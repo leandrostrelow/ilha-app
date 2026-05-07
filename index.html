@@ -1,261 +1,275 @@
-<div id="ilha-app">
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <title>Ilha Tênis Colatina</title>
+
+  <link rel="manifest" href="/manifest.json">
+
+  <meta name="theme-color" content="#243847">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Ilha Tênis">
+
+  <link rel="apple-touch-icon" href="https://ilhatenis.com/favicon.ico">
+  <link rel="icon" href="https://ilhatenis.com/favicon.ico">
+
   <style>
-    #ilha-app{
-      min-height:100vh;
-      background:#ffffff;
-      padding:20px 14px;
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
       font-family:Arial, Helvetica, sans-serif;
-      box-sizing:border-box;
     }
 
-    #ilha-app *{
-      box-sizing:border-box;
+    body{
+      background:#ffffff;
+      color:#0f2230;
+      padding:20px;
+      min-height:100vh;
     }
 
-    .app-container{
+    .container{
       width:100%;
-      max-width:680px;
+      max-width:520px;
       margin:0 auto;
     }
 
     .top-card{
-      background:#ffffff;
+      background:#fff;
       border-radius:28px;
-      padding:30px;
+      padding:28px;
+      margin-bottom:20px;
+      border:1px solid #e9eef2;
+      box-shadow:0 6px 20px rgba(0,0,0,0.04);
       border-left:8px solid #243847;
-      box-shadow:0 6px 25px rgba(0,0,0,.05);
-      margin-bottom:22px;
-      border:1px solid #e4eaee;
     }
 
-    .mini-title{
-      font-size:13px;
-      font-weight:800;
-      letter-spacing:2px;
-      text-transform:uppercase;
-      color:#70808d;
-      margin-bottom:12px;
+    .mini{
+      font-size:11px;
+      letter-spacing:3px;
+      color:#6f7f8d;
+      margin-bottom:10px;
+      font-weight:700;
     }
 
-    h1{
-      margin:0;
-      color:#102532;
+    .title{
       font-size:38px;
-      line-height:1.05;
+      line-height:0.95;
       font-weight:900;
-      letter-spacing:-2px;
+      color:#0f2230;
+      margin-bottom:14px;
     }
 
     .desc{
-      margin-top:16px;
-      color:#6b7b87;
-      font-size:17px;
-      line-height:1.6;
+      color:#667786;
+      font-size:15px;
+      line-height:1.5;
     }
 
-    .grid{
-      display:grid;
-      gap:18px;
+    .menu{
+      display:flex;
+      flex-direction:column;
+      gap:16px;
     }
 
-    .app-btn{
-      background:#ffffff;
-      border-radius:26px;
-      padding:24px;
-      text-decoration:none;
+    .item{
+      background:#fff;
+      border-radius:24px;
+      padding:18px;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      transition:.2s ease;
-      border:1px solid #dce3e8;
-      box-shadow:0 5px 20px rgba(0,0,0,.04);
+      text-decoration:none;
+      color:#0f2230;
+      border:1px solid #e9eef2;
+      box-shadow:0 5px 18px rgba(0,0,0,0.04);
+      transition:0.2s;
     }
 
-    .app-btn:hover{
-      transform:translateY(-2px);
+    .item:active{
+      transform:scale(0.98);
     }
 
     .left{
       display:flex;
       align-items:center;
-      gap:18px;
+      gap:16px;
     }
 
     .icon{
-      width:68px;
-      height:68px;
-      border-radius:22px;
-      background:#c6f000;
-      color:#102532;
+      width:56px;
+      height:56px;
+      border-radius:18px;
+      background:#d7ff00;
       display:flex;
       align-items:center;
       justify-content:center;
-      font-size:34px;
-      font-weight:900;
+      font-size:28px;
       flex-shrink:0;
     }
 
-    .title{
-      display:block;
-      color:#102532;
-      font-size:24px;
-      font-weight:900;
-      margin-bottom:6px;
+    .texts h3{
+      font-size:18px;
+      margin-bottom:4px;
+      color:#0f2230;
     }
 
-    .sub{
-      display:block;
-      color:#70808d;
-      font-size:15px;
+    .texts p{
+      font-size:13px;
+      color:#738291;
     }
 
     .arrow{
+      font-size:30px;
       color:#243847;
-      font-size:34px;
-      font-weight:900;
-      margin-left:12px;
+      font-weight:bold;
     }
 
     .install{
-      margin-top:24px;
+      margin-top:22px;
       background:#243847;
-      border-radius:26px;
-      padding:26px;
-      color:#ffffff;
+      color:#fff;
+      border-radius:24px;
+      padding:22px;
     }
 
-    .install strong{
-      display:block;
-      font-size:20px;
-      margin-bottom:14px;
+    .install h4{
+      margin-bottom:10px;
+      font-size:17px;
     }
 
     .install p{
-      margin:0;
-      color:rgba(255,255,255,.78);
-      line-height:1.8;
-      font-size:15px;
+      font-size:14px;
+      line-height:1.6;
+      opacity:0.9;
     }
 
     .footer{
       text-align:center;
-      margin-top:24px;
-      color:#7a8792;
-      font-size:13px;
+      margin-top:20px;
+      color:#9aa6b2;
+      font-size:12px;
     }
 
     @media(max-width:480px){
 
-      h1{
-        font-size:34px;
+      body{
+        padding:14px;
+      }
+
+      .container{
+        max-width:100%;
+      }
+
+      .top-card{
+        padding:24px;
       }
 
       .title{
-        font-size:22px;
+        font-size:32px;
       }
 
-      .app-btn{
-        padding:22px;
+      .item{
+        padding:16px;
       }
 
       .icon{
-        width:62px;
-        height:62px;
-        font-size:30px;
+        width:52px;
+        height:52px;
+        font-size:25px;
       }
 
+      .texts h3{
+        font-size:17px;
+      }
     }
-
   </style>
+</head>
 
-  <div class="app-container">
+<body>
+
+  <div class="container">
 
     <div class="top-card">
+      <div class="mini">APP</div>
 
-      <div class="mini-title">APP</div>
-
-      <h1>Ilha Tênis<br>Colatina</h1>
+      <div class="title">
+        Ilha Tênis<br>
+        Colatina
+      </div>
 
       <div class="desc">
         Acesse rapidamente os principais serviços e informações do clube.
       </div>
-
     </div>
 
-    <div class="grid">
+    <div class="menu">
 
-      <a class="app-btn" href="https://ilhatenis.com/agenda">
-
+      <a class="item" href="https://ilhatenis.com/agenda">
         <div class="left">
           <div class="icon">📅</div>
 
-          <div>
-            <span class="title">Reservar Quadra</span>
-            <span class="sub">Agenda e horários disponíveis</span>
+          <div class="texts">
+            <h3>Reservar Quadra</h3>
+            <p>Agenda e horários disponíveis</p>
           </div>
         </div>
 
         <div class="arrow">›</div>
-
       </a>
 
-      <a class="app-btn" href="https://ilhatenis.com/viafor-open">
-
+      <a class="item" href="https://ilhatenis.com/viafor-open">
         <div class="left">
           <div class="icon">🏆</div>
 
-          <div>
-            <span class="title">Viafor Open</span>
-            <span class="sub">Inscrições do torneio</span>
+          <div class="texts">
+            <h3>Viafor Open</h3>
+            <p>Inscrições do torneio</p>
           </div>
         </div>
 
         <div class="arrow">›</div>
-
       </a>
 
-      <a class="app-btn" href="https://ilhatenis.com/aulas-de-tenis">
-
+      <a class="item" href="https://ilhatenis.com/aulas-de-tenis">
         <div class="left">
           <div class="icon">🎾</div>
 
-          <div>
-            <span class="title">Aulas de Tênis</span>
-            <span class="sub">Faça sua matrícula online</span>
+          <div class="texts">
+            <h3>Aulas de Tênis</h3>
+            <p>Faça sua matrícula online</p>
           </div>
         </div>
 
         <div class="arrow">›</div>
-
       </a>
 
-      <a class="app-btn" href="https://ilhatenis.com/">
-
+      <a class="item" href="https://ilhatenis.com/">
         <div class="left">
           <div class="icon">🏠</div>
 
-          <div>
-            <span class="title">Página Inicial</span>
-            <span class="sub">Voltar para o site principal</span>
+          <div class="texts">
+            <h3>Página Inicial</h3>
+            <p>Voltar para o site principal</p>
           </div>
         </div>
 
         <div class="arrow">›</div>
-
       </a>
 
     </div>
 
     <div class="install">
-
-      <strong>Instale no celular como aplicativo</strong>
+      <h4>Instale no celular como aplicativo</h4>
 
       <p>
-        iPhone: abra no Safari → Compartilhar → “Adicionar à Tela de Início”.<br><br>
-
+        iPhone: abra no Safari → Compartilhar → “Adicionar à Tela de Início”
+        <br><br>
         Android: abra no Chrome → menu → “Adicionar à tela inicial”.
       </p>
-
     </div>
 
     <div class="footer">
@@ -263,4 +277,12 @@
     </div>
 
   </div>
-</div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js');
+    }
+  </script>
+
+</body>
+</html>
