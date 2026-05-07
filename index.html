@@ -235,8 +235,6 @@ body{
 .modal{
   width:100%;
   max-width:430px;
-  max-height:90vh;
-  overflow:auto;
   background:#ffffff;
   border-radius:26px;
   padding:22px;
@@ -321,111 +319,6 @@ body{
   cursor:pointer;
 }
 
-/* VALORES */
-
-.plan-tabs{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-  margin-bottom:12px;
-}
-
-.plan-tab{
-  border:1px solid #dfe7eb;
-  background:#f4f6f7;
-  color:#082131;
-  border-radius:999px;
-  padding:12px;
-  font-weight:900;
-  cursor:pointer;
-}
-
-.plan-tab.active{
-  background:#a7e900;
-  border-color:#a7e900;
-}
-
-.plan-info{
-  border:1px solid #dfe7eb;
-  border-radius:18px;
-  padding:14px;
-  margin-bottom:12px;
-  background:#f9fbfc;
-}
-
-.plan-info h4{
-  font-size:16px;
-  color:#082131;
-  margin-bottom:6px;
-}
-
-.plan-info p{
-  font-size:13px;
-  color:#637584;
-  line-height:1.35;
-  font-weight:700;
-}
-
-.plan-list{
-  display:grid;
-  gap:10px;
-}
-
-.plan-card{
-  border:1px solid #dfe7eb;
-  border-radius:18px;
-  padding:14px;
-  background:#ffffff;
-}
-
-.plan-card h4{
-  font-size:14px;
-  color:#082131;
-  margin-bottom:8px;
-}
-
-.plan-price{
-  font-size:28px;
-  font-weight:900;
-  color:#243847;
-  margin-bottom:6px;
-}
-
-.plan-price small{
-  font-size:13px;
-  color:#637584;
-}
-
-.plan-total{
-  font-size:12px;
-  color:#637584;
-  line-height:1.4;
-  margin-bottom:10px;
-}
-
-.badge{
-  display:inline-block;
-  background:#a7e900;
-  color:#082131;
-  border-radius:999px;
-  padding:5px 8px;
-  font-size:10px;
-  font-weight:900;
-  margin-left:4px;
-}
-
-.hire-btn{
-  width:100%;
-  border:none;
-  border-radius:14px;
-  padding:12px;
-  background:#103b48;
-  color:#ffffff;
-  font-size:14px;
-  font-weight:900;
-  cursor:pointer;
-}
-
 .copy-alert{
   position:fixed;
   left:50%;
@@ -457,7 +350,10 @@ body{
 @media(max-width:520px){
   body{padding:12px;}
 
-  .top-card{border-radius:24px;padding:18px 16px;}
+  .top-card{
+    border-radius:24px;
+    padding:18px 16px;
+  }
 
   .top-line{gap:10px;}
 
@@ -469,9 +365,15 @@ body{
     padding-left:10px;
   }
 
-  .desc{font-size:13px;margin-bottom:10px;}
+  .desc{
+    font-size:13px;
+    margin-bottom:10px;
+  }
 
-  .install{padding:12px 14px;border-radius:18px;}
+  .install{
+    padding:12px 14px;
+    border-radius:18px;
+  }
 
   .install h4{font-size:13px;}
   .install p{font-size:11px;}
@@ -486,14 +388,25 @@ body{
   }
 
   .icon{min-width:28px;font-size:28px;}
+
   .icon-img{width:34px;height:34px;}
 
-  .pix-icon svg{width:28px;height:28px;}
+  .pix-icon svg{
+    width:28px;
+    height:28px;
+  }
 
-  .texts h3{font-size:15px;margin-bottom:4px;}
+  .texts h3{
+    font-size:15px;
+    margin-bottom:4px;
+  }
+
   .texts p{font-size:12px;}
 
-  .arrow{right:9px;font-size:22px;}
+  .arrow{
+    right:9px;
+    font-size:22px;
+  }
 
   .social{
     min-height:50px;
@@ -502,9 +415,15 @@ body{
     padding:8px 4px;
   }
 
-  .social svg{width:18px;height:18px;}
+  .social svg{
+    width:18px;
+    height:18px;
+  }
 
-  .modal{border-radius:22px;padding:18px;}
+  .modal{
+    border-radius:22px;
+    padding:18px;
+  }
 }
 </style>
 </head>
@@ -520,7 +439,7 @@ body{
     </div>
 
     <div class="desc">
-      Principais serviços e informações do clube.
+      Acesse rapidamente os principais serviços e informações do clube.
     </div>
 
     <div class="install">
@@ -529,20 +448,20 @@ body{
         <h4>Instale no celular como aplicativo</h4>
         <p>
           Clique em
-          <span class="inline-icon">
+          <span class="inline-icon" aria-label="ícone de compartilhar">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 3v12"></path>
               <path d="M7 8l5-5 5 5"></path>
               <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"></path>
             </svg>
           </span>
-          &gt;
-          <span class="inline-icon">
+          ou
+          <span class="inline-icon" aria-label="ícone de ver mais">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
               <path d="M6 9l6 6 6-6"></path>
             </svg>
           </span>
-          Ver Mais &gt; Adicionar à Tela de Início.
+          → “Adicionar à Tela de Início”.
         </p>
       </div>
     </div>
@@ -586,15 +505,6 @@ body{
       <div class="arrow">›</div>
     </button>
 
-    <button class="item" type="button" onclick="abrirValores()">
-      <div class="icon">💰</div>
-      <div class="texts">
-        <h3>Valores</h3>
-        <p>Planos do clube</p>
-      </div>
-      <div class="arrow">›</div>
-    </button>
-
     <button class="item" type="button" onclick="copiarPix()">
       <div class="icon pix-icon">
         <svg viewBox="0 0 64 64">
@@ -614,22 +524,30 @@ body{
   <div class="socials">
 
     <a class="social" href="https://wa.me/5527995312150" target="_blank">
-      <svg viewBox="0 0 32 32"><path d="M16.02 3C8.86 3 3.04 8.82 3.04 15.98c0 2.3.6 4.54 1.75 6.51L3 29l6.68-1.75a12.9 12.9 0 0 0 6.34 1.62C23.18 28.87 29 23.05 29 15.98S23.18 3 16.02 3zm0 23.7c-2.03 0-4.01-.54-5.74-1.56l-.41-.24-3.96 1.04 1.06-3.86-.27-.44a10.66 10.66 0 0 1-1.49-5.45c0-5.95 4.85-10.8 10.81-10.8 5.96 0 10.81 4.85 10.81 10.8 0 5.96-4.85 10.81-10.81 10.81z"/></svg>
+      <svg viewBox="0 0 32 32">
+        <path d="M16.02 3C8.86 3 3.04 8.82 3.04 15.98c0 2.3.6 4.54 1.75 6.51L3 29l6.68-1.75a12.9 12.9 0 0 0 6.34 1.62C23.18 28.87 29 23.05 29 15.98S23.18 3 16.02 3zm0 23.7c-2.03 0-4.01-.54-5.74-1.56l-.41-.24-3.96 1.04 1.06-3.86-.27-.44a10.66 10.66 0 0 1-1.49-5.45c0-5.95 4.85-10.8 10.81-10.8 5.96 0 10.81 4.85 10.81 10.8 0 5.96-4.85 10.81-10.81 10.81z"/>
+      </svg>
       WhatsApp
     </a>
 
     <a class="social" href="https://instagram.com/ilhateniscolatina" target="_blank">
-      <svg viewBox="0 0 24 24"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7zm5 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>
+      <svg viewBox="0 0 24 24">
+        <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7zm5 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>
+      </svg>
       Instagram
     </a>
 
     <a class="social" href="https://youtube.com/@ilhateniscolatina" target="_blank">
-      <svg viewBox="0 0 24 24"><path d="M23.5 6.2s-.23-1.64-.94-2.36c-.9-.94-1.9-.95-2.36-1C16.9 2.6 12 2.6 12 2.6h-.02s-4.9 0-8.2.24c-.46.05-1.46.06-2.36 1C.72 4.56.5 6.2.5 6.2S.25 8.13.25 10.07v1.82c0 1.94.25 3.87.25 3.87s.22 1.64.92 2.36c.9.94 2.08.91 2.6 1.01 1.89.18 7.98.24 7.98.24s4.9-.01 8.2-.25c.46-.05 1.46-.06 2.36-1 .71-.72.94-2.36.94-2.36s.25-1.93.25-3.87v-1.82c0-1.94-.25-3.87-.25-3.87zM9.75 14.35v-5.1l5.05 2.55-5.05 2.55z"/></svg>
+      <svg viewBox="0 0 24 24">
+        <path d="M23.5 6.2s-.23-1.64-.94-2.36c-.9-.94-1.9-.95-2.36-1C16.9 2.6 12 2.6 12 2.6h-.02s-4.9 0-8.2.24c-.46.05-1.46.06-2.36 1C.72 4.56.5 6.2.5 6.2S.25 8.13.25 10.07v1.82c0 1.94.25 3.87.25 3.87s.22 1.64.92 2.36c.9.94 2.08.91 2.6 1.01 1.89.18 7.98.24 7.98.24s4.9-.01 8.2-.25c.46-.05 1.46-.06 2.36-1 .71-.72.94-2.36.94-2.36s.25-1.93.25-3.87v-1.82c0-1.94-.25-3.87-.25-3.87zM9.75 14.35v-5.1l5.05 2.55-5.05 2.55z"/>
+      </svg>
       YouTube
     </a>
 
     <a class="social" href="https://maps.google.com/?q=Ilha+Tênis+Colatina" target="_blank">
-      <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg>
+      <svg viewBox="0 0 24 24">
+        <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/>
+      </svg>
       Como chegar
     </a>
 
@@ -642,7 +560,6 @@ body{
 
 </div>
 
-<!-- MODAL AGENDA -->
 <div id="agendaModal" class="modal-overlay" onclick="fecharAgendaFora(event)">
   <div class="modal">
     <div class="modal-header">
@@ -662,7 +579,6 @@ body{
   </div>
 </div>
 
-<!-- MODAL RANKING -->
 <div id="rankingModal" class="modal-overlay" onclick="fecharRankingFora(event)">
   <div class="modal">
     <div class="modal-header">
@@ -685,147 +601,10 @@ body{
   </div>
 </div>
 
-<!-- MODAL VALORES -->
-<div id="valoresModal" class="modal-overlay" onclick="fecharValoresFora(event)">
-  <div class="modal">
-    <div class="modal-header">
-      <div>
-        <h3>Valores do Clube</h3>
-        <p>Escolha a modalidade e o plano</p>
-      </div>
-    </div>
-
-    <div class="plan-tabs">
-      <button class="plan-tab active" onclick="trocarTipoPlano('aulas')">Aulas</button>
-      <button class="plan-tab" onclick="trocarTipoPlano('jogar')">Somente jogar</button>
-    </div>
-
-    <div id="planInfo" class="plan-info"></div>
-    <div id="planList" class="plan-list"></div>
-
-    <button class="close-modal" onclick="fecharValores()">Fechar</button>
-  </div>
-</div>
-
 <div id="copyAlert" class="copy-alert">Chave Pix copiada ✅</div>
 
 <script>
 const PIX_KEY = "54.969.790/0001-47";
-const WHATSAPP_CLUBE = "5527995312150";
-let tipoPlanoAtual = "aulas";
-
-const planos = {
-  aulas: {
-    info: {
-      titulo: "Aulas de Tênis",
-      texto: "Planos com aula inclusa. Escolha a frequência desejada."
-    },
-    opcoes: [
-      {nome:"1x por semana • Anual", modalidade:"Aulas", frequencia:"1x por semana", periodo:"Anual", mensal:230, meses:12, destaque:true},
-      {nome:"1x por semana • Semestral", modalidade:"Aulas", frequencia:"1x por semana", periodo:"Semestral", mensal:250, meses:6},
-      {nome:"1x por semana • Mensal", modalidade:"Aulas", frequencia:"1x por semana", periodo:"Mensal", mensal:270, meses:1},
-      {nome:"2x por semana • Anual", modalidade:"Aulas", frequencia:"2x por semana", periodo:"Anual", mensal:350, meses:12, destaque:true},
-      {nome:"2x por semana • Semestral", modalidade:"Aulas", frequencia:"2x por semana", periodo:"Semestral", mensal:370, meses:6},
-      {nome:"2x por semana • Mensal", modalidade:"Aulas", frequencia:"2x por semana", periodo:"Mensal", mensal:390, meses:1}
-    ]
-  },
-  jogar: {
-    info: {
-      titulo: "Somente jogar",
-      texto: "Uso das quadras conforme as regras do clube, sem aula inclusa. A agenda de horários é liberada semanalmente."
-    },
-    opcoes: [
-      {nome:"Somente jogar • Anual", modalidade:"Somente jogar", frequencia:"Uso das quadras", periodo:"Anual", mensal:130, meses:12, destaque:true},
-      {nome:"Somente jogar • Semestral", modalidade:"Somente jogar", frequencia:"Uso das quadras", periodo:"Semestral", mensal:140, meses:6},
-      {nome:"Somente jogar • Mensal", modalidade:"Somente jogar", frequencia:"Uso das quadras", periodo:"Mensal", mensal:150, meses:1}
-    ]
-  }
-};
-
-function formatar(valor){
-  return valor.toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
-}
-
-function calcularPix(plano){
-  const total = plano.mensal * plano.meses;
-  const totalPix = total * 0.95;
-  return {total, totalPix};
-}
-
-function abrirValores(){
-  document.getElementById("valoresModal").classList.add("show");
-  renderPlanos();
-}
-
-function fecharValores(){
-  document.getElementById("valoresModal").classList.remove("show");
-}
-
-function fecharValoresFora(event){
-  if(event.target.id === "valoresModal"){
-    fecharValores();
-  }
-}
-
-function trocarTipoPlano(tipo){
-  tipoPlanoAtual = tipo;
-
-  document.querySelectorAll(".plan-tab").forEach(btn => btn.classList.remove("active"));
-  event.target.classList.add("active");
-
-  renderPlanos();
-}
-
-function renderPlanos(){
-  const dados = planos[tipoPlanoAtual];
-
-  document.getElementById("planInfo").innerHTML = `
-    <h4>${dados.info.titulo}</h4>
-    <p>${dados.info.texto}</p>
-  `;
-
-  document.getElementById("planList").innerHTML = dados.opcoes.map((plano, index) => {
-    const calc = calcularPix(plano);
-
-    return `
-      <div class="plan-card">
-        <h4>
-          ${plano.nome}
-          ${plano.destaque ? '<span class="badge">MELHOR ESCOLHA</span>' : ''}
-        </h4>
-
-        <div class="plan-price">
-          ${formatar(plano.mensal)} <small>/ mês</small>
-        </div>
-
-        <div class="plan-total">
-          Total do plano: <strong>${formatar(calc.total)}</strong><br>
-          Valor via Pix com 5% OFF: <strong>${formatar(calc.totalPix)}</strong>
-        </div>
-
-        <button class="hire-btn" onclick="contratarPlano('${tipoPlanoAtual}', ${index})">
-          Contratar pelo WhatsApp
-        </button>
-      </div>
-    `;
-  }).join("");
-}
-
-function contratarPlano(tipo, index){
-  const plano = planos[tipo].opcoes[index];
-  const calc = calcularPix(plano);
-
-  const msg = `Olá! Tenho interesse em contratar um plano do Ilha Tênis Colatina.%0A%0A` +
-              `Modalidade: ${plano.modalidade}%0A` +
-              `Frequência: ${plano.frequencia}%0A` +
-              `Plano: ${plano.periodo}%0A` +
-              `Valor mensal: ${formatar(plano.mensal)}%0A` +
-              `Total do plano: ${formatar(calc.total)}%0A` +
-              `Valor via Pix com 5% OFF: ${formatar(calc.totalPix)}%0A%0A` +
-              `Gostaria de seguir com a contratação.`;
-
-  window.open(`https://wa.me/${WHATSAPP_CLUBE}?text=${msg}`, "_blank");
-}
 
 function copiarPix(){
   navigator.clipboard.writeText(PIX_KEY).then(function(){
