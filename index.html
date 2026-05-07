@@ -4,318 +4,265 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-<title>Ilha Tênis Colatina</title>
+<title>Ilha Play</title>
 
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#243847">
+<link rel="manifest" href="manifest.json">
+
+<meta name="theme-color" content="#173542">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Ilha Tênis">
-
-<link rel="apple-touch-icon" href="/icon.png">
-<link rel="icon" href="/icon.png">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ilha Play">
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial, Helvetica, sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;}
 
 body{
-  background:#f4f6f7;
-  color:#0f2230;
-  padding:14px;
-  min-height:100vh;
+  font-family:Arial, Helvetica, sans-serif;
+  background:#eef1f3;
+  color:#173542;
+  padding:16px;
 }
 
-.container{width:100%;max-width:760px;margin:0 auto;}
+.container{max-width:700px;margin:auto;}
 
-.top-card{
-  background:#ffffff;
+.top{
+  background:white;
   border-radius:28px;
-  padding:22px;
-  margin-bottom:16px;
-  border:1px solid #dfe7eb;
-  box-shadow:0 10px 28px rgba(15,34,48,0.06);
+  padding:24px 22px;
+  margin-bottom:14px;
+  border:1px solid #dbe3e8;
 }
 
-.top-line{
+.logo-line{
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:14px;
+  gap:12px;
   margin-bottom:12px;
 }
 
-.logo{width:100%;max-width:230px;height:auto;display:block;}
+.logo-line img{height:62px;}
 
-.play-title{
-  font-size:17px;
-  letter-spacing:4px;
-  color:#718391;
-  font-weight:900;
-  text-transform:uppercase;
-  border-left:1px solid #dfe7eb;
-  padding-left:14px;
+.play{
+  font-size:12px;
+  letter-spacing:6px;
+  font-weight:700;
+  color:#587389;
 }
 
-.desc{
+.subtitle{
   text-align:center;
-  color:#31596b;
-  font-size:16px;
-  line-height:1.45;
-  font-weight:500;
-  max-width:620px;
-  margin:0 auto 14px;
+  font-size:17px;
+  color:#587389;
+  line-height:1.4;
 }
 
 .install{
-  background:#243847;
-  color:#fff;
+  margin-top:18px;
+  background:#173542;
+  color:white;
   border-radius:22px;
-  padding:14px 16px;
-  margin-top:8px;
+  padding:16px;
+  font-size:14px;
+  line-height:1.6;
+}
+
+.install strong{
+  display:block;
+  margin-bottom:6px;
+  font-size:16px;
+}
+
+.install-icons{
   display:flex;
-  gap:12px;
   align-items:center;
-  text-align:left;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:6px;
 }
 
-.install-icon{font-size:24px;flex-shrink:0;line-height:1;}
-
-.install h4{
-  font-size:15px;
-  line-height:1.2;
-  margin-bottom:5px;
-  font-weight:900;
-}
-
-.install p{
-  font-size:12px;
-  line-height:1.45;
-  opacity:0.94;
-}
-
-.inline-icon{
-  width:19px;
-  height:19px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  vertical-align:-5px;
-  margin:0 4px;
-}
-
-.inline-icon svg{
-  width:100%;
-  height:100%;
-  stroke:currentColor;
+.install-icons span{
+  background:rgba(255,255,255,0.12);
+  padding:4px 8px;
+  border-radius:10px;
 }
 
 .grid{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:12px;
-  margin-bottom:14px;
+  margin-top:14px;
 }
 
 .item{
-  background:#ffffff;
+  background:white;
   border-radius:24px;
-  padding:18px 16px;
-  min-height:98px;
+  padding:18px;
+  border:none;
+  text-align:left;
   display:flex;
   align-items:center;
-  gap:14px;
-  text-decoration:none;
-  color:#0f2230;
-  border:1px solid #dfe7eb;
-  box-shadow:0 6px 18px rgba(15,34,48,0.04);
+  gap:12px;
   position:relative;
-  overflow:hidden;
   cursor:pointer;
-  width:100%;
-  text-align:left;
-  appearance:none;
+  min-height:95px;
+  border:1px solid #dbe3e8;
+  color:#173542;
 }
 
-.item:active{transform:scale(0.98);}
+.item:hover{transform:translateY(-2px);}
 
 .icon{
+  font-size:30px;
   min-width:34px;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:34px;
-  line-height:1;
-  flex-shrink:0;
 }
-
-.icon-img{
-  width:42px;
-  height:42px;
-  object-fit:contain;
-  flex-shrink:0;
-}
-
-.pix-icon svg{
-  width:34px;
-  height:34px;
-  fill:#32BCAD;
-}
-
-.texts{min-width:0;padding-right:12px;}
 
 .texts h3{
-  font-size:19px;
-  line-height:1.05;
-  color:#082131;
-  margin-bottom:6px;
-  font-weight:900;
+  font-size:15px;
+  margin-bottom:4px;
 }
 
 .texts p{
-  font-size:14px;
-  line-height:1.2;
-  color:#637584;
+  font-size:13px;
+  color:#6b7f8d;
+  line-height:1.3;
 }
 
 .arrow{
   position:absolute;
-  right:14px;
+  right:18px;
   top:50%;
   transform:translateY(-50%);
-  font-size:27px;
-  color:#123545;
-  font-weight:900;
+  font-size:28px;
+  color:#173542;
 }
 
 .socials{
   display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:8px;
-  margin:10px 0 14px;
+  grid-template-columns:1fr 1fr 1fr 1fr;
+  gap:10px;
+  margin-top:16px;
 }
 
 .social{
-  min-height:54px;
-  background:#103b48;
-  color:#fff;
-  border-radius:16px;
-  padding:10px 6px;
-  text-decoration:none;
+  border:none;
+  border-radius:18px;
+  padding:14px 8px;
+  background:#173542;
+  color:white;
+  font-weight:700;
+  font-size:12px;
+  cursor:pointer;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  gap:4px;
-  font-weight:900;
-  font-size:11px;
-  text-align:center;
-  box-shadow:0 8px 20px rgba(15,34,48,0.08);
+  gap:6px;
+  min-height:62px;
 }
 
 .social svg{
   width:20px;
   height:20px;
-  fill:currentColor;
-  flex-shrink:0;
+  fill:white;
 }
 
-.modal-overlay{
+.footer{
+  text-align:center;
+  margin-top:18px;
+  color:#7c8c97;
+  font-size:12px;
+  line-height:1.5;
+}
+
+.modal{
   position:fixed;
   inset:0;
-  background:rgba(8,20,28,0.68);
+  background:rgba(0,0,0,0.65);
   display:none;
   align-items:center;
   justify-content:center;
-  padding:18px;
-  z-index:9999;
+  z-index:999;
+  padding:16px;
 }
 
-.modal-overlay.show{display:flex;}
-
-.modal{
+.modal-content{
+  background:white;
   width:100%;
-  max-width:430px;
-  background:#ffffff;
-  border-radius:26px;
+  max-width:500px;
+  border-radius:28px;
   padding:22px;
-  box-shadow:0 18px 50px rgba(0,0,0,.25);
-  animation:modalIn .2s ease;
+  max-height:90vh;
+  overflow:auto;
 }
 
-@keyframes modalIn{
-  from{opacity:0;transform:translateY(10px) scale(.98);}
-  to{opacity:1;transform:translateY(0) scale(1);}
+.modal h2{margin-bottom:16px;}
+
+.close{
+  float:right;
+  cursor:pointer;
+  font-size:24px;
 }
 
-.modal-header{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  margin-bottom:16px;
+.rank-links,
+.plan-links{
+  display:grid;
+  gap:10px;
 }
 
-.modal-header img{
-  width:44px;
-  height:44px;
-  object-fit:contain;
-}
-
-.modal-header h3{
-  font-size:21px;
-  color:#082131;
-  font-weight:900;
-}
-
-.modal-header p{
-  font-size:13px;
-  color:#637584;
-  margin-top:3px;
+.rank-links a,
+.plan-links button{
+  display:block;
+  width:100%;
+  background:#173542;
+  color:white;
+  text-decoration:none;
+  border:none;
+  padding:14px;
+  border-radius:14px;
+  font-weight:700;
+  cursor:pointer;
 }
 
 .banner{
   width:100%;
   border-radius:18px;
-  display:block;
   margin-bottom:14px;
 }
 
-.modal-links{display:grid;gap:10px;}
-
-.rank-link,
-.modal-main-link{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  text-decoration:none;
-  background:#f4f6f7;
-  border:1px solid #dfe7eb;
-  color:#082131;
-  border-radius:16px;
-  padding:14px 16px;
-  font-size:15px;
-  font-weight:900;
+.plan-card{
+  border:1px solid #dbe3e8;
+  border-radius:18px;
+  padding:16px;
+  margin-bottom:12px;
 }
 
-.modal-main-link{
-  background:#103b48;
-  color:#ffffff;
+.plan-card h3{
+  font-size:16px;
+  margin-bottom:8px;
 }
 
-.rank-link span,
-.modal-main-link span{
-  font-size:22px;
+.plan-card strong{
+  font-size:24px;
+  color:#173542;
 }
 
-.close-modal{
+.plan-card small{
+  color:#6b7f8d;
+}
+
+.plan-card button{
   width:100%;
-  margin-top:14px;
+  margin-top:12px;
+  background:#173542;
+  color:white;
   border:none;
-  border-radius:16px;
-  padding:14px;
-  background:#243847;
-  color:#ffffff;
-  font-size:15px;
-  font-weight:900;
+  border-radius:14px;
+  padding:12px;
+  font-weight:700;
   cursor:pointer;
 }
 
@@ -324,8 +271,8 @@ body{
   left:50%;
   bottom:24px;
   transform:translateX(-50%);
-  background:#103b48;
-  color:#fff;
+  background:#173542;
+  color:white;
   padding:14px 18px;
   border-radius:999px;
   font-size:14px;
@@ -333,96 +280,46 @@ body{
   opacity:0;
   pointer-events:none;
   transition:.25s ease;
-  box-shadow:0 10px 28px rgba(0,0,0,.18);
-  z-index:999;
+  z-index:9999;
 }
 
-.copy-alert.show{opacity:1;bottom:34px;}
-
-.footer{
-  text-align:center;
-  margin-top:18px;
-  color:#7c8994;
-  font-size:12px;
-  line-height:1.5;
+.copy-alert.show{
+  opacity:1;
+  bottom:34px;
 }
 
-@media(max-width:520px){
-  body{padding:12px;}
+@media(max-width:700px){
+  .grid{grid-template-columns:1fr 1fr;}
+  .socials{grid-template-columns:1fr 1fr 1fr 1fr;}
 
-  .top-card{
-    border-radius:24px;
-    padding:18px 16px;
+  .logo-line img{height:48px;}
+
+  .play{
+    font-size:11px;
+    letter-spacing:4px;
   }
 
-  .top-line{gap:10px;}
-
-  .logo{max-width:170px;}
-
-  .play-title{
+  .subtitle{
     font-size:14px;
-    letter-spacing:3px;
-    padding-left:10px;
   }
-
-  .desc{
-    font-size:13px;
-    margin-bottom:10px;
-  }
-
-  .install{
-    padding:12px 14px;
-    border-radius:18px;
-  }
-
-  .install h4{font-size:13px;}
-  .install p{font-size:11px;}
-
-  .grid{gap:10px;}
 
   .item{
-    border-radius:20px;
-    padding:14px 12px;
     min-height:88px;
-    gap:10px;
+    padding:14px 12px;
   }
 
-  .icon{min-width:28px;font-size:28px;}
-
-  .icon-img{width:34px;height:34px;}
-
-  .pix-icon svg{
-    width:28px;
-    height:28px;
-  }
-
-  .texts h3{
-    font-size:15px;
-    margin-bottom:4px;
-  }
-
+  .texts h3{font-size:14px;}
   .texts p{font-size:12px;}
 
-  .arrow{
-    right:9px;
-    font-size:22px;
-  }
-
   .social{
-    min-height:50px;
-    border-radius:15px;
     font-size:10px;
-    padding:8px 4px;
+    min-height:56px;
+    border-radius:15px;
   }
 
   .social svg{
     width:18px;
     height:18px;
-  }
-
-  .modal{
-    border-radius:22px;
-    padding:18px;
   }
 }
 </style>
@@ -432,86 +329,82 @@ body{
 
 <div class="container">
 
-  <div class="top-card">
-    <div class="top-line">
-      <img class="logo" src="/logo.png" alt="Ilha Tênis Colatina">
-      <div class="play-title">PLAY</div>
+  <div class="top">
+
+    <div class="logo-line">
+      <img src="https://raw.githubusercontent.com/leandrostrelow/ilha-app/main/logo.png" alt="Ilha Tênis">
+      <div class="play">PLAY</div>
     </div>
 
-    <div class="desc">
-      Acesse rapidamente os principais serviços e informações do clube.
+    <div class="subtitle">
+      Principais serviços e informações do clube.
     </div>
 
     <div class="install">
-      <div class="install-icon">📱</div>
-      <div>
-        <h4>Instale no celular como aplicativo</h4>
-        <p>
-          Clique em
-          <span class="inline-icon" aria-label="ícone de compartilhar">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 3v12"></path>
-              <path d="M7 8l5-5 5 5"></path>
-              <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"></path>
-            </svg>
-          </span>
-          ou
-          <span class="inline-icon" aria-label="ícone de ver mais">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 9l6 6 6-6"></path>
-            </svg>
-          </span>
-          → “Adicionar à Tela de Início”.
-        </p>
+      <strong>📱 Instale no celular como aplicativo</strong>
+      <div class="install-icons">
+        Clique em
+        <span>📤 Compartilhar</span>
+        >
+        <span>⌄ Ver Mais</span>
+        >
+        <span>Adicionar à Tela de Início</span>
       </div>
     </div>
+
   </div>
 
   <div class="grid">
 
-    <a class="item" href="https://ilhatenis.com/agenda">
+    <button class="item" onclick="window.open('https://ilhatenis.com/agenda','_blank')">
       <div class="icon">📅</div>
       <div class="texts">
         <h3>Reservar Quadra</h3>
         <p>Horários disponíveis</p>
       </div>
       <div class="arrow">›</div>
-    </a>
+    </button>
 
-    <button class="item" type="button" onclick="abrirAgenda()">
+    <button class="item" onclick="abrirAgenda()">
       <div class="icon">🏆</div>
       <div class="texts">
-        <h3>Agenda</h3>
-        <p>II Viafor Open</p>
+        <h3>II VIAFOR OPEN</h3>
+        <p>Faça sua inscrição</p>
       </div>
       <div class="arrow">›</div>
     </button>
 
-    <a class="item" href="https://ilhatenis.com/aulas-de-tenis">
+    <button class="item" onclick="window.open('https://ilhatenis.com/aulas-de-tenis','_blank')">
       <div class="icon">🎾</div>
       <div class="texts">
         <h3>Aulas de Tênis</h3>
         <p>Quero fazer aulas</p>
       </div>
       <div class="arrow">›</div>
-    </a>
+    </button>
 
-    <button class="item" type="button" onclick="abrirRanking()">
-      <img class="icon-img" src="/cincate.png" alt="CINCATE">
+    <button class="item" onclick="abrirValores()">
+      <div class="icon">💰</div>
       <div class="texts">
-        <h3>Ranking 2026</h3>
-        <p>Circuito CINCATE</p>
+        <h3>Valores</h3>
+        <p>Planos do clube</p>
       </div>
       <div class="arrow">›</div>
     </button>
 
-    <button class="item" type="button" onclick="copiarPix()">
-      <div class="icon pix-icon">
-        <svg viewBox="0 0 64 64">
-          <path d="M45.7 42.1c-2.1 0-4.1-.8-5.6-2.3l-8.1-8.1-8.2 8.2c-1.5 1.5-3.5 2.3-5.6 2.3H16l10.3 10.3c3.2 3.2 8.3 3.2 11.5 0l10.3-10.3h-2.4zM18.2 21.9c2.1 0 4.1.8 5.6 2.3l8.2 8.2 8.1-8.1c1.5-1.5 3.5-2.3 5.6-2.3h2.4L37.8 11.5c-3.2-3.2-8.3-3.2-11.5 0L16 21.9h2.2z"/>
-          <path d="M56.5 26.3l-6.2-6.2c-.1.1-.3.1-.5.1h-4.1c-1.4 0-2.8.6-3.8 1.6l-8.1 8.1c-.9.9-2.4.9-3.3 0l-8.2-8.2c-1-1-2.4-1.6-3.8-1.6h-5c-.2 0-.3 0-.5-.1l-6.4 6.4c-3.2 3.2-3.2 8.3 0 11.5l6.4 6.4c.1-.1.3-.1.5-.1h5c1.4 0 2.8-.6 3.8-1.6l8.2-8.2c.9-.9 2.4-.9 3.3 0l8.1 8.1c1 1 2.4 1.6 3.8 1.6h4.1c.2 0 .3 0 .5.1l6.2-6.2c3.2-3.3 3.2-8.4 0-11.7z"/>
-        </svg>
+    <button class="item" onclick="abrirRanking()">
+      <div class="icon">
+        <img src="https://raw.githubusercontent.com/leandrostrelow/ilha-app/main/cincate.png" style="width:34px">
       </div>
+      <div class="texts">
+        <h3>Ranking 2026</h3>
+        <p>CINCATE</p>
+      </div>
+      <div class="arrow">›</div>
+    </button>
+
+    <button class="item" onclick="copiarPix()">
+      <div class="icon">◇</div>
       <div class="texts">
         <h3>Pix Ilha Tênis</h3>
         <p>Copiar chave Pix</p>
@@ -523,33 +416,25 @@ body{
 
   <div class="socials">
 
-    <a class="social" href="https://wa.me/5527995312150" target="_blank">
-      <svg viewBox="0 0 32 32">
-        <path d="M16.02 3C8.86 3 3.04 8.82 3.04 15.98c0 2.3.6 4.54 1.75 6.51L3 29l6.68-1.75a12.9 12.9 0 0 0 6.34 1.62C23.18 28.87 29 23.05 29 15.98S23.18 3 16.02 3zm0 23.7c-2.03 0-4.01-.54-5.74-1.56l-.41-.24-3.96 1.04 1.06-3.86-.27-.44a10.66 10.66 0 0 1-1.49-5.45c0-5.95 4.85-10.8 10.81-10.8 5.96 0 10.81 4.85 10.81 10.8 0 5.96-4.85 10.81-10.81 10.81z"/>
-      </svg>
+    <button class="social" onclick="window.open('https://wa.me/5527995312150','_blank')">
+      <svg viewBox="0 0 24 24"><path d="M20.52 3.48A11.8 11.8 0 0 0 12.04 0C5.42 0 .04 5.37.04 12c0 2.11.55 4.18 1.6 6L0 24l6.2-1.62A11.95 11.95 0 0 0 12.04 24C18.66 24 24 18.63 24 12c0-3.2-1.25-6.22-3.48-8.52zM12.04 21.8c-1.8 0-3.56-.48-5.1-1.4l-.36-.22-3.68.96.98-3.58-.24-.37A9.7 9.7 0 0 1 2.33 12c0-5.35 4.35-9.7 9.7-9.7 2.6 0 5.04 1.01 6.88 2.85A9.65 9.65 0 0 1 21.74 12c0 5.35-4.35 9.8-9.7 9.8z"/></svg>
       WhatsApp
-    </a>
+    </button>
 
-    <a class="social" href="https://instagram.com/ilhateniscolatina" target="_blank">
-      <svg viewBox="0 0 24 24">
-        <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7zm5 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>
-      </svg>
+    <button class="social" onclick="window.open('https://instagram.com/ilhateniscolatina','_blank')">
+      <svg viewBox="0 0 24 24"><path d="M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4A5.8 5.8 0 0 1 16.2 22H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2zm0 1.8A4 4 0 0 0 3.8 7.8v8.4a4 4 0 0 0 4 4h8.4a4 4 0 0 0 4-4V7.8a4 4 0 0 0-4-4H7.8zM12 6.5A5.5 5.5 0 1 1 6.5 12 5.5 5.5 0 0 1 12 6.5z"/></svg>
       Instagram
-    </a>
+    </button>
 
-    <a class="social" href="https://youtube.com/@ilhateniscolatina" target="_blank">
-      <svg viewBox="0 0 24 24">
-        <path d="M23.5 6.2s-.23-1.64-.94-2.36c-.9-.94-1.9-.95-2.36-1C16.9 2.6 12 2.6 12 2.6h-.02s-4.9 0-8.2.24c-.46.05-1.46.06-2.36 1C.72 4.56.5 6.2.5 6.2S.25 8.13.25 10.07v1.82c0 1.94.25 3.87.25 3.87s.22 1.64.92 2.36c.9.94 2.08.91 2.6 1.01 1.89.18 7.98.24 7.98.24s4.9-.01 8.2-.25c.46-.05 1.46-.06 2.36-1 .71-.72.94-2.36.94-2.36s.25-1.93.25-3.87v-1.82c0-1.94-.25-3.87-.25-3.87zM9.75 14.35v-5.1l5.05 2.55-5.05 2.55z"/>
-      </svg>
+    <button class="social" onclick="window.open('https://youtube.com/@ilhateniscolatina','_blank')">
+      <svg viewBox="0 0 24 24"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.4 31.4 0 0 0 24 12a31.4 31.4 0 0 0-.5-5.8zM9.6 15.5v-7l6.2 3.5-6.2 3.5z"/></svg>
       YouTube
-    </a>
+    </button>
 
-    <a class="social" href="https://maps.google.com/?q=Ilha+Tênis+Colatina" target="_blank">
-      <svg viewBox="0 0 24 24">
-        <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/>
-      </svg>
+    <button class="social" onclick="window.open('https://maps.google.com/?q=Ilha+Tênis+Colatina','_blank')">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5z"/></svg>
       Como chegar
-    </a>
+    </button>
 
   </div>
 
@@ -560,92 +445,95 @@ body{
 
 </div>
 
-<div id="agendaModal" class="modal-overlay" onclick="fecharAgendaFora(event)">
-  <div class="modal">
-    <div class="modal-header">
-      <div>
-        <h3>II Viafor Open</h3>
-        <p>Agenda e inscrições do torneio</p>
-      </div>
+<div class="modal" id="rankingModal">
+  <div class="modal-content">
+    <div class="close" onclick="fecharRanking()">×</div>
+    <h2>🏆 Ranking CINCATE 2026</h2>
+
+    <div class="rank-links">
+      <a href="https://duplafalta.com.br/ranking/finals-masculino.html" target="_blank">Finals Masculino</a>
+      <a href="https://duplafalta.com.br/ranking/challenger-masculino" target="_blank">Challenger Masculino</a>
+      <a href="https://duplafalta.com.br/ranking/future-masculino.html" target="_blank">Future Masculino</a>
+      <a href="https://duplafalta.com.br/ranking/finals-feminino.html" target="_blank">Finals Feminino</a>
+      <a href="https://duplafalta.com.br/ranking/challenger-feminino.html" target="_blank">Challenger Feminino</a>
     </div>
-
-    <img class="banner" src="/bannerviafor.jpg" alt="II Viafor Open">
-
-    <a class="modal-main-link" href="https://ilhatenis.com/viafor-open" target="_blank">
-      Fazer inscrição <span>›</span>
-    </a>
-
-    <button class="close-modal" onclick="fecharAgenda()">Fechar</button>
   </div>
 </div>
 
-<div id="rankingModal" class="modal-overlay" onclick="fecharRankingFora(event)">
-  <div class="modal">
-    <div class="modal-header">
-      <img src="/cincate.png" alt="CINCATE">
-      <div>
-        <h3>Ranking 2026</h3>
-        <p>Escolha uma categoria do CINCATE</p>
-      </div>
+<div class="modal" id="agendaModal">
+  <div class="modal-content">
+    <div class="close" onclick="fecharAgenda()">×</div>
+
+    <img class="banner" src="https://raw.githubusercontent.com/leandrostrelow/ilha-app/main/bannerviafor.jpg">
+
+    <div class="plan-links">
+      <button onclick="window.open('https://ilhatenis.com/viafor-open','_blank')">
+        Fazer inscrição
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="valoresModal">
+  <div class="modal-content">
+    <div class="close" onclick="fecharValores()">×</div>
+    <h2>🎾 Planos Ilha Tênis</h2>
+
+    <div class="plan-card">
+      <h3>Aulas 1x por semana • Anual</h3>
+      <strong>R$ 230,00</strong> <small>/ mês</small>
+      <p>Total PIX com 5% OFF: R$ 2.622,00</p>
+      <button onclick="contratar('Aulas 1x por semana - Plano anual - R$ 2.622,00 no PIX')">Contratar</button>
     </div>
 
-    <div class="modal-links">
-      <a class="rank-link" href="https://duplafalta.com.br/ranking/finals-masculino.html" target="_blank">Finals Masculino <span>›</span></a>
-      <a class="rank-link" href="https://duplafalta.com.br/ranking/challenger-masculino" target="_blank">Challenger Masculino <span>›</span></a>
-      <a class="rank-link" href="https://duplafalta.com.br/ranking/future-masculino.html" target="_blank">Future Masculino <span>›</span></a>
-      <a class="rank-link" href="https://duplafalta.com.br/ranking/finals-feminino.html" target="_blank">Finals Feminino <span>›</span></a>
-      <a class="rank-link" href="https://duplafalta.com.br/ranking/challenger-feminino.html" target="_blank">Challenger Feminino <span>›</span></a>
+    <div class="plan-card">
+      <h3>Aulas 2x por semana • Anual</h3>
+      <strong>R$ 350,00</strong> <small>/ mês</small>
+      <p>Total PIX com 5% OFF: R$ 3.990,00</p>
+      <button onclick="contratar('Aulas 2x por semana - Plano anual - R$ 3.990,00 no PIX')">Contratar</button>
     </div>
 
-    <button class="close-modal" onclick="fecharRanking()">Fechar</button>
+    <div class="plan-card">
+      <h3>Somente jogar • Anual</h3>
+      <strong>R$ 130,00</strong> <small>/ mês</small>
+      <p>Total PIX com 5% OFF: R$ 1.482,00</p>
+      <button onclick="contratar('Somente jogar - Plano anual - R$ 1.482,00 no PIX')">Contratar</button>
+    </div>
   </div>
 </div>
 
 <div id="copyAlert" class="copy-alert">Chave Pix copiada ✅</div>
 
 <script>
-const PIX_KEY = "54.969.790/0001-47";
-
 function copiarPix(){
-  navigator.clipboard.writeText(PIX_KEY).then(function(){
-    const alertBox = document.getElementById("copyAlert");
-    alertBox.classList.add("show");
-    setTimeout(function(){
-      alertBox.classList.remove("show");
-    }, 2200);
-  });
+  navigator.clipboard.writeText('54969790000147');
+  const alertBox = document.getElementById("copyAlert");
+  alertBox.classList.add("show");
+  setTimeout(() => alertBox.classList.remove("show"), 2200);
 }
 
-function abrirRanking(){
-  document.getElementById("rankingModal").classList.add("show");
-}
+function abrirRanking(){document.getElementById('rankingModal').style.display='flex';}
+function fecharRanking(){document.getElementById('rankingModal').style.display='none';}
 
-function fecharRanking(){
-  document.getElementById("rankingModal").classList.remove("show");
-}
+function abrirAgenda(){document.getElementById('agendaModal').style.display='flex';}
+function fecharAgenda(){document.getElementById('agendaModal').style.display='none';}
 
-function fecharRankingFora(event){
-  if(event.target.id === "rankingModal"){
-    fecharRanking();
-  }
-}
+function abrirValores(){document.getElementById('valoresModal').style.display='flex';}
+function fecharValores(){document.getElementById('valoresModal').style.display='none';}
 
-function abrirAgenda(){
-  document.getElementById("agendaModal").classList.add("show");
-}
+function contratar(plano){
+  const texto =
+`Olá! Tenho interesse no plano:
 
-function fecharAgenda(){
-  document.getElementById("agendaModal").classList.remove("show");
-}
+${plano}
 
-function fecharAgendaFora(event){
-  if(event.target.id === "agendaModal"){
-    fecharAgenda();
-  }
+Gostaria de fazer minha contratação no Ilha Tênis 🎾`;
+
+  window.open('https://wa.me/5527995312150?text=' + encodeURIComponent(texto),'_blank');
 }
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js');
+  navigator.serviceWorker.register('service-worker.js');
 }
 </script>
 
