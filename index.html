@@ -42,38 +42,41 @@ body{
 .top-card{
   background:#ffffff;
   border-radius:28px;
-  padding:24px 22px 22px;
+  padding:22px;
   margin-bottom:16px;
   border:1px solid #dfe7eb;
   box-shadow:0 10px 28px rgba(15,34,48,0.06);
-  text-align:center;
 }
 
 .top-line{
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:18px;
-  margin-bottom:10px;
-}
-
-.mini{
-  font-size:13px;
-  letter-spacing:5px;
-  color:#718391;
-  font-weight:900;
+  gap:14px;
+  margin-bottom:12px;
 }
 
 .logo{
   width:100%;
-  max-width:300px;
+  max-width:230px;
   height:auto;
   display:block;
 }
 
-.desc{
-  color:#31596b;
+.play-title{
   font-size:17px;
+  letter-spacing:4px;
+  color:#718391;
+  font-weight:900;
+  text-transform:uppercase;
+  border-left:1px solid #dfe7eb;
+  padding-left:14px;
+}
+
+.desc{
+  text-align:center;
+  color:#31596b;
+  font-size:16px;
   line-height:1.45;
   font-weight:500;
   max-width:620px;
@@ -113,15 +116,17 @@ body{
   opacity:0.94;
 }
 
-.share-icon{
-  width:18px;
-  height:18px;
-  display:inline-block;
-  vertical-align:-4px;
-  margin:0 3px;
+.more-icon{
+  width:21px;
+  height:21px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  vertical-align:-5px;
+  margin:0 4px;
 }
 
-.share-icon svg{
+.more-icon svg{
   width:100%;
   height:100%;
   stroke:currentColor;
@@ -151,6 +156,9 @@ body{
   position:relative;
   overflow:hidden;
   cursor:pointer;
+  width:100%;
+  text-align:left;
+  appearance:none;
 }
 
 .item:active{
@@ -164,6 +172,13 @@ body{
   justify-content:center;
   font-size:34px;
   line-height:1;
+  flex-shrink:0;
+}
+
+.icon-img{
+  width:42px;
+  height:42px;
+  object-fit:contain;
   flex-shrink:0;
 }
 
@@ -240,6 +255,106 @@ body{
   background:#FF0000;
 }
 
+/* POPUP */
+
+.modal-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(8,20,28,0.68);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  z-index:9999;
+}
+
+.modal-overlay.show{
+  display:flex;
+}
+
+.modal{
+  width:100%;
+  max-width:430px;
+  background:#ffffff;
+  border-radius:26px;
+  padding:22px;
+  box-shadow:0 18px 50px rgba(0,0,0,.25);
+  animation:modalIn .2s ease;
+}
+
+@keyframes modalIn{
+  from{
+    opacity:0;
+    transform:translateY(10px) scale(.98);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0) scale(1);
+  }
+}
+
+.modal-header{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:16px;
+}
+
+.modal-header img{
+  width:44px;
+  height:44px;
+  object-fit:contain;
+}
+
+.modal-header h3{
+  font-size:21px;
+  color:#082131;
+  font-weight:900;
+}
+
+.modal-header p{
+  font-size:13px;
+  color:#637584;
+  margin-top:3px;
+}
+
+.modal-links{
+  display:grid;
+  gap:10px;
+}
+
+.rank-link{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  text-decoration:none;
+  background:#f4f6f7;
+  border:1px solid #dfe7eb;
+  color:#082131;
+  border-radius:16px;
+  padding:14px 16px;
+  font-size:15px;
+  font-weight:900;
+}
+
+.rank-link span{
+  color:#123545;
+  font-size:22px;
+}
+
+.close-modal{
+  width:100%;
+  margin-top:14px;
+  border:none;
+  border-radius:16px;
+  padding:14px;
+  background:#243847;
+  color:#ffffff;
+  font-size:15px;
+  font-weight:900;
+  cursor:pointer;
+}
+
 /* ALERTA PIX */
 
 .copy-alert{
@@ -285,25 +400,25 @@ body{
 
   .top-card{
     border-radius:24px;
-    padding:20px 16px 18px;
+    padding:18px 16px;
   }
 
   .top-line{
     gap:10px;
-    flex-direction:column;
-  }
-
-  .mini{
-    font-size:11px;
-    letter-spacing:4px;
   }
 
   .logo{
-    max-width:230px;
+    max-width:170px;
+  }
+
+  .play-title{
+    font-size:14px;
+    letter-spacing:3px;
+    padding-left:10px;
   }
 
   .desc{
-    font-size:14px;
+    font-size:13px;
     margin-bottom:10px;
   }
 
@@ -336,6 +451,11 @@ body{
     font-size:28px;
   }
 
+  .icon-img{
+    width:34px;
+    height:34px;
+  }
+
   .texts h3{
     font-size:15px;
     margin-bottom:4px;
@@ -362,6 +482,11 @@ body{
     width:18px;
     height:18px;
   }
+
+  .modal{
+    border-radius:22px;
+    padding:18px;
+  }
 }
 </style>
 </head>
@@ -373,12 +498,12 @@ body{
   <div class="top-card">
 
     <div class="top-line">
-      <div class="mini">APP</div>
-
       <img
         class="logo"
         src="https://raw.githubusercontent.com/leandrostrelow/ilha-app/main/logo.png"
         alt="Ilha Tênis Colatina">
+
+      <div class="play-title">PLAY</div>
     </div>
 
     <div class="desc">
@@ -392,11 +517,9 @@ body{
         <h4>Instale no celular como aplicativo</h4>
         <p>
           Clique em
-          <span class="share-icon" aria-label="ícone de compartilhar">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 3v12"></path>
-              <path d="M7 8l5-5 5 5"></path>
-              <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"></path>
+          <span class="more-icon" aria-label="ícone de ver mais">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9l6 6 6-6"></path>
             </svg>
           </span>
           → “Adicionar à Tela de Início”.
@@ -444,14 +567,18 @@ body{
       <div class="arrow">›</div>
     </a>
 
-    <a class="item" href="https://ilhatenis.com/">
-      <div class="icon">🌐</div>
+    <button class="item" type="button" onclick="abrirRanking()">
+      <img
+        class="icon-img"
+        src="https://raw.githubusercontent.com/leandrostrelow/ilha-app/main/cincate.png"
+        alt="CINCATE">
+
       <div class="texts">
-        <h3>Site Oficial</h3>
-        <p>Acesse o site completo</p>
+        <h3>Ranking 2026</h3>
+        <p>Circuito CINCATE</p>
       </div>
       <div class="arrow">›</div>
-    </a>
+    </button>
 
     <button class="item" type="button" onclick="copiarPix()">
       <div class="icon">💳</div>
@@ -496,6 +623,44 @@ body{
 
 </div>
 
+<div id="rankingModal" class="modal-overlay" onclick="fecharRankingFora(event)">
+  <div class="modal">
+
+    <div class="modal-header">
+      <img src="https://raw.githubusercontent.com/leandrostrelow/ilha-app/main/cincate.png" alt="CINCATE">
+      <div>
+        <h3>Ranking 2026</h3>
+        <p>Escolha uma categoria do CINCATE</p>
+      </div>
+    </div>
+
+    <div class="modal-links">
+      <a class="rank-link" href="https://duplafalta.com.br/ranking/finals-masculino.html" target="_blank">
+        Finals Masculino <span>›</span>
+      </a>
+
+      <a class="rank-link" href="https://duplafalta.com.br/ranking/challenger-masculino" target="_blank">
+        Challenger Masculino <span>›</span>
+      </a>
+
+      <a class="rank-link" href="https://duplafalta.com.br/ranking/future-masculino.html" target="_blank">
+        Future Masculino <span>›</span>
+      </a>
+
+      <a class="rank-link" href="https://duplafalta.com.br/ranking/finals-feminino.html" target="_blank">
+        Finals Feminino <span>›</span>
+      </a>
+
+      <a class="rank-link" href="https://duplafalta.com.br/ranking/challenger-feminino.html" target="_blank">
+        Challenger Feminino <span>›</span>
+      </a>
+    </div>
+
+    <button class="close-modal" onclick="fecharRanking()">Fechar</button>
+
+  </div>
+</div>
+
 <div id="copyAlert" class="copy-alert">
   Chave Pix copiada ✅
 </div>
@@ -512,6 +677,20 @@ function copiarPix(){
       alertBox.classList.remove("show");
     }, 2200);
   });
+}
+
+function abrirRanking(){
+  document.getElementById("rankingModal").classList.add("show");
+}
+
+function fecharRanking(){
+  document.getElementById("rankingModal").classList.remove("show");
+}
+
+function fecharRankingFora(event){
+  if(event.target.id === "rankingModal"){
+    fecharRanking();
+  }
 }
 
 if ('serviceWorker' in navigator) {
