@@ -7,7 +7,6 @@
 <title>Ilha Tênis Colatina</title>
 
 <link rel="manifest" href="/manifest.json">
-
 <meta name="theme-color" content="#243847">
 
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -236,6 +235,8 @@ body{
 .modal{
   width:100%;
   max-width:430px;
+  max-height:90vh;
+  overflow:auto;
   background:#ffffff;
   border-radius:26px;
   padding:22px;
@@ -305,6 +306,42 @@ body{
 .rank-link span,
 .modal-main-link span{
   font-size:22px;
+}
+
+.store-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.store-item{
+  background:#f4f6f7;
+  border:1px solid #dfe7eb;
+  border-radius:18px;
+  padding:10px;
+  text-decoration:none;
+  color:#082131;
+  text-align:center;
+  font-weight:900;
+  box-shadow:0 6px 16px rgba(15,34,48,0.05);
+}
+
+.store-item:active{transform:scale(.97);}
+
+.store-item img{
+  width:100%;
+  aspect-ratio:1/1;
+  object-fit:cover;
+  border-radius:14px;
+  display:block;
+  margin-bottom:8px;
+  background:#101010;
+}
+
+.store-item span{
+  display:block;
+  font-size:13px;
+  line-height:1.2;
 }
 
 .close-modal{
@@ -431,6 +468,10 @@ body{
     border-radius:22px;
     padding:18px;
   }
+
+  .store-grid{
+    gap:10px;
+  }
 }
 </style>
 </head>
@@ -488,6 +529,15 @@ body{
       <div class="arrow">›</div>
     </button>
 
+    <button class="item" type="button" onclick="abrirStore()">
+      <div class="icon">🛍️</div>
+      <div class="texts">
+        <h3>Ilha Store</h3>
+        <p>Produtos e Serviços</p>
+      </div>
+      <div class="arrow">›</div>
+    </button>
+
     <button class="item" type="button" onclick="copiarPix()">
       <div class="icon pix-icon">
         <svg viewBox="0 0 64 64">
@@ -536,9 +586,7 @@ body{
 
   </div>
 
-  <div class="sponsors-title">
-    PATROCINADORES
-  </div>
+  <div class="sponsors-title">PATROCINADORES</div>
 
   <div class="sponsors">
 
@@ -612,6 +660,48 @@ body{
   </div>
 </div>
 
+<div id="storeModal" class="modal-overlay" onclick="fecharStoreFora(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h3>Ilha Store</h3>
+        <p>Produtos e serviços do clube</p>
+      </div>
+    </div>
+
+    <div class="store-grid">
+
+      <a class="store-item" target="_blank" href="https://wa.me/5527992963984?text=Fala%20Renato%2C%20quero%20uma%20camisa%20preta%20do%20Ilha.%20Pode%20me%20passar%20os%20detalhes%3F">
+        <img src="/camisapreta.png" alt="Camisa preta Ilha">
+        <span>Camisa preta</span>
+      </a>
+
+      <a class="store-item" target="_blank" href="https://wa.me/5527992963984?text=Fala%20Renato%2C%20quero%20uma%20camisa%20roxa%20do%20Ilha.%20Pode%20me%20passar%20os%20detalhes%3F">
+        <img src="/camisaroxa.png" alt="Camisa roxa Ilha">
+        <span>Camisa roxa</span>
+      </a>
+
+      <a class="store-item" target="_blank" href="https://wa.me/5527992963984?text=Fala%20Renato%2C%20quero%20uma%20camisa%20verde%20do%20Ilha.%20Pode%20me%20passar%20os%20detalhes%3F">
+        <img src="/camisaverde.png" alt="Camisa verde Ilha">
+        <span>Camisa verde</span>
+      </a>
+
+      <a class="store-item" target="_blank" href="https://wa.me/5527992963984?text=Fala%20Renato%2C%20quero%20comprar%20bolinhas%20de%20t%C3%AAnis.%20Pode%20me%20passar%20os%20detalhes%3F">
+        <img src="/bolas.png" alt="Bolinhas de tênis">
+        <span>Bolinhas de tênis</span>
+      </a>
+
+      <a class="store-item" target="_blank" href="https://wa.me/5527992963984?text=Fala%20Renato%2C%20quero%20ver%20sobre%20encordoamento%20de%20raquete.%20Pode%20me%20passar%20os%20detalhes%3F">
+        <img src="/cordas.png" alt="Encordoamento">
+        <span>Encordoamento</span>
+      </a>
+
+    </div>
+
+    <button class="close-modal" onclick="fecharStore()">Fechar</button>
+  </div>
+</div>
+
 <div id="copyAlert" class="copy-alert">Chave Pix copiada ✅</div>
 
 <script>
@@ -652,6 +742,20 @@ function fecharAgenda(){
 function fecharAgendaFora(event){
   if(event.target.id === "agendaModal"){
     fecharAgenda();
+  }
+}
+
+function abrirStore(){
+  document.getElementById("storeModal").classList.add("show");
+}
+
+function fecharStore(){
+  document.getElementById("storeModal").classList.remove("show");
+}
+
+function fecharStoreFora(event){
+  if(event.target.id === "storeModal"){
+    fecharStore();
   }
 }
 
