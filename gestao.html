@@ -695,25 +695,135 @@
 
     .agenda-list {
       display: grid;
-      gap: 8px;
+      grid-template-columns: repeat(7, minmax(158px, 1fr));
+      gap: 10px;
+      align-items: stretch;
+      overflow-x: auto;
+      padding-bottom: 4px;
     }
 
-    .agenda-item {
-      display: grid;
-      grid-template-columns: 90px 1fr auto;
-      gap: 10px;
-      align-items: center;
-      padding: 10px;
+    .agenda-day-column {
+      min-width: 158px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 9px;
       border: 1px solid var(--line);
       border-radius: 12px;
-      background: #fff;
+      background: #f8fbfc;
     }
 
-    .timebox {
+    .agenda-day-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 34px;
+      padding: 8px 9px;
       border-radius: 10px;
+      background: var(--dark);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .agenda-day-count {
+      min-width: 24px;
+      height: 24px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--lime);
+      color: var(--text);
+      font-size: 11px;
+    }
+
+    .agenda-day-games {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .agenda-match-card {
+      width: 100%;
+      display: grid;
+      gap: 7px;
       padding: 9px;
+      border: 1px solid var(--line);
+      border-left: 5px solid #0b5aaa;
+      border-radius: 12px;
+      background: #fff;
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(17, 38, 45, .06);
+    }
+
+    .agenda-match-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(17, 38, 45, .11);
+    }
+
+    .agenda-match-card.done {
+      border-left-color: var(--lime);
+      background: #fbfff0;
+    }
+
+    .agenda-match-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .agenda-time-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 48px;
+      min-height: 26px;
+      padding: 4px 7px;
+      border-radius: 999px;
       background: #eaf1f3;
-      text-align: center;
+      color: var(--dark);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .agenda-players {
+      display: grid;
+      gap: 3px;
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .agenda-versus {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .agenda-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .agenda-meta span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 21px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: #eaf1f3;
+      color: var(--muted);
+      font-size: 10px;
       font-weight: 900;
     }
 
@@ -756,8 +866,7 @@
       .span-3, .span-4, .span-5, .span-6, .span-7, .span-8, .span-12 { grid-column: span 12; }
       .form-grid { grid-template-columns: 1fr; }
       .metric strong { font-size: 24px; }
-      .agenda-item { grid-template-columns: 76px 1fr; }
-      .agenda-item .small-btn { grid-column: 1 / -1; }
+      .agenda-list { grid-template-columns: repeat(3, minmax(168px, 1fr)); }
       .bracket-tools { grid-template-columns: 1fr; }
       .category-strip { grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); }
       .player-filters, .agenda-filters, .match-agenda-grid { grid-template-columns: 1fr 1fr; }
@@ -777,6 +886,7 @@
       .modal-grid { grid-template-columns: 1fr; }
       .score-set-header,
       .score-set-row { grid-template-columns: repeat(3, 54px) minmax(132px, 1fr); }
+      .agenda-list { grid-template-columns: 1fr; }
       .player-filters, .agenda-filters, .match-agenda-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -2162,14 +2272,35 @@
         if (categoryFilter && String(j.categoria_id || '') !== String(categoryFilter)) return false;
         return true;
       }).sort(sortAgenda);
-      $('agendaList').innerHTML = scheduled.map(function (j) {
-        return '<div class="agenda-item"><div class="timebox">' +
-          escapeHtml(formatDate(j.data)) + '<br>' + escapeHtml(formatAgendaTime(j.hora)) +
-          '</div><div><strong>' + escapeHtml(getCategoryName(j.categoria_id)) + ' | ' + escapeHtml(j.quadra || 'Sem quadra') + '</strong>' +
-          '<small>' + escapeHtml(getPlayerName(j.jogador1_id) || 'A definir') + ' x ' + escapeHtml(getPlayerName(j.jogador2_id) || 'A definir') +
-          ' | ' + escapeHtml(j.status || 'PENDENTE') + '</small></div>' +
-          '<button class="small-btn" data-open-category="' + escapeHtml(j.categoria_id) + '">Abrir</button></div>';
-      }).join('') || '<div class="empty">Nenhum jogo agendado ainda.</div>';
+      const daysToRender = dayFilter ? [dayFilter] : agendaDays;
+      const html = daysToRender.map(function (day) {
+        const dayMatches = scheduled.filter(function (j) {
+          return String(j.data || '') === String(day);
+        });
+        return '<div class="agenda-day-column">' +
+          '<div class="agenda-day-head"><span>' + escapeHtml(displayAgendaDay(day)) + '</span><span class="agenda-day-count">' + dayMatches.length + '</span></div>' +
+          '<div class="agenda-day-games">' +
+          (dayMatches.map(renderAgendaMatchCard).join('') || '<div class="empty">Sem jogos</div>') +
+          '</div></div>';
+      }).join('');
+      $('agendaList').innerHTML = html || '<div class="empty">Nenhum jogo agendado ainda.</div>';
+    }
+
+    function renderAgendaMatchCard(j) {
+      const player1 = getPlayerName(j.jogador1_id) || 'A definir';
+      const player2 = getPlayerName(j.jogador2_id) || 'A definir';
+      const phase = roundLabels[j.fase] || j.fase || 'Jogo';
+      const done = String(j.status || '').toUpperCase() === 'FINALIZADO';
+      return '<button type="button" class="agenda-match-card ' + (done ? 'done' : '') + '" data-open-match="' + escapeHtml(j.jogo_id) + '">' +
+        '<div class="agenda-match-top"><span>' + escapeHtml(phase) + ' ' + escapeHtml(j.posicao_chave || '') + '</span><span class="agenda-time-pill">' + escapeHtml(formatAgendaTime(j.hora)) + '</span></div>' +
+        '<div class="agenda-players"><span>' + escapeHtml(player1) + '</span><span class="agenda-versus">x</span><span>' + escapeHtml(player2) + '</span></div>' +
+        '<div class="agenda-meta"><span>' + escapeHtml(getCategoryName(j.categoria_id)) + '</span><span>' + escapeHtml(j.quadra || 'Sem quadra') + '</span><span>' + escapeHtml(done ? 'Finalizado' : 'Aberto') + '</span></div>' +
+        '</button>';
+    }
+
+    function displayAgendaDay(value) {
+      const map = { Terca: 'Terça', Sabado: 'Sábado' };
+      return map[value] || value || 'Sem dia';
     }
 
     function sortAgenda(a, b) {
