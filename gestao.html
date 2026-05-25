@@ -1195,7 +1195,7 @@
             return response.json();
           }),
           new Promise(function (_, reject) {
-            setTimeout(function () { reject(new Error('Tempo esgotado ao carregar a planilha.')); }, 35000);
+            setTimeout(function () { reject(new Error('Tempo esgotado ao carregar a planilha.')); }, 90000);
           })
         ]).catch(function () {
           return apiGetJsonp();
@@ -1211,7 +1211,7 @@
         const timer = setTimeout(function () {
           cleanup();
           reject(new Error('Tempo esgotado ao carregar a planilha.'));
-        }, 45000);
+        }, 90000);
 
         function cleanup() {
           clearTimeout(timer);
@@ -1252,7 +1252,7 @@
         const response = await Promise.race([
           fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }),
           new Promise(function (_, reject) {
-            setTimeout(function () { reject(new Error('Tempo esgotado ao salvar.')); }, 45000);
+            setTimeout(function () { reject(new Error('Tempo esgotado ao salvar.')); }, 90000);
           })
         ]);
         const text = await response.text();
