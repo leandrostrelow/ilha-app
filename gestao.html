@@ -495,6 +495,24 @@
       border-right-color: var(--lime);
     }
 
+    .draw-match.scheduled {
+      border-left-color: #005bbb;
+    }
+
+    .draw-match.right.scheduled {
+      border-right-color: #005bbb;
+    }
+
+    .draw-match.scheduled.done {
+      border-left-color: var(--lime);
+      box-shadow: inset 5px 0 0 #005bbb, 0 7px 16px rgba(16, 39, 44, .09);
+    }
+
+    .draw-match.right.scheduled.done {
+      border-right-color: var(--lime);
+      box-shadow: inset -5px 0 0 #005bbb, 0 7px 16px rgba(16, 39, 44, .09);
+    }
+
     .draw-match:hover {
       transform: translateY(-1px);
       box-shadow: 0 10px 20px rgba(16, 39, 44, .14);
@@ -1605,10 +1623,11 @@
 
     function drawMatchHtml(match, row, side) {
       const done = String(match.status || '').toUpperCase() === 'FINALIZADO';
+      const scheduled = Boolean(match.data || match.hora || match.quadra);
       const scores = splitScoreForPlayers(match.placar || '');
       const player1 = resolvedMatchPlayer(match, 'jogador1_id', 'jogador1_nome', 'origem1_jogo_id');
       const player2 = resolvedMatchPlayer(match, 'jogador2_id', 'jogador2_nome', 'origem2_jogo_id');
-      return '<button type="button" class="draw-match ' + escapeHtml(side || '') + ' ' + (done ? 'done' : '') +
+      return '<button type="button" class="draw-match ' + escapeHtml(side || '') + ' ' + (done ? 'done' : '') + ' ' + (scheduled ? 'scheduled' : '') +
         '" style="--match-top:' + matchTopFromRow(row) + 'px" data-open-match="' + escapeHtml(match.jogo_id) + '">' +
         drawPlayerLine(player1.id, match.vencedor_id, scores.p1, match.rodada, 'p1', player1.name) +
         drawPlayerLine(player2.id, match.vencedor_id, scores.p2, match.rodada, 'p2', player2.name) +
