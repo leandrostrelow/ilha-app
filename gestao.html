@@ -531,6 +531,13 @@
       color: transparent;
     }
 
+    .draw-player.placeholder {
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .2px;
+    }
+
     .draw-player:last-child {
       border-bottom: 0;
     }
@@ -1641,8 +1648,10 @@
 
     function drawPlayerLine(playerId, winnerId, score, round, lineClass, fallbackName) {
       const isWinner = playerId && String(playerId) === String(winnerId);
-      const name = fallbackName || getPlayerName(playerId) || (Number(round) <= 1 ? 'BYE' : '');
-      return '<div class="draw-player ' + escapeHtml(lineClass || '') + ' ' + (!name ? 'empty' : '') + ' ' + (isWinner ? 'winner' : '') + '">' +
+      let name = fallbackName || getPlayerName(playerId) || '';
+      const isPlaceholder = !name && Number(round || 0) > 1;
+      if (!name) name = Number(round || 0) <= 1 ? 'BYE' : 'A definir';
+      return '<div class="draw-player ' + escapeHtml(lineClass || '') + ' ' + (isPlaceholder ? 'placeholder' : '') + ' ' + (isWinner ? 'winner' : '') + '">' +
         '<span class="draw-player-main">' +
         '<span class="draw-name">' + (name ? escapeHtml(name) : '&nbsp;') + '</span>' +
         (score ? '<span class="draw-score">' + formatScoreHtml(score) + '</span>' : '') +
