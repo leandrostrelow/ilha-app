@@ -796,17 +796,30 @@
 
     .agenda-players {
       display: grid;
-      gap: 3px;
+      gap: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 10px;
       font-size: 13px;
       font-weight: 900;
       line-height: 1.2;
     }
 
-    .agenda-versus {
-      color: var(--muted);
-      font-size: 10px;
-      font-weight: 900;
-      text-transform: uppercase;
+    .agenda-player {
+      min-height: 30px;
+      display: flex;
+      align-items: center;
+      padding: 7px 9px;
+      background: #ffffff;
+      color: var(--text);
+    }
+
+    .agenda-player + .agenda-player {
+      border-top: 1px solid var(--line);
+    }
+
+    .agenda-player.p2 {
+      background: #eaf3ff;
     }
 
     .agenda-meta {
@@ -2293,7 +2306,7 @@
       const done = String(j.status || '').toUpperCase() === 'FINALIZADO';
       return '<button type="button" class="agenda-match-card ' + (done ? 'done' : '') + '" data-open-match="' + escapeHtml(j.jogo_id) + '">' +
         '<div class="agenda-match-top"><span>' + escapeHtml(phase) + ' ' + escapeHtml(j.posicao_chave || '') + '</span><span class="agenda-time-pill">' + escapeHtml(formatAgendaTime(j.hora)) + '</span></div>' +
-        '<div class="agenda-players"><span>' + escapeHtml(player1) + '</span><span class="agenda-versus">x</span><span>' + escapeHtml(player2) + '</span></div>' +
+        '<div class="agenda-players"><span class="agenda-player p1">' + escapeHtml(player1) + '</span><span class="agenda-player p2">' + escapeHtml(player2) + '</span></div>' +
         '<div class="agenda-meta"><span>' + escapeHtml(getCategoryName(j.categoria_id)) + '</span><span>' + escapeHtml(j.quadra || 'Sem quadra') + '</span><span>' + escapeHtml(done ? 'Finalizado' : 'Aberto') + '</span></div>' +
         '</button>';
     }
