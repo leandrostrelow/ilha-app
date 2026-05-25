@@ -1,7 +1,8 @@
-const CACHE_NAME = 'ilha-play-v2';
+const CACHE_NAME = 'ilha-play-v3';
 const ASSETS = [
   './',
   './index.html',
+  './publico.html',
   './manifest.json',
   './icon.png',
   './logo.png',
@@ -38,10 +39,10 @@ self.addEventListener('fetch', event => {
       fetch(event.request)
         .then(response => {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
           return response;
         })
-        .catch(() => caches.match('./index.html'))
+        .catch(() => caches.match(event.request).then(cached => cached || caches.match('./index.html')))
     );
     return;
   }
