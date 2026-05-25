@@ -216,31 +216,39 @@
       font-weight: 800;
     }
 
-    .category-strip {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 9px;
+    .category-bar {
+      display: grid;
+      grid-template-columns: auto minmax(0, 320px);
+      align-items: center;
+      gap: 10px;
       margin-bottom: 12px;
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #f5fbff 100%);
     }
 
-    .category-btn {
-      flex: 0 0 auto;
-      min-height: 38px;
-      border-radius: 999px;
-      padding: 9px 12px;
-      border: 1px solid #cfe2f2;
-      background: #fff;
-      color: var(--text);
-      font-size: 12px;
+    .category-bar label {
+      color: var(--muted);
+      font-size: 11px;
       font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+      white-space: nowrap;
     }
 
-    .category-btn.active {
+    .category-select {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid #cfe2f2;
+      border-radius: 999px;
+      padding: 8px 14px;
       background: var(--lime);
-      border-color: var(--lime);
       color: #062844;
-      box-shadow: 0 8px 18px rgba(181, 229, 0, .24);
+      font-size: 13px;
+      font-weight: 900;
+      outline: none;
+      box-shadow: 0 8px 18px rgba(181, 229, 0, .18);
     }
 
     .bracket-wrap {
@@ -730,6 +738,10 @@
       }
       .nav button { min-height: 40px; font-size: 12px; }
       .agenda-filters, .athlete-filters { grid-template-columns: 1fr; }
+      .category-bar {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
       .agenda-card {
         grid-template-columns: 68px 1fr;
         gap: 8px;
@@ -803,7 +815,10 @@
             <div class="muted">Escolha a categoria para ver o caminho ate a final.</div>
           </div>
         </div>
-        <div class="category-strip" id="categoryStrip"></div>
+        <div class="category-bar" id="categoryBar">
+          <label for="categorySelect">Classe</label>
+          <select class="category-select" id="categorySelect"></select>
+        </div>
         <div class="bracket-wrap">
           <div class="bracket" id="bracket"></div>
         </div>
@@ -1084,10 +1099,13 @@
       if (!categories.some(function (cat) { return String(cat.categoria_id) === String(state.selectedCategory); })) {
         state.selectedCategory = categories[0] ? categories[0].categoria_id : '';
       }
-      $('categoryStrip').innerHTML = categories.map(function (cat) {
-        return '<button class="category-btn ' + (String(cat.categoria_id) === String(state.selectedCategory) ? 'active' : '') +
-          '" data-select-category="' + escapeHtml(cat.categoria_id) + '">' + escapeHtml(cat.nome) + '</button>';
-      }).join('') || '<div class="empty">Nenhuma chave publicada ainda.</div>';
+      $('categoryBar').style.display = categories.length ? 'grid' : 'none';
+      $('categorySelect').innerHTML = categories.map(function (cat) {
+        return '<option value="' + escapeHtml(cat.categoria_id) + '"' +
+          (String(cat.categoria_id) === String(state.selectedCategory) ? ' selected' : '') + '>' +
+          escapeHtml(cat.nome) + '</option>';
+      }).join('');
+      if (!categories.length) $('bracket').innerHTML = '<div class="empty">Nenhuma chave publicada ainda.</div>';
     }
 
     function renderAgendaFilterOptions() {
@@ -1603,9 +1621,6 @@
       });
     });
     document.addEventListener('click', function (event) {
-      const categoryBtn = event.target.closest('[data-select-category]');
-      if (categoryBtn) selectCategory(categoryBtn.dataset.selectCategory);
-
       const athleteBtn = event.target.closest('[data-athlete-id]');
       if (athleteBtn) openAthleteDetail(athleteBtn.dataset.athleteId);
     });
@@ -1619,6 +1634,9 @@
     ['athleteSearch', 'athleteCategoryFilter'].forEach(function (id) {
       $(id).addEventListener('input', renderAthletes);
       $(id).addEventListener('change', renderAthletes);
+    });
+    $('categorySelect').addEventListener('change', function () {
+      selectCategory(this.value);
     });
 
     loadData();
