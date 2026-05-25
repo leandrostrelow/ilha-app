@@ -145,25 +145,39 @@
       z-index: 10;
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 8px;
-      padding: 10px 0;
+      gap: 9px;
+      padding: 10px 0 12px;
       background: rgba(238, 244, 249, .96);
       backdrop-filter: blur(12px);
     }
 
     .nav button {
-      min-height: 42px;
+      position: relative;
+      min-height: 44px;
       border-radius: 999px;
-      background: var(--ford-soft);
+      border: 1px solid #cfe2f2;
+      background: linear-gradient(180deg, #ffffff 0%, var(--ford-soft) 100%);
       color: var(--text);
       font-size: 13px;
       font-weight: 900;
+      box-shadow: 0 8px 18px rgba(0, 63, 134, .07);
     }
 
     .nav button.active {
       background: var(--dark);
       color: #fff;
       box-shadow: 0 8px 18px rgba(0, 63, 134, .18);
+    }
+
+    .nav button.active::after {
+      content: "";
+      position: absolute;
+      left: 22px;
+      right: 22px;
+      bottom: 6px;
+      height: 3px;
+      border-radius: 999px;
+      background: var(--lime);
     }
 
     .section {
@@ -215,15 +229,18 @@
       min-height: 38px;
       border-radius: 999px;
       padding: 9px 12px;
-      background: var(--ford-soft);
+      border: 1px solid #cfe2f2;
+      background: #fff;
       color: var(--text);
       font-size: 12px;
       font-weight: 900;
     }
 
     .category-btn.active {
-      background: var(--dark);
-      color: #fff;
+      background: var(--lime);
+      border-color: var(--lime);
+      color: #062844;
+      box-shadow: 0 8px 18px rgba(181, 229, 0, .24);
     }
 
     .bracket-wrap {
@@ -378,7 +395,7 @@
     }
 
     .draw-player.winner {
-      background: #eaf3ff;
+      background: #efffd0;
       color: var(--dark);
     }
 
@@ -454,12 +471,16 @@
       grid-template-columns: 82px 1fr;
       gap: 10px;
       align-items: center;
-      padding: 8px;
+      padding: 9px;
       border: 1px solid var(--line);
       border-left: 5px solid var(--dark);
       border-radius: 13px;
       background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
       box-shadow: 0 8px 18px rgba(0, 63, 134, .07);
+    }
+
+    .agenda-card {
+      border-left-color: var(--lime);
     }
 
     .result-card.bye-result {
@@ -546,6 +567,11 @@
       color: var(--dark);
       font-size: 11px;
       font-weight: 900;
+    }
+
+    .agenda-tag:first-child {
+      background: #efffd0;
+      color: #254300;
     }
 
     .agenda-card small, .result-card small {
@@ -691,12 +717,41 @@
       .metric { gap: 6px; padding: 8px; }
       .metric strong { font-size: 18px; }
       .metric span { font-size: 9px; }
-      .nav { gap: 5px; }
-      .nav button { min-height: 38px; font-size: 11px; }
+      .nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px;
+      }
+      .nav button { min-height: 40px; font-size: 12px; }
       .agenda-filters, .athlete-filters { grid-template-columns: 1fr; }
-      .agenda-card { grid-template-columns: 76px 1fr; }
-      .agenda-players { display: grid; gap: 3px; font-size: 15px; }
+      .agenda-card {
+        grid-template-columns: 68px 1fr;
+        gap: 8px;
+        align-items: stretch;
+        padding: 8px;
+      }
+      .timebox {
+        display: grid;
+        align-content: center;
+        min-height: 72px;
+        padding: 8px 6px;
+      }
+      .timebox span { font-size: 11px; }
+      .timebox strong { font-size: 14px; }
+      .agenda-players {
+        display: grid;
+        gap: 4px;
+        font-size: 15px;
+        line-height: 1.1;
+      }
+      .agenda-players span {
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
       .agenda-players em { display: none; }
+      .agenda-meta { gap: 5px; margin-top: 7px; }
+      .agenda-tag { font-size: 10px; padding: 4px 7px; }
     }
   </style>
 </head>
@@ -925,13 +980,21 @@
     }
 
     function firstPublishedCategoryId() {
-      const published = new Set((state.data.jogos || []).map(function (match) {
-        return String(match.categoria_id || '');
-      }));
-      const category = (state.data.categorias || []).find(function (cat) {
-        return published.has(String(cat.categoria_id));
-      }) || (state.data.categorias || [])[0];
+      const category = publishedCategories()[0] || (state.data.categorias || [])[0];
       return category ? category.categoria_id : '';
+    }
+
+    function publishedCategoryIds() {
+      return new Set((state.data.jogos || [])
+        .filter(function (match) { return match && match.categoria_id; })
+        .map(function (match) { return String(match.categoria_id); }));
+    }
+
+    function publishedCategories() {
+      const published = publishedCategoryIds();
+      return (state.data.categorias || []).filter(function (cat) {
+        return published.has(String(cat.categoria_id));
+      });
     }
 
     function applyAdvancementsLocally() {
@@ -1003,45 +1066,59 @@
     }
 
     function renderCategories() {
-      $('categoryStrip').innerHTML = state.data.categorias.map(function (cat) {
+      const categories = publishedCategories();
+      if (!categories.some(function (cat) { return String(cat.categoria_id) === String(state.selectedCategory); })) {
+        state.selectedCategory = categories[0] ? categories[0].categoria_id : '';
+      }
+      $('categoryStrip').innerHTML = categories.map(function (cat) {
         return '<button class="category-btn ' + (String(cat.categoria_id) === String(state.selectedCategory) ? 'active' : '') +
           '" data-select-category="' + escapeHtml(cat.categoria_id) + '">' + escapeHtml(cat.nome) + '</button>';
-      }).join('');
+      }).join('') || '<div class="empty">Nenhuma chave publicada ainda.</div>';
     }
 
     function renderAgendaFilterOptions() {
       const day = $('agendaDayFilter').value;
       const court = $('agendaCourtFilter').value;
       const category = $('agendaCategoryFilter').value;
+      const categories = publishedCategories();
       $('agendaDayFilter').innerHTML = '<option value="">Todos os dias</option>' + agendaDays.map(function (item) {
         return '<option value="' + escapeHtml(item) + '">' + escapeHtml(displayDay(item)) + '</option>';
       }).join('');
       $('agendaCourtFilter').innerHTML = '<option value="">Todas quadras</option>' + state.data.quadras.map(function (q) {
         return '<option value="' + escapeHtml(q.nome) + '">' + escapeHtml(q.nome) + '</option>';
       }).join('');
-      $('agendaCategoryFilter').innerHTML = '<option value="">Todas classes</option>' + state.data.categorias.map(function (cat) {
+      $('agendaCategoryFilter').innerHTML = '<option value="">Todas classes</option>' + categories.map(function (cat) {
         return '<option value="' + escapeHtml(cat.categoria_id) + '">' + escapeHtml(cat.nome) + '</option>';
       }).join('');
       $('agendaDayFilter').value = day || '';
       $('agendaCourtFilter').value = court || '';
-      $('agendaCategoryFilter').value = category || '';
+      $('agendaCategoryFilter').value = categories.some(function (cat) {
+        return String(cat.categoria_id) === String(category);
+      }) ? category : '';
     }
 
     function renderAthleteFilterOptions() {
       const category = $('athleteCategoryFilter').value;
-      $('athleteCategoryFilter').innerHTML = '<option value="">Todas as classes</option>' + state.data.categorias.map(function (cat) {
+      const categories = publishedCategories();
+      $('athleteCategoryFilter').innerHTML = '<option value="">Todas as classes</option>' + categories.map(function (cat) {
         return '<option value="' + escapeHtml(cat.categoria_id) + '">' + escapeHtml(cat.nome) + '</option>';
       }).join('');
-      $('athleteCategoryFilter').value = category || '';
+      $('athleteCategoryFilter').value = categories.some(function (cat) {
+        return String(cat.categoria_id) === String(category);
+      }) ? category : '';
     }
 
     function renderAthletes() {
       const search = normalizeSearch($('athleteSearch').value);
       const categoryFilter = $('athleteCategoryFilter').value;
+      const published = publishedCategoryIds();
       const activePlayers = state.data.jogadores
         .filter(function (player) {
           if (String(player.status || 'ATIVO') === 'INATIVO') return false;
-          const registrations = athleteRegistrations(player.jogador_id);
+          const registrations = athleteRegistrations(player.jogador_id).filter(function (reg) {
+            return published.has(String(reg.categoria_id));
+          });
+          if (!registrations.length) return false;
           const classes = athleteClasses(player.jogador_id);
           const haystack = normalizeSearch([player.nome, player.cidade, classes].join(' '));
           if (search && haystack.indexOf(search) === -1) return false;
@@ -1068,7 +1145,9 @@
     }
 
     function athleteClasses(playerId) {
+      const published = publishedCategoryIds();
       const names = athleteRegistrations(playerId)
+        .filter(function (reg) { return published.has(String(reg.categoria_id)); })
         .map(function (reg) { return getCategoryName(reg.categoria_id); })
         .filter(Boolean);
       return names.filter(function (name, index, list) { return list.indexOf(name) === index; }).join(', ');
@@ -1199,7 +1278,7 @@
       const name = fallbackName || getPlayerName(playerId) || (Number(round) <= 1 ? 'BYE' : '');
       return '<div class="draw-player ' + escapeHtml(lineClass || '') + ' ' + (!name ? 'empty' : '') + ' ' + (isWinner ? 'winner' : '') + '">' +
         '<span class="draw-player-main">' +
-        '<span class="draw-name">' + (name ? escapeHtml(name) : '&nbsp;') + '</span>' +
+        '<span class="draw-name" title="' + escapeHtml(name) + '">' + (name ? escapeHtml(name) : '&nbsp;') + '</span>' +
         (score ? '<span class="draw-score">' + formatScoreHtml(score) + '</span>' : '') +
         '</span>' +
         '</div>';
