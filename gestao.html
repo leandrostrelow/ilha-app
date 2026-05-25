@@ -2652,9 +2652,9 @@
       }
 
       const positions = instagramColumnPositions(layout);
-      const areaTop = hasBackground ? 592 : 288;
-      const areaBottom = hasBackground ? 1012 : 955;
-      const cardHeight = hasBackground ? 68 : 72;
+      const areaTop = hasBackground ? 628 : 288;
+      const areaBottom = hasBackground ? 1094 : 955;
+      const cardHeight = hasBackground ? 82 : 72;
       const rowToY = function (row) {
         const rows = Math.max(2, Number(layout.rows || 2));
         return areaTop + ((Math.max(1, Number(row || 1)) - 1) / (rows - 1)) * (areaBottom - areaTop - cardHeight);
@@ -2682,13 +2682,13 @@
       });
 
       if (layout.final) {
-        const finalW = hasBackground ? 300 : 250;
+        const finalW = hasBackground ? 330 : 250;
         const finalX = (canvas.width - finalW) / 2;
-        const finalLabelY = hasBackground ? 918 : 1015;
-        const finalY = hasBackground ? 960 : 1058;
-        drawFinalConnectors(ctx, layout, positions, finalX, finalY, finalW, hasBackground ? 66 : 76, rowToY, cardHeight, colors);
+        const finalLabelY = hasBackground ? 976 : 1015;
+        const finalY = hasBackground ? 1018 : 1058;
+        drawFinalConnectors(ctx, layout, positions, finalX, finalY, finalW, hasBackground ? 78 : 76, rowToY, cardHeight, colors);
         drawCanvasRoundLabel(ctx, 'Final', finalX, finalLabelY, finalW, colors, 'center');
-        drawCanvasMatch(ctx, layout.final, finalX, finalY, finalW, hasBackground ? 66 : 76, 'center', colors);
+        drawCanvasMatch(ctx, layout.final, finalX, finalY, finalW, hasBackground ? 78 : 76, 'center', colors);
       }
 
       if (!hasBackground) {
@@ -2730,26 +2730,26 @@
       if (Math.max(leftCount, rightCount) >= 3) {
         return {
           left: [
-            { x: 32, w: 198 },
-            { x: 244, w: 166 },
-            { x: 414, w: 148 }
+            { x: 28, w: 212 },
+            { x: 255, w: 170 },
+            { x: 438, w: 160 }
           ].slice(0, leftCount),
           right: [
-            { x: 518, w: 148 },
-            { x: 670, w: 166 },
-            { x: 850, w: 198 }
+            { x: 482, w: 160 },
+            { x: 655, w: 170 },
+            { x: 840, w: 212 }
           ].slice(0, rightCount)
         };
       }
       if (Math.max(leftCount, rightCount) === 2) {
         return {
           left: [
-            { x: 56, w: 250 },
-            { x: 338, w: 214 }
+            { x: 48, w: 280 },
+            { x: 370, w: 250 }
           ].slice(0, leftCount),
           right: [
-            { x: 528, w: 214 },
-            { x: 774, w: 250 }
+            { x: 460, w: 250 },
+            { x: 752, w: 280 }
           ].slice(0, rightCount)
         };
       }
@@ -2762,7 +2762,7 @@
     function drawInstagramConnectors(ctx, columns, positions, side, rowToY, cardHeight, colors) {
       ctx.save();
       ctx.strokeStyle = colors.connector || 'rgba(215,229,232,.48)';
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 3.2;
       ctx.lineCap = 'round';
       if (side === 'right') {
         columns.forEach(function (targetCol, targetIndex) {
@@ -2825,7 +2825,7 @@
       const rightPos = positions.right[0];
       ctx.save();
       ctx.strokeStyle = colors.connector || 'rgba(215,229,232,.45)';
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 3.2;
       ctx.lineCap = 'round';
       if (leftSemi && leftSemi.matches[0] && leftPos && rightSemi && rightSemi.matches[0] && rightPos) {
         const centerX = finalX + finalW / 2;
@@ -2847,17 +2847,17 @@
       ctx.shadowBlur = 8;
       ctx.shadowOffsetY = 4;
       ctx.fillStyle = side === 'right' ? colors.dark : colors.dark2;
-      roundRect(ctx, x, y, width, 30, 15);
+      roundRect(ctx, x, y, width, 34, 17);
       ctx.fill();
       if (side === 'center') {
         ctx.fillStyle = colors.dark;
-        roundRect(ctx, x, y, width, 30, 15);
+        roundRect(ctx, x, y, width, 34, 17);
         ctx.fill();
       }
       ctx.shadowColor = 'transparent';
       ctx.fillStyle = colors.white;
       ctx.textAlign = 'center';
-      drawFitText(ctx, String(label || '').toUpperCase(), x + width / 2, y + 21, width - 18, 14, 900);
+      drawFitText(ctx, String(label || '').toUpperCase(), x + width / 2, y + 23, width - 18, 16, 900);
       ctx.restore();
     }
 
@@ -2874,12 +2874,12 @@
       ctx.shadowBlur = 12;
       ctx.shadowOffsetY = 6;
       ctx.fillStyle = colors.white;
-      roundRect(ctx, x, y, width, height, 14);
+      roundRect(ctx, x, y, width, height, 16);
       ctx.fill();
       ctx.restore();
 
       ctx.save();
-      roundRect(ctx, x, y, width, height, 14);
+      roundRect(ctx, x, y, width, height, 16);
       ctx.clip();
       ctx.fillStyle = p1Winner ? colors.winner : colors.white;
       ctx.fillRect(x, y, width, height / 2);
@@ -2895,35 +2895,35 @@
 
       ctx.save();
       ctx.strokeStyle = side === 'right' ? colors.dark : colors.dark2;
-      ctx.lineWidth = 6;
+      ctx.lineWidth = 7;
       ctx.beginPath();
       if (side === 'right') {
-        ctx.moveTo(x + width - 2, y + 12);
-        ctx.lineTo(x + width - 2, y + height - 12);
+        ctx.moveTo(x + width - 2, y + 14);
+        ctx.lineTo(x + width - 2, y + height - 14);
       } else {
-        ctx.moveTo(x + 2, y + 12);
-        ctx.lineTo(x + 2, y + height - 12);
+        ctx.moveTo(x + 2, y + 14);
+        ctx.lineTo(x + 2, y + height - 14);
       }
       ctx.stroke();
       ctx.restore();
 
-      drawCanvasPlayer(ctx, canvasPlayerName(player1, match), scores.p1, x, y + (height / 2) - 10, width, side, p1Winner, colors);
-      drawCanvasPlayer(ctx, canvasPlayerName(player2, match), scores.p2, x, y + height - 10, width, side, p2Winner, colors);
+      drawCanvasPlayer(ctx, canvasPlayerName(player1, match), scores.p1, x, y + (height / 2) - 12, width, side, p1Winner, colors);
+      drawCanvasPlayer(ctx, canvasPlayerName(player2, match), scores.p2, x, y + height - 12, width, side, p2Winner, colors);
     }
 
     function drawCanvasPlayer(ctx, name, score, x, y, width, side, isWinner, colors) {
-      const pad = 13;
-      const scoreWidth = score ? Math.min(42, Math.max(24, ctx.measureText(score).width + 8)) : 0;
+      const pad = 16;
+      const scoreWidth = score ? Math.min(54, Math.max(30, ctx.measureText(score).width + 10)) : 0;
       ctx.fillStyle = colors.text;
       ctx.textAlign = side === 'right' ? 'right' : 'left';
       const textX = side === 'right' ? x + width - pad - scoreWidth : x + pad;
       const maxNameWidth = Math.max(56, width - (pad * 2) - scoreWidth);
-      drawFitText(ctx, shortName(name, width > 190 ? 22 : 16), textX, y, maxNameWidth, isWinner ? 17 : 16, 900, side === 'right' ? 'right' : 'left');
+      drawFitText(ctx, shortName(name, width > 200 ? 25 : (width > 170 ? 21 : 18)), textX, y, maxNameWidth, isWinner ? 20 : 19, 900, side === 'right' ? 'right' : 'left');
       if (score) {
         ctx.fillStyle = colors.dark;
         ctx.textAlign = side === 'right' ? 'left' : 'right';
         const scoreX = side === 'right' ? x + pad : x + width - pad;
-        drawFitText(ctx, score, scoreX, y, scoreWidth + 8, 13, 900, side === 'right' ? 'left' : 'right');
+        drawFitText(ctx, score, scoreX, y, scoreWidth + 8, 15, 900, side === 'right' ? 'left' : 'right');
       }
     }
 
