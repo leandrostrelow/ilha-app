@@ -1245,7 +1245,7 @@
 
     async function apiPost(payload, options) {
       options = options || {};
-      if (options.silent) payload = Object.assign({}, payload, { returnData: false });
+      payload = Object.assign({}, payload, { returnData: options.returnData === true });
       state.saving = true;
       setStatus('Salvando...');
       try {
@@ -2238,6 +2238,7 @@
           tamanho_chave: $('drawSize').value,
           overwrite: true
         });
+        await loadData(false);
         toast('Chave criada.');
       } catch (error) {
         toast(error.message);
@@ -2392,6 +2393,7 @@
             observacoes: $('tournamentNotes').value
           }
         });
+        await loadData(false);
         toast('Torneio salvo.');
       } catch (error) {
         toast(error.message);
