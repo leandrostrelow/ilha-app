@@ -1183,6 +1183,12 @@
       setStatus(dirtyMatchCount() + ' alteracao(oes) pendente(s)');
     }
 
+    function clearDirtyMatch(match) {
+      if (!match || !match.jogo_id) return;
+      delete state.dirtyMatches[String(match.jogo_id)];
+      updateSaveBracketButton();
+    }
+
     function clearDirtyMatches() {
       state.dirtyMatches = {};
       updateSaveBracketButton();
@@ -1985,23 +1991,52 @@
         let data = editorMatchData();
         const matchesToSave = buildSwapMatches(data);
         data = matchesToSave.find(function (match) { return String(match.jogo_id) === String(data.jogo_id); }) || data;
+        const changedMatches = [];
+
+        function queueChanged(match) {
+          if (!match || !match.jogo_id) return;
+          const id = String(match.jogo_id);
+          const existingIndex = changedMatches.findIndex(function (item) { return String(item.jogo_id) === id; });
+          if (existingIndex >= 0) changedMatches[existingIndex] = Object.assign({}, match);
+          else changedMatches.push(Object.assign({}, match));
+        }
+
         for (let i = 0; i < matchesToSave.length; i++) {
           applySavedMatchLocally(matchesToSave[i]);
           markMatchDirty(matchesToSave[i]);
+          queueChanged(matchesToSave[i]);
         }
 
         const nextMatch = nextMatchWithWinner(data);
         if (nextMatch) {
           applySavedMatchLocally(nextMatch);
           markMatchDirty(nextMatch);
+          queueChanged(nextMatch);
         }
 
         closeMatchEditor();
         applySavedMatchLocally(data);
         markMatchDirty(data);
+        queueChanged(data);
         applyAdvancementsLocally();
         renderAll();
-        toast('Jogo atualizado na tela. Clique em Salvar chave.');
+        toast('Jogo atualizado na tela. Salvando na planilha...');
+
+        try {
+          await apiPost({
+            action: 'saveMatches',
+            jogos: changedMatches
+          }, { silent: true });
+        } catch (saveMatchesError) {
+          if (!String(saveMatchesError.message || '').includes('saveMatches')) throw saveMatchesError;
+          for (let i = 0; i < changedMatches.length; i++) {
+            await apiPost({ action: 'saveMatch', jogo: changedMatches[i] }, { silent: true });
+          }
+        }
+
+        changedMatches.forEach(clearDirtyMatch);
+        setStatus('Sincronizado ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+        toast('Jogo salvo e vencedor avancado.');
       } catch (error) {
         toast(error.message);
       }
