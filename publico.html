@@ -620,7 +620,7 @@
       outline: none;
     }
 
-    .agenda-card, .result-card {
+    .agenda-card {
       display: grid;
       grid-template-columns: 82px 1fr;
       gap: 10px;
@@ -676,14 +676,6 @@
       gap: 8px;
     }
 
-    .result-card.bye-result {
-      border-left-color: var(--lime);
-    }
-
-    .result-card.bye-result .timebox {
-      background: linear-gradient(160deg, var(--ford-dark), var(--teal));
-    }
-
     .timebox {
       border-radius: 10px;
       padding: 8px;
@@ -705,7 +697,7 @@
       font-size: 15px;
     }
 
-    .agenda-card strong, .result-card strong {
+    .agenda-card strong {
       display: block;
       font-size: 14px;
       line-height: 1.25;
@@ -765,11 +757,82 @@
       color: #254300;
     }
 
-    .agenda-card small, .result-card small {
+    .agenda-card small {
       display: block;
       margin-top: 4px;
       color: var(--muted);
       font-weight: 800;
+    }
+
+    .result-card {
+      display: grid;
+      gap: 7px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--dark);
+      border-radius: 13px;
+      background: #fff;
+      box-shadow: 0 8px 18px rgba(0, 63, 134, .06);
+    }
+
+    .result-card.bye-result {
+      border-left-color: var(--lime);
+    }
+
+    .result-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .result-player {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 25px;
+      border-radius: 999px;
+      padding: 3px 7px;
+    }
+
+    .result-player.winner {
+      background: #efffd0;
+      color: #163b00;
+    }
+
+    .result-score {
+      display: inline-block;
+      min-height: 20px;
+      border-radius: 999px;
+      padding: 2px 6px;
+      background: var(--ford-soft);
+      color: var(--dark);
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .result-score sup {
+      font-size: .62em;
+      line-height: 0;
+      vertical-align: super;
+    }
+
+    .result-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .result-meta strong {
+      color: var(--dark);
     }
 
     .athlete-list {
@@ -985,6 +1048,16 @@
       }
       .timebox span { font-size: 11px; }
       .timebox strong { font-size: 14px; }
+      .result-card {
+        padding: 9px;
+      }
+      .result-line {
+        gap: 4px;
+        font-size: 14px;
+      }
+      .result-player {
+        padding: 3px 6px;
+      }
       .agenda-players {
         font-size: 15px;
         line-height: 1.1;
@@ -1695,12 +1768,32 @@
         .sort(sortSchedule);
       $('resultsList').innerHTML = done.map(function (j) {
         if (isByeResult(j)) return byeResultHtml(j);
-        return '<div class="result-card"><div class="timebox"><span>' + escapeHtml(formatDate(j.data) || 'OK') + '</span>' +
-          '<strong>' + escapeHtml(j.placar || 'Final') + '</strong></div><div><strong>' +
-          escapeHtml(getPlayerName(j.jogador1_id) || 'A definir') + ' x ' + escapeHtml(getPlayerName(j.jogador2_id) || 'A definir') +
-          '</strong><small>Vencedor: ' + escapeHtml(getPlayerName(j.vencedor_id) || 'A definir') +
-          ' | ' + escapeHtml(getCategoryName(j.categoria_id)) + '</small></div></div>';
+        return resultHtml(j);
       }).join('') || '<div class="empty">Nenhum resultado finalizado ainda.</div>';
+    }
+
+    function resultHtml(match) {
+      const scores = splitScoreForPlayers(match.placar || '');
+      const player1 = getPlayerName(match.jogador1_id) || 'A definir';
+      const player2 = getPlayerName(match.jogador2_id) || 'A definir';
+      const winner = getPlayerName(match.vencedor_id) || 'A definir';
+      const p1Winner = match.jogador1_id && String(match.jogador1_id) === String(match.vencedor_id || '');
+      const p2Winner = match.jogador2_id && String(match.jogador2_id) === String(match.vencedor_id || '');
+      return '<div class="result-card">' +
+        '<div class="result-line">' +
+        resultPlayerHtml(player1, scores.p1, p1Winner) +
+        '<span>x</span>' +
+        resultPlayerHtml(player2, scores.p2, p2Winner) +
+        '</div>' +
+        '<div class="result-meta">Vencedor: <strong>' + escapeHtml(winner) + '</strong><span>|</span><span>' + escapeHtml(getCategoryName(match.categoria_id)) + '</span></div>' +
+        '</div>';
+    }
+
+    function resultPlayerHtml(name, score, isWinner) {
+      return '<span class="result-player ' + (isWinner ? 'winner' : '') + '">' +
+        '<span>' + escapeHtml(name) + '</span>' +
+        (score ? '<span class="result-score">' + formatScoreHtml(score) + '</span>' : '') +
+        '</span>';
     }
 
     function isByeResult(match) {
@@ -1714,6 +1807,14 @@
         '<div><strong>' + escapeHtml(winner) + ' avançou de BYE</strong>' +
         '<small>' + escapeHtml(getCategoryName(match.categoria_id)) + ' | ' +
         escapeHtml(roundLabels[match.fase] || match.fase || 'Jogo') + '</small></div></div>';
+    }
+
+    function byeResultHtml(match) {
+      const winner = getPlayerName(match.vencedor_id) || match.vencedor_nome || 'Atleta';
+      return '<div class="result-card bye-result">' +
+        '<div class="result-line"><span class="result-player winner"><span>' + escapeHtml(winner) + '</span><span class="result-score">BYE</span></span><span>avancou</span></div>' +
+        '<div class="result-meta"><span>' + escapeHtml(getCategoryName(match.categoria_id)) + '</span><span>|</span><span>' +
+        escapeHtml(roundLabels[match.fase] || match.fase || 'Jogo') + '</span></div></div>';
     }
 
     function openAthleteDetail(playerId) {
