@@ -3052,9 +3052,8 @@
       const areaTop = profile.areaTop;
       const areaBottom = profile.areaBottom;
       const cardHeight = profile.cardHeight;
-      const rowToY = function (row) {
-        const rows = Math.max(2, Number(layout.rows || 2));
-        return areaTop + ((Math.max(1, Number(row || 1)) - 1) / (rows - 1)) * (areaBottom - areaTop - cardHeight);
+      const rowToY = function (row, side, colIndex) {
+        return instagramRowToY(profile, row, side, colIndex, areaTop, areaBottom, cardHeight, layout);
       };
 
       drawInstagramConnectors(ctx, layout.left, positions.left, 'left', rowToY, cardHeight, colors);
@@ -3063,24 +3062,24 @@
       layout.left.forEach(function (col, index) {
         const pos = positions.left[index];
         if (!pos) return;
-        drawCanvasRoundLabel(ctx, col.label, pos.x, Math.max(profile.labelMinY, rowToY(col.matches[0] && col.matches[0].row) - profile.labelOffset), pos.w, colors, 'left');
+        drawCanvasRoundLabel(ctx, col.label, pos.x, Math.max(profile.labelMinY, rowToY(col.matches[0] && col.matches[0].row, 'left', index) - profile.labelOffset), pos.w, colors, 'left');
         col.matches.forEach(function (item) {
-          drawCanvasMatch(ctx, item.match, pos.x, rowToY(item.row), pos.w, cardHeight, 'left', colors);
+          drawCanvasMatch(ctx, item.match, pos.x, rowToY(item.row, 'left', index), pos.w, cardHeight, 'left', colors);
         });
       });
 
       layout.right.forEach(function (col, index) {
         const pos = positions.right[index];
         if (!pos) return;
-        drawCanvasRoundLabel(ctx, col.label, pos.x, Math.max(profile.labelMinY, rowToY(col.matches[0] && col.matches[0].row) - profile.labelOffset), pos.w, colors, 'right');
+        drawCanvasRoundLabel(ctx, col.label, pos.x, Math.max(profile.labelMinY, rowToY(col.matches[0] && col.matches[0].row, 'right', index) - profile.labelOffset), pos.w, colors, 'right');
         col.matches.forEach(function (item) {
-          drawCanvasMatch(ctx, item.match, pos.x, rowToY(item.row), pos.w, cardHeight, 'right', colors);
+          drawCanvasMatch(ctx, item.match, pos.x, rowToY(item.row, 'right', index), pos.w, cardHeight, 'right', colors);
         });
       });
 
       if (layout.final) {
         const finalW = profile.finalW;
-        const finalX = (canvas.width - finalW) / 2;
+        const finalX = profile.finalX === undefined ? (canvas.width - finalW) / 2 : profile.finalX;
         drawFinalConnectors(ctx, layout, positions, finalX, profile.finalY, finalW, profile.finalH, rowToY, cardHeight, colors);
         drawCanvasRoundLabel(ctx, 'Final', finalX, profile.finalLabelY, finalW, colors, 'center');
         drawCanvasMatch(ctx, layout.final, finalX, profile.finalY, finalW, profile.finalH, 'center', colors);
@@ -3137,49 +3136,75 @@
 
       if (rows <= 4) {
         return {
-          areaTop: 610,
-          areaBottom: 1048,
-          cardHeight: 94,
-          finalW: 390,
-          finalH: 94,
-          finalLabelY: 970,
-          finalY: 1012,
+          areaTop: 560,
+          areaBottom: 960,
+          cardHeight: 92,
+          finalX: 112,
+          finalW: 380,
+          finalH: 92,
+          finalLabelY: 1010,
+          finalY: 1052,
           labelMinY: 520,
-          labelOffset: 42,
+          labelOffset: 38,
           kind: 'draw8',
           leftPositions: [
-            { x: 44, w: 396 },
-            { x: 292, w: 312 }
+            { x: 45, w: 405 },
+            { x: 455, w: 405 }
           ],
           rightPositions: [
-            { x: 476, w: 312 },
-            { x: 640, w: 396 }
+            { x: 225, w: 405 },
+            { x: 650, w: 405 }
           ]
         };
       }
 
       return {
         areaTop: 590,
-        areaBottom: 1106,
+        areaBottom: 1020,
         cardHeight: 78,
-        finalW: 270,
+        finalX: 450,
+        finalW: 180,
         finalH: 80,
-        finalLabelY: 900,
-        finalY: 942,
+        finalLabelY: 774,
+        finalY: 816,
         labelMinY: 520,
         labelOffset: 40,
         kind: 'draw16',
         leftPositions: [
           { x: 24, w: 218 },
-          { x: 252, w: 190 },
-          { x: 360, w: 168 }
+          { x: 250, w: 210 },
+          { x: 260, w: 180 }
         ],
         rightPositions: [
-          { x: 552, w: 168 },
-          { x: 638, w: 190 },
+          { x: 640, w: 180 },
+          { x: 620, w: 210 },
           { x: 838, w: 218 }
         ]
       };
+    }
+
+    function instagramRowToY(profile, row, side, colIndex, areaTop, areaBottom, cardHeight, layout) {
+      const numericRow = Math.max(1, Number(row || 1));
+      if (profile && profile.kind === 'draw8') {
+        const draw8 = {
+          left: [
+            { 1: 560, 3: 735 },
+            { 2: 640 }
+          ],
+          right: [
+            { 2: 855 },
+            { 1: 795, 3: 955 }
+          ]
+        };
+        const map = draw8[side] && draw8[side][Number(colIndex || 0)];
+        if (map && map[numericRow]) return map[numericRow];
+      }
+      if (profile && profile.kind === 'draw16') {
+        const draw16 = { 1: 590, 2: 662, 3: 735, 4: 816, 5: 878, 6: 948, 7: 1020, 8: 1060 };
+        if (draw16[numericRow]) return draw16[numericRow];
+      }
+      const rows = Math.max(2, Number(layout.rows || 2));
+      return areaTop + ((numericRow - 1) / (rows - 1)) * (areaBottom - areaTop - cardHeight);
     }
 
     function instagramColumnPositions(layout, profile) {
@@ -3237,9 +3262,9 @@
           const group = Math.max(1, Math.ceil(sourceCol.matches.length / targetCol.matches.length));
           targetCol.matches.forEach(function (targetItem, targetMatchIndex) {
             const sources = sourceCol.matches.slice(targetMatchIndex * group, targetMatchIndex * group + group);
-            const targetY = rowToY(targetItem.row) + cardHeight / 2;
+            const targetY = rowToY(targetItem.row, 'right', targetIndex) + cardHeight / 2;
             sources.forEach(function (source) {
-              const sourceY = rowToY(source.row) + cardHeight / 2;
+              const sourceY = rowToY(source.row, 'right', targetIndex + 1) + cardHeight / 2;
               const fromX = sourcePos.x;
               const toX = targetPos.x + targetPos.w;
               const midX = (fromX + toX) / 2;
@@ -3264,9 +3289,9 @@
         const group = Math.max(1, Math.ceil(col.matches.length / next.matches.length));
         next.matches.forEach(function (nextItem, nextIndex) {
           const sources = col.matches.slice(nextIndex * group, nextIndex * group + group);
-          const targetY = rowToY(nextItem.row) + cardHeight / 2;
+          const targetY = rowToY(nextItem.row, 'left', index + 1) + cardHeight / 2;
           sources.forEach(function (source) {
-            const sourceY = rowToY(source.row) + cardHeight / 2;
+            const sourceY = rowToY(source.row, 'left', index) + cardHeight / 2;
             const fromX = pos.x + pos.w;
             const toX = nextPos.x;
             const midX = (fromX + toX) / 2;
@@ -3293,14 +3318,16 @@
       ctx.lineCap = 'round';
       if (leftSemi && leftSemi.matches[0] && leftPos && rightSemi && rightSemi.matches[0] && rightPos) {
         const centerX = finalX + finalW / 2;
-        const leftY = rowToY(leftSemi.matches[0].row) + cardHeight / 2;
-        const rightY = rowToY(rightSemi.matches[0].row) + cardHeight / 2;
+        const leftY = rowToY(leftSemi.matches[0].row, 'left', positions.left.length - 1) + cardHeight / 2;
+        const rightY = rowToY(rightSemi.matches[0].row, 'right', 0) + cardHeight / 2;
         const startY = Math.max(leftY, rightY) + 40;
         const endY = finalY - 14;
-        ctx.beginPath();
-        ctx.moveTo(centerX, startY);
-        ctx.lineTo(centerX, endY);
-        ctx.stroke();
+        if (endY > startY) {
+          ctx.beginPath();
+          ctx.moveTo(centerX, startY);
+          ctx.lineTo(centerX, endY);
+          ctx.stroke();
+        }
       }
       ctx.restore();
     }
@@ -3386,9 +3413,9 @@
       drawFitText(ctx, shortName(name, width > 340 ? 30 : (width > 250 ? 25 : (width > 185 ? 21 : 18))), textX, y, maxNameWidth, isWinner ? nameSize + 1 : nameSize, 900, side === 'right' ? 'right' : 'left');
       if (score) {
         ctx.fillStyle = colors.dark;
-        ctx.textAlign = side === 'right' ? 'left' : 'right';
-        const scoreX = side === 'right' ? x + pad : x + width - pad;
-        drawFitText(ctx, score, scoreX, y, scoreWidth + 8, width > 300 ? 18 : 16, 900, side === 'right' ? 'left' : 'right');
+        ctx.textAlign = 'right';
+        const scoreX = x + width - pad;
+        drawFitText(ctx, score, scoreX, y, scoreWidth + 8, width > 300 ? 18 : 16, 900, 'right');
       }
     }
 
