@@ -3355,7 +3355,6 @@
     function drawCanvasMatch(ctx, match, x, y, width, height, side, colors) {
       const player1 = resolvedMatchPlayer(match, 'jogador1_id', 'jogador1_nome', 'origem1_jogo_id');
       const player2 = resolvedMatchPlayer(match, 'jogador2_id', 'jogador2_nome', 'origem2_jogo_id');
-      const scores = splitScoreForPlayers(match.placar || '');
       const winnerId = String(match.vencedor_id || '');
       const p1Winner = player1.id && String(player1.id) === winnerId;
       const p2Winner = player2.id && String(player2.id) === winnerId;
@@ -3398,25 +3397,18 @@
       ctx.stroke();
       ctx.restore();
 
-      drawCanvasPlayer(ctx, canvasPlayerName(player1, match), scores.p1, x, y + (height / 2) - 12, width, side, p1Winner, colors);
-      drawCanvasPlayer(ctx, canvasPlayerName(player2, match), scores.p2, x, y + height - 12, width, side, p2Winner, colors);
+      drawCanvasPlayer(ctx, canvasPlayerName(player1, match), x, y + (height / 2) - 12, width, side, p1Winner, colors);
+      drawCanvasPlayer(ctx, canvasPlayerName(player2, match), x, y + height - 12, width, side, p2Winner, colors);
     }
 
-    function drawCanvasPlayer(ctx, name, score, x, y, width, side, isWinner, colors) {
+    function drawCanvasPlayer(ctx, name, x, y, width, side, isWinner, colors) {
       const pad = width > 300 ? 20 : 16;
-      const scoreWidth = score ? Math.min(width > 300 ? 76 : 58, Math.max(34, ctx.measureText(score).width + 12)) : 0;
       ctx.fillStyle = colors.text;
       ctx.textAlign = side === 'right' ? 'right' : 'left';
-      const textX = side === 'right' ? x + width - pad - scoreWidth : x + pad;
-      const maxNameWidth = Math.max(56, width - (pad * 2) - scoreWidth);
+      const textX = side === 'right' ? x + width - pad : x + pad;
+      const maxNameWidth = Math.max(56, width - (pad * 2));
       const nameSize = width > 340 ? 24 : (width > 250 ? 22 : (width > 185 ? 20 : 18));
       drawFitText(ctx, shortName(name, width > 340 ? 30 : (width > 250 ? 25 : (width > 185 ? 21 : 18))), textX, y, maxNameWidth, isWinner ? nameSize + 1 : nameSize, 900, side === 'right' ? 'right' : 'left');
-      if (score) {
-        ctx.fillStyle = colors.dark;
-        ctx.textAlign = 'right';
-        const scoreX = x + width - pad;
-        drawFitText(ctx, score, scoreX, y, scoreWidth + 8, width > 300 ? 18 : 16, 900, 'right');
-      }
     }
 
     function canvasPlayerName(player, match) {
