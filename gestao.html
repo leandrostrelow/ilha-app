@@ -682,27 +682,44 @@
 
     .editor-player-cell {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 46px;
+      grid-template-columns: minmax(0, 1fr) minmax(154px, 190px);
       gap: 6px;
       align-items: center;
+      min-width: 0;
+    }
+
+    .editor-whatsapp-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 5px;
       min-width: 0;
     }
 
     .editor-whatsapp-btn {
       min-width: 0;
       min-height: 42px;
-      display: inline-grid;
-      place-items: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 0 7px;
       border-radius: 11px;
       background: #16a34a;
       color: #fff;
+      font-size: 10px;
+      font-weight: 900;
       box-shadow: 0 6px 14px rgba(22, 163, 74, .18);
     }
 
+    .editor-whatsapp-btn.call {
+      background: #0f766e;
+    }
+
     .wa-icon {
-      width: 20px;
-      height: 20px;
+      width: 15px;
+      height: 15px;
       display: block;
+      flex: 0 0 auto;
     }
 
     .editor-whatsapp-btn:disabled {
@@ -964,6 +981,9 @@
       .modal-grid { grid-template-columns: 1fr; }
       .score-set-header,
       .score-set-row { grid-template-columns: repeat(3, 54px) minmax(132px, 1fr); }
+      .editor-player-cell { grid-template-columns: 1fr; }
+      .editor-whatsapp-btn { min-height: 34px; padding: 0 4px; font-size: 9px; }
+      .editor-whatsapp-btn .wa-icon { width: 13px; height: 13px; }
       .agenda-list { grid-template-columns: 1fr; }
       .player-filters, .agenda-filters, .match-agenda-grid { grid-template-columns: 1fr; }
     }
@@ -1258,7 +1278,10 @@
               <input id="editorTbP1" inputmode="numeric" placeholder="-" />
               <div class="editor-player-cell">
                 <select id="editorPlayer1"></select>
-                <button class="editor-whatsapp-btn" id="editorWhatsapp1" type="button" onclick="openEditorWhatsapp(1)" aria-label="Enviar WhatsApp para jogador 1"><svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5a9.4 9.4 0 0 0-8 14.35L3 21l4.28-1.02A9.4 9.4 0 1 0 12 2.5Zm0 1.8a7.6 7.6 0 0 1 0 15.2 7.5 7.5 0 0 1-3.88-1.08l-.32-.18-2.42.58.58-2.34-.2-.34A7.6 7.6 0 0 1 12 4.3Zm-3.2 3.85c-.17 0-.44.06-.67.32-.23.26-.88.86-.88 2.1s.9 2.44 1.03 2.6c.12.17 1.75 2.8 4.34 3.82 2.15.85 2.59.68 3.06.64.47-.04 1.52-.62 1.73-1.22.21-.6.21-1.12.15-1.22-.06-.11-.23-.17-.49-.3-.26-.13-1.52-.75-1.75-.84-.24-.09-.41-.13-.58.13-.17.26-.67.84-.82 1-.15.17-.3.19-.56.06-.26-.13-1.1-.4-2.1-1.29-.78-.69-1.3-1.54-1.45-1.8-.15-.26-.02-.4.11-.53.12-.12.26-.3.39-.45.13-.15.17-.26.26-.43.09-.17.04-.32-.02-.45-.06-.13-.58-1.4-.8-1.91-.2-.49-.41-.42-.57-.43h-.39Z"/></svg></button>
+                <div class="editor-whatsapp-actions">
+                  <button class="editor-whatsapp-btn" id="editorWhatsappConfirm1" type="button" onclick="openEditorWhatsapp(1, 'confirm')" aria-label="Confirmar jogo pelo WhatsApp para jogador 1"><svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5a9.4 9.4 0 0 0-8 14.35L3 21l4.28-1.02A9.4 9.4 0 1 0 12 2.5Zm0 1.8a7.6 7.6 0 0 1 0 15.2 7.5 7.5 0 0 1-3.88-1.08l-.32-.18-2.42.58.58-2.34-.2-.34A7.6 7.6 0 0 1 12 4.3Zm-3.2 3.85c-.17 0-.44.06-.67.32-.23.26-.88.86-.88 2.1s.9 2.44 1.03 2.6c.12.17 1.75 2.8 4.34 3.82 2.15.85 2.59.68 3.06.64.47-.04 1.52-.62 1.73-1.22.21-.6.21-1.12.15-1.22-.06-.11-.23-.17-.49-.3-.26-.13-1.52-.75-1.75-.84-.24-.09-.41-.13-.58.13-.17.26-.67.84-.82 1-.15.17-.3.19-.56.06-.26-.13-1.1-.4-2.1-1.29-.78-.69-1.3-1.54-1.45-1.8-.15-.26-.02-.4.11-.53.12-.12.26-.3.39-.45.13-.15.17-.26.26-.43.09-.17.04-.32-.02-.45-.06-.13-.58-1.4-.8-1.91-.2-.49-.41-.42-.57-.43h-.39Z"/></svg><span>Confirmar</span></button>
+                  <button class="editor-whatsapp-btn call" id="editorWhatsappCall1" type="button" onclick="openEditorWhatsapp(1, 'call')" aria-label="Chamar jogador 1 para o proximo jogo pelo WhatsApp"><svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5a9.4 9.4 0 0 0-8 14.35L3 21l4.28-1.02A9.4 9.4 0 1 0 12 2.5Zm0 1.8a7.6 7.6 0 0 1 0 15.2 7.5 7.5 0 0 1-3.88-1.08l-.32-.18-2.42.58.58-2.34-.2-.34A7.6 7.6 0 0 1 12 4.3Zm-3.2 3.85c-.17 0-.44.06-.67.32-.23.26-.88.86-.88 2.1s.9 2.44 1.03 2.6c.12.17 1.75 2.8 4.34 3.82 2.15.85 2.59.68 3.06.64.47-.04 1.52-.62 1.73-1.22.21-.6.21-1.12.15-1.22-.06-.11-.23-.17-.49-.3-.26-.13-1.52-.75-1.75-.84-.24-.09-.41-.13-.58.13-.17.26-.67.84-.82 1-.15.17-.3.19-.56.06-.26-.13-1.1-.4-2.1-1.29-.78-.69-1.3-1.54-1.45-1.8-.15-.26-.02-.4.11-.53.12-.12.26-.3.39-.45.13-.15.17-.26.26-.43.09-.17.04-.32-.02-.45-.06-.13-.58-1.4-.8-1.91-.2-.49-.41-.42-.57-.43h-.39Z"/></svg><span>Chamar</span></button>
+                </div>
               </div>
             </div>
             <div class="score-set-row">
@@ -1267,7 +1290,10 @@
               <input id="editorTbP2" inputmode="numeric" placeholder="-" />
               <div class="editor-player-cell">
                 <select id="editorPlayer2"></select>
-                <button class="editor-whatsapp-btn" id="editorWhatsapp2" type="button" onclick="openEditorWhatsapp(2)" aria-label="Enviar WhatsApp para jogador 2"><svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5a9.4 9.4 0 0 0-8 14.35L3 21l4.28-1.02A9.4 9.4 0 1 0 12 2.5Zm0 1.8a7.6 7.6 0 0 1 0 15.2 7.5 7.5 0 0 1-3.88-1.08l-.32-.18-2.42.58.58-2.34-.2-.34A7.6 7.6 0 0 1 12 4.3Zm-3.2 3.85c-.17 0-.44.06-.67.32-.23.26-.88.86-.88 2.1s.9 2.44 1.03 2.6c.12.17 1.75 2.8 4.34 3.82 2.15.85 2.59.68 3.06.64.47-.04 1.52-.62 1.73-1.22.21-.6.21-1.12.15-1.22-.06-.11-.23-.17-.49-.3-.26-.13-1.52-.75-1.75-.84-.24-.09-.41-.13-.58.13-.17.26-.67.84-.82 1-.15.17-.3.19-.56.06-.26-.13-1.1-.4-2.1-1.29-.78-.69-1.3-1.54-1.45-1.8-.15-.26-.02-.4.11-.53.12-.12.26-.3.39-.45.13-.15.17-.26.26-.43.09-.17.04-.32-.02-.45-.06-.13-.58-1.4-.8-1.91-.2-.49-.41-.42-.57-.43h-.39Z"/></svg></button>
+                <div class="editor-whatsapp-actions">
+                  <button class="editor-whatsapp-btn" id="editorWhatsappConfirm2" type="button" onclick="openEditorWhatsapp(2, 'confirm')" aria-label="Confirmar jogo pelo WhatsApp para jogador 2"><svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5a9.4 9.4 0 0 0-8 14.35L3 21l4.28-1.02A9.4 9.4 0 1 0 12 2.5Zm0 1.8a7.6 7.6 0 0 1 0 15.2 7.5 7.5 0 0 1-3.88-1.08l-.32-.18-2.42.58.58-2.34-.2-.34A7.6 7.6 0 0 1 12 4.3Zm-3.2 3.85c-.17 0-.44.06-.67.32-.23.26-.88.86-.88 2.1s.9 2.44 1.03 2.6c.12.17 1.75 2.8 4.34 3.82 2.15.85 2.59.68 3.06.64.47-.04 1.52-.62 1.73-1.22.21-.6.21-1.12.15-1.22-.06-.11-.23-.17-.49-.3-.26-.13-1.52-.75-1.75-.84-.24-.09-.41-.13-.58.13-.17.26-.67.84-.82 1-.15.17-.3.19-.56.06-.26-.13-1.1-.4-2.1-1.29-.78-.69-1.3-1.54-1.45-1.8-.15-.26-.02-.4.11-.53.12-.12.26-.3.39-.45.13-.15.17-.26.26-.43.09-.17.04-.32-.02-.45-.06-.13-.58-1.4-.8-1.91-.2-.49-.41-.42-.57-.43h-.39Z"/></svg><span>Confirmar</span></button>
+                  <button class="editor-whatsapp-btn call" id="editorWhatsappCall2" type="button" onclick="openEditorWhatsapp(2, 'call')" aria-label="Chamar jogador 2 para o proximo jogo pelo WhatsApp"><svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5a9.4 9.4 0 0 0-8 14.35L3 21l4.28-1.02A9.4 9.4 0 1 0 12 2.5Zm0 1.8a7.6 7.6 0 0 1 0 15.2 7.5 7.5 0 0 1-3.88-1.08l-.32-.18-2.42.58.58-2.34-.2-.34A7.6 7.6 0 0 1 12 4.3Zm-3.2 3.85c-.17 0-.44.06-.67.32-.23.26-.88.86-.88 2.1s.9 2.44 1.03 2.6c.12.17 1.75 2.8 4.34 3.82 2.15.85 2.59.68 3.06.64.47-.04 1.52-.62 1.73-1.22.21-.6.21-1.12.15-1.22-.06-.11-.23-.17-.49-.3-.26-.13-1.52-.75-1.75-.84-.24-.09-.41-.13-.58.13-.17.26-.67.84-.82 1-.15.17-.3.19-.56.06-.26-.13-1.1-.4-2.1-1.29-.78-.69-1.3-1.54-1.45-1.8-.15-.26-.02-.4.11-.53.12-.12.26-.3.39-.45.13-.15.17-.26.26-.43.09-.17.04-.32-.02-.45-.06-.13-.58-1.4-.8-1.91-.2-.49-.41-.42-.57-.43h-.39Z"/></svg><span>Chamar</span></button>
+                </div>
               </div>
             </div>
           </div>
@@ -2479,14 +2505,20 @@
       [1, 2].forEach(function (slot) {
         const id = $('editorPlayer' + slot).value;
         const player = getPlayerById(id);
-        const btn = $('editorWhatsapp' + slot);
         const hasWhatsapp = Boolean(player && whatsappNumber(player.whatsapp));
-        btn.disabled = !hasWhatsapp;
-        btn.title = hasWhatsapp ? 'Enviar confirmacao para ' + (player.nome || 'jogador') : 'Jogador sem WhatsApp cadastrado';
+        [
+          { id: 'editorWhatsappConfirm' + slot, text: 'Confirmar jogo' },
+          { id: 'editorWhatsappCall' + slot, text: 'Chamar para o proximo jogo' }
+        ].forEach(function (action) {
+          const btn = $(action.id);
+          if (!btn) return;
+          btn.disabled = !hasWhatsapp;
+          btn.title = hasWhatsapp ? action.text + ' - ' + (player.nome || 'jogador') : 'Jogador sem WhatsApp cadastrado';
+        });
       });
     }
 
-    function openEditorWhatsapp(slot) {
+    function openEditorWhatsapp(slot, type) {
       const playerId = $('editorPlayer' + slot).value;
       const opponentId = $('editorPlayer' + (slot === 1 ? 2 : 1)).value;
       const player = getPlayerById(playerId);
@@ -2504,23 +2536,30 @@
       const match = state.data.jogos.find(function (j) { return String(j.jogo_id) === String(matchId); }) || {};
       const category = shortCategoryName(getCategoryName(match.categoria_id));
       const phase = roundLabels[match.fase] || match.fase || 'Jogo';
+      const phaseText = whatsappPhaseText(phase);
       const opponent = getPlayerName(opponentId) || 'adversario a definir';
-      const day = dayTurnText($('editorDate').value, $('editorTime').value);
-      const tournament = (state.data.torneio && state.data.torneio.nome) || 'Torneio Ilha';
+      const day = dayTurnText($('editorDate').value, $('editorTime').value).toLowerCase();
+      const dayPhrase = day === 'dia a definir' ? 'em dia a definir' : 'na ' + day;
+      const tournament = (state.data.torneio && state.data.torneio.nome) || 'II VIAFOR OPEN';
 
-      const message = [
-        'Ola, ' + (player.nome || 'atleta') + '!',
-        '',
-        'Confirmando seu jogo no ' + tournament + ' \uD83C\uDFBE',
-        category + ' - ' + phase,
-        'Adversario: ' + opponent,
-        'Dia: ' + day,
-        '',
-        'Por favor, confirme sua presenca.',
-        '',
-        'e acompanha tudo pelo nosso aplicativo',
-        'https://app.ilhatenis.com/'
-      ].join('\n');
+      const firstName = String(player.nome || 'Atleta').trim().split(/\s+/)[0] || 'Atleta';
+      const message = type === 'call'
+        ? [
+          firstName + ', seu jogo e o proximo.',
+          'Por favor, venha para o clube o quanto antes.'
+        ].join('\n')
+        : [
+          tournament + ' \uD83C\uDFBE',
+          '',
+          'Fala ' + firstName + ', blz?',
+          'Passando para confirmar seu jogo da ' + category + ' ' + phaseText + ' contra ' + opponent + ' ' + dayPhrase + '.',
+          '',
+          'Por favor, confirme sua presenca.',
+          '',
+          'E todas as informacoes necessarias estao em nosso aplicativo:',
+          '',
+          'https://app.ilhatenis.com/'
+        ].join('\n');
 
       window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
     }
@@ -2530,6 +2569,18 @@
         .replace(/\s+(Masculina|Feminina)$/i, '')
         .replace(/\s+/g, ' ')
         .trim();
+    }
+
+    function whatsappPhaseText(phase) {
+      const value = String(phase || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+      if (value.indexOf('oitava') !== -1) return 'nas oitavas de final';
+      if (value.indexOf('quarta') !== -1) return 'nas quartas de final';
+      if (value.indexOf('semi') !== -1) return 'na semifinal';
+      if (value.indexOf('final') !== -1) return 'na final';
+      return 'no jogo';
     }
 
     function dayTurnText(dayValue, timeValue) {
