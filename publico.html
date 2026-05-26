@@ -210,7 +210,7 @@
       top: 0;
       z-index: 10;
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 9px;
       padding: 0 0 12px;
       background: rgba(255, 255, 255, .96);
@@ -583,7 +583,7 @@
       color: var(--text);
     }
 
-    .agenda-list, .results-list {
+    .agenda-list, .results-list, .photo-list {
       display: grid;
       gap: 9px;
     }
@@ -593,7 +593,8 @@
     }
 
     .agenda-filters,
-    .athlete-filters {
+    .athlete-filters,
+    .photo-filters {
       display: grid;
       gap: 8px;
       margin-bottom: 12px;
@@ -607,10 +608,16 @@
       grid-template-columns: minmax(180px, 1.4fr) minmax(140px, .8fr);
     }
 
+    .photo-filters {
+      grid-template-columns: minmax(180px, 1.4fr) minmax(140px, .8fr);
+    }
+
     .agenda-filters input,
     .agenda-filters select,
     .athlete-filters input,
-    .athlete-filters select {
+    .athlete-filters select,
+    .photo-filters input,
+    .photo-filters select {
       min-height: 38px;
       border: 1px solid var(--line);
       border-radius: 999px;
@@ -620,6 +627,56 @@
       font-size: 13px;
       font-weight: 800;
       outline: none;
+    }
+
+    .photo-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--dark);
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 8px 18px rgba(0, 63, 134, .06);
+    }
+
+    .photo-card strong {
+      display: block;
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.25;
+    }
+
+    .photo-card span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .photo-btn,
+    .photo-inline-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: var(--dark);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .photo-inline-btn {
+      margin-top: 8px;
+      min-height: 30px;
+      padding: 7px 10px;
     }
 
     .agenda-card {
@@ -991,7 +1048,7 @@
       .today-pill strong {
         font-size: 16px;
       }
-      .agenda-filters, .athlete-filters { grid-template-columns: 1fr 1fr; }
+      .agenda-filters, .athlete-filters, .photo-filters { grid-template-columns: 1fr 1fr; }
       .app { padding-left: 10px; padding-right: 10px; }
       .section-head { display: grid; }
       .bracket-wrap {
@@ -1030,11 +1087,19 @@
       .metric strong { font-size: 18px; }
       .metric span { font-size: 9px; }
       .nav {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 7px;
       }
-      .nav button { min-height: 40px; font-size: 12px; }
-      .agenda-filters, .athlete-filters { grid-template-columns: 1fr; }
+      .nav button {
+        grid-column: span 2;
+        min-height: 40px;
+        font-size: 12px;
+      }
+      .nav button:nth-child(4),
+      .nav button:nth-child(5) {
+        grid-column: span 3;
+      }
+      .agenda-filters, .athlete-filters, .photo-filters { grid-template-columns: 1fr; }
       .category-bar {
         grid-template-columns: 1fr;
         gap: 6px;
@@ -1053,6 +1118,13 @@
         gap: 8px;
         align-items: stretch;
         padding: 8px;
+      }
+      .photo-card {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .photo-btn {
+        width: 100%;
       }
       .timebox {
         display: grid;
@@ -1119,9 +1191,10 @@
   <main class="app">
     <div class="nav">
       <button class="active" data-tab="bracketSection">Chaves</button>
-      <button data-tab="athletesSection">Atletas</button>
       <button data-tab="agendaSection">Agenda</button>
+      <button data-tab="athletesSection">Atletas</button>
       <button data-tab="resultsSection">Resultados</button>
+      <button data-tab="photosSection">Fotos</button>
     </div>
 
     <section class="section active" id="bracketSection">
@@ -1185,6 +1258,22 @@
           </div>
         </div>
         <div class="results-list" id="resultsList"></div>
+      </div>
+    </section>
+
+    <section class="section" id="photosSection">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Fotos</h2>
+            <div class="muted">Jogos com fotos publicadas pelo fotografo.</div>
+          </div>
+        </div>
+        <div class="photo-filters">
+          <input id="photoSearch" placeholder="Buscar jogador" />
+          <select id="photoCategoryFilter"><option value="">Todas as classes</option></select>
+        </div>
+        <div class="photo-list" id="photoList"></div>
       </div>
     </section>
   </main>
@@ -1318,10 +1407,12 @@
       renderCategories();
       renderAgendaFilterOptions();
       renderAthleteFilterOptions();
+      renderPhotoFilterOptions();
       renderBracket();
       renderAthletes();
       renderAgenda();
       renderResults();
+      renderPhotos();
     }
 
     function firstPublishedCategoryId() {
@@ -1452,6 +1543,22 @@
         return '<option value="' + escapeHtml(cat.categoria_id) + '">' + escapeHtml(cat.nome) + '</option>';
       }).join('');
       $('athleteCategoryFilter').value = categories.some(function (cat) {
+        return String(cat.categoria_id) === String(category);
+      }) ? category : '';
+    }
+
+    function renderPhotoFilterOptions() {
+      const category = $('photoCategoryFilter').value;
+      const photoCategories = new Set(photoMatches().map(function (match) {
+        return String(match.categoria_id || '');
+      }));
+      const categories = publishedCategories().filter(function (cat) {
+        return photoCategories.has(String(cat.categoria_id));
+      });
+      $('photoCategoryFilter').innerHTML = '<option value="">Todas as classes</option>' + categories.map(function (cat) {
+        return '<option value="' + escapeHtml(cat.categoria_id) + '">' + escapeHtml(cat.nome) + '</option>';
+      }).join('');
+      $('photoCategoryFilter').value = categories.some(function (cat) {
         return String(cat.categoria_id) === String(category);
       }) ? category : '';
     }
@@ -1784,6 +1891,49 @@
         '</div></div></div>';
     }
 
+    function renderPhotos() {
+      const search = normalizeSearch($('photoSearch').value);
+      const categoryFilter = $('photoCategoryFilter').value;
+      const matches = photoMatches().filter(function (match) {
+        if (categoryFilter && String(match.categoria_id || '') !== String(categoryFilter)) return false;
+        if (search) {
+          const haystack = normalizeSearch([
+            getPlayerName(match.jogador1_id),
+            getPlayerName(match.jogador2_id),
+            getCategoryName(match.categoria_id)
+          ].join(' '));
+          if (haystack.indexOf(search) === -1) return false;
+        }
+        return true;
+      }).sort(sortSchedule);
+      $('photoList').innerHTML = matches.map(renderPhotoCard).join('') ||
+        '<div class="empty">Nenhuma galeria publicada ainda.</div>';
+    }
+
+    function renderPhotoCard(match) {
+      const player1 = getPlayerName(match.jogador1_id) || 'A definir';
+      const player2 = getPlayerName(match.jogador2_id) || 'A definir';
+      const url = photoLink(match);
+      return '<div class="photo-card"><div><strong>' + escapeHtml(player1) + ' x ' + escapeHtml(player2) +
+        '</strong><span>' + escapeHtml(getCategoryName(match.categoria_id)) + '</span></div>' +
+        '<a class="photo-btn" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">Ver fotos</a></div>';
+    }
+
+    function photoMatches() {
+      return state.data.jogos.filter(function (match) {
+        return Boolean(photoLink(match));
+      });
+    }
+
+    function photoLink(match) {
+      const raw = String((match && match.observacoes) || '').trim();
+      if (!raw) return '';
+      if (/^https?:\/\//i.test(raw)) return raw;
+      if (/^www\./i.test(raw)) return 'https://' + raw;
+      if (/^[\w.-]+\.[a-z]{2,}/i.test(raw)) return 'https://' + raw;
+      return '';
+    }
+
     function renderResults() {
       const done = state.data.jogos.filter(function (j) { return String(j.status).toUpperCase() === 'FINALIZADO'; })
         .sort(sortSchedule);
@@ -1879,13 +2029,14 @@
         const opponentId = String(match.jogador1_id || '') === String(playerId) ? match.jogador2_id : match.jogador1_id;
         const opponent = isByeResult(match) ? 'BYE' : (getPlayerName(opponentId) || 'A definir');
         const result = athleteResultText(match, playerId);
+        const photos = photoLink(match) ? '<a class="photo-inline-btn" href="' + escapeHtml(photoLink(match)) + '" target="_blank" rel="noopener">Ver fotos</a>' : '';
         return '<div class="athlete-match"><strong>' + escapeHtml(getCategoryName(match.categoria_id)) +
           ' | ' + escapeHtml(roundLabels[match.fase] || match.fase || 'Jogo') + '</strong>' +
           '<div class="agenda-meta">' +
           '<span class="agenda-tag">' + escapeHtml(formatDate(match.data) || 'Sem dia') + '</span>' +
           '<span class="agenda-tag">' + escapeHtml(formatAgendaTime(match.hora)) + '</span>' +
           '<span class="agenda-tag">' + escapeHtml(match.quadra || 'Sem quadra') + '</span>' +
-          '</div><small>Contra: ' + escapeHtml(opponent) + result + '</small></div>';
+          '</div><small>Contra: ' + escapeHtml(opponent) + result + '</small>' + photos + '</div>';
       }).join('') || '<div class="empty">Nenhum jogo encontrado para este atleta.</div>';
 
       $('athleteDetailBackdrop').classList.add('open');
@@ -2058,6 +2209,10 @@
     ['athleteSearch', 'athleteCategoryFilter'].forEach(function (id) {
       $(id).addEventListener('input', renderAthletes);
       $(id).addEventListener('change', renderAthletes);
+    });
+    ['photoSearch', 'photoCategoryFilter'].forEach(function (id) {
+      $(id).addEventListener('input', renderPhotos);
+      $(id).addEventListener('change', renderPhotos);
     });
     $('categorySelect').addEventListener('change', function () {
       selectCategory(this.value);
