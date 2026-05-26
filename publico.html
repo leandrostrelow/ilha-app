@@ -1562,6 +1562,7 @@
       const categoryFilter = $('agendaCategoryFilter').value;
       const scheduled = state.data.jogos.filter(function (j) {
         if (!(j.data || j.hora || j.quadra)) return false;
+        if (String(j.status || '').toUpperCase() === 'FINALIZADO') return false;
         if (dayFilter && String(normalizeAgendaDay(j.data) || '') !== String(dayFilter)) return false;
         if (courtFilter && String(j.quadra || '') !== String(courtFilter)) return false;
         if (categoryFilter && String(j.categoria_id || '') !== String(categoryFilter)) return false;
