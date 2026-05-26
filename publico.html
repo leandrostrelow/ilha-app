@@ -6,7 +6,7 @@
   <title>Torneio Ilha</title>
   <style>
     :root {
-      --bg: #eef4f9;
+      --bg: #e7f0f7;
       --panel: #ffffff;
       --text: #08283f;
       --muted: #5e7486;
@@ -24,7 +24,9 @@
     body {
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
-      background: var(--bg);
+      background:
+        linear-gradient(180deg, rgba(0, 63, 134, .08) 0, rgba(0, 63, 134, 0) 260px),
+        var(--bg);
       color: var(--text);
     }
 
@@ -35,7 +37,7 @@
     }
 
     .hero {
-      background: linear-gradient(135deg, #003776 0%, #005bbb 62%, #00285f 100%);
+      background: linear-gradient(135deg, #003776 0%, #004b9d 56%, #00285f 100%);
       color: #fff;
       padding: 20px 14px 26px;
       border-top: 7px solid var(--lime);
@@ -117,7 +119,7 @@
       gap: 8px;
       background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 13px;
+      border-radius: 16px;
       padding: 8px 10px;
       box-shadow: 0 12px 26px rgba(0, 63, 134, .13);
     }
@@ -191,7 +193,7 @@
     .panel {
       background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: 20px;
       padding: 14px;
       box-shadow: var(--shadow);
     }
@@ -258,6 +260,10 @@
 
     .bracket {
       min-width: min(1120px, calc(var(--draw-cols, 7) * 150px));
+    }
+
+    .draw-mobile-board {
+      display: none;
     }
 
     .draw-board {
@@ -353,6 +359,14 @@
       box-shadow: 0 8px 18px rgba(0, 63, 134, .10);
     }
 
+    .draw-static-match {
+      position: relative;
+      top: auto;
+      left: auto;
+      right: auto;
+      width: 100%;
+    }
+
     .draw-match.right {
       border-left-width: 1px;
       border-right: 5px solid var(--dark);
@@ -444,6 +458,74 @@
       font-size: .62em;
       line-height: 0;
       vertical-align: super;
+    }
+
+    .draw-mobile-side,
+    .draw-mobile-final {
+      display: grid;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #f5fbff 100%);
+      box-shadow: 0 12px 24px rgba(0, 63, 134, .09);
+    }
+
+    .draw-mobile-side-head,
+    .draw-mobile-final-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 36px;
+      padding: 8px 11px;
+      border-radius: 13px;
+      background: var(--dark);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .2px;
+    }
+
+    .draw-mobile-side.bottom .draw-mobile-side-head {
+      background: #004f9f;
+    }
+
+    .draw-mobile-side-head span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: var(--lime);
+      color: var(--text);
+      font-size: 11px;
+    }
+
+    .draw-mobile-side-scroll {
+      overflow-x: auto;
+      padding-bottom: 3px;
+    }
+
+    .draw-mobile-side-board {
+      display: grid;
+      grid-template-columns: repeat(var(--mobile-cols, 3), minmax(102px, 1fr));
+      gap: 7px;
+      min-width: calc(var(--mobile-cols, 3) * 108px);
+      min-height: var(--draw-height, 360px);
+      align-items: start;
+    }
+
+    .draw-mobile-final {
+      background: linear-gradient(180deg, #eaf3ff 0%, #ffffff 100%);
+    }
+
+    .draw-mobile-final-head {
+      justify-content: center;
+      background: var(--lime);
+      color: var(--text);
     }
 
     .agenda-list, .results-list {
@@ -759,13 +841,34 @@
       .agenda-filters, .athlete-filters { grid-template-columns: 1fr 1fr; }
       .app { padding-left: 10px; padding-right: 10px; }
       .section-head { display: grid; }
-      .bracket { min-width: calc(var(--draw-cols, 7) * 108px); }
-      .draw-board { grid-template-columns:
-        repeat(var(--left-cols, 3), 102px)
-        108px
-        repeat(var(--right-cols, 3), 102px);
+      .bracket-wrap {
+        overflow-x: visible;
+        padding-bottom: 0;
+      }
+      .bracket {
+        min-width: 0;
+        width: 100%;
+      }
+      .draw-board { display: none; }
+      .draw-mobile-board {
+        display: grid;
+        gap: 12px;
+      }
+      .draw-mobile-board .draw-col {
+        min-height: var(--draw-height, 360px);
+      }
+      .draw-mobile-board .draw-col-title {
+        height: 23px;
+        font-size: 9px;
+      }
+      .draw-mobile-board .draw-match {
+        --match-height: 62px;
+        border-radius: 12px;
       }
       .draw-player { font-size: 10px; padding: 6px; }
+      .draw-mobile-final .draw-match {
+        height: 66px;
+      }
     }
 
     @media (max-width: 520px) {
@@ -782,6 +885,15 @@
       .category-bar {
         grid-template-columns: 1fr;
         gap: 6px;
+      }
+      .panel {
+        padding: 11px;
+        border-radius: 18px;
+      }
+      .draw-mobile-side,
+      .draw-mobile-final {
+        padding: 9px;
+        border-radius: 16px;
       }
       .agenda-card {
         grid-template-columns: 68px 1fr;
@@ -1236,6 +1348,11 @@
         (layout.final ? drawMatchHtml(layout.final, layout.finalRow, 'final') : '<div class="empty">Final a definir.</div>') +
         '</div></div>' +
         layout.right.map(function (col) { return drawColumnHtml(col, 'right'); }).join('') +
+        '</div>' +
+        '<div class="draw-mobile-board">' +
+        drawMobileSideHtml('Chave de cima', layout.left, 'top', layout.height) +
+        drawMobileFinalHtml(layout.final) +
+        drawMobileSideHtml('Chave de baixo', layout.right.slice().reverse(), 'bottom', layout.height) +
         '</div>';
     }
 
@@ -1294,12 +1411,39 @@
         '</div>';
     }
 
+    function drawMobileSideHtml(title, columns, side, height) {
+      if (!columns.length) return '';
+      return '<div class="draw-mobile-side ' + escapeHtml(side || '') + '">' +
+        '<div class="draw-mobile-side-head">' + escapeHtml(title) + '<span>' + columns[0].matches.length + '</span></div>' +
+        '<div class="draw-mobile-side-scroll">' +
+        '<div class="draw-mobile-side-board" style="--mobile-cols:' + columns.length + ';--draw-height:' + height + 'px;--match-height:' + DRAW_MATCH_HEIGHT + 'px">' +
+        columns.map(function (col) { return drawColumnHtml(col, 'left'); }).join('') +
+        '</div></div></div>';
+    }
+
+    function drawMobileFinalHtml(match) {
+      return '<div class="draw-mobile-final"><div class="draw-mobile-final-head">Final</div>' +
+        (match ? drawStaticMatchHtml(match, 'final') : '<div class="empty">Final a definir.</div>') +
+        '</div>';
+    }
+
     function drawMatchHtml(match, row, side) {
       const done = String(match.status || '').toUpperCase() === 'FINALIZADO';
       const scores = splitScoreForPlayers(match.placar || '');
       const player1 = resolvedMatchPlayer(match, 'jogador1_id', 'jogador1_nome', 'origem1_jogo_id');
       const player2 = resolvedMatchPlayer(match, 'jogador2_id', 'jogador2_nome', 'origem2_jogo_id');
       return '<div class="draw-match ' + escapeHtml(side || '') + ' ' + (done ? 'done' : '') + '" style="--match-top:' + matchTopFromRow(row) + 'px">' +
+        drawPlayerLine(player1.id, match.vencedor_id, scores.p1, match.rodada, 'p1', player1.name) +
+        drawPlayerLine(player2.id, match.vencedor_id, scores.p2, match.rodada, 'p2', player2.name) +
+        '</div>';
+    }
+
+    function drawStaticMatchHtml(match, side) {
+      const done = String(match.status || '').toUpperCase() === 'FINALIZADO';
+      const scores = splitScoreForPlayers(match.placar || '');
+      const player1 = resolvedMatchPlayer(match, 'jogador1_id', 'jogador1_nome', 'origem1_jogo_id');
+      const player2 = resolvedMatchPlayer(match, 'jogador2_id', 'jogador2_nome', 'origem2_jogo_id');
+      return '<div class="draw-match draw-static-match ' + escapeHtml(side || '') + ' ' + (done ? 'done' : '') + '">' +
         drawPlayerLine(player1.id, match.vencedor_id, scores.p1, match.rodada, 'p1', player1.name) +
         drawPlayerLine(player2.id, match.vencedor_id, scores.p2, match.rodada, 'p2', player2.name) +
         '</div>';
