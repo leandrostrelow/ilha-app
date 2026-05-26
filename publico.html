@@ -780,10 +780,10 @@
     }
 
     .result-line {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       color: var(--text);
       font-size: 15px;
       font-weight: 900;
@@ -791,12 +791,21 @@
     }
 
     .result-player {
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 5px;
+      justify-content: center;
       min-height: 25px;
       border-radius: 999px;
       padding: 3px 7px;
+      min-width: 0;
+      text-align: center;
+    }
+
+    .result-player span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .result-player.winner {
@@ -805,13 +814,16 @@
     }
 
     .result-score {
-      display: inline-block;
-      min-height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 56px;
+      min-height: 30px;
       border-radius: 999px;
-      padding: 2px 6px;
-      background: var(--ford-soft);
-      color: var(--dark);
-      font-size: 11px;
+      padding: 4px 10px;
+      background: var(--dark);
+      color: #fff;
+      font-size: 14px;
       font-weight: 900;
       white-space: nowrap;
     }
@@ -1052,11 +1064,18 @@
         padding: 9px;
       }
       .result-line {
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         gap: 4px;
         font-size: 14px;
       }
       .result-player {
         padding: 3px 6px;
+      }
+      .result-score {
+        min-width: 48px;
+        min-height: 28px;
+        padding: 4px 8px;
+        font-size: 13px;
       }
       .agenda-players {
         font-size: 15px;
@@ -1773,7 +1792,7 @@
     }
 
     function resultHtml(match) {
-      const scores = splitScoreForPlayers(match.placar || '');
+      const setScore = resultSetScore(match);
       const player1 = getPlayerName(match.jogador1_id) || 'A definir';
       const player2 = getPlayerName(match.jogador2_id) || 'A definir';
       const winner = getPlayerName(match.vencedor_id) || 'A definir';
@@ -1781,19 +1800,43 @@
       const p2Winner = match.jogador2_id && String(match.jogador2_id) === String(match.vencedor_id || '');
       return '<div class="result-card">' +
         '<div class="result-line">' +
-        resultPlayerHtml(player1, scores.p1, p1Winner) +
-        '<span>x</span>' +
-        resultPlayerHtml(player2, scores.p2, p2Winner) +
+        resultPlayerHtml(player1, p1Winner) +
+        '<span class="result-score">' + escapeHtml(setScore.p1) + ' x ' + escapeHtml(setScore.p2) + '</span>' +
+        resultPlayerHtml(player2, p2Winner) +
         '</div>' +
         '<div class="result-meta">Vencedor: <strong>' + escapeHtml(winner) + '</strong><span>|</span><span>' + escapeHtml(getCategoryName(match.categoria_id)) + '</span></div>' +
         '</div>';
     }
 
-    function resultPlayerHtml(name, score, isWinner) {
+    function resultPlayerHtml(name, isWinner) {
       return '<span class="result-player ' + (isWinner ? 'winner' : '') + '">' +
         '<span>' + escapeHtml(name) + '</span>' +
-        (score ? '<span class="result-score">' + formatScoreHtml(score) + '</span>' : '') +
         '</span>';
+    }
+
+    function resultSetScore(match) {
+      const detailed = parseScoreDetailed(match.placar || '');
+      let p1 = 0;
+      let p2 = 0;
+      const maxSets = Math.max(detailed.sets1.length, detailed.sets2.length);
+      for (let i = 0; i < maxSets; i++) {
+        const a = Number(detailed.sets1[i]);
+        const b = Number(detailed.sets2[i]);
+        if (Number.isNaN(a) || Number.isNaN(b) || a === b) continue;
+        if (a > b) p1++;
+        else p2++;
+      }
+      if (detailed.tb1 || detailed.tb2) {
+        const a = Number(detailed.tb1 || 0);
+        const b = Number(detailed.tb2 || 0);
+        if (a > b) p1++;
+        else if (b > a) p2++;
+      }
+      if (!p1 && !p2 && match.vencedor_id) {
+        if (String(match.vencedor_id) === String(match.jogador1_id || '')) p1 = 1;
+        if (String(match.vencedor_id) === String(match.jogador2_id || '')) p2 = 1;
+      }
+      return { p1: String(p1), p2: String(p2) };
     }
 
     function isByeResult(match) {
