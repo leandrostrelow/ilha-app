@@ -3277,46 +3277,66 @@
         winner: '#eaffbd'
       };
 
+      const selectedMatches = matches.slice(0, 6);
       drawCoverImage(ctx, background, 0, 0, canvas.width, canvas.height);
 
       ctx.save();
       ctx.shadowColor = 'rgba(0, 45, 98, .24)';
-      ctx.shadowBlur = 14;
-      ctx.shadowOffsetY = 8;
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 10;
       ctx.fillStyle = colors.dark;
-      roundRect(ctx, 285, 382, 510, 58, 29);
+      roundRect(ctx, 250, 382, 580, 68, 34);
       ctx.fill();
       ctx.restore();
 
       ctx.fillStyle = colors.white;
       ctx.textAlign = 'center';
-      drawFitText(ctx, 'RESULTADOS', canvas.width / 2, 420, 430, 32, 900);
+      drawFitText(ctx, 'RESULTADOS', canvas.width / 2, 427, 500, 40, 900);
 
       ctx.save();
       ctx.fillStyle = '#ffffff';
       ctx.strokeStyle = colors.dark2;
       ctx.lineWidth = 2;
-      roundRect(ctx, 385, 458, 310, 34, 17);
+      roundRect(ctx, 365, 466, 350, 38, 19);
       ctx.fill();
       ctx.stroke();
       ctx.restore();
       ctx.fillStyle = colors.dark;
-      drawFitText(ctx, 'PLACARES CONFIRMADOS', canvas.width / 2, 481, 270, 15, 900);
+      drawFitText(ctx, 'PLACARES CONFIRMADOS', canvas.width / 2, 491, 305, 17, 900);
 
-      const top = matches.length <= 4 ? 590 : 548;
-      const gap = matches.length <= 4 ? 24 : 14;
-      const cardHeight = matches.length <= 4 ? 104 : 88;
-      matches.slice(0, 6).forEach(function (match, index) {
-        drawResultsPosterCard(ctx, match, 80, top + index * (cardHeight + gap), 920, cardHeight, colors);
+      const count = Math.max(selectedMatches.length, 1);
+      const zoneTop = 570;
+      const zoneBottom = 1160;
+      const gap = count <= 2 ? 34 : (count <= 4 ? 22 : 14);
+      const available = zoneBottom - zoneTop;
+      const fittedHeight = (available - gap * (count - 1)) / count;
+      const cardHeight = Math.round(Math.min(count <= 2 ? 168 : 138, Math.max(94, fittedHeight)));
+      const totalHeight = cardHeight * count + gap * (count - 1);
+      const top = Math.round(zoneTop + (available - totalHeight) / 2);
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 255, 255, .58)';
+      roundRect(ctx, 44, top - 24, 992, totalHeight + 48, 28);
+      ctx.fill();
+      ctx.restore();
+
+      selectedMatches.forEach(function (match, index) {
+        drawResultsPosterCard(ctx, match, 68, top + index * (cardHeight + gap), 944, cardHeight, colors);
       });
     }
 
     function drawResultsPosterCard(ctx, match, x, y, width, height, colors) {
       const isBye = isByeResult(match);
-      const radius = 18;
+      const radius = 20;
+      const compact = height < 112;
+      const nameSize = compact ? 22 : (height > 145 ? 31 : 27);
+      const scoreFont = compact ? 19 : (height > 145 ? 25 : 22);
+      const scoreW = compact ? 118 : 142;
+      const scoreH = compact ? 38 : 48;
+      const centerY = y + Math.round(height * .62);
       ctx.save();
-      ctx.shadowColor = 'rgba(0, 45, 98, .16)';
-      ctx.shadowBlur = 12;
+      ctx.shadowColor = 'rgba(0, 45, 98, .18)';
+      ctx.shadowBlur = 16;
       ctx.shadowOffsetY = 8;
       ctx.fillStyle = colors.white;
       roundRect(ctx, x, y, width, height, radius);
@@ -3338,24 +3358,27 @@
 
       ctx.save();
       ctx.strokeStyle = isBye ? colors.lime : colors.dark2;
-      ctx.lineWidth = 7;
+      ctx.lineWidth = 8;
       ctx.beginPath();
-      ctx.moveTo(x + 4, y + 16);
-      ctx.lineTo(x + 4, y + height - 16);
+      ctx.moveTo(x + 5, y + 17);
+      ctx.lineTo(x + 5, y + height - 17);
       ctx.stroke();
       ctx.restore();
 
       const meta = getCategoryName(match.categoria_id) + ' | ' + (roundLabels[match.fase] || match.fase || 'Jogo');
       ctx.fillStyle = colors.muted;
       ctx.textAlign = 'left';
-      drawFitText(ctx, meta.toUpperCase(), x + 26, y + 24, width - 52, 13, 900, 'left');
+      drawFitText(ctx, meta.toUpperCase(), x + 30, y + (compact ? 23 : 30), width - 60, compact ? 13 : 15, 900, 'left');
 
       if (isBye) {
         const winner = getPlayerName(match.vencedor_id || firstRoundByeWinner(match)) || match.vencedor_nome || 'Atleta';
         ctx.fillStyle = colors.text;
-        drawFitText(ctx, shortName(winner, 30), x + 26, y + 64, width - 220, 25, 900, 'left');
+        drawFitText(ctx, shortName(winner, 34), x + 30, centerY + 8, width - 280, nameSize, 900, 'left');
         ctx.fillStyle = colors.dark;
-        drawFitText(ctx, 'AVANÇOU DE BYE', x + width - 28, y + 64, 220, 20, 900, 'right');
+        roundRect(ctx, x + width - 245, centerY - scoreH / 2 - 3, 215, scoreH, scoreH / 2);
+        ctx.fill();
+        ctx.fillStyle = colors.white;
+        drawFitText(ctx, 'AVAN\u00c7OU DE BYE', x + width - 138, centerY + 7, 170, scoreFont - 4, 900, 'center');
         return;
       }
 
@@ -3364,28 +3387,29 @@
       const p1Winner = match.jogador1_id && String(match.jogador1_id) === String(match.vencedor_id || '');
       const p2Winner = match.jogador2_id && String(match.jogador2_id) === String(match.vencedor_id || '');
       const setScore = resultSetScore(match);
-      const nameY = y + 67;
       const scoreText = setScore.p1 + ' x ' + setScore.p2;
 
-      drawPosterResultName(ctx, player1, x + 26, nameY, 330, p1Winner, colors, 'left');
+      drawPosterResultName(ctx, player1, x + 30, centerY + 8, 350, p1Winner, colors, 'left', nameSize);
       ctx.fillStyle = colors.dark;
-      roundRect(ctx, x + width / 2 - 56, y + 44, 112, 38, 19);
+      roundRect(ctx, x + width / 2 - scoreW / 2, centerY - scoreH / 2 - 3, scoreW, scoreH, scoreH / 2);
       ctx.fill();
       ctx.fillStyle = colors.white;
-      drawFitText(ctx, scoreText, x + width / 2, y + 70, 92, 20, 900, 'center');
-      drawPosterResultName(ctx, player2, x + width - 26, nameY, 330, p2Winner, colors, 'right');
+      drawFitText(ctx, scoreText, x + width / 2, centerY + 7, scoreW - 26, scoreFont, 900, 'center');
+      drawPosterResultName(ctx, player2, x + width - 30, centerY + 8, 350, p2Winner, colors, 'right', nameSize);
     }
 
-    function drawPosterResultName(ctx, name, x, y, maxWidth, isWinner, colors, align) {
+    function drawPosterResultName(ctx, name, x, y, maxWidth, isWinner, colors, align, size) {
+      const fontSize = size || 24;
       if (isWinner) {
-        const bubbleWidth = Math.min(maxWidth, Math.max(160, ctx.measureText(shortName(name, 26)).width + 32));
+        ctx.font = '900 ' + fontSize + 'px Arial';
+        const bubbleWidth = Math.min(maxWidth, Math.max(190, ctx.measureText(shortName(name, 30)).width + 38));
         const bubbleX = align === 'right' ? x - bubbleWidth : x;
         ctx.fillStyle = colors.winner;
-        roundRect(ctx, bubbleX, y - 28, bubbleWidth, 36, 18);
+        roundRect(ctx, bubbleX, y - fontSize - 13, bubbleWidth, fontSize + 24, 18);
         ctx.fill();
       }
       ctx.fillStyle = colors.text;
-      drawFitText(ctx, shortName(name, 26), x, y, maxWidth, isWinner ? 24 : 23, 900, align);
+      drawFitText(ctx, shortName(name, 30), x, y, maxWidth, isWinner ? fontSize : fontSize - 1, 900, align);
     }
 
     function drawInstagramBracket(ctx, canvas, matches, category, background) {
