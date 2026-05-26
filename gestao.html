@@ -1223,13 +1223,16 @@
             <option value="21:00"></option>
           </datalist>
         </div>
+        <div class="field full">
+          <label>Link das fotos</label>
+          <input id="editorPhotoLink" type="url" placeholder="https://..." />
+        </div>
         <div hidden>
           <select id="editorWinner"></select>
           <select id="editorStatus">
             <option value="PENDENTE">Pendente</option>
             <option value="FINALIZADO">Finalizado</option>
           </select>
-          <textarea id="editorNotes"></textarea>
         </div>
       </div>
       <div class="actions">
@@ -2004,7 +2007,7 @@
       $('editorTime').value = match.hora || '';
       $('editorCourt').innerHTML = courtOptions(match.quadra);
       $('editorStatus').value = match.status || 'PENDENTE';
-      $('editorNotes').value = match.observacoes || '';
+      $('editorPhotoLink').value = match.observacoes || '';
       updateEditorWinnerOptions(match.vencedor_id);
       syncWinnerFromEditor(false);
       $('matchEditorBackdrop').classList.add('open');
@@ -2051,7 +2054,7 @@
         hora: normalizeAgendaTime($('editorTime').value),
         quadra: $('editorCourt').value,
         status: status,
-        observacoes: $('editorNotes').value.trim()
+        observacoes: $('editorPhotoLink').value.trim()
       });
     }
 
