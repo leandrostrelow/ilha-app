@@ -1030,7 +1030,7 @@
         </div>
         <div class="card span-4">
           <h2>Publicacao</h2>
-          <p class="muted">Na aba Chaves, use "Imagem Instagram" para baixar um card 1080x1350 da categoria atual.</p>
+          <p class="muted">Na aba Chaves, use "Imagem Instagram" para baixar a arte da categoria atual em alta qualidade.</p>
         </div>
       </div>
     </section>
@@ -2879,10 +2879,13 @@
         return;
       }
       const canvas = document.createElement('canvas');
-      canvas.width = 1080;
-      canvas.height = 1920;
+      const exportScale = 2;
+      const poster = { width: 1080, height: 1920 };
+      canvas.width = poster.width * exportScale;
+      canvas.height = poster.height * exportScale;
       const ctx = canvas.getContext('2d');
-      drawInstagramBracket(ctx, canvas, matches, category, background);
+      ctx.scale(exportScale, exportScale);
+      drawInstagramBracket(ctx, poster, matches, category, background);
 
       const fileName = 'chave-' + (state.selectedCategory || 'torneio') + '.png';
       let imageUrl;
@@ -3044,10 +3047,11 @@
         drawFitText(ctx, 'CHAVE OFICIAL', canvas.width / 2, 197, 250, 16, 900);
       }
 
-      const positions = instagramColumnPositions(layout);
-      const areaTop = hasBackground ? 628 : 288;
-      const areaBottom = hasBackground ? 1094 : 955;
-      const cardHeight = hasBackground ? 82 : 72;
+      const profile = instagramLayoutProfile(layout, hasBackground);
+      const positions = instagramColumnPositions(layout, profile);
+      const areaTop = profile.areaTop;
+      const areaBottom = profile.areaBottom;
+      const cardHeight = profile.cardHeight;
       const rowToY = function (row) {
         const rows = Math.max(2, Number(layout.rows || 2));
         return areaTop + ((Math.max(1, Number(row || 1)) - 1) / (rows - 1)) * (areaBottom - areaTop - cardHeight);
@@ -3059,7 +3063,7 @@
       layout.left.forEach(function (col, index) {
         const pos = positions.left[index];
         if (!pos) return;
-        drawCanvasRoundLabel(ctx, col.label, pos.x, Math.max(232, rowToY(col.matches[0] && col.matches[0].row) - 42), pos.w, colors, 'left');
+        drawCanvasRoundLabel(ctx, col.label, pos.x, Math.max(profile.labelMinY, rowToY(col.matches[0] && col.matches[0].row) - profile.labelOffset), pos.w, colors, 'left');
         col.matches.forEach(function (item) {
           drawCanvasMatch(ctx, item.match, pos.x, rowToY(item.row), pos.w, cardHeight, 'left', colors);
         });
@@ -3068,20 +3072,18 @@
       layout.right.forEach(function (col, index) {
         const pos = positions.right[index];
         if (!pos) return;
-        drawCanvasRoundLabel(ctx, col.label, pos.x, Math.max(232, rowToY(col.matches[0] && col.matches[0].row) - 42), pos.w, colors, 'right');
+        drawCanvasRoundLabel(ctx, col.label, pos.x, Math.max(profile.labelMinY, rowToY(col.matches[0] && col.matches[0].row) - profile.labelOffset), pos.w, colors, 'right');
         col.matches.forEach(function (item) {
           drawCanvasMatch(ctx, item.match, pos.x, rowToY(item.row), pos.w, cardHeight, 'right', colors);
         });
       });
 
       if (layout.final) {
-        const finalW = hasBackground ? 330 : 250;
+        const finalW = profile.finalW;
         const finalX = (canvas.width - finalW) / 2;
-        const finalLabelY = hasBackground ? 976 : 1015;
-        const finalY = hasBackground ? 1018 : 1058;
-        drawFinalConnectors(ctx, layout, positions, finalX, finalY, finalW, hasBackground ? 78 : 76, rowToY, cardHeight, colors);
-        drawCanvasRoundLabel(ctx, 'Final', finalX, finalLabelY, finalW, colors, 'center');
-        drawCanvasMatch(ctx, layout.final, finalX, finalY, finalW, hasBackground ? 78 : 76, 'center', colors);
+        drawFinalConnectors(ctx, layout, positions, finalX, profile.finalY, finalW, profile.finalH, rowToY, cardHeight, colors);
+        drawCanvasRoundLabel(ctx, 'Final', finalX, profile.finalLabelY, finalW, colors, 'center');
+        drawCanvasMatch(ctx, layout.final, finalX, profile.finalY, finalW, profile.finalH, 'center', colors);
       }
 
       if (!hasBackground) {
@@ -3117,9 +3119,78 @@
         .toUpperCase();
     }
 
-    function instagramColumnPositions(layout) {
+    function instagramLayoutProfile(layout, hasBackground) {
+      const rows = Number(layout.rows || 0);
+      if (!hasBackground) {
+        return {
+          areaTop: 288,
+          areaBottom: 955,
+          cardHeight: 72,
+          finalW: 250,
+          finalH: 76,
+          finalLabelY: 1015,
+          finalY: 1058,
+          labelMinY: 232,
+          labelOffset: 42
+        };
+      }
+
+      if (rows <= 4) {
+        return {
+          areaTop: 610,
+          areaBottom: 1048,
+          cardHeight: 94,
+          finalW: 390,
+          finalH: 94,
+          finalLabelY: 970,
+          finalY: 1012,
+          labelMinY: 520,
+          labelOffset: 42,
+          kind: 'draw8',
+          leftPositions: [
+            { x: 44, w: 396 },
+            { x: 292, w: 312 }
+          ],
+          rightPositions: [
+            { x: 476, w: 312 },
+            { x: 640, w: 396 }
+          ]
+        };
+      }
+
+      return {
+        areaTop: 590,
+        areaBottom: 1106,
+        cardHeight: 78,
+        finalW: 270,
+        finalH: 80,
+        finalLabelY: 900,
+        finalY: 942,
+        labelMinY: 520,
+        labelOffset: 40,
+        kind: 'draw16',
+        leftPositions: [
+          { x: 24, w: 218 },
+          { x: 252, w: 190 },
+          { x: 360, w: 168 }
+        ],
+        rightPositions: [
+          { x: 552, w: 168 },
+          { x: 638, w: 190 },
+          { x: 838, w: 218 }
+        ]
+      };
+    }
+
+    function instagramColumnPositions(layout, profile) {
       const leftCount = layout.left.length;
       const rightCount = layout.right.length;
+      if (profile && profile.leftPositions && profile.rightPositions) {
+        return {
+          left: profile.leftPositions.slice(0, leftCount),
+          right: profile.rightPositions.slice(0, rightCount)
+        };
+      }
       if (Math.max(leftCount, rightCount) >= 3) {
         return {
           left: [
@@ -3305,18 +3376,19 @@
     }
 
     function drawCanvasPlayer(ctx, name, score, x, y, width, side, isWinner, colors) {
-      const pad = 16;
-      const scoreWidth = score ? Math.min(54, Math.max(30, ctx.measureText(score).width + 10)) : 0;
+      const pad = width > 300 ? 20 : 16;
+      const scoreWidth = score ? Math.min(width > 300 ? 76 : 58, Math.max(34, ctx.measureText(score).width + 12)) : 0;
       ctx.fillStyle = colors.text;
       ctx.textAlign = side === 'right' ? 'right' : 'left';
       const textX = side === 'right' ? x + width - pad - scoreWidth : x + pad;
       const maxNameWidth = Math.max(56, width - (pad * 2) - scoreWidth);
-      drawFitText(ctx, shortName(name, width > 200 ? 25 : (width > 170 ? 21 : 18)), textX, y, maxNameWidth, isWinner ? 20 : 19, 900, side === 'right' ? 'right' : 'left');
+      const nameSize = width > 340 ? 24 : (width > 250 ? 22 : (width > 185 ? 20 : 18));
+      drawFitText(ctx, shortName(name, width > 340 ? 30 : (width > 250 ? 25 : (width > 185 ? 21 : 18))), textX, y, maxNameWidth, isWinner ? nameSize + 1 : nameSize, 900, side === 'right' ? 'right' : 'left');
       if (score) {
         ctx.fillStyle = colors.dark;
         ctx.textAlign = side === 'right' ? 'left' : 'right';
         const scoreX = side === 'right' ? x + pad : x + width - pad;
-        drawFitText(ctx, score, scoreX, y, scoreWidth + 8, 15, 900, side === 'right' ? 'left' : 'right');
+        drawFitText(ctx, score, scoreX, y, scoreWidth + 8, width > 300 ? 18 : 16, 900, side === 'right' ? 'left' : 'right');
       }
     }
 
@@ -3341,7 +3413,14 @@
 
     function shortName(name, limit) {
       const max = limit || 18;
-      const value = String(name || '');
+      const value = String(name || '').replace(/\s+/g, ' ').trim();
+      if (value.length > max) {
+        const parts = value.split(' ').filter(Boolean);
+        if (parts.length > 1) {
+          const compact = parts[0] + ' ' + parts[parts.length - 1];
+          if (compact.length <= max + 3) return compact.length > max ? compact.slice(0, max - 1) + '.' : compact;
+        }
+      }
       return value.length > max ? value.slice(0, Math.max(1, max - 1)) + '.' : value;
     }
 
