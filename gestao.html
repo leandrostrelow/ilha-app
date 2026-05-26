@@ -768,6 +768,13 @@
       font-weight: 900;
     }
 
+    .agenda-day-main {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+    }
+
     .agenda-day-count {
       min-width: 24px;
       height: 24px;
@@ -777,6 +784,25 @@
       background: var(--lime);
       color: var(--text);
       font-size: 11px;
+    }
+
+    .agenda-art-btn {
+      border: 0;
+      min-height: 24px;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: #ffffff;
+      color: var(--dark);
+      font-size: 10px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, .12);
+    }
+
+    .agenda-art-btn:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      box-shadow: none;
     }
 
     .agenda-day-games {
@@ -2534,8 +2560,12 @@
             (courtMatches.map(renderAgendaMatchCard).join('') || '<div class="agenda-court-empty">Sem jogos</div>') +
             '</div>';
         }).join('') + '</div>' : '<div class="empty">Sem jogos</div>';
+        const artMatches = dayMatches.filter(function (j) {
+          return String(j.status || '').toUpperCase() !== 'FINALIZADO';
+        });
         return '<div class="agenda-day-column">' +
-          '<div class="agenda-day-head"><span>' + escapeHtml(displayAgendaDay(day)) + '</span><span class="agenda-day-count">' + dayMatches.length + '</span></div>' +
+          '<div class="agenda-day-head"><span class="agenda-day-main"><span>' + escapeHtml(displayAgendaDay(day)) + '</span><span class="agenda-day-count">' + dayMatches.length + '</span></span>' +
+          '<button type="button" class="agenda-art-btn" data-agenda-art-day="' + escapeHtml(day) + '"' + (artMatches.length ? '' : ' disabled') + '>Arte</button></div>' +
           '<div class="agenda-day-games">' + gamesHtml + '</div></div>';
       }).join('');
       $('agendaList').innerHTML = html || '<div class="empty">Nenhum jogo agendado ainda.</div>';
@@ -2550,6 +2580,19 @@
         if (names.indexOf(court) === -1) names.push(court);
       });
       return names;
+    }
+
+    function agendaPosterMatches(day) {
+      const courtFilter = $('agendaCourtFilter').value;
+      const categoryFilter = $('agendaCategoryFilter').value;
+      return (state.data.jogos || []).filter(function (j) {
+        if (!(j.data || j.hora || j.quadra)) return false;
+        if (String(j.data || '') !== String(day || '')) return false;
+        if (String(j.status || '').toUpperCase() === 'FINALIZADO') return false;
+        if (courtFilter && String(j.quadra || '') !== String(courtFilter)) return false;
+        if (categoryFilter && String(j.categoria_id || '') !== String(categoryFilter)) return false;
+        return true;
+      }).sort(sortAgenda);
     }
 
     function renderAgendaMatchCard(j) {
@@ -3186,6 +3229,45 @@
       link.click();
     }
 
+    async function downloadAgendaDayImage(day) {
+      if (!state.data) return;
+      const matches = agendaPosterMatches(day);
+      if (!matches.length) {
+        toast('Esse dia nao tem jogos abertos na agenda.');
+        return;
+      }
+
+      const background = await loadInstagramBackground();
+      if (!background) {
+        toast('Fundo nao carregou. Abra pelo link 127.0.0.1 ou atualize com Ctrl+F5.');
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      const exportScale = 2;
+      const poster = { width: 1080, height: 1920 };
+      canvas.width = poster.width * exportScale;
+      canvas.height = poster.height * exportScale;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(exportScale, exportScale);
+      drawAgendaPoster(ctx, poster, matches.slice(0, 10), day, background);
+
+      const fileName = 'agenda-' + normalizeSearch(day || 'jogos').replace(/\s+/g, '-') + '.png';
+      let imageUrl;
+      try {
+        imageUrl = canvas.toDataURL('image/png');
+      } catch (error) {
+        toast('Nao foi possivel exportar. Abra pelo servidor local ou suba o fundo junto com o HTML.');
+        return;
+      }
+      showInstagramPreview(imageUrl, fileName);
+      const link = document.createElement('a');
+      link.download = fileName;
+      link.href = imageUrl;
+      link.click();
+      if (matches.length > 10) toast('Arte gerada com os 10 primeiros jogos do dia.');
+    }
+
     function showInstagramPreview(imageUrl, fileName) {
       let backdrop = document.getElementById('instagramPreviewBackdrop');
       if (!backdrop) {
@@ -3304,21 +3386,9 @@
       ctx.fillStyle = colors.dark;
       drawFitText(ctx, 'PLACARES CONFIRMADOS', canvas.width / 2, 491, 305, 17, 900);
 
-      const count = Math.max(selectedMatches.length, 1);
-      const zoneTop = 570;
-      const zoneBottom = 1160;
-      const gap = count <= 2 ? 34 : (count <= 4 ? 22 : 14);
-      const available = zoneBottom - zoneTop;
-      const fittedHeight = (available - gap * (count - 1)) / count;
-      const cardHeight = Math.round(Math.min(count <= 2 ? 168 : 138, Math.max(94, fittedHeight)));
-      const totalHeight = cardHeight * count + gap * (count - 1);
-      const top = Math.round(zoneTop + (available - totalHeight) / 2);
-
-      ctx.save();
-      ctx.fillStyle = 'rgba(255, 255, 255, .58)';
-      roundRect(ctx, 44, top - 24, 992, totalHeight + 48, 28);
-      ctx.fill();
-      ctx.restore();
+      const top = 590;
+      const gap = 14;
+      const cardHeight = 82;
 
       selectedMatches.forEach(function (match, index) {
         drawResultsPosterCard(ctx, match, 68, top + index * (cardHeight + gap), 944, cardHeight, colors);
@@ -3328,11 +3398,10 @@
     function drawResultsPosterCard(ctx, match, x, y, width, height, colors) {
       const isBye = isByeResult(match);
       const radius = 20;
-      const compact = height < 112;
-      const nameSize = compact ? 22 : (height > 145 ? 31 : 27);
-      const scoreFont = compact ? 19 : (height > 145 ? 25 : 22);
-      const scoreW = compact ? 118 : 142;
-      const scoreH = compact ? 38 : 48;
+      const nameSize = 23;
+      const scoreFont = 21;
+      const scoreW = 128;
+      const scoreH = 42;
       const centerY = y + Math.round(height * .62);
       ctx.save();
       ctx.shadowColor = 'rgba(0, 45, 98, .18)';
@@ -3368,7 +3437,7 @@
       const meta = getCategoryName(match.categoria_id) + ' | ' + (roundLabels[match.fase] || match.fase || 'Jogo');
       ctx.fillStyle = colors.muted;
       ctx.textAlign = 'left';
-      drawFitText(ctx, meta.toUpperCase(), x + 30, y + (compact ? 23 : 30), width - 60, compact ? 13 : 15, 900, 'left');
+      drawFitText(ctx, meta.toUpperCase(), x + 30, y + 25, width - 60, 13, 900, 'left');
 
       if (isBye) {
         const winner = getPlayerName(match.vencedor_id || firstRoundByeWinner(match)) || match.vencedor_nome || 'Atleta';
@@ -3400,16 +3469,117 @@
 
     function drawPosterResultName(ctx, name, x, y, maxWidth, isWinner, colors, align, size) {
       const fontSize = size || 24;
-      if (isWinner) {
-        ctx.font = '900 ' + fontSize + 'px Arial';
-        const bubbleWidth = Math.min(maxWidth, Math.max(190, ctx.measureText(shortName(name, 30)).width + 38));
-        const bubbleX = align === 'right' ? x - bubbleWidth : x;
-        ctx.fillStyle = colors.winner;
-        roundRect(ctx, bubbleX, y - fontSize - 13, bubbleWidth, fontSize + 24, 18);
-        ctx.fill();
-      }
-      ctx.fillStyle = colors.text;
+      ctx.fillStyle = isWinner ? colors.dark : colors.text;
       drawFitText(ctx, shortName(name, 30), x, y, maxWidth, isWinner ? fontSize : fontSize - 1, 900, align);
+    }
+
+    function drawAgendaPoster(ctx, canvas, matches, day, background) {
+      const colors = {
+        dark: '#003f86',
+        dark2: '#005bbb',
+        lime: '#b5e500',
+        white: '#ffffff',
+        soft: '#eaf3ff',
+        line: '#b7d2f5',
+        text: '#08264a',
+        muted: '#315a87'
+      };
+
+      drawCoverImage(ctx, background, 0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 45, 98, .24)';
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 10;
+      ctx.fillStyle = colors.dark;
+      roundRect(ctx, 210, 382, 660, 68, 34);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.fillStyle = colors.white;
+      ctx.textAlign = 'center';
+      drawFitText(ctx, 'JOGOS DE ' + posterDayName(day), canvas.width / 2, 427, 580, 38, 900);
+
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = colors.dark2;
+      ctx.lineWidth = 2;
+      roundRect(ctx, 365, 466, 350, 38, 19);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = colors.dark;
+      drawFitText(ctx, 'PROGRAMA\u00c7\u00c3O OFICIAL', canvas.width / 2, 491, 305, 17, 900);
+
+      const selectedMatches = matches.slice(0, 10);
+      const count = Math.max(selectedMatches.length, 1);
+      const top = 590;
+      const gap = count > 8 ? 7 : (count > 6 ? 10 : 14);
+      const cardHeight = count > 8 ? 54 : (count > 6 ? 62 : 78);
+
+      selectedMatches.forEach(function (match, index) {
+        drawAgendaPosterCard(ctx, match, 68, top + index * (cardHeight + gap), 944, cardHeight, colors);
+      });
+    }
+
+    function drawAgendaPosterCard(ctx, match, x, y, width, height, colors) {
+      const compact = height < 64;
+      const radius = compact ? 15 : 18;
+      const player1 = getPlayerName(match.jogador1_id) || 'A definir';
+      const player2 = getPlayerName(match.jogador2_id) || 'A definir';
+      const category = shortCategoryName(getCategoryName(match.categoria_id));
+      const court = match.quadra || 'Sem quadra';
+      const time = posterTime(match.hora);
+      const nameSize = compact ? 17 : 22;
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 45, 98, .14)';
+      ctx.shadowBlur = 13;
+      ctx.shadowOffsetY = 7;
+      ctx.fillStyle = colors.white;
+      roundRect(ctx, x, y, width, height, radius);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      roundRect(ctx, x, y, width, height, radius);
+      ctx.clip();
+      ctx.fillStyle = colors.soft;
+      ctx.fillRect(x, y + height / 2, width, height / 2);
+      ctx.restore();
+
+      ctx.fillStyle = colors.dark;
+      roundRect(ctx, x + 20, y + (compact ? 10 : 14), compact ? 92 : 112, compact ? 34 : 42, 21);
+      ctx.fill();
+      ctx.fillStyle = colors.white;
+      drawFitText(ctx, time, x + 20 + (compact ? 46 : 56), y + (compact ? 33 : 43), compact ? 72 : 90, compact ? 15 : 18, 900, 'center');
+
+      ctx.fillStyle = colors.text;
+      ctx.textAlign = 'left';
+      const namesText = shortName(player1, compact ? 22 : 28) + '  x  ' + shortName(player2, compact ? 22 : 28);
+      drawFitText(ctx, namesText, x + (compact ? 135 : 160), y + (compact ? 30 : 39), width - (compact ? 170 : 205), nameSize, 900, 'left');
+
+      ctx.fillStyle = colors.muted;
+      const meta = category + ' | ' + court;
+      drawFitText(ctx, meta, x + (compact ? 135 : 160), y + (compact ? 49 : 63), width - (compact ? 170 : 205), compact ? 12 : 15, 900, 'left');
+    }
+
+    function posterDayName(day) {
+      const map = {
+        Segunda: 'SEGUNDA',
+        Terca: 'TER\u00c7A',
+        Quarta: 'QUARTA',
+        Quinta: 'QUINTA',
+        Sexta: 'SEXTA',
+        Sabado: 'S\u00c1BADO',
+        Domingo: 'DOMINGO'
+      };
+      return map[day] || String(day || 'HOJE').toUpperCase();
+    }
+
+    function posterTime(value) {
+      const time = formatAgendaTime(value);
+      return normalizeSearch(time).indexOf('apos') === 0 ? 'AP\u00d3S' : time;
     }
 
     function drawInstagramBracket(ctx, canvas, matches, category, background) {
@@ -3887,6 +4057,7 @@
 
     window.downloadInstagramImage = downloadInstagramImage;
     window.downloadResultsImage = downloadResultsImage;
+    window.downloadAgendaDayImage = downloadAgendaDayImage;
     window.clearResultSelection = clearResultSelection;
 
     document.querySelectorAll('.tab-btn').forEach(function (btn) {
@@ -3917,6 +4088,12 @@
       const editPlayerBtn = event.target.closest('[data-edit-player]');
       if (editPlayerBtn) {
         editPlayer(editPlayerBtn.dataset.editPlayer);
+        return;
+      }
+
+      const agendaArtBtn = event.target.closest('[data-agenda-art-day]');
+      if (agendaArtBtn) {
+        downloadAgendaDayImage(agendaArtBtn.dataset.agendaArtDay);
         return;
       }
 
