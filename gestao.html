@@ -82,7 +82,7 @@
 
     .tabs {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 7px;
     }
 
@@ -920,6 +920,110 @@
       font-weight: 900;
     }
 
+    .results-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .result-selection-status {
+      width: fit-content;
+      margin-bottom: 10px;
+      border-radius: 999px;
+      padding: 7px 10px;
+      background: #eaf1f3;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .result-card {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--dark);
+      border-radius: 13px;
+      background: #fff;
+      box-shadow: 0 8px 18px rgba(16, 39, 44, .06);
+    }
+
+    .result-card.selected {
+      border-left-color: var(--lime);
+      background: #fbfff0;
+      box-shadow: 0 10px 24px rgba(181, 229, 0, .16);
+    }
+
+    .result-card input[type="checkbox"] {
+      width: 24px;
+      min-height: 24px;
+      accent-color: var(--lime);
+    }
+
+    .result-line {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .result-player {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 25px;
+      border-radius: 999px;
+      padding: 3px 7px;
+      min-width: 0;
+      text-align: center;
+    }
+
+    .result-player span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .result-player.winner {
+      background: #efffd0;
+      color: #163b00;
+    }
+
+    .result-score {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 56px;
+      min-height: 30px;
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: var(--dark);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .result-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .result-meta strong {
+      color: var(--dark);
+    }
+
     .empty {
       min-height: 84px;
       display: grid;
@@ -986,6 +1090,9 @@
       .editor-whatsapp-btn .wa-icon { width: 13px; height: 13px; }
       .agenda-list { grid-template-columns: 1fr; }
       .player-filters, .agenda-filters, .match-agenda-grid { grid-template-columns: 1fr; }
+      .result-card { grid-template-columns: 28px minmax(0, 1fr); padding: 9px; }
+      .result-line { grid-template-columns: 1fr; justify-items: stretch; text-align: center; }
+      .result-score { justify-self: center; }
     }
   </style>
 </head>
@@ -1003,6 +1110,7 @@
         <button class="tab-btn active" data-tab="brackets">Chaves</button>
         <button class="tab-btn" data-tab="players">Jogadores</button>
         <button class="tab-btn" data-tab="schedule">Agenda</button>
+        <button class="tab-btn" data-tab="results">Resultados</button>
         <button class="tab-btn" data-tab="settings">Torneio</button>
         <button class="tab-btn" data-tab="dashboard">Informacoes</button>
       </div>
@@ -1199,6 +1307,23 @@
       </div>
     </section>
 
+    <section class="section" id="results">
+      <div class="card">
+        <div class="card-title">
+          <div>
+            <h2>Resultados</h2>
+            <div class="muted">Selecione ate 6 jogos finalizados para gerar a arte.</div>
+          </div>
+          <div class="actions" style="margin-top:0">
+            <button class="ghost-btn" onclick="clearResultSelection()">Limpar selecao</button>
+            <button class="primary-btn" onclick="downloadResultsImage()">Arte resultados</button>
+          </div>
+        </div>
+        <div class="result-selection-status" id="resultSelectionStatus">0 selecionados</div>
+        <div class="results-list" id="managementResultsList"></div>
+      </div>
+    </section>
+
     <section class="section" id="settings">
       <div class="grid">
         <div class="card span-6">
@@ -1361,7 +1486,8 @@
       data: null,
       selectedCategory: '',
       saving: false,
-      dirtyMatches: {}
+      dirtyMatches: {},
+      selectedResultMatches: new Set()
     };
 
     const roundLabels = {
@@ -1573,6 +1699,7 @@
       renderCategoryStrip();
       renderBracket();
       renderAgenda();
+      renderResults();
       updateSaveBracketButton();
     }
 
@@ -2437,6 +2564,111 @@
         '</button>';
     }
 
+    function renderResults() {
+      if (!state.data) return;
+      const done = resultMatches();
+      const validIds = new Set(done.map(function (match) { return String(match.jogo_id); }));
+      Array.from(state.selectedResultMatches).forEach(function (id) {
+        if (!validIds.has(String(id))) state.selectedResultMatches.delete(id);
+      });
+      updateResultSelectionStatus();
+      const list = $('managementResultsList');
+      if (!list) return;
+      list.innerHTML = done.map(renderResultSelectionCard).join('') || '<div class="empty">Nenhum resultado finalizado ainda.</div>';
+    }
+
+    function resultMatches() {
+      return (state.data.jogos || []).filter(function (match) {
+        return String(match.status || '').toUpperCase() === 'FINALIZADO' && (match.vencedor_id || firstRoundByeWinner(match));
+      }).sort(sortAgenda);
+    }
+
+    function renderResultSelectionCard(match) {
+      const selected = state.selectedResultMatches.has(String(match.jogo_id));
+      if (isByeResult(match)) {
+        const winner = getPlayerName(match.vencedor_id || firstRoundByeWinner(match)) || match.vencedor_nome || 'Atleta';
+        return '<label class="result-card ' + (selected ? 'selected' : '') + '">' +
+          '<input type="checkbox" data-result-match="' + escapeHtml(match.jogo_id) + '"' + (selected ? ' checked' : '') + ' />' +
+          '<div><div class="result-line"><span class="result-player winner"><span>' + escapeHtml(winner) + '</span></span><span class="result-score">BYE</span><span>avancou</span></div>' +
+          '<div class="result-meta"><span>' + escapeHtml(getCategoryName(match.categoria_id)) + '</span><span>|</span><span>' + escapeHtml(roundLabels[match.fase] || match.fase || 'Jogo') + '</span></div></div>' +
+          '</label>';
+      }
+
+      const setScore = resultSetScore(match);
+      const player1 = getPlayerName(match.jogador1_id) || 'A definir';
+      const player2 = getPlayerName(match.jogador2_id) || 'A definir';
+      const winner = getPlayerName(match.vencedor_id) || 'A definir';
+      const p1Winner = match.jogador1_id && String(match.jogador1_id) === String(match.vencedor_id || '');
+      const p2Winner = match.jogador2_id && String(match.jogador2_id) === String(match.vencedor_id || '');
+      return '<label class="result-card ' + (selected ? 'selected' : '') + '">' +
+        '<input type="checkbox" data-result-match="' + escapeHtml(match.jogo_id) + '"' + (selected ? ' checked' : '') + ' />' +
+        '<div>' +
+        '<div class="result-line">' +
+        resultPlayerHtml(player1, p1Winner) +
+        '<span class="result-score">' + escapeHtml(setScore.p1) + ' x ' + escapeHtml(setScore.p2) + '</span>' +
+        resultPlayerHtml(player2, p2Winner) +
+        '</div>' +
+        '<div class="result-meta">Vencedor: <strong>' + escapeHtml(winner) + '</strong><span>|</span><span>' + escapeHtml(getCategoryName(match.categoria_id)) + '</span><span>|</span><span>' + escapeHtml(roundLabels[match.fase] || match.fase || 'Jogo') + '</span></div>' +
+        '</div></label>';
+    }
+
+    function resultPlayerHtml(name, isWinner) {
+      return '<span class="result-player ' + (isWinner ? 'winner' : '') + '"><span>' + escapeHtml(name) + '</span></span>';
+    }
+
+    function resultSetScore(match) {
+      const detailed = parseScoreDetailed(match.placar || '');
+      let p1 = 0;
+      let p2 = 0;
+      const maxSets = Math.max(detailed.sets1.length, detailed.sets2.length);
+      for (let i = 0; i < maxSets; i++) {
+        const a = Number(detailed.sets1[i]);
+        const b = Number(detailed.sets2[i]);
+        if (Number.isNaN(a) || Number.isNaN(b) || a === b) continue;
+        if (a > b) p1++;
+        else p2++;
+      }
+      if (detailed.tb1 || detailed.tb2) {
+        const a = Number(detailed.tb1 || 0);
+        const b = Number(detailed.tb2 || 0);
+        if (a > b) p1++;
+        else if (b > a) p2++;
+      }
+      if (!p1 && !p2 && match.vencedor_id) {
+        if (String(match.vencedor_id) === String(match.jogador1_id || '')) p1 = 1;
+        if (String(match.vencedor_id) === String(match.jogador2_id || '')) p2 = 1;
+      }
+      return { p1: String(p1), p2: String(p2) };
+    }
+
+    function isByeResult(match) {
+      const byeWinner = firstRoundByeWinner(match);
+      return byeWinner && String(match.vencedor_id || byeWinner) === String(byeWinner);
+    }
+
+    function toggleResultSelection(matchId, checked) {
+      const id = String(matchId || '');
+      if (!id) return;
+      if (checked && !state.selectedResultMatches.has(id) && state.selectedResultMatches.size >= 6) {
+        toast('Selecione no maximo 6 resultados para a arte.');
+        renderResults();
+        return;
+      }
+      if (checked) state.selectedResultMatches.add(id);
+      else state.selectedResultMatches.delete(id);
+      renderResults();
+    }
+
+    function clearResultSelection() {
+      state.selectedResultMatches.clear();
+      renderResults();
+    }
+
+    function updateResultSelectionStatus() {
+      const el = $('resultSelectionStatus');
+      if (el) el.textContent = state.selectedResultMatches.size + ' selecionado(s) de 6';
+    }
+
     function displayAgendaDay(value) {
       const map = { Terca: 'Terça', Sabado: 'Sábado' };
       return map[value] || value || 'Sem dia';
@@ -2902,6 +3134,58 @@
       link.click();
     }
 
+    async function downloadResultsImage() {
+      if (!state.data) return;
+      const selectedIds = Array.from(state.selectedResultMatches);
+      if (!selectedIds.length) {
+        toast('Selecione os resultados que vao entrar na arte.');
+        return;
+      }
+      if (selectedIds.length > 6) {
+        toast('Selecione no maximo 6 resultados.');
+        return;
+      }
+
+      const allResults = resultMatches();
+      const selectedSet = new Set(selectedIds.map(String));
+      const matches = allResults.filter(function (match) {
+        return selectedSet.has(String(match.jogo_id));
+      });
+      if (!matches.length) {
+        toast('Nenhum resultado selecionado encontrado.');
+        return;
+      }
+
+      const background = await loadInstagramBackground();
+      if (!background) {
+        toast('Fundo nao carregou. Abra pelo link 127.0.0.1 ou atualize com Ctrl+F5.');
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      const exportScale = 2;
+      const poster = { width: 1080, height: 1920 };
+      canvas.width = poster.width * exportScale;
+      canvas.height = poster.height * exportScale;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(exportScale, exportScale);
+      drawResultsPoster(ctx, poster, matches, background);
+
+      const fileName = 'resultados-' + (state.selectedCategory || 'torneio') + '.png';
+      let imageUrl;
+      try {
+        imageUrl = canvas.toDataURL('image/png');
+      } catch (error) {
+        toast('Nao foi possivel exportar. Abra pelo servidor local ou suba o fundo junto com o HTML.');
+        return;
+      }
+      showInstagramPreview(imageUrl, fileName);
+      const link = document.createElement('a');
+      link.download = fileName;
+      link.href = imageUrl;
+      link.click();
+    }
+
     function showInstagramPreview(imageUrl, fileName) {
       let backdrop = document.getElementById('instagramPreviewBackdrop');
       if (!backdrop) {
@@ -2978,6 +3262,130 @@
         image.onerror = function () { resolve(null); };
         image.src = src + '?v=' + Date.now();
       });
+    }
+
+    function drawResultsPoster(ctx, canvas, matches, background) {
+      const colors = {
+        dark: '#003f86',
+        dark2: '#005bbb',
+        lime: '#b5e500',
+        white: '#ffffff',
+        soft: '#eaf3ff',
+        line: '#b7d2f5',
+        text: '#08264a',
+        muted: '#315a87',
+        winner: '#eaffbd'
+      };
+
+      drawCoverImage(ctx, background, 0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 45, 98, .24)';
+      ctx.shadowBlur = 14;
+      ctx.shadowOffsetY = 8;
+      ctx.fillStyle = colors.dark;
+      roundRect(ctx, 285, 382, 510, 58, 29);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.fillStyle = colors.white;
+      ctx.textAlign = 'center';
+      drawFitText(ctx, 'RESULTADOS', canvas.width / 2, 420, 430, 32, 900);
+
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = colors.dark2;
+      ctx.lineWidth = 2;
+      roundRect(ctx, 385, 458, 310, 34, 17);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = colors.dark;
+      drawFitText(ctx, 'PLACARES CONFIRMADOS', canvas.width / 2, 481, 270, 15, 900);
+
+      const top = matches.length <= 4 ? 590 : 548;
+      const gap = matches.length <= 4 ? 24 : 14;
+      const cardHeight = matches.length <= 4 ? 104 : 88;
+      matches.slice(0, 6).forEach(function (match, index) {
+        drawResultsPosterCard(ctx, match, 80, top + index * (cardHeight + gap), 920, cardHeight, colors);
+      });
+    }
+
+    function drawResultsPosterCard(ctx, match, x, y, width, height, colors) {
+      const isBye = isByeResult(match);
+      const radius = 18;
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 45, 98, .16)';
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetY = 8;
+      ctx.fillStyle = colors.white;
+      roundRect(ctx, x, y, width, height, radius);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      roundRect(ctx, x, y, width, height, radius);
+      ctx.clip();
+      ctx.fillStyle = colors.soft;
+      ctx.fillRect(x, y + height / 2, width, height / 2);
+      ctx.strokeStyle = colors.line;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(x, y + height / 2);
+      ctx.lineTo(x + width, y + height / 2);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = isBye ? colors.lime : colors.dark2;
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      ctx.moveTo(x + 4, y + 16);
+      ctx.lineTo(x + 4, y + height - 16);
+      ctx.stroke();
+      ctx.restore();
+
+      const meta = getCategoryName(match.categoria_id) + ' | ' + (roundLabels[match.fase] || match.fase || 'Jogo');
+      ctx.fillStyle = colors.muted;
+      ctx.textAlign = 'left';
+      drawFitText(ctx, meta.toUpperCase(), x + 26, y + 24, width - 52, 13, 900, 'left');
+
+      if (isBye) {
+        const winner = getPlayerName(match.vencedor_id || firstRoundByeWinner(match)) || match.vencedor_nome || 'Atleta';
+        ctx.fillStyle = colors.text;
+        drawFitText(ctx, shortName(winner, 30), x + 26, y + 64, width - 220, 25, 900, 'left');
+        ctx.fillStyle = colors.dark;
+        drawFitText(ctx, 'AVANÇOU DE BYE', x + width - 28, y + 64, 220, 20, 900, 'right');
+        return;
+      }
+
+      const player1 = getPlayerName(match.jogador1_id) || 'A definir';
+      const player2 = getPlayerName(match.jogador2_id) || 'A definir';
+      const p1Winner = match.jogador1_id && String(match.jogador1_id) === String(match.vencedor_id || '');
+      const p2Winner = match.jogador2_id && String(match.jogador2_id) === String(match.vencedor_id || '');
+      const setScore = resultSetScore(match);
+      const nameY = y + 67;
+      const scoreText = setScore.p1 + ' x ' + setScore.p2;
+
+      drawPosterResultName(ctx, player1, x + 26, nameY, 330, p1Winner, colors, 'left');
+      ctx.fillStyle = colors.dark;
+      roundRect(ctx, x + width / 2 - 56, y + 44, 112, 38, 19);
+      ctx.fill();
+      ctx.fillStyle = colors.white;
+      drawFitText(ctx, scoreText, x + width / 2, y + 70, 92, 20, 900, 'center');
+      drawPosterResultName(ctx, player2, x + width - 26, nameY, 330, p2Winner, colors, 'right');
+    }
+
+    function drawPosterResultName(ctx, name, x, y, maxWidth, isWinner, colors, align) {
+      if (isWinner) {
+        const bubbleWidth = Math.min(maxWidth, Math.max(160, ctx.measureText(shortName(name, 26)).width + 32));
+        const bubbleX = align === 'right' ? x - bubbleWidth : x;
+        ctx.fillStyle = colors.winner;
+        roundRect(ctx, bubbleX, y - 28, bubbleWidth, 36, 18);
+        ctx.fill();
+      }
+      ctx.fillStyle = colors.text;
+      drawFitText(ctx, shortName(name, 26), x, y, maxWidth, isWinner ? 24 : 23, 900, align);
     }
 
     function drawInstagramBracket(ctx, canvas, matches, category, background) {
@@ -3454,12 +3862,20 @@
     }
 
     window.downloadInstagramImage = downloadInstagramImage;
+    window.downloadResultsImage = downloadResultsImage;
+    window.clearResultSelection = clearResultSelection;
 
     document.querySelectorAll('.tab-btn').forEach(function (btn) {
       btn.addEventListener('click', function () { showTab(btn.dataset.tab); });
     });
     document.querySelectorAll('[data-tab-go]').forEach(function (btn) {
       btn.addEventListener('click', function () { showTab(btn.dataset.tabGo); });
+    });
+    document.addEventListener('change', function (event) {
+      const resultCheckbox = event.target.closest('[data-result-match]');
+      if (resultCheckbox) {
+        toggleResultSelection(resultCheckbox.dataset.resultMatch, resultCheckbox.checked);
+      }
     });
     document.addEventListener('click', function (event) {
       const selectCategoryBtn = event.target.closest('[data-select-category]');
