@@ -6,7 +6,7 @@
   <title>Torneio Ilha</title>
   <style>
     :root {
-      --bg: #e7f0f7;
+      --bg: #ffffff;
       --panel: #ffffff;
       --text: #08283f;
       --muted: #5e7486;
@@ -24,9 +24,7 @@
     body {
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
-      background:
-        linear-gradient(180deg, rgba(0, 63, 134, .08) 0, rgba(0, 63, 134, 0) 260px),
-        var(--bg);
+      background: var(--bg);
       color: var(--text);
     }
 
@@ -73,9 +71,6 @@
     }
 
     .live {
-      position: absolute;
-      top: 0;
-      right: 0;
       display: inline-flex;
       align-items: center;
       gap: 8px;
@@ -87,6 +82,37 @@
       font-size: 12px;
       font-weight: 900;
       white-space: nowrap;
+    }
+
+    .hero-badges {
+      position: absolute;
+      top: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .today-pill {
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: #ffffff;
+      color: var(--dark);
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+      box-shadow: 0 8px 18px rgba(0, 63, 134, .13);
+    }
+
+    .today-pill strong {
+      font-size: 17px;
+      line-height: 1;
     }
 
     .live::before {
@@ -149,7 +175,7 @@
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 9px;
       padding: 10px 0 12px;
-      background: rgba(238, 244, 249, .96);
+      background: rgba(255, 255, 255, .96);
       backdrop-filter: blur(12px);
     }
 
@@ -169,17 +195,6 @@
       background: var(--dark);
       color: #fff;
       box-shadow: 0 8px 18px rgba(0, 63, 134, .18);
-    }
-
-    .nav button.active::after {
-      content: "";
-      position: absolute;
-      left: 22px;
-      right: 22px;
-      bottom: 6px;
-      height: 3px;
-      border-radius: 999px;
-      background: var(--lime);
     }
 
     .section {
@@ -836,8 +851,11 @@
 
     @media (max-width: 760px) {
       .hero { padding-top: 16px; }
-      .live { position: static; }
-      .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .hero-badges {
+        position: static;
+        justify-content: center;
+        margin-top: 2px;
+      }
       .agenda-filters, .athlete-filters { grid-template-columns: 1fr 1fr; }
       .app { padding-left: 10px; padding-right: 10px; }
       .section-head { display: grid; }
@@ -932,17 +950,15 @@
           <h1 id="title">Torneio Ilha</h1>
           <p id="subtitle">Chaves, agenda e resultados atualizados durante o torneio.</p>
         </div>
-        <div class="live" id="updatedAt">Atualizando</div>
+        <div class="hero-badges">
+          <div class="live" id="updatedAt">Atualizando</div>
+          <div class="today-pill"><strong id="metricToday">0</strong><span>jogos hoje</span></div>
+        </div>
       </div>
     </div>
   </header>
 
   <main class="app">
-    <div class="summary">
-      <div class="metric"><strong id="metricPlayers">0</strong><span>atletas</span></div>
-      <div class="metric"><strong id="metricToday">0</strong><span>jogos hoje</span></div>
-    </div>
-
     <div class="nav">
       <button class="active" data-tab="bracketSection">Chaves</button>
       <button data-tab="athletesSection">Atletas</button>
@@ -1139,7 +1155,6 @@
       $('subtitle').textContent = (data.torneio.clube || 'Ilha Tenis') + ' | ' + (data.torneio.cidade || 'Colatina');
       $('updatedAt').textContent = 'Atualizado ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-      $('metricPlayers').textContent = data.jogadores.filter(function (p) { return String(p.status || 'ATIVO') !== 'INATIVO'; }).length;
       $('metricToday').textContent = gamesToday().length;
 
       renderCategories();
@@ -1804,7 +1819,11 @@
 
     function gamesToday() {
       const today = agendaDays[(new Date().getDay() + 6) % 7];
-      return state.data.jogos.filter(function (j) { return String(normalizeAgendaDay(j.data)) === today; });
+      return state.data.jogos.filter(function (j) {
+        return String(normalizeAgendaDay(j.data)) === today &&
+          String(j.status || '').toUpperCase() !== 'FINALIZADO' &&
+          Boolean(j.data || j.hora || j.quadra);
+      });
     }
 
     document.querySelectorAll('.nav button').forEach(function (btn) {
