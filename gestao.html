@@ -3415,8 +3415,6 @@
       ctx.save();
       roundRect(ctx, x, y, width, height, radius);
       ctx.clip();
-      ctx.fillStyle = colors.soft;
-      ctx.fillRect(x, y + height / 2, width, height / 2);
       ctx.strokeStyle = colors.line;
       ctx.lineWidth = 1.2;
       ctx.beginPath();
@@ -3469,7 +3467,15 @@
 
     function drawPosterResultName(ctx, name, x, y, maxWidth, isWinner, colors, align, size) {
       const fontSize = size || 24;
-      ctx.fillStyle = isWinner ? colors.dark : colors.text;
+      if (isWinner) {
+        ctx.font = '900 ' + fontSize + 'px Arial';
+        const bubbleWidth = Math.min(maxWidth, Math.max(190, ctx.measureText(shortName(name, 30)).width + 38));
+        const bubbleX = align === 'right' ? x - bubbleWidth : x;
+        ctx.fillStyle = colors.winner;
+        roundRect(ctx, bubbleX, y - fontSize - 13, bubbleWidth, fontSize + 24, 18);
+        ctx.fill();
+      }
+      ctx.fillStyle = colors.text;
       drawFitText(ctx, shortName(name, 30), x, y, maxWidth, isWinner ? fontSize : fontSize - 1, 900, align);
     }
 
@@ -3544,8 +3550,6 @@
       ctx.save();
       roundRect(ctx, x, y, width, height, radius);
       ctx.clip();
-      ctx.fillStyle = colors.soft;
-      ctx.fillRect(x, y + height / 2, width, height / 2);
       ctx.restore();
 
       ctx.fillStyle = colors.dark;
