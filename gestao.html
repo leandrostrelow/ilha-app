@@ -680,6 +680,31 @@
       min-width: 0;
     }
 
+    .editor-player-cell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 46px;
+      gap: 6px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .editor-whatsapp-btn {
+      min-width: 0;
+      min-height: 42px;
+      border-radius: 11px;
+      background: #16a34a;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+      box-shadow: 0 6px 14px rgba(22, 163, 74, .18);
+    }
+
+    .editor-whatsapp-btn:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
     .match-agenda-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1225,13 +1250,19 @@
               <input id="editorSet1P1" inputmode="numeric" placeholder="-" />
               <input id="editorSet2P1" inputmode="numeric" placeholder="-" />
               <input id="editorTbP1" inputmode="numeric" placeholder="-" />
-              <select id="editorPlayer1"></select>
+              <div class="editor-player-cell">
+                <select id="editorPlayer1"></select>
+                <button class="editor-whatsapp-btn" id="editorWhatsapp1" type="button" onclick="openEditorWhatsapp(1)">WA</button>
+              </div>
             </div>
             <div class="score-set-row">
               <input id="editorSet1P2" inputmode="numeric" placeholder="-" />
               <input id="editorSet2P2" inputmode="numeric" placeholder="-" />
               <input id="editorTbP2" inputmode="numeric" placeholder="-" />
-              <select id="editorPlayer2"></select>
+              <div class="editor-player-cell">
+                <select id="editorPlayer2"></select>
+                <button class="editor-whatsapp-btn" id="editorWhatsapp2" type="button" onclick="openEditorWhatsapp(2)">WA</button>
+              </div>
             </div>
           </div>
         </div>
@@ -2050,6 +2081,7 @@
       $('editorPhotoLink').value = match.observacoes || '';
       updateEditorWinnerOptions(match.vencedor_id);
       syncWinnerFromEditor(false);
+      updateEditorWhatsappButtons();
       $('matchEditorBackdrop').classList.add('open');
     }
 
@@ -2431,6 +2463,70 @@
     function getPlayerName(id) {
       const player = state.data.jogadores.find(function (p) { return String(p.jogador_id) === String(id); });
       return player ? player.nome : '';
+    }
+
+    function getPlayerById(id) {
+      return state.data.jogadores.find(function (p) { return String(p.jogador_id) === String(id); }) || null;
+    }
+
+    function updateEditorWhatsappButtons() {
+      [1, 2].forEach(function (slot) {
+        const id = $('editorPlayer' + slot).value;
+        const player = getPlayerById(id);
+        const btn = $('editorWhatsapp' + slot);
+        const hasWhatsapp = Boolean(player && whatsappNumber(player.whatsapp));
+        btn.disabled = !hasWhatsapp;
+        btn.title = hasWhatsapp ? 'Enviar confirmacao para ' + (player.nome || 'jogador') : 'Jogador sem WhatsApp cadastrado';
+      });
+    }
+
+    function openEditorWhatsapp(slot) {
+      const playerId = $('editorPlayer' + slot).value;
+      const opponentId = $('editorPlayer' + (slot === 1 ? 2 : 1)).value;
+      const player = getPlayerById(playerId);
+      if (!player) {
+        toast('Selecione um jogador primeiro.');
+        return;
+      }
+      const phone = whatsappNumber(player.whatsapp);
+      if (!phone) {
+        toast('Este jogador nao tem WhatsApp cadastrado.');
+        return;
+      }
+
+      const matchId = $('editorMatchId').value;
+      const match = state.data.jogos.find(function (j) { return String(j.jogo_id) === String(matchId); }) || {};
+      const category = getCategoryName(match.categoria_id);
+      const phase = roundLabels[match.fase] || match.fase || 'Jogo';
+      const opponent = getPlayerName(opponentId) || 'adversario a definir';
+      const day = displayAgendaDay($('editorDate').value) || 'a definir';
+      const time = formatAgendaTime($('editorTime').value);
+      const court = $('editorCourt').value || 'quadra a definir';
+      const tournament = (state.data.torneio && state.data.torneio.nome) || 'Torneio Ilha';
+
+      const message = [
+        'Ola, ' + (player.nome || 'atleta') + '!',
+        '',
+        'Confirmando seu jogo no ' + tournament + ':',
+        category + ' - ' + phase + ' | Jogo ' + (match.posicao_chave || ''),
+        'Adversario: ' + opponent,
+        'Dia: ' + day,
+        'Horario: ' + time,
+        'Quadra: ' + court,
+        '',
+        'Por favor, confirme sua presenca.'
+      ].join('\n');
+
+      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
+    }
+
+    function whatsappNumber(value) {
+      let digits = String(value || '').replace(/\D/g, '');
+      if (!digits) return '';
+      if (digits.indexOf('55') === 0) return digits;
+      if (digits.length <= 9) return '5527' + digits;
+      if (digits.length <= 11) return '55' + digits;
+      return digits;
     }
 
     function getCategoryName(id) {
@@ -3225,10 +3321,12 @@
     $('editorPlayer1').addEventListener('change', function () {
       updateEditorWinnerOptions($('editorWinner').value);
       syncWinnerFromEditor(true);
+      updateEditorWhatsappButtons();
     });
     $('editorPlayer2').addEventListener('change', function () {
       updateEditorWinnerOptions($('editorWinner').value);
       syncWinnerFromEditor(true);
+      updateEditorWhatsappButtons();
     });
     [
       'editorSet1P1', 'editorSet2P1', 'editorTbP1',
