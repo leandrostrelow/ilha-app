@@ -243,27 +243,13 @@
     }
 
     .pill-btn.has-draw {
-      border-color: var(--dark);
-      box-shadow: inset 0 -3px 0 var(--dark);
-    }
-
-    .pill-btn.has-draw::after {
-      content: 'CHAVE';
-      display: inline-block;
-      margin-left: 5px;
-      padding: 2px 5px;
-      border-radius: 999px;
-      background: var(--dark);
-      color: #fff;
-      font-size: 8px;
-      font-weight: 900;
-      line-height: 1;
-      vertical-align: middle;
+      border-color: var(--lime);
+      box-shadow: inset 0 -4px 0 var(--lime);
     }
 
     .pill-btn.active.has-draw {
       border-color: var(--lime);
-      box-shadow: inset 0 -3px 0 var(--dark), 0 0 0 2px rgba(181, 229, 0, .24);
+      box-shadow: inset 0 -4px 0 var(--dark), 0 0 0 2px rgba(181, 229, 0, .24);
     }
 
     .list {
@@ -362,14 +348,16 @@
     }
 
     .category-strip {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(102px, 1fr));
+      display: flex;
       gap: 7px;
       margin-bottom: 10px;
-      overflow: visible;
+      overflow-x: auto;
+      padding-bottom: 4px;
     }
 
     .category-strip .pill-btn {
+      flex: 0 0 auto;
+      min-width: 132px;
       min-height: 34px;
       padding: 7px 8px;
       border-radius: 999px;
@@ -384,16 +372,16 @@
     }
 
     .bracket {
-      min-width: min(1120px, calc(var(--draw-cols, 7) * 150px));
+      min-width: min(1360px, calc(var(--draw-cols, 7) * 172px));
     }
 
     .draw-board {
       display: grid;
       grid-template-columns:
-        repeat(var(--left-cols, 3), minmax(136px, 1fr))
-        minmax(136px, 1fr)
-        repeat(var(--right-cols, 3), minmax(136px, 1fr));
-      gap: 7px;
+        repeat(var(--left-cols, 3), minmax(158px, 1fr))
+        minmax(150px, .95fr)
+        repeat(var(--right-cols, 3), minmax(158px, 1fr));
+      gap: 10px;
       align-items: start;
       min-height: var(--draw-height, 360px);
       padding: 0;
@@ -410,7 +398,7 @@
       left: 0;
       right: 0;
       z-index: 2;
-      height: 24px;
+      height: 26px;
       display: grid;
       place-items: center;
       border-radius: 999px;
@@ -441,7 +429,7 @@
       left: 0;
       right: 0;
       z-index: 2;
-      height: 24px;
+      height: 26px;
       display: grid;
       place-items: center;
       border-radius: 999px;
@@ -526,7 +514,7 @@
       gap: 4px;
       min-height: calc(var(--match-height, 52px) / 2);
       padding: 0 8px;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 900;
       line-height: 1.1;
       border-bottom: 1px solid var(--line);
@@ -598,10 +586,14 @@
 
     .bracket-tools {
       display: grid;
-      grid-template-columns: minmax(160px, 260px) 1fr;
+      grid-template-columns: minmax(150px, 220px) minmax(150px, 240px);
       gap: 8px;
       margin-bottom: 10px;
       align-items: end;
+    }
+
+    .bracket-tools .primary-btn {
+      width: 100%;
     }
 
     #brackets > .card {
@@ -695,7 +687,7 @@
 
     .agenda-list {
       display: grid;
-      grid-template-columns: repeat(7, minmax(158px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 10px;
       align-items: stretch;
       overflow-x: auto;
@@ -703,7 +695,7 @@
     }
 
     .agenda-day-column {
-      min-width: 158px;
+      min-width: 0;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -742,6 +734,45 @@
       display: grid;
       gap: 8px;
       align-content: start;
+    }
+
+    .agenda-court-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      align-items: start;
+    }
+
+    .agenda-court-column {
+      display: grid;
+      gap: 7px;
+      align-content: start;
+      min-width: 0;
+    }
+
+    .agenda-court-title {
+      min-height: 22px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: #eaf1f3;
+      color: var(--dark);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .agenda-court-empty {
+      min-height: 48px;
+      display: grid;
+      place-items: center;
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-align: center;
+      padding: 8px;
     }
 
     .agenda-match-card {
@@ -879,8 +910,8 @@
       .span-3, .span-4, .span-5, .span-6, .span-7, .span-8, .span-12 { grid-column: span 12; }
       .form-grid { grid-template-columns: 1fr; }
       .metric strong { font-size: 24px; }
-      .agenda-list { grid-template-columns: repeat(3, minmax(168px, 1fr)); }
-      .bracket-tools { grid-template-columns: 1fr; }
+      .agenda-list { grid-template-columns: repeat(2, minmax(280px, 1fr)); }
+      .bracket-tools { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
       .category-strip { grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); }
       .player-filters, .agenda-filters, .match-agenda-grid { grid-template-columns: 1fr 1fr; }
     }
@@ -889,13 +920,13 @@
       .topline { display: grid; }
       .status { white-space: normal; }
       .tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .bracket { min-width: calc(var(--draw-cols, 7) * 108px); }
+      .bracket { min-width: calc(var(--draw-cols, 7) * 124px); }
       .draw-board { grid-template-columns:
-        repeat(var(--left-cols, 3), 102px)
-        108px
-        repeat(var(--right-cols, 3), 102px);
+        repeat(var(--left-cols, 3), 118px)
+        124px
+        repeat(var(--right-cols, 3), 118px);
       }
-      .draw-player { font-size: 10px; padding: 6px; }
+      .draw-player { font-size: 11px; padding: 6px; }
       .modal-grid { grid-template-columns: 1fr; }
       .score-set-header,
       .score-set-row { grid-template-columns: repeat(3, 54px) minmax(132px, 1fr); }
@@ -915,15 +946,15 @@
         <div class="status" id="syncStatus">Sincronizando...</div>
       </div>
       <div class="tabs">
-        <button class="tab-btn active" data-tab="dashboard">Inicio</button>
+        <button class="tab-btn active" data-tab="brackets">Chaves</button>
         <button class="tab-btn" data-tab="players">Jogadores</button>
-        <button class="tab-btn" data-tab="brackets">Chaves</button>
         <button class="tab-btn" data-tab="schedule">Agenda</button>
         <button class="tab-btn" data-tab="settings">Torneio</button>
+        <button class="tab-btn" data-tab="dashboard">Informacoes</button>
       </div>
     </div>
 
-    <section class="section active" id="dashboard">
+    <section class="section" id="dashboard">
       <div class="grid">
         <div class="card metric span-3"><strong id="metricPlayers">0</strong><span>jogadores ativos</span></div>
         <div class="card metric span-3"><strong id="metricCategories">0</strong><span>categorias</span></div>
@@ -1055,7 +1086,7 @@
       </div>
     </section>
 
-    <section class="section" id="brackets">
+    <section class="section active" id="brackets">
       <div class="card">
         <div class="card-title">
           <div>
@@ -1082,7 +1113,7 @@
           </div>
           <div class="field">
             <label>Acao</label>
-            <button class="primary-btn" style="width:100%" onclick="generateBracket()">Gerar/Refazer chave da categoria</button>
+            <button class="primary-btn" onclick="generateBracket()">Gerar chave</button>
           </div>
         </div>
         <div class="bracket-wrap">
@@ -1256,9 +1287,9 @@
     });
 
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxpm53hx_IN3DUoInBG2SlkSiLkhG7XiZ_j4Ae4l95R-6dqY2PfUlt3Xl-KJiGnotYd/exec';
-    const DRAW_ROW_STEP = 54;
+    const DRAW_ROW_STEP = 62;
     const DRAW_TITLE_SPACE = 32;
-    const DRAW_MATCH_HEIGHT = 64;
+    const DRAW_MATCH_HEIGHT = 72;
 
     const state = {
       data: null,
@@ -1443,7 +1474,13 @@
         if (!json.ok) throw new Error(json.error || 'Falha ao carregar.');
         state.data = json.data;
         if (!state.selectedCategory && state.data.categorias.length) {
-          state.selectedCategory = state.data.categorias[0].categoria_id;
+          const categoriesWithDraw = new Set((state.data.jogos || []).map(function (match) {
+            return String(match.categoria_id);
+          }));
+          const firstWithDraw = state.data.categorias.find(function (cat) {
+            return categoriesWithDraw.has(String(cat.categoria_id));
+          });
+          state.selectedCategory = (firstWithDraw || state.data.categorias[0]).categoria_id;
         }
         renderAll();
         setStatus('Sincronizado ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
@@ -2293,13 +2330,32 @@
         const dayMatches = scheduled.filter(function (j) {
           return String(j.data || '') === String(day);
         });
+        const courtNames = agendaCourtNames(dayMatches, courtFilter);
+        const gamesHtml = dayMatches.length ? '<div class="agenda-court-grid">' + courtNames.map(function (court) {
+          const courtMatches = dayMatches.filter(function (j) {
+            return String(j.quadra || 'Sem quadra') === String(court);
+          });
+          return '<div class="agenda-court-column">' +
+            '<div class="agenda-court-title">' + escapeHtml(court) + '</div>' +
+            (courtMatches.map(renderAgendaMatchCard).join('') || '<div class="agenda-court-empty">Sem jogos</div>') +
+            '</div>';
+        }).join('') + '</div>' : '<div class="empty">Sem jogos</div>';
         return '<div class="agenda-day-column">' +
           '<div class="agenda-day-head"><span>' + escapeHtml(displayAgendaDay(day)) + '</span><span class="agenda-day-count">' + dayMatches.length + '</span></div>' +
-          '<div class="agenda-day-games">' +
-          (dayMatches.map(renderAgendaMatchCard).join('') || '<div class="empty">Sem jogos</div>') +
-          '</div></div>';
+          '<div class="agenda-day-games">' + gamesHtml + '</div></div>';
       }).join('');
       $('agendaList').innerHTML = html || '<div class="empty">Nenhum jogo agendado ainda.</div>';
+    }
+
+    function agendaCourtNames(dayMatches, courtFilter) {
+      if (courtFilter) return [courtFilter];
+      const base = (state.data.quadras || []).map(function (q) { return q.nome; }).filter(Boolean);
+      const names = base.length ? base : ['Quadra 1', 'Quadra 2'];
+      dayMatches.forEach(function (match) {
+        const court = match.quadra || 'Sem quadra';
+        if (names.indexOf(court) === -1) names.push(court);
+      });
+      return names;
     }
 
     function renderAgendaMatchCard(j) {
@@ -2440,7 +2496,11 @@
 
     async function generateBracket() {
       if (!state.selectedCategory) return;
-      if (!confirm('Gerar ou refazer a chave desta categoria?')) return;
+      const existingMatches = currentMatches();
+      if (existingMatches.length) {
+        const categoryName = getCategoryName(state.selectedCategory);
+        if (!confirm('A categoria "' + categoryName + '" ja tem chave criada. Refazer a chave vai substituir os jogos desta categoria. Deseja continuar?')) return;
+      }
       try {
         await apiPost({
           action: 'generateBracket',
