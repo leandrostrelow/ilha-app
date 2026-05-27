@@ -990,6 +990,105 @@
       font-weight: 900;
     }
 
+    .sponsor-popup-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(0, 25, 55, .48);
+      backdrop-filter: blur(4px);
+    }
+
+    .sponsor-popup-backdrop.open {
+      display: flex;
+    }
+
+    .sponsor-popup {
+      width: min(420px, 100%);
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border-radius: 22px;
+      background: #fff;
+      box-shadow: 0 24px 64px rgba(0, 40, 90, .28);
+      border: 1px solid rgba(0, 91, 187, .16);
+      text-align: center;
+    }
+
+    .sponsor-popup-top {
+      display: flex;
+      justify-content: flex-end;
+      min-height: 32px;
+    }
+
+    .sponsor-close {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #eef5f8;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .sponsor-logo-pill {
+      width: 86px;
+      height: 86px;
+      display: grid;
+      place-items: center;
+      justify-self: center;
+      border-radius: 50%;
+      background: var(--ford-soft);
+      border: 3px solid var(--lime);
+      overflow: hidden;
+    }
+
+    .sponsor-logo-pill img {
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+    }
+
+    .sponsor-popup h2 {
+      margin: 0;
+      font-size: 25px;
+      line-height: 1.05;
+      color: var(--ford-dark);
+    }
+
+    .sponsor-popup p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.35;
+      font-weight: 800;
+    }
+
+    .sponsor-follow-btn {
+      min-height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--dark);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 900;
+      text-decoration: none;
+      box-shadow: 0 12px 26px rgba(0, 63, 134, .24);
+    }
+
+    .sponsor-later-btn {
+      min-height: 38px;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
     .athlete-match-list {
       display: grid;
       gap: 8px;
@@ -1288,6 +1387,21 @@
         <button class="athlete-close" type="button" onclick="closeAthleteDetail()">X</button>
       </div>
       <div class="athlete-match-list" id="athleteDetailMatches"></div>
+    </div>
+  </div>
+
+  <div class="sponsor-popup-backdrop" id="sponsorPopupBackdrop">
+    <div class="sponsor-popup" role="dialog" aria-modal="true" aria-labelledby="sponsorPopupTitle">
+      <div class="sponsor-popup-top">
+        <button class="sponsor-close" type="button" onclick="closeSponsorPopup()" aria-label="Fechar">X</button>
+      </div>
+      <div class="sponsor-logo-pill">
+        <img src="./ford.png" alt="Viafor Ford" />
+      </div>
+      <h2 id="sponsorPopupTitle">Siga nosso patrocinador</h2>
+      <p>A Viafor apoia o torneio. Da uma forca e acompanha eles no Instagram.</p>
+      <a class="sponsor-follow-btn" href="https://www.instagram.com/viaforveiculos/" target="_blank" rel="noopener" onclick="closeSponsorPopup()">Seguir Viafor</a>
+      <button class="sponsor-later-btn" type="button" onclick="closeSponsorPopup()">Agora nao</button>
     </div>
   </div>
 
@@ -1936,7 +2050,7 @@
 
     function renderResults() {
       const done = state.data.jogos.filter(function (j) { return String(j.status).toUpperCase() === 'FINALIZADO'; })
-        .sort(sortSchedule);
+        .sort(sortRecentResults);
       $('resultsList').innerHTML = done.map(function (j) {
         if (isByeResult(j)) return byeResultHtml(j);
         return resultHtml(j);
@@ -2046,6 +2160,16 @@
       $('athleteDetailBackdrop').classList.remove('open');
     }
 
+    function openSponsorPopup() {
+      const backdrop = $('sponsorPopupBackdrop');
+      if (backdrop) backdrop.classList.add('open');
+    }
+
+    function closeSponsorPopup() {
+      const backdrop = $('sponsorPopupBackdrop');
+      if (backdrop) backdrop.classList.remove('open');
+    }
+
     function athleteResultText(match, playerId) {
       if (isByeResult(match)) {
         return String(match.vencedor_id || '') === String(playerId) ? ' | Avançou de BYE' : '';
@@ -2088,6 +2212,29 @@
         String(a.quadra || '').localeCompare(String(b.quadra || '')) ||
         Number(a.rodada || 0) - Number(b.rodada || 0) ||
         Number(a.posicao_chave || 0) - Number(b.posicao_chave || 0);
+    }
+
+    function sortRecentResults(a, b) {
+      const byeA = isByeResult(a) ? 1 : 0;
+      const byeB = isByeResult(b) ? 1 : 0;
+      if (byeA !== byeB) return byeA - byeB;
+
+      const resultA = resultOrderValue(a);
+      const resultB = resultOrderValue(b);
+      if (resultA || resultB) return (resultB || 0) - (resultA || 0);
+
+      const fallback = sortSchedule(b, a);
+      if (fallback) return fallback;
+      return String(b.jogo_id || '').localeCompare(String(a.jogo_id || ''));
+    }
+
+    function resultOrderValue(match) {
+      const raw = match && (match.resultado_em || match.resultadoEm || match.atualizado_em || match.updated_at || match.data_resultado);
+      if (!raw) return 0;
+      if (raw instanceof Date) return raw.getTime();
+      const normalized = String(raw).trim().replace(' ', 'T');
+      const parsed = Date.parse(normalized);
+      return Number.isNaN(parsed) ? 0 : parsed;
     }
 
     function daySortValue(value) {
@@ -2202,6 +2349,15 @@
     $('athleteDetailBackdrop').addEventListener('click', function (event) {
       if (event.target.id === 'athleteDetailBackdrop') closeAthleteDetail();
     });
+    $('sponsorPopupBackdrop').addEventListener('click', function (event) {
+      if (event.target.id === 'sponsorPopupBackdrop') closeSponsorPopup();
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        closeAthleteDetail();
+        closeSponsorPopup();
+      }
+    });
     ['agendaSearch', 'agendaDayFilter', 'agendaCourtFilter', 'agendaCategoryFilter'].forEach(function (id) {
       $(id).addEventListener('input', renderAgenda);
       $(id).addEventListener('change', renderAgenda);
@@ -2219,6 +2375,7 @@
     });
 
     loadData();
+    setTimeout(openSponsorPopup, 900);
     setInterval(loadData, 60000);
   </script>
 </body>
