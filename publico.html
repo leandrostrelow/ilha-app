@@ -993,13 +993,13 @@
     .sponsor-popup-backdrop {
       position: fixed;
       inset: 0;
-      z-index: 80;
+      z-index: 140;
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 18px;
-      background: rgba(0, 25, 55, .48);
-      backdrop-filter: blur(4px);
+      padding: 16px;
+      background: rgba(8, 18, 28, .58);
+      backdrop-filter: blur(8px);
     }
 
     .sponsor-popup-backdrop.open {
@@ -1007,54 +1007,104 @@
     }
 
     .sponsor-popup {
-      width: min(420px, 100%);
+      position: relative;
+      width: min(390px, 100%);
       display: grid;
-      gap: 14px;
-      padding: 18px;
-      border-radius: 22px;
-      background: #fff;
-      box-shadow: 0 24px 64px rgba(0, 40, 90, .28);
-      border: 1px solid rgba(0, 91, 187, .16);
+      gap: 12px;
+      padding: 18px 18px 16px;
+      border-radius: 28px;
+      background:
+        linear-gradient(#fff, #fff) padding-box,
+        linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045) border-box;
+      box-shadow: 0 24px 70px rgba(5, 16, 30, .32);
+      border: 2px solid transparent;
+      overflow: hidden;
       text-align: center;
+    }
+
+    .sponsor-popup::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto;
+      height: 7px;
+      background: linear-gradient(90deg, #833ab4, #fd1d1d, #fcb045);
     }
 
     .sponsor-popup-top {
       display: flex;
       justify-content: flex-end;
-      min-height: 32px;
+      min-height: 26px;
     }
 
     .sponsor-close {
-      width: 34px;
-      height: 34px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
-      background: #eef5f8;
+      background: #f4f7f8;
       color: var(--text);
       font-size: 16px;
       font-weight: 900;
+      box-shadow: 0 8px 20px rgba(0, 40, 90, .12);
     }
 
-    .sponsor-logo-pill {
-      width: 86px;
-      height: 86px;
+    .instagram-mark {
+      width: 78px;
+      height: 78px;
       display: grid;
       place-items: center;
       justify-self: center;
-      border-radius: 50%;
-      background: var(--ford-soft);
-      border: 3px solid var(--lime);
-      overflow: hidden;
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 30% 105%, #feda75 0 22%, transparent 45%),
+        radial-gradient(circle at 12% 10%, #f58529 0 18%, transparent 38%),
+        linear-gradient(135deg, #833ab4 0%, #c13584 35%, #fd1d1d 68%, #fcb045 100%);
+      box-shadow: 0 16px 34px rgba(193, 53, 132, .28);
     }
 
-    .sponsor-logo-pill img {
-      width: 72px;
-      height: 72px;
-      object-fit: contain;
+    .instagram-lens {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      border: 5px solid #fff;
+      border-radius: 13px;
+    }
+
+    .instagram-lens::before {
+      content: '';
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      left: 50%;
+      top: 50%;
+      border: 5px solid #fff;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .instagram-lens::after {
+      content: '';
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      right: 5px;
+      top: 5px;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    .sponsor-tag {
+      justify-self: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #f4f7f8;
+      color: var(--ford-dark);
+      font-size: 12px;
+      font-weight: 900;
     }
 
     .sponsor-popup h2 {
       margin: 0;
-      font-size: 25px;
+      font-size: 24px;
       line-height: 1.05;
       color: var(--ford-dark);
     }
@@ -1062,9 +1112,16 @@
     .sponsor-popup p {
       margin: 0;
       color: var(--muted);
-      font-size: 15px;
+      font-size: 14px;
       line-height: 1.35;
       font-weight: 800;
+    }
+
+    .sponsor-handle {
+      justify-self: center;
+      color: #c13584;
+      font-size: 18px;
+      font-weight: 900;
     }
 
     .sponsor-follow-btn {
@@ -1072,12 +1129,12 @@
       display: grid;
       place-items: center;
       border-radius: 999px;
-      background: var(--dark);
+      background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
       color: #fff;
       font-size: 15px;
       font-weight: 900;
       text-decoration: none;
-      box-shadow: 0 12px 26px rgba(0, 63, 134, .24);
+      box-shadow: 0 12px 26px rgba(193, 53, 132, .28);
     }
 
     .sponsor-later-btn {
@@ -1395,13 +1452,15 @@
       <div class="sponsor-popup-top">
         <button class="sponsor-close" type="button" onclick="closeSponsorPopup()" aria-label="Fechar">X</button>
       </div>
-      <div class="sponsor-logo-pill">
-        <img src="./ford.png" alt="Viafor Ford" />
+      <div class="instagram-mark" aria-hidden="true">
+        <span class="instagram-lens"></span>
       </div>
-      <h2 id="sponsorPopupTitle">Siga nosso patrocinador</h2>
-      <p>A Viafor apoia o torneio. Da uma forca e acompanha eles no Instagram.</p>
-      <a class="sponsor-follow-btn" href="https://www.instagram.com/viaforveiculos/" target="_blank" rel="noopener" onclick="closeSponsorPopup()">Seguir Viafor</a>
-      <button class="sponsor-later-btn" type="button" onclick="closeSponsorPopup()">Agora nao</button>
+      <div class="sponsor-tag">Patrocinador oficial</div>
+      <h2 id="sponsorPopupTitle">Siga a Viafor no Instagram</h2>
+      <div class="sponsor-handle">@viaforveiculos</div>
+      <p>A Viafor apoia o II VIAFOR OPEN. D&aacute; uma for&ccedil;a r&aacute;pida para quem ajuda o torneio acontecer.</p>
+      <a class="sponsor-follow-btn" href="https://www.instagram.com/viaforveiculos/" target="_blank" rel="noopener" onclick="closeSponsorPopup()">Abrir Instagram</a>
+      <button class="sponsor-later-btn" type="button" onclick="closeSponsorPopup()">Agora n&atilde;o</button>
     </div>
   </div>
 
@@ -2160,9 +2219,32 @@
       $('athleteDetailBackdrop').classList.remove('open');
     }
 
+    const SPONSOR_POPUP_SESSION_KEY = 'viaforSponsorPopupSeen';
+
+    function sponsorPopupSeen() {
+      try {
+        return sessionStorage.getItem(SPONSOR_POPUP_SESSION_KEY) === '1';
+      } catch (err) {
+        return false;
+      }
+    }
+
+    function markSponsorPopupSeen() {
+      try {
+        sessionStorage.setItem(SPONSOR_POPUP_SESSION_KEY, '1');
+      } catch (err) {}
+    }
+
+    function maybeOpenSponsorPopup() {
+      if (sponsorPopupSeen()) return;
+      openSponsorPopup();
+    }
+
     function openSponsorPopup() {
       const backdrop = $('sponsorPopupBackdrop');
-      if (backdrop) backdrop.classList.add('open');
+      if (!backdrop || backdrop.classList.contains('open')) return;
+      markSponsorPopupSeen();
+      backdrop.classList.add('open');
     }
 
     function closeSponsorPopup() {
@@ -2375,7 +2457,7 @@
     });
 
     loadData();
-    setTimeout(openSponsorPopup, 900);
+    setTimeout(maybeOpenSponsorPopup, 1200);
     setInterval(loadData, 60000);
   </script>
 </body>
