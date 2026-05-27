@@ -2302,7 +2302,7 @@
       const inferredWinner = inferWinnerFromEditorFields(player1, player2);
       const winner = inferredWinner;
       const status = winner ? 'FINALIZADO' : 'PENDENTE';
-      return Object.assign({}, match, {
+      return withResultStamp(Object.assign({}, match, {
         jogador1_id: player1,
         jogador2_id: player2,
         placar: score,
@@ -2312,7 +2312,7 @@
         quadra: $('editorCourt').value,
         status: status,
         observacoes: $('editorPhotoLink').value.trim()
-      });
+      }));
     }
 
     function currentMatchById(matchId) {
@@ -2726,15 +2726,26 @@
     }
 
     function sortRecentResults(a, b) {
-      const dayA = a.data ? daySortValue(a.data) : -1;
-      const dayB = b.data ? daySortValue(b.data) : -1;
-      const timeA = a.hora ? timeSortValue(a.hora) : -1;
-      const timeB = b.hora ? timeSortValue(b.hora) : -1;
-      return dayB - dayA ||
-        timeB - timeA ||
-        Number(b.rodada || 0) - Number(a.rodada || 0) ||
-        Number(b.posicao_chave || 0) - Number(a.posicao_chave || 0) ||
-        String(b.jogo_id || '').localeCompare(String(a.jogo_id || ''));
+      const byeA = isByeResult(a) ? 1 : 0;
+      const byeB = isByeResult(b) ? 1 : 0;
+      if (byeA !== byeB) return byeA - byeB;
+
+      const resultA = resultOrderValue(a);
+      const resultB = resultOrderValue(b);
+      if (resultA || resultB) return (resultB || 0) - (resultA || 0);
+
+      const fallback = sortAgenda(b, a);
+      if (fallback) return fallback;
+      return String(b.jogo_id || '').localeCompare(String(a.jogo_id || ''));
+    }
+
+    function resultOrderValue(match) {
+      const raw = match && (match.resultado_em || match.resultadoEm || match.atualizado_em || match.updated_at || match.data_resultado);
+      if (!raw) return 0;
+      if (raw instanceof Date) return raw.getTime();
+      const normalized = String(raw).trim().replace(' ', 'T');
+      const parsed = Date.parse(normalized);
+      return Number.isNaN(parsed) ? 0 : parsed;
     }
 
     function daySortValue(value) {
@@ -2922,6 +2933,14 @@
       card.querySelectorAll('[data-field]').forEach(function (field) {
         data[field.dataset.field] = field.value;
       });
+      return withResultStamp(data);
+    }
+
+    function withResultStamp(match) {
+      const data = Object.assign({}, match);
+      const finished = String(data.status || '').toUpperCase() === 'FINALIZADO' || Boolean(data.vencedor_id);
+      if (finished) data.resultado_em = new Date().toISOString();
+      else data.resultado_em = '';
       return data;
     }
 
