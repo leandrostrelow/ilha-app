@@ -2623,7 +2623,7 @@
     function resultMatches() {
       return (state.data.jogos || []).filter(function (match) {
         return String(match.status || '').toUpperCase() === 'FINALIZADO' && (match.vencedor_id || firstRoundByeWinner(match));
-      }).sort(sortAgenda);
+      }).sort(sortRecentResults);
     }
 
     function renderResultSelectionCard(match) {
@@ -2723,6 +2723,18 @@
         String(a.quadra || '').localeCompare(String(b.quadra || '')) ||
         Number(a.rodada || 0) - Number(b.rodada || 0) ||
         Number(a.posicao_chave || 0) - Number(b.posicao_chave || 0);
+    }
+
+    function sortRecentResults(a, b) {
+      const dayA = a.data ? daySortValue(a.data) : -1;
+      const dayB = b.data ? daySortValue(b.data) : -1;
+      const timeA = a.hora ? timeSortValue(a.hora) : -1;
+      const timeB = b.hora ? timeSortValue(b.hora) : -1;
+      return dayB - dayA ||
+        timeB - timeA ||
+        Number(b.rodada || 0) - Number(a.rodada || 0) ||
+        Number(b.posicao_chave || 0) - Number(a.posicao_chave || 0) ||
+        String(b.jogo_id || '').localeCompare(String(a.jogo_id || ''));
     }
 
     function daySortValue(value) {
@@ -3415,12 +3427,6 @@
       ctx.save();
       roundRect(ctx, x, y, width, height, radius);
       ctx.clip();
-      ctx.strokeStyle = colors.line;
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.moveTo(x, y + height / 2);
-      ctx.lineTo(x + width, y + height / 2);
-      ctx.stroke();
       ctx.restore();
 
       ctx.save();
@@ -3432,15 +3438,10 @@
       ctx.stroke();
       ctx.restore();
 
-      const meta = getCategoryName(match.categoria_id) + ' | ' + (roundLabels[match.fase] || match.fase || 'Jogo');
-      ctx.fillStyle = colors.muted;
-      ctx.textAlign = 'left';
-      drawFitText(ctx, meta.toUpperCase(), x + 30, y + 25, width - 60, 13, 900, 'left');
-
       if (isBye) {
         const winner = getPlayerName(match.vencedor_id || firstRoundByeWinner(match)) || match.vencedor_nome || 'Atleta';
         ctx.fillStyle = colors.text;
-        drawFitText(ctx, shortName(winner, 34), x + 30, centerY + 8, width - 280, nameSize, 900, 'left');
+        drawPosterResultName(ctx, winner, x + 30, centerY + 8, width - 300, true, colors, 'left', nameSize);
         ctx.fillStyle = colors.dark;
         roundRect(ctx, x + width - 245, centerY - scoreH / 2 - 3, 215, scoreH, scoreH / 2);
         ctx.fill();
