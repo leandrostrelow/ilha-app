@@ -735,6 +735,47 @@
       gap: 8px;
     }
 
+    .agenda-court-block {
+      display: grid;
+      gap: 8px;
+      padding: 8px;
+      border: 1px solid #dcebf4;
+      border-radius: 14px;
+      background: #ffffff;
+    }
+
+    .agenda-court-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 34px;
+      padding: 7px 10px;
+      border-radius: 11px;
+      background: #eef6ff;
+      color: var(--ford-dark);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .agenda-court-title span {
+      display: inline-grid;
+      place-items: center;
+      min-width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      background: #fff;
+      color: var(--dark);
+      font-size: 11px;
+      border: 1px solid #d5e5ef;
+    }
+
+    .agenda-court-games {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 8px;
+    }
+
     .timebox {
       border-radius: 10px;
       padding: 8px;
@@ -814,6 +855,11 @@
     .agenda-tag:first-child {
       background: #efffd0;
       color: #254300;
+    }
+
+    .agenda-tag.agenda-phase {
+      background: var(--dark);
+      color: #fff;
     }
 
     .agenda-card small {
@@ -1986,6 +2032,7 @@
             getPlayerName(j.jogador1_id),
             getPlayerName(j.jogador2_id),
             getCategoryName(j.categoria_id),
+            roundLabels[j.fase] || j.fase,
             j.quadra,
             formatDate(j.data),
             formatAgendaTime(j.hora)
@@ -2008,19 +2055,49 @@
         return '<div class="agenda-day-block">' +
           '<div class="agenda-day-title">' + escapeHtml(displayDay(day)) + '<span>' + dayMatches.length + '</span></div>' +
           '<div class="agenda-day-games">' +
-          (dayMatches.map(renderAgendaCard).join('') || '<div class="empty">Sem jogos publicados</div>') +
+          (renderAgendaCourtBlocks(dayMatches) || '<div class="empty">Sem jogos publicados</div>') +
           '</div></div>';
       }).join('');
       $('agendaList').innerHTML = html || '<div class="empty">Agenda ainda nao publicada.</div>';
     }
 
+    function renderAgendaCourtBlocks(matches) {
+      if (!matches.length) return '';
+      const groups = {};
+      matches.forEach(function (match) {
+        const court = match.quadra || 'Sem quadra';
+        if (!groups[court]) groups[court] = [];
+        groups[court].push(match);
+      });
+
+      const preferredOrder = (state.data.quadras || []).map(function (court) {
+        return court.nome;
+      }).filter(Boolean);
+      const courts = Object.keys(groups).sort(function (a, b) {
+        const ia = preferredOrder.indexOf(a);
+        const ib = preferredOrder.indexOf(b);
+        if (ia >= 0 || ib >= 0) return (ia >= 0 ? ia : 99) - (ib >= 0 ? ib : 99);
+        return String(a).localeCompare(String(b));
+      });
+
+      return courts.map(function (court) {
+        const courtMatches = groups[court].sort(sortSchedule);
+        return '<div class="agenda-court-block">' +
+          '<div class="agenda-court-title">' + escapeHtml(court) + '<span>' + courtMatches.length + '</span></div>' +
+          '<div class="agenda-court-games">' + courtMatches.map(renderAgendaCard).join('') + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
     function renderAgendaCard(j) {
       const player1 = getPlayerName(j.jogador1_id) || 'A definir';
       const player2 = getPlayerName(j.jogador2_id) || 'A definir';
+      const phase = roundLabels[j.fase] || j.fase || 'Jogo';
       return '<div class="agenda-card"><div class="timebox"><span>' + escapeHtml(formatDate(j.data) || '--/--') +
         '</span><strong>' + escapeHtml(formatAgendaTime(j.hora)) + '</strong></div>' +
         '<div><div class="agenda-players"><span>' + escapeHtml(player1) + '</span><span>' +
         escapeHtml(player2) + '</span></div><div class="agenda-meta">' +
+        '<span class="agenda-tag agenda-phase">' + escapeHtml(phase) + '</span>' +
         '<span class="agenda-tag">' + escapeHtml(getCategoryName(j.categoria_id)) + '</span>' +
         '<span class="agenda-tag">' + escapeHtml(j.quadra || 'Sem quadra') + '</span>' +
         '</div></div></div>';
