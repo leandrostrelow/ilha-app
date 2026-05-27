@@ -3428,44 +3428,33 @@
 
     function drawResultsPosterCard(ctx, match, x, y, width, height, colors) {
       const isBye = isByeResult(match);
-      const radius = 20;
       const nameSize = 23;
       const scoreFont = 21;
       const scoreW = 128;
       const scoreH = 42;
-      const centerY = y + Math.round(height * .62);
-      ctx.save();
-      ctx.shadowColor = 'rgba(0, 45, 98, .18)';
-      ctx.shadowBlur = 16;
-      ctx.shadowOffsetY = 8;
-      ctx.fillStyle = colors.white;
-      roundRect(ctx, x, y, width, height, radius);
-      ctx.fill();
-      ctx.restore();
-
-      ctx.save();
-      roundRect(ctx, x, y, width, height, radius);
-      ctx.clip();
-      ctx.restore();
+      const nameY = y + 62;
+      const meta = shortCategoryName(getCategoryName(match.categoria_id)) + ' | ' + (roundLabels[match.fase] || match.fase || 'Jogo');
 
       ctx.save();
       ctx.strokeStyle = isBye ? colors.lime : colors.dark2;
       ctx.lineWidth = 8;
       ctx.beginPath();
-      ctx.moveTo(x + 5, y + 17);
-      ctx.lineTo(x + 5, y + height - 17);
+      ctx.moveTo(x + 5, y + 16);
+      ctx.lineTo(x + 5, y + height - 16);
       ctx.stroke();
       ctx.restore();
 
+      ctx.fillStyle = colors.muted;
+      drawFitText(ctx, meta.toUpperCase(), x + 30, y + 22, width - 60, 14, 900, 'left');
+
       if (isBye) {
         const winner = getPlayerName(match.vencedor_id || firstRoundByeWinner(match)) || match.vencedor_nome || 'Atleta';
-        ctx.fillStyle = colors.text;
-        drawPosterResultName(ctx, winner, x + 30, centerY + 8, width - 300, true, colors, 'left', nameSize);
+        drawPosterResultName(ctx, winner, x + 30, nameY, width - 300, true, colors, 'left', nameSize);
         ctx.fillStyle = colors.dark;
-        roundRect(ctx, x + width - 245, centerY - scoreH / 2 - 3, 215, scoreH, scoreH / 2);
+        roundRect(ctx, x + width - 245, nameY - scoreH + 10, 215, scoreH, scoreH / 2);
         ctx.fill();
         ctx.fillStyle = colors.white;
-        drawFitText(ctx, 'AVAN\u00c7OU DE BYE', x + width - 138, centerY + 7, 170, scoreFont - 4, 900, 'center');
+        drawFitText(ctx, 'AVAN\u00c7OU DE BYE', x + width - 138, nameY - 9, 170, scoreFont - 4, 900, 'center');
         return;
       }
 
@@ -3476,13 +3465,13 @@
       const setScore = resultSetScore(match);
       const scoreText = setScore.p1 + ' x ' + setScore.p2;
 
-      drawPosterResultName(ctx, player1, x + 30, centerY + 8, 350, p1Winner, colors, 'left', nameSize);
+      drawPosterResultName(ctx, player1, x + 30, nameY, 350, p1Winner, colors, 'left', nameSize);
       ctx.fillStyle = colors.dark;
-      roundRect(ctx, x + width / 2 - scoreW / 2, centerY - scoreH / 2 - 3, scoreW, scoreH, scoreH / 2);
+      roundRect(ctx, x + width / 2 - scoreW / 2, nameY - scoreH + 10, scoreW, scoreH, scoreH / 2);
       ctx.fill();
       ctx.fillStyle = colors.white;
-      drawFitText(ctx, scoreText, x + width / 2, centerY + 7, scoreW - 26, scoreFont, 900, 'center');
-      drawPosterResultName(ctx, player2, x + width - 30, centerY + 8, 350, p2Winner, colors, 'right', nameSize);
+      drawFitText(ctx, scoreText, x + width / 2, nameY - 9, scoreW - 26, scoreFont, 900, 'center');
+      drawPosterResultName(ctx, player2, x + width - 30, nameY, 350, p2Winner, colors, 'right', nameSize);
     }
 
     function drawPosterResultName(ctx, name, x, y, maxWidth, isWinner, colors, align, size) {
