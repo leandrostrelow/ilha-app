@@ -870,6 +870,11 @@
       box-shadow: 0 10px 22px rgba(17, 38, 45, .11);
     }
 
+    .agenda-match-card:focus-visible {
+      outline: 3px solid rgba(181, 229, 0, .55);
+      outline-offset: 2px;
+    }
+
     .agenda-match-card.done {
       border-left-color: var(--lime);
       background: #fbfff0;
@@ -884,6 +889,39 @@
       font-size: 10px;
       font-weight: 900;
       text-transform: uppercase;
+    }
+
+    .agenda-card-actions {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 5px;
+      flex: 0 0 auto;
+    }
+
+    .agenda-order-btn {
+      width: 26px;
+      height: 26px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #ffffff;
+      color: var(--dark);
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(17, 38, 45, .08);
+    }
+
+    .agenda-order-btn:hover {
+      background: var(--lime);
+      border-color: var(--lime);
+    }
+
+    .agenda-order-btn:disabled {
+      opacity: .28;
+      cursor: not-allowed;
+      box-shadow: none;
     }
 
     .agenda-time-pill {
@@ -1256,6 +1294,8 @@
       .editor-whatsapp-btn .wa-icon { width: 13px; height: 13px; }
       .agenda-list { grid-template-columns: 1fr; }
       .player-filters, .agenda-filters, .match-agenda-grid { grid-template-columns: 1fr; }
+      .agenda-card-actions { gap: 4px; }
+      .agenda-order-btn { width: 30px; height: 30px; font-size: 13px; }
       .result-card { grid-template-columns: 28px minmax(0, 1fr); padding: 9px; }
       .result-line { grid-template-columns: 1fr; justify-items: stretch; text-align: center; }
       .result-score { justify-self: center; }
@@ -2699,7 +2739,9 @@
           });
           return '<div class="agenda-court-column">' +
             '<div class="agenda-court-title">' + escapeHtml(court) + '</div>' +
-            (courtMatches.map(renderAgendaMatchCard).join('') || '<div class="agenda-court-empty">Sem jogos</div>') +
+            (courtMatches.map(function (match, index) {
+              return renderAgendaMatchCard(match, index, courtMatches.length);
+            }).join('') || '<div class="agenda-court-empty">Sem jogos</div>') +
             '</div>';
         }).join('') + '</div>' : '<div class="empty">Sem jogos</div>';
         const artMatches = dayMatches.filter(function (j) {
@@ -2737,16 +2779,21 @@
       }).sort(sortAgenda);
     }
 
-    function renderAgendaMatchCard(j) {
+    function renderAgendaMatchCard(j, index, total) {
       const player1 = getPlayerName(j.jogador1_id) || 'A definir';
       const player2 = getPlayerName(j.jogador2_id) || 'A definir';
       const phase = roundLabels[j.fase] || j.fase || 'Jogo';
       const done = String(j.status || '').toUpperCase() === 'FINALIZADO';
-      return '<button type="button" class="agenda-match-card ' + (done ? 'done' : '') + '" data-open-match="' + escapeHtml(j.jogo_id) + '">' +
-        '<div class="agenda-match-top"><span>' + escapeHtml(phase) + ' ' + escapeHtml(j.posicao_chave || '') + '</span><span class="agenda-time-pill">' + escapeHtml(formatAgendaTime(j.hora)) + '</span></div>' +
+      const canMoveUp = index > 0;
+      const canMoveDown = index < total - 1;
+      return '<div class="agenda-match-card ' + (done ? 'done' : '') + '" role="button" tabindex="0" data-open-match="' + escapeHtml(j.jogo_id) + '">' +
+        '<div class="agenda-match-top"><span>' + escapeHtml(phase) + ' ' + escapeHtml(j.posicao_chave || '') + '</span><span class="agenda-card-actions">' +
+        '<button type="button" class="agenda-order-btn" title="Subir jogo" data-agenda-move="' + escapeHtml(j.jogo_id) + '" data-direction="up"' + (canMoveUp ? '' : ' disabled') + '>&uarr;</button>' +
+        '<button type="button" class="agenda-order-btn" title="Descer jogo" data-agenda-move="' + escapeHtml(j.jogo_id) + '" data-direction="down"' + (canMoveDown ? '' : ' disabled') + '>&darr;</button>' +
+        '<span class="agenda-time-pill">' + escapeHtml(formatAgendaTime(j.hora)) + '</span></span></div>' +
         '<div class="agenda-players"><span class="agenda-player p1">' + escapeHtml(player1) + '</span><span class="agenda-player p2">' + escapeHtml(player2) + '</span></div>' +
         '<div class="agenda-meta"><span>' + escapeHtml(getCategoryName(j.categoria_id)) + '</span><span>' + escapeHtml(j.quadra || 'Sem quadra') + '</span><span>' + escapeHtml(done ? 'Finalizado' : 'Aberto') + '</span></div>' +
-        '</button>';
+        '</div>';
     }
 
     function renderResults() {
@@ -2859,10 +2906,26 @@
       return map[value] || value || 'Sem dia';
     }
 
+    function agendaOrderValue(match) {
+      const value = Number(match && match.ordem);
+      return Number.isFinite(value) && value > 0 ? value : 0;
+    }
+
     function sortAgenda(a, b) {
-      return daySortValue(a.data) - daySortValue(b.data) ||
-        timeSortValue(a.hora) - timeSortValue(b.hora) ||
-        String(a.quadra || '').localeCompare(String(b.quadra || '')) ||
+      const dayDiff = daySortValue(a.data) - daySortValue(b.data);
+      if (dayDiff) return dayDiff;
+
+      const courtDiff = String(a.quadra || '').localeCompare(String(b.quadra || ''));
+      if (courtDiff) return courtDiff;
+
+      const orderA = agendaOrderValue(a);
+      const orderB = agendaOrderValue(b);
+      if (orderA || orderB) {
+        const orderDiff = (orderA || 9999) - (orderB || 9999);
+        if (orderDiff) return orderDiff;
+      }
+
+      return timeSortValue(a.hora) - timeSortValue(b.hora) ||
         Number(a.rodada || 0) - Number(b.rodada || 0) ||
         Number(a.posicao_chave || 0) - Number(b.posicao_chave || 0);
     }
@@ -3124,6 +3187,72 @@
         });
         toast('Agenda atualizada.');
       } catch (error) {
+        toast(error.message);
+      }
+    }
+
+    async function moveAgendaMatch(matchId, direction) {
+      if (!state.data || !Array.isArray(state.data.jogos)) return;
+      const match = state.data.jogos.find(function (j) {
+        return String(j.jogo_id) === String(matchId);
+      });
+      if (!match) return;
+
+      const step = direction === 'up' ? -1 : 1;
+      const day = String(match.data || '');
+      const court = String(match.quadra || 'Sem quadra');
+      const categoryFilter = $('agendaCategoryFilter').value;
+      const group = state.data.jogos.filter(function (j) {
+        if (!(j.data || j.hora || j.quadra)) return false;
+        if (String(j.data || '') !== day) return false;
+        if (String(j.quadra || 'Sem quadra') !== court) return false;
+        if (categoryFilter && String(j.categoria_id || '') !== String(categoryFilter)) return false;
+        return true;
+      }).sort(sortAgenda);
+
+      const from = group.findIndex(function (j) {
+        return String(j.jogo_id) === String(matchId);
+      });
+      const to = from + step;
+      if (from < 0 || to < 0 || to >= group.length) return;
+
+      const previousOrders = group.map(function (j) {
+        return { jogo_id: j.jogo_id, ordem: j.ordem };
+      });
+      const moved = group.splice(from, 1)[0];
+      group.splice(to, 0, moved);
+
+      const changed = [];
+      group.forEach(function (item, index) {
+        const nextOrder = (index + 1) * 10;
+        if (Number(item.ordem || 0) !== nextOrder) {
+          item.ordem = nextOrder;
+          changed.push(Object.assign({}, item));
+        }
+      });
+      if (!changed.length) return;
+
+      renderAgenda();
+      toast('Ordem atualizada. Salvando na planilha...');
+      try {
+        try {
+          await apiPost({ action: 'saveMatches', jogos: changed }, { silent: true });
+        } catch (error) {
+          if (!String(error.message || '').includes('saveMatches')) throw error;
+          for (let i = 0; i < changed.length; i++) {
+            await apiPost({ action: 'saveMatch', jogo: changed[i] }, { silent: true });
+          }
+        }
+        setStatus('Sincronizado ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+        toast('Ordem salva. A arte vai seguir essa sequencia.');
+      } catch (error) {
+        previousOrders.forEach(function (snapshot) {
+          const item = state.data.jogos.find(function (j) {
+            return String(j.jogo_id) === String(snapshot.jogo_id);
+          });
+          if (item) item.ordem = snapshot.ordem;
+        });
+        renderAgenda();
         toast(error.message);
       }
     }
@@ -4249,6 +4378,14 @@
       const agendaArtBtn = event.target.closest('[data-agenda-art-day]');
       if (agendaArtBtn) {
         downloadAgendaDayImage(agendaArtBtn.dataset.agendaArtDay);
+        return;
+      }
+
+      const agendaMoveBtn = event.target.closest('[data-agenda-move]');
+      if (agendaMoveBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        moveAgendaMatch(agendaMoveBtn.dataset.agendaMove, agendaMoveBtn.dataset.direction);
         return;
       }
 
