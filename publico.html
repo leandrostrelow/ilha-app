@@ -2027,7 +2027,9 @@
       const dayFilter = normalizeAgendaDay($('agendaDayFilter').value);
       const courtFilter = $('agendaCourtFilter').value;
       const categoryFilter = $('agendaCategoryFilter').value;
-      const scheduledMatches = state.data.jogos.filter(function (j) {
+      const scheduledMatches = state.data.jogos.map(function (j) {
+        return Object.assign({}, j, { __agendaOrder: agendaOrderForMatch(j.jogo_id) });
+      }).filter(function (j) {
         if (!(j.data || j.hora || j.quadra)) return false;
         if (String(j.status || '').toUpperCase() === 'FINALIZADO') return false;
         if (dayFilter && String(normalizeAgendaDay(j.data) || '') !== String(dayFilter)) return false;
@@ -2396,12 +2398,21 @@
 
       return timeSortValue(a.hora) - timeSortValue(b.hora) ||
         Number(a.rodada || 0) - Number(b.rodada || 0) ||
-        Number(a.posicao_chave || 0) - Number(b.posicao_chave || 0);
+        Number(a.posicao_chave || 0) - Number(b.posicao_chave || 0) ||
+        String(a.jogo_id || a.agenda_id || '').localeCompare(String(b.jogo_id || b.agenda_id || ''));
     }
 
     function agendaOrderValue(match) {
-      const value = Number(match && match.ordem);
+      const value = Number(match && (match.__agendaOrder || match.ordem));
       return Number.isFinite(value) && value > 0 ? value : 0;
+    }
+
+    function agendaOrderForMatch(jogoId) {
+      if (!jogoId || !state.data || !Array.isArray(state.data.agenda)) return 0;
+      const row = state.data.agenda.find(function (item) {
+        return String(item.jogo_id || '') === String(jogoId);
+      });
+      return agendaOrderValue(row);
     }
 
     function sortRecentResults(a, b) {
