@@ -109,7 +109,7 @@
     .score-label-row,
     .score-row {
       display: grid;
-      grid-template-columns: 1fr 38px 42px;
+      grid-template-columns: 1fr;
     }
 
     .score-label-row {
@@ -148,8 +148,7 @@
       text-overflow: ellipsis;
     }
 
-    .score-games,
-    .score-st {
+    .score-cell {
       display: grid;
       place-items: center;
       background: #eaf3ff;
@@ -159,17 +158,15 @@
       border-left: 1px solid #cfe0f5;
     }
 
-    .score-st {
+    [data-score-col] {
       display: none;
+    }
+
+    .score-st {
       background: #f2ffe4;
       color: #0d3e20;
       font-size: 17px;
     }
-
-    body.has-tie .score-st { display: grid; }
-    body:not(.has-tie) .score-label-row,
-    body:not(.has-tie) .score-row { grid-template-columns: 1fr 38px; }
-    body:not(.has-tie) .score-label-st { display: none; }
 
     .live-message {
       display: none;
@@ -420,19 +417,22 @@
         <span class="live-pill"><span class="live-dot"></span>AO VIVO</span>
       </div>
       <div class="score-label-row">
-        <span>Placar</span>
-        <span>Game</span>
-        <span class="score-label-st">ST</span>
+        <span>Jogador</span>
+        <span data-score-col="set1">Set 1</span>
+        <span data-score-col="set2">Set 2</span>
+        <span class="score-st" data-score-col="st">ST</span>
       </div>
       <div class="score-row">
         <div class="score-name" id="livePlayer1">Jogador 1</div>
-        <div class="score-games" id="liveGame1">0</div>
-        <div class="score-st" id="liveTie1"></div>
+        <div class="score-cell" data-score-col="set1" id="liveSet1P1"></div>
+        <div class="score-cell" data-score-col="set2" id="liveSet2P1"></div>
+        <div class="score-cell score-st" data-score-col="st" id="liveStP1"></div>
       </div>
       <div class="score-row">
         <div class="score-name" id="livePlayer2">Jogador 2</div>
-        <div class="score-games" id="liveGame2">0</div>
-        <div class="score-st" id="liveTie2"></div>
+        <div class="score-cell" data-score-col="set1" id="liveSet1P2"></div>
+        <div class="score-cell" data-score-col="set2" id="liveSet2P2"></div>
+        <div class="score-cell score-st" data-score-col="st" id="liveStP2"></div>
       </div>
       <div class="live-message" id="liveMessage"></div>
     </section>
@@ -521,15 +521,61 @@
       document.body.classList.remove('is-winner');
       document.body.classList.remove('is-paused');
       document.body.classList.remove('is-ad');
-      document.body.classList.toggle('has-tie', Boolean(live.tie1 || live.tie2));
+      document.body.classList.remove('has-tie');
       $('liveMeta').textContent = [shortCategory(getCategoryName(match.categoria_id)), roundLabels[match.fase] || match.fase || 'Jogo'].filter(Boolean).join(' | ');
       $('livePlayer1').textContent = getPlayerName(live.jogador1_id || match.jogador1_id) || 'A definir';
       $('livePlayer2').textContent = getPlayerName(live.jogador2_id || match.jogador2_id) || 'A definir';
-      $('liveGame1').textContent = live.game1 || '0';
-      $('liveGame2').textContent = live.game2 || '0';
-      $('liveTie1').textContent = live.tie1 || '';
-      $('liveTie2').textContent = live.tie2 || '';
+      const scores = liveScoreValues(live);
+      const activeColumns = ['set1', 'set2', 'st'].filter(function (key) {
+        return hasScoreValue(scores[key].p1) || hasScoreValue(scores[key].p2);
+      });
+      applyScoreColumns(activeColumns);
+      $('liveSet1P1').textContent = scores.set1.p1;
+      $('liveSet1P2').textContent = scores.set1.p2;
+      $('liveSet2P1').textContent = scores.set2.p1;
+      $('liveSet2P2').textContent = scores.set2.p2;
+      $('liveStP1').textContent = scores.st.p1;
+      $('liveStP2').textContent = scores.st.p2;
       $('liveMessage').textContent = '';
+    }
+
+    function liveScoreValues(live) {
+      return {
+        set1: {
+          p1: firstScoreValue(live.set1p1),
+          p2: firstScoreValue(live.set1p2)
+        },
+        set2: {
+          p1: firstScoreValue(live.set2p1),
+          p2: firstScoreValue(live.set2p2)
+        },
+        st: {
+          p1: firstScoreValue(live.st1),
+          p2: firstScoreValue(live.st2)
+        }
+      };
+    }
+
+    function firstScoreValue() {
+      for (let i = 0; i < arguments.length; i++) {
+        if (hasScoreValue(arguments[i])) return String(arguments[i]).trim();
+      }
+      return '';
+    }
+
+    function hasScoreValue(value) {
+      return value !== undefined && value !== null && String(value).trim() !== '';
+    }
+
+    function applyScoreColumns(columns) {
+      const widths = { set1: '38px', set2: '38px', st: '42px' };
+      const grid = ['1fr'].concat(columns.map(function (key) { return widths[key] || '38px'; })).join(' ');
+      document.querySelectorAll('.score-label-row, .score-row').forEach(function (row) {
+        row.style.gridTemplateColumns = grid;
+      });
+      document.querySelectorAll('[data-score-col]').forEach(function (cell) {
+        cell.style.display = columns.indexOf(cell.dataset.scoreCol) >= 0 ? (cell.classList.contains('score-cell') ? 'grid' : 'block') : 'none';
+      });
     }
 
     function renderPaused(match, live) {

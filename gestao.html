@@ -822,7 +822,7 @@
     .live-score-head,
     .live-score-line {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 76px 76px;
+      grid-template-columns: minmax(0, 1fr) 64px 64px 64px;
       gap: 8px;
       align-items: center;
     }
@@ -1491,7 +1491,7 @@
       .agenda-list { grid-template-columns: 1fr; }
       .player-filters, .agenda-filters, .match-agenda-grid, .agenda-event-form, .live-actions { grid-template-columns: 1fr; }
       .live-score-head,
-      .live-score-line { grid-template-columns: minmax(0, 1fr) 62px 62px; }
+      .live-score-line { grid-template-columns: minmax(0, 1fr) repeat(3, 54px); }
       .agenda-card-actions { gap: 4px; }
       .agenda-order-btn { width: 30px; height: 30px; font-size: 13px; }
       .result-card { grid-template-columns: 28px minmax(0, 1fr); padding: 9px; }
@@ -1874,16 +1874,18 @@
               <a href="live.html" target="_blank" rel="noopener">Abrir tela OBS</a>
             </div>
             <div class="live-score-editor">
-              <div class="live-score-head"><span>Jogador</span><span>Game</span><span>ST</span></div>
+              <div class="live-score-head"><span>Jogador</span><span>Set 1</span><span>Set 2</span><span>ST</span></div>
               <div class="live-score-line">
                 <div class="live-score-name" id="liveNameP1">Jogador 1</div>
-                <input id="liveGameP1" inputmode="numeric" value="0" />
-                <input id="liveTieP1" inputmode="numeric" placeholder="-" />
+                <input id="liveSet1P1" inputmode="numeric" placeholder="-" />
+                <input id="liveSet2P1" inputmode="numeric" placeholder="-" />
+                <input id="liveStP1" inputmode="numeric" placeholder="-" />
               </div>
               <div class="live-score-line">
                 <div class="live-score-name" id="liveNameP2">Jogador 2</div>
-                <input id="liveGameP2" inputmode="numeric" value="0" />
-                <input id="liveTieP2" inputmode="numeric" placeholder="-" />
+                <input id="liveSet1P2" inputmode="numeric" placeholder="-" />
+                <input id="liveSet2P2" inputmode="numeric" placeholder="-" />
+                <input id="liveStP2" inputmode="numeric" placeholder="-" />
               </div>
             </div>
             <select class="live-ad-select" id="liveAdVideo">
@@ -3505,10 +3507,12 @@
       const live = liveState();
       refreshLivePlayerLabels();
       const sameMatch = match && String(live.match_id || '') === String(match.jogo_id || '') && ['AO_VIVO', 'PAUSADO', 'INTERVALO', 'FINALIZADO'].indexOf(String(live.status || '')) >= 0;
-      $('liveGameP1').value = sameMatch ? (live.game1 || '0') : '0';
-      $('liveGameP2').value = sameMatch ? (live.game2 || '0') : '0';
-      $('liveTieP1').value = sameMatch ? (live.tie1 || '') : '';
-      $('liveTieP2').value = sameMatch ? (live.tie2 || '') : '';
+      $('liveSet1P1').value = sameMatch ? (live.set1p1 || '') : ($('editorSet1P1').value || '');
+      $('liveSet1P2').value = sameMatch ? (live.set1p2 || '') : ($('editorSet1P2').value || '');
+      $('liveSet2P1').value = sameMatch ? (live.set2p1 || '') : ($('editorSet2P1').value || '');
+      $('liveSet2P2').value = sameMatch ? (live.set2p2 || '') : ($('editorSet2P2').value || '');
+      $('liveStP1').value = sameMatch ? (live.st1 || '') : ($('editorTbP1').value || '');
+      $('liveStP2').value = sameMatch ? (live.st2 || '') : ($('editorTbP2').value || '');
       const hint = sameMatch ? ('Este jogo esta na tela do OBS: ' + (liveStatusLabel(live.status) || 'ativo') + '.') : 'Clique em iniciar partida para jogar este jogo na tela do OBS.';
       $('livePanelHint').textContent = hint;
     }
@@ -3535,10 +3539,16 @@
       return {
         status: status || 'AO_VIVO',
         match_id: clear ? '' : matchId,
-        game1: clear ? '' : String($('liveGameP1').value || '0').trim(),
-        game2: clear ? '' : String($('liveGameP2').value || '0').trim(),
-        tie1: clear ? '' : String($('liveTieP1').value || '').trim(),
-        tie2: clear ? '' : String($('liveTieP2').value || '').trim(),
+        set1p1: clear ? '' : String($('liveSet1P1').value || '').trim(),
+        set1p2: clear ? '' : String($('liveSet1P2').value || '').trim(),
+        set2p1: clear ? '' : String($('liveSet2P1').value || '').trim(),
+        set2p2: clear ? '' : String($('liveSet2P2').value || '').trim(),
+        st1: clear ? '' : String($('liveStP1').value || '').trim(),
+        st2: clear ? '' : String($('liveStP2').value || '').trim(),
+        game1: clear ? '' : String($('liveSet1P1').value || '').trim(),
+        game2: clear ? '' : String($('liveSet1P2').value || '').trim(),
+        tie1: clear ? '' : String($('liveStP1').value || '').trim(),
+        tie2: clear ? '' : String($('liveStP2').value || '').trim(),
         jogador1_id: clear ? '' : player1,
         jogador2_id: clear ? '' : player2,
         vencedor_id: status === 'FINALIZADO' ? winnerId : '',
@@ -3554,12 +3564,16 @@
     function inferLiveWinner(player1, player2) {
       const scoreWinner = inferWinnerFromEditorFields(player1, player2);
       if (scoreWinner) return scoreWinner;
-      const game1 = Number(String($('liveGameP1').value || '').replace(',', '.'));
-      const game2 = Number(String($('liveGameP2').value || '').replace(',', '.'));
-      const tie1 = Number(String($('liveTieP1').value || '').replace(',', '.'));
-      const tie2 = Number(String($('liveTieP2').value || '').replace(',', '.'));
-      if (!Number.isNaN(tie1) && !Number.isNaN(tie2) && tie1 !== tie2) return tie1 > tie2 ? player1 : player2;
-      if (!Number.isNaN(game1) && !Number.isNaN(game2) && game1 !== game2) return game1 > game2 ? player1 : player2;
+      let wins1 = 0;
+      let wins2 = 0;
+      [['liveSet1P1', 'liveSet1P2'], ['liveSet2P1', 'liveSet2P2'], ['liveStP1', 'liveStP2']].forEach(function (pair) {
+        const p1 = Number(String($(pair[0]).value || '').replace(',', '.'));
+        const p2 = Number(String($(pair[1]).value || '').replace(',', '.'));
+        if (Number.isNaN(p1) || Number.isNaN(p2) || p1 === p2) return;
+        if (p1 > p2) wins1++;
+        else wins2++;
+      });
+      if (wins1 !== wins2) return wins1 > wins2 ? player1 : player2;
       return $('editorWinner').value || '';
     }
 
