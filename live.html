@@ -48,6 +48,7 @@
       background: rgba(0, 32, 72, .72);
       box-shadow: 0 18px 46px rgba(0, 0, 0, .22);
       backdrop-filter: blur(10px);
+      z-index: 8;
     }
 
     .brand-bug img {
@@ -240,31 +241,11 @@
     }
 
     body.is-ad .ad-panel { display: grid; }
-    body.is-ad .brand-bug,
     body.is-ad .live-score,
     body.is-ad .next-panel,
     body.is-ad .ticker,
     body.is-ad .winner-panel,
     body.is-ad .paused-panel { display: none !important; }
-
-    .ad-title {
-      position: absolute;
-      left: 50%;
-      top: 28px;
-      z-index: 2;
-      transform: translateX(-50%);
-      max-width: calc(100vw - 72px);
-      border-radius: 999px;
-      padding: 12px 24px;
-      background: linear-gradient(90deg, rgba(0, 75, 147, .96), rgba(0, 43, 92, .96));
-      color: #fff;
-      box-shadow: 0 16px 44px rgba(0, 0, 0, .34);
-      font-size: 20px;
-      font-weight: 900;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      text-align: center;
-    }
 
     .ad-frame {
       width: 100vw;
@@ -475,7 +456,6 @@
     </section>
 
     <section class="ad-panel" id="adPanel">
-      <div class="ad-title" id="adTitle">Intervalo Ford</div>
       <div class="ad-frame" id="adFrame"></div>
     </section>
 
@@ -634,7 +614,6 @@
       document.body.classList.remove('has-tie');
       document.body.classList.add('is-ad');
       const adId = String(live.ad_id || live.ad_url || '');
-      $('adTitle').textContent = live.ad_title || 'Intervalo Ford';
       if (currentAdId === adId) return;
       currentAdId = adId;
       loadYouTubeAd(live.ad_url, adId);
