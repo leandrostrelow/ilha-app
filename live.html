@@ -519,10 +519,11 @@
       const ad = activeAd(live);
       if (ad) renderAd(live);
       else if (finished) renderWinner(finished, live);
+      else if (String(live.status || '').toUpperCase() === 'PROXIMO') renderManualNext(live);
       else if (match && String(live.status || '').toUpperCase() === 'PAUSADO') renderPaused(match, live);
       else if (match) renderLive(match, live);
       else renderIdle();
-      renderTicker();
+      document.body.classList.remove('show-ticker');
     }
 
     function renderLive(match, live) {
@@ -717,44 +718,35 @@
       document.body.classList.remove('has-tie');
       document.body.classList.remove('is-paused');
       document.body.classList.remove('is-ad');
+      document.body.classList.remove('is-idle');
+      $('nextTitle').textContent = '';
+      $('nextMeta').innerHTML = '';
+    }
+
+    function renderManualNext(live) {
+      document.body.classList.remove('is-live');
+      document.body.classList.remove('is-winner');
+      document.body.classList.remove('has-tie');
+      document.body.classList.remove('is-paused');
+      document.body.classList.remove('is-ad');
       document.body.classList.add('is-idle');
-      const next = nextMatch();
-      if (!next) {
-        $('nextTitle').textContent = 'Aguardando programação';
-        $('nextMeta').innerHTML = '<span>II VIAFOR OPEN</span><span>Ilha Tenis Colatina</span>';
-        return;
-      }
-      const p1 = getPlayerName(next.jogador1_id) || 'A definir';
-      const p2 = getPlayerName(next.jogador2_id) || 'A definir';
+      const match = (state.data.jogos || []).find(function (j) { return String(j.jogo_id) === String(live.match_id); }) || live;
+      const p1 = getPlayerName(live.jogador1_id || match.jogador1_id) || 'A definir';
+      const p2 = getPlayerName(live.jogador2_id || match.jogador2_id) || 'A definir';
       $('nextTitle').textContent = p1 + ' x ' + p2;
       $('nextMeta').innerHTML = [
-        getCategoryName(next.categoria_id),
-        roundLabels[next.fase] || next.fase || 'Jogo',
-        displayDay(next.data),
-        formatAgendaTime(next.hora),
-        next.quadra || 'Sem quadra'
+        getCategoryName(live.categoria_id || match.categoria_id),
+        roundLabels[live.fase || match.fase] || live.fase || match.fase || 'Jogo',
+        displayDay(match.data),
+        formatAgendaTime(match.hora),
+        match.quadra || 'Sem quadra'
       ].filter(Boolean).map(function (item) {
         return '<span>' + escapeHtml(item) + '</span>';
       }).join('');
     }
 
     function renderTicker() {
-      if (document.body.classList.contains('is-ad')) {
-        document.body.classList.remove('show-ticker');
-        return;
-      }
-      const cycle = Date.now() % 600000;
-      const showTicker = cycle < 120000;
-      const mode = cycle < 60000 ? 'next' : 'results';
-      document.body.classList.toggle('show-ticker', showTicker);
-      if (!showTicker) return;
-      $('tickerLabel').textContent = mode === 'next' ? 'Próximos' : 'Resultados';
-      const items = mode === 'next' ? upcomingTexts().slice(0, 8) : recentResults().slice(0, 8).map(resultText);
-      const content = (items.length ? items : ['II VIAFOR OPEN | Ilha Tenis Colatina']);
-      const doubled = content.concat(content);
-      $('tickerTrack').innerHTML = doubled.map(function (item) {
-        return '<span>' + item + '</span>';
-      }).join('');
+      document.body.classList.remove('show-ticker');
     }
 
     function liveState() {
@@ -929,7 +921,7 @@
 
     function renderFallback() {
       document.body.classList.remove('is-live');
-      document.body.classList.add('is-idle');
+      document.body.classList.remove('is-idle');
       $('nextTitle').textContent = 'Conectando ao placar';
       $('nextMeta').innerHTML = '<span>II VIAFOR OPEN</span>';
     }
