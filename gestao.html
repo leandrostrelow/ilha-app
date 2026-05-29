@@ -80,6 +80,29 @@
       white-space: nowrap;
     }
 
+    .top-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .obs-link {
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: var(--dark);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+      text-decoration: none;
+      white-space: nowrap;
+      box-shadow: 0 8px 20px rgba(36, 56, 71, .16);
+    }
+
     .tabs {
       display: grid;
       grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -762,6 +785,73 @@
       gap: 8px;
     }
 
+    .live-panel {
+      padding: 10px;
+      border: 1px solid #cfe6ff;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #f7fbff 0%, #eef7ff 100%);
+    }
+
+    .live-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .live-panel-title {
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--dark);
+      text-transform: uppercase;
+    }
+
+    .live-panel-subtitle {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .live-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 78px) minmax(0, 1fr);
+      gap: 8px;
+      align-items: end;
+    }
+
+    .live-grid input {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .live-actions {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 9px;
+    }
+
+    .live-actions button,
+    .live-panel-head a {
+      min-height: 38px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .live-panel-head a {
+      display: inline-grid;
+      place-items: center;
+      padding: 0 10px;
+      background: #fff;
+      color: var(--dark);
+      text-decoration: none;
+      border: 1px solid var(--line);
+    }
+
     .agenda-list {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(560px, 1fr));
@@ -1188,6 +1278,11 @@
       .app { padding: 10px; }
       .topbar { margin: -10px -10px 10px; padding: 10px; }
       .topline { align-items: flex-start; }
+      .top-actions {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 6px;
+      }
       h1 { font-size: 19px; }
       .tabs {
         display: flex;
@@ -1359,7 +1454,7 @@
       .editor-whatsapp-btn { min-height: 34px; padding: 0 4px; font-size: 9px; }
       .editor-whatsapp-btn .wa-icon { width: 13px; height: 13px; }
       .agenda-list { grid-template-columns: 1fr; }
-      .player-filters, .agenda-filters, .match-agenda-grid, .agenda-event-form { grid-template-columns: 1fr; }
+      .player-filters, .agenda-filters, .match-agenda-grid, .agenda-event-form, .live-grid, .live-actions { grid-template-columns: 1fr; }
       .agenda-card-actions { gap: 4px; }
       .agenda-order-btn { width: 30px; height: 30px; font-size: 13px; }
       .result-card { grid-template-columns: 28px minmax(0, 1fr); padding: 9px; }
@@ -1376,7 +1471,10 @@
           <h1>Gestao Torneio Ilha</h1>
           <div class="muted" id="tournamentSubtitle">Carregando torneio...</div>
         </div>
-        <div class="status" id="syncStatus">Sincronizando...</div>
+        <div class="top-actions">
+          <a class="obs-link" href="live.html" target="_blank" rel="noopener">Tela OBS</a>
+          <div class="status" id="syncStatus">Sincronizando...</div>
+        </div>
       </div>
       <div class="tabs">
         <button class="tab-btn active" data-tab="brackets">Chaves</button>
@@ -1728,6 +1826,37 @@
         <div class="field full">
           <label>Link das fotos</label>
           <input id="editorPhotoLink" type="url" placeholder="https://..." />
+        </div>
+        <div class="field full">
+          <div class="live-panel">
+            <div class="live-panel-head">
+              <div>
+                <div class="live-panel-title">Transmissao OBS</div>
+                <div class="live-panel-subtitle" id="livePanelHint">Controle o placar simples que aparece na live.</div>
+              </div>
+              <a href="live.html" target="_blank" rel="noopener">Abrir tela OBS</a>
+            </div>
+            <div class="live-grid">
+              <div class="field">
+                <label>Games J1</label>
+                <input id="liveGameP1" inputmode="numeric" value="0" />
+              </div>
+              <div class="field">
+                <label>Games J2</label>
+                <input id="liveGameP2" inputmode="numeric" value="0" />
+              </div>
+              <div class="field">
+                <label>Mensagem rapida</label>
+                <input id="liveMessage" placeholder="Ex: aquecimento, intervalo..." />
+              </div>
+            </div>
+            <div class="live-actions">
+              <button class="primary-btn" type="button" onclick="startLiveMatch()">Iniciar partida</button>
+              <button class="ghost-btn" type="button" onclick="updateLiveScore()">Atualizar games</button>
+              <button class="ghost-btn" type="button" onclick="clearLiveMatch()">Limpar tela</button>
+              <button class="ghost-btn" type="button" onclick="openLiveOverlay()">OBS</button>
+            </div>
+          </div>
         </div>
         <div hidden>
           <select id="editorWinner"></select>
@@ -2533,6 +2662,7 @@
       updateEditorWinnerOptions(match.vencedor_id);
       syncWinnerFromEditor(false);
       updateEditorWhatsappButtons();
+      updateLiveEditorFields(match);
       $('matchEditorBackdrop').classList.add('open');
     }
 
@@ -2709,6 +2839,20 @@
           for (let i = 0; i < changedMatches.length; i++) {
             await apiPost({ action: 'saveMatch', jogo: changedMatches[i] }, { silent: true });
           }
+        }
+
+        if (data.vencedor_id && String(liveState().match_id || '') === String(data.jogo_id || '')) {
+          await apiPost({
+            action: 'setLiveState',
+            live: {
+              status: 'IDLE',
+              match_id: '',
+              game1: '',
+              game2: '',
+              message: '',
+              updated_client_at: new Date().toISOString()
+            }
+          }, { silent: true });
         }
 
         changedMatches.forEach(clearDirtyMatch);
@@ -3289,6 +3433,71 @@
       if (finished) data.resultado_em = new Date().toISOString();
       else data.resultado_em = '';
       return data;
+    }
+
+    function configValue(key) {
+      const row = (state.data && state.data.config || []).find(function (item) {
+        return String(item.chave || '') === String(key);
+      });
+      return row ? row.valor : '';
+    }
+
+    function liveState() {
+      try {
+        return JSON.parse(configValue('LIVE_STATE') || '{}') || {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function updateLiveEditorFields(match) {
+      const live = liveState();
+      const sameMatch = match && String(live.match_id || '') === String(match.jogo_id || '') && String(live.status || '') === 'AO_VIVO';
+      $('liveGameP1').value = sameMatch ? (live.game1 || '0') : '0';
+      $('liveGameP2').value = sameMatch ? (live.game2 || '0') : '0';
+      $('liveMessage').value = sameMatch ? (live.message || '') : '';
+      const hint = sameMatch ? 'Este jogo esta na tela do OBS.' : 'Clique em iniciar partida para jogar este jogo na tela do OBS.';
+      $('livePanelHint').textContent = hint;
+    }
+
+    function livePayloadFromEditor(status) {
+      const matchId = $('editorMatchId').value;
+      const match = currentMatchById(matchId);
+      return {
+        status: status || 'AO_VIVO',
+        match_id: status === 'IDLE' ? '' : matchId,
+        game1: status === 'IDLE' ? '' : String($('liveGameP1').value || '0').trim(),
+        game2: status === 'IDLE' ? '' : String($('liveGameP2').value || '0').trim(),
+        message: status === 'IDLE' ? '' : String($('liveMessage').value || '').trim(),
+        categoria_id: match ? match.categoria_id : '',
+        fase: match ? match.fase : '',
+        updated_client_at: new Date().toISOString()
+      };
+    }
+
+    async function saveLiveState(live, successMessage) {
+      try {
+        await apiPost({ action: 'setLiveState', live: live }, { returnData: true });
+        toast(successMessage || 'Tela OBS atualizada.');
+      } catch (error) {
+        toast(error.message);
+      }
+    }
+
+    async function startLiveMatch() {
+      await saveLiveState(livePayloadFromEditor('AO_VIVO'), 'Partida enviada para a tela OBS.');
+    }
+
+    async function updateLiveScore() {
+      await saveLiveState(livePayloadFromEditor('AO_VIVO'), 'Games atualizados na tela OBS.');
+    }
+
+    async function clearLiveMatch() {
+      await saveLiveState(livePayloadFromEditor('IDLE'), 'Tela OBS limpa.');
+    }
+
+    function openLiveOverlay() {
+      window.open('live.html', '_blank', 'noopener');
     }
 
     async function saveMatchFromCard(matchId) {

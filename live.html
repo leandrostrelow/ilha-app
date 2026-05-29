@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transmissao II Viafor Open</title>
+  <style>
+    :root {
+      --ford: #004b93;
+      --ford-dark: #052b5f;
+      --lime: #b5e500;
+      --white: #ffffff;
+      --soft: rgba(235, 246, 255, .94);
+      --text: #062345;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--white);
+    }
+
+    body {
+      position: relative;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .brand-bug {
+      position: absolute;
+      top: 34px;
+      left: 42px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      background: rgba(0, 32, 72, .72);
+      box-shadow: 0 18px 46px rgba(0, 0, 0, .22);
+      backdrop-filter: blur(10px);
+    }
+
+    .brand-bug img {
+      display: block;
+      object-fit: contain;
+    }
+
+    .brand-title { width: 190px; height: 46px; }
+    .brand-ilha { width: 120px; height: 44px; }
+
+    .live-score {
+      position: absolute;
+      left: 42px;
+      bottom: 98px;
+      width: min(860px, calc(100vw - 84px));
+      display: none;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 22px 60px rgba(0, 0, 0, .34);
+      background: rgba(255, 255, 255, .96);
+      color: var(--text);
+    }
+
+    body.is-live .live-score { display: block; }
+
+    .live-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 18px;
+      background: linear-gradient(90deg, var(--ford-dark), var(--ford));
+      color: var(--white);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(181, 229, 0, .18);
+      color: var(--lime);
+      font-size: 13px;
+    }
+
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--lime);
+      box-shadow: 0 0 18px var(--lime);
+    }
+
+    .score-row {
+      display: grid;
+      grid-template-columns: 1fr 92px;
+      min-height: 78px;
+      border-top: 1px solid #cfe0f5;
+    }
+
+    .score-row:first-child { border-top: 0; }
+
+    .score-name {
+      display: flex;
+      align-items: center;
+      padding: 16px 22px;
+      font-size: 34px;
+      line-height: 1;
+      font-weight: 900;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .score-games {
+      display: grid;
+      place-items: center;
+      background: #eaf3ff;
+      color: var(--ford-dark);
+      font-size: 44px;
+      font-weight: 900;
+      border-left: 1px solid #cfe0f5;
+    }
+
+    .live-message {
+      padding: 10px 18px 14px;
+      color: #315a87;
+      font-size: 17px;
+      font-weight: 900;
+      min-height: 42px;
+    }
+
+    .next-panel {
+      position: absolute;
+      right: 48px;
+      bottom: 150px;
+      width: min(720px, calc(100vw - 96px));
+      display: none;
+      border-radius: 28px;
+      padding: 26px;
+      background: rgba(0, 55, 117, .88);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .34);
+      backdrop-filter: blur(12px);
+    }
+
+    body.is-idle .next-panel { display: block; }
+
+    .next-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--lime);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .next-title {
+      margin-top: 18px;
+      font-size: 42px;
+      line-height: 1.02;
+      font-weight: 900;
+    }
+
+    .next-meta {
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .next-meta span {
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .14);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .ticker {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      background: rgba(0, 32, 72, .88);
+      border-top: 4px solid var(--lime);
+    }
+
+    .ticker-label {
+      height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 0 24px;
+      background: var(--lime);
+      color: var(--text);
+      font-size: 17px;
+      font-weight: 900;
+      text-transform: uppercase;
+      z-index: 2;
+    }
+
+    .ticker-track {
+      display: inline-flex;
+      gap: 42px;
+      min-width: max-content;
+      animation: ticker 42s linear infinite;
+      padding-left: 36px;
+      font-size: 22px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .ticker-track span strong { color: var(--lime); }
+
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body class="is-idle">
+  <div class="overlay">
+    <div class="brand-bug">
+      <img class="brand-title" src="titulo.png" alt="Viafor Open" />
+      <img class="brand-ilha" src="logo%20ilha%20branca.png" alt="Ilha Tenis" />
+    </div>
+
+    <section class="live-score" id="liveScore">
+      <div class="live-head">
+        <span id="liveMeta">II VIAFOR OPEN</span>
+        <span class="live-pill"><span class="live-dot"></span>AO VIVO</span>
+      </div>
+      <div class="score-row">
+        <div class="score-name" id="livePlayer1">Jogador 1</div>
+        <div class="score-games" id="liveGame1">0</div>
+      </div>
+      <div class="score-row">
+        <div class="score-name" id="livePlayer2">Jogador 2</div>
+        <div class="score-games" id="liveGame2">0</div>
+      </div>
+      <div class="live-message" id="liveMessage"></div>
+    </section>
+
+    <section class="next-panel" id="nextPanel">
+      <div class="next-label">Proximo jogo</div>
+      <div class="next-title" id="nextTitle">Aguardando programacao</div>
+      <div class="next-meta" id="nextMeta"></div>
+    </section>
+
+    <div class="ticker">
+      <div class="ticker-label">Atualizacoes</div>
+      <div class="ticker-track" id="tickerTrack"><span>II VIAFOR OPEN | Ilha Tenis Colatina</span></div>
+    </div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxpm53hx_IN3DUoInBG2SlkSiLkhG7XiZ_j4Ae4l95R-6dqY2PfUlt3Xl-KJiGnotYd/exec';
+    const agendaDays = ['Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado', 'Domingo'];
+    const roundLabels = { R32: '32 avos', R16: 'Oitavas', QF: 'Quartas', SF: 'Semifinal', FINAL: 'Final' };
+    let state = { data: null };
+
+    function $(id) { return document.getElementById(id); }
+
+    function loadData() {
+      return new Promise(function (resolve, reject) {
+        const callbackName = '__liveCb' + Date.now() + Math.floor(Math.random() * 1000);
+        const script = document.createElement('script');
+        const cleanup = function () {
+          delete window[callbackName];
+          script.remove();
+        };
+        window[callbackName] = function (payload) {
+          cleanup();
+          if (!payload || !payload.ok) reject(new Error(payload && payload.error || 'Falha ao carregar'));
+          else resolve(payload.data);
+        };
+        script.onerror = function () {
+          cleanup();
+          reject(new Error('Falha ao conectar'));
+        };
+        script.src = SCRIPT_URL + '?callback=' + encodeURIComponent(callbackName) + '&t=' + Date.now();
+        document.body.appendChild(script);
+      }).then(function (data) {
+        state.data = data;
+        render();
+      }).catch(function () {
+        renderFallback();
+      });
+    }
+
+    function render() {
+      if (!state.data) return renderFallback();
+      const live = liveState();
+      const match = activeLiveMatch(live);
+      if (match) renderLive(match, live);
+      else renderIdle();
+      renderTicker();
+    }
+
+    function renderLive(match, live) {
+      document.body.classList.add('is-live');
+      document.body.classList.remove('is-idle');
+      $('liveMeta').textContent = [shortCategory(getCategoryName(match.categoria_id)), roundLabels[match.fase] || match.fase || 'Jogo'].filter(Boolean).join(' | ');
+      $('livePlayer1').textContent = getPlayerName(match.jogador1_id) || 'A definir';
+      $('livePlayer2').textContent = getPlayerName(match.jogador2_id) || 'A definir';
+      $('liveGame1').textContent = live.game1 || '0';
+      $('liveGame2').textContent = live.game2 || '0';
+      $('liveMessage').textContent = live.message || 'Placar parcial em tempo real';
+    }
+
+    function renderIdle() {
+      document.body.classList.remove('is-live');
+      document.body.classList.add('is-idle');
+      const next = nextMatch();
+      if (!next) {
+        $('nextTitle').textContent = 'Aguardando programacao';
+        $('nextMeta').innerHTML = '<span>II VIAFOR OPEN</span><span>Ilha Tenis Colatina</span>';
+        return;
+      }
+      const p1 = getPlayerName(next.jogador1_id) || 'A definir';
+      const p2 = getPlayerName(next.jogador2_id) || 'A definir';
+      $('nextTitle').textContent = p1 + ' x ' + p2;
+      $('nextMeta').innerHTML = [
+        getCategoryName(next.categoria_id),
+        roundLabels[next.fase] || next.fase || 'Jogo',
+        displayDay(next.data),
+        formatAgendaTime(next.hora),
+        next.quadra || 'Sem quadra'
+      ].filter(Boolean).map(function (item) {
+        return '<span>' + escapeHtml(item) + '</span>';
+      }).join('');
+    }
+
+    function renderTicker() {
+      const items = recentResults().slice(0, 8).map(resultText);
+      const next = nextMatch();
+      if (next) {
+        items.unshift('Proximo: <strong>' + escapeHtml(getPlayerName(next.jogador1_id) || 'A definir') + ' x ' + escapeHtml(getPlayerName(next.jogador2_id) || 'A definir') + '</strong>');
+      }
+      const content = (items.length ? items : ['II VIAFOR OPEN | Ilha Tenis Colatina']);
+      const doubled = content.concat(content);
+      $('tickerTrack').innerHTML = doubled.map(function (item) {
+        return '<span>' + item + '</span>';
+      }).join('');
+    }
+
+    function liveState() {
+      try {
+        const row = (state.data.config || []).find(function (item) { return String(item.chave || '') === 'LIVE_STATE'; });
+        return row ? JSON.parse(row.valor || '{}') : {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function activeLiveMatch(live) {
+      if (!live || String(live.status || '') !== 'AO_VIVO' || !live.match_id) return null;
+      const match = (state.data.jogos || []).find(function (j) { return String(j.jogo_id) === String(live.match_id); });
+      if (!match || String(match.status || '').toUpperCase() === 'FINALIZADO') return null;
+      return match;
+    }
+
+    function nextMatch() {
+      const live = liveState();
+      return (state.data.jogos || []).filter(function (match) {
+        if (String(match.status || '').toUpperCase() === 'FINALIZADO') return false;
+        if (String(match.jogo_id || '') === String(live.match_id || '')) return false;
+        if (!(match.data || match.hora || match.quadra)) return false;
+        return true;
+      }).sort(sortSchedule)[0] || null;
+    }
+
+    function recentResults() {
+      return (state.data.jogos || []).filter(function (match) {
+        return String(match.status || '').toUpperCase() === 'FINALIZADO' && match.vencedor_id;
+      }).sort(function (a, b) {
+        const resultA = Date.parse(String(a.resultado_em || '').replace(' ', 'T')) || 0;
+        const resultB = Date.parse(String(b.resultado_em || '').replace(' ', 'T')) || 0;
+        if (resultA || resultB) return resultB - resultA;
+        return sortSchedule(b, a);
+      });
+    }
+
+    function resultText(match) {
+      const p1 = getPlayerName(match.jogador1_id) || 'A definir';
+      const p2 = getPlayerName(match.jogador2_id) || 'A definir';
+      const score = resultSetScore(match);
+      const winner = getPlayerName(match.vencedor_id) || 'Vencedor';
+      return '<strong>' + escapeHtml(winner) + '</strong> venceu: ' + escapeHtml(p1) + ' ' + score.p1 + ' x ' + score.p2 + ' ' + escapeHtml(p2);
+    }
+
+    function resultSetScore(match) {
+      const tokens = String(match.placar || '').trim().split(/\s+/).filter(Boolean);
+      let p1 = 0;
+      let p2 = 0;
+      tokens.forEach(function (token) {
+        if (/^ST$/i.test(token)) return;
+        const nums = token.match(/\d+/g);
+        if (!nums || nums.length < 2) return;
+        const a = Number(nums[0]);
+        const b = Number(nums[1]);
+        if (a > b) p1++;
+        else if (b > a) p2++;
+      });
+      if (!p1 && !p2 && match.vencedor_id) {
+        if (String(match.vencedor_id) === String(match.jogador1_id)) p1 = 1;
+        if (String(match.vencedor_id) === String(match.jogador2_id)) p2 = 1;
+      }
+      return { p1: p1, p2: p2 };
+    }
+
+    function getPlayerName(id) {
+      const player = (state.data.jogadores || []).find(function (p) { return String(p.jogador_id) === String(id); });
+      return player ? player.nome : '';
+    }
+
+    function getCategoryName(id) {
+      const category = (state.data.categorias || []).find(function (c) { return String(c.categoria_id) === String(id); });
+      return category ? category.nome : '';
+    }
+
+    function shortCategory(name) {
+      return String(name || '').replace(/\s+(Masculina|Feminina)$/i, '').trim();
+    }
+
+    function sortSchedule(a, b) {
+      const dayDiff = daySortValue(a.data) - daySortValue(b.data);
+      if (dayDiff) return dayDiff;
+      const courtDiff = String(a.quadra || '').localeCompare(String(b.quadra || ''));
+      if (courtDiff) return courtDiff;
+      const orderA = Number(a.ordem || 0);
+      const orderB = Number(b.ordem || 0);
+      if (orderA || orderB) return (orderA || 9999) - (orderB || 9999);
+      return timeSortValue(a.hora) - timeSortValue(b.hora) ||
+        Number(a.rodada || 0) - Number(b.rodada || 0) ||
+        Number(a.posicao_chave || 0) - Number(b.posicao_chave || 0);
+    }
+
+    function daySortValue(value) {
+      const normalized = normalizeSearch(normalizeAgendaDay(value));
+      const index = agendaDays.findIndex(function (day) { return normalizeSearch(day) === normalized; });
+      return index >= 0 ? index : 99;
+    }
+
+    function timeSortValue(value) {
+      const raw = normalizeSearch(formatAgendaTime(value));
+      if (!raw) return 9999;
+      if (raw.indexOf('apos') === 0) return 9998;
+      const match = raw.match(/^(\d{1,2}):(\d{2})$/);
+      return match ? Number(match[1]) * 60 + Number(match[2]) : 9997;
+    }
+
+    function formatAgendaTime(value) {
+      const raw = String(value || '').replace(/^'/, '').trim();
+      if (!raw) return 'A definir';
+      if (normalizeSearch(raw).indexOf('apos') === 0) return 'Apos';
+      const hour = raw.match(/^(\d{1,2})h?$/i);
+      if (hour) return String(Number(hour[1])).padStart(2, '0') + ':00';
+      const minute = raw.match(/^(\d{1,2})(?:h|:)(\d{2})$/i);
+      if (minute) return String(Number(minute[1])).padStart(2, '0') + ':' + minute[2];
+      return raw;
+    }
+
+    function normalizeAgendaDay(value) {
+      if (!value) return '';
+      const raw = String(value).trim();
+      const found = agendaDays.find(function (day) {
+        return normalizeSearch(day) === normalizeSearch(raw) || normalizeSearch(displayDay(day)) === normalizeSearch(raw);
+      });
+      return found || raw;
+    }
+
+    function displayDay(value) {
+      const map = { Terca: 'Terca', Sabado: 'Sabado' };
+      return map[normalizeAgendaDay(value)] || value || '';
+    }
+
+    function normalizeSearch(value) {
+      return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    }
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"]/g, function (char) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char];
+      });
+    }
+
+    function renderFallback() {
+      document.body.classList.remove('is-live');
+      document.body.classList.add('is-idle');
+      $('nextTitle').textContent = 'Conectando ao placar';
+      $('nextMeta').innerHTML = '<span>II VIAFOR OPEN</span>';
+    }
+
+    loadData();
+    setInterval(loadData, 5000);
+  </script>
+</body>
+</html>
