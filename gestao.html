@@ -4125,7 +4125,7 @@
       canvas.height = poster.height * exportScale;
       const ctx = canvas.getContext('2d');
       ctx.scale(exportScale, exportScale);
-      drawAgendaPoster(ctx, poster, matches.slice(0, 10), day, background);
+      drawAgendaPoster(ctx, poster, matches, day, background);
 
       const fileName = 'agenda-' + normalizeSearch(day || 'jogos').replace(/\s+/g, '-') + '.png';
       let imageUrl;
@@ -4140,7 +4140,7 @@
       link.download = fileName;
       link.href = imageUrl;
       link.click();
-      if (matches.length > 10) toast('Arte gerada com os 10 primeiros jogos do dia.');
+      if (matches.length > 18) toast('Arte gerada com os primeiros jogos de cada quadra.');
     }
 
     function showInstagramPreview(imageUrl, fileName) {
@@ -4370,19 +4370,31 @@
       ctx.fillStyle = colors.dark;
       drawFitText(ctx, 'PROGRAMA\u00c7\u00c3O OFICIAL', canvas.width / 2, 491, 305, 17, 900);
 
-      const selectedMatches = matches.slice(0, 10);
-      const count = Math.max(selectedMatches.length, 1);
-      const top = 590;
-      const gap = count > 8 ? 7 : (count > 6 ? 10 : 14);
-      const cardHeight = count > 8 ? 54 : (count > 6 ? 62 : 78);
-
-      selectedMatches.forEach(function (match, index) {
-        drawAgendaPosterCard(ctx, match, 68, top + index * (cardHeight + gap), 944, cardHeight, colors);
+      const selectedMatches = matches.slice();
+      const courtNames = agendaCourtNames(selectedMatches, '').filter(function (court) {
+        return selectedMatches.some(function (match) {
+          return String(match.quadra || 'Sem quadra') === String(court);
+        });
       });
+      const columns = (courtNames.length ? courtNames : ['Quadra 1', 'Quadra 2']).slice(0, 2).map(function (court) {
+        return {
+          court: court,
+          items: selectedMatches.filter(function (match) {
+            return String(match.quadra || 'Sem quadra') === String(court);
+          }).sort(sortAgenda)
+        };
+      });
+
+      if (columns.length === 1) {
+        drawAgendaPosterColumn(ctx, columns[0].court, columns[0].items, 68, 590, 944, colors);
+      } else {
+        drawAgendaPosterColumn(ctx, columns[0].court, columns[0].items, 54, 590, 470, colors);
+        drawAgendaPosterColumn(ctx, columns[1].court, columns[1].items, 556, 590, 470, colors);
+      }
     }
 
     function drawAgendaPosterCard(ctx, match, x, y, width, height, colors) {
-      const compact = height < 64;
+      const compact = height < 64 || width < 620;
       const radius = compact ? 15 : 18;
       const isEvent = isAgendaEvent(match);
       const player1 = isEvent ? (match.titulo || match.jogador1 || 'Evento') : (getPlayerName(match.jogador1_id) || 'A definir');
@@ -4415,13 +4427,44 @@
       ctx.fillStyle = colors.text;
       ctx.textAlign = 'left';
       const namesText = isEvent
-        ? shortName(player1, compact ? 42 : 52)
-        : shortName(player1, compact ? 22 : 28) + '  x  ' + shortName(player2, compact ? 22 : 28);
+        ? shortName(player1, compact ? 32 : 52)
+        : shortName(player1, compact ? 16 : 28) + '  x  ' + shortName(player2, compact ? 16 : 28);
       drawFitText(ctx, namesText, x + (compact ? 135 : 160), y + (compact ? 30 : 39), width - (compact ? 170 : 205), nameSize, 900, 'left');
 
       ctx.fillStyle = colors.muted;
       const meta = [category, court, isEvent && player2 ? shortName(player2, 42) : ''].filter(Boolean).join(' | ');
       drawFitText(ctx, meta, x + (compact ? 135 : 160), y + (compact ? 49 : 63), width - (compact ? 170 : 205), compact ? 12 : 15, 900, 'left');
+    }
+
+    function drawAgendaPosterColumn(ctx, court, items, x, y, width, colors) {
+      const headerHeight = 38;
+      const displayItems = items.slice(0, 9);
+      const maxRows = Math.max(displayItems.length, 1);
+      const availableHeight = 700;
+      const gap = maxRows > 7 ? 7 : 10;
+      const cardHeight = Math.max(58, Math.min(76, Math.floor((availableHeight - headerHeight - ((maxRows - 1) * gap) - 14) / maxRows)));
+
+      ctx.save();
+      ctx.fillStyle = colors.dark;
+      roundRect(ctx, x, y, width, headerHeight, 19);
+      ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = colors.white;
+      ctx.textAlign = 'center';
+      drawFitText(ctx, String(court || 'Quadra').toUpperCase(), x + width / 2, y + 25, width - 34, 17, 900, 'center');
+
+      if (!displayItems.length) {
+        ctx.fillStyle = 'rgba(255,255,255,.84)';
+        roundRect(ctx, x, y + headerHeight + 12, width, 62, 16);
+        ctx.fill();
+        ctx.fillStyle = colors.muted;
+        drawFitText(ctx, 'Sem jogos nessa quadra', x + width / 2, y + headerHeight + 50, width - 40, 16, 900, 'center');
+        return;
+      }
+
+      displayItems.forEach(function (match, index) {
+        drawAgendaPosterCard(ctx, match, x, y + headerHeight + 12 + index * (cardHeight + gap), width, cardHeight, colors);
+      });
     }
 
     function posterDayName(day) {
