@@ -816,7 +816,7 @@
 
     .live-grid {
       display: grid;
-      grid-template-columns: repeat(2, 78px) minmax(0, 1fr);
+      grid-template-columns: repeat(4, 72px);
       gap: 8px;
       align-items: end;
     }
@@ -829,7 +829,7 @@
 
     .live-actions {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 8px;
       margin-top: 9px;
     }
@@ -1846,13 +1846,18 @@
                 <input id="liveGameP2" inputmode="numeric" value="0" />
               </div>
               <div class="field">
-                <label>Mensagem rapida</label>
-                <input id="liveMessage" placeholder="Ex: aquecimento, intervalo..." />
+                <label>Super tie J1</label>
+                <input id="liveTieP1" inputmode="numeric" placeholder="-" />
+              </div>
+              <div class="field">
+                <label>Super tie J2</label>
+                <input id="liveTieP2" inputmode="numeric" placeholder="-" />
               </div>
             </div>
             <div class="live-actions">
               <button class="primary-btn" type="button" onclick="startLiveMatch()">Iniciar partida</button>
               <button class="ghost-btn" type="button" onclick="updateLiveScore()">Atualizar games</button>
+              <button class="primary-btn" type="button" onclick="finishLiveMatch()">Finalizar partida</button>
               <button class="ghost-btn" type="button" onclick="clearLiveMatch()">Limpar tela</button>
               <button class="ghost-btn" type="button" onclick="openLiveOverlay()">OBS</button>
             </div>
@@ -2842,14 +2847,22 @@
         }
 
         if (data.vencedor_id && String(liveState().match_id || '') === String(data.jogo_id || '')) {
+          const currentLive = liveState();
           await apiPost({
             action: 'setLiveState',
             live: {
-              status: 'IDLE',
-              match_id: '',
-              game1: '',
-              game2: '',
-              message: '',
+              status: 'FINALIZADO',
+              match_id: data.jogo_id || '',
+              game1: currentLive.game1 || '',
+              game2: currentLive.game2 || '',
+              tie1: currentLive.tie1 || '',
+              tie2: currentLive.tie2 || '',
+              jogador1_id: data.jogador1_id || '',
+              jogador2_id: data.jogador2_id || '',
+              vencedor_id: data.vencedor_id || '',
+              vencedor_nome: getPlayerName(data.vencedor_id),
+              categoria_id: data.categoria_id || '',
+              fase: data.fase || '',
               updated_client_at: new Date().toISOString()
             }
           }, { silent: true });
@@ -3452,10 +3465,11 @@
 
     function updateLiveEditorFields(match) {
       const live = liveState();
-      const sameMatch = match && String(live.match_id || '') === String(match.jogo_id || '') && String(live.status || '') === 'AO_VIVO';
+      const sameMatch = match && String(live.match_id || '') === String(match.jogo_id || '') && ['AO_VIVO', 'FINALIZADO'].indexOf(String(live.status || '')) >= 0;
       $('liveGameP1').value = sameMatch ? (live.game1 || '0') : '0';
       $('liveGameP2').value = sameMatch ? (live.game2 || '0') : '0';
-      $('liveMessage').value = sameMatch ? (live.message || '') : '';
+      $('liveTieP1').value = sameMatch ? (live.tie1 || '') : '';
+      $('liveTieP2').value = sameMatch ? (live.tie2 || '') : '';
       const hint = sameMatch ? 'Este jogo esta na tela do OBS.' : 'Clique em iniciar partida para jogar este jogo na tela do OBS.';
       $('livePanelHint').textContent = hint;
     }
@@ -3463,16 +3477,36 @@
     function livePayloadFromEditor(status) {
       const matchId = $('editorMatchId').value;
       const match = currentMatchById(matchId);
+      const player1 = match ? ($('editorPlayer1').value || match.jogador1_id || '') : '';
+      const player2 = match ? ($('editorPlayer2').value || match.jogador2_id || '') : '';
+      const winnerId = status === 'FINALIZADO' ? inferLiveWinner(player1, player2) : '';
       return {
         status: status || 'AO_VIVO',
         match_id: status === 'IDLE' ? '' : matchId,
         game1: status === 'IDLE' ? '' : String($('liveGameP1').value || '0').trim(),
         game2: status === 'IDLE' ? '' : String($('liveGameP2').value || '0').trim(),
-        message: status === 'IDLE' ? '' : String($('liveMessage').value || '').trim(),
+        tie1: status === 'IDLE' ? '' : String($('liveTieP1').value || '').trim(),
+        tie2: status === 'IDLE' ? '' : String($('liveTieP2').value || '').trim(),
+        jogador1_id: status === 'IDLE' ? '' : player1,
+        jogador2_id: status === 'IDLE' ? '' : player2,
+        vencedor_id: status === 'FINALIZADO' ? winnerId : '',
+        vencedor_nome: status === 'FINALIZADO' ? getPlayerName(winnerId) : '',
         categoria_id: match ? match.categoria_id : '',
         fase: match ? match.fase : '',
         updated_client_at: new Date().toISOString()
       };
+    }
+
+    function inferLiveWinner(player1, player2) {
+      const scoreWinner = inferWinnerFromEditorFields(player1, player2);
+      if (scoreWinner) return scoreWinner;
+      const game1 = Number(String($('liveGameP1').value || '').replace(',', '.'));
+      const game2 = Number(String($('liveGameP2').value || '').replace(',', '.'));
+      const tie1 = Number(String($('liveTieP1').value || '').replace(',', '.'));
+      const tie2 = Number(String($('liveTieP2').value || '').replace(',', '.'));
+      if (!Number.isNaN(tie1) && !Number.isNaN(tie2) && tie1 !== tie2) return tie1 > tie2 ? player1 : player2;
+      if (!Number.isNaN(game1) && !Number.isNaN(game2) && game1 !== game2) return game1 > game2 ? player1 : player2;
+      return $('editorWinner').value || '';
     }
 
     async function saveLiveState(live, successMessage) {
@@ -3490,6 +3524,15 @@
 
     async function updateLiveScore() {
       await saveLiveState(livePayloadFromEditor('AO_VIVO'), 'Games atualizados na tela OBS.');
+    }
+
+    async function finishLiveMatch() {
+      const payload = livePayloadFromEditor('FINALIZADO');
+      if (!payload.vencedor_id) {
+        toast('Informe o placar ou deixe os games diferentes para identificar o vencedor.');
+        return;
+      }
+      await saveLiveState(payload, 'Vencedor enviado para a tela OBS.');
     }
 
     async function clearLiveMatch() {

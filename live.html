@@ -61,12 +61,12 @@
     .live-score {
       position: absolute;
       left: 42px;
-      bottom: 98px;
-      width: min(860px, calc(100vw - 84px));
+      bottom: 82px;
+      width: min(470px, calc(100vw - 84px));
       display: none;
-      border-radius: 24px;
+      border-radius: 18px;
       overflow: hidden;
-      box-shadow: 0 22px 60px rgba(0, 0, 0, .34);
+      box-shadow: 0 16px 42px rgba(0, 0, 0, .30);
       background: rgba(255, 255, 255, .96);
       color: var(--text);
     }
@@ -78,12 +78,13 @@
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      padding: 12px 18px;
+      padding: 8px 12px;
       background: linear-gradient(90deg, var(--ford-dark), var(--ford));
       color: var(--white);
       font-weight: 900;
       text-transform: uppercase;
       letter-spacing: .08em;
+      font-size: 12px;
     }
 
     .live-pill {
@@ -94,7 +95,7 @@
       border-radius: 999px;
       background: rgba(181, 229, 0, .18);
       color: var(--lime);
-      font-size: 13px;
+      font-size: 11px;
     }
 
     .live-dot {
@@ -105,10 +106,31 @@
       box-shadow: 0 0 18px var(--lime);
     }
 
+    .score-label-row,
     .score-row {
       display: grid;
-      grid-template-columns: 1fr 92px;
-      min-height: 78px;
+      grid-template-columns: 1fr 54px 58px;
+    }
+
+    .score-label-row {
+      min-height: 24px;
+      align-items: center;
+      padding: 0 0 0 14px;
+      background: #f5faff;
+      color: #5d7691;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      border-bottom: 1px solid #dbe9f8;
+    }
+
+    .score-label-row span:not(:first-child) {
+      text-align: center;
+    }
+
+    .score-row {
+      min-height: 50px;
       border-top: 1px solid #cfe0f5;
     }
 
@@ -117,8 +139,8 @@
     .score-name {
       display: flex;
       align-items: center;
-      padding: 16px 22px;
-      font-size: 34px;
+      padding: 10px 14px;
+      font-size: 21px;
       line-height: 1;
       font-weight: 900;
       white-space: nowrap;
@@ -126,22 +148,101 @@
       text-overflow: ellipsis;
     }
 
-    .score-games {
+    .score-games,
+    .score-st {
       display: grid;
       place-items: center;
       background: #eaf3ff;
       color: var(--ford-dark);
-      font-size: 44px;
+      font-size: 27px;
       font-weight: 900;
       border-left: 1px solid #cfe0f5;
     }
 
+    .score-st {
+      display: none;
+      background: #f2ffe4;
+      color: #0d3e20;
+      font-size: 23px;
+    }
+
+    body.has-tie .score-st { display: grid; }
+    body:not(.has-tie) .score-label-row,
+    body:not(.has-tie) .score-row { grid-template-columns: 1fr 54px; }
+    body:not(.has-tie) .score-label-st { display: none; }
+
     .live-message {
+      display: none;
       padding: 10px 18px 14px;
       color: #315a87;
       font-size: 17px;
       font-weight: 900;
       min-height: 42px;
+    }
+
+    .winner-panel {
+      position: absolute;
+      left: 50%;
+      top: 46%;
+      width: min(820px, calc(100vw - 96px));
+      display: none;
+      transform: translate(-50%, -50%);
+      border-radius: 34px;
+      padding: 30px;
+      background: linear-gradient(135deg, rgba(0, 75, 147, .94), rgba(5, 43, 95, .94));
+      color: #fff;
+      box-shadow: 0 26px 90px rgba(0, 0, 0, .42);
+      text-align: center;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+    }
+
+    .winner-panel::before {
+      content: "";
+      position: absolute;
+      inset: -40% auto auto -20%;
+      width: 55%;
+      height: 180%;
+      transform: rotate(18deg);
+      background: linear-gradient(90deg, transparent, rgba(181, 229, 0, .22), transparent);
+      animation: winnerSweep 2.4s ease-in-out infinite;
+    }
+
+    body.is-winner .winner-panel { display: block; }
+
+    .winner-kicker {
+      position: relative;
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 9px 16px;
+      background: var(--lime);
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .winner-name {
+      position: relative;
+      margin-top: 18px;
+      font-size: 64px;
+      line-height: .98;
+      font-weight: 900;
+      text-shadow: 0 10px 26px rgba(0, 0, 0, .28);
+    }
+
+    .winner-meta {
+      position: relative;
+      margin-top: 16px;
+      color: #d8e9ff;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    @keyframes winnerSweep {
+      0%, 100% { transform: translateX(-30%) rotate(18deg); opacity: .2; }
+      50% { transform: translateX(190%) rotate(18deg); opacity: .9; }
     }
 
     .next-panel {
@@ -202,12 +303,14 @@
       right: 0;
       bottom: 0;
       height: 54px;
-      display: flex;
+      display: none;
       align-items: center;
       overflow: hidden;
       background: rgba(0, 32, 72, .88);
       border-top: 4px solid var(--lime);
     }
+
+    body.show-ticker .ticker { display: flex; }
 
     .ticker-label {
       height: 100%;
@@ -255,25 +358,38 @@
         <span id="liveMeta">II VIAFOR OPEN</span>
         <span class="live-pill"><span class="live-dot"></span>AO VIVO</span>
       </div>
+      <div class="score-label-row">
+        <span>Placar</span>
+        <span>Game</span>
+        <span class="score-label-st">ST</span>
+      </div>
       <div class="score-row">
         <div class="score-name" id="livePlayer1">Jogador 1</div>
         <div class="score-games" id="liveGame1">0</div>
+        <div class="score-st" id="liveTie1"></div>
       </div>
       <div class="score-row">
         <div class="score-name" id="livePlayer2">Jogador 2</div>
         <div class="score-games" id="liveGame2">0</div>
+        <div class="score-st" id="liveTie2"></div>
       </div>
       <div class="live-message" id="liveMessage"></div>
     </section>
 
+    <section class="winner-panel" id="winnerPanel">
+      <div class="winner-kicker">Vencedor da partida</div>
+      <div class="winner-name" id="winnerName">Atleta</div>
+      <div class="winner-meta" id="winnerMeta">II VIAFOR OPEN</div>
+    </section>
+
     <section class="next-panel" id="nextPanel">
-      <div class="next-label">Proximo jogo</div>
-      <div class="next-title" id="nextTitle">Aguardando programacao</div>
+      <div class="next-label">Próximo jogo</div>
+      <div class="next-title" id="nextTitle">Aguardando programação</div>
       <div class="next-meta" id="nextMeta"></div>
     </section>
 
     <div class="ticker">
-      <div class="ticker-label">Atualizacoes</div>
+      <div class="ticker-label" id="tickerLabel">Atualizações</div>
       <div class="ticker-track" id="tickerTrack"><span>II VIAFOR OPEN | Ilha Tenis Colatina</span></div>
     </div>
   </div>
@@ -317,7 +433,9 @@
       if (!state.data) return renderFallback();
       const live = liveState();
       const match = activeLiveMatch(live);
-      if (match) renderLive(match, live);
+      const finished = finishedLiveMatch(live);
+      if (finished) renderWinner(finished, live);
+      else if (match) renderLive(match, live);
       else renderIdle();
       renderTicker();
     }
@@ -325,20 +443,36 @@
     function renderLive(match, live) {
       document.body.classList.add('is-live');
       document.body.classList.remove('is-idle');
+      document.body.classList.remove('is-winner');
+      document.body.classList.toggle('has-tie', Boolean(live.tie1 || live.tie2));
       $('liveMeta').textContent = [shortCategory(getCategoryName(match.categoria_id)), roundLabels[match.fase] || match.fase || 'Jogo'].filter(Boolean).join(' | ');
       $('livePlayer1').textContent = getPlayerName(match.jogador1_id) || 'A definir';
       $('livePlayer2').textContent = getPlayerName(match.jogador2_id) || 'A definir';
       $('liveGame1').textContent = live.game1 || '0';
       $('liveGame2').textContent = live.game2 || '0';
-      $('liveMessage').textContent = live.message || 'Placar parcial em tempo real';
+      $('liveTie1').textContent = live.tie1 || '';
+      $('liveTie2').textContent = live.tie2 || '';
+      $('liveMessage').textContent = '';
+    }
+
+    function renderWinner(match, live) {
+      document.body.classList.remove('is-live');
+      document.body.classList.remove('is-idle');
+      document.body.classList.remove('has-tie');
+      document.body.classList.add('is-winner');
+      const winner = live.vencedor_nome || getPlayerName(live.vencedor_id) || getPlayerName(match.vencedor_id) || 'Vencedor';
+      $('winnerName').textContent = winner;
+      $('winnerMeta').textContent = [shortCategory(getCategoryName(match.categoria_id)), roundLabels[match.fase] || match.fase || 'Jogo'].filter(Boolean).join(' | ');
     }
 
     function renderIdle() {
       document.body.classList.remove('is-live');
+      document.body.classList.remove('is-winner');
+      document.body.classList.remove('has-tie');
       document.body.classList.add('is-idle');
       const next = nextMatch();
       if (!next) {
-        $('nextTitle').textContent = 'Aguardando programacao';
+        $('nextTitle').textContent = 'Aguardando programação';
         $('nextMeta').innerHTML = '<span>II VIAFOR OPEN</span><span>Ilha Tenis Colatina</span>';
         return;
       }
@@ -357,11 +491,13 @@
     }
 
     function renderTicker() {
-      const items = recentResults().slice(0, 8).map(resultText);
-      const next = nextMatch();
-      if (next) {
-        items.unshift('Proximo: <strong>' + escapeHtml(getPlayerName(next.jogador1_id) || 'A definir') + ' x ' + escapeHtml(getPlayerName(next.jogador2_id) || 'A definir') + '</strong>');
-      }
+      const cycle = Date.now() % 600000;
+      const showTicker = cycle < 120000;
+      const mode = cycle < 60000 ? 'next' : 'results';
+      document.body.classList.toggle('show-ticker', showTicker);
+      if (!showTicker) return;
+      $('tickerLabel').textContent = mode === 'next' ? 'Próximos' : 'Resultados';
+      const items = mode === 'next' ? upcomingTexts().slice(0, 8) : recentResults().slice(0, 8).map(resultText);
       const content = (items.length ? items : ['II VIAFOR OPEN | Ilha Tenis Colatina']);
       const doubled = content.concat(content);
       $('tickerTrack').innerHTML = doubled.map(function (item) {
@@ -385,6 +521,15 @@
       return match;
     }
 
+    function finishedLiveMatch(live) {
+      if (!live || String(live.status || '') !== 'FINALIZADO' || !live.match_id) return null;
+      return (state.data.jogos || []).find(function (j) { return String(j.jogo_id) === String(live.match_id); }) || {
+        categoria_id: live.categoria_id || '',
+        fase: live.fase || '',
+        vencedor_id: live.vencedor_id || ''
+      };
+    }
+
     function nextMatch() {
       const live = liveState();
       return (state.data.jogos || []).filter(function (match) {
@@ -403,6 +548,19 @@
         const resultB = Date.parse(String(b.resultado_em || '').replace(' ', 'T')) || 0;
         if (resultA || resultB) return resultB - resultA;
         return sortSchedule(b, a);
+      });
+    }
+
+    function upcomingTexts() {
+      return (state.data.jogos || []).filter(function (match) {
+        if (String(match.status || '').toUpperCase() === 'FINALIZADO') return false;
+        if (!(match.data || match.hora || match.quadra)) return false;
+        return true;
+      }).sort(sortSchedule).map(function (match) {
+        const p1 = getPlayerName(match.jogador1_id) || 'A definir';
+        const p2 = getPlayerName(match.jogador2_id) || 'A definir';
+        return '<strong>' + escapeHtml(displayDay(match.data) || 'Próximo') + ' ' + escapeHtml(formatAgendaTime(match.hora)) + '</strong> ' +
+          escapeHtml(p1) + ' x ' + escapeHtml(p2) + ' | ' + escapeHtml(shortCategory(getCategoryName(match.categoria_id)));
       });
     }
 
