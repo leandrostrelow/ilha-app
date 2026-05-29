@@ -306,6 +306,34 @@
       font-weight: 800;
     }
 
+    .agenda-event-form {
+      margin: 12px 0 14px;
+      display: grid;
+      grid-template-columns: 1.25fr .9fr .9fr 1fr 1.6fr auto;
+      gap: 8px;
+      align-items: end;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #f8fbfc;
+    }
+
+    .agenda-event-form input,
+    .agenda-event-form select {
+      min-height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      padding: 0 12px;
+      background: #fff;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .agenda-event-form button {
+      min-height: 42px;
+      white-space: nowrap;
+    }
+
     .tag-line {
       display: flex;
       flex-wrap: wrap;
@@ -880,6 +908,11 @@
       background: #fbfff0;
     }
 
+    .agenda-match-card.event {
+      border-left-color: var(--lime);
+      background: #ffffff;
+    }
+
     .agenda-match-top {
       display: flex;
       align-items: center;
@@ -924,6 +957,18 @@
       box-shadow: none;
     }
 
+    .agenda-delete-event-btn {
+      min-height: 26px;
+      border: 1px solid #fecaca;
+      border-radius: 999px;
+      padding: 0 8px;
+      background: #fff5f5;
+      color: #b91c1c;
+      font-size: 10px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
     .agenda-time-pill {
       display: inline-flex;
       align-items: center;
@@ -964,6 +1009,27 @@
 
     .agenda-player.p2 {
       background: #eaf3ff;
+    }
+
+    .agenda-event-title {
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f4ffe2;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .agenda-event-desc {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.25;
     }
 
     .agenda-meta {
@@ -1293,7 +1359,7 @@
       .editor-whatsapp-btn { min-height: 34px; padding: 0 4px; font-size: 9px; }
       .editor-whatsapp-btn .wa-icon { width: 13px; height: 13px; }
       .agenda-list { grid-template-columns: 1fr; }
-      .player-filters, .agenda-filters, .match-agenda-grid { grid-template-columns: 1fr; }
+      .player-filters, .agenda-filters, .match-agenda-grid, .agenda-event-form { grid-template-columns: 1fr; }
       .agenda-card-actions { gap: 4px; }
       .agenda-order-btn { width: 30px; height: 30px; font-size: 13px; }
       .result-card { grid-template-columns: 28px minmax(0, 1fr); padding: 9px; }
@@ -1498,6 +1564,14 @@
             <div class="muted">Todo jogo agendado aparece aqui e na pagina publica.</div>
           </div>
         </div>
+        <form class="agenda-event-form" id="agendaEventForm">
+          <input id="eventTitle" placeholder="Evento: Duplas, Coffee break..." />
+          <select id="eventDay"></select>
+          <input id="eventTime" placeholder="18:00 ou Apos" />
+          <select id="eventCourt"></select>
+          <input id="eventDescription" placeholder="Detalhe opcional" />
+          <button type="submit" class="primary-btn">Adicionar evento</button>
+        </form>
         <div class="agenda-filters">
           <select id="agendaDayFilter">
             <option value="">Todos os dias</option>
@@ -2019,10 +2093,18 @@
       const day = $('agendaDayFilter').value;
       const court = $('agendaCourtFilter').value;
       const category = $('agendaCategoryFilter').value;
+      const eventDay = $('eventDay').value;
+      const eventCourt = $('eventCourt').value;
       $('agendaDayFilter').innerHTML = '<option value="">Todos os dias</option>' + agendaDays.map(function (item) {
         return '<option value="' + escapeHtml(item) + '">' + escapeHtml(item) + '</option>';
       }).join('');
       $('agendaCourtFilter').innerHTML = '<option value="">Todas quadras</option>' + state.data.quadras.map(function (q) {
+        return '<option value="' + escapeHtml(q.nome) + '">' + escapeHtml(q.nome) + '</option>';
+      }).join('');
+      $('eventDay').innerHTML = '<option value="">Dia</option>' + agendaDays.map(function (item) {
+        return '<option value="' + escapeHtml(item) + '">' + escapeHtml(displayAgendaDay(item)) + '</option>';
+      }).join('');
+      $('eventCourt').innerHTML = '<option value="">Sem quadra</option>' + state.data.quadras.map(function (q) {
         return '<option value="' + escapeHtml(q.nome) + '">' + escapeHtml(q.nome) + '</option>';
       }).join('');
       $('agendaCategoryFilter').innerHTML = '<option value="">Todas classes</option>' + state.data.categorias.map(function (cat) {
@@ -2031,6 +2113,8 @@
       $('agendaDayFilter').value = day || '';
       $('agendaCourtFilter').value = court || '';
       $('agendaCategoryFilter').value = category || '';
+      $('eventDay').value = eventDay || '';
+      $('eventCourt').value = eventCourt || '';
     }
 
     function renderPlayers() {
@@ -2720,13 +2804,21 @@
       const dayFilter = $('agendaDayFilter').value;
       const courtFilter = $('agendaCourtFilter').value;
       const categoryFilter = $('agendaCategoryFilter').value;
-      const scheduled = state.data.jogos.filter(function (j) {
+      const scheduledMatches = state.data.jogos.filter(function (j) {
         if (!(j.data || j.hora || j.quadra)) return false;
         if (dayFilter && String(j.data || '') !== String(dayFilter)) return false;
         if (courtFilter && String(j.quadra || '') !== String(courtFilter)) return false;
         if (categoryFilter && String(j.categoria_id || '') !== String(categoryFilter)) return false;
         return true;
-      }).sort(sortAgenda);
+      });
+      const scheduledEvents = agendaEventItems().filter(function (event) {
+        if (!(event.data || event.hora || event.quadra)) return false;
+        if (dayFilter && String(event.data || '') !== String(dayFilter)) return false;
+        if (courtFilter && String(event.quadra || 'Sem quadra') !== String(courtFilter)) return false;
+        if (categoryFilter) return false;
+        return true;
+      });
+      const scheduled = scheduledMatches.concat(scheduledEvents).sort(sortAgenda);
       const daysToRender = dayFilter ? [dayFilter] : agendaDays;
       const html = daysToRender.map(function (day) {
         const dayMatches = scheduled.filter(function (j) {
@@ -2740,7 +2832,7 @@
           return '<div class="agenda-court-column">' +
             '<div class="agenda-court-title">' + escapeHtml(court) + '</div>' +
             (courtMatches.map(function (match, index) {
-              return renderAgendaMatchCard(match, index, courtMatches.length);
+              return renderAgendaItemCard(match, index, courtMatches.length);
             }).join('') || '<div class="agenda-court-empty">Sem jogos</div>') +
             '</div>';
         }).join('') + '</div>' : '<div class="empty">Sem jogos</div>';
@@ -2769,14 +2861,64 @@
     function agendaPosterMatches(day) {
       const courtFilter = $('agendaCourtFilter').value;
       const categoryFilter = $('agendaCategoryFilter').value;
-      return (state.data.jogos || []).filter(function (j) {
+      const matches = (state.data.jogos || []).filter(function (j) {
         if (!(j.data || j.hora || j.quadra)) return false;
         if (String(j.data || '') !== String(day || '')) return false;
         if (String(j.status || '').toUpperCase() === 'FINALIZADO') return false;
         if (courtFilter && String(j.quadra || '') !== String(courtFilter)) return false;
         if (categoryFilter && String(j.categoria_id || '') !== String(categoryFilter)) return false;
         return true;
-      }).sort(sortAgenda);
+      });
+      const events = agendaEventItems().filter(function (event) {
+        if (!(event.data || event.hora || event.quadra)) return false;
+        if (String(event.data || '') !== String(day || '')) return false;
+        if (courtFilter && String(event.quadra || 'Sem quadra') !== String(courtFilter)) return false;
+        if (categoryFilter) return false;
+        return true;
+      });
+      return matches.concat(events).sort(sortAgenda);
+    }
+
+    function isAgendaEvent(item) {
+      return String(item && item.__agendaKind || '') === 'event' ||
+        String(item && item.tipo || '').toUpperCase() === 'EVENTO' ||
+        Boolean(item && item.agenda_id && !item.jogo_id && item.titulo);
+    }
+
+    function agendaEventItems() {
+      return (state.data.agenda || []).filter(function (item) {
+        return isAgendaEvent(item);
+      }).map(function (item) {
+        item.__agendaKind = 'event';
+        return item;
+      });
+    }
+
+    function agendaItemKey(item) {
+      return isAgendaEvent(item) ? 'event:' + String(item.agenda_id || '') : 'match:' + String(item.jogo_id || '');
+    }
+
+    function renderAgendaItemCard(item, index, total) {
+      if (isAgendaEvent(item)) return renderAgendaEventCard(item, index, total);
+      return renderAgendaMatchCard(item, index, total);
+    }
+
+    function renderAgendaEventCard(event, index, total) {
+      const canMoveUp = index > 0;
+      const canMoveDown = index < total - 1;
+      const title = event.titulo || event.jogador1 || 'Evento';
+      const description = event.descricao || event.observacoes || '';
+      const key = agendaItemKey(event);
+      return '<div class="agenda-match-card event">' +
+        '<div class="agenda-match-top"><span>Evento</span><span class="agenda-card-actions">' +
+        '<button type="button" class="agenda-order-btn" title="Subir evento" data-agenda-move-item="' + escapeHtml(key) + '" data-direction="up"' + (canMoveUp ? '' : ' disabled') + '>&uarr;</button>' +
+        '<button type="button" class="agenda-order-btn" title="Descer evento" data-agenda-move-item="' + escapeHtml(key) + '" data-direction="down"' + (canMoveDown ? '' : ' disabled') + '>&darr;</button>' +
+        '<button type="button" class="agenda-delete-event-btn" data-delete-agenda-event="' + escapeHtml(event.agenda_id || '') + '">Excluir</button>' +
+        '<span class="agenda-time-pill">' + escapeHtml(formatAgendaTime(event.hora)) + '</span></span></div>' +
+        '<div class="agenda-event-title">' + escapeHtml(title) + '</div>' +
+        (description ? '<div class="agenda-event-desc">' + escapeHtml(description) + '</div>' : '') +
+        '<div class="agenda-meta"><span>Evento</span><span>' + escapeHtml(event.quadra || 'Sem quadra') + '</span><span>' + escapeHtml(event.status || 'Aberto') + '</span></div>' +
+        '</div>';
     }
 
     function renderAgendaMatchCard(j, index, total) {
@@ -3191,33 +3333,101 @@
       }
     }
 
-    async function moveAgendaMatch(matchId, direction) {
-      if (!state.data || !Array.isArray(state.data.jogos)) return;
-      const match = state.data.jogos.find(function (j) {
-        return String(j.jogo_id) === String(matchId);
-      });
-      if (!match) return;
+    async function saveAgendaEvent(event) {
+      event.preventDefault();
+      const title = $('eventTitle').value.trim();
+      const day = $('eventDay').value;
+      const time = normalizeAgendaTime($('eventTime').value);
+      const court = $('eventCourt').value;
+      const description = $('eventDescription').value.trim();
+      if (!title) {
+        toast('Digite o nome do evento.');
+        return;
+      }
+      if (!day) {
+        toast('Escolha o dia do evento.');
+        return;
+      }
+      try {
+        await apiPost({
+          action: 'saveAgendaEvent',
+          evento: {
+            tipo: 'EVENTO',
+            titulo: title,
+            descricao: description,
+            data: day,
+            hora: time,
+            quadra: court || 'Sem quadra',
+            status: 'ABERTO',
+            publicar: true,
+            ordem: nextAgendaOrder(day, court || 'Sem quadra')
+          }
+        }, { returnData: true });
+        $('agendaEventForm').reset();
+        toast('Evento adicionado na agenda.');
+      } catch (error) {
+        toast(error.message);
+      }
+    }
 
+    async function deleteAgendaEvent(agendaId) {
+      if (!agendaId) return;
+      if (!confirm('Excluir este evento da agenda?')) return;
+      try {
+        await apiPost({ action: 'deleteAgendaEvent', agenda_id: agendaId }, { returnData: true });
+        toast('Evento removido da agenda.');
+      } catch (error) {
+        toast(error.message);
+      }
+    }
+
+    function nextAgendaOrder(day, court) {
+      const sameGroup = agendaOrderItems().filter(function (item) {
+        return String(item.data || '') === String(day || '') &&
+          String(item.quadra || 'Sem quadra') === String(court || 'Sem quadra');
+      });
+      const maxOrder = sameGroup.reduce(function (max, item) {
+        return Math.max(max, agendaOrderValue(item));
+      }, 0);
+      return maxOrder ? maxOrder + 10 : (sameGroup.length + 1) * 10;
+    }
+
+    function agendaOrderItems() {
+      const matches = (state.data && state.data.jogos || []).filter(function (j) {
+        return j.data || j.hora || j.quadra;
+      });
+      return matches.concat(agendaEventItems());
+    }
+
+    async function moveAgendaItem(itemKey, direction) {
+      if (!state.data) return;
+      const item = agendaOrderItems().find(function (entry) {
+        return agendaItemKey(entry) === String(itemKey);
+      });
+      if (!item) return;
       const step = direction === 'up' ? -1 : 1;
-      const day = String(match.data || '');
-      const court = String(match.quadra || 'Sem quadra');
+      const day = String(item.data || '');
+      const court = String(item.quadra || 'Sem quadra');
       const categoryFilter = $('agendaCategoryFilter').value;
-      const group = state.data.jogos.filter(function (j) {
+      const group = agendaOrderItems().filter(function (j) {
         if (!(j.data || j.hora || j.quadra)) return false;
         if (String(j.data || '') !== day) return false;
         if (String(j.quadra || 'Sem quadra') !== court) return false;
-        if (categoryFilter && String(j.categoria_id || '') !== String(categoryFilter)) return false;
+        if (categoryFilter) {
+          if (isAgendaEvent(j)) return false;
+          if (String(j.categoria_id || '') !== String(categoryFilter)) return false;
+        }
         return true;
       }).sort(sortAgenda);
 
       const from = group.findIndex(function (j) {
-        return String(j.jogo_id) === String(matchId);
+        return agendaItemKey(j) === String(itemKey);
       });
       const to = from + step;
       if (from < 0 || to < 0 || to >= group.length) return;
 
       const previousOrders = group.map(function (j) {
-        return { jogo_id: j.jogo_id, ordem: j.ordem };
+        return { key: agendaItemKey(j), ordem: j.ordem };
       });
       const moved = group.splice(from, 1)[0];
       group.splice(to, 0, moved);
@@ -3235,26 +3445,37 @@
       renderAgenda();
       toast('Ordem atualizada. Salvando na planilha...');
       try {
-        try {
-          await apiPost({ action: 'saveMatches', jogos: changed }, { silent: true });
-        } catch (error) {
-          if (!String(error.message || '').includes('saveMatches')) throw error;
-          for (let i = 0; i < changed.length; i++) {
-            await apiPost({ action: 'saveMatch', jogo: changed[i] }, { silent: true });
+        const changedMatches = changed.filter(function (entry) { return !isAgendaEvent(entry); });
+        const changedEvents = changed.filter(isAgendaEvent);
+        if (changedMatches.length) {
+          try {
+            await apiPost({ action: 'saveMatches', jogos: changedMatches }, { silent: true });
+          } catch (error) {
+            if (!String(error.message || '').includes('saveMatches')) throw error;
+            for (let i = 0; i < changedMatches.length; i++) {
+              await apiPost({ action: 'saveMatch', jogo: changedMatches[i] }, { silent: true });
+            }
           }
+        }
+        for (let i = 0; i < changedEvents.length; i++) {
+          await apiPost({ action: 'saveAgendaEvent', evento: changedEvents[i] }, { silent: true });
         }
         setStatus('Sincronizado ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
         toast('Ordem salva. A arte vai seguir essa sequencia.');
       } catch (error) {
         previousOrders.forEach(function (snapshot) {
-          const item = state.data.jogos.find(function (j) {
-            return String(j.jogo_id) === String(snapshot.jogo_id);
+          const entry = agendaOrderItems().find(function (j) {
+            return agendaItemKey(j) === String(snapshot.key);
           });
-          if (item) item.ordem = snapshot.ordem;
+          if (entry) entry.ordem = snapshot.ordem;
         });
         renderAgenda();
         toast(error.message);
       }
+    }
+
+    async function moveAgendaMatch(matchId, direction) {
+      return moveAgendaItem('match:' + matchId, direction);
     }
 
     async function generateBracket() {
@@ -3811,9 +4032,10 @@
     function drawAgendaPosterCard(ctx, match, x, y, width, height, colors) {
       const compact = height < 64;
       const radius = compact ? 15 : 18;
-      const player1 = getPlayerName(match.jogador1_id) || 'A definir';
-      const player2 = getPlayerName(match.jogador2_id) || 'A definir';
-      const category = shortCategoryName(getCategoryName(match.categoria_id));
+      const isEvent = isAgendaEvent(match);
+      const player1 = isEvent ? (match.titulo || match.jogador1 || 'Evento') : (getPlayerName(match.jogador1_id) || 'A definir');
+      const player2 = isEvent ? (match.descricao || match.observacoes || '') : (getPlayerName(match.jogador2_id) || 'A definir');
+      const category = isEvent ? 'Evento' : shortCategoryName(getCategoryName(match.categoria_id));
       const court = match.quadra || 'Sem quadra';
       const time = posterTime(match.hora);
       const nameSize = compact ? 17 : 22;
@@ -3840,11 +4062,13 @@
 
       ctx.fillStyle = colors.text;
       ctx.textAlign = 'left';
-      const namesText = shortName(player1, compact ? 22 : 28) + '  x  ' + shortName(player2, compact ? 22 : 28);
+      const namesText = isEvent
+        ? shortName(player1, compact ? 42 : 52)
+        : shortName(player1, compact ? 22 : 28) + '  x  ' + shortName(player2, compact ? 22 : 28);
       drawFitText(ctx, namesText, x + (compact ? 135 : 160), y + (compact ? 30 : 39), width - (compact ? 170 : 205), nameSize, 900, 'left');
 
       ctx.fillStyle = colors.muted;
-      const meta = category + ' | ' + court;
+      const meta = [category, court, isEvent && player2 ? shortName(player2, 42) : ''].filter(Boolean).join(' | ');
       drawFitText(ctx, meta, x + (compact ? 135 : 160), y + (compact ? 49 : 63), width - (compact ? 170 : 205), compact ? 12 : 15, 900, 'left');
     }
 
@@ -4389,6 +4613,22 @@
         return;
       }
 
+      const agendaMoveItemBtn = event.target.closest('[data-agenda-move-item]');
+      if (agendaMoveItemBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        moveAgendaItem(agendaMoveItemBtn.dataset.agendaMoveItem, agendaMoveItemBtn.dataset.direction);
+        return;
+      }
+
+      const deleteAgendaEventBtn = event.target.closest('[data-delete-agenda-event]');
+      if (deleteAgendaEventBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        deleteAgendaEvent(deleteAgendaEventBtn.dataset.deleteAgendaEvent);
+        return;
+      }
+
       const openMatchBtn = event.target.closest('[data-open-match]');
       if (openMatchBtn) {
         openMatchEditor(openMatchBtn.dataset.openMatch);
@@ -4440,6 +4680,7 @@
     ['agendaDayFilter', 'agendaCourtFilter', 'agendaCategoryFilter'].forEach(function (id) {
       $(id).addEventListener('change', renderAgenda);
     });
+    $('agendaEventForm').addEventListener('submit', saveAgendaEvent);
     $('playerForm').addEventListener('submit', savePlayer);
     $('tournamentForm').addEventListener('submit', saveTournament);
 
