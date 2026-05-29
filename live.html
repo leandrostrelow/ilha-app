@@ -785,6 +785,7 @@
       document.body.classList.remove('is-paused');
       document.body.classList.remove('is-ad');
       document.body.classList.add('is-idle');
+      forceNextPanelLeft();
       const match = (state.data.jogos || []).find(function (j) { return String(j.jogo_id) === String(live.match_id); }) || live;
       const p1 = getPlayerName(live.jogador1_id || match.jogador1_id) || 'A definir';
       const p2 = getPlayerName(live.jogador2_id || match.jogador2_id) || 'A definir';
@@ -798,6 +799,17 @@
       ].filter(Boolean).map(function (item) {
         return '<span>' + escapeHtml(item) + '</span>';
       }).join('');
+    }
+
+    function forceNextPanelLeft() {
+      const panel = $('nextPanel');
+      if (!panel) return;
+      panel.style.position = 'absolute';
+      panel.style.left = '36px';
+      panel.style.right = 'auto';
+      panel.style.bottom = '72px';
+      panel.style.width = 'min(620px, calc(100vw - 72px))';
+      panel.style.transform = 'none';
     }
 
     function renderTicker() {
