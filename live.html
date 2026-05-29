@@ -247,12 +247,37 @@
     body.is-ad .winner-panel,
     body.is-ad .paused-panel { display: none !important; }
 
-    .ad-video {
+    .ad-title {
+      position: absolute;
+      left: 50%;
+      top: 28px;
+      z-index: 2;
+      transform: translateX(-50%);
+      max-width: calc(100vw - 72px);
+      border-radius: 999px;
+      padding: 12px 24px;
+      background: linear-gradient(90deg, rgba(0, 75, 147, .96), rgba(0, 43, 92, .96));
+      color: #fff;
+      box-shadow: 0 16px 44px rgba(0, 0, 0, .34);
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .ad-frame {
       width: 100vw;
       height: 100vh;
-      object-fit: cover;
       display: block;
       background: #000;
+    }
+
+    .ad-frame iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
     }
 
     .winner-panel::before {
@@ -450,7 +475,8 @@
     </section>
 
     <section class="ad-panel" id="adPanel">
-      <video class="ad-video" id="adVideo" playsinline muted></video>
+      <div class="ad-title" id="adTitle">Intervalo Ford</div>
+      <div class="ad-frame" id="adFrame"></div>
     </section>
 
     <section class="next-panel" id="nextPanel">
@@ -471,6 +497,10 @@
     const roundLabels = { R32: '32 avos', R16: 'Oitavas', QF: 'Quartas', SF: 'Semifinal', FINAL: 'Final' };
     let state = { data: null };
     const playedAds = new Set();
+    let youtubePlayer = null;
+    let youtubeApiLoading = false;
+    let youtubeReadyCallbacks = [];
+    let currentAdId = '';
 
     function $(id) { return document.getElementById(id); }
 
@@ -603,29 +633,91 @@
       document.body.classList.remove('is-paused');
       document.body.classList.remove('has-tie');
       document.body.classList.add('is-ad');
-      const video = $('adVideo');
       const adId = String(live.ad_id || live.ad_url || '');
-      if (video.dataset.adId !== adId) {
-        video.dataset.adId = adId;
-        video.src = live.ad_url || '';
-        video.currentTime = 0;
-        video.onended = function () {
-          playedAds.add(adId);
-          video.pause();
-          video.removeAttribute('src');
-          video.load();
-          render();
+      $('adTitle').textContent = live.ad_title || 'Intervalo Ford';
+      if (currentAdId === adId) return;
+      currentAdId = adId;
+      loadYouTubeAd(live.ad_url, adId);
+    }
+
+    function loadYouTubeAd(url, adId) {
+      const video = parseYouTubeUrl(url);
+      if (!video.id) return finishAd(adId);
+      ensureYouTubeApi(function () {
+        const options = {
+          videoId: video.id,
+          playerVars: {
+            autoplay: 1,
+            controls: 0,
+            rel: 0,
+            modestbranding: 1,
+            playsinline: 1,
+            start: video.start || 0
+          },
+          events: {
+            onReady: function (event) {
+              try {
+                event.target.unMute();
+                event.target.setVolume(100);
+                event.target.playVideo();
+              } catch (error) {}
+            },
+            onStateChange: function (event) {
+              if (event.data === window.YT.PlayerState.ENDED) finishAd(currentAdId);
+            },
+            onError: function () {
+              finishAd(currentAdId);
+            }
+          }
         };
-        video.onerror = function () {
-          playedAds.add(adId);
-          video.pause();
-          video.removeAttribute('src');
-          video.load();
-          render();
-        };
-        const playPromise = video.play();
-        if (playPromise && playPromise.catch) playPromise.catch(function () {});
+        if (youtubePlayer && youtubePlayer.loadVideoById) {
+          youtubePlayer.loadVideoById({ videoId: video.id, startSeconds: video.start || 0 });
+          try {
+            youtubePlayer.unMute();
+            youtubePlayer.setVolume(100);
+            youtubePlayer.playVideo();
+          } catch (error) {}
+        } else {
+          youtubePlayer = new window.YT.Player('adFrame', options);
+        }
+      });
+    }
+
+    function ensureYouTubeApi(callback) {
+      if (window.YT && window.YT.Player) {
+        callback();
+        return;
       }
+      youtubeReadyCallbacks.push(callback);
+      if (youtubeApiLoading) return;
+      youtubeApiLoading = true;
+      window.onYouTubeIframeAPIReady = function () {
+        const callbacks = youtubeReadyCallbacks.slice();
+        youtubeReadyCallbacks = [];
+        callbacks.forEach(function (item) { item(); });
+      };
+      const script = document.createElement('script');
+      script.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(script);
+    }
+
+    function parseYouTubeUrl(url) {
+      const text = String(url || '');
+      const idMatch = text.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([A-Za-z0-9_-]{6,})/);
+      const startMatch = text.match(/[?&](?:t|start)=(\d+)(?:s)?/);
+      return {
+        id: idMatch ? idMatch[1] : '',
+        start: startMatch ? Number(startMatch[1] || 0) : 0
+      };
+    }
+
+    function finishAd(adId) {
+      if (adId) playedAds.add(adId);
+      currentAdId = '';
+      try {
+        if (youtubePlayer && youtubePlayer.stopVideo) youtubePlayer.stopVideo();
+      } catch (error) {}
+      render();
     }
 
     function renderWinner(match, live) {

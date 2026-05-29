@@ -1889,12 +1889,13 @@
               </div>
             </div>
             <select class="live-ad-select" id="liveAdVideo">
-              <option value="https://live.dealer-asset.co/br1001/banners/B862E.webm">Video Ford 1</option>
-              <option value="https://live.dealer-asset.co/br1001/product/file/250708-ford-brasil-territory-titanium-lancamento.webm">Video Ford 2</option>
+              <option value="https://www.youtube.com/watch?v=NAtOR3W7Bfo" data-title="Ford Ranger">Ford Ranger</option>
+              <option value="https://www.youtube.com/watch?v=7B57nvL_s84" data-title="Ford Bronco">Ford Bronco</option>
+              <option value="https://www.youtube.com/watch?v=yDR63ewPWk0" data-title="Ford Territory">Ford Territory</option>
+              <option value="https://www.youtube.com/watch?v=etyKU3JTXTg" data-title="Ford Maverick">Ford Maverick</option>
             </select>
             <div class="live-actions">
               <button class="primary-btn" type="button" onclick="startLiveMatch()">Iniciar partida</button>
-              <button class="ghost-btn" type="button" onclick="updateLiveScore()">Atualizar placar</button>
               <button class="ghost-btn" type="button" onclick="pauseLiveMatch()">Pausar</button>
               <button class="ghost-btn" type="button" onclick="playLiveInterval()">Intervalo Ford</button>
               <button class="primary-btn" type="button" onclick="finishLiveMatch()">Finalizar partida</button>
@@ -1941,7 +1942,8 @@
       selectedCategory: '',
       saving: false,
       dirtyMatches: {},
-      selectedResultMatches: new Set()
+      selectedResultMatches: new Set(),
+      liveScoreSaveTimer: null
     };
 
     const roundLabels = {
@@ -3536,6 +3538,7 @@
       const player2 = match ? ($('editorPlayer2').value || match.jogador2_id || '') : '';
       const winnerId = status === 'FINALIZADO' ? inferLiveWinner(player1, player2) : '';
       const clear = status === 'IDLE';
+      const adOption = $('liveAdVideo') ? $('liveAdVideo').selectedOptions[0] : null;
       return {
         status: status || 'AO_VIVO',
         match_id: clear ? '' : matchId,
@@ -3556,6 +3559,8 @@
         categoria_id: match ? match.categoria_id : '',
         fase: match ? match.fase : '',
         ad_url: status === 'INTERVALO' ? (extra.ad_url || $('liveAdVideo').value || '') : '',
+        ad_title: status === 'INTERVALO' ? (extra.ad_title || (adOption ? (adOption.dataset.title || adOption.textContent) : '') || 'Intervalo Ford') : '',
+        ad_source: status === 'INTERVALO' ? 'youtube' : '',
         ad_id: status === 'INTERVALO' ? String(Date.now()) : '',
         updated_client_at: new Date().toISOString()
       };
@@ -3577,10 +3582,10 @@
       return $('editorWinner').value || '';
     }
 
-    async function saveLiveState(live, successMessage) {
+    async function saveLiveState(live, successMessage, silent) {
       try {
-        await apiPost({ action: 'setLiveState', live: live }, { returnData: true });
-        toast(successMessage || 'Tela OBS atualizada.');
+        await apiPost({ action: 'setLiveState', live: live }, { returnData: true, silent: Boolean(silent) });
+        if (!silent) toast(successMessage || 'Tela OBS atualizada.');
       } catch (error) {
         toast(error.message);
       }
@@ -3592,6 +3597,20 @@
 
     async function updateLiveScore() {
       await saveLiveState(livePayloadFromEditor('AO_VIVO'), 'Placar atualizado na tela OBS.');
+    }
+
+    function scheduleLiveScoreAutoSave() {
+      clearTimeout(state.liveScoreSaveTimer);
+      state.liveScoreSaveTimer = setTimeout(autoSaveLiveScore, 650);
+    }
+
+    async function autoSaveLiveScore() {
+      const live = liveState();
+      const status = String(live.status || '').toUpperCase();
+      const matchId = $('editorMatchId').value;
+      if (!matchId || String(live.match_id || '') !== String(matchId)) return;
+      if (['AO_VIVO', 'PAUSADO'].indexOf(status) < 0) return;
+      await saveLiveState(livePayloadFromEditor(status), '', true);
     }
 
     async function pauseLiveMatch() {
@@ -4999,6 +5018,14 @@
       $(id).addEventListener('input', function () {
         syncWinnerFromEditor(true);
       });
+    });
+    [
+      'liveSet1P1', 'liveSet1P2',
+      'liveSet2P1', 'liveSet2P2',
+      'liveStP1', 'liveStP2'
+    ].forEach(function (id) {
+      $(id).addEventListener('input', scheduleLiveScoreAutoSave);
+      $(id).addEventListener('change', scheduleLiveScoreAutoSave);
     });
     $('matchEditorBackdrop').addEventListener('click', function (event) {
       if (event.target.id === 'matchEditorBackdrop') closeMatchEditor();
