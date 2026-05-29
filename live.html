@@ -60,13 +60,13 @@
 
     .live-score {
       position: absolute;
-      left: 42px;
-      bottom: 82px;
-      width: min(470px, calc(100vw - 84px));
+      left: 36px;
+      bottom: 72px;
+      width: min(330px, calc(100vw - 72px));
       display: none;
-      border-radius: 18px;
+      border-radius: 14px;
       overflow: hidden;
-      box-shadow: 0 16px 42px rgba(0, 0, 0, .30);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, .30);
       background: rgba(255, 255, 255, .96);
       color: var(--text);
     }
@@ -78,29 +78,29 @@
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      padding: 8px 12px;
+      padding: 6px 9px;
       background: linear-gradient(90deg, var(--ford-dark), var(--ford));
       color: var(--white);
       font-weight: 900;
       text-transform: uppercase;
       letter-spacing: .08em;
-      font-size: 12px;
+      font-size: 9px;
     }
 
     .live-pill {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 6px 12px;
+      gap: 6px;
+      padding: 4px 8px;
       border-radius: 999px;
       background: rgba(181, 229, 0, .18);
       color: var(--lime);
-      font-size: 11px;
+      font-size: 9px;
     }
 
     .live-dot {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 999px;
       background: var(--lime);
       box-shadow: 0 0 18px var(--lime);
@@ -109,16 +109,16 @@
     .score-label-row,
     .score-row {
       display: grid;
-      grid-template-columns: 1fr 54px 58px;
+      grid-template-columns: 1fr 38px 42px;
     }
 
     .score-label-row {
-      min-height: 24px;
+      min-height: 18px;
       align-items: center;
-      padding: 0 0 0 14px;
+      padding: 0 0 0 9px;
       background: #f5faff;
       color: #5d7691;
-      font-size: 10px;
+      font-size: 8px;
       font-weight: 900;
       text-transform: uppercase;
       letter-spacing: .08em;
@@ -130,7 +130,7 @@
     }
 
     .score-row {
-      min-height: 50px;
+      min-height: 36px;
       border-top: 1px solid #cfe0f5;
     }
 
@@ -139,8 +139,8 @@
     .score-name {
       display: flex;
       align-items: center;
-      padding: 10px 14px;
-      font-size: 21px;
+      padding: 7px 9px;
+      font-size: 16px;
       line-height: 1;
       font-weight: 900;
       white-space: nowrap;
@@ -154,7 +154,7 @@
       place-items: center;
       background: #eaf3ff;
       color: var(--ford-dark);
-      font-size: 27px;
+      font-size: 20px;
       font-weight: 900;
       border-left: 1px solid #cfe0f5;
     }
@@ -163,12 +163,12 @@
       display: none;
       background: #f2ffe4;
       color: #0d3e20;
-      font-size: 23px;
+      font-size: 17px;
     }
 
     body.has-tie .score-st { display: grid; }
     body:not(.has-tie) .score-label-row,
-    body:not(.has-tie) .score-row { grid-template-columns: 1fr 54px; }
+    body:not(.has-tie) .score-row { grid-template-columns: 1fr 38px; }
     body:not(.has-tie) .score-label-st { display: none; }
 
     .live-message {
@@ -195,6 +195,67 @@
       text-align: center;
       overflow: hidden;
       backdrop-filter: blur(12px);
+    }
+
+    .paused-panel {
+      position: absolute;
+      left: 50%;
+      top: 52%;
+      width: min(620px, calc(100vw - 96px));
+      display: none;
+      transform: translate(-50%, -50%);
+      border-radius: 28px;
+      padding: 24px;
+      background: rgba(0, 55, 117, .88);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .34);
+      text-align: center;
+      backdrop-filter: blur(12px);
+    }
+
+    body.is-paused .paused-panel { display: block; }
+
+    .paused-kicker {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 8px 14px;
+      background: var(--lime);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .paused-title {
+      margin-top: 14px;
+      font-size: 34px;
+      line-height: 1.04;
+      font-weight: 900;
+    }
+
+    .ad-panel {
+      position: absolute;
+      inset: 0;
+      display: none;
+      place-items: center;
+      background: #000;
+      z-index: 5;
+    }
+
+    body.is-ad .ad-panel { display: grid; }
+    body.is-ad .brand-bug,
+    body.is-ad .live-score,
+    body.is-ad .next-panel,
+    body.is-ad .ticker,
+    body.is-ad .winner-panel,
+    body.is-ad .paused-panel { display: none !important; }
+
+    .ad-video {
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      display: block;
+      background: #000;
     }
 
     .winner-panel::before {
@@ -382,6 +443,16 @@
       <div class="winner-meta" id="winnerMeta">II VIAFOR OPEN</div>
     </section>
 
+    <section class="paused-panel" id="pausedPanel">
+      <div class="paused-kicker">Partida pausada</div>
+      <div class="paused-title" id="pausedTitle">Voltamos em instantes</div>
+      <div class="next-meta" id="pausedMeta"></div>
+    </section>
+
+    <section class="ad-panel" id="adPanel">
+      <video class="ad-video" id="adVideo" playsinline muted></video>
+    </section>
+
     <section class="next-panel" id="nextPanel">
       <div class="next-label">Próximo jogo</div>
       <div class="next-title" id="nextTitle">Aguardando programação</div>
@@ -399,6 +470,7 @@
     const agendaDays = ['Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado', 'Domingo'];
     const roundLabels = { R32: '32 avos', R16: 'Oitavas', QF: 'Quartas', SF: 'Semifinal', FINAL: 'Final' };
     let state = { data: null };
+    const playedAds = new Set();
 
     function $(id) { return document.getElementById(id); }
 
@@ -432,9 +504,12 @@
     function render() {
       if (!state.data) return renderFallback();
       const live = liveState();
-      const match = activeLiveMatch(live);
+      const match = liveMatch(live);
       const finished = finishedLiveMatch(live);
-      if (finished) renderWinner(finished, live);
+      const ad = activeAd(live);
+      if (ad) renderAd(live);
+      else if (finished) renderWinner(finished, live);
+      else if (match && String(live.status || '').toUpperCase() === 'PAUSADO') renderPaused(match, live);
       else if (match) renderLive(match, live);
       else renderIdle();
       renderTicker();
@@ -444,10 +519,12 @@
       document.body.classList.add('is-live');
       document.body.classList.remove('is-idle');
       document.body.classList.remove('is-winner');
+      document.body.classList.remove('is-paused');
+      document.body.classList.remove('is-ad');
       document.body.classList.toggle('has-tie', Boolean(live.tie1 || live.tie2));
       $('liveMeta').textContent = [shortCategory(getCategoryName(match.categoria_id)), roundLabels[match.fase] || match.fase || 'Jogo'].filter(Boolean).join(' | ');
-      $('livePlayer1').textContent = getPlayerName(match.jogador1_id) || 'A definir';
-      $('livePlayer2').textContent = getPlayerName(match.jogador2_id) || 'A definir';
+      $('livePlayer1').textContent = getPlayerName(live.jogador1_id || match.jogador1_id) || 'A definir';
+      $('livePlayer2').textContent = getPlayerName(live.jogador2_id || match.jogador2_id) || 'A definir';
       $('liveGame1').textContent = live.game1 || '0';
       $('liveGame2').textContent = live.game2 || '0';
       $('liveTie1').textContent = live.tie1 || '';
@@ -455,10 +532,62 @@
       $('liveMessage').textContent = '';
     }
 
+    function renderPaused(match, live) {
+      document.body.classList.remove('is-live');
+      document.body.classList.remove('is-idle');
+      document.body.classList.remove('is-winner');
+      document.body.classList.remove('is-ad');
+      document.body.classList.remove('has-tie');
+      document.body.classList.add('is-paused');
+      const p1 = getPlayerName(live.jogador1_id || match.jogador1_id) || 'A definir';
+      const p2 = getPlayerName(live.jogador2_id || match.jogador2_id) || 'A definir';
+      $('pausedTitle').textContent = p1 + ' x ' + p2;
+      $('pausedMeta').innerHTML = [
+        shortCategory(getCategoryName(match.categoria_id)),
+        roundLabels[match.fase] || match.fase || 'Jogo'
+      ].filter(Boolean).map(function (item) {
+        return '<span>' + escapeHtml(item) + '</span>';
+      }).join('');
+    }
+
+    function renderAd(live) {
+      document.body.classList.remove('is-live');
+      document.body.classList.remove('is-idle');
+      document.body.classList.remove('is-winner');
+      document.body.classList.remove('is-paused');
+      document.body.classList.remove('has-tie');
+      document.body.classList.add('is-ad');
+      const video = $('adVideo');
+      const adId = String(live.ad_id || live.ad_url || '');
+      if (video.dataset.adId !== adId) {
+        video.dataset.adId = adId;
+        video.src = live.ad_url || '';
+        video.currentTime = 0;
+        video.onended = function () {
+          playedAds.add(adId);
+          video.pause();
+          video.removeAttribute('src');
+          video.load();
+          render();
+        };
+        video.onerror = function () {
+          playedAds.add(adId);
+          video.pause();
+          video.removeAttribute('src');
+          video.load();
+          render();
+        };
+        const playPromise = video.play();
+        if (playPromise && playPromise.catch) playPromise.catch(function () {});
+      }
+    }
+
     function renderWinner(match, live) {
       document.body.classList.remove('is-live');
       document.body.classList.remove('is-idle');
       document.body.classList.remove('has-tie');
+      document.body.classList.remove('is-paused');
+      document.body.classList.remove('is-ad');
       document.body.classList.add('is-winner');
       const winner = live.vencedor_nome || getPlayerName(live.vencedor_id) || getPlayerName(match.vencedor_id) || 'Vencedor';
       $('winnerName').textContent = winner;
@@ -469,6 +598,8 @@
       document.body.classList.remove('is-live');
       document.body.classList.remove('is-winner');
       document.body.classList.remove('has-tie');
+      document.body.classList.remove('is-paused');
+      document.body.classList.remove('is-ad');
       document.body.classList.add('is-idle');
       const next = nextMatch();
       if (!next) {
@@ -491,6 +622,10 @@
     }
 
     function renderTicker() {
+      if (document.body.classList.contains('is-ad')) {
+        document.body.classList.remove('show-ticker');
+        return;
+      }
       const cycle = Date.now() % 600000;
       const showTicker = cycle < 120000;
       const mode = cycle < 60000 ? 'next' : 'results';
@@ -514,11 +649,18 @@
       }
     }
 
-    function activeLiveMatch(live) {
-      if (!live || String(live.status || '') !== 'AO_VIVO' || !live.match_id) return null;
+    function liveMatch(live) {
+      const status = String(live && live.status || '').toUpperCase();
+      if (!live || ['AO_VIVO', 'PAUSADO', 'INTERVALO'].indexOf(status) < 0 || !live.match_id) return null;
       const match = (state.data.jogos || []).find(function (j) { return String(j.jogo_id) === String(live.match_id); });
       if (!match || String(match.status || '').toUpperCase() === 'FINALIZADO') return null;
       return match;
+    }
+
+    function activeAd(live) {
+      if (!live || String(live.status || '').toUpperCase() !== 'INTERVALO' || !live.ad_url) return null;
+      const adId = String(live.ad_id || live.ad_url || '');
+      return playedAds.has(adId) ? null : live;
     }
 
     function finishedLiveMatch(live) {
