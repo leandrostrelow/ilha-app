@@ -406,6 +406,24 @@
       text-transform: uppercase;
     }
 
+    .cat-chip {
+      border: 1px solid var(--cat-border, transparent);
+      background: var(--cat-bg, #eaf1f3) !important;
+      color: var(--cat-fg, var(--dark)) !important;
+      box-shadow: inset 3px 0 0 var(--cat-accent, var(--ford-blue));
+    }
+
+    .cat-m1 { --cat-bg: #dbeafe; --cat-fg: #073b77; --cat-border: #9cc6ff; --cat-accent: #004d97; }
+    .cat-m2 { --cat-bg: #eaffbf; --cat-fg: #173b0a; --cat-border: #b5e500; --cat-accent: #8fc400; }
+    .cat-m3 { --cat-bg: #ffedd5; --cat-fg: #7c2d12; --cat-border: #fdba74; --cat-accent: #f97316; }
+    .cat-m4 { --cat-bg: #ede9fe; --cat-fg: #4c1d95; --cat-border: #c4b5fd; --cat-accent: #7c3aed; }
+    .cat-m5 { --cat-bg: #fce7f3; --cat-fg: #831843; --cat-border: #f9a8d4; --cat-accent: #db2777; }
+    .cat-m6 { --cat-bg: #ccfbf1; --cat-fg: #134e4a; --cat-border: #5eead4; --cat-accent: #0f766e; }
+    .cat-m7 { --cat-bg: #fef3c7; --cat-fg: #78350f; --cat-border: #fcd34d; --cat-accent: #d97706; }
+    .cat-f2 { --cat-bg: #ffe4e6; --cat-fg: #881337; --cat-border: #fda4af; --cat-accent: #e11d48; }
+    .cat-f3 { --cat-bg: #e0e7ff; --cat-fg: #312e81; --cat-border: #a5b4fc; --cat-accent: #4f46e5; }
+    .cat-ic { --cat-bg: #e2e8f0; --cat-fg: #0f172a; --cat-border: #94a3b8; --cat-accent: #243847; }
+
     .mini-tag.warn {
       background: #fef3c7;
       color: #92400e;
@@ -1060,6 +1078,10 @@
     .agenda-match-card.done {
       border-left-color: var(--lime);
       background: #fbfff0;
+    }
+
+    .agenda-match-card.cat-chip {
+      border-left-color: var(--cat-accent, #0b5aaa);
     }
 
     .agenda-match-card.event {
@@ -2349,7 +2371,7 @@
           const regs = registrations
             .filter(function (r) { return String(r.jogador_id) === String(player.jogador_id) && String(r.status_pagamento) !== 'CANCELADO'; });
           const cats = regs.map(function (r) {
-            return '<span class="mini-tag">' + escapeHtml(getCategoryName(r.categoria_id)) + '</span>';
+            return '<span class="mini-tag cat-chip ' + categoryColorClass(r.categoria_id) + '">' + escapeHtml(getCategoryName(r.categoria_id)) + '</span>';
           }).join('');
           const payment = regs[0] ? regs[0].status_pagamento : '';
           const statusClass = String(player.status || 'ATIVO') === 'INATIVO' ? ' off' : '';
@@ -3221,13 +3243,14 @@
       const done = String(j.status || '').toUpperCase() === 'FINALIZADO';
       const canMoveUp = index > 0;
       const canMoveDown = index < total - 1;
-      return '<div class="agenda-match-card ' + (done ? 'done' : '') + '" role="button" tabindex="0" data-open-match="' + escapeHtml(j.jogo_id) + '">' +
+      const categoryClass = categoryColorClass(j.categoria_id);
+      return '<div class="agenda-match-card cat-chip ' + categoryClass + ' ' + (done ? 'done' : '') + '" role="button" tabindex="0" data-open-match="' + escapeHtml(j.jogo_id) + '">' +
         '<div class="agenda-match-top"><span>' + escapeHtml(phase) + ' ' + escapeHtml(j.posicao_chave || '') + '</span><span class="agenda-card-actions">' +
         '<button type="button" class="agenda-order-btn" title="Subir jogo" data-agenda-move="' + escapeHtml(j.jogo_id) + '" data-direction="up"' + (canMoveUp ? '' : ' disabled') + '>&uarr;</button>' +
         '<button type="button" class="agenda-order-btn" title="Descer jogo" data-agenda-move="' + escapeHtml(j.jogo_id) + '" data-direction="down"' + (canMoveDown ? '' : ' disabled') + '>&darr;</button>' +
         '<span class="agenda-time-pill">' + escapeHtml(formatAgendaTime(j.hora)) + '</span></span></div>' +
         '<div class="agenda-players"><span class="agenda-player p1">' + escapeHtml(player1) + '</span><span class="agenda-player p2">' + escapeHtml(player2) + '</span></div>' +
-        '<div class="agenda-meta"><span>' + escapeHtml(getCategoryName(j.categoria_id)) + '</span><span>' + escapeHtml(j.quadra || 'Sem quadra') + '</span><span>' + escapeHtml(done ? 'Finalizado' : 'Aberto') + '</span></div>' +
+        '<div class="agenda-meta"><span class="cat-chip ' + categoryClass + '">' + escapeHtml(getCategoryName(j.categoria_id)) + '</span><span>' + escapeHtml(j.quadra || 'Sem quadra') + '</span><span>' + escapeHtml(done ? 'Finalizado' : 'Aberto') + '</span></div>' +
         '</div>';
     }
 
@@ -3557,6 +3580,11 @@
     function getCategoryName(id) {
       const cat = state.data.categorias.find(function (c) { return String(c.categoria_id) === String(id); });
       return cat ? cat.nome : id;
+    }
+
+    function categoryColorClass(id) {
+      const value = String(id || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+      return value ? 'cat-' + value : '';
     }
 
     function formatDate(value) {
