@@ -244,6 +244,20 @@
       color: var(--text);
     }
 
+    .small-btn.ilha-card-btn {
+      background: #fff;
+      border: 1px solid var(--line);
+      color: var(--dark);
+      white-space: nowrap;
+    }
+
+    .small-btn.ilha-card-btn.active {
+      background: var(--ford-blue);
+      border-color: var(--ford-blue);
+      color: #fff;
+      box-shadow: inset 0 -3px 0 var(--lime);
+    }
+
     .primary-btn:disabled {
       opacity: .45;
       cursor: not-allowed;
@@ -2339,6 +2353,7 @@
           }).join('');
           const payment = regs[0] ? regs[0].status_pagamento : '';
           const statusClass = String(player.status || 'ATIVO') === 'INATIVO' ? ' off' : '';
+          const inIlhaCard = regs.some(function (r) { return isIlhaCardCategoryId(r.categoria_id); });
           return '<div class="row">' +
             '<div><strong>' + escapeHtml(player.nome) + '</strong><small>' +
             escapeHtml(player.cidade || 'sem cidade') + ' | ' + escapeHtml(player.whatsapp || 'sem WhatsApp') +
@@ -2348,9 +2363,50 @@
             (payment ? '<span class="mini-tag warn">' + escapeHtml(payment) + '</span>' : '') +
             '</div></div>' +
             '<div class="actions" style="margin:0">' +
+            '<button class="small-btn ilha-card-btn ' + (inIlhaCard ? 'active' : '') + '" type="button" data-ilha-card-player="' + escapeHtml(player.jogador_id) + '"' +
+            (inIlhaCard ? ' disabled title="Jogador ja esta na classe Especial"' : ' title="Adicionar na classe Especial"') + '>Especial</button>' +
             '<button class="icon-btn" title="Editar" data-edit-player="' + escapeHtml(player.jogador_id) + '">...</button>' +
             '</div></div>';
         }).join('') || '<div class="empty">Nenhum jogador cadastrado.</div>';
+    }
+
+    function ilhaCardCategory() {
+      return state.data.categorias.find(function (cat) {
+        return isIlhaCardCategoryId(cat.categoria_id) || normalizeSearch(cat.nome) === 'especial';
+      }) || null;
+    }
+
+    function isIlhaCardCategoryId(categoryId) {
+      const cat = state.data.categorias.find(function (item) {
+        return String(item.categoria_id) === String(categoryId);
+      });
+      return String(categoryId) === 'IC' || (cat && (normalizeSearch(cat.nome) === 'ilha card' || normalizeSearch(cat.nome) === 'especial'));
+    }
+
+    async function addPlayerToIlhaCard(playerId) {
+      const category = ilhaCardCategory();
+      if (!category) {
+        toast('Categoria Especial ainda nao existe.');
+        return;
+      }
+      if (playerRegistrations(playerId).some(function (reg) { return isIlhaCardCategoryId(reg.categoria_id); })) {
+        toast('Jogador ja esta na classe Especial.');
+        return;
+      }
+      await apiPost({
+        action: 'saveRegistration',
+        inscricao: {
+          torneio_id: (state.data.torneio && state.data.torneio.torneio_id) || 'torneio-atual',
+          categoria_id: category.categoria_id,
+          jogador_id: playerId,
+          status_pagamento: 'CONFIRMADO',
+          valor: '',
+          data_inscricao: new Date().toISOString().slice(0, 10),
+          confirmado: true,
+          observacoes: 'Especial'
+        }
+      }, { returnData: true });
+      toast('Jogador adicionado na classe Especial.');
     }
 
     function renderCategories() {
@@ -5028,6 +5084,12 @@
       const editPlayerBtn = event.target.closest('[data-edit-player]');
       if (editPlayerBtn) {
         editPlayer(editPlayerBtn.dataset.editPlayer);
+        return;
+      }
+
+      const ilhaCardPlayerBtn = event.target.closest('[data-ilha-card-player]');
+      if (ilhaCardPlayerBtn) {
+        addPlayerToIlhaCard(ilhaCardPlayerBtn.dataset.ilhaCardPlayer);
         return;
       }
 
