@@ -1060,10 +1060,10 @@
     .sponsor-popup {
       position: relative;
       z-index: 1;
-      width: min(420px, 100%);
+      width: min(430px, 100%);
       display: grid;
-      gap: 14px;
-      padding: 18px;
+      gap: 13px;
+      padding: 18px 18px 16px;
       border-radius: 22px;
       background: #fff;
       box-shadow: 0 24px 64px rgba(0, 40, 90, .32);
@@ -1074,31 +1074,31 @@
     .sponsor-popup-top {
       display: flex;
       justify-content: flex-end;
-      min-height: 32px;
+      min-height: 30px;
     }
 
     .sponsor-close {
-      width: 34px;
-      height: 34px;
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
       background: #eef5f8;
       color: var(--text);
-      font-size: 16px;
+      font-size: 20px;
       font-weight: 900;
     }
 
     .sponsor-logo-pill {
-      width: min(320px, 100%);
-      height: 154px;
+      width: 100%;
+      height: 176px;
       display: grid;
       place-items: center;
       justify-self: center;
-      border-radius: 16px;
+      border-radius: 18px;
       background: #fff;
       border: 1px solid rgba(0, 63, 134, .12);
       box-shadow: 0 10px 26px rgba(0, 40, 90, .08);
       overflow: hidden;
-      padding: 8px;
+      padding: 10px;
     }
 
     .sponsor-logo-pill img {
@@ -1109,7 +1109,7 @@
 
     .sponsor-popup h2 {
       margin: 0;
-      font-size: 24px;
+      font-size: 0;
       line-height: 1.05;
       color: var(--ford-dark);
     }
@@ -1117,30 +1117,64 @@
     .sponsor-popup p {
       margin: 0;
       color: var(--muted);
-      font-size: 14px;
-      line-height: 1.35;
+      font-size: 15px;
+      line-height: 1.32;
       font-weight: 800;
     }
 
-    .sponsor-popup strong {
+    .sponsor-pix-title {
       display: block;
-      margin-top: 3px;
-      font-size: 30px;
-      line-height: 1;
+      margin-top: 2px;
       color: var(--ford-blue);
+      font-size: 23px;
+      line-height: 1;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .sponsor-pix-card {
+      width: min(260px, 100%);
+      justify-self: center;
+      display: grid;
+      gap: 2px;
+      border-radius: 12px;
+      padding: 8px 12px;
+      background: #fff;
+      color: var(--ford-dark);
+      box-shadow: 0 8px 18px rgba(0, 40, 90, .08);
+    }
+
+    .sponsor-pix-number {
+      display: block;
+      border-radius: 6px;
+      background: #f6f0e4;
+      color: #050505;
+      padding: 3px 8px;
+      font-size: 24px;
+      line-height: 1;
+      font-weight: 900;
       letter-spacing: 0;
     }
 
-    .sponsor-pix-key {
-      width: fit-content;
-      justify-self: center;
-      border-radius: 999px;
-      padding: 7px 12px;
-      background: #f4ffe2;
-      color: var(--ford-dark);
-      border: 1px solid rgba(181, 229, 0, .7);
-      font-size: 13px;
+    .sponsor-pix-name,
+    .sponsor-pix-bank,
+    .sponsor-pix-thanks {
+      display: block;
+      color: #111;
+      font-size: 12px;
+      line-height: 1.05;
       font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .sponsor-pix-bank {
+      color: #7c2bd8;
+      font-size: 18px;
+    }
+
+    .sponsor-pix-thanks {
+      margin-top: 5px;
+      font-size: 15px;
     }
 
     .sponsor-action-row {
@@ -1154,13 +1188,36 @@
       display: grid;
       place-items: center;
       border: 0;
-      border-radius: 999px;
+      border-radius: 22px;
       font-size: 15px;
       font-weight: 900;
       text-decoration: none;
       background: var(--ford-blue);
       color: #fff;
       box-shadow: 0 12px 26px rgba(0, 77, 151, .24);
+    }
+
+    @media (max-width: 420px) {
+      .sponsor-popup {
+        padding: 14px;
+        gap: 11px;
+      }
+
+      .sponsor-logo-pill {
+        height: 150px;
+      }
+
+      .sponsor-popup p {
+        font-size: 14px;
+      }
+
+      .sponsor-pix-title {
+        font-size: 20px;
+      }
+
+      .sponsor-pix-number {
+        font-size: 21px;
+      }
     }
 
     .athlete-match-list {
@@ -1472,13 +1529,20 @@
       <div class="sponsor-logo-pill">
         <img src="./instaviafor.png" alt="Ajude nosso amigo Pereira" />
       </div>
-      <h2 id="sponsorPopupTitle">&#128591; AJUDE NOSSO AMIGO<strong>PEREIRA</strong></h2>
+      <h2 id="sponsorPopupTitle">Ajude nosso amigo Pereira</h2>
       <p>Grande parceiro do Ilha T&ecirc;nis, Pereira sofreu um grave acidente e precisou passar por uma amputa&ccedil;&atilde;o para salvar sua vida.</p>
       <p>Agora ele inicia uma nova etapa e precisa da nossa ajuda para sua recupera&ccedil;&atilde;o e adapta&ccedil;&atilde;o.</p>
       <p>Qualquer contribui&ccedil;&atilde;o faz a diferen&ccedil;a. &#10084;&#65039;&#127934;</p>
-      <div class="sponsor-pix-key">Pix: (27) 99523-4025</div>
       <div class="sponsor-action-row">
-        <button class="sponsor-pix-btn" type="button" onclick="copyPereiraPix()">Copiar chave Pix</button>
+        <button class="sponsor-pix-btn" type="button" onclick="copyPereiraPix()">
+          <span class="sponsor-pix-title">Copiar chave Pix</span>
+          <span class="sponsor-pix-card">
+            <span class="sponsor-pix-number">(27)99523-4025</span>
+            <span class="sponsor-pix-name">(Erasmo Schultz Pereira)</span>
+            <span class="sponsor-pix-bank">Nubank</span>
+            <span class="sponsor-pix-thanks">Agradecemos sua colabora&ccedil;&atilde;o!</span>
+          </span>
+        </button>
       </div>
     </div>
   </div>
