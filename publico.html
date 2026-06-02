@@ -1135,12 +1135,21 @@
       display: grid;
       grid-template-columns: 1fr;
       gap: 5px;
+      width: 100%;
+      border: 1px solid rgba(0, 77, 151, .14);
       border-radius: 18px;
       padding: 13px 14px;
       background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
       color: var(--ford-dark);
-      border: 1px solid rgba(0, 77, 151, .14);
       box-shadow: inset 0 0 0 1px rgba(255,255,255,.8);
+      cursor: pointer;
+      font-family: inherit;
+      text-align: center;
+    }
+
+    .sponsor-pix-card:focus-visible {
+      outline: 3px solid rgba(181, 229, 0, .55);
+      outline-offset: 2px;
     }
 
     .sponsor-pix-label {
@@ -1167,24 +1176,23 @@
       text-transform: uppercase;
     }
 
-    .sponsor-action-row {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 0;
+    .sponsor-copy-hint {
+      min-height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      justify-self: center;
+      border-radius: 999px;
+      padding: 6px 12px;
+      background: #f4ffe2;
+      color: var(--ford-blue);
+      font-size: 12px;
+      font-weight: 900;
     }
 
-    .sponsor-pix-btn {
-      min-height: 52px;
-      display: grid;
-      place-items: center;
-      border: 0;
-      border-radius: 999px;
-      font-size: 16px;
-      font-weight: 900;
-      text-decoration: none;
-      background: var(--ford-blue);
-      color: #fff;
-      box-shadow: 0 12px 26px rgba(0, 77, 151, .24);
+    .sponsor-copy-hint.copied {
+      background: var(--lime);
+      color: #0f1f24;
     }
 
     @media (max-width: 420px) {
@@ -1524,16 +1532,12 @@
       <p>Agora ele inicia uma nova etapa e precisa da nossa ajuda para sua recupera&ccedil;&atilde;o e adapta&ccedil;&atilde;o.</p>
       <p>Qualquer contribui&ccedil;&atilde;o faz a diferen&ccedil;a. &#10084;&#65039;&#127934;</p>
       <div class="sponsor-pix-area">
-        <div class="sponsor-pix-card">
+        <button class="sponsor-pix-card" type="button" onclick="copyPereiraPix()" aria-label="Copiar chave Pix do Pereira">
           <span class="sponsor-pix-label">Chave Pix Nubank</span>
           <span class="sponsor-pix-number">(27) 99523-4025</span>
           <span class="sponsor-pix-name">Erasmo Schultz Pereira</span>
-        </div>
-        <div class="sponsor-action-row">
-          <button class="sponsor-pix-btn" type="button" onclick="copyPereiraPix()">
-            <span class="sponsor-pix-btn-text">Copiar chave Pix</span>
-          </button>
-        </div>
+        </button>
+        <div class="sponsor-copy-hint" id="sponsorPixHint">Toque na chave para copiar</div>
       </div>
     </div>
   </div>
@@ -2408,11 +2412,15 @@
     }
 
     function copyPereiraPix() {
-      const label = document.querySelector('.sponsor-pix-btn-text');
+      const hint = $('sponsorPixHint');
       function done() {
-        if (label) {
-          label.textContent = 'Chave Pix copiada';
-          setTimeout(function () { label.textContent = 'Copiar chave Pix'; }, 2200);
+        if (hint) {
+          hint.textContent = 'Chave Pix copiada';
+          hint.classList.add('copied');
+          setTimeout(function () {
+            hint.textContent = 'Toque na chave para copiar';
+            hint.classList.remove('copied');
+          }, 2400);
         }
       }
       if (navigator.clipboard && navigator.clipboard.writeText) {
