@@ -1109,7 +1109,7 @@
 
     .sponsor-popup h2 {
       margin: 0;
-      font-size: 25px;
+      font-size: 24px;
       line-height: 1.05;
       color: var(--ford-dark);
     }
@@ -1117,46 +1117,50 @@
     .sponsor-popup p {
       margin: 0;
       color: var(--muted);
-      font-size: 15px;
+      font-size: 14px;
       line-height: 1.35;
       font-weight: 800;
     }
 
+    .sponsor-popup strong {
+      display: block;
+      margin-top: 3px;
+      font-size: 30px;
+      line-height: 1;
+      color: var(--ford-blue);
+      letter-spacing: 0;
+    }
+
+    .sponsor-pix-key {
+      width: fit-content;
+      justify-self: center;
+      border-radius: 999px;
+      padding: 7px 12px;
+      background: #f4ffe2;
+      color: var(--ford-dark);
+      border: 1px solid rgba(181, 229, 0, .7);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
     .sponsor-action-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 10px;
     }
 
-    .sponsor-follow-btn,
-    .sponsor-message-btn {
+    .sponsor-pix-btn {
       min-height: 48px;
       display: grid;
       place-items: center;
+      border: 0;
       border-radius: 999px;
       font-size: 15px;
       font-weight: 900;
       text-decoration: none;
-    }
-
-    .sponsor-follow-btn {
-      background: #4856f4;
+      background: var(--ford-blue);
       color: #fff;
-      box-shadow: 0 12px 26px rgba(72, 86, 244, .24);
-    }
-
-    .sponsor-message-btn {
-      background: #eef1f4;
-      color: var(--text);
-    }
-
-    .sponsor-later-btn {
-      min-height: 38px;
-      border-radius: 999px;
-      background: transparent;
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 900;
+      box-shadow: 0 12px 26px rgba(0, 77, 151, .24);
     }
 
     .athlete-match-list {
@@ -1466,15 +1470,16 @@
         <button class="sponsor-close" type="button" onclick="closeSponsorPopup()" aria-label="Fechar">X</button>
       </div>
       <div class="sponsor-logo-pill">
-        <img src="./instaviafor.png" alt="Instagram da Viafor Veiculos" />
+        <img src="./instaviafor.png" alt="Ajude nosso amigo Pereira" />
       </div>
-      <h2 id="sponsorPopupTitle">SIGA NOSSO PATROCINADOR</h2>
-      <p>A Viafor apoia o t&ecirc;nis em nossa cidade. D&aacute; uma for&ccedil;a e acompanha eles no Instagram.</p>
+      <h2 id="sponsorPopupTitle">&#128591; AJUDE NOSSO AMIGO<strong>PEREIRA</strong></h2>
+      <p>Grande parceiro do Ilha T&ecirc;nis, Pereira sofreu um grave acidente e precisou passar por uma amputa&ccedil;&atilde;o para salvar sua vida.</p>
+      <p>Agora ele inicia uma nova etapa e precisa da nossa ajuda para sua recupera&ccedil;&atilde;o e adapta&ccedil;&atilde;o.</p>
+      <p>Qualquer contribui&ccedil;&atilde;o faz a diferen&ccedil;a. &#10084;&#65039;&#127934;</p>
+      <div class="sponsor-pix-key">Pix: (27) 99523-4025</div>
       <div class="sponsor-action-row">
-        <a class="sponsor-follow-btn" href="https://www.instagram.com/viaforveiculos/" target="_blank" rel="noopener" onclick="closeSponsorPopup()">Seguir</a>
-        <a class="sponsor-message-btn" href="https://api.whatsapp.com/send?phone=552737230050&text=Ol%C3%A1%2C%20estou%20participando%20do%20segundo%20Viafor%20Open%20de%20t%C3%AAnis%20e%20gostaria%20de%20um%20atendimento." target="_blank" rel="noopener" onclick="closeSponsorPopup()">Enviar mensagem</a>
+        <button class="sponsor-pix-btn" type="button" onclick="copyPereiraPix()">Copiar chave Pix</button>
       </div>
-      <button class="sponsor-later-btn" type="button" onclick="closeSponsorPopup()">Agora n&atilde;o</button>
     </div>
   </div>
 
@@ -2313,7 +2318,8 @@
       $('athleteDetailBackdrop').classList.remove('open');
     }
 
-    const SPONSOR_POPUP_SESSION_KEY = 'viaforSponsorPopupSeen';
+    const SPONSOR_POPUP_SESSION_KEY = 'pereiraAidPopupSeenV1';
+    const PEREIRA_PIX_KEY = '27995234025';
 
     function sponsorPopupSeen() {
       try {
@@ -2344,6 +2350,37 @@
     function closeSponsorPopup() {
       const backdrop = $('sponsorPopupBackdrop');
       if (backdrop) backdrop.classList.remove('open');
+    }
+
+    function copyPereiraPix() {
+      const button = document.querySelector('.sponsor-pix-btn');
+      function done() {
+        if (button) {
+          button.textContent = 'Chave Pix copiada';
+          setTimeout(function () { button.textContent = 'Copiar chave Pix'; }, 2200);
+        }
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(PEREIRA_PIX_KEY).then(done).catch(function () {
+          fallbackCopy(PEREIRA_PIX_KEY);
+          done();
+        });
+        return;
+      }
+      fallbackCopy(PEREIRA_PIX_KEY);
+      done();
+    }
+
+    function fallbackCopy(text) {
+      const input = document.createElement('input');
+      input.value = text;
+      input.setAttribute('readonly', 'readonly');
+      input.style.position = 'fixed';
+      input.style.left = '-999px';
+      document.body.appendChild(input);
+      input.select();
+      try { document.execCommand('copy'); } catch (err) {}
+      document.body.removeChild(input);
     }
 
     function athleteResultText(match, playerId) {
