@@ -910,7 +910,7 @@
 
     .live-actions {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
       margin-top: 9px;
     }
@@ -2012,12 +2012,8 @@
             </select>
             <div class="live-actions">
               <button class="primary-btn" type="button" onclick="startLiveMatch()">Iniciar partida</button>
-              <button class="ghost-btn" type="button" onclick="showLiveNextMatch()">Proximo jogo</button>
-              <button class="ghost-btn" type="button" onclick="pauseLiveMatch()">Pausar</button>
-              <button class="ghost-btn" type="button" onclick="playLiveInterval()">Intervalo / Propaganda</button>
+              <button class="ghost-btn" type="button" onclick="playLiveInterval()">Intervalo</button>
               <button class="primary-btn" type="button" onclick="finishLiveMatch()">Finalizar partida</button>
-              <button class="ghost-btn" type="button" onclick="clearLiveMatch()">Tirar da tela</button>
-              <button class="ghost-btn" type="button" onclick="openLiveOverlay()">OBS</button>
             </div>
           </div>
         </div>
@@ -3792,7 +3788,7 @@
 
     function scheduleLiveScoreAutoSave() {
       clearTimeout(state.liveScoreSaveTimer);
-      state.liveScoreSaveTimer = setTimeout(autoSaveLiveScore, 650);
+      state.liveScoreSaveTimer = setTimeout(autoSaveLiveScore, 220);
     }
 
     async function autoSaveLiveScore() {
@@ -5265,7 +5261,11 @@
       'liveStP1', 'liveStP2'
     ].forEach(function (id) {
       $(id).addEventListener('input', scheduleLiveScoreAutoSave);
+      $(id).addEventListener('keyup', scheduleLiveScoreAutoSave);
       $(id).addEventListener('change', scheduleLiveScoreAutoSave);
+      $(id).addEventListener('paste', function () {
+        setTimeout(scheduleLiveScoreAutoSave, 0);
+      });
     });
     $('matchEditorBackdrop').addEventListener('click', function (event) {
       if (event.target.id === 'matchEditorBackdrop') closeMatchEditor();
