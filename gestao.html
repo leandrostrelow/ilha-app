@@ -1052,6 +1052,7 @@
 
     .agenda-match-card {
       width: 100%;
+      min-width: 0;
       display: grid;
       gap: 9px;
       padding: 12px;
@@ -1094,6 +1095,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 6px;
+      min-width: 0;
       color: var(--muted);
       font-size: 10px;
       font-weight: 900;
@@ -1217,6 +1219,8 @@
     .agenda-meta span {
       display: inline-flex;
       align-items: center;
+      max-width: 100%;
+      min-width: 0;
       min-height: 21px;
       padding: 3px 7px;
       border-radius: 999px;
@@ -1224,6 +1228,9 @@
       color: var(--muted);
       font-size: 10px;
       font-weight: 900;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .results-list {
@@ -1540,11 +1547,67 @@
       .editor-whatsapp-btn { min-height: 34px; padding: 0 4px; font-size: 9px; }
       .editor-whatsapp-btn .wa-icon { width: 13px; height: 13px; }
       .agenda-list { grid-template-columns: 1fr; }
+      .agenda-list {
+        overflow-x: visible;
+        gap: 10px;
+      }
+      .agenda-day-column {
+        padding: 10px;
+        gap: 10px;
+        overflow: hidden;
+      }
+      .agenda-day-head {
+        padding: 8px;
+        gap: 6px;
+      }
+      .agenda-court-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .agenda-court-column {
+        gap: 8px;
+      }
+      .agenda-court-title {
+        min-height: 24px;
+        font-size: 10px;
+      }
+      .agenda-match-card {
+        padding: 10px;
+        gap: 8px;
+      }
+      .agenda-match-top {
+        align-items: flex-start;
+      }
       .player-filters, .agenda-filters, .match-agenda-grid, .agenda-event-form, .live-actions { grid-template-columns: 1fr; }
       .live-score-head,
       .live-score-line { grid-template-columns: minmax(0, 1fr) repeat(3, 54px); }
-      .agenda-card-actions { gap: 4px; }
-      .agenda-order-btn { width: 30px; height: 30px; font-size: 13px; }
+      .agenda-card-actions {
+        gap: 4px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        max-width: 142px;
+      }
+      .agenda-order-btn { width: 28px; height: 28px; font-size: 12px; }
+      .agenda-time-pill {
+        min-width: 44px;
+        min-height: 28px;
+        padding: 4px 7px;
+      }
+      .agenda-players,
+      .agenda-event-title {
+        font-size: 14px;
+      }
+      .agenda-player {
+        min-height: 37px;
+        padding: 8px 10px;
+      }
+      .agenda-meta {
+        gap: 4px;
+      }
+      .agenda-meta span {
+        min-height: 22px;
+        font-size: 9px;
+      }
       .result-card { grid-template-columns: 28px minmax(0, 1fr); padding: 9px; }
       .result-line { grid-template-columns: 1fr; justify-items: stretch; text-align: center; }
       .result-score { justify-self: center; }
