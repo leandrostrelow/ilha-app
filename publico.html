@@ -1195,6 +1195,43 @@
       color: #0f1f24;
     }
 
+    .sponsor-action-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 9px;
+    }
+
+    .sponsor-action-link,
+    .sponsor-action-btn {
+      min-height: 48px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 999px;
+      padding: 0 16px;
+      font-size: 15px;
+      font-weight: 900;
+      text-decoration: none;
+      font-family: inherit;
+    }
+
+    .sponsor-action-link.primary,
+    .sponsor-action-btn.primary {
+      background: var(--ford-blue);
+      color: #fff;
+      box-shadow: 0 12px 26px rgba(0, 77, 151, .24);
+    }
+
+    .sponsor-action-link.secondary,
+    .sponsor-action-btn.secondary {
+      background: #eef5f8;
+      color: var(--text);
+    }
+
+    .sponsor-action-row.two {
+      grid-template-columns: 1fr 1fr;
+    }
+
     @media (max-width: 420px) {
       .sponsor-popup {
         padding: 14px;
@@ -1215,6 +1252,10 @@
 
       .sponsor-pix-number {
         font-size: 23px;
+      }
+
+      .sponsor-action-row.two {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -1525,20 +1566,11 @@
         <button class="sponsor-close" type="button" onclick="closeSponsorPopup()" aria-label="Fechar">X</button>
       </div>
       <div class="sponsor-logo-pill">
-        <img src="./instaviafor.png" alt="Ajude nosso amigo Pereira" />
+        <img id="sponsorPopupImage" src="./instaviafor.png" alt="" />
       </div>
-      <h2 id="sponsorPopupTitle">Ajude nosso amigo Pereira</h2>
-      <p>Grande parceiro do Ilha T&ecirc;nis, Pereira sofreu um grave acidente e precisou passar por uma amputa&ccedil;&atilde;o para salvar sua vida.</p>
-      <p>Agora ele inicia uma nova etapa e precisa da nossa ajuda para sua recupera&ccedil;&atilde;o e adapta&ccedil;&atilde;o.</p>
-      <p>Qualquer contribui&ccedil;&atilde;o faz a diferen&ccedil;a. &#10084;&#65039;&#127934;</p>
-      <div class="sponsor-pix-area">
-        <button class="sponsor-pix-card" type="button" onclick="copyPereiraPix()" aria-label="Copiar chave Pix do Pereira">
-          <span class="sponsor-pix-label">Chave Pix Nubank</span>
-          <span class="sponsor-pix-number">(27) 99523-4025</span>
-          <span class="sponsor-pix-name">Erasmo Schultz Pereira</span>
-        </button>
-        <div class="sponsor-copy-hint" id="sponsorPixHint">Toque na chave para copiar</div>
-      </div>
+      <h2 id="sponsorPopupTitle"></h2>
+      <div id="sponsorPopupText"></div>
+      <div id="sponsorPopupAction"></div>
     </div>
   </div>
 
@@ -2377,38 +2409,127 @@
       $('athleteDetailBackdrop').classList.remove('open');
     }
 
-    const SPONSOR_POPUP_SESSION_KEY = 'pereiraAidPopupSeenV1';
+    const POPUP_NOTICE_STORAGE_KEY = 'torneioPublicPopupNoticeIndexV1';
     const PEREIRA_PIX_KEY = '27995234025';
-
-    function sponsorPopupSeen() {
-      try {
-        return sessionStorage.getItem(SPONSOR_POPUP_SESSION_KEY) === '1';
-      } catch (err) {
-        return false;
+    const popupNotices = [
+      {
+        id: 'pereira',
+        image: './pereira.png',
+        imageAlt: 'Ajude nosso amigo Pereira',
+        title: 'Ajude nosso amigo Pereira',
+        paragraphs: [
+          'Grande parceiro do Ilha T\u00eanis, Pereira sofreu um grave acidente e precisou passar por uma amputa\u00e7\u00e3o para salvar sua vida.',
+          'Agora ele inicia uma nova etapa e precisa da nossa ajuda para sua recupera\u00e7\u00e3o e adapta\u00e7\u00e3o.',
+          'Qualquer contribui\u00e7\u00e3o faz a diferen\u00e7a. \u2764\ufe0f\uD83C\uDFBE'
+        ],
+        kind: 'pix'
+      },
+      {
+        id: 'viafor',
+        image: './instaviafor.png',
+        imageAlt: 'II Viafor Open',
+        title: 'Siga nosso patrocinador',
+        paragraphs: [
+          'A Viafor apoia o t\u00eanis em nossa cidade e ajuda esse torneio acontecer.',
+          'D\u00e1 uma for\u00e7a para quem tamb\u00e9m fortalece o esporte em Colatina.'
+        ],
+        actions: [
+          { label: 'Seguir no Instagram', href: 'https://www.instagram.com/viaforveiculos/', style: 'primary' },
+          { label: 'Enviar mensagem', href: 'https://api.whatsapp.com/send?phone=552737230050&text=Ol%C3%A1%2C%20estou%20participando%20do%20segundo%20Viafor%20Open%20de%20t%C3%AAnis%20e%20gostaria%20de%20um%20atendimento.', style: 'secondary' }
+        ]
+      },
+      {
+        id: 'padaria',
+        image: './padaria%20insta.png',
+        imageAlt: 'Padaria Malacarne Nossa Senhora Aparecida',
+        title: 'Siga nosso parceiro',
+        paragraphs: [
+          'A Padaria Malacarne tamb\u00e9m est\u00e1 apoiando o II Viafor Open e fortalecendo o esporte em nossa cidade.',
+          'D\u00e1 uma for\u00e7a para quem caminha junto com o Ilha T\u00eanis.'
+        ],
+        actions: [
+          { label: 'Seguir no Instagram', href: 'https://www.instagram.com/padaria_malacarne_aparecida/', style: 'primary' }
+        ]
       }
-    }
-
-    function markSponsorPopupSeen() {
-      try {
-        sessionStorage.setItem(SPONSOR_POPUP_SESSION_KEY, '1');
-      } catch (err) {}
-    }
+    ];
 
     function maybeOpenSponsorPopup() {
-      if (sponsorPopupSeen()) return;
       openSponsorPopup();
+    }
+
+    function nextPopupNotice() {
+      if (!popupNotices.length) return null;
+      let index = 0;
+      try {
+        const raw = localStorage.getItem(POPUP_NOTICE_STORAGE_KEY);
+        const previous = raw === null ? -1 : Number(raw);
+        index = Number.isFinite(previous) ? (previous + 1) % popupNotices.length : 0;
+        localStorage.setItem(POPUP_NOTICE_STORAGE_KEY, String(index));
+      } catch (err) {
+        index = Math.floor(Date.now() / 1000) % popupNotices.length;
+      }
+      return popupNotices[index];
+    }
+
+    function renderSponsorPopup(notice) {
+      if (!notice) return false;
+      const image = $('sponsorPopupImage');
+      const title = $('sponsorPopupTitle');
+      const text = $('sponsorPopupText');
+      const action = $('sponsorPopupAction');
+      if (!image || !title || !text || !action) return false;
+
+      image.src = notice.image || './titulo.png';
+      image.alt = notice.imageAlt || notice.title || '';
+      title.textContent = notice.title || '';
+      text.innerHTML = (notice.paragraphs || []).map(function (paragraph) {
+        return '<p>' + escapeHtml(paragraph) + '</p>';
+      }).join('');
+
+      if (notice.kind === 'pix') {
+        action.innerHTML = '<div class="sponsor-pix-area">' +
+          '<button class="sponsor-pix-card" type="button" onclick="copyPereiraPix()" aria-label="Copiar chave Pix do Pereira">' +
+          '<span class="sponsor-pix-label">Chave Pix Nubank</span>' +
+          '<span class="sponsor-pix-number">(27) 99523-4025</span>' +
+          '<span class="sponsor-pix-name">Erasmo Schultz Pereira</span>' +
+          '</button>' +
+          '<div class="sponsor-copy-hint" id="sponsorPixHint">Toque na chave para copiar</div>' +
+          '</div>';
+        return true;
+      }
+
+      const actions = notice.actions || [];
+      action.innerHTML = actions.length ? '<div class="sponsor-action-row ' + (actions.length > 1 ? 'two' : '') + '">' +
+        actions.map(function (item) {
+          const style = item.style === 'secondary' ? 'secondary' : 'primary';
+          if (item.href) {
+            return '<a class="sponsor-action-link ' + style + '" href="' + escapeHtml(item.href) + '" target="_blank" rel="noopener" onclick="closeSponsorPopup()">' + escapeHtml(item.label) + '</a>';
+          }
+          if (item.tab) {
+            return '<button class="sponsor-action-btn ' + style + '" type="button" onclick="openPopupTab(' + jsArg(item.tab) + ')">' + escapeHtml(item.label) + '</button>';
+          }
+          return '<button class="sponsor-action-btn ' + style + '" type="button" onclick="closeSponsorPopup()">' + escapeHtml(item.label || 'Fechar') + '</button>';
+        }).join('') +
+        '</div>' : '';
+      return true;
     }
 
     function openSponsorPopup() {
       const backdrop = $('sponsorPopupBackdrop');
       if (!backdrop || backdrop.classList.contains('open')) return;
-      markSponsorPopupSeen();
+      if (!renderSponsorPopup(nextPopupNotice())) return;
       backdrop.classList.add('open');
     }
 
     function closeSponsorPopup() {
       const backdrop = $('sponsorPopupBackdrop');
       if (backdrop) backdrop.classList.remove('open');
+    }
+
+    function openPopupTab(tabId) {
+      const button = document.querySelector('.nav button[data-tab="' + CSS.escape(tabId) + '"]');
+      if (button) button.click();
+      closeSponsorPopup();
     }
 
     function copyPereiraPix() {
