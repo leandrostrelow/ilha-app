@@ -70,6 +70,9 @@
     body.club-communication .club-home,
     body.club-communication .topbar,
     body.club-communication .section,
+    body.club-clients .club-home,
+    body.club-clients .topbar,
+    body.club-clients .section,
     body.club-tournament .lessons-module,
     body.club-home .lessons-module,
     body.club-home .ops-module,
@@ -85,7 +88,8 @@
     body.club-students .student-center-module,
     body.club-agenda .agenda-module,
     body.club-finance .finance-module,
-    body.club-communication .communication-module {
+    body.club-communication .communication-module,
+    body.club-clients .clients-module {
       display: block;
     }
 
@@ -194,8 +198,124 @@
       font-weight: 900;
     }
 
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 272px minmax(0, 1fr);
+      background:
+        linear-gradient(90deg, #10272c 0 272px, transparent 272px),
+        var(--bg);
+    }
+
+    .app > :not(.admin-sidebar) {
+      grid-column: 2;
+      min-width: 0;
+      margin: 0;
+      padding: 18px 22px 28px;
+    }
+
+    .admin-sidebar {
+      grid-column: 1;
+      grid-row: 1 / span 20;
+      min-height: 100vh;
+      padding: 20px 16px;
+      background: #10272c;
+      color: #fff;
+      position: sticky;
+      top: 0;
+      align-self: start;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .admin-sidebar-brand {
+      padding: 6px 6px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+    }
+
+    .admin-sidebar-brand img {
+      width: 146px;
+      height: auto;
+      display: block;
+      margin-bottom: 14px;
+      filter: brightness(0) invert(1);
+    }
+
+    .admin-sidebar-brand strong {
+      display: block;
+      font-size: 18px;
+      line-height: 1.1;
+    }
+
+    .admin-sidebar-brand span {
+      display: block;
+      margin-top: 5px;
+      color: rgba(255,255,255,.62);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .admin-sidebar-nav {
+      display: grid;
+      gap: 6px;
+    }
+
+    .admin-nav-btn {
+      width: 100%;
+      min-height: 44px;
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      border-radius: 8px;
+      padding: 0 10px;
+      background: transparent;
+      color: rgba(255,255,255,.76);
+      text-align: left;
+      font-weight: 900;
+    }
+
+    .admin-nav-btn:hover,
+    .admin-nav-btn.active {
+      background: rgba(255,255,255,.1);
+      color: #fff;
+    }
+
+    .admin-nav-icon {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: rgba(255,255,255,.1);
+      font-size: 13px;
+    }
+
+    .admin-sidebar-footer {
+      margin-top: auto;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,.12);
+      display: grid;
+      gap: 8px;
+    }
+
+    .admin-sidebar-footer a,
+    .admin-sidebar-footer button {
+      width: 100%;
+      min-height: 38px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,.1);
+      color: #fff;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
     .club-home {
-      padding: 8px 0 24px;
+      padding: 18px 22px 28px;
     }
 
     .club-home-top {
@@ -2075,7 +2195,38 @@
     .toast.show { display: block; }
 
     @media (max-width: 860px) {
-      .app { padding: 10px; }
+      .app {
+        grid-template-columns: 1fr;
+        background: var(--bg);
+      }
+      .app > :not(.admin-sidebar) {
+        grid-column: 1;
+        padding: 12px;
+      }
+      .admin-sidebar {
+        position: static;
+        grid-column: 1;
+        grid-row: auto;
+        min-height: auto;
+        padding: 12px;
+      }
+      .admin-sidebar-brand {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        padding-bottom: 12px;
+      }
+      .admin-sidebar-brand img {
+        width: 112px;
+        margin: 0;
+      }
+      .admin-sidebar-nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .admin-sidebar-footer {
+        grid-template-columns: 1fr 1fr;
+      }
       .club-home-top {
         grid-template-columns: 1fr;
       }
@@ -2170,7 +2321,9 @@
         width: 118px;
       }
       .club-metrics,
-      .club-modules {
+      .club-modules,
+      .admin-sidebar-nav,
+      .admin-sidebar-footer {
         grid-template-columns: 1fr;
       }
       .club-module {
@@ -2422,6 +2575,30 @@
   </main>
 
   <div class="app" id="adminApp" aria-hidden="true">
+    <aside class="admin-sidebar" aria-label="Menu administrativo">
+      <div class="admin-sidebar-brand">
+        <img src="../logo.png" alt="Ilha Tenis" />
+        <div>
+          <strong>Admin Ilha</strong>
+          <span>Gestao do clube</span>
+        </div>
+      </div>
+      <nav class="admin-sidebar-nav">
+        <button class="admin-nav-btn active" type="button" data-admin-nav="club-home"><span class="admin-nav-icon">IN</span><span>Inicio</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon">CL</span><span>Clientes do App</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-students"><span class="admin-nav-icon">AL</span><span>Alunos</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-lessons"><span class="admin-nav-icon">AU</span><span>Aulas</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-agenda"><span class="admin-nav-icon">AG</span><span>Agenda</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon">FI</span><span>Financeiro</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-communication"><span class="admin-nav-icon">CO</span><span>Comunicacao</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-tournament"><span class="admin-nav-icon">TO</span><span>Torneios</span></button>
+      </nav>
+      <div class="admin-sidebar-footer">
+        <a href="../" target="_blank" rel="noopener">App publico</a>
+        <button type="button" id="sidebarLogoutBtn">Sair</button>
+      </div>
+    </aside>
+
     <section class="club-home" id="clubHome">
       <div class="club-home-top">
         <div class="club-home-brand">
@@ -2445,6 +2622,14 @@
       </div>
 
       <div class="club-modules">
+        <button class="club-module" type="button" id="openClientsModule">
+          <span class="club-module-kicker">Novo oficial</span>
+          <div>
+            <h2>Clientes do App</h2>
+            <p>Cadastros que entram pelo Ilha Play com nome, e-mail, telefone e senha.</p>
+          </div>
+          <span class="club-module-action">Abrir modulo</span>
+        </button>
         <button class="club-module" type="button" id="openTournamentModule">
           <span class="club-module-kicker">Disponivel</span>
           <div>
@@ -2493,6 +2678,49 @@
           </div>
           <span class="club-module-action">Abrir modulo</span>
         </button>
+      </div>
+    </section>
+
+    <section class="ops-module clients-module" id="clientsModule">
+      <div class="module-shell">
+        <div class="module-head">
+          <div>
+            <h1>Clientes do App</h1>
+            <div class="muted">Base oficial de pessoas cadastradas no Ilha Play.</div>
+          </div>
+          <div class="module-actions">
+            <button class="ghost-btn" type="button" data-home-action>Inicio</button>
+            <button class="ghost-btn" type="button" id="clientReloadBtn">Recarregar</button>
+          </div>
+        </div>
+        <div class="ops-content">
+          <div class="ops-summary">
+            <div class="ops-card"><strong id="clientTotalMetric">0</strong><span>clientes cadastrados</span></div>
+            <div class="ops-card"><strong id="clientActiveMetric">0</strong><span>ativos</span></div>
+            <div class="ops-card"><strong id="clientPhoneMetric">0</strong><span>com WhatsApp</span></div>
+            <div class="ops-card"><strong id="clientRecentMetric">0</strong><span>novos 7 dias</span></div>
+          </div>
+          <div class="ops-grid">
+            <div class="ops-panel span-8">
+              <div class="ops-panel-head">
+                <div>
+                  <h2>Cadastros recentes</h2>
+                  <div class="muted">Entradas feitas pelo app publico.</div>
+                </div>
+              </div>
+              <div class="ops-list" id="clientList"></div>
+            </div>
+            <div class="ops-panel span-4">
+              <div class="ops-panel-head">
+                <div>
+                  <h2>Segmentos</h2>
+                  <div class="muted">Primeira leitura para relacionamento.</div>
+                </div>
+              </div>
+              <div class="ops-list" id="clientSegmentList"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -6459,6 +6687,9 @@
     };
 
     const opsData = {
+      clients: [
+        { name: 'Cliente exemplo', email: 'cliente@ilhatenis.com', phone: '5527999999999', status: 'ATIVO', type: 'cliente', created: '2026-06-22', lastLogin: '' }
+      ],
       students: [
         { name: 'Leandro Strelow', phone: '5527999805814', status: 'ATIVO', plan: 'Aula semanal', level: 'Intermediario', teacher: 'Renato', financial: 'OK', nextAction: 'Confirmar presenca hoje' },
         { name: 'Evandro Ferraco', phone: '5527999292514', status: 'ATIVO', plan: 'Aula semanal', level: 'Intermediario', teacher: 'Renato', financial: 'PENDENTE', nextAction: 'Enviar lembrete de mensalidade' },
@@ -6497,10 +6728,17 @@
     const opsSeedData = JSON.parse(JSON.stringify(opsData));
 
     function setClubMode(mode) {
-      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-finance', 'club-communication'].forEach(function (className) {
+      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-finance', 'club-communication', 'club-clients'].forEach(function (className) {
         document.body.classList.remove(className);
       });
       document.body.classList.add(mode);
+      updateAdminNav(mode);
+    }
+
+    function updateAdminNav(mode) {
+      document.querySelectorAll('[data-admin-nav]').forEach(function (btn) {
+        btn.classList.toggle('active', btn.dataset.adminNav === mode);
+      });
     }
 
     function money(value) {
@@ -6559,6 +6797,19 @@
       const number = Number(String(value || '').replace(/\./g, '').replace(',', '.'));
       if (!Number.isFinite(number) || number <= 0) throw new Error('Valor invalido.');
       return number;
+    }
+
+    function mapClientRow(row) {
+      return {
+        id: row.id,
+        name: row.full_name || row.email || 'Cliente',
+        email: row.email || '',
+        phone: row.phone || '',
+        status: row.status || 'ATIVO',
+        type: row.client_type || 'cliente',
+        created: row.created_at || '',
+        lastLogin: row.last_login_at || ''
+      };
     }
 
     function mapStudentRow(row) {
@@ -6622,6 +6873,7 @@
       if (opsState.loaded && !force) return;
       try {
         const results = await Promise.all([
+          supabaseRest('app_clients?select=*&order=created_at.desc'),
           supabaseRest('students?select=*&order=name.asc'),
           supabaseRest('club_agenda_events?select=*&order=starts_at.asc'),
           supabaseRest('financial_transactions?select=*,students(name)&order=due_date.asc'),
@@ -6629,17 +6881,44 @@
           supabaseRest('communication_campaigns?select=*&order=created_at.desc'),
           supabaseRest('communication_templates?select=*&order=name.asc')
         ]);
-        opsData.students = results[0].map(mapStudentRow);
-        opsData.agenda = results[1].map(mapAgendaRow);
-        opsData.finance = results[2].map(mapFinanceRow);
-        opsData.audiences = results[3].map(mapAudienceRow);
-        opsData.campaigns = results[4].map(mapCampaignRow);
-        opsData.templates = results[5];
+        opsData.clients = results[0].map(mapClientRow);
+        opsData.students = results[1].map(mapStudentRow);
+        opsData.agenda = results[2].map(mapAgendaRow);
+        opsData.finance = results[3].map(mapFinanceRow);
+        opsData.audiences = results[4].map(mapAudienceRow);
+        opsData.campaigns = results[5].map(mapCampaignRow);
+        opsData.templates = results[6];
         opsState.loaded = true;
       } catch (error) {
         console.info('Supabase indisponivel para modulos administrativos; usando dados locais.', error && error.message);
         toast('Nao consegui carregar o Supabase agora. Mantive a base local na tela.');
       }
+    }
+
+    function renderClientsModule() {
+      const recentLimit = Date.now() - (7 * 24 * 60 * 60 * 1000);
+      const withPhone = opsData.clients.filter(function (client) { return String(client.phone || '').replace(/\D/g, '').length >= 10; });
+      const recent = opsData.clients.filter(function (client) {
+        const created = new Date(client.created || 0).getTime();
+        return created && created >= recentLimit;
+      });
+      $('clientTotalMetric').textContent = opsData.clients.length;
+      $('clientActiveMetric').textContent = opsData.clients.filter(function (client) { return client.status === 'ATIVO'; }).length;
+      $('clientPhoneMetric').textContent = withPhone.length;
+      $('clientRecentMetric').textContent = recent.length;
+      $('clientList').innerHTML = opsData.clients.map(function (client) {
+        const created = client.created ? new Date(client.created).toLocaleDateString('pt-BR') : 'Sem data';
+        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(client.email) + ' | cadastrado em ' + escapeHtml(created) + '</div></div><div class="ops-meta">' + statusPill(client.status) + '<span class="ops-pill">' + escapeHtml(client.type) + '</span>' + whatsappLink(client.phone) + '</div></div></article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhum cliente cadastrado ainda.</div>';
+
+      const segments = {};
+      opsData.clients.forEach(function (client) {
+        const type = client.type || 'cliente';
+        segments[type] = (segments[type] || 0) + 1;
+      });
+      $('clientSegmentList').innerHTML = Object.keys(segments).map(function (type) {
+        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(type) + '</strong><div class="muted">Segmento do cadastro publico</div></div><span class="ops-pill good">' + segments[type] + ' pessoa(s)</span></div></article>';
+      }).join('') || '<div class="lesson-empty-state">Sem segmentos ainda.</div>';
     }
 
     function renderStudentsModule() {
@@ -6723,6 +7002,12 @@
       $('communicationCampaignList').innerHTML = opsData.campaigns.map(function (campaign) {
         return '<span class="ops-pill">' + escapeHtml(campaign.title) + ' | ' + escapeHtml(campaign.status) + '</span>';
       }).join('');
+    }
+
+    function openClientsModule() {
+      setClubMode('club-clients');
+      renderClientsModule();
+      loadOpsData(false).then(renderClientsModule);
     }
 
     function openStudentsModule() {
@@ -6917,7 +7202,7 @@
       const result = await supabaseAuthRequest('signup', {
         email: email,
         password: password,
-        data: { full_name: email.split('@')[0] }
+        data: { full_name: email.split('@')[0], app_context: 'admin' }
       }, false);
       const session = result.session || (result.access_token ? result : null);
       if (session && session.access_token) {
@@ -6980,7 +7265,7 @@
         }).catch(function () {});
       }
       document.body.classList.remove('adm-unlocked');
-      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-finance', 'club-communication'].forEach(function (className) {
+      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-finance', 'club-communication', 'club-clients'].forEach(function (className) {
         document.body.classList.remove(className);
       });
       document.body.classList.add('adm-locked');
@@ -7002,6 +7287,7 @@
     }
 
     function renderCurrentOpsModule() {
+      if (document.body.classList.contains('club-clients')) renderClientsModule();
       if (document.body.classList.contains('club-students')) renderStudentsModule();
       if (document.body.classList.contains('club-agenda')) renderAgendaModule();
       if (document.body.classList.contains('club-finance')) renderFinanceModule();
@@ -7386,15 +7672,36 @@
 
       $('adminLogoutBtn').addEventListener('click', lockAdmin);
       $('homeLogoutBtn').addEventListener('click', lockAdmin);
+      $('sidebarLogoutBtn').addEventListener('click', lockAdmin);
       $('backToClubHomeBtn').addEventListener('click', showClubHome);
       $('openTournamentModule').addEventListener('click', openTournamentModule);
+      $('openClientsModule').addEventListener('click', openClientsModule);
       $('openLessonsModule').addEventListener('click', openLessonsModule);
       $('openStudentsModule').addEventListener('click', openStudentsModule);
       $('openAgendaModule').addEventListener('click', openAgendaModule);
       $('openFinanceModule').addEventListener('click', openFinanceModule);
       $('openCommunicationModule').addEventListener('click', openCommunicationModule);
+      document.querySelectorAll('[data-admin-nav]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const actions = {
+            'club-home': showClubHome,
+            'club-clients': openClientsModule,
+            'club-students': openStudentsModule,
+            'club-lessons': openLessonsModule,
+            'club-agenda': openAgendaModule,
+            'club-finance': openFinanceModule,
+            'club-communication': openCommunicationModule,
+            'club-tournament': openTournamentModule
+          };
+          const action = actions[btn.dataset.adminNav];
+          if (action) action();
+        });
+      });
       document.querySelectorAll('[data-home-action]').forEach(function (btn) {
         btn.addEventListener('click', showClubHome);
+      });
+      $('clientReloadBtn').addEventListener('click', function () {
+        loadOpsData(true).then(renderClientsModule).catch(reportActionError);
       });
       $('lessonsBackBtn').addEventListener('click', showClubHome);
       $('lessonsReloadBtn').addEventListener('click', function () {

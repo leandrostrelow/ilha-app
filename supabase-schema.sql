@@ -10,6 +10,22 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.app_clients (
+  id uuid primary key references auth.users(id) on delete cascade,
+  full_name text not null,
+  email text not null,
+  phone text,
+  status text not null default 'ATIVO' check (status in ('ATIVO', 'BLOQUEADO', 'PENDENTE')),
+  client_type text not null default 'cliente' check (client_type in ('cliente', 'aluno', 'responsavel', 'socio')),
+  source text not null default 'app',
+  notes text,
+  last_login_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists app_clients_email_idx on public.app_clients(lower(email));
+
 create or replace function public.current_user_role()
 returns text
 language sql
@@ -94,6 +110,10 @@ as $$
 declare
   assigned_role text;
 begin
+  if coalesce(new.raw_user_meta_data ->> 'app_context', '') <> 'admin' then
+    return new;
+  end if;
+
   assigned_role := case
     when not exists (select 1 from public.profiles) then 'admin'
     else 'secretaria'
@@ -115,6 +135,76 @@ drop trigger if exists on_auth_user_created_profile on auth.users;
 create trigger on_auth_user_created_profile
   after insert on auth.users
   for each row execute function public.handle_new_user_profile();
+
+create or replace function public.handle_new_app_client()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+begin
+  if coalesce(new.raw_user_meta_data ->> 'app_context', 'public') = 'admin' then
+    return new;
+  end if;
+
+  insert into public.app_clients (id, full_name, email, phone, client_type)
+  values (
+    new.id,
+    coalesce(nullif(new.raw_user_meta_data ->> 'full_name', ''), split_part(coalesce(new.email, ''), '@', 1), 'Cliente Ilha'),
+    coalesce(new.email, ''),
+    nullif(new.raw_user_meta_data ->> 'phone', ''),
+    coalesce(nullif(new.raw_user_meta_data ->> 'client_type', ''), 'cliente')
+  )
+  on conflict (id) do update
+    set full_name = excluded.full_name,
+        email = excluded.email,
+        phone = excluded.phone,
+        updated_at = now();
+
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created_app_client on auth.users;
+create trigger on_auth_user_created_app_client
+  after insert on auth.users
+  for each row execute function public.handle_new_app_client();
+
+create or replace function public.ensure_current_app_client(
+  p_full_name text default null,
+  p_phone text default null
+)
+returns public.app_clients
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  client_row public.app_clients%rowtype;
+begin
+  if auth.uid() is null then
+    raise exception 'Usuario nao autenticado.';
+  end if;
+
+  insert into public.app_clients (id, full_name, email, phone, last_login_at)
+  values (
+    auth.uid(),
+    coalesce(nullif(p_full_name, ''), auth.jwt() -> 'user_metadata' ->> 'full_name', split_part(coalesce(auth.jwt() ->> 'email', ''), '@', 1), 'Cliente Ilha'),
+    coalesce(auth.jwt() ->> 'email', ''),
+    coalesce(nullif(p_phone, ''), auth.jwt() -> 'user_metadata' ->> 'phone'),
+    now()
+  )
+  on conflict (id) do update
+    set full_name = coalesce(nullif(p_full_name, ''), public.app_clients.full_name),
+        phone = coalesce(nullif(p_phone, ''), public.app_clients.phone),
+        email = excluded.email,
+        last_login_at = now(),
+        updated_at = now()
+  returning * into client_row;
+
+  return client_row;
+end;
+$$;
 
 create table if not exists public.teachers (
   id uuid primary key default gen_random_uuid(),
@@ -264,6 +354,7 @@ create index if not exists financial_transactions_due_idx on public.financial_tr
 create index if not exists communication_campaigns_status_idx on public.communication_campaigns(status);
 
 alter table public.profiles enable row level security;
+alter table public.app_clients enable row level security;
 alter table public.teachers enable row level security;
 alter table public.students enable row level security;
 alter table public.courts enable row level security;
@@ -279,6 +370,7 @@ alter table public.communication_campaigns enable row level security;
 grant usage on schema public to authenticated;
 grant select, insert, update, delete on
   public.profiles,
+  public.app_clients,
   public.teachers,
   public.students,
   public.courts,
@@ -295,6 +387,7 @@ grant execute on function public.current_user_role() to authenticated;
 grant execute on function public.is_club_staff() to authenticated;
 grant execute on function public.is_club_office() to authenticated;
 grant execute on function public.ensure_current_user_profile() to authenticated;
+grant execute on function public.ensure_current_app_client(text, text) to authenticated;
 
 drop policy if exists "public read teachers" on public.teachers;
 drop policy if exists "public read students" on public.students;
@@ -310,6 +403,10 @@ drop policy if exists "public read communication_campaigns" on public.communicat
 
 drop policy if exists "profiles read own or admin" on public.profiles;
 drop policy if exists "profiles admin manage" on public.profiles;
+drop policy if exists "clients read own or staff" on public.app_clients;
+drop policy if exists "clients insert own" on public.app_clients;
+drop policy if exists "clients update own or staff" on public.app_clients;
+drop policy if exists "clients staff manage" on public.app_clients;
 drop policy if exists "staff read teachers" on public.teachers;
 drop policy if exists "office manage teachers" on public.teachers;
 drop policy if exists "staff read students" on public.students;
@@ -344,6 +441,27 @@ on public.profiles for all
 to authenticated
 using (public.current_user_role() = 'admin')
 with check (public.current_user_role() = 'admin');
+
+create policy "clients read own or staff"
+on public.app_clients for select
+to authenticated
+using (id = auth.uid() or public.is_club_staff());
+
+create policy "clients insert own"
+on public.app_clients for insert
+to authenticated
+with check (id = auth.uid());
+
+create policy "clients update own or staff"
+on public.app_clients for update
+to authenticated
+using (id = auth.uid() or public.is_club_staff())
+with check (id = auth.uid() or public.is_club_staff());
+
+create policy "clients staff manage"
+on public.app_clients for delete
+to authenticated
+using (public.is_club_office());
 
 create policy "staff read teachers"
 on public.teachers for select
