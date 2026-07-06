@@ -60,6 +60,14 @@
       display: none;
     }
 
+    .preview-only {
+      display: none !important;
+    }
+
+    body.preview-env .preview-only {
+      display: initial !important;
+    }
+
     button, a {
       -webkit-tap-highlight-color: transparent;
     }
@@ -228,6 +236,22 @@
     .app-auth-submit:disabled {
       opacity: .6;
       cursor: wait;
+    }
+
+    .app-auth-demo {
+      display: none;
+      width: 100%;
+      min-height: 44px;
+      margin-top: 10px;
+      border-radius: 8px;
+      background: #f6fbdd;
+      color: #2a3d00;
+      border: 1px solid #dbe8a6;
+      font-weight: 900;
+    }
+
+    body.preview-env .app-auth-demo {
+      display: block !important;
     }
 
     .app-auth-message {
@@ -719,6 +743,7 @@
         <button class="app-auth-submit" type="submit" id="appSignupSubmit">Criar e entrar</button>
       </form>
 
+      <button class="app-auth-demo preview-only" type="button" id="appDemoBtn">Entrar em modo demonstracao</button>
       <div class="app-auth-message" id="appAuthMessage" aria-live="polite"></div>
     </div>
   </section>
@@ -877,6 +902,15 @@
     let appSession = null;
     let appClient = null;
 
+    function isPreviewEnvironment() {
+      const host = window.location.hostname;
+      return host === '127.0.0.1' || host === 'localhost' || host.endsWith('.vercel.app') || window.location.protocol === 'file:';
+    }
+
+    function configurePreviewEnvironment() {
+      document.body.classList.toggle('preview-env', isPreviewEnvironment());
+    }
+
     function appBaseUrl() {
       return APP_SUPABASE_URL.replace(/\/$/, '');
     }
@@ -964,6 +998,16 @@
     }
 
     async function ensureAppClient(fullName, phone) {
+      if (appSession && appSession.demo) {
+        appClient = {
+          full_name: fullName || 'Cliente Ilha Demo',
+          email: 'cliente.demo@ilhatenis.com',
+          phone: phone || '5527999999999',
+          status: 'ATIVO',
+          client_type: 'cliente'
+        };
+        return appClient;
+      }
       const result = await appRest('rpc/ensure_current_app_client', {
         method: 'POST',
         body: { p_full_name: fullName || null, p_phone: phone || null },
@@ -1010,6 +1054,23 @@
       if (emailInput) emailInput.focus();
     }
 
+    function enterPublicDemo() {
+      if (!isPreviewEnvironment()) return;
+      appSession = {
+        demo: true,
+        user: { email: 'cliente.demo@ilhatenis.com' }
+      };
+      appClient = {
+        full_name: 'Cliente Ilha Demo',
+        email: 'cliente.demo@ilhatenis.com',
+        phone: '5527999999999',
+        status: 'ATIVO',
+        client_type: 'cliente'
+      };
+      localStorage.setItem(APP_SESSION_KEY, JSON.stringify(appSession));
+      unlockPublicApp();
+    }
+
     async function loginPublicApp(email, password) {
       const session = await appAuthRequest('token?grant_type=password', {
         email: email,
@@ -1050,6 +1111,11 @@
       }
       try {
         appSession = stored;
+        if (stored.demo && isPreviewEnvironment()) {
+          await ensureAppClient(null, null);
+          unlockPublicApp();
+          return;
+        }
         if (isAppSessionExpired(stored)) await refreshAppSession(stored);
         await ensureAppClient(null, null);
         unlockPublicApp();
@@ -1061,8 +1127,9 @@
 
     function logoutPublicApp() {
       const token = appSession && appSession.access_token;
+      const isDemo = appSession && appSession.demo;
       clearAppSession();
-      if (token) {
+      if (token && !isDemo) {
         fetch(appBaseUrl() + '/auth/v1/logout', {
           method: 'POST',
           headers: Object.assign(appHeaders(false), { Authorization: 'Bearer ' + token })
@@ -1140,7 +1207,9 @@
     });
 
     document.getElementById('appLogoutBtn').addEventListener('click', logoutPublicApp);
+    document.getElementById('appDemoBtn').addEventListener('click', enterPublicDemo);
 
+    configurePreviewEnvironment();
     restorePublicAppSession();
 
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {

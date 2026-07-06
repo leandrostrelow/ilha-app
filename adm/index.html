@@ -46,6 +46,14 @@
       display: none;
     }
 
+    .preview-only {
+      display: none !important;
+    }
+
+    body.preview-env .preview-only {
+      display: initial !important;
+    }
+
     body.club-home .topbar,
     body.club-home .section {
       display: none;
@@ -177,6 +185,18 @@
       margin-top: 0;
     }
 
+    .adm-login-card .adm-login-demo {
+      display: none;
+      margin-top: 8px;
+      background: #f6fbdd;
+      color: #2a3d00;
+      border: 1px solid #dbe8a6;
+    }
+
+    body.preview-env .adm-login-card .adm-login-demo {
+      display: block !important;
+    }
+
     .adm-login-card .adm-login-secondary {
       background: #eaf1f3;
       color: var(--text);
@@ -261,6 +281,15 @@
       gap: 6px;
     }
 
+    .admin-nav-group {
+      margin: 12px 8px 2px;
+      color: rgba(255,255,255,.46);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
     .admin-nav-btn {
       width: 100%;
       min-height: 44px;
@@ -300,6 +329,24 @@
       gap: 8px;
     }
 
+    .admin-sidebar-status {
+      min-height: 52px;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.08);
+      color: rgba(255,255,255,.72);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .admin-sidebar-status strong {
+      display: block;
+      margin-bottom: 3px;
+      color: #ffffff;
+      font-size: 12px;
+    }
+
     .admin-sidebar-footer a,
     .admin-sidebar-footer button {
       width: 100%;
@@ -316,6 +363,124 @@
 
     .club-home {
       padding: 18px 22px 28px;
+    }
+
+    .club-command {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+    }
+
+    .club-command-main {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      min-width: 0;
+    }
+
+    .club-command-dot {
+      width: 10px;
+      height: 10px;
+      flex: 0 0 auto;
+      margin-top: 5px;
+      border-radius: 999px;
+      background: var(--lime);
+      box-shadow: 0 0 0 5px rgba(181, 229, 0, .18);
+    }
+
+    .club-command h2 {
+      margin: 0 0 4px;
+      font-size: 18px;
+    }
+
+    .club-command-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .club-home-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .club-panel {
+      min-height: 176px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+    }
+
+    .club-panel.span-4 { grid-column: span 4; }
+    .club-panel.span-5 { grid-column: span 5; }
+    .club-panel.span-7 { grid-column: span 7; }
+
+    .club-panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .club-panel h2 {
+      margin: 0 0 4px;
+      font-size: 17px;
+    }
+
+    .club-feed {
+      display: grid;
+      gap: 8px;
+    }
+
+    .club-feed-card {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      min-height: 54px;
+      padding: 10px;
+      border: 1px solid #e6eef1;
+      border-radius: 8px;
+      background: #fbfdfe;
+    }
+
+    .club-feed-time {
+      min-width: 54px;
+      min-height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #10272c;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .club-task {
+      display: grid;
+      gap: 3px;
+      padding: 10px;
+      border: 1px solid #e6eef1;
+      border-radius: 8px;
+      background: #fbfdfe;
+    }
+
+    .club-task strong,
+    .club-feed-card strong {
+      font-size: 13px;
     }
 
     .club-home-top {
@@ -2227,6 +2392,16 @@
       .admin-sidebar-footer {
         grid-template-columns: 1fr 1fr;
       }
+      .admin-nav-group,
+      .admin-sidebar-status {
+        grid-column: 1 / -1;
+      }
+      .club-command {
+        grid-template-columns: 1fr;
+      }
+      .club-command-actions {
+        justify-content: flex-start;
+      }
       .club-home-top {
         grid-template-columns: 1fr;
       }
@@ -2238,6 +2413,11 @@
       }
       .club-modules {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .club-panel.span-4,
+      .club-panel.span-5,
+      .club-panel.span-7 {
+        grid-column: span 12;
       }
       .module-head,
       .lesson-toolbar {
@@ -2569,6 +2749,7 @@
         <button type="submit" id="adminLoginBtn">Entrar</button>
         <button class="adm-login-secondary" type="button" id="adminSignupBtn">Criar primeiro acesso</button>
       </div>
+      <button class="adm-login-demo preview-only" type="button" id="adminDemoBtn">Entrar em modo demonstracao</button>
       <div class="adm-login-note" id="adminSessionInfo">O primeiro e-mail cadastrado vira admin. Depois ele libera professores e secretaria.</div>
       <div class="adm-login-error" id="adminLoginError" aria-live="polite"></div>
     </form>
@@ -2584,16 +2765,20 @@
         </div>
       </div>
       <nav class="admin-sidebar-nav">
+        <div class="admin-nav-group">Comando</div>
         <button class="admin-nav-btn active" type="button" data-admin-nav="club-home"><span class="admin-nav-icon">IN</span><span>Inicio</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon">CL</span><span>Clientes do App</span></button>
+        <div class="admin-nav-group">Operacao</div>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-students"><span class="admin-nav-icon">AL</span><span>Alunos</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-lessons"><span class="admin-nav-icon">AU</span><span>Aulas</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-agenda"><span class="admin-nav-icon">AG</span><span>Agenda</span></button>
+        <div class="admin-nav-group">Gestao</div>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon">FI</span><span>Financeiro</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-communication"><span class="admin-nav-icon">CO</span><span>Comunicacao</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-tournament"><span class="admin-nav-icon">TO</span><span>Torneios</span></button>
       </nav>
       <div class="admin-sidebar-footer">
+        <div class="admin-sidebar-status" id="adminSidebarStatus"><strong>Conectando</strong> Aguardando login da equipe.</div>
         <a href="../" target="_blank" rel="noopener">App publico</a>
         <button type="button" id="sidebarLogoutBtn">Sair</button>
       </div>
@@ -2614,11 +2799,76 @@
         </div>
       </div>
 
+      <div class="club-command">
+        <div class="club-command-main">
+          <span class="club-command-dot" aria-hidden="true"></span>
+          <div>
+            <h2>Operacao do clube hoje</h2>
+            <div class="muted" id="homeCommandSummary">Agenda, alunos, financeiro e comunicacao prontos para acompanhamento.</div>
+          </div>
+        </div>
+        <div class="club-command-actions">
+          <button class="primary-btn" type="button" data-admin-nav="club-agenda">Abrir agenda</button>
+          <button class="ghost-btn" type="button" data-admin-nav="club-clients">Ver clientes</button>
+          <button class="ghost-btn" type="button" data-admin-nav="club-finance">Financeiro</button>
+        </div>
+      </div>
+
       <div class="club-metrics">
-        <div class="club-metric"><strong>Hoje</strong><span>visao diaria do clube</span></div>
-        <div class="club-metric"><strong>Quadras</strong><span>agenda e ocupacao</span></div>
-        <div class="club-metric"><strong>Atletas</strong><span>cadastro e relacionamento</span></div>
-        <div class="club-metric"><strong>Receitas</strong><span>mensalidades e produtos</span></div>
+        <div class="club-metric"><strong id="homeClientsMetric">0</strong><span>clientes no app</span></div>
+        <div class="club-metric"><strong id="homeStudentsMetric">0</strong><span>alunos ativos</span></div>
+        <div class="club-metric"><strong id="homeAgendaMetric">0</strong><span>eventos do dia</span></div>
+        <div class="club-metric"><strong id="homeFinanceMetric">R$ 0</strong><span>em aberto</span></div>
+      </div>
+
+      <div class="club-home-grid">
+        <section class="club-panel span-7">
+          <div class="club-panel-head">
+            <div>
+              <h2>Agenda operacional</h2>
+              <div class="muted">Aulas, reservas e bloqueios para a secretaria acompanhar.</div>
+            </div>
+            <button class="ghost-btn" type="button" data-admin-nav="club-agenda">Abrir</button>
+          </div>
+          <div class="club-feed" id="homeAgendaList"></div>
+        </section>
+        <section class="club-panel span-5">
+          <div class="club-panel-head">
+            <div>
+              <h2>Pendencias de cuidado</h2>
+              <div class="muted">Financeiro, presenca e relacionamento.</div>
+            </div>
+            <button class="ghost-btn" type="button" data-admin-nav="club-students">Alunos</button>
+          </div>
+          <div class="club-feed" id="homeCareList"></div>
+        </section>
+        <section class="club-panel span-4">
+          <div class="club-panel-head">
+            <div>
+              <h2>Clientes do app</h2>
+              <div class="muted">Primeira base oficial do Ilha Play.</div>
+            </div>
+          </div>
+          <div class="club-feed" id="homeClientsList"></div>
+        </section>
+        <section class="club-panel span-4">
+          <div class="club-panel-head">
+            <div>
+              <h2>Financeiro rapido</h2>
+              <div class="muted">Entradas, atrasos e lancamentos.</div>
+            </div>
+          </div>
+          <div class="club-feed" id="homeFinanceList"></div>
+        </section>
+        <section class="club-panel span-4">
+          <div class="club-panel-head">
+            <div>
+              <h2>Pronto para testar</h2>
+              <div class="muted">Base navegavel enquanto ligamos o Supabase completo.</div>
+            </div>
+          </div>
+          <div class="club-feed" id="homeSystemList"></div>
+        </section>
       </div>
 
       <div class="club-modules">
@@ -6870,6 +7120,10 @@
 
     async function loadOpsData(force) {
       if (!adminSession || !adminSession.access_token) return;
+      if (isAdminDemoMode()) {
+        opsState.loaded = true;
+        return;
+      }
       if (opsState.loaded && !force) return;
       try {
         const results = await Promise.all([
@@ -6893,6 +7147,46 @@
         console.info('Supabase indisponivel para modulos administrativos; usando dados locais.', error && error.message);
         toast('Nao consegui carregar o Supabase agora. Mantive a base local na tela.');
       }
+    }
+
+    function renderHomeDashboard() {
+      if (!$('homeClientsMetric')) return;
+      const activeStudents = opsData.students.filter(function (student) { return student.status === 'ATIVO'; });
+      const pendingFinance = opsData.finance.filter(function (item) { return item.status !== 'RECEBIDO'; });
+      const pendingAmount = pendingFinance.reduce(function (sum, item) { return sum + Number(item.amount || 0); }, 0);
+      $('homeClientsMetric').textContent = opsData.clients.length;
+      $('homeStudentsMetric').textContent = activeStudents.length;
+      $('homeAgendaMetric').textContent = opsData.agenda.length;
+      $('homeFinanceMetric').textContent = money(pendingAmount);
+      $('homeCommandSummary').textContent = opsData.agenda.length + ' eventos no dia, ' + pendingFinance.length + ' pendencia(s) financeira(s) e ' + opsData.clients.length + ' cliente(s) no app.';
+
+      $('homeAgendaList').innerHTML = opsData.agenda.slice(0, 4).map(function (item) {
+        return '<article class="club-feed-card"><div class="club-feed-time">' + escapeHtml(item.time.replace(':00', 'H')) + '</div><div><strong>' + escapeHtml(item.title) + '</strong><div class="muted">' + escapeHtml(item.court) + ' | ' + escapeHtml(item.owner) + ' | ' + escapeHtml(item.status) + '</div></div></article>';
+      }).join('') || '<div class="lesson-empty-state">Sem agenda cadastrada.</div>';
+
+      $('homeCareList').innerHTML = opsData.students
+        .filter(function (student) { return student.financial !== 'OK' || (student.nextAction && student.nextAction !== 'Sem acao urgente'); })
+        .slice(0, 4)
+        .map(function (student) {
+          return '<article class="club-task"><strong>' + escapeHtml(student.name) + '</strong><div class="muted">' + escapeHtml(student.nextAction || 'Acompanhar relacionamento') + '</div><div class="ops-meta">' + statusPill(student.financial) + '</div></article>';
+        }).join('') || '<div class="lesson-empty-state">Sem pendencias abertas.</div>';
+
+      $('homeClientsList').innerHTML = opsData.clients.slice(0, 3).map(function (client) {
+        return '<article class="club-task"><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(client.email || 'Sem e-mail') + '</div><div class="ops-meta">' + statusPill(client.status) + whatsappLink(client.phone) + '</div></article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhum cliente no app ainda.</div>';
+
+      $('homeFinanceList').innerHTML = pendingFinance.slice(0, 3).map(function (item) {
+        return '<article class="club-task"><strong>' + escapeHtml(item.source) + '</strong><div class="muted">' + escapeHtml(item.student) + ' | ' + escapeHtml(item.due) + '</div><div class="finance-total">' + money(item.amount) + '</div></article>';
+      }).join('') || '<div class="lesson-empty-state">Sem pendencias financeiras.</div>';
+
+      const systemRows = [
+        { title: isAdminDemoMode() ? 'Modo demonstracao ativo' : 'Sessao de equipe ativa', detail: isAdminDemoMode() ? 'Dados locais para testar navegacao e fluxo.' : 'Operacao conectada com login da equipe.' },
+        { title: 'Modulo oficial iniciado', detail: 'Clientes do App e cadastro publico preparados.' },
+        { title: 'Proxima conexao', detail: 'Aplicar SQL no Supabase para gravar clientes reais.' }
+      ];
+      $('homeSystemList').innerHTML = systemRows.map(function (row) {
+        return '<article class="club-task"><strong>' + escapeHtml(row.title) + '</strong><div class="muted">' + escapeHtml(row.detail) + '</div></article>';
+      }).join('');
     }
 
     function renderClientsModule() {
@@ -7035,8 +7329,27 @@
     }
 
     const ADMIN_SESSION_KEY = 'ilha-admin-supabase-session';
+    const ADMIN_DEMO_SESSION_KEY = 'ilha-admin-demo-session';
     let adminSession = null;
     let adminProfile = null;
+    let adminDemoMode = false;
+
+    function isPreviewEnvironment() {
+      const host = window.location.hostname;
+      return host === '127.0.0.1' || host === 'localhost' || host.endsWith('.vercel.app') || window.location.protocol === 'file:';
+    }
+
+    function configurePreviewEnvironment() {
+      document.body.classList.toggle('preview-env', isPreviewEnvironment());
+    }
+
+    function isAdminDemoMode() {
+      return adminDemoMode || Boolean(adminSession && adminSession.demo);
+    }
+
+    function localId(prefix) {
+      return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+    }
 
     function supabaseBaseUrl() {
       return LESSONS_SUPABASE_URL.replace(/\/$/, '');
@@ -7074,8 +7387,10 @@
     function clearAdminSession() {
       adminSession = null;
       adminProfile = null;
+      adminDemoMode = false;
       localStorage.removeItem(ADMIN_SESSION_KEY);
       sessionStorage.removeItem('ilha-admin-authenticated');
+      sessionStorage.removeItem(ADMIN_DEMO_SESSION_KEY);
     }
 
     function isSessionExpired(session) {
@@ -7178,6 +7493,11 @@
       const label = [name || email || 'Equipe Ilha', role ? roleLabel(role) : ''].filter(Boolean).join(' | ');
       if ($('clubHomeIdentity')) $('clubHomeIdentity').textContent = label || 'Painel central para operacao do clube de tenis.';
       if ($('adminSessionInfo')) $('adminSessionInfo').textContent = role ? 'Conectado como ' + roleLabel(role) + '.' : 'O primeiro e-mail cadastrado vira admin. Depois ele libera professores e secretaria.';
+      if ($('adminSidebarStatus')) {
+        $('adminSidebarStatus').innerHTML = isAdminDemoMode()
+          ? '<strong>Modo demonstracao</strong> Dados locais para navegar e testar.'
+          : '<strong>' + escapeHtml(role ? roleLabel(role) : 'Equipe') + '</strong> ' + escapeHtml(name || email || 'Sessao ativa');
+      }
     }
 
     function setLoginBusy(isBusy) {
@@ -7215,6 +7535,10 @@
     }
 
     async function restoreAdminSession() {
+      if (isPreviewEnvironment() && sessionStorage.getItem(ADMIN_DEMO_SESSION_KEY) === '1') {
+        enterAdminDemo(false);
+        return;
+      }
       const stored = readStoredAdminSession();
       if (!stored) {
         $('adminUser').focus();
@@ -7232,6 +7556,24 @@
       }
     }
 
+    function enterAdminDemo(showToast) {
+      if (!isPreviewEnvironment()) return;
+      adminDemoMode = true;
+      adminSession = {
+        demo: true,
+        access_token: 'demo',
+        user: { email: 'demo@ilhatenis.com' }
+      };
+      adminProfile = {
+        full_name: 'Equipe Ilha Demo',
+        role: 'admin',
+        active: true
+      };
+      sessionStorage.setItem(ADMIN_DEMO_SESSION_KEY, '1');
+      unlockAdmin();
+      if (showToast !== false) toast('Modo demonstracao ativo. Dados locais prontos para testar.');
+    }
+
     function unlockAdmin() {
       document.body.classList.remove('adm-locked');
       document.body.classList.add('adm-unlocked');
@@ -7242,6 +7584,8 @@
 
     function showClubHome() {
       setClubMode('club-home');
+      renderHomeDashboard();
+      loadOpsData(false).then(renderHomeDashboard).catch(function () {});
     }
 
     function openTournamentModule() {
@@ -7258,7 +7602,7 @@
     function lockAdmin() {
       const token = adminSession && adminSession.access_token;
       clearAdminSession();
-      if (token) {
+      if (token && token !== 'demo') {
         fetch(supabaseBaseUrl() + '/auth/v1/logout', {
           method: 'POST',
           headers: Object.assign(supabaseHeaders(false), { Authorization: 'Bearer ' + token })
@@ -7276,6 +7620,7 @@
     }
 
     function requireAdminSession() {
+      if (isAdminDemoMode()) return;
       if (!adminSession || !adminSession.access_token) {
         throw new Error('Entre com seu e-mail antes de salvar no Supabase.');
       }
@@ -7301,10 +7646,45 @@
     async function createStudentAction() {
       try {
         requireAdminSession();
+        if (isAdminDemoMode()) {
+          const number = opsData.students.length + 1;
+          opsData.students.push({
+            id: localId('student'),
+            name: 'Aluno Demo ' + number,
+            phone: '55279999900' + String(number).padStart(2, '0'),
+            status: 'ATIVO',
+            plan: 'Plano teste',
+            level: 'A definir',
+            teacher: 'Equipe Ilha',
+            financial: 'OK',
+            nextAction: 'Novo cadastro em demonstracao'
+          });
+          renderStudentsModule();
+          renderHomeDashboard();
+          toast('Aluno demo criado.');
+          return;
+        }
         const name = prompt('Nome do aluno');
         if (!name) return;
         const phone = prompt('WhatsApp do aluno ou responsavel', '') || '';
         const plan = prompt('Plano ou observacao inicial', 'Plano a definir') || 'Plano a definir';
+        if (isAdminDemoMode()) {
+          opsData.students.push({
+            id: localId('student'),
+            name: name.trim(),
+            phone: phone.trim(),
+            status: 'ATIVO',
+            plan: plan.trim(),
+            level: 'A definir',
+            teacher: 'Equipe Ilha',
+            financial: 'OK',
+            nextAction: 'Novo cadastro em demonstracao'
+          });
+          renderStudentsModule();
+          renderHomeDashboard();
+          toast('Aluno criado na demonstracao.');
+          return;
+        }
         const inserted = await supabaseInsert('students', {
           name: name.trim(),
           phone: phone.trim(),
@@ -7326,6 +7706,17 @@
     async function importSeedBaseAction() {
       try {
         requireAdminSession();
+        if (isAdminDemoMode()) {
+          opsData.students = JSON.parse(JSON.stringify(opsSeedData.students));
+          opsData.agenda = JSON.parse(JSON.stringify(opsSeedData.agenda));
+          opsData.finance = JSON.parse(JSON.stringify(opsSeedData.finance));
+          opsData.audiences = JSON.parse(JSON.stringify(opsSeedData.audiences));
+          opsData.campaigns = JSON.parse(JSON.stringify(opsSeedData.campaigns));
+          renderCurrentOpsModule();
+          renderHomeDashboard();
+          toast('Base demo restaurada.');
+          return;
+        }
         if (!confirm('Importar a base inicial de alunos, agenda, financeiro e comunicacao para o Supabase?')) return;
         const results = await Promise.all([
           supabaseRest('students?select=name'),
@@ -7406,12 +7797,43 @@
     async function createAgendaEventAction() {
       try {
         requireAdminSession();
+        if (isAdminDemoMode()) {
+          const number = opsData.agenda.length + 1;
+          opsData.agenda.push({
+            id: localId('agenda'),
+            time: localTimeString(new Date()),
+            title: 'Evento Demo ' + number,
+            type: 'evento',
+            court: 'Quadra ' + ((number % 2) + 1),
+            owner: 'Secretaria',
+            status: 'Confirmado'
+          });
+          renderAgendaModule();
+          renderHomeDashboard();
+          toast('Evento demo criado.');
+          return;
+        }
         const title = prompt('Titulo do evento');
         if (!title) return;
         const startsAt = startsAtFromPrompt(prompt('Data e horario (AAAA-MM-DD HH:MM)', localDateString() + ' 19:00'));
         const type = (prompt('Tipo', 'evento') || 'evento').trim().toLowerCase();
         const court = prompt('Quadra', 'Quadra 1') || 'Quadra 1';
         const owner = prompt('Responsavel', 'Secretaria') || 'Secretaria';
+        if (isAdminDemoMode()) {
+          opsData.agenda.push({
+            id: localId('agenda'),
+            time: displayTimeFromIso(startsAt),
+            title: title.trim(),
+            type: type,
+            court: court.trim(),
+            owner: owner.trim(),
+            status: 'Confirmado'
+          });
+          renderAgendaModule();
+          renderHomeDashboard();
+          toast('Evento criado na demonstracao.');
+          return;
+        }
         const inserted = await supabaseInsert('club_agenda_events', {
           title: title.trim(),
           type: type,
@@ -7437,11 +7859,42 @@
     async function createFinanceAction() {
       try {
         requireAdminSession();
+        if (isAdminDemoMode()) {
+          const number = opsData.finance.length + 1;
+          opsData.finance.push({
+            id: localId('finance'),
+            student: 'Cliente Demo ' + number,
+            source: 'Lancamento Demo ' + number,
+            amount: 220,
+            due: localDateString(),
+            status: 'ABERTO',
+            category: 'Aulas'
+          });
+          renderFinanceModule();
+          renderHomeDashboard();
+          toast('Lancamento demo criado.');
+          return;
+        }
         const description = prompt('Descricao do lancamento');
         if (!description) return;
         const amount = parseMoneyInput(prompt('Valor', '220,00'));
         const dueDate = prompt('Vencimento (AAAA-MM-DD)', localDateString()) || localDateString();
         const category = prompt('Categoria', 'Aulas') || 'Aulas';
+        if (isAdminDemoMode()) {
+          opsData.finance.push({
+            id: localId('finance'),
+            student: description.trim(),
+            source: description.trim(),
+            amount: amount,
+            due: dueDate,
+            status: 'ABERTO',
+            category: category.trim()
+          });
+          renderFinanceModule();
+          renderHomeDashboard();
+          toast('Lancamento criado na demonstracao.');
+          return;
+        }
         const inserted = await supabaseInsert('financial_transactions', {
           description: description.trim(),
           category: category.trim(),
@@ -7475,9 +7928,27 @@
     async function createTemplateAction() {
       try {
         requireAdminSession();
+        if (isAdminDemoMode()) {
+          const number = (opsData.templates || []).length + 1;
+          const body = 'Oi, {nome}! Este e um modelo demo para comunicacao do Ilha.';
+          opsData.templates = opsData.templates || [];
+          opsData.templates.push({ id: localId('template'), name: 'Modelo Demo ' + number, channel: 'WHATSAPP', body: body, active: true });
+          opsData.message = body;
+          renderCommunicationModule();
+          toast('Modelo demo criado.');
+          return;
+        }
         const name = prompt('Nome do modelo', 'Lembrete de aula');
         if (!name) return;
         const body = prompt('Texto do modelo', opsData.message) || opsData.message;
+        if (isAdminDemoMode()) {
+          opsData.templates = opsData.templates || [];
+          opsData.templates.push({ id: localId('template'), name: name.trim(), channel: 'WHATSAPP', body: body, active: true });
+          opsData.message = body;
+          renderCommunicationModule();
+          toast('Modelo criado na demonstracao.');
+          return;
+        }
         const inserted = await supabaseInsert('communication_templates', {
           name: name.trim(),
           channel: 'WHATSAPP',
@@ -7497,10 +7968,34 @@
     async function createCampaignAction() {
       try {
         requireAdminSession();
+        if (isAdminDemoMode()) {
+          const number = opsData.campaigns.length + 1;
+          const body = 'Oi, {nome}! Temos uma nova comunicacao do Ilha para voce.';
+          const template = { id: localId('template'), name: 'Campanha Demo ' + number, channel: 'WHATSAPP', body: body, active: true };
+          opsData.templates = opsData.templates || [];
+          opsData.templates.push(template);
+          opsData.campaigns.unshift({ id: localId('campaign'), title: 'Campanha Demo ' + number, channel: 'WHATSAPP', status: 'Rascunho' });
+          opsData.message = body;
+          renderCommunicationModule();
+          renderHomeDashboard();
+          toast('Campanha demo criada.');
+          return;
+        }
         const title = prompt('Titulo da campanha');
         if (!title) return;
         const channel = prompt('Canal', 'WHATSAPP') || 'WHATSAPP';
         const body = prompt('Mensagem base', opsData.message) || opsData.message;
+        if (isAdminDemoMode()) {
+          const template = { id: localId('template'), name: title.trim(), channel: channel.trim().toUpperCase(), body: body, active: true };
+          opsData.templates = opsData.templates || [];
+          opsData.templates.push(template);
+          opsData.campaigns.unshift({ id: localId('campaign'), title: title.trim(), channel: channel.trim().toUpperCase(), status: 'Rascunho' });
+          opsData.message = body;
+          renderCommunicationModule();
+          renderHomeDashboard();
+          toast('Campanha criada na demonstracao.');
+          return;
+        }
         const template = await supabaseInsert('communication_templates', {
           name: title.trim(),
           channel: channel.trim().toUpperCase(),
@@ -7534,6 +8029,25 @@
     async function createLessonSlotAction() {
       try {
         requireAdminSession();
+        if (isAdminDemoMode()) {
+          const number = lessonState.slots.length + 1;
+          const time = String(8 + (number % 10)).padStart(2, '0') + ':00';
+          lessonState.source = 'demo';
+          lessonState.slots.push({
+            id: localId('slot'),
+            day: lessonState.activeDay,
+            time: time,
+            period: periodFromTime(time),
+            court: 'Quadra ' + ((number % 2) + 1),
+            teacher: number % 2 ? 'Renato' : 'Gabriel',
+            level: 'A definir',
+            capacity: 4,
+            active: true
+          });
+          renderLessons();
+          toast('Horario demo criado.');
+          return;
+        }
         const day = (prompt('Dia da semana', lessonState.activeDay) || '').trim().toLowerCase();
         if (!lessonDays.concat([{ key: 'sabado' }, { key: 'domingo' }]).some(function (item) { return item.key === day; })) {
           throw new Error('Dia invalido. Use segunda, terca, quarta, quinta, sexta, sabado ou domingo.');
@@ -7543,6 +8057,24 @@
         const court = prompt('Quadra', 'Quadra 1') || 'Quadra 1';
         const level = prompt('Nivel', 'Iniciante') || 'Iniciante';
         const capacity = Number(prompt('Capacidade', '4') || 4);
+        if (isAdminDemoMode()) {
+          lessonState.source = 'demo';
+          lessonState.slots.push({
+            id: localId('slot'),
+            day: day,
+            time: String(time).slice(0, 5),
+            period: periodFromTime(time),
+            court: court.trim(),
+            teacher: teacher.trim(),
+            level: level.trim(),
+            capacity: capacity,
+            active: true
+          });
+          lessonState.activeDay = day;
+          renderLessons();
+          toast('Horario criado na demonstracao.');
+          return;
+        }
         const inserted = await supabaseInsert('lesson_slots', {
           day: day,
           time: time,
@@ -7576,11 +8108,34 @@
     async function addStudentToLessonSlot(slotId) {
       try {
         requireAdminSession();
-        if (lessonState.source !== 'supabase') {
+        if (lessonState.source !== 'supabase' && !isAdminDemoMode()) {
           throw new Error('Carregue ou crie horarios do Supabase antes de agendar alunos.');
         }
         const slot = lessonState.slots.find(function (item) { return String(item.id) === String(slotId); });
         if (!slot) throw new Error('Horario nao encontrado.');
+        if (isAdminDemoMode()) {
+          const number = lessonState.students.length + 1;
+          const student = {
+            id: localId('student'),
+            name: 'Aluno Aula Demo ' + number,
+            phone: '55279999910' + String(number).padStart(2, '0'),
+            status: 'ATIVO',
+            weekly_lessons: 1,
+            monthly_value: null
+          };
+          lessonState.students.push(student);
+          lessonState.enrollments.push({
+            id: localId('enrollment'),
+            student_id: student.id,
+            slot_id: slot.id,
+            type: 'FIXO',
+            active: true
+          });
+          renderLessons();
+          renderHomeDashboard();
+          toast('Aluno demo agendado.');
+          return;
+        }
         const name = prompt('Nome do aluno para este horario');
         if (!name) return;
         let student = lessonState.students.find(function (item) {
@@ -7588,6 +8143,28 @@
         });
         if (!student) {
           const phone = prompt('WhatsApp do aluno ou responsavel', '') || '';
+          if (isAdminDemoMode()) {
+            student = {
+              id: localId('student'),
+              name: name.trim(),
+              phone: phone.trim(),
+              status: 'ATIVO',
+              weekly_lessons: 1,
+              monthly_value: null
+            };
+            lessonState.students.push(student);
+            opsData.students.push({
+              id: student.id,
+              name: student.name,
+              phone: student.phone,
+              status: 'ATIVO',
+              plan: 'Aula fixa',
+              level: slot.level,
+              teacher: slot.teacher,
+              financial: 'OK',
+              nextAction: 'Aluno agendado em demonstracao'
+            });
+          } else {
           const insertedStudent = await supabaseInsert('students', {
             name: name.trim(),
             phone: phone.trim(),
@@ -7606,6 +8183,7 @@
             monthly_value: insertedStudent.monthly_value
           };
           lessonState.students.push(student);
+          }
         }
         const alreadyInSlot = lessonState.enrollments.some(function (enrollment) {
           return enrollment.active !== false &&
@@ -7616,12 +8194,14 @@
           toast('Aluno ja esta nesse horario.');
           return;
         }
-        const insertedEnrollment = await supabaseInsert('lesson_enrollments', {
-          student_id: student.id,
-          slot_id: slot.id,
-          type: 'FIXO',
-          active: true
-        });
+        const insertedEnrollment = isAdminDemoMode()
+          ? { id: localId('enrollment') }
+          : await supabaseInsert('lesson_enrollments', {
+            student_id: student.id,
+            slot_id: slot.id,
+            type: 'FIXO',
+            active: true
+          });
         lessonState.enrollments.push({
           id: insertedEnrollment.id,
           student_id: student.id,
@@ -7630,13 +8210,15 @@
           active: true
         });
         renderLessons();
-        toast('Aluno agendado nesse horario.');
+        renderHomeDashboard();
+        toast(isAdminDemoMode() ? 'Aluno agendado na demonstracao.' : 'Aluno agendado nesse horario.');
       } catch (error) {
         reportActionError(error);
       }
     }
 
     function initAdminLogin() {
+      configurePreviewEnvironment();
       $('adminLoginForm').addEventListener('submit', async function (event) {
         event.preventDefault();
         const email = $('adminUser').value.trim();
@@ -7668,6 +8250,10 @@
         } finally {
           setLoginBusy(false);
         }
+      });
+
+      $('adminDemoBtn').addEventListener('click', function () {
+        enterAdminDemo(true);
       });
 
       $('adminLogoutBtn').addEventListener('click', lockAdmin);
