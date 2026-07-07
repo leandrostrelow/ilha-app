@@ -618,6 +618,89 @@
       gap: 10px;
     }
 
+    .notice-list,
+    .store-grid,
+    .plan-catalog,
+    .plan-category-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .notice-list {
+      margin-top: 4px;
+    }
+
+    .notice-card,
+    .store-card,
+    .payment-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 10px 26px rgba(16, 39, 44, .08);
+    }
+
+    .notice-card {
+      padding: 13px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .notice-card img {
+      width: 100%;
+      max-height: 220px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #f4f9fa;
+    }
+
+    .notice-card h3,
+    .store-card h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .notice-card p,
+    .store-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.4;
+      font-weight: 800;
+    }
+
+    .plan-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 2px 0 4px;
+      scrollbar-width: none;
+    }
+
+    .plan-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .plan-tab {
+      min-height: 40px;
+      flex: 0 0 auto;
+      border-radius: 999px;
+      padding: 8px 14px;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      color: var(--dark);
+      font-weight: 900;
+    }
+
+    .plan-tab.active {
+      border-color: rgba(181, 229, 0, .8);
+      background: #f7ffe4;
+      color: var(--teal);
+      box-shadow: inset 4px 0 0 var(--lime);
+    }
+
+    .plan-category-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .plan-card {
       padding: 18px;
       display: grid;
@@ -702,6 +785,93 @@
       box-shadow: none;
     }
 
+    .catalog-plan {
+      align-content: start;
+      gap: 12px;
+      box-shadow: none;
+    }
+
+    .catalog-plan h3 {
+      font-size: 19px;
+    }
+
+    .catalog-price {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      color: var(--teal);
+      font-size: 28px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .catalog-price small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .store-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .store-card {
+      overflow: hidden;
+      display: grid;
+    }
+
+    .store-card img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      background: #f4f9fa;
+    }
+
+    .store-card-body {
+      padding: 13px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .payment-card {
+      padding: 16px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 220px;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .pix-box {
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdfe;
+    }
+
+    .pix-box img {
+      width: 190px;
+      height: 190px;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .pix-copy {
+      word-break: break-all;
+      max-height: 86px;
+      overflow: auto;
+      padding: 10px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+      font-weight: 800;
+    }
+
     .form-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -771,6 +941,15 @@
       }
       .plan-status-grid {
         grid-template-columns: 1fr;
+      }
+      .plan-category-grid,
+      .store-grid,
+      .payment-card {
+        grid-template-columns: 1fr;
+      }
+      .pix-box img {
+        width: 170px;
+        height: 170px;
       }
       .sidebar {
         position: sticky;
@@ -955,6 +1134,9 @@
       .quick-menu {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+      .store-card img {
+        aspect-ratio: 16 / 9;
+      }
       .top-actions { width: 100%; }
       .top-actions button,
       .top-actions a { flex: 1 1 auto; }
@@ -1056,7 +1238,7 @@
         <button type="button" data-view="plans"><span class="nav-icon"><svg><use href="#client-icon-plan"></use></svg></span><span>Planos</span></button>
         <button type="button" data-view="payments"><span class="nav-icon"><svg><use href="#client-icon-card"></use></svg></span><span>Pagamento</span></button>
         <a href="https://ilhatenis.com/agenda" target="_blank" rel="noopener"><span class="nav-icon"><svg><use href="#client-icon-play"></use></svg></span><span>Jogar</span></a>
-        <a href="https://wa.me/5527992963984?text=Ola%2C%20quero%20ver%20a%20Ilha%20Store." target="_blank" rel="noopener"><span class="nav-icon"><svg><use href="#client-icon-bag"></use></svg></span><span>Loja</span></a>
+        <button type="button" data-view="store"><span class="nav-icon"><svg><use href="#client-icon-bag"></use></svg></span><span>Loja</span></button>
         <a href="https://duplafalta.com.br/ranking/finals-masculino.html" target="_blank" rel="noopener"><span class="nav-icon"><svg><use href="#client-icon-ranking"></use></svg></span><span>Ranking</span></a>
         <a href="../publico.html"><span class="nav-icon"><svg><use href="#client-icon-trophy"></use></svg></span><span>Torneios</span></a>
       </nav>
@@ -1089,10 +1271,11 @@
           </div>
           <div class="quick-menu" aria-label="Atalhos do clube">
             <a class="quick-link" href="https://ilhatenis.com/agenda" target="_blank" rel="noopener"><svg><use href="#client-icon-play"></use></svg>Jogar</a>
-            <a class="quick-link" href="https://wa.me/5527992963984?text=Ola%2C%20quero%20ver%20a%20Ilha%20Store." target="_blank" rel="noopener"><svg><use href="#client-icon-bag"></use></svg>Loja</a>
+            <button class="quick-link" type="button" data-view="store"><svg><use href="#client-icon-bag"></use></svg>Loja</button>
             <a class="quick-link" href="https://duplafalta.com.br/ranking/finals-masculino.html" target="_blank" rel="noopener"><svg><use href="#client-icon-ranking"></use></svg>Ranking</a>
             <a class="quick-link" href="../publico.html"><svg><use href="#client-icon-trophy"></use></svg>Torneios</a>
           </div>
+          <div class="notice-list" id="homeAnnouncements"></div>
         </div>
       </section>
 
@@ -1168,6 +1351,18 @@
           <div class="list" id="paymentList"></div>
         </div>
       </section>
+
+      <section class="view" id="view-store">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Ilha Store</h2>
+              <div class="muted">Produtos e servicos do clube.</div>
+            </div>
+          </div>
+          <div class="store-grid" id="storeGrid"></div>
+        </div>
+      </section>
     </section>
   </main>
 
@@ -1179,11 +1374,43 @@
     const SESSION_KEY = 'ilha-client-session';
     const DEMO_SESSION_KEY = 'ilha-client-demo-session';
     const FALLBACK_PROFILE_KEY = 'ilha-client-profile-fallback';
+    const PIX_KEY = '54.969.790/0001-47';
+    const officialPlanSeed = [
+      { code: 'aulas_anual_1x', name: 'Aulas 1x por semana - Anual', type: 'aluno', amount: 230, weekly_lessons: 1, default_due_day: 10, description: 'Ciclo de 12 meses. Pix 5% OFF no pagamento do ciclo.' },
+      { code: 'aulas_semestral_1x', name: 'Aulas 1x por semana - Semestral', type: 'aluno', amount: 250, weekly_lessons: 1, default_due_day: 10, description: 'Ciclo de 6 meses. Pix 5% OFF no pagamento do ciclo.' },
+      { code: 'aulas_mensal_1x', name: 'Aulas 1x por semana - Mensal', type: 'aluno', amount: 270, weekly_lessons: 1, default_due_day: 10, description: 'Plano mensal de aulas uma vez por semana.' },
+      { code: 'aulas_anual_2x', name: 'Aulas 2x por semana - Anual', type: 'aluno', amount: 350, weekly_lessons: 2, default_due_day: 10, description: 'Ciclo de 12 meses. Pix 5% OFF no pagamento do ciclo.' },
+      { code: 'aulas_semestral_2x', name: 'Aulas 2x por semana - Semestral', type: 'aluno', amount: 370, weekly_lessons: 2, default_due_day: 10, description: 'Ciclo de 6 meses. Pix 5% OFF no pagamento do ciclo.' },
+      { code: 'aulas_mensal_2x', name: 'Aulas 2x por semana - Mensal', type: 'aluno', amount: 390, weekly_lessons: 2, default_due_day: 10, description: 'Plano mensal de aulas duas vezes por semana.' },
+      { code: 'jogar_anual', name: 'Somente jogar - Anual', type: 'mensalista', amount: 130, weekly_lessons: 0, default_due_day: 10, description: 'Acesso mensal as quadras conforme regras do clube. Ciclo de 12 meses. Pix 5% OFF.' },
+      { code: 'jogar_semestral', name: 'Somente jogar - Semestral', type: 'mensalista', amount: 140, weekly_lessons: 0, default_due_day: 10, description: 'Acesso mensal as quadras conforme regras do clube. Ciclo de 6 meses. Pix 5% OFF.' },
+      { code: 'jogar_mensal', name: 'Somente jogar - Mensal', type: 'mensalista', amount: 150, weekly_lessons: 0, default_due_day: 10, description: 'Acesso mensal as quadras conforme regras do clube.' },
+      { code: 'aula_avulsa', name: 'Aula avulsa', type: 'avulso', amount: 80, weekly_lessons: 0, default_due_day: 10, description: 'Valor por aula avulsa.' },
+      { code: 'familia', name: 'Plano familia', type: 'outro', amount: 0, weekly_lessons: 0, default_due_day: 10, description: 'Calculo com a equipe conforme quantidade de pessoas da mesma familia.' }
+    ];
+    const storeProducts = [
+      { code: 'camisa_preta', name: 'Camisa preta Ilha', image: '../camisapreta.png', amount: 0, description: 'Uniforme oficial do clube.' },
+      { code: 'camisa_roxa', name: 'Camisa roxa Ilha', image: '../camisaroxa.png', amount: 0, description: 'Uniforme oficial do clube.' },
+      { code: 'camisa_verde', name: 'Camisa verde Ilha', image: '../camisaverde.png', amount: 0, description: 'Uniforme oficial do clube.' },
+      { code: 'bolinhas', name: 'Bolinhas de tenis', image: '../bolas.png', amount: 0, description: 'Compra de bolas na secretaria.' },
+      { code: 'encordoamento', name: 'Encordoamento', image: '../cordas.png', amount: 0, description: 'Servico de corda para raquete.' }
+    ];
+    const planTabs = [
+      { key: 'aluno', label: 'Aulas' },
+      { key: 'mensalista', label: 'Somente jogar' },
+      { key: 'avulso', label: 'Aula avulsa' },
+      { key: 'outro', label: 'Familia' }
+    ];
 
     let session = null;
     let client = null;
     let demoMode = false;
     let databaseReady = true;
+    let appPlans = officialPlanSeed.slice();
+    let planRequests = [];
+    let storeRequests = [];
+    let announcements = [];
+    let activePlanTab = 'aluno';
 
     function $(id) {
       return document.getElementById(id);
@@ -1441,8 +1668,82 @@
       return client;
     }
 
+    function mapPlanRow(row) {
+      return {
+        id: row.id || '',
+        code: row.code || '',
+        name: row.name || 'Plano',
+        type: row.type || 'aluno',
+        amount: Number(row.amount || 0),
+        weekly_lessons: row.weekly_lessons == null ? 0 : Number(row.weekly_lessons || 0),
+        default_due_day: row.default_due_day || '',
+        active: row.active !== false,
+        description: row.description || ''
+      };
+    }
+
+    function mapPlanRequestRow(row) {
+      return {
+        id: row.id || '',
+        plan_code: row.plan_code || '',
+        plan_name: row.plan_name || 'Plano',
+        amount: Number(row.amount || 0),
+        status: row.status || 'SOLICITADO',
+        created_at: row.created_at || '',
+        notes: row.notes || ''
+      };
+    }
+
+    function mapStoreRequestRow(row) {
+      return {
+        id: row.id || '',
+        product_code: row.product_code || '',
+        product_name: row.product_name || 'Produto',
+        quantity: Number(row.quantity || 1),
+        amount: Number(row.amount || 0),
+        status: row.status || 'SOLICITADO',
+        created_at: row.created_at || '',
+        notes: row.notes || ''
+      };
+    }
+
+    function mapAnnouncementRow(row) {
+      return {
+        id: row.id || '',
+        title: row.title || 'Comunicado',
+        body: row.body || '',
+        image_url: row.image_url || '',
+        link_url: row.link_url || '',
+        target_type: row.target_type || 'todos',
+        target_plan_code: row.target_plan_code || '',
+        active: row.active !== false,
+        published_at: row.published_at || row.created_at || ''
+      };
+    }
+
     async function loadClientData() {
-      return null;
+      if (!session || demoMode || (session && session.demo)) {
+        appPlans = officialPlanSeed.map(mapPlanRow);
+        planRequests = readStored(storageKey('ilha-client-plan-requests'), []);
+        storeRequests = readStored(storageKey('ilha-client-store-requests'), []);
+        announcements = [];
+        return;
+      }
+      if (!databaseReady) return;
+      try {
+        const results = await Promise.all([
+          rest('app_plans?select=*&active=eq.true&order=type.asc,amount.asc', { auth: true }).catch(function () { return []; }),
+          rest('app_plan_requests?select=*&client_id=eq.' + encodeURIComponent(session.user.id) + '&order=created_at.desc', { auth: true }).catch(function () { return []; }),
+          rest('app_store_requests?select=*&client_id=eq.' + encodeURIComponent(session.user.id) + '&order=created_at.desc', { auth: true }).catch(function () { return []; }),
+          rest('app_announcements?select=*&active=eq.true&order=published_at.desc', { auth: true }).catch(function () { return []; })
+        ]);
+        appPlans = results[0] && results[0].length ? results[0].map(mapPlanRow) : officialPlanSeed.map(mapPlanRow);
+        planRequests = (results[1] || []).map(mapPlanRequestRow);
+        storeRequests = (results[2] || []).map(mapStoreRequestRow);
+        announcements = (results[3] || []).map(mapAnnouncementRow);
+      } catch (error) {
+        appPlans = officialPlanSeed.map(mapPlanRow);
+      }
     }
 
     function setAuthMessage(message, isError) {
@@ -1561,8 +1862,9 @@
       const labels = {
         home: 'Inicio',
         profile: 'Meus dados',
-        plans: 'Plano',
-        payments: 'Pagamento'
+        plans: 'Planos',
+        payments: 'Pagamento',
+        store: 'Ilha Store'
       };
       $('pageTitle').textContent = labels[view];
       if (view === 'plans') {
@@ -1578,6 +1880,7 @@
       renderProfile();
       renderPlans();
       renderPayments();
+      renderStore();
     }
 
     function renderIdentity() {
@@ -1585,11 +1888,34 @@
       $('sideClientName').textContent = name;
     }
 
+    function announcementMatchesClient(item) {
+      if (!item || item.active === false) return false;
+      const target = item.target_type || 'todos';
+      if (target === 'todos') return true;
+      if (target === 'plano') return String(item.target_plan_code || '') === String(client && client.official_plan_code || '');
+      return String(target) === String(client && client.client_type || '') ||
+        String(target) === String(client && client.official_plan_code || '') ||
+        String(target) === String(client && client.official_plan_name || '').toLowerCase();
+    }
+
+    function renderAnnouncements() {
+      const list = announcements.filter(announcementMatchesClient).slice(0, 3);
+      $('homeAnnouncements').innerHTML = list.map(function (item) {
+        return '<article class="notice-card">' +
+          (item.image_url ? '<img src="' + escapeHtml(item.image_url) + '" alt="" />' : '') +
+          '<div><h3>' + escapeHtml(item.title) + '</h3>' +
+          (item.body ? '<p>' + escapeHtml(item.body) + '</p>' : '') + '</div>' +
+          (item.link_url ? '<a class="ghost-btn" href="' + escapeHtml(item.link_url) + '" target="_blank" rel="noopener">Abrir comunicado</a>' : '') +
+        '</article>';
+      }).join('');
+    }
+
     function renderHome() {
       const name = client && client.full_name || 'aluno';
       const firstName = name.split(' ')[0] || 'aluno';
       $('homeWelcomeName').textContent = 'Ola, ' + firstName;
       $('homeAvatar').innerHTML = avatarMarkup(profilePhoto(), name);
+      renderAnnouncements();
     }
 
     function renderProfile() {
@@ -1621,9 +1947,8 @@
           '</div>' +
           '<div class="plan-actions">' +
             '<button class="ghost-btn" type="button" data-refresh-plan>Atualizar</button>' +
-            '<a class="primary-btn" href="' + escapeHtml(whatsappPlanChangeUrl()) + '" target="_blank" rel="noopener">Solicitar alteracao</a>' +
           '</div>' +
-        '</article>';
+        '</article>' + renderPlanCatalog();
         return;
       }
       const details = [];
@@ -1650,17 +1975,124 @@
         (details.length ? '<div class="plan-status-grid">' + details.join('') + '</div>' : '') +
         '<div class="plan-actions">' +
           '<button class="ghost-btn" type="button" data-refresh-plan>Atualizar</button>' +
-          '<a class="primary-btn" href="' + escapeHtml(whatsappPlanChangeUrl()) + '" target="_blank" rel="noopener">Solicitar alteracao</a>' +
         '</div>' +
+      '</article>' + renderPlanCatalog();
+    }
+
+    function latestPlanRequest(plan) {
+      return planRequests.find(function (request) {
+        return String(request.plan_code || '') === String(plan.code || '');
+      });
+    }
+
+    function renderPlanCatalog() {
+      const tabs = planTabs.map(function (tab) {
+        return '<button class="plan-tab' + (activePlanTab === tab.key ? ' active' : '') + '" type="button" data-plan-tab="' + escapeHtml(tab.key) + '">' + escapeHtml(tab.label) + '</button>';
+      }).join('');
+      const plans = appPlans.filter(function (plan) {
+        return plan.active !== false && String(plan.type || 'aluno') === activePlanTab;
+      });
+      const grouped = activePlanTab === 'aluno'
+        ? '<div class="plan-category-grid">' + ['1x por semana', '2x por semana'].map(function (label) {
+            const count = label.indexOf('1x') === 0 ? 1 : 2;
+            const items = plans.filter(function (plan) { return Number(plan.weekly_lessons || 0) === count; });
+            return '<div class="plan-catalog">' +
+              '<span class="plan-kicker">' + escapeHtml(label) + '</span>' +
+              (items.map(renderCatalogPlanCard).join('') || '<div class="empty">Sem planos nessa faixa.</div>') +
+            '</div>';
+          }).join('') + '</div>'
+        : '<div class="plan-catalog">' + (plans.map(renderCatalogPlanCard).join('') || '<div class="empty">Sem planos nessa categoria.</div>') + '</div>';
+      return '<section class="panel"><div class="panel-head"><div><h2>Solicitar alteracao</h2><div class="muted">A equipe recebe o pedido e confirma se existe horario/disponibilidade.</div></div></div><div class="plan-tabs">' + tabs + '</div>' + grouped + '</section>';
+    }
+
+    function renderCatalogPlanCard(plan) {
+      const request = latestPlanRequest(plan);
+      const disabled = request && ['SOLICITADO', 'EM_ANALISE'].includes(String(request.status || '').toUpperCase());
+      const price = Number(plan.amount || 0) ? '<div class="catalog-price">' + money(plan.amount) + '<small>/' + (plan.type === 'avulso' ? 'aula' : 'mes') + '</small></div>' : '<div class="catalog-price">A combinar</div>';
+      return '<article class="plan-card catalog-plan">' +
+        '<div><span class="plan-kicker">' + escapeHtml(plan.type === 'mensalista' ? 'Somente jogar' : plan.type === 'avulso' ? 'Aula avulsa' : plan.type === 'outro' ? 'Familia' : 'Aulas') + '</span><h3>' + escapeHtml(plan.name) + '</h3></div>' +
+        price +
+        '<p class="muted">' + escapeHtml(plan.description || 'Plano oficial do clube.') + '</p>' +
+        '<div class="meta">' +
+          (plan.weekly_lessons ? '<span class="pill">' + plan.weekly_lessons + 'x por semana</span>' : '') +
+          (plan.default_due_day ? '<span class="pill">Vence dia ' + escapeHtml(plan.default_due_day) + '</span>' : '') +
+          (request ? pill(request.status) : '') +
+        '</div>' +
+        '<button class="' + (disabled ? 'ghost-btn' : 'primary-btn') + '" type="button" data-request-plan="' + escapeHtml(plan.code || plan.id || plan.name) + '"' + (disabled ? ' disabled' : '') + '>' + (disabled ? 'Pedido enviado' : 'Solicitar alteracao') + '</button>' +
       '</article>';
     }
 
     function paymentCards() {
-      return '<div class="empty">Nenhuma fatura em aberto.</div>';
+      const amount = Number(client && client.plan_amount || 0);
+      const planName = client && client.official_plan_name || 'Plano a definir';
+      const dueDay = client && client.due_day || '';
+      if (!amount) return '<div class="empty">Nenhuma fatura em aberto.</div>';
+      const payload = pixPayload(amount, planName);
+      const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(payload);
+      return '<article class="payment-card">' +
+        '<div>' +
+          '<span class="plan-kicker">Fatura do plano</span>' +
+          '<h2>' + escapeHtml(planName) + '</h2>' +
+          '<div class="catalog-price">' + money(amount) + '<small>vencimento ' + (dueDay ? 'dia ' + escapeHtml(dueDay) : 'a definir') + '</small></div>' +
+          '<p class="muted">Pix preparado com seus dados. Em breve vamos conectar com baixa automatica via Asaas.</p>' +
+          '<div class="plan-actions"><button class="primary-btn" type="button" data-copy-pix>Copiar Pix</button></div>' +
+        '</div>' +
+        '<div class="pix-box"><img src="' + qrUrl + '" alt="QR Code Pix" /><div class="pix-copy" id="pixCopyText">' + escapeHtml(payload) + '</div></div>' +
+      '</article>';
     }
 
     function renderPayments() {
       $('paymentList').innerHTML = paymentCards();
+    }
+
+    function renderStore() {
+      $('storeGrid').innerHTML = storeProducts.map(function (product) {
+        const request = storeRequests.find(function (item) { return item.product_code === product.code && ['SOLICITADO', 'EM_ANALISE', 'APROVADO'].includes(String(item.status || '').toUpperCase()); });
+        return '<article class="store-card">' +
+          '<img src="' + escapeHtml(product.image) + '" alt="' + escapeHtml(product.name) + '" />' +
+          '<div class="store-card-body">' +
+            '<div><h3>' + escapeHtml(product.name) + '</h3><p>' + escapeHtml(product.description) + '</p></div>' +
+            (request ? '<span class="pill warn">' + escapeHtml(request.status) + '</span>' : '<button class="primary-btn" type="button" data-store-request="' + escapeHtml(product.code) + '">Solicitar</button>') +
+          '</div>' +
+        '</article>';
+      }).join('');
+    }
+
+    function emv(id, value) {
+      const text = String(value == null ? '' : value);
+      return id + String(text.length).padStart(2, '0') + text;
+    }
+
+    function crc16(payload) {
+      let crc = 0xffff;
+      for (let i = 0; i < payload.length; i++) {
+        crc ^= payload.charCodeAt(i) << 8;
+        for (let j = 0; j < 8; j++) {
+          crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) : (crc << 1);
+          crc &= 0xffff;
+        }
+      }
+      return crc.toString(16).toUpperCase().padStart(4, '0');
+    }
+
+    function normalizePixText(value, max) {
+      return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9 .-]/g, '').slice(0, max);
+    }
+
+    function pixPayload(amount, description) {
+      const merchantAccount = emv('00', 'br.gov.bcb.pix') + emv('01', PIX_KEY) + emv('02', normalizePixText(description, 40));
+      const txid = normalizePixText((client && client.full_name || 'ILHA') + Date.now(), 25) || 'ILHA';
+      const base = emv('00', '01') +
+        emv('26', merchantAccount) +
+        emv('52', '0000') +
+        emv('53', '986') +
+        emv('54', Number(amount || 0).toFixed(2)) +
+        emv('58', 'BR') +
+        emv('59', 'ILHA TENIS') +
+        emv('60', 'COLATINA') +
+        emv('62', emv('05', txid));
+      const partial = base + '6304';
+      return partial + crc16(partial);
     }
 
     function cardHtml(item) {
@@ -1757,6 +2189,81 @@
       }
     }
 
+    function findAppPlan(value) {
+      return appPlans.find(function (plan) {
+        return String(plan.code || plan.id || plan.name) === String(value);
+      });
+    }
+
+    async function requestPlanChange(planCode) {
+      const plan = findAppPlan(planCode);
+      if (!plan) return;
+      const notes = prompt('Informe dias/horarios desejados ou alguma observacao para a equipe:', '') || '';
+      const payload = {
+        client_id: session.user.id,
+        plan_code: plan.code || plan.id || plan.name,
+        plan_name: plan.name,
+        amount: plan.amount || 0,
+        membership_type: plan.type || 'aluno',
+        weekly_lessons: plan.weekly_lessons || 0,
+        requested_days: [],
+        preferred_due_day: plan.default_due_day || null,
+        status: 'SOLICITADO',
+        notes: notes.trim()
+      };
+      try {
+        if (demoMode || (session && session.demo)) {
+          const local = Object.assign({ id: 'local_' + Date.now(), created_at: new Date().toISOString() }, payload);
+          planRequests.unshift(mapPlanRequestRow(local));
+          writeStored(storageKey('ilha-client-plan-requests'), planRequests);
+        } else {
+          const saved = await rest('app_plan_requests', {
+            method: 'POST',
+            body: payload,
+            prefer: 'return=representation'
+          });
+          planRequests.unshift(mapPlanRequestRow(Array.isArray(saved) ? saved[0] : saved));
+        }
+        renderPlans();
+        toast('Pedido enviado para a equipe.');
+      } catch (error) {
+        toast(error.message || 'Nao consegui enviar a solicitacao.');
+      }
+    }
+
+    async function requestStoreProduct(code) {
+      const product = storeProducts.find(function (item) { return item.code === code; });
+      if (!product) return;
+      const notes = prompt('Tamanho, quantidade ou observacao para a secretaria:', '') || '';
+      const payload = {
+        client_id: session.user.id,
+        product_code: product.code,
+        product_name: product.name,
+        quantity: 1,
+        amount: product.amount || 0,
+        status: 'SOLICITADO',
+        notes: notes.trim()
+      };
+      try {
+        if (demoMode || (session && session.demo)) {
+          const local = Object.assign({ id: 'local_' + Date.now(), created_at: new Date().toISOString() }, payload);
+          storeRequests.unshift(mapStoreRequestRow(local));
+          writeStored(storageKey('ilha-client-store-requests'), storeRequests);
+        } else {
+          const saved = await rest('app_store_requests', {
+            method: 'POST',
+            body: payload,
+            prefer: 'return=representation'
+          });
+          storeRequests.unshift(mapStoreRequestRow(Array.isArray(saved) ? saved[0] : saved));
+        }
+        renderStore();
+        toast('Solicitacao enviada para a Ilha Store.');
+      } catch (error) {
+        toast(error.message || 'Nao consegui enviar o pedido.');
+      }
+    }
+
     async function refresh(silent) {
       if (!session) return;
       await ensureClient(null, null);
@@ -1789,11 +2296,35 @@
         btn.addEventListener('click', function () { showView(btn.dataset.view); });
       });
       $('planGrid').addEventListener('click', function (event) {
+        const tabBtn = event.target.closest('[data-plan-tab]');
+        if (tabBtn) {
+          activePlanTab = tabBtn.dataset.planTab;
+          renderPlans();
+          return;
+        }
+        const requestBtn = event.target.closest('[data-request-plan]');
+        if (requestBtn) {
+          requestPlanChange(requestBtn.dataset.requestPlan);
+          return;
+        }
         if (event.target.closest('[data-refresh-plan]')) {
           refresh(false).catch(function () {
             toast('Nao consegui atualizar o plano agora.');
           });
         }
+      });
+      $('paymentList').addEventListener('click', function (event) {
+        if (!event.target.closest('[data-copy-pix]')) return;
+        const text = $('pixCopyText') ? $('pixCopyText').textContent : '';
+        if (navigator.clipboard && text) {
+          navigator.clipboard.writeText(text).then(function () { toast('Pix copiado.'); }).catch(function () { toast('Pix pronto para copiar.'); });
+        } else {
+          toast('Pix pronto para copiar.');
+        }
+      });
+      $('storeGrid').addEventListener('click', function (event) {
+        const requestBtn = event.target.closest('[data-store-request]');
+        if (requestBtn) requestStoreProduct(requestBtn.dataset.storeRequest);
       });
       document.addEventListener('visibilitychange', function () {
         if (!document.hidden && session) {

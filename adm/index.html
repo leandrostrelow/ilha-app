@@ -72,9 +72,18 @@
     body.club-agenda .club-home,
     body.club-agenda .topbar,
     body.club-agenda .section,
+    body.club-courts .club-home,
+    body.club-courts .topbar,
+    body.club-courts .section,
     body.club-finance .club-home,
     body.club-finance .topbar,
     body.club-finance .section,
+    body.club-store .club-home,
+    body.club-store .topbar,
+    body.club-store .section,
+    body.club-announcements .club-home,
+    body.club-announcements .topbar,
+    body.club-announcements .section,
     body.club-communication .club-home,
     body.club-communication .topbar,
     body.club-communication .section,
@@ -101,7 +110,10 @@
 
     body.club-students .student-center-module,
     body.club-agenda .agenda-module,
+    body.club-courts .court-booking-module,
     body.club-finance .finance-module,
+    body.club-store .store-module,
+    body.club-announcements .announcements-module,
     body.club-communication .communication-module,
     body.club-clients .clients-module,
     body.club-team .team-module,
@@ -1031,6 +1043,80 @@
       flex-wrap: nowrap;
       justify-content: flex-end;
       gap: 6px;
+    }
+
+    .admin-kanban,
+    .court-board,
+    .announcement-preview-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .admin-kanban {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .kanban-column {
+      min-height: 180px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fbfc;
+    }
+
+    .kanban-column h3 {
+      margin: 0 0 10px;
+      font-size: 14px;
+    }
+
+    .store-request-card,
+    .court-slot-card,
+    .announcement-card {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .store-request-card,
+    .announcement-card {
+      display: grid;
+      gap: 8px;
+    }
+
+    .court-board {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .court-column {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .court-slot-card {
+      display: grid;
+      grid-template-columns: 62px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .court-time {
+      color: var(--teal);
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .announcement-preview-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .announcement-card img {
+      width: 100%;
+      max-height: 160px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #eef4f6;
     }
 
     .ops-list-main {
@@ -3218,6 +3304,19 @@
       <path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5" />
       <path d="M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" />
     </symbol>
+    <symbol id="admin-icon-calendar" viewBox="0 0 24 24">
+      <path d="M7 3v3M17 3v3M4 9h16M6 5h12a2 2 0 0 1 2 2v12H4V7a2 2 0 0 1 2-2Z" />
+      <path d="M8 14h3M13 14h3M8 17h3M13 17h3" />
+    </symbol>
+    <symbol id="admin-icon-bag" viewBox="0 0 24 24">
+      <path d="M6 8h12l-1 12H7L6 8Z" />
+      <path d="M9 8a3 3 0 0 1 6 0" />
+    </symbol>
+    <symbol id="admin-icon-megaphone" viewBox="0 0 24 24">
+      <path d="M4 13h4l9 4V5L8 9H4v4Z" />
+      <path d="M8 13l2 6h3" />
+      <path d="M19 9v4" />
+    </symbol>
   </svg>
 
   <main class="adm-login" id="adminLogin">
@@ -3248,6 +3347,9 @@
         <button class="admin-nav-btn active" type="button" data-admin-nav="club-home"><span class="admin-nav-icon"><svg><use href="#admin-icon-home"></use></svg></span><span>Inicio</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon"><svg><use href="#admin-icon-users"></use></svg></span><span>Alunos</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-courts"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Quadras</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-store"><span class="admin-nav-icon"><svg><use href="#admin-icon-bag"></use></svg></span><span>Ilha Store</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-announcements"><span class="admin-nav-icon"><svg><use href="#admin-icon-megaphone"></use></svg></span><span>Comunicados</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-team"><span class="admin-nav-icon"><svg><use href="#admin-icon-team"></use></svg></span><span>Equipe</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-database"><span class="admin-nav-icon"><svg><use href="#admin-icon-database"></use></svg></span><span>Planos</span></button>
       </nav>
@@ -3611,6 +3713,157 @@
                 </div>
               </div>
               <div class="ops-list" id="planList"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ops-module court-booking-module" id="courtBookingModule">
+      <div class="module-shell">
+        <div class="module-head">
+          <div>
+            <h1>Quadras</h1>
+            <div class="muted">Teste interno do novo agendamento com login.</div>
+          </div>
+          <div class="module-actions">
+            <button class="ghost-btn" type="button" data-home-action>Inicio</button>
+            <button class="ghost-btn" type="button" id="courtReloadBtn">Recarregar</button>
+          </div>
+        </div>
+        <div class="ops-content">
+          <div class="ops-summary">
+            <div class="ops-card"><strong id="courtDayMetric">0</strong><span>reservas no dia</span></div>
+            <div class="ops-card"><strong id="courtFreeMetric">0</strong><span>horarios livres</span></div>
+            <div class="ops-card"><strong id="courtBusyMetric">0</strong><span>horarios ocupados</span></div>
+            <div class="ops-card"><strong id="courtBlockedMetric">0</strong><span>bloqueios</span></div>
+          </div>
+          <div class="ops-grid">
+            <div class="ops-panel span-4">
+              <div class="ops-panel-head"><div><h2>Nova reserva</h2><div class="muted">Por enquanto apenas teste no ADM.</div></div></div>
+              <form class="form-grid" id="courtBookingForm">
+                <div class="field full">
+                  <label for="courtBookingDate">Data</label>
+                  <input id="courtBookingDate" type="date" />
+                </div>
+                <div class="field">
+                  <label for="courtBookingTime">Horario</label>
+                  <select id="courtBookingTime"></select>
+                </div>
+                <div class="field">
+                  <label for="courtBookingCourt">Quadra</label>
+                  <select id="courtBookingCourt"></select>
+                </div>
+                <div class="field full">
+                  <label for="courtBookingClient">Aluno</label>
+                  <select id="courtBookingClient"></select>
+                </div>
+                <div class="field full">
+                  <label for="courtBookingOpponent">Adversario</label>
+                  <input id="courtBookingOpponent" placeholder="Obrigatorio para reservar" />
+                </div>
+                <div class="field full">
+                  <label for="courtBookingNotes">Observacoes</label>
+                  <textarea id="courtBookingNotes" placeholder="Aula, jogo, bloqueio ou detalhe interno."></textarea>
+                </div>
+                <div class="field full">
+                  <button class="primary-btn" type="submit">Salvar reserva</button>
+                </div>
+              </form>
+            </div>
+            <div class="ops-panel span-8">
+              <div class="ops-panel-head">
+                <div>
+                  <h2>Mapa do dia</h2>
+                  <div class="muted">Nao permite dois horarios no mesmo dia para o mesmo aluno.</div>
+                </div>
+              </div>
+              <div class="court-board" id="courtBoard"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ops-module store-module" id="storeModule">
+      <div class="module-shell">
+        <div class="module-head">
+          <div>
+            <h1>Ilha Store</h1>
+            <div class="muted">Solicitacoes de produtos e servicos feitas no app do aluno.</div>
+          </div>
+          <div class="module-actions">
+            <button class="ghost-btn" type="button" data-home-action>Inicio</button>
+            <button class="ghost-btn" type="button" id="storeReloadBtn">Recarregar</button>
+          </div>
+        </div>
+        <div class="ops-content">
+          <div class="ops-summary">
+            <div class="ops-card"><strong id="storeOpenMetric">0</strong><span>solicitacoes abertas</span></div>
+            <div class="ops-card"><strong id="storeApprovedMetric">0</strong><span>aprovadas</span></div>
+            <div class="ops-card"><strong id="storeDeliveredMetric">0</strong><span>entregues</span></div>
+            <div class="ops-card"><strong id="storeAmountMetric">R$ 0</strong><span>valor previsto</span></div>
+          </div>
+          <div class="admin-kanban" id="storeRequestBoard"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ops-module announcements-module" id="announcementsModule">
+      <div class="module-shell">
+        <div class="module-head">
+          <div>
+            <h1>Comunicados</h1>
+            <div class="muted">Avisos que aparecem no inicio do app do aluno.</div>
+          </div>
+          <div class="module-actions">
+            <button class="ghost-btn" type="button" data-home-action>Inicio</button>
+            <button class="ghost-btn" type="button" id="announcementsReloadBtn">Recarregar</button>
+          </div>
+        </div>
+        <div class="ops-content">
+          <div class="ops-grid">
+            <div class="ops-panel span-5">
+              <div class="ops-panel-head"><div><h2>Novo comunicado</h2><div class="muted">Texto, imagem, link e publico.</div></div></div>
+              <form class="form-grid" id="announcementForm">
+                <div class="field full">
+                  <label for="announcementTitle">Titulo</label>
+                  <input id="announcementTitle" placeholder="Ex.: Horario especial do feriado" />
+                </div>
+                <div class="field full">
+                  <label for="announcementBody">Mensagem</label>
+                  <textarea id="announcementBody" placeholder="Mensagem curta para aparecer no inicio do app."></textarea>
+                </div>
+                <div class="field full">
+                  <label for="announcementImage">Imagem</label>
+                  <input id="announcementImage" placeholder="https://..." />
+                </div>
+                <div class="field full">
+                  <label for="announcementLink">Link</label>
+                  <input id="announcementLink" placeholder="https://..." />
+                </div>
+                <div class="field">
+                  <label for="announcementTarget">Publico</label>
+                  <select id="announcementTarget">
+                    <option value="todos">Todos</option>
+                    <option value="aluno">Alunos de aula</option>
+                    <option value="mensalista">Mensalistas / jogar</option>
+                    <option value="avulso">Avulso</option>
+                    <option value="plano">Plano especifico</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="announcementPlan">Plano</label>
+                  <select id="announcementPlan"></select>
+                </div>
+                <div class="field full">
+                  <button class="primary-btn" type="submit">Publicar comunicado</button>
+                </div>
+              </form>
+            </div>
+            <div class="ops-panel span-7">
+              <div class="ops-panel-head"><div><h2>Comunicados ativos</h2><div class="muted">O aluno ve isso na tela inicial.</div></div></div>
+              <div class="announcement-preview-grid" id="announcementList"></div>
             </div>
           </div>
         </div>
@@ -7669,6 +7922,7 @@
       planTab: 'list',
       selectedClientId: null,
       editingPlanId: null,
+      courtDate: localDateString(new Date()),
       loaded: false
     };
 
@@ -7690,6 +7944,8 @@
       { key: 'finance.read', label: 'Ver financeiro', detail: 'Consultar fluxo de caixa e faturas.' },
       { key: 'finance.write', label: 'Gerenciar financeiro', detail: 'Criar contas a pagar, receber e baixar pagamentos.' },
       { key: 'classes', label: 'Aulas e agenda', detail: 'Gerenciar horarios, presenca e agenda de quadras.' },
+      { key: 'store', label: 'Ilha Store', detail: 'Acompanhar pedidos de produtos e servicos.' },
+      { key: 'announcements', label: 'Comunicados', detail: 'Publicar avisos no app do aluno.' },
       { key: 'tournaments', label: 'Torneios', detail: 'Organizar inscricoes, chaves, agenda e resultados.' },
       { key: 'communication', label: 'Comunicacao', detail: 'Enviar avisos, campanhas e mensagens.' },
       { key: 'team', label: 'Equipe e acessos', detail: 'Criar usuarios e alterar permissoes.' }
@@ -7757,12 +8013,15 @@
         { title: 'Agenda da semana', status: 'Pronto', channel: 'WhatsApp' },
         { title: 'Viafor Open', status: 'Programar', channel: 'Instagram/WhatsApp' }
       ],
+      storeRequests: [],
+      announcements: [],
+      courtBookings: [],
       message: 'Oi, {nome}! Passando para lembrar que sua aula no Ilha esta confirmada para hoje. Se precisar ajustar o horario, fale com a secretaria pelo WhatsApp. Obrigado!'
     };
     const opsSeedData = JSON.parse(JSON.stringify(opsData));
 
     function setClubMode(mode) {
-      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-finance', 'club-communication', 'club-clients', 'club-team', 'club-database'].forEach(function (className) {
+      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-courts', 'club-finance', 'club-store', 'club-announcements', 'club-communication', 'club-clients', 'club-team', 'club-database'].forEach(function (className) {
         document.body.classList.remove(className);
       });
       document.body.classList.add(mode);
@@ -7950,8 +8209,10 @@
       const client = row.app_clients || {};
       return {
         id: row.id,
+        clientId: row.client_id || '',
         client: client.full_name || 'Cliente',
         email: client.email || '',
+        phone: client.phone || '',
         plan: row.plan_name || 'Plano',
         planCode: row.plan_code || '',
         amount: Number(row.amount || 0),
@@ -7979,6 +8240,54 @@
       };
     }
 
+    function mapStoreRequestRow(row) {
+      const client = row.app_clients || {};
+      return {
+        id: row.id,
+        clientId: row.client_id || '',
+        client: client.full_name || row.client_name || 'Aluno',
+        email: client.email || '',
+        phone: client.phone || '',
+        productCode: row.product_code || '',
+        productName: row.product_name || 'Produto',
+        quantity: Number(row.quantity || 1),
+        amount: Number(row.amount || 0),
+        status: row.status || 'SOLICITADO',
+        notes: row.notes || '',
+        created: row.created_at || ''
+      };
+    }
+
+    function mapAnnouncementRow(row) {
+      return {
+        id: row.id,
+        title: row.title || 'Comunicado',
+        body: row.body || '',
+        imageUrl: row.image_url || '',
+        linkUrl: row.link_url || '',
+        targetType: row.target_type || 'todos',
+        targetPlanCode: row.target_plan_code || '',
+        active: row.active !== false,
+        publishedAt: row.published_at || row.created_at || ''
+      };
+    }
+
+    function mapCourtBookingRow(row) {
+      const client = row.app_clients || {};
+      return {
+        id: row.id,
+        clientId: row.client_id || '',
+        client: client.full_name || row.client_name || 'Aluno',
+        opponent: row.opponent_name || '',
+        date: row.booking_date || '',
+        time: String(row.starts_at || '').slice(0, 5),
+        court: row.court_name || 'Quadra 1',
+        status: row.status || 'CONFIRMADO',
+        notes: row.notes || '',
+        created: row.created_at || ''
+      };
+    }
+
     async function loadOpsData(force) {
       if (!adminSession || !adminSession.access_token) return;
       if (isAdminDemoMode()) {
@@ -7992,13 +8301,19 @@
           supabaseRest('financial_transactions?select=*,students(name)&order=due_date.asc'),
           supabaseRest('app_plan_requests?select=*,app_clients(full_name,email,phone)&order=created_at.desc'),
           supabaseRest('profiles?select=*&order=created_at.desc').catch(function () { return []; }),
-          supabaseRest('app_plans?select=*&order=created_at.desc').catch(function () { return []; })
+          supabaseRest('app_plans?select=*&order=created_at.desc').catch(function () { return []; }),
+          supabaseRest('app_store_requests?select=*,app_clients(full_name,email,phone)&order=created_at.desc').catch(function () { return []; }),
+          supabaseRest('app_announcements?select=*&order=published_at.desc').catch(function () { return []; }),
+          supabaseRest('app_court_bookings?select=*,app_clients(full_name,email,phone)&order=booking_date.asc,starts_at.asc').catch(function () { return []; })
         ]);
         opsData.clients = results[0].map(mapClientRow);
         opsData.finance = results[1].map(mapFinanceRow);
         opsData.planRequests = results[2].map(mapPlanRequestRow);
         opsData.team = results[3].map(mapProfileRow);
         if (results[4] && results[4].length) opsData.plans = results[4].map(mapPlanRow);
+        opsData.storeRequests = (results[5] || []).map(mapStoreRequestRow);
+        opsData.announcements = (results[6] || []).map(mapAnnouncementRow);
+        opsData.courtBookings = (results[7] || []).map(mapCourtBookingRow);
         opsData.students = [];
         opsData.agenda = [];
         opsData.audiences = [];
@@ -8062,7 +8377,9 @@
 
     function findPlanByValue(value) {
       return opsData.plans.find(function (plan) {
-        return String(plan.id || plan.code || plan.name) === String(value);
+        return String(plan.id || '') === String(value) ||
+          String(plan.code || '') === String(value) ||
+          String(plan.name || '') === String(value);
       });
     }
 
@@ -8147,7 +8464,8 @@
       const client = findClientByKey(key);
       if (!client) return;
       opsState.selectedClientId = client.id || client.email || client.name;
-      const selectedPlanValue = client.officialPlanId || client.officialPlanCode || '';
+      const selectedPlan = findClientPlan(client);
+      const selectedPlanValue = selectedPlan ? (selectedPlan.id || selectedPlan.code || selectedPlan.name) : (client.officialPlanId || client.officialPlanCode || '');
       const request = findClientRequest(client);
       $('clientModalTitle').textContent = client.name || 'Ficha do aluno';
       $('clientModalSubtitle').textContent = client.officialPlanName ? 'Plano oficial: ' + client.officialPlanName : 'Plano oficial ainda nao definido.';
@@ -8168,7 +8486,7 @@
       $('clientEditNotes').value = client.notes || '';
       renderWeekdayInputs('clientEditDays', client.preferredDays && client.preferredDays.length ? client.preferredDays : request && request.requestedDays);
       $('clientRequestSummary').innerHTML = request
-        ? '<article class="ops-list-card"><div class="ops-list-main"><div><strong>Pedido recebido no app</strong><div class="muted">' + escapeHtml(request.plan) + ' | ' + escapeHtml(request.membershipType || 'tipo nao informado') + ' | ' + escapeHtml(formatDays(request.requestedDays) || 'sem dias') + '</div></div><div class="ops-meta">' + statusPill(request.status) + '<span class="ops-pill">' + money(request.amount) + '</span></div></div></article>'
+        ? '<article class="ops-list-card"><div class="ops-list-main"><div><strong>Pedido recebido no app</strong><div class="muted">' + escapeHtml(request.plan) + ' | ' + escapeHtml(request.membershipType || 'tipo nao informado') + ' | ' + escapeHtml(formatDays(request.requestedDays) || 'sem dias') + '</div></div><div class="ops-meta">' + statusPill(request.status) + '<span class="ops-pill">' + money(request.amount) + '</span></div></div><div class="ops-meta"><button class="small-btn" type="button" data-plan-request-approve="' + escapeHtml(request.id) + '">Aprovar e vincular</button><button class="small-btn" type="button" data-plan-request-reject="' + escapeHtml(request.id) + '">Recusar</button></div></article>'
         : '<div class="lesson-empty-state">Sem pedido registrado pelo aluno. Defina o plano manualmente.</div>';
       $('clientModal').classList.add('show');
       $('clientModal').setAttribute('aria-hidden', 'false');
@@ -8320,6 +8638,226 @@
       setClubMode('club-database');
       renderPlansModule();
       loadOpsData(false).then(renderPlansModule);
+    }
+
+    const courtNames = ['Quadra 1', 'Quadra 2'];
+    const courtTimes = ['06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'];
+
+    function renderCourtBookingModule() {
+      if (!$('courtBookingDate').value) $('courtBookingDate').value = opsState.courtDate || localDateString(new Date());
+      opsState.courtDate = $('courtBookingDate').value || opsState.courtDate;
+      $('courtBookingTime').innerHTML = courtTimes.map(function (time) { return '<option value="' + time + '">' + time + '</option>'; }).join('');
+      $('courtBookingCourt').innerHTML = courtNames.map(function (court) { return '<option value="' + court + '">' + court + '</option>'; }).join('');
+      $('courtBookingClient').innerHTML = '<option value="">Selecione</option>' + opsData.clients.map(function (client) {
+        const value = client.id || client.email || client.name;
+        return '<option value="' + escapeHtml(value) + '">' + escapeHtml(client.name) + '</option>';
+      }).join('');
+      const dayRows = opsData.courtBookings.filter(function (item) {
+        return String(item.date) === String(opsState.courtDate);
+      });
+      const occupied = dayRows.filter(function (item) { return item.status !== 'BLOQUEADO'; });
+      const blocked = dayRows.filter(function (item) { return item.status === 'BLOQUEADO'; });
+      const totalSlots = courtNames.length * courtTimes.length;
+      $('courtDayMetric').textContent = dayRows.length;
+      $('courtBusyMetric').textContent = occupied.length;
+      $('courtBlockedMetric').textContent = blocked.length;
+      $('courtFreeMetric').textContent = Math.max(0, totalSlots - dayRows.length);
+      $('courtBoard').innerHTML = courtNames.map(function (court) {
+        return '<div class="court-column"><h3>' + escapeHtml(court) + '</h3>' + courtTimes.map(function (time) {
+          const booking = dayRows.find(function (item) { return item.court === court && item.time === time; });
+          if (!booking) {
+            return '<article class="court-slot-card"><div class="court-time">' + time + '</div><div><strong>Livre</strong><div class="muted">Disponivel para teste.</div></div><span class="ops-pill good">Livre</span></article>';
+          }
+          return '<article class="court-slot-card"><div class="court-time">' + time + '</div><div><strong>' + escapeHtml(booking.client) + '</strong><div class="muted">Adversario: ' + escapeHtml(booking.opponent || 'A definir') + '</div></div><div class="ops-meta">' + statusPill(booking.status) + '<button class="small-btn" type="button" data-court-cancel="' + escapeHtml(booking.id) + '">Cancelar</button></div></article>';
+        }).join('') + '</div>';
+      }).join('');
+    }
+
+    function openCourtBookingModule() {
+      setClubMode('club-courts');
+      renderCourtBookingModule();
+      loadOpsData(false).then(renderCourtBookingModule);
+    }
+
+    async function createCourtBookingAction(event) {
+      event.preventDefault();
+      try {
+        requireAdminSession();
+        const client = findClientByKey($('courtBookingClient').value);
+        if (!client) throw new Error('Selecione um aluno.');
+        const date = $('courtBookingDate').value || localDateString(new Date());
+        const time = $('courtBookingTime').value;
+        const court = $('courtBookingCourt').value;
+        const opponent = $('courtBookingOpponent').value.trim();
+        if (!opponent) throw new Error('Informe o adversario.');
+        const duplicateClient = opsData.courtBookings.find(function (item) {
+          return item.status !== 'CANCELADO' && String(item.date) === String(date) && String(item.clientId || item.client) === String(client.id || client.name);
+        });
+        if (duplicateClient) throw new Error('Esse aluno ja tem horario nesse dia.');
+        const duplicateSlot = opsData.courtBookings.find(function (item) {
+          return item.status !== 'CANCELADO' && String(item.date) === String(date) && item.court === court && item.time === time;
+        });
+        if (duplicateSlot) throw new Error('Esse horario ja esta ocupado.');
+        const payload = {
+          client_id: isUuid(client.id) ? client.id : null,
+          client_name: client.name,
+          opponent_name: opponent,
+          booking_date: date,
+          starts_at: time,
+          court_name: court,
+          status: 'CONFIRMADO',
+          notes: $('courtBookingNotes').value.trim()
+        };
+        let saved = null;
+        if (!isAdminDemoMode()) saved = await supabaseInsert('app_court_bookings', payload);
+        opsData.courtBookings.unshift(saved ? mapCourtBookingRow(saved) : mapCourtBookingRow(Object.assign({ id: localId('court') }, payload)));
+        $('courtBookingOpponent').value = '';
+        $('courtBookingNotes').value = '';
+        renderCourtBookingModule();
+        toast('Reserva salva.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function cancelCourtBookingAction(id) {
+      const booking = opsData.courtBookings.find(function (item) { return String(item.id) === String(id); });
+      if (!booking) return;
+      try {
+        if (!isAdminDemoMode() && isUuid(booking.id)) {
+          const saved = await supabaseRest('app_court_bookings?id=eq.' + encodeURIComponent(booking.id), {
+            method: 'PATCH',
+            body: { status: 'CANCELADO' },
+            prefer: 'return=representation'
+          });
+          Object.assign(booking, mapCourtBookingRow(Array.isArray(saved) ? saved[0] : saved));
+        } else {
+          booking.status = 'CANCELADO';
+        }
+        renderCourtBookingModule();
+        toast('Reserva cancelada.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    function renderStoreModule() {
+      const open = opsData.storeRequests.filter(function (item) { return ['SOLICITADO', 'EM_ANALISE'].includes(String(item.status).toUpperCase()); });
+      const approved = opsData.storeRequests.filter(function (item) { return String(item.status).toUpperCase() === 'APROVADO'; });
+      const delivered = opsData.storeRequests.filter(function (item) { return String(item.status).toUpperCase() === 'ENTREGUE'; });
+      $('storeOpenMetric').textContent = open.length;
+      $('storeApprovedMetric').textContent = approved.length;
+      $('storeDeliveredMetric').textContent = delivered.length;
+      $('storeAmountMetric').textContent = money(opsData.storeRequests.reduce(function (sum, item) { return sum + Number(item.amount || 0); }, 0));
+      const groups = [
+        { title: 'Novos pedidos', rows: open },
+        { title: 'Aprovados', rows: approved },
+        { title: 'Finalizados', rows: delivered.concat(opsData.storeRequests.filter(function (item) { return ['RECUSADO', 'CANCELADO'].includes(String(item.status).toUpperCase()); })) }
+      ];
+      $('storeRequestBoard').innerHTML = groups.map(function (group) {
+        return '<section class="kanban-column"><h3>' + escapeHtml(group.title) + '</h3>' + (group.rows.map(function (item) {
+          return '<article class="store-request-card"><div><strong>' + escapeHtml(item.productName) + '</strong><div class="muted">' + escapeHtml(item.client) + (item.phone ? ' | ' + escapeHtml(item.phone) : '') + '</div></div><div class="muted">' + escapeHtml(item.notes || 'Sem observacao.') + '</div><div class="ops-meta">' + statusPill(item.status) + whatsappLink(item.phone) + '<button class="small-btn" type="button" data-store-status="' + escapeHtml(item.id) + '" data-next-status="APROVADO">Aprovar</button><button class="small-btn" type="button" data-store-status="' + escapeHtml(item.id) + '" data-next-status="ENTREGUE">Entregue</button><button class="small-btn" type="button" data-store-status="' + escapeHtml(item.id) + '" data-next-status="RECUSADO">Recusar</button></div></article>';
+        }).join('') || '<div class="lesson-empty-state">Nada aqui.</div>') + '</section>';
+      }).join('');
+    }
+
+    function openStoreModule() {
+      setClubMode('club-store');
+      renderStoreModule();
+      loadOpsData(false).then(renderStoreModule);
+    }
+
+    async function updateStoreRequestStatusAction(id, status) {
+      const item = opsData.storeRequests.find(function (request) { return String(request.id) === String(id); });
+      if (!item) return;
+      try {
+        if (!isAdminDemoMode() && isUuid(item.id)) {
+          const saved = await supabaseRest('app_store_requests?id=eq.' + encodeURIComponent(item.id), {
+            method: 'PATCH',
+            body: { status: status },
+            prefer: 'return=representation'
+          });
+          Object.assign(item, mapStoreRequestRow(Array.isArray(saved) ? saved[0] : saved));
+        } else {
+          item.status = status;
+        }
+        renderStoreModule();
+        toast('Pedido atualizado.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    function renderAnnouncementPlanOptions() {
+      $('announcementPlan').innerHTML = '<option value="">Qualquer plano</option>' + opsData.plans.map(function (plan) {
+        return '<option value="' + escapeHtml(plan.code || plan.id || plan.name) + '">' + escapeHtml(plan.name) + '</option>';
+      }).join('');
+    }
+
+    function renderAnnouncementsModule() {
+      renderAnnouncementPlanOptions();
+      $('announcementList').innerHTML = opsData.announcements.map(function (item) {
+        return '<article class="announcement-card">' +
+          (item.imageUrl ? '<img src="' + escapeHtml(item.imageUrl) + '" alt="" />' : '') +
+          '<div><strong>' + escapeHtml(item.title) + '</strong><div class="muted">' + escapeHtml(item.body || 'Sem mensagem.') + '</div></div>' +
+          '<div class="ops-meta">' + statusPill(item.active ? 'ATIVO' : 'INATIVO') + '<span class="ops-pill">' + escapeHtml(item.targetType || 'todos') + '</span><button class="small-btn" type="button" data-announcement-toggle="' + escapeHtml(item.id) + '">' + (item.active ? 'Desativar' : 'Ativar') + '</button></div>' +
+        '</article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhum comunicado cadastrado.</div>';
+    }
+
+    function openAnnouncementsModule() {
+      setClubMode('club-announcements');
+      renderAnnouncementsModule();
+      loadOpsData(false).then(renderAnnouncementsModule);
+    }
+
+    async function createAnnouncementAction(event) {
+      event.preventDefault();
+      try {
+        requireAdminSession();
+        const title = $('announcementTitle').value.trim();
+        if (!title) throw new Error('Informe o titulo do comunicado.');
+        const payload = {
+          title: title,
+          body: $('announcementBody').value.trim(),
+          image_url: $('announcementImage').value.trim(),
+          link_url: $('announcementLink').value.trim(),
+          target_type: $('announcementTarget').value,
+          target_plan_code: $('announcementTarget').value === 'plano' ? $('announcementPlan').value : null,
+          active: true,
+          published_at: new Date().toISOString()
+        };
+        let saved = null;
+        if (!isAdminDemoMode()) saved = await supabaseInsert('app_announcements', payload);
+        opsData.announcements.unshift(saved ? mapAnnouncementRow(saved) : mapAnnouncementRow(Object.assign({ id: localId('announcement') }, payload)));
+        $('announcementForm').reset();
+        renderAnnouncementsModule();
+        toast('Comunicado publicado.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function toggleAnnouncementAction(id) {
+      const item = opsData.announcements.find(function (announcement) { return String(announcement.id) === String(id); });
+      if (!item) return;
+      const active = !item.active;
+      try {
+        if (!isAdminDemoMode() && isUuid(item.id)) {
+          const saved = await supabaseRest('app_announcements?id=eq.' + encodeURIComponent(item.id), {
+            method: 'PATCH',
+            body: { active: active },
+            prefer: 'return=representation'
+          });
+          Object.assign(item, mapAnnouncementRow(Array.isArray(saved) ? saved[0] : saved));
+        } else {
+          item.active = active;
+        }
+        renderAnnouncementsModule();
+        toast('Comunicado atualizado.');
+      } catch (error) {
+        reportActionError(error);
+      }
     }
 
     async function savePlanAction(event) {
@@ -8852,7 +9390,10 @@
       if (document.body.classList.contains('club-clients')) renderClientsModule();
       if (document.body.classList.contains('club-students')) renderStudentsModule();
       if (document.body.classList.contains('club-agenda')) renderAgendaModule();
+      if (document.body.classList.contains('club-courts')) renderCourtBookingModule();
       if (document.body.classList.contains('club-finance')) renderFinanceModule();
+      if (document.body.classList.contains('club-store')) renderStoreModule();
+      if (document.body.classList.contains('club-announcements')) renderAnnouncementsModule();
       if (document.body.classList.contains('club-communication')) renderCommunicationModule();
       if (document.body.classList.contains('club-team')) renderTeamModule();
       if (document.body.classList.contains('club-database')) renderPlansModule();
@@ -8932,13 +9473,107 @@
             due_day: localUpdate.dueDay || null,
             notes: localUpdate.notes
           };
-          await patchClientFromAdmin(client, payload);
+          const savedClient = await patchClientFromAdmin(client, payload);
+          if (savedClient) Object.assign(client, mapClientRow(savedClient));
         }
-        Object.assign(client, localUpdate);
+        if (isAdminDemoMode()) Object.assign(client, localUpdate);
         closeClientModal();
         renderClientsModule();
         renderHomeDashboard();
         toast('Aluno atualizado.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    function findPlanRequestById(id) {
+      return opsData.planRequests.find(function (request) {
+        return String(request.id) === String(id);
+      });
+    }
+
+    function clientForPlanRequest(request) {
+      return opsData.clients.find(function (client) {
+        return String(client.id || '') === String(request.clientId || '') ||
+          String(client.email || '').toLowerCase() === String(request.email || '').toLowerCase() ||
+          String(client.name || '').toLowerCase() === String(request.client || '').toLowerCase();
+      });
+    }
+
+    async function updatePlanRequestStatus(request, status) {
+      if (!request || !request.id) return null;
+      if (!isAdminDemoMode() && isUuid(request.id)) {
+        const saved = await supabaseRest('app_plan_requests?id=eq.' + encodeURIComponent(request.id), {
+          method: 'PATCH',
+          body: { status: status },
+          prefer: 'return=representation'
+        });
+        return Array.isArray(saved) ? saved[0] : saved;
+      }
+      request.status = status;
+      return request;
+    }
+
+    async function approvePlanRequestAction(id) {
+      const request = findPlanRequestById(id);
+      if (!request) return;
+      const targetClient = clientForPlanRequest(request) || findClientByKey(opsState.selectedClientId);
+      if (!targetClient) {
+        toast('Nao encontrei o aluno desse pedido.');
+        return;
+      }
+      const plan = findPlanByValue(request.planCode || request.plan) || {
+        id: '',
+        code: request.planCode || '',
+        name: request.plan,
+        amount: request.amount,
+        weeklyLessons: request.weeklyLessons,
+        dueDay: request.preferredDueDay,
+        type: request.membershipType || targetClient.type
+      };
+      try {
+        const payload = {
+          client_type: plan.type || request.membershipType || targetClient.type || 'aluno',
+          official_plan_id: isUuid(plan.id) ? plan.id : null,
+          official_plan_code: plan.code || request.planCode || '',
+          official_plan_name: plan.name || request.plan,
+          plan_amount: Number(plan.amount || request.amount || 0),
+          weekly_lessons: Number(plan.weeklyLessons || request.weeklyLessons || 0),
+          due_day: plan.dueDay || request.preferredDueDay || targetClient.dueDay || null,
+          preferred_days: request.requestedDays || targetClient.preferredDays || []
+        };
+        let savedClient = null;
+        if (!isAdminDemoMode()) savedClient = await patchClientFromAdmin(targetClient, payload);
+        if (savedClient) Object.assign(targetClient, mapClientRow(savedClient));
+        else Object.assign(targetClient, {
+          type: payload.client_type,
+          officialPlanId: payload.official_plan_id || '',
+          officialPlanCode: payload.official_plan_code,
+          officialPlanName: payload.official_plan_name,
+          planAmount: payload.plan_amount,
+          weeklyLessons: payload.weekly_lessons,
+          dueDay: payload.due_day || '',
+          preferredDays: payload.preferred_days
+        });
+        const savedRequest = await updatePlanRequestStatus(request, 'APROVADO');
+        if (savedRequest) Object.assign(request, mapPlanRequestRow(savedRequest));
+        openClientModal(targetClient.id || targetClient.email || targetClient.name);
+        renderClientsModule();
+        toast('Plano aprovado e vinculado.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function rejectPlanRequestAction(id) {
+      const request = findPlanRequestById(id);
+      if (!request) return;
+      try {
+        const savedRequest = await updatePlanRequestStatus(request, 'RECUSADO');
+        if (savedRequest) Object.assign(request, mapPlanRequestRow(savedRequest));
+        const targetClient = clientForPlanRequest(request) || findClientByKey(opsState.selectedClientId);
+        if (targetClient) openClientModal(targetClient.id || targetClient.email || targetClient.name);
+        toast('Pedido recusado.');
       } catch (error) {
         reportActionError(error);
       }
@@ -9727,7 +10362,10 @@
         ['openLessonsModule', openLessonsModule],
         ['openStudentsModule', openStudentsModule],
         ['openAgendaModule', openAgendaModule],
+        ['openCourtBookingModule', openCourtBookingModule],
         ['openFinanceModule', openFinanceModule],
+        ['openStoreModule', openStoreModule],
+        ['openAnnouncementsModule', openAnnouncementsModule],
         ['openCommunicationModule', openCommunicationModule],
         ['openTeamModule', openTeamModule],
         ['openDatabaseModule', openDatabaseModule]
@@ -9743,7 +10381,10 @@
             'club-students': openStudentsModule,
             'club-lessons': openLessonsModule,
             'club-agenda': openAgendaModule,
+            'club-courts': openCourtBookingModule,
             'club-finance': openFinanceModule,
+            'club-store': openStoreModule,
+            'club-announcements': openAnnouncementsModule,
             'club-communication': openCommunicationModule,
             'club-team': openTeamModule,
             'club-database': openDatabaseModule,
@@ -9768,6 +10409,16 @@
       $('clientModalClose').addEventListener('click', closeClientModal);
       $('clientModalCancel').addEventListener('click', closeClientModal);
       $('clientModal').addEventListener('click', function (event) {
+        const approveBtn = event.target.closest('[data-plan-request-approve]');
+        if (approveBtn) {
+          approvePlanRequestAction(approveBtn.dataset.planRequestApprove);
+          return;
+        }
+        const rejectBtn = event.target.closest('[data-plan-request-reject]');
+        if (rejectBtn) {
+          rejectPlanRequestAction(rejectBtn.dataset.planRequestReject);
+          return;
+        }
         if (event.target.id === 'clientModal') closeClientModal();
       });
       $('clientEditPlan').addEventListener('change', applyPlanToClientForm);
@@ -9862,6 +10513,18 @@
           renderAgendaModule();
         }
       });
+      $('courtBookingDate').addEventListener('change', function () {
+        opsState.courtDate = this.value || localDateString(new Date());
+        renderCourtBookingModule();
+      });
+      $('courtReloadBtn').addEventListener('click', function () {
+        loadOpsData(true).then(renderCourtBookingModule).catch(reportActionError);
+      });
+      $('courtBookingForm').addEventListener('submit', createCourtBookingAction);
+      $('courtBookingModule').addEventListener('click', function (event) {
+        const cancelBtn = event.target.closest('[data-court-cancel]');
+        if (cancelBtn) cancelCourtBookingAction(cancelBtn.dataset.courtCancel);
+      });
       $('financeModule').addEventListener('click', function (event) {
         const viewBtn = event.target.closest('[data-finance-view]');
         if (viewBtn) {
@@ -9879,6 +10542,21 @@
         if (paidBtn) {
           markFinancePaidAction(paidBtn.dataset.financePaid);
         }
+      });
+      $('storeReloadBtn').addEventListener('click', function () {
+        loadOpsData(true).then(renderStoreModule).catch(reportActionError);
+      });
+      $('storeModule').addEventListener('click', function (event) {
+        const statusBtn = event.target.closest('[data-store-status]');
+        if (statusBtn) updateStoreRequestStatusAction(statusBtn.dataset.storeStatus, statusBtn.dataset.nextStatus);
+      });
+      $('announcementsReloadBtn').addEventListener('click', function () {
+        loadOpsData(true).then(renderAnnouncementsModule).catch(reportActionError);
+      });
+      $('announcementForm').addEventListener('submit', createAnnouncementAction);
+      $('announcementsModule').addEventListener('click', function (event) {
+        const toggleBtn = event.target.closest('[data-announcement-toggle]');
+        if (toggleBtn) toggleAnnouncementAction(toggleBtn.dataset.announcementToggle);
       });
       $('studentImportBtn').addEventListener('click', importSeedBaseAction);
       $('studentNewBtn').addEventListener('click', createStudentAction);
