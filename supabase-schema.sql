@@ -19,6 +19,20 @@ alter table public.profiles add column if not exists phone text;
 alter table public.profiles add column if not exists permissions jsonb not null default '[]'::jsonb;
 alter table public.profiles add column if not exists notes text;
 
+create table if not exists public.app_plans (
+  id uuid primary key default gen_random_uuid(),
+  code text not null unique,
+  name text not null,
+  type text not null default 'aluno' check (type in ('aluno', 'mensalista', 'avulso', 'outro')),
+  amount numeric(10, 2) not null default 0,
+  weekly_lessons integer not null default 0,
+  default_due_day integer check (default_due_day between 1 and 31),
+  active boolean not null default true,
+  description text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.app_clients (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text not null,
@@ -29,8 +43,15 @@ create table if not exists public.app_clients (
   guardian_name text,
   guardian_phone text,
   profile_photo text,
+  official_plan_id uuid references public.app_plans(id) on delete set null,
+  official_plan_code text,
+  official_plan_name text,
+  plan_amount numeric(10, 2) not null default 0,
+  weekly_lessons integer not null default 0,
+  preferred_days jsonb not null default '[]'::jsonb,
+  due_day integer check (due_day between 1 and 31),
   status text not null default 'ATIVO' check (status in ('ATIVO', 'BLOQUEADO', 'PENDENTE')),
-  client_type text not null default 'cliente' check (client_type in ('cliente', 'aluno', 'responsavel', 'socio')),
+  client_type text not null default 'cliente' check (client_type in ('cliente', 'aluno', 'mensalista', 'responsavel', 'socio')),
   source text not null default 'app',
   notes text,
   last_login_at timestamptz,
@@ -45,6 +66,15 @@ alter table public.app_clients add column if not exists age integer;
 alter table public.app_clients add column if not exists guardian_name text;
 alter table public.app_clients add column if not exists guardian_phone text;
 alter table public.app_clients add column if not exists profile_photo text;
+alter table public.app_clients add column if not exists official_plan_id uuid references public.app_plans(id) on delete set null;
+alter table public.app_clients add column if not exists official_plan_code text;
+alter table public.app_clients add column if not exists official_plan_name text;
+alter table public.app_clients add column if not exists plan_amount numeric(10, 2) not null default 0;
+alter table public.app_clients add column if not exists weekly_lessons integer not null default 0;
+alter table public.app_clients add column if not exists preferred_days jsonb not null default '[]'::jsonb;
+alter table public.app_clients add column if not exists due_day integer;
+alter table public.app_clients drop constraint if exists app_clients_client_type_check;
+alter table public.app_clients add constraint app_clients_client_type_check check (client_type in ('cliente', 'aluno', 'mensalista', 'responsavel', 'socio'));
 
 create table if not exists public.app_plan_requests (
   id uuid primary key default gen_random_uuid(),
@@ -52,6 +82,10 @@ create table if not exists public.app_plan_requests (
   plan_code text not null,
   plan_name text not null,
   amount numeric(10, 2) not null default 0,
+  membership_type text not null default 'aluno',
+  weekly_lessons integer not null default 0,
+  requested_days jsonb not null default '[]'::jsonb,
+  preferred_due_day integer check (preferred_due_day between 1 and 31),
   status text not null default 'SOLICITADO' check (status in ('SOLICITADO', 'EM_ANALISE', 'APROVADO', 'RECUSADO', 'CANCELADO')),
   notes text,
   created_at timestamptz not null default now(),
@@ -60,6 +94,12 @@ create table if not exists public.app_plan_requests (
 
 create index if not exists app_plan_requests_client_idx on public.app_plan_requests(client_id, created_at desc);
 create index if not exists app_plan_requests_status_idx on public.app_plan_requests(status, created_at desc);
+create index if not exists app_plans_active_idx on public.app_plans(active, type);
+
+alter table public.app_plan_requests add column if not exists membership_type text not null default 'aluno';
+alter table public.app_plan_requests add column if not exists weekly_lessons integer not null default 0;
+alter table public.app_plan_requests add column if not exists requested_days jsonb not null default '[]'::jsonb;
+alter table public.app_plan_requests add column if not exists preferred_due_day integer;
 
 create or replace function public.current_user_role()
 returns text
@@ -391,6 +431,7 @@ create index if not exists financial_transactions_due_idx on public.financial_tr
 create index if not exists communication_campaigns_status_idx on public.communication_campaigns(status);
 
 alter table public.profiles enable row level security;
+alter table public.app_plans enable row level security;
 alter table public.app_clients enable row level security;
 alter table public.app_plan_requests enable row level security;
 alter table public.teachers enable row level security;
@@ -408,6 +449,7 @@ alter table public.communication_campaigns enable row level security;
 grant usage on schema public to authenticated;
 grant select, insert, update, delete on
   public.profiles,
+  public.app_plans,
   public.app_clients,
   public.app_plan_requests,
   public.teachers,
@@ -442,6 +484,8 @@ drop policy if exists "public read communication_campaigns" on public.communicat
 
 drop policy if exists "profiles read own or admin" on public.profiles;
 drop policy if exists "profiles admin manage" on public.profiles;
+drop policy if exists "plans read active or staff" on public.app_plans;
+drop policy if exists "plans staff manage" on public.app_plans;
 drop policy if exists "clients read own or staff" on public.app_clients;
 drop policy if exists "clients insert own" on public.app_clients;
 drop policy if exists "clients update own or staff" on public.app_clients;
@@ -484,6 +528,17 @@ on public.profiles for all
 to authenticated
 using (public.current_user_role() = 'admin')
 with check (public.current_user_role() = 'admin');
+
+create policy "plans read active or staff"
+on public.app_plans for select
+to authenticated
+using (active = true or public.is_club_staff());
+
+create policy "plans staff manage"
+on public.app_plans for all
+to authenticated
+using (public.is_club_office())
+with check (public.is_club_office());
 
 create policy "clients read own or staff"
 on public.app_clients for select
