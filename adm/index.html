@@ -2768,14 +2768,7 @@
         <div class="admin-nav-group">Comando</div>
         <button class="admin-nav-btn active" type="button" data-admin-nav="club-home"><span class="admin-nav-icon">IN</span><span>Inicio</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon">CL</span><span>Clientes do App</span></button>
-        <div class="admin-nav-group">Operacao</div>
-        <button class="admin-nav-btn" type="button" data-admin-nav="club-students"><span class="admin-nav-icon">AL</span><span>Alunos</span></button>
-        <button class="admin-nav-btn" type="button" data-admin-nav="club-lessons"><span class="admin-nav-icon">AU</span><span>Aulas</span></button>
-        <button class="admin-nav-btn" type="button" data-admin-nav="club-agenda"><span class="admin-nav-icon">AG</span><span>Agenda</span></button>
-        <div class="admin-nav-group">Gestao</div>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon">FI</span><span>Financeiro</span></button>
-        <button class="admin-nav-btn" type="button" data-admin-nav="club-communication"><span class="admin-nav-icon">CO</span><span>Comunicacao</span></button>
-        <button class="admin-nav-btn" type="button" data-admin-nav="club-tournament"><span class="admin-nav-icon">TO</span><span>Torneios</span></button>
       </nav>
       <div class="admin-sidebar-footer">
         <div class="admin-sidebar-status" id="adminSidebarStatus"><strong>Conectando</strong> Aguardando login da equipe.</div>
@@ -2804,20 +2797,19 @@
           <span class="club-command-dot" aria-hidden="true"></span>
           <div>
             <h2>Operacao do clube hoje</h2>
-            <div class="muted" id="homeCommandSummary">Agenda, alunos, financeiro e comunicacao prontos para acompanhamento.</div>
+            <div class="muted" id="homeCommandSummary">Clientes cadastrados pelo app e financeiro do clube.</div>
           </div>
         </div>
         <div class="club-command-actions">
-          <button class="primary-btn" type="button" data-admin-nav="club-agenda">Abrir agenda</button>
-          <button class="ghost-btn" type="button" data-admin-nav="club-clients">Ver clientes</button>
+          <button class="primary-btn" type="button" data-admin-nav="club-clients">Ver clientes</button>
           <button class="ghost-btn" type="button" data-admin-nav="club-finance">Financeiro</button>
         </div>
       </div>
 
       <div class="club-metrics">
         <div class="club-metric"><strong id="homeClientsMetric">0</strong><span>clientes no app</span></div>
-        <div class="club-metric"><strong id="homeStudentsMetric">0</strong><span>alunos ativos</span></div>
-        <div class="club-metric"><strong id="homeAgendaMetric">0</strong><span>eventos do dia</span></div>
+        <div class="club-metric"><strong id="homeStudentsMetric">0</strong><span>clientes ativos</span></div>
+        <div class="club-metric"><strong id="homeAgendaMetric">0</strong><span>planos solicitados</span></div>
         <div class="club-metric"><strong id="homeFinanceMetric">R$ 0</strong><span>em aberto</span></div>
       </div>
 
@@ -2825,46 +2817,28 @@
         <section class="club-panel span-7">
           <div class="club-panel-head">
             <div>
-              <h2>Agenda operacional</h2>
-              <div class="muted">Aulas, reservas e bloqueios para a secretaria acompanhar.</div>
+              <h2>Clientes cadastrados</h2>
+              <div class="muted">Base oficial de quem criou conta em /clientes.</div>
             </div>
-            <button class="ghost-btn" type="button" data-admin-nav="club-agenda">Abrir</button>
+            <button class="ghost-btn" type="button" data-admin-nav="club-clients">Abrir</button>
           </div>
-          <div class="club-feed" id="homeAgendaList"></div>
+          <div class="club-feed" id="homeClientsList"></div>
         </section>
         <section class="club-panel span-5">
           <div class="club-panel-head">
             <div>
-              <h2>Pendencias de cuidado</h2>
-              <div class="muted">Financeiro, presenca e relacionamento.</div>
+              <h2>Financeiro</h2>
+              <div class="muted">Recebiveis, atrasos e proximos lancamentos.</div>
             </div>
-            <button class="ghost-btn" type="button" data-admin-nav="club-students">Alunos</button>
-          </div>
-          <div class="club-feed" id="homeCareList"></div>
-        </section>
-        <section class="club-panel span-4">
-          <div class="club-panel-head">
-            <div>
-              <h2>Clientes do app</h2>
-              <div class="muted">Primeira base oficial do Ilha Play.</div>
-            </div>
-          </div>
-          <div class="club-feed" id="homeClientsList"></div>
-        </section>
-        <section class="club-panel span-4">
-          <div class="club-panel-head">
-            <div>
-              <h2>Financeiro rapido</h2>
-              <div class="muted">Entradas, atrasos e lancamentos.</div>
-            </div>
+            <button class="ghost-btn" type="button" data-admin-nav="club-finance">Abrir</button>
           </div>
           <div class="club-feed" id="homeFinanceList"></div>
         </section>
-        <section class="club-panel span-4">
+        <section class="club-panel span-12">
           <div class="club-panel-head">
             <div>
-              <h2>Pronto para testar</h2>
-              <div class="muted">Base navegavel enquanto ligamos o Supabase completo.</div>
+              <h2>Planos solicitados</h2>
+              <div class="muted">Pedidos feitos pelos clientes dentro do portal.</div>
             </div>
           </div>
           <div class="club-feed" id="homeSystemList"></div>
@@ -2880,51 +2854,11 @@
           </div>
           <span class="club-module-action">Abrir modulo</span>
         </button>
-        <button class="club-module" type="button" id="openTournamentModule">
-          <span class="club-module-kicker">Disponivel</span>
-          <div>
-            <h2>Torneios</h2>
-            <p>Chaves, inscricoes, agenda de jogos, placares, resultados e tela ao vivo.</p>
-          </div>
-          <span class="club-module-action">Abrir modulo</span>
-        </button>
-        <button class="club-module" type="button" id="openStudentsModule">
-          <span class="club-module-kicker">Disponivel</span>
-          <div>
-            <h2>Socios e atletas</h2>
-            <p>Cadastro completo, contatos, historico, categorias, status e etiquetas.</p>
-          </div>
-          <span class="club-module-action">Abrir modulo</span>
-        </button>
-        <button class="club-module" type="button" id="openLessonsModule">
-          <span class="club-module-kicker">Disponivel</span>
-          <div>
-            <h2>Aulas e professores</h2>
-            <p>Turmas, professores, planos, presenca e evolucao dos alunos.</p>
-          </div>
-          <span class="club-module-action">Abrir modulo</span>
-        </button>
-        <button class="club-module" type="button" id="openAgendaModule">
-          <span class="club-module-kicker">Disponivel</span>
-          <div>
-            <h2>Quadras e agenda</h2>
-            <p>Reservas, horarios fixos, bloqueios, eventos e manutencoes.</p>
-          </div>
-          <span class="club-module-action">Abrir modulo</span>
-        </button>
         <button class="club-module" type="button" id="openFinanceModule">
           <span class="club-module-kicker">Disponivel</span>
           <div>
             <h2>Financeiro</h2>
             <p>Mensalidades, pagamentos, produtos, pendencias e relatorios.</p>
-          </div>
-          <span class="club-module-action">Abrir modulo</span>
-        </button>
-        <button class="club-module" type="button" id="openCommunicationModule">
-          <span class="club-module-kicker">Disponivel</span>
-          <div>
-            <h2>Comunicacao</h2>
-            <p>Listas, avisos, campanhas, WhatsApp e publicacoes do clube.</p>
           </div>
           <span class="club-module-action">Abrir modulo</span>
         </button>
@@ -7144,22 +7078,17 @@
       try {
         const results = await Promise.all([
           supabaseRest('app_clients?select=*&order=created_at.desc'),
-          supabaseRest('students?select=*&order=name.asc'),
-          supabaseRest('club_agenda_events?select=*&order=starts_at.asc'),
           supabaseRest('financial_transactions?select=*,students(name)&order=due_date.asc'),
-          supabaseRest('communication_audiences?select=*&order=name.asc'),
-          supabaseRest('communication_campaigns?select=*&order=created_at.desc'),
-          supabaseRest('communication_templates?select=*&order=name.asc'),
           supabaseRest('app_plan_requests?select=*,app_clients(full_name,email,phone)&order=created_at.desc')
         ]);
         opsData.clients = results[0].map(mapClientRow);
-        opsData.students = results[1].map(mapStudentRow);
-        opsData.agenda = results[2].map(mapAgendaRow);
-        opsData.finance = results[3].map(mapFinanceRow);
-        opsData.audiences = results[4].map(mapAudienceRow);
-        opsData.campaigns = results[5].map(mapCampaignRow);
-        opsData.templates = results[6];
-        opsData.planRequests = results[7].map(mapPlanRequestRow);
+        opsData.finance = results[1].map(mapFinanceRow);
+        opsData.planRequests = results[2].map(mapPlanRequestRow);
+        opsData.students = [];
+        opsData.agenda = [];
+        opsData.audiences = [];
+        opsData.campaigns = [];
+        opsData.templates = [];
         opsState.loaded = true;
       } catch (error) {
         console.info('Supabase indisponivel para modulos administrativos; usando dados locais.', error && error.message);
@@ -7169,25 +7098,14 @@
 
     function renderHomeDashboard() {
       if (!$('homeClientsMetric')) return;
-      const activeStudents = opsData.students.filter(function (student) { return student.status === 'ATIVO'; });
+      const activeClients = opsData.clients.filter(function (client) { return client.status === 'ATIVO'; });
       const pendingFinance = opsData.finance.filter(function (item) { return item.status !== 'RECEBIDO'; });
       const pendingAmount = pendingFinance.reduce(function (sum, item) { return sum + Number(item.amount || 0); }, 0);
       $('homeClientsMetric').textContent = opsData.clients.length;
-      $('homeStudentsMetric').textContent = activeStudents.length;
-      $('homeAgendaMetric').textContent = opsData.agenda.length;
+      $('homeStudentsMetric').textContent = activeClients.length;
+      $('homeAgendaMetric').textContent = opsData.planRequests.length;
       $('homeFinanceMetric').textContent = money(pendingAmount);
-      $('homeCommandSummary').textContent = opsData.agenda.length + ' eventos no dia, ' + pendingFinance.length + ' pendencia(s) financeira(s) e ' + opsData.clients.length + ' cliente(s) no app.';
-
-      $('homeAgendaList').innerHTML = opsData.agenda.slice(0, 4).map(function (item) {
-        return '<article class="club-feed-card"><div class="club-feed-time">' + escapeHtml(item.time.replace(':00', 'H')) + '</div><div><strong>' + escapeHtml(item.title) + '</strong><div class="muted">' + escapeHtml(item.court) + ' | ' + escapeHtml(item.owner) + ' | ' + escapeHtml(item.status) + '</div></div></article>';
-      }).join('') || '<div class="lesson-empty-state">Sem agenda cadastrada.</div>';
-
-      $('homeCareList').innerHTML = opsData.students
-        .filter(function (student) { return student.financial !== 'OK' || (student.nextAction && student.nextAction !== 'Sem acao urgente'); })
-        .slice(0, 4)
-        .map(function (student) {
-          return '<article class="club-task"><strong>' + escapeHtml(student.name) + '</strong><div class="muted">' + escapeHtml(student.nextAction || 'Acompanhar relacionamento') + '</div><div class="ops-meta">' + statusPill(student.financial) + '</div></article>';
-        }).join('') || '<div class="lesson-empty-state">Sem pendencias abertas.</div>';
+      $('homeCommandSummary').textContent = opsData.clients.length + ' cliente(s) no app, ' + opsData.planRequests.length + ' plano(s) solicitado(s) e ' + pendingFinance.length + ' pendencia(s) financeira(s).';
 
       $('homeClientsList').innerHTML = opsData.clients.slice(0, 3).map(function (client) {
         return '<article class="club-task"><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(client.email || 'Sem e-mail') + '</div><div class="ops-meta">' + statusPill(client.status) + whatsappLink(client.phone) + '</div></article>';
@@ -7197,14 +7115,10 @@
         return '<article class="club-task"><strong>' + escapeHtml(item.source) + '</strong><div class="muted">' + escapeHtml(item.student) + ' | ' + escapeHtml(item.due) + '</div><div class="finance-total">' + money(item.amount) + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Sem pendencias financeiras.</div>';
 
-      const systemRows = [
-        { title: isAdminDemoMode() ? 'Modo demonstracao ativo' : 'Sessao de equipe ativa', detail: isAdminDemoMode() ? 'Dados locais para testar navegacao e fluxo.' : 'Operacao conectada com login da equipe.' },
-        { title: 'Modulo oficial iniciado', detail: 'Clientes do App e cadastro publico preparados.' },
-        { title: 'Proxima conexao', detail: 'Aplicar SQL no Supabase para gravar clientes reais.' }
-      ];
-      $('homeSystemList').innerHTML = systemRows.map(function (row) {
-        return '<article class="club-task"><strong>' + escapeHtml(row.title) + '</strong><div class="muted">' + escapeHtml(row.detail) + '</div></article>';
-      }).join('');
+      $('homeSystemList').innerHTML = opsData.planRequests.slice(0, 5).map(function (item) {
+        const created = item.created ? new Date(item.created).toLocaleDateString('pt-BR') : 'Sem data';
+        return '<article class="club-task"><strong>' + escapeHtml(item.client) + '</strong><div class="muted">' + escapeHtml(item.plan) + ' | ' + escapeHtml(created) + '</div><div class="ops-meta">' + statusPill(item.status) + '<span class="finance-total">' + money(item.amount) + '</span></div></article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhuma solicitacao de plano ainda.</div>';
     }
 
     function renderClientsModule() {
@@ -8280,13 +8194,18 @@
       $('homeLogoutBtn').addEventListener('click', lockAdmin);
       $('sidebarLogoutBtn').addEventListener('click', lockAdmin);
       $('backToClubHomeBtn').addEventListener('click', showClubHome);
-      $('openTournamentModule').addEventListener('click', openTournamentModule);
-      $('openClientsModule').addEventListener('click', openClientsModule);
-      $('openLessonsModule').addEventListener('click', openLessonsModule);
-      $('openStudentsModule').addEventListener('click', openStudentsModule);
-      $('openAgendaModule').addEventListener('click', openAgendaModule);
-      $('openFinanceModule').addEventListener('click', openFinanceModule);
-      $('openCommunicationModule').addEventListener('click', openCommunicationModule);
+      [
+        ['openTournamentModule', openTournamentModule],
+        ['openClientsModule', openClientsModule],
+        ['openLessonsModule', openLessonsModule],
+        ['openStudentsModule', openStudentsModule],
+        ['openAgendaModule', openAgendaModule],
+        ['openFinanceModule', openFinanceModule],
+        ['openCommunicationModule', openCommunicationModule]
+      ].forEach(function (entry) {
+        const button = $(entry[0]);
+        if (button) button.addEventListener('click', entry[1]);
+      });
       document.querySelectorAll('[data-admin-nav]').forEach(function (btn) {
         btn.addEventListener('click', function () {
           const actions = {
