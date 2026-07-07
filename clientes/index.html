@@ -645,6 +645,31 @@
 
     .field.full { grid-column: 1 / -1; }
 
+    .weekday-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .weekday-grid label {
+      min-height: 38px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--teal);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: none;
+    }
+
+    .weekday-grid input {
+      width: auto;
+      min-height: auto;
+      margin: 0 0 4px;
+    }
+
     .empty {
       min-height: 118px;
       display: grid;
@@ -774,6 +799,7 @@
       .auth-tabs { margin-bottom: 18px; }
       label { margin-top: 12px; }
       .form-grid { grid-template-columns: 1fr; }
+      .weekday-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       .client-app {
         min-height: 100dvh;
       }
@@ -1044,6 +1070,10 @@
                 <input id="profileAge" type="number" min="1" max="120" inputmode="numeric" />
               </div>
               <div class="field">
+                <label for="profileDueDay">Dia de vencimento</label>
+                <input id="profileDueDay" type="number" min="1" max="31" inputmode="numeric" placeholder="10" />
+              </div>
+              <div class="field">
                 <label for="profileGuardian">Responsavel</label>
                 <input id="profileGuardian" placeholder="Obrigatorio para menores" />
               </div>
@@ -1068,7 +1098,28 @@
           <div class="panel-head">
             <div>
               <h2>Escolha seu plano</h2>
-              <div class="muted">Escolha uma opcao. A secretaria confirma valores e horarios depois.</div>
+              <div class="muted">Escolha uma opcao para analise. A secretaria confirma horarios, plano oficial e vencimento.</div>
+            </div>
+          </div>
+          <div class="form-grid" style="margin-bottom:12px">
+            <div class="field">
+              <label for="planMembershipType">Tipo de plano</label>
+              <select id="planMembershipType">
+                <option value="aluno">Aluno de aula</option>
+                <option value="mensalista">Mensalista / jogar</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="planWeeklyLessons">Quantas vezes por semana</label>
+              <input id="planWeeklyLessons" type="number" min="0" max="7" inputmode="numeric" placeholder="1" />
+            </div>
+            <div class="field">
+              <label for="planPreferredDueDay">Vencimento preferido</label>
+              <input id="planPreferredDueDay" type="number" min="1" max="31" inputmode="numeric" placeholder="10" />
+            </div>
+            <div class="field full">
+              <label>Dias preferidos</label>
+              <div class="weekday-grid" id="planPreferredDays"></div>
             </div>
           </div>
           <div class="plan-grid" id="planGrid"></div>
@@ -1105,10 +1156,20 @@
     let demoMode = false;
     let databaseReady = true;
 
-    const plans = [
-      { code: 'aula_1x', name: 'Aulas 1x por semana', amount: 220, detail: 'Uma aula fixa semanal.' },
-      { code: 'aula_2x', name: 'Aulas 2x por semana', amount: 360, detail: 'Duas aulas fixas semanais.' },
-      { code: 'clube_social', name: 'Cliente do clube', amount: 0, detail: 'Cadastro para comunicados e proximos servicos.' }
+    const fallbackPlans = [
+      { code: 'aula_1x', name: 'Aulas 1x por semana', type: 'aluno', amount: 220, weeklyLessons: 1, dueDay: 10, detail: 'Uma aula fixa semanal.' },
+      { code: 'aula_2x', name: 'Aulas 2x por semana', type: 'aluno', amount: 360, weeklyLessons: 2, dueDay: 10, detail: 'Duas aulas fixas semanais.' },
+      { code: 'mensalista', name: 'Mensalista quadra', type: 'mensalista', amount: 180, weeklyLessons: 0, dueDay: 10, detail: 'Plano para jogar e reservar horarios conforme regra do clube.' }
+    ];
+    let plans = fallbackPlans.slice();
+    const weekDays = [
+      { key: 'segunda', label: 'Seg' },
+      { key: 'terca', label: 'Ter' },
+      { key: 'quarta', label: 'Qua' },
+      { key: 'quinta', label: 'Qui' },
+      { key: 'sexta', label: 'Sex' },
+      { key: 'sabado', label: 'Sab' },
+      { key: 'domingo', label: 'Dom' }
     ];
 
     function $(id) {
@@ -1265,6 +1326,7 @@
         age: stored.age || '',
         guardian_name: stored.guardian_name || '',
         guardian_phone: stored.guardian_phone || '',
+        due_day: stored.due_day || '',
         profile_photo: stored.profile_photo || ''
       });
       writeStored(storageKey(FALLBACK_PROFILE_KEY), nextClient);
@@ -1277,6 +1339,41 @@
 
     function storeFallbackPlanRequests(rows) {
       writeStored(storageKey(FALLBACK_PLANS_KEY), rows || []);
+    }
+
+    function mapPlanRow(row) {
+      return {
+        id: row.id,
+        code: row.code || row.plan_code || '',
+        name: row.name || row.plan_name || 'Plano',
+        type: row.type || 'aluno',
+        amount: Number(row.amount || 0),
+        weeklyLessons: row.weekly_lessons == null ? 0 : Number(row.weekly_lessons || 0),
+        dueDay: row.default_due_day || row.due_day || '',
+        detail: row.description || row.notes || ''
+      };
+    }
+
+    async function loadPlansData() {
+      try {
+        const rows = await rest('app_plans?select=*&active=eq.true&order=amount.asc');
+        if (Array.isArray(rows) && rows.length) plans = rows.map(mapPlanRow);
+      } catch (error) {
+        plans = fallbackPlans.slice();
+      }
+    }
+
+    function renderWeekdayInputs() {
+      if (!$('planPreferredDays')) return;
+      $('planPreferredDays').innerHTML = weekDays.map(function (day) {
+        return '<label><input type="checkbox" value="' + day.key + '" />' + day.label + '</label>';
+      }).join('');
+    }
+
+    function selectedPlanDays() {
+      return Array.from($('planPreferredDays').querySelectorAll('input:checked')).map(function (input) {
+        return input.value;
+      });
     }
 
     function storeSession(nextSession) {
@@ -1332,6 +1429,7 @@
           age: stored.age || '',
           guardian_name: stored.guardian_name || '',
           guardian_phone: stored.guardian_phone || '',
+          due_day: stored.due_day || '',
           profile_photo: stored.profile_photo || ''
         };
         return client;
@@ -1357,9 +1455,7 @@
 
     async function loadClientData() {
       if (demoMode || (session && session.demo)) {
-        if (!planRequests.length) {
-          planRequests = [{ id: 'demo_plan', plan_name: 'Aulas 1x por semana', amount: 220, status: 'SOLICITADO', created_at: new Date().toISOString() }];
-        }
+        planRequests = planRequests || [];
         return;
       }
       try {
@@ -1401,6 +1497,7 @@
       const nextSession = await authRequest('token?grant_type=password', { email: email, password: password });
       storeSession(nextSession);
       await ensureClient(null, null);
+      await loadPlansData();
       await loadClientData();
       unlock();
     }
@@ -1415,6 +1512,7 @@
       if (nextSession && nextSession.access_token) {
         storeSession(nextSession);
         await ensureClient(name, phone);
+        await loadPlansData();
         await loadClientData();
         unlock();
         return;
@@ -1437,6 +1535,7 @@
         session = stored;
         if (isExpired(stored)) await refreshSession(stored);
         await ensureClient(null, null);
+        await loadPlansData();
         await loadClientData();
         unlock();
       } catch (error) {
@@ -1450,7 +1549,7 @@
       demoMode = true;
       session = { demo: true, user: { email: 'cliente.demo@ilhatenis.com' } };
       sessionStorage.setItem(DEMO_SESSION_KEY, '1');
-      ensureClient(null, null).then(loadClientData).then(function () {
+      ensureClient(null, null).then(loadPlansData).then(loadClientData).then(function () {
         unlock();
         if (show !== false) toast('Modo demonstracao ativo.');
       });
@@ -1527,6 +1626,7 @@
       $('profilePhone').value = client && client.phone || '';
       $('profileCpf').value = client && client.cpf || '';
       $('profileAge').value = client && client.age || '';
+      $('profileDueDay').value = client && client.due_day || '';
       $('profileGuardian').value = client && client.guardian_name || '';
       $('profileGuardianPhone').value = client && client.guardian_phone || '';
       $('profileNotes').value = client && client.notes || '';
@@ -1534,14 +1634,20 @@
     }
 
     function renderPlans() {
+      const hasOpenRequest = planRequests.some(function (item) {
+        const status = String(item.status || '').toUpperCase();
+        return !['CANCELADO', 'RECUSADO'].includes(status);
+      });
       $('planGrid').innerHTML = plans.map(function (plan) {
+        const disabled = hasOpenRequest ? ' disabled' : '';
+        const buttonText = hasOpenRequest ? 'Solicitacao enviada' : 'Solicitar analise';
         return '<article class="plan-card">' +
           '<div>' +
             '<h3>' + escapeHtml(plan.name) + '</h3>' +
             '<div class="price">' + (plan.amount ? money(plan.amount) : 'Sob consulta') + '</div>' +
             '<p class="muted">' + escapeHtml(plan.detail) + '</p>' +
           '</div>' +
-          '<button class="primary-btn" type="button" data-plan-code="' + escapeHtml(plan.code) + '">Solicitar plano</button>' +
+          '<button class="primary-btn" type="button" data-plan-code="' + escapeHtml(plan.code) + '"' + disabled + '>' + buttonText + '</button>' +
         '</article>';
       }).join('');
     }
@@ -1627,6 +1733,7 @@
           phone: phone,
           cpf: $('profileCpf').value.trim(),
           age: $('profileAge').value ? Number($('profileAge').value) : null,
+          due_day: $('profileDueDay').value ? Number($('profileDueDay').value) : null,
           guardian_name: $('profileGuardian').value.trim(),
           guardian_phone: $('profileGuardianPhone').value.trim(),
           profile_photo: photo,
@@ -1660,12 +1767,28 @@
     async function requestPlan(code) {
       const plan = plans.find(function (item) { return item.code === code; });
       if (!plan) return;
+      const hasOpenRequest = planRequests.some(function (item) {
+        const status = String(item.status || '').toUpperCase();
+        return !['CANCELADO', 'RECUSADO'].includes(status);
+      });
+      if (hasOpenRequest) {
+        toast('Voce ja tem uma solicitacao em analise. A secretaria confirma o plano oficial.');
+        return;
+      }
+      const membershipType = $('planMembershipType').value || plan.type || 'aluno';
+      const weeklyLessons = $('planWeeklyLessons').value ? Number($('planWeeklyLessons').value) : Number(plan.weeklyLessons || 0);
+      const preferredDueDay = $('planPreferredDueDay').value ? Number($('planPreferredDueDay').value) : Number(plan.dueDay || 0);
+      const requestedDays = selectedPlanDays();
       if (demoMode || (session && session.demo)) {
         planRequests.unshift({
           id: 'demo_' + Date.now(),
           plan_code: plan.code,
           plan_name: plan.name,
           amount: plan.amount,
+          membership_type: membershipType,
+          weekly_lessons: weeklyLessons,
+          preferred_due_day: preferredDueDay || null,
+          requested_days: requestedDays,
           status: 'SOLICITADO',
           created_at: new Date().toISOString()
         });
@@ -1681,6 +1804,10 @@
             plan_code: plan.code,
             plan_name: plan.name,
             amount: plan.amount,
+            membership_type: membershipType,
+            weekly_lessons: weeklyLessons,
+            preferred_due_day: preferredDueDay || null,
+            requested_days: requestedDays,
             status: 'SOLICITADO',
             created_at: new Date().toISOString()
           });
@@ -1696,6 +1823,10 @@
             plan_code: plan.code,
             plan_name: plan.name,
             amount: plan.amount,
+            membership_type: membershipType,
+            weekly_lessons: weeklyLessons,
+            preferred_due_day: preferredDueDay || null,
+            requested_days: requestedDays,
             status: 'SOLICITADO'
           },
           prefer: 'return=representation'
@@ -1718,6 +1849,7 @@
 
     function init() {
       configurePreviewEnvironment();
+      renderWeekdayInputs();
       $('showLoginBtn').addEventListener('click', function () { showAuthTab('login'); });
       $('showSignupBtn').addEventListener('click', function () { showAuthTab('signup'); });
       $('demoBtn').addEventListener('click', function () { enterDemo(true); });

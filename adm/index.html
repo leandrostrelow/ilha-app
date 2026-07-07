@@ -84,6 +84,9 @@
     body.club-team .club-home,
     body.club-team .topbar,
     body.club-team .section,
+    body.club-database .club-home,
+    body.club-database .topbar,
+    body.club-database .section,
     body.club-tournament .lessons-module,
     body.club-home .lessons-module,
     body.club-home .ops-module,
@@ -101,7 +104,8 @@
     body.club-finance .finance-module,
     body.club-communication .communication-module,
     body.club-clients .clients-module,
-    body.club-team .team-module {
+    body.club-team .team-module,
+    body.club-database .database-module {
       display: block;
     }
 
@@ -1132,6 +1136,80 @@
       color: var(--teal);
       font-size: 22px;
       line-height: 1;
+    }
+
+    .admin-modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: none;
+      padding: 18px;
+      overflow: auto;
+      background: rgba(16, 39, 44, .52);
+    }
+
+    .admin-modal-overlay.show {
+      display: grid;
+      place-items: start center;
+    }
+
+    .admin-modal {
+      width: min(980px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .22);
+    }
+
+    .admin-modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .admin-modal-head h2 {
+      margin: 0 0 4px;
+      font-size: 22px;
+    }
+
+    .admin-modal-body {
+      padding: 18px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 14px 18px 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .weekday-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .weekday-grid label {
+      min-height: 36px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fbfc;
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: none;
+    }
+
+    .weekday-grid input {
+      width: auto;
+      min-height: auto;
+      margin: 0 0 4px;
     }
 
     .agenda-timeline {
@@ -2923,6 +3001,11 @@
       <path d="M5 21c.7-4 3-6 7-6s6.3 2 7 6" />
       <path d="M18 8h3M19.5 6.5v3" />
     </symbol>
+    <symbol id="admin-icon-database" viewBox="0 0 24 24">
+      <ellipse cx="12" cy="5" rx="7" ry="3" />
+      <path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5" />
+      <path d="M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" />
+    </symbol>
   </svg>
 
   <main class="adm-login" id="adminLogin">
@@ -2958,6 +3041,7 @@
         <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon"><svg><use href="#admin-icon-users"></use></svg></span><span>Alunos</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-team"><span class="admin-nav-icon"><svg><use href="#admin-icon-team"></use></svg></span><span>Equipe</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-database"><span class="admin-nav-icon"><svg><use href="#admin-icon-database"></use></svg></span><span>Banco de dados</span></button>
       </nav>
       <div class="admin-sidebar-footer">
         <button type="button" id="sidebarLogoutBtn">Sair</button>
@@ -2992,7 +3076,7 @@
       <div class="club-metrics">
         <div class="club-metric"><strong id="homeClientsMetric">0</strong><span>alunos cadastrados</span></div>
         <div class="club-metric"><strong id="homeStudentsMetric">0</strong><span>alunos ativos</span></div>
-        <div class="club-metric"><strong id="homeAgendaMetric">0</strong><span>planos solicitados</span></div>
+        <div class="club-metric"><strong id="homeAgendaMetric">0</strong><span>pedidos no app</span></div>
         <div class="club-metric"><strong id="homeFinanceMetric">R$ 0</strong><span>em aberto</span></div>
       </div>
 
@@ -3020,8 +3104,8 @@
         <section class="club-panel span-12">
           <div class="club-panel-head">
             <div>
-              <h2>Planos solicitados</h2>
-              <div class="muted">Pedidos feitos dentro do portal.</div>
+              <h2>Pedidos recebidos no app</h2>
+              <div class="muted">Solicitacoes para a equipe analisar e vincular manualmente.</div>
             </div>
           </div>
           <div class="club-feed" id="homeSystemList"></div>
@@ -3050,37 +3134,115 @@
             <div class="ops-card"><strong id="clientRecentMetric">0</strong><span>novos 7 dias</span></div>
           </div>
           <div class="ops-grid">
-            <div class="ops-panel span-7">
+            <div class="ops-panel span-12">
               <div class="ops-panel-head">
                 <div>
-                  <h2>Cadastros recentes</h2>
+                  <h2>Alunos cadastrados</h2>
                   <div class="muted">Clique em um aluno para abrir a ficha completa.</div>
                 </div>
               </div>
               <div class="ops-list" id="clientList"></div>
             </div>
-            <div class="ops-panel span-5">
-              <div class="ops-panel-head">
-                <div>
-                  <h2>Planos solicitados</h2>
-                  <div class="muted">Pedidos feitos pelo portal.</div>
-                </div>
-              </div>
-              <div class="ops-list" id="clientSegmentList"></div>
-            </div>
-            <div class="ops-panel span-12">
-              <div class="ops-panel-head">
-                <div>
-                  <h2>Ficha do aluno</h2>
-                  <div class="muted">Dados pessoais, responsavel, contato e historico inicial.</div>
-                </div>
-              </div>
-              <div id="clientDetailPanel"></div>
-            </div>
           </div>
         </div>
       </div>
     </section>
+
+    <div class="admin-modal-overlay" id="clientModal" aria-hidden="true">
+      <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="clientModalTitle">
+        <div class="admin-modal-head">
+          <div class="client-line">
+            <span class="client-avatar" id="clientModalAvatar">IL</span>
+            <div>
+              <h2 id="clientModalTitle">Ficha do aluno</h2>
+              <div class="muted" id="clientModalSubtitle">Plano oficial definido pela equipe.</div>
+            </div>
+          </div>
+          <button class="ghost-btn" type="button" id="clientModalClose">Fechar</button>
+        </div>
+        <form id="clientModalForm">
+          <div class="admin-modal-body">
+            <div class="form-grid">
+              <div class="field full">
+                <label for="clientEditName">Nome completo</label>
+                <input id="clientEditName" />
+              </div>
+              <div class="field">
+                <label for="clientEditEmail">E-mail</label>
+                <input id="clientEditEmail" type="email" disabled />
+              </div>
+              <div class="field">
+                <label for="clientEditPhone">Telefone / WhatsApp</label>
+                <input id="clientEditPhone" type="tel" inputmode="tel" />
+              </div>
+              <div class="field">
+                <label for="clientEditCpf">CPF</label>
+                <input id="clientEditCpf" />
+              </div>
+              <div class="field">
+                <label for="clientEditAge">Idade</label>
+                <input id="clientEditAge" type="number" min="1" max="120" />
+              </div>
+              <div class="field">
+                <label for="clientEditGuardian">Responsavel</label>
+                <input id="clientEditGuardian" />
+              </div>
+              <div class="field">
+                <label for="clientEditGuardianPhone">Telefone responsavel</label>
+                <input id="clientEditGuardianPhone" type="tel" inputmode="tel" />
+              </div>
+              <div class="field">
+                <label for="clientEditType">Tipo</label>
+                <select id="clientEditType">
+                  <option value="aluno">Aluno de aula</option>
+                  <option value="mensalista">Mensalista / joga</option>
+                  <option value="cliente">Cliente</option>
+                  <option value="responsavel">Responsavel</option>
+                  <option value="socio">Socio</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="clientEditStatus">Status</label>
+                <select id="clientEditStatus">
+                  <option value="ATIVO">Ativo</option>
+                  <option value="PENDENTE">Pendente</option>
+                  <option value="BLOQUEADO">Bloqueado</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="clientEditPlan">Plano oficial</label>
+                <select id="clientEditPlan"></select>
+              </div>
+              <div class="field">
+                <label for="clientEditDueDay">Dia de vencimento</label>
+                <input id="clientEditDueDay" type="number" min="1" max="31" inputmode="numeric" placeholder="10" />
+              </div>
+              <div class="field">
+                <label for="clientEditFrequency">Aulas por semana</label>
+                <input id="clientEditFrequency" type="number" min="0" max="7" inputmode="numeric" placeholder="0" />
+              </div>
+              <div class="field">
+                <label for="clientEditAmount">Valor mensal</label>
+                <input id="clientEditAmount" inputmode="decimal" placeholder="220,00" />
+              </div>
+              <div class="field full">
+                <label>Dias preferidos / aula</label>
+                <div class="weekday-grid" id="clientEditDays"></div>
+              </div>
+              <div class="field full">
+                <label for="clientEditNotes">Observacoes internas</label>
+                <textarea id="clientEditNotes" placeholder="Horario, professor, regra combinada, restricoes e observacoes."></textarea>
+              </div>
+            </div>
+            <div class="ops-list" id="clientRequestSummary" style="margin-top:12px"></div>
+          </div>
+          <div class="modal-actions">
+            <button class="ghost-btn" type="button" id="clientModalCancel">Cancelar</button>
+            <button class="primary-btn" type="submit">Salvar aluno</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <section class="ops-module team-module" id="teamModule">
       <div class="module-shell">
@@ -3154,6 +3316,95 @@
                 </div>
               </div>
               <div class="ops-list" id="teamList"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ops-module database-module" id="databaseModule">
+      <div class="module-shell">
+        <div class="module-head">
+          <div>
+            <h1>Banco de dados</h1>
+            <div class="muted">Planos oficiais que podem ser vinculados manualmente aos alunos.</div>
+          </div>
+          <div class="module-actions">
+            <button class="ghost-btn" type="button" data-home-action>Inicio</button>
+            <button class="ghost-btn" type="button" id="plansReloadBtn">Recarregar</button>
+            <button class="primary-btn" type="button" id="planNewBtn">Novo plano</button>
+          </div>
+        </div>
+        <div class="ops-content">
+          <div class="ops-summary">
+            <div class="ops-card"><strong id="planTotalMetric">0</strong><span>planos cadastrados</span></div>
+            <div class="ops-card"><strong id="planActiveMetric">0</strong><span>ativos</span></div>
+            <div class="ops-card"><strong id="planLessonMetric">0</strong><span>aulas</span></div>
+            <div class="ops-card"><strong id="planMemberMetric">0</strong><span>mensalistas</span></div>
+          </div>
+          <div class="ops-grid">
+            <div class="ops-panel span-5">
+              <div class="ops-panel-head">
+                <div>
+                  <h2>Cadastro do plano</h2>
+                  <div class="muted">Edite valores, tipo, frequencia e regras.</div>
+                </div>
+              </div>
+              <form class="form-grid" id="planForm">
+                <input id="planEditId" type="hidden" />
+                <div class="field full">
+                  <label for="planName">Nome do plano</label>
+                  <input id="planName" placeholder="Aulas 1x por semana" />
+                </div>
+                <div class="field">
+                  <label for="planCode">Codigo</label>
+                  <input id="planCode" placeholder="aula_1x" />
+                </div>
+                <div class="field">
+                  <label for="planType">Tipo</label>
+                  <select id="planType">
+                    <option value="aluno">Aluno de aula</option>
+                    <option value="mensalista">Mensalista / joga</option>
+                    <option value="avulso">Avulso</option>
+                    <option value="outro">Outro</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="planAmount">Valor mensal</label>
+                  <input id="planAmount" inputmode="decimal" placeholder="220,00" />
+                </div>
+                <div class="field">
+                  <label for="planFrequency">Aulas por semana</label>
+                  <input id="planFrequency" type="number" min="0" max="7" inputmode="numeric" placeholder="1" />
+                </div>
+                <div class="field">
+                  <label for="planDueDay">Vencimento padrao</label>
+                  <input id="planDueDay" type="number" min="1" max="31" inputmode="numeric" placeholder="10" />
+                </div>
+                <div class="field">
+                  <label for="planActive">Status</label>
+                  <select id="planActive">
+                    <option value="true">Ativo</option>
+                    <option value="false">Inativo</option>
+                  </select>
+                </div>
+                <div class="field full">
+                  <label for="planDescription">Descricao</label>
+                  <textarea id="planDescription" placeholder="Regra do plano, limite de uso, observacoes e combinados."></textarea>
+                </div>
+                <div class="field full">
+                  <button class="primary-btn" type="submit">Salvar plano</button>
+                </div>
+              </form>
+            </div>
+            <div class="ops-panel span-7">
+              <div class="ops-panel-head">
+                <div>
+                  <h2>Planos do clube</h2>
+                  <div class="muted">Base usada para vincular planos aos alunos no admin.</div>
+                </div>
+              </div>
+              <div class="ops-list" id="planList"></div>
             </div>
           </div>
         </div>
@@ -7147,8 +7398,19 @@
       studentStatus: 'todos',
       agendaType: 'todos',
       selectedClientId: null,
+      editingPlanId: null,
       loaded: false
     };
+
+    const weekDays = [
+      { key: 'segunda', label: 'Seg' },
+      { key: 'terca', label: 'Ter' },
+      { key: 'quarta', label: 'Qua' },
+      { key: 'quinta', label: 'Qui' },
+      { key: 'sexta', label: 'Sex' },
+      { key: 'sabado', label: 'Sab' },
+      { key: 'domingo', label: 'Dom' }
+    ];
 
     const teamPermissionCatalog = [
       { key: 'dashboard', label: 'Inicio e indicadores', detail: 'Visualizar resumo geral e alertas do clube.' },
@@ -7174,7 +7436,12 @@
         { name: 'Cliente exemplo', email: 'cliente@ilhatenis.com', phone: '5527999999999', status: 'ATIVO', type: 'cliente', created: '2026-06-22', lastLogin: '' }
       ],
       planRequests: [
-        { client: 'Cliente exemplo', email: 'cliente@ilhatenis.com', plan: 'Aulas 1x por semana', amount: 220, status: 'SOLICITADO', created: '2026-06-22' }
+        { client: 'Cliente exemplo', email: 'cliente@ilhatenis.com', plan: 'Aulas 1x por semana', amount: 220, status: 'SOLICITADO', created: '2026-06-22', weeklyLessons: 1, requestedDays: ['terca', 'quinta'], membershipType: 'aluno', preferredDueDay: 10 }
+      ],
+      plans: [
+        { id: 'plan_aula_1x', code: 'aula_1x', name: 'Aulas 1x por semana', type: 'aluno', amount: 220, weeklyLessons: 1, dueDay: 10, active: true, description: 'Uma aula fixa semanal com horario combinado pela secretaria.' },
+        { id: 'plan_aula_2x', code: 'aula_2x', name: 'Aulas 2x por semana', type: 'aluno', amount: 360, weeklyLessons: 2, dueDay: 10, active: true, description: 'Duas aulas fixas semanais, conforme disponibilidade de horario.' },
+        { id: 'plan_mensalista', code: 'mensalista', name: 'Mensalista quadra', type: 'mensalista', amount: 180, weeklyLessons: 0, dueDay: 10, active: true, description: 'Plano para jogar e reservar horarios conforme regra do clube.' }
       ],
       students: [
         { name: 'Leandro Strelow', phone: '5527999805814', status: 'ATIVO', plan: 'Aula semanal', level: 'Intermediario', teacher: 'Renato', financial: 'OK', nextAction: 'Confirmar presenca hoje' },
@@ -7219,7 +7486,7 @@
     const opsSeedData = JSON.parse(JSON.stringify(opsData));
 
     function setClubMode(mode) {
-      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-finance', 'club-communication', 'club-clients', 'club-team'].forEach(function (className) {
+      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-finance', 'club-communication', 'club-clients', 'club-team', 'club-database'].forEach(function (className) {
         document.body.classList.remove(className);
       });
       document.body.classList.add(mode);
@@ -7238,7 +7505,7 @@
 
     function statusPill(status) {
       const value = String(status || '').toUpperCase();
-      const kind = value === 'OK' || value === 'RECEBIDO' || value === 'CONFIRMADO' ? 'good' : (value === 'VENCIDO' || value === 'PENDENTE' ? 'bad' : 'warn');
+      const kind = value === 'OK' || value === 'RECEBIDO' || value === 'CONFIRMADO' || value === 'ATIVO' || value === 'PAGO' ? 'good' : (value === 'VENCIDO' || value === 'PENDENTE' || value === 'BLOQUEADO' || value === 'INATIVO' ? 'bad' : 'warn');
       return '<span class="ops-pill ' + kind + '">' + escapeHtml(status) + '</span>';
     }
 
@@ -7301,8 +7568,16 @@
         guardian: row.guardian_name || '',
         guardianPhone: row.guardian_phone || '',
         photo: row.profile_photo || row.avatar_url || '',
+        officialPlanId: row.official_plan_id || '',
+        officialPlanCode: row.official_plan_code || '',
+        officialPlanName: row.official_plan_name || '',
+        planAmount: row.plan_amount == null ? '' : Number(row.plan_amount || 0),
+        weeklyLessons: row.weekly_lessons == null ? '' : Number(row.weekly_lessons || 0),
+        preferredDays: Array.isArray(row.preferred_days) ? row.preferred_days : [],
+        dueDay: row.due_day || '',
         status: row.status || 'ATIVO',
         type: row.client_type || 'cliente',
+        notes: row.notes || '',
         created: row.created_at || '',
         lastLogin: row.last_login_at || ''
       };
@@ -7389,9 +7664,29 @@
         client: client.full_name || 'Cliente',
         email: client.email || '',
         plan: row.plan_name || 'Plano',
+        planCode: row.plan_code || '',
         amount: Number(row.amount || 0),
         status: row.status || 'SOLICITADO',
-        created: row.created_at || ''
+        created: row.created_at || '',
+        weeklyLessons: row.weekly_lessons == null ? '' : Number(row.weekly_lessons || 0),
+        requestedDays: Array.isArray(row.requested_days) ? row.requested_days : [],
+        membershipType: row.membership_type || '',
+        preferredDueDay: row.preferred_due_day || '',
+        notes: row.notes || ''
+      };
+    }
+
+    function mapPlanRow(row) {
+      return {
+        id: row.id,
+        code: row.code || row.plan_code || '',
+        name: row.name || row.plan_name || 'Plano',
+        type: row.type || row.category || 'aluno',
+        amount: Number(row.amount || 0),
+        weeklyLessons: row.weekly_lessons == null ? 0 : Number(row.weekly_lessons || 0),
+        dueDay: row.default_due_day || row.due_day || '',
+        active: row.active !== false,
+        description: row.description || row.notes || ''
       };
     }
 
@@ -7407,12 +7702,14 @@
           supabaseRest('app_clients?select=*&order=created_at.desc'),
           supabaseRest('financial_transactions?select=*,students(name)&order=due_date.asc'),
           supabaseRest('app_plan_requests?select=*,app_clients(full_name,email,phone)&order=created_at.desc'),
-          supabaseRest('profiles?select=*&order=created_at.desc').catch(function () { return []; })
+          supabaseRest('profiles?select=*&order=created_at.desc').catch(function () { return []; }),
+          supabaseRest('app_plans?select=*&order=created_at.desc').catch(function () { return []; })
         ]);
         opsData.clients = results[0].map(mapClientRow);
         opsData.finance = results[1].map(mapFinanceRow);
         opsData.planRequests = results[2].map(mapPlanRequestRow);
         opsData.team = results[3].map(mapProfileRow);
+        if (results[4] && results[4].length) opsData.plans = results[4].map(mapPlanRow);
         opsData.students = [];
         opsData.agenda = [];
         opsData.audiences = [];
@@ -7460,49 +7757,100 @@
       }).join('') || '<div class="lesson-empty-state">Nenhuma solicitacao de plano ainda.</div>';
     }
 
-    function detailItem(label, value) {
-      return '<div class="detail-item"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value || '-') + '</strong></div>';
+    function formatDays(days) {
+      const list = Array.isArray(days) ? days : [];
+      return list.map(function (day) {
+        const found = weekDays.find(function (item) { return item.key === day; });
+        return found ? found.label : day;
+      }).join(', ');
     }
 
-    function renderClientDetail() {
-      const panel = $('clientDetailPanel');
-      if (!panel) return;
-      const client = opsData.clients.find(function (item) { return String(item.id || item.email) === String(opsState.selectedClientId); }) || opsData.clients[0];
-      if (!client) {
-        panel.innerHTML = '<div class="lesson-empty-state">Selecione um aluno para abrir a ficha.</div>';
-        return;
-      }
-      opsState.selectedClientId = client.id || client.email;
-      const created = client.created ? new Date(client.created).toLocaleString('pt-BR') : '';
-      const lastLogin = client.lastLogin ? new Date(client.lastLogin).toLocaleString('pt-BR') : '';
-      const requests = opsData.planRequests.filter(function (request) {
+    function findClientByKey(key) {
+      return opsData.clients.find(function (client) {
+        return String(client.id || client.email || client.name) === String(key);
+      });
+    }
+
+    function findPlanByValue(value) {
+      return opsData.plans.find(function (plan) {
+        return String(plan.id || plan.code || plan.name) === String(value);
+      });
+    }
+
+    function findClientRequest(client) {
+      return opsData.planRequests.find(function (request) {
         return String(request.email || '').toLowerCase() === String(client.email || '').toLowerCase() ||
           String(request.client || '').toLowerCase() === String(client.name || '').toLowerCase();
       });
-      panel.innerHTML =
-        '<div class="ops-list-card">' +
-          '<div class="ops-list-main">' +
-            '<div class="client-line">' + clientAvatar(client) + '<div><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(client.email || 'Sem e-mail') + '</div></div></div>' +
-            '<div class="ops-meta">' + statusPill(client.status) + '<span class="ops-pill">' + escapeHtml(client.type || 'cliente') + '</span>' + whatsappLink(client.phone || client.guardianPhone) + '</div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="client-detail-grid" style="margin-top:10px">' +
-          detailItem('Nome completo', client.name) +
-          detailItem('E-mail', client.email) +
-          detailItem('Telefone', client.phone) +
-          detailItem('CPF', client.cpf) +
-          detailItem('Idade', client.age ? client.age + ' anos' : '') +
-          detailItem('Responsavel', client.guardian) +
-          detailItem('Telefone responsavel', client.guardianPhone) +
-          detailItem('Cadastro', created) +
-          detailItem('Ultimo acesso', lastLogin) +
-          detailItem('Origem', client.type || 'cliente') +
-        '</div>' +
-        '<div class="ops-list" style="margin-top:10px">' +
-          (requests.length ? requests.map(function (request) {
-            return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(request.plan) + '</strong><div class="muted">Solicitado no portal</div></div><div class="ops-meta">' + statusPill(request.status) + '<span class="ops-pill">' + money(request.amount) + '</span></div></div></article>';
-          }).join('') : '<div class="lesson-empty-state">Nenhum plano solicitado por este aluno.</div>') +
-        '</div>';
+    }
+
+    function renderWeekdayInputs(containerId, selectedDays) {
+      const selected = new Set(Array.isArray(selectedDays) ? selectedDays : []);
+      $(containerId).innerHTML = weekDays.map(function (day) {
+        return '<label><input type="checkbox" value="' + day.key + '"' + (selected.has(day.key) ? ' checked' : '') + ' />' + day.label + '</label>';
+      }).join('');
+    }
+
+    function selectedWeekdays(containerId) {
+      return Array.from($(containerId).querySelectorAll('input:checked')).map(function (input) {
+        return input.value;
+      });
+    }
+
+    function renderClientPlanOptions(selectedValue) {
+      const options = ['<option value="">Sem plano oficial</option>'].concat(opsData.plans.filter(function (plan) {
+        return plan.active !== false || String(plan.id || plan.code) === String(selectedValue);
+      }).map(function (plan) {
+        const value = plan.id || plan.code || plan.name;
+        const label = plan.name + ' - ' + money(plan.amount || 0);
+        return '<option value="' + escapeHtml(value) + '"' + (String(value) === String(selectedValue) ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+      }));
+      $('clientEditPlan').innerHTML = options.join('');
+    }
+
+    function applyPlanToClientForm() {
+      const plan = findPlanByValue($('clientEditPlan').value);
+      if (!plan) return;
+      $('clientEditType').value = plan.type || 'aluno';
+      $('clientEditAmount').value = plan.amount ? String(plan.amount).replace('.', ',') : '';
+      $('clientEditFrequency').value = plan.weeklyLessons || 0;
+      if (plan.dueDay && !$('clientEditDueDay').value) $('clientEditDueDay').value = plan.dueDay;
+    }
+
+    function openClientModal(key) {
+      const client = findClientByKey(key);
+      if (!client) return;
+      opsState.selectedClientId = client.id || client.email || client.name;
+      const selectedPlanValue = client.officialPlanId || client.officialPlanCode || '';
+      const request = findClientRequest(client);
+      $('clientModalTitle').textContent = client.name || 'Ficha do aluno';
+      $('clientModalSubtitle').textContent = client.officialPlanName ? 'Plano oficial: ' + client.officialPlanName : 'Plano oficial ainda nao definido.';
+      $('clientModalAvatar').innerHTML = client.photo ? '<img src="' + escapeHtml(client.photo) + '" alt="" />' : escapeHtml(clientInitials(client.name));
+      $('clientEditName').value = client.name || '';
+      $('clientEditEmail').value = client.email || '';
+      $('clientEditPhone').value = client.phone || '';
+      $('clientEditCpf').value = client.cpf || '';
+      $('clientEditAge').value = client.age || '';
+      $('clientEditGuardian').value = client.guardian || '';
+      $('clientEditGuardianPhone').value = client.guardianPhone || '';
+      $('clientEditType').value = client.type || 'aluno';
+      $('clientEditStatus').value = client.status || 'ATIVO';
+      renderClientPlanOptions(selectedPlanValue);
+      $('clientEditDueDay').value = client.dueDay || (request && request.preferredDueDay) || '';
+      $('clientEditFrequency').value = client.weeklyLessons || (request && request.weeklyLessons) || '';
+      $('clientEditAmount').value = client.planAmount ? String(client.planAmount).replace('.', ',') : '';
+      $('clientEditNotes').value = client.notes || '';
+      renderWeekdayInputs('clientEditDays', client.preferredDays && client.preferredDays.length ? client.preferredDays : request && request.requestedDays);
+      $('clientRequestSummary').innerHTML = request
+        ? '<article class="ops-list-card"><div class="ops-list-main"><div><strong>Pedido recebido no app</strong><div class="muted">' + escapeHtml(request.plan) + ' | ' + escapeHtml(request.membershipType || 'tipo nao informado') + ' | ' + escapeHtml(formatDays(request.requestedDays) || 'sem dias') + '</div></div><div class="ops-meta">' + statusPill(request.status) + '<span class="ops-pill">' + money(request.amount) + '</span></div></div></article>'
+        : '<div class="lesson-empty-state">Sem pedido registrado pelo aluno. Defina o plano manualmente.</div>';
+      $('clientModal').classList.add('show');
+      $('clientModal').setAttribute('aria-hidden', 'false');
+    }
+
+    function closeClientModal() {
+      $('clientModal').classList.remove('show');
+      $('clientModal').setAttribute('aria-hidden', 'true');
     }
 
     function renderClientsModule() {
@@ -7521,6 +7869,8 @@
         const created = client.created ? new Date(client.created).toLocaleDateString('pt-BR') : 'Sem data';
         const extra = [
           client.email,
+          client.officialPlanName ? 'Plano ' + client.officialPlanName : 'sem plano oficial',
+          client.dueDay ? 'vence dia ' + client.dueDay : '',
           client.age ? client.age + ' anos' : '',
           client.cpf ? 'CPF ' + client.cpf : '',
           client.guardian ? 'Resp. ' + client.guardian : '',
@@ -7530,17 +7880,6 @@
         return '<article class="ops-list-card"><div class="ops-list-main"><div class="client-line">' + clientAvatar(client) + '<div><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(extra) + '</div></div></div><div class="ops-meta">' + statusPill(client.status) + '<span class="ops-pill">' + escapeHtml(client.type) + '</span>' + whatsappLink(client.phone || client.guardianPhone) + '<button class="small-btn" type="button" data-client-open="' + escapeHtml(key) + '">Abrir</button></div></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum cliente cadastrado ainda.</div>';
 
-      const segments = {};
-      opsData.clients.forEach(function (client) {
-        const type = client.type || 'cliente';
-        segments[type] = (segments[type] || 0) + 1;
-      });
-      $('clientSegmentList').innerHTML = opsData.planRequests.map(function (request) {
-        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(request.plan) + '</strong><div class="muted">' + escapeHtml(request.client) + ' | ' + escapeHtml(request.email) + '</div></div><div class="ops-meta">' + statusPill(request.status) + '<span class="ops-pill">' + money(request.amount) + '</span></div></div></article>';
-      }).join('') || Object.keys(segments).map(function (type) {
-        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(type) + '</strong><div class="muted">Segmento do cadastro publico</div></div><span class="ops-pill good">' + segments[type] + ' pessoa(s)</span></div></article>';
-      }).join('') || '<div class="lesson-empty-state">Sem solicitacoes ainda.</div>';
-      renderClientDetail();
     }
 
     function renderStudentsModule() {
@@ -7623,6 +7962,108 @@
       setClubMode('club-team');
       renderTeamModule();
       loadOpsData(false).then(renderTeamModule);
+    }
+
+    function resetPlanForm() {
+      opsState.editingPlanId = null;
+      $('planForm').reset();
+      $('planEditId').value = '';
+      $('planType').value = 'aluno';
+      $('planActive').value = 'true';
+    }
+
+    function fillPlanForm(plan) {
+      opsState.editingPlanId = plan.id || plan.code || '';
+      $('planEditId').value = opsState.editingPlanId;
+      $('planName').value = plan.name || '';
+      $('planCode').value = plan.code || '';
+      $('planType').value = plan.type || 'aluno';
+      $('planAmount').value = plan.amount ? String(plan.amount).replace('.', ',') : '';
+      $('planFrequency').value = plan.weeklyLessons || 0;
+      $('planDueDay').value = plan.dueDay || '';
+      $('planActive').value = plan.active === false ? 'false' : 'true';
+      $('planDescription').value = plan.description || '';
+    }
+
+    function renderPlansModule() {
+      $('planTotalMetric').textContent = opsData.plans.length;
+      $('planActiveMetric').textContent = opsData.plans.filter(function (plan) { return plan.active !== false; }).length;
+      $('planLessonMetric').textContent = opsData.plans.filter(function (plan) { return plan.type === 'aluno'; }).length;
+      $('planMemberMetric').textContent = opsData.plans.filter(function (plan) { return plan.type === 'mensalista'; }).length;
+      $('planList').innerHTML = opsData.plans.map(function (plan) {
+        const value = plan.id || plan.code || plan.name;
+        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(plan.name) + '</strong><div class="muted">' + escapeHtml(plan.code || 'sem codigo') + ' | ' + escapeHtml(plan.type || 'plano') + ' | vence dia ' + escapeHtml(plan.dueDay || '-') + '</div></div><div class="ops-meta">' + statusPill(plan.active === false ? 'INATIVO' : 'ATIVO') + '<span class="ops-pill">' + money(plan.amount || 0) + '</span><button class="small-btn" type="button" data-plan-edit="' + escapeHtml(value) + '">Editar</button></div></div><div class="muted" style="margin-top:8px">' + escapeHtml(plan.description || 'Sem descricao.') + '</div></article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhum plano cadastrado ainda.</div>';
+    }
+
+    function openDatabaseModule() {
+      setClubMode('club-database');
+      renderPlansModule();
+      loadOpsData(false).then(renderPlansModule);
+    }
+
+    async function savePlanAction(event) {
+      event.preventDefault();
+      try {
+        requireAdminSession();
+        const name = $('planName').value.trim();
+        const code = $('planCode').value.trim() || name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+        if (!name || !code) throw new Error('Informe nome e codigo do plano.');
+        const amount = parseOptionalMoney($('planAmount').value);
+        const dueDay = $('planDueDay').value ? Number($('planDueDay').value) : null;
+        if (dueDay && (dueDay < 1 || dueDay > 31)) throw new Error('Vencimento padrao deve ser entre 1 e 31.');
+        const localPlan = {
+          id: $('planEditId').value || localId('plan'),
+          code: code,
+          name: name,
+          type: $('planType').value,
+          amount: amount,
+          weeklyLessons: $('planFrequency').value ? Number($('planFrequency').value) : 0,
+          dueDay: dueDay || '',
+          active: $('planActive').value === 'true',
+          description: $('planDescription').value.trim()
+        };
+        let savedPlan = null;
+        let savedLocally = false;
+        if (!isAdminDemoMode()) {
+          const payload = {
+            code: localPlan.code,
+            name: localPlan.name,
+            type: localPlan.type,
+            amount: localPlan.amount,
+            weekly_lessons: localPlan.weeklyLessons,
+            default_due_day: localPlan.dueDay || null,
+            active: localPlan.active,
+            description: localPlan.description
+          };
+          try {
+            if ($('planEditId').value && String($('planEditId').value).startsWith('plan_') === false) {
+              const saved = await supabaseRest('app_plans?id=eq.' + encodeURIComponent($('planEditId').value), {
+                method: 'PATCH',
+                body: payload,
+                prefer: 'return=representation'
+              });
+              savedPlan = Array.isArray(saved) ? saved[0] : saved;
+            } else {
+              savedPlan = await supabaseInsert('app_plans', payload);
+            }
+          } catch (error) {
+            savedLocally = true;
+          }
+        }
+        const finalPlan = savedPlan ? mapPlanRow(savedPlan) : localPlan;
+        const index = opsData.plans.findIndex(function (plan) {
+          return String(plan.id || plan.code) === String($('planEditId').value || finalPlan.id || finalPlan.code) ||
+            String(plan.code) === String(finalPlan.code);
+        });
+        if (index >= 0) opsData.plans.splice(index, 1, finalPlan);
+        else opsData.plans.unshift(finalPlan);
+        resetPlanForm();
+        renderPlansModule();
+        toast(savedLocally ? 'Plano salvo nesta tela. Aplique o SQL para gravar no Supabase.' : 'Plano salvo.');
+      } catch (error) {
+        reportActionError(error);
+      }
     }
 
     function renderFinanceModule() {
@@ -7992,7 +8433,7 @@
         }).catch(function () {});
       }
       document.body.classList.remove('adm-unlocked');
-      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-finance', 'club-communication', 'club-clients', 'club-team'].forEach(function (className) {
+      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-finance', 'club-communication', 'club-clients', 'club-team', 'club-database'].forEach(function (className) {
         document.body.classList.remove(className);
       });
       document.body.classList.add('adm-locked');
@@ -8021,10 +8462,109 @@
       if (document.body.classList.contains('club-finance')) renderFinanceModule();
       if (document.body.classList.contains('club-communication')) renderCommunicationModule();
       if (document.body.classList.contains('club-team')) renderTeamModule();
+      if (document.body.classList.contains('club-database')) renderPlansModule();
     }
 
     function quoteCsv(value) {
       return '"' + String(value == null ? '' : value).replace(/"/g, '""') + '"';
+    }
+
+    function parseOptionalMoney(value) {
+      const clean = String(value || '').trim();
+      if (!clean) return 0;
+      const number = Number(clean.replace(/\./g, '').replace(',', '.'));
+      if (!Number.isFinite(number) || number < 0) throw new Error('Valor invalido.');
+      return number;
+    }
+
+    async function patchClientFromAdmin(client, payload) {
+      if (!client || !client.id) return null;
+      try {
+        const saved = await supabaseRest('app_clients?id=eq.' + encodeURIComponent(client.id), {
+          method: 'PATCH',
+          body: payload,
+          prefer: 'return=representation'
+        });
+        return Array.isArray(saved) ? saved[0] : saved;
+      } catch (error) {
+        const basicPayload = {
+          full_name: payload.full_name,
+          phone: payload.phone,
+          cpf: payload.cpf,
+          age: payload.age,
+          guardian_name: payload.guardian_name,
+          guardian_phone: payload.guardian_phone,
+          status: payload.status,
+          client_type: payload.client_type === 'mensalista' ? 'socio' : payload.client_type,
+          notes: payload.notes
+        };
+        const saved = await supabaseRest('app_clients?id=eq.' + encodeURIComponent(client.id), {
+          method: 'PATCH',
+          body: basicPayload,
+          prefer: 'return=representation'
+        });
+        return Array.isArray(saved) ? saved[0] : saved;
+      }
+    }
+
+    async function saveClientModal(event) {
+      event.preventDefault();
+      try {
+        requireAdminSession();
+        const client = findClientByKey(opsState.selectedClientId);
+        if (!client) throw new Error('Aluno nao encontrado.');
+        const plan = findPlanByValue($('clientEditPlan').value);
+        const amount = parseOptionalMoney($('clientEditAmount').value);
+        const dueDay = $('clientEditDueDay').value ? Number($('clientEditDueDay').value) : null;
+        if (dueDay && (dueDay < 1 || dueDay > 31)) throw new Error('Dia de vencimento deve ser entre 1 e 31.');
+        const weeklyLessons = $('clientEditFrequency').value ? Number($('clientEditFrequency').value) : 0;
+        const localUpdate = {
+          name: $('clientEditName').value.trim() || client.name,
+          phone: $('clientEditPhone').value.trim(),
+          cpf: $('clientEditCpf').value.trim(),
+          age: $('clientEditAge').value ? Number($('clientEditAge').value) : '',
+          guardian: $('clientEditGuardian').value.trim(),
+          guardianPhone: $('clientEditGuardianPhone').value.trim(),
+          type: $('clientEditType').value,
+          status: $('clientEditStatus').value,
+          officialPlanId: plan ? plan.id : '',
+          officialPlanCode: plan ? plan.code : '',
+          officialPlanName: plan ? plan.name : '',
+          planAmount: amount,
+          weeklyLessons: weeklyLessons,
+          preferredDays: selectedWeekdays('clientEditDays'),
+          dueDay: dueDay || '',
+          notes: $('clientEditNotes').value.trim()
+        };
+        if (!isAdminDemoMode()) {
+          const payload = {
+            full_name: localUpdate.name,
+            phone: localUpdate.phone,
+            cpf: localUpdate.cpf,
+            age: localUpdate.age || null,
+            guardian_name: localUpdate.guardian,
+            guardian_phone: localUpdate.guardianPhone,
+            status: localUpdate.status,
+            client_type: localUpdate.type,
+            official_plan_id: localUpdate.officialPlanId || null,
+            official_plan_code: localUpdate.officialPlanCode,
+            official_plan_name: localUpdate.officialPlanName,
+            plan_amount: localUpdate.planAmount || 0,
+            weekly_lessons: localUpdate.weeklyLessons || 0,
+            preferred_days: localUpdate.preferredDays,
+            due_day: localUpdate.dueDay || null,
+            notes: localUpdate.notes
+          };
+          await patchClientFromAdmin(client, payload);
+        }
+        Object.assign(client, localUpdate);
+        closeClientModal();
+        renderClientsModule();
+        renderHomeDashboard();
+        toast('Aluno atualizado.');
+      } catch (error) {
+        reportActionError(error);
+      }
     }
 
     async function patchTeamProfile(id, payload) {
@@ -8736,7 +9276,8 @@
         ['openAgendaModule', openAgendaModule],
         ['openFinanceModule', openFinanceModule],
         ['openCommunicationModule', openCommunicationModule],
-        ['openTeamModule', openTeamModule]
+        ['openTeamModule', openTeamModule],
+        ['openDatabaseModule', openDatabaseModule]
       ].forEach(function (entry) {
         const button = $(entry[0]);
         if (button) button.addEventListener('click', entry[1]);
@@ -8752,6 +9293,7 @@
             'club-finance': openFinanceModule,
             'club-communication': openCommunicationModule,
             'club-team': openTeamModule,
+            'club-database': openDatabaseModule,
             'club-tournament': openTournamentModule
           };
           const action = actions[btn.dataset.adminNav];
@@ -8767,10 +9309,16 @@
       $('clientsModule').addEventListener('click', function (event) {
         const openBtn = event.target.closest('[data-client-open]');
         if (openBtn) {
-          opsState.selectedClientId = openBtn.dataset.clientOpen;
-          renderClientsModule();
+          openClientModal(openBtn.dataset.clientOpen);
         }
       });
+      $('clientModalClose').addEventListener('click', closeClientModal);
+      $('clientModalCancel').addEventListener('click', closeClientModal);
+      $('clientModal').addEventListener('click', function (event) {
+        if (event.target.id === 'clientModal') closeClientModal();
+      });
+      $('clientEditPlan').addEventListener('change', applyPlanToClientForm);
+      $('clientModalForm').addEventListener('submit', saveClientModal);
       $('teamRole').addEventListener('change', function () {
         renderTeamPermissions(this.value);
       });
@@ -8778,6 +9326,20 @@
       $('teamCreateBtn').addEventListener('click', createTeamAction);
       $('teamReloadBtn').addEventListener('click', function () {
         loadOpsData(true).then(renderTeamModule).catch(reportActionError);
+      });
+      $('planForm').addEventListener('submit', savePlanAction);
+      $('planNewBtn').addEventListener('click', function () {
+        resetPlanForm();
+        $('planName').focus();
+      });
+      $('plansReloadBtn').addEventListener('click', function () {
+        loadOpsData(true).then(renderPlansModule).catch(reportActionError);
+      });
+      $('planList').addEventListener('click', function (event) {
+        const editBtn = event.target.closest('[data-plan-edit]');
+        if (!editBtn) return;
+        const plan = findPlanByValue(editBtn.dataset.planEdit);
+        if (plan) fillPlanForm(plan);
       });
       $('lessonsBackBtn').addEventListener('click', showClubHome);
       $('lessonsReloadBtn').addEventListener('click', function () {
