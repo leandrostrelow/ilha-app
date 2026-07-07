@@ -260,7 +260,7 @@
     }
 
     .side-user {
-      padding: 12px;
+      padding: 10px 12px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #f8fbfc;
@@ -345,12 +345,12 @@
 
     .content {
       min-width: 0;
-      width: min(1120px, 100%);
-      justify-self: center;
-      padding: 20px;
+      width: min(980px, 100%);
+      justify-self: start;
+      padding: 20px 24px;
       display: grid;
       align-content: start;
-      gap: 14px;
+      gap: 12px;
     }
 
     .topbar {
@@ -365,8 +365,12 @@
     }
 
     .topbar h1 {
-      margin: 0 0 2px;
+      margin: 0;
       font-size: 18px;
+    }
+
+    .topbar .muted {
+      display: none;
     }
 
     .top-actions {
@@ -615,30 +619,49 @@
     }
 
     .plan-card {
-      padding: 15px;
+      padding: 18px;
       display: grid;
-      gap: 14px;
+      gap: 16px;
     }
 
     .plan-card h3 {
       margin: 0;
-      font-size: 19px;
+      font-size: 22px;
+      line-height: 1.1;
     }
 
-    .price {
-      font-size: 26px;
+    .plan-kicker {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-size: 11px;
       font-weight: 900;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+    }
+
+    .plan-card .muted {
+      margin: 6px 0 0;
+      max-width: 460px;
+      font-size: 13px;
+    }
+
+    .plan-summary {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
     }
 
     .plan-status-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 10px;
     }
 
     .plan-status-item {
-      min-height: 62px;
-      padding: 10px;
+      min-height: auto;
+      padding: 11px 12px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #fbfdfe;
@@ -655,8 +678,14 @@
 
     .plan-status-item strong {
       display: block;
-      color: var(--text);
+      color: var(--ink);
       font-size: 15px;
+    }
+
+    .empty-plan {
+      border-style: dashed;
+      background: #fbfdfe;
+      box-shadow: none;
     }
 
     .form-grid {
@@ -1002,7 +1031,7 @@
           <span class="brand-play">Play</span>
         </div>
         <div class="side-user">
-          <strong>Area do aluno</strong>
+          <strong>Aluno</strong>
           <span id="sideClientName">Entrando...</span>
         </div>
         <button class="side-logout" type="button" data-logout>Sair</button>
@@ -1023,7 +1052,6 @@
       <header class="topbar">
         <div>
           <h1 id="pageTitle">Inicio</h1>
-          <div class="muted" id="pageSubtitle">Sua area do aluno no Ilha Tenis.</div>
         </div>
         <div class="top-actions">
           <button class="primary-btn" type="button" id="logoutBtn" data-logout>Sair</button>
@@ -1112,15 +1140,7 @@
       </section>
 
       <section class="view" id="view-plans">
-        <div class="panel">
-          <div class="panel-head">
-            <div>
-              <h2>Meu plano</h2>
-              <div class="muted">Plano definido pela equipe do Ilha Tenis.</div>
-            </div>
-          </div>
-          <div class="plan-grid" id="planGrid"></div>
-        </div>
+        <div class="plan-grid" id="planGrid"></div>
       </section>
 
       <section class="view" id="view-payments">
@@ -1518,13 +1538,12 @@
         btn.classList.toggle('active', btn.dataset.view === view);
       });
       const labels = {
-        home: ['Inicio', 'Sua area do aluno no Ilha Tenis.'],
-        profile: ['Meus dados', 'Complete seu cadastro.'],
-        plans: ['Planos', 'Plano definido pelo clube.'],
-        payments: ['Pagamento', 'Faturas em aberto.']
+        home: 'Inicio',
+        profile: 'Meus dados',
+        plans: 'Plano',
+        payments: 'Pagamento'
       };
-      $('pageTitle').textContent = labels[view][0];
-      $('pageSubtitle').textContent = labels[view][1];
+      $('pageTitle').textContent = labels[view];
     }
 
     function renderAll() {
@@ -1566,21 +1585,39 @@
       const dueDay = client && client.due_day || '';
       const weeklyLessons = Number(client && client.weekly_lessons || 0);
       const preferredDays = Array.isArray(client && client.preferred_days) ? client.preferred_days : [];
-      const details = [
-        '<div class="plan-status-item"><span>Valor</span><strong>' + (amount ? money(amount) : 'A definir') + '</strong></div>',
-        '<div class="plan-status-item"><span>Vencimento</span><strong>' + (dueDay ? 'Dia ' + escapeHtml(dueDay) : 'A definir') + '</strong></div>',
-        '<div class="plan-status-item"><span>Aulas</span><strong>' + (weeklyLessons ? weeklyLessons + 'x por semana' : 'A definir') + '</strong></div>'
-      ];
+      const hasPlan = Boolean(planName || amount || dueDay || weeklyLessons || preferredDays.length);
+      if (!hasPlan) {
+        $('planGrid').innerHTML = '<article class="plan-card empty-plan">' +
+          '<div>' +
+            '<span class="plan-kicker">Plano atual</span>' +
+            '<h3>Ainda nao definido</h3>' +
+            '<p class="muted">Quando a equipe vincular seu plano no ADM, ele aparece aqui.</p>' +
+          '</div>' +
+        '</article>';
+        return;
+      }
+      const details = [];
+      if (amount) {
+        details.push('<div class="plan-status-item"><span>Valor</span><strong>' + money(amount) + '</strong></div>');
+      }
+      if (dueDay) {
+        details.push('<div class="plan-status-item"><span>Vencimento</span><strong>Dia ' + escapeHtml(dueDay) + '</strong></div>');
+      }
+      if (weeklyLessons) {
+        details.push('<div class="plan-status-item"><span>Aulas</span><strong>' + weeklyLessons + 'x por semana</strong></div>');
+      }
       if (preferredDays.length) {
         details.push('<div class="plan-status-item"><span>Dias</span><strong>' + escapeHtml(preferredDays.join(', ')) + '</strong></div>');
       }
       $('planGrid').innerHTML = '<article class="plan-card">' +
-        '<div>' +
-          '<h3>' + escapeHtml(planName || 'Plano em definicao') + '</h3>' +
-          '<div class="price">' + (amount ? money(amount) : 'A definir') + '</div>' +
+        '<div class="plan-summary">' +
+          '<div>' +
+            '<span class="plan-kicker">Plano atual</span>' +
+            '<h3>' + escapeHtml(planName || 'Plano definido pelo clube') + '</h3>' +
+          '</div>' +
+          '<span class="pill good">Ativo</span>' +
         '</div>' +
-        '<div class="plan-status-grid">' + details.join('') + '</div>' +
-        '<p class="muted">Alteracoes de plano sao feitas pela equipe do clube.</p>' +
+        (details.length ? '<div class="plan-status-grid">' + details.join('') + '</div>' : '') +
       '</article>';
     }
 
