@@ -6,18 +6,18 @@
   <title>Admin Ilha | Gestao do Clube</title>
   <style>
     :root {
-      --bg: #f3f7f8;
+      --bg: #eef3f5;
       --panel: #ffffff;
       --text: #10272c;
       --muted: #647783;
-      --line: #dce8ec;
+      --line: #dce6ea;
       --dark: #243847;
       --teal: #083f4b;
       --ford-blue: #004d97;
       --lime: #b5e500;
       --red: #ef4444;
       --orange: #f59e0b;
-      --shadow: 0 12px 32px rgba(16, 39, 44, .12);
+      --shadow: 0 8px 24px rgba(16, 39, 44, .08);
     }
 
     * { box-sizing: border-box; }
@@ -221,45 +221,43 @@
     .app {
       min-height: 100vh;
       display: grid;
-      grid-template-columns: 272px minmax(0, 1fr);
-      background:
-        linear-gradient(90deg, #10272c 0 272px, transparent 272px),
-        var(--bg);
+      grid-template-columns: 244px minmax(0, 1fr);
+      background: var(--bg);
     }
 
     .app > :not(.admin-sidebar) {
       grid-column: 2;
       min-width: 0;
       margin: 0;
-      padding: 18px 22px 28px;
+      padding: 22px 28px 32px;
     }
 
     .admin-sidebar {
       grid-column: 1;
       grid-row: 1 / span 20;
       min-height: 100vh;
-      padding: 20px 16px;
-      background: #10272c;
-      color: #fff;
+      padding: 18px 14px;
+      border-right: 1px solid var(--line);
+      background: #ffffff;
+      color: var(--text);
       position: sticky;
       top: 0;
       align-self: start;
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 16px;
     }
 
     .admin-sidebar-brand {
-      padding: 6px 6px 16px;
-      border-bottom: 1px solid rgba(255,255,255,.12);
+      padding: 4px 8px 14px;
+      border-bottom: 1px solid var(--line);
     }
 
     .admin-sidebar-brand img {
-      width: 146px;
+      width: 132px;
       height: auto;
       display: block;
-      margin-bottom: 14px;
-      filter: brightness(0) invert(1);
+      margin-bottom: 16px;
     }
 
     .admin-sidebar-brand strong {
@@ -271,7 +269,7 @@
     .admin-sidebar-brand span {
       display: block;
       margin-top: 5px;
-      color: rgba(255,255,255,.62);
+      color: var(--muted);
       font-size: 12px;
       font-weight: 800;
     }
@@ -283,7 +281,7 @@
 
     .admin-nav-group {
       margin: 12px 8px 2px;
-      color: rgba(255,255,255,.46);
+      color: #8ba0a8;
       font-size: 10px;
       font-weight: 900;
       letter-spacing: .08em;
@@ -300,15 +298,15 @@
       border-radius: 8px;
       padding: 0 10px;
       background: transparent;
-      color: rgba(255,255,255,.76);
+      color: #385057;
       text-align: left;
       font-weight: 900;
     }
 
     .admin-nav-btn:hover,
     .admin-nav-btn.active {
-      background: rgba(255,255,255,.1);
-      color: #fff;
+      background: #eef5f6;
+      color: var(--teal);
     }
 
     .admin-nav-icon {
@@ -317,14 +315,19 @@
       display: grid;
       place-items: center;
       border-radius: 8px;
-      background: rgba(255,255,255,.1);
+      background: #edf4f6;
       font-size: 13px;
+    }
+
+    .admin-nav-btn.active .admin-nav-icon,
+    .admin-nav-btn:hover .admin-nav-icon {
+      background: #dfecef;
     }
 
     .admin-sidebar-footer {
       margin-top: auto;
       padding-top: 14px;
-      border-top: 1px solid rgba(255,255,255,.12);
+      border-top: 1px solid var(--line);
       display: grid;
       gap: 8px;
     }
@@ -333,8 +336,8 @@
       min-height: 52px;
       padding: 10px;
       border-radius: 8px;
-      background: rgba(255,255,255,.08);
-      color: rgba(255,255,255,.72);
+      background: #f5f8f9;
+      color: var(--muted);
       font-size: 11px;
       font-weight: 800;
       line-height: 1.35;
@@ -343,7 +346,7 @@
     .admin-sidebar-status strong {
       display: block;
       margin-bottom: 3px;
-      color: #ffffff;
+      color: var(--text);
       font-size: 12px;
     }
 
@@ -354,19 +357,19 @@
       border-radius: 8px;
       display: grid;
       place-items: center;
-      background: rgba(255,255,255,.1);
-      color: #fff;
+      background: #eef4f6;
+      color: var(--text);
       text-decoration: none;
       font-size: 12px;
       font-weight: 900;
     }
 
     .club-home {
-      padding: 18px 22px 28px;
+      padding: 0;
     }
 
     .club-command {
-      display: grid;
+      display: none;
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 12px;
       align-items: center;
@@ -410,34 +413,35 @@
     .club-home-grid {
       display: grid;
       grid-template-columns: repeat(12, minmax(0, 1fr));
-      gap: 10px;
-      margin-bottom: 12px;
+      gap: 14px;
+      margin-bottom: 0;
     }
 
     .club-panel {
-      min-height: 176px;
-      padding: 14px;
+      min-height: 170px;
+      padding: 18px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #ffffff;
-      box-shadow: var(--shadow);
+      box-shadow: none;
     }
 
     .club-panel.span-4 { grid-column: span 4; }
     .club-panel.span-5 { grid-column: span 5; }
     .club-panel.span-7 { grid-column: span 7; }
+    .club-panel.span-12 { grid-column: span 12; }
 
     .club-panel-head {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
       gap: 10px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     .club-panel h2 {
       margin: 0 0 4px;
-      font-size: 17px;
+      font-size: 16px;
     }
 
     .club-feed {
@@ -475,7 +479,7 @@
       padding: 10px;
       border: 1px solid #e6eef1;
       border-radius: 8px;
-      background: #fbfdfe;
+      background: #ffffff;
     }
 
     .club-task strong,
@@ -488,12 +492,9 @@
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 16px;
       align-items: center;
-      margin-bottom: 16px;
-      padding: 18px;
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+      padding: 0 0 18px;
+      border-bottom: 1px solid var(--line);
     }
 
     .club-home-brand {
@@ -504,14 +505,14 @@
     }
 
     .club-home-brand img {
-      width: 132px;
+      display: none;
       height: auto;
       flex: 0 0 auto;
     }
 
     .club-home-brand h1 {
       margin-bottom: 4px;
-      font-size: 24px;
+      font-size: 26px;
     }
 
     .club-home-actions {
@@ -524,20 +525,19 @@
     .club-metrics {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-
-    .club-metric,
-    .club-module {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      box-shadow: var(--shadow);
+      gap: 14px;
+      margin-bottom: 14px;
     }
 
     .club-metric {
-      padding: 14px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: none;
+    }
+
+    .club-metric {
+      padding: 16px;
     }
 
     .club-metric strong {
@@ -555,7 +555,7 @@
     }
 
     .club-modules {
-      display: grid;
+      display: none;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
     }
@@ -623,7 +623,7 @@
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
-      box-shadow: var(--shadow);
+      box-shadow: none;
       overflow: hidden;
     }
 
@@ -632,9 +632,9 @@
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 12px;
       align-items: center;
-      padding: 16px;
+      padding: 18px;
       border-bottom: 1px solid var(--line);
-      background: #fbfdfe;
+      background: #ffffff;
     }
 
     .module-head h1 {
@@ -839,18 +839,18 @@
 
     .ops-module {
       display: none;
-      padding: 8px 0 24px;
+      padding: 0 0 24px;
     }
 
     .ops-content {
-      padding: 14px;
+      padding: 18px;
     }
 
     .ops-summary {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-      margin-bottom: 12px;
+      gap: 14px;
+      margin-bottom: 14px;
     }
 
     .ops-card,
@@ -859,12 +859,12 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #ffffff;
-      box-shadow: 0 8px 22px rgba(16, 39, 44, .08);
+      box-shadow: none;
     }
 
     .ops-card {
-      min-height: 82px;
-      padding: 13px;
+      min-height: 78px;
+      padding: 16px;
     }
 
     .ops-card strong {
@@ -884,11 +884,11 @@
     .ops-grid {
       display: grid;
       grid-template-columns: repeat(12, minmax(0, 1fr));
-      gap: 10px;
+      gap: 14px;
     }
 
     .ops-panel {
-      padding: 14px;
+      padding: 18px;
     }
 
     .ops-panel.span-4 { grid-column: span 4; }
@@ -1087,8 +1087,9 @@
       justify-content: center;
       border-radius: 999px;
       padding: 8px 12px;
-      background: var(--dark);
-      color: #fff;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      color: var(--text);
       font-size: 12px;
       font-weight: 900;
       text-decoration: none;
@@ -2772,7 +2773,7 @@
       </nav>
       <div class="admin-sidebar-footer">
         <div class="admin-sidebar-status" id="adminSidebarStatus"><strong>Conectando</strong> Aguardando login da equipe.</div>
-        <a href="../" target="_blank" rel="noopener">App publico</a>
+        <a href="../clientes/" target="_blank" rel="noopener">App do cliente</a>
         <button type="button" id="sidebarLogoutBtn">Sair</button>
       </div>
     </aside>
@@ -2780,29 +2781,15 @@
     <section class="club-home" id="clubHome">
       <div class="club-home-top">
         <div class="club-home-brand">
-          <img src="../logo.png" alt="Ilha Tenis" />
           <div>
-            <h1>Gestao Clube Ilha</h1>
-            <div class="muted" id="clubHomeIdentity">Painel central para operacao do clube de tenis.</div>
-          </div>
-        </div>
-        <div class="club-home-actions">
-          <a class="obs-link" href="../" target="_blank" rel="noopener">Ver app publico</a>
-          <button class="ghost-btn" type="button" id="homeLogoutBtn">Sair</button>
-        </div>
-      </div>
-
-      <div class="club-command">
-        <div class="club-command-main">
-          <span class="club-command-dot" aria-hidden="true"></span>
-          <div>
-            <h2>Operacao do clube hoje</h2>
+            <h1>Painel administrativo</h1>
             <div class="muted" id="homeCommandSummary">Clientes cadastrados pelo app e financeiro do clube.</div>
           </div>
         </div>
-        <div class="club-command-actions">
-          <button class="primary-btn" type="button" data-admin-nav="club-clients">Ver clientes</button>
-          <button class="ghost-btn" type="button" data-admin-nav="club-finance">Financeiro</button>
+        <div class="club-home-actions">
+          <span class="obs-link" id="clubHomeIdentity">Admin</span>
+          <a class="obs-link" href="../clientes/" target="_blank" rel="noopener">App do cliente</a>
+          <button class="ghost-btn" type="button" id="homeLogoutBtn">Sair</button>
         </div>
       </div>
 
@@ -2818,7 +2805,7 @@
           <div class="club-panel-head">
             <div>
               <h2>Clientes cadastrados</h2>
-              <div class="muted">Base oficial de quem criou conta em /clientes.</div>
+              <div class="muted">Contas criadas no portal de clientes.</div>
             </div>
             <button class="ghost-btn" type="button" data-admin-nav="club-clients">Abrir</button>
           </div>
@@ -2828,7 +2815,7 @@
           <div class="club-panel-head">
             <div>
               <h2>Financeiro</h2>
-              <div class="muted">Recebiveis, atrasos e proximos lancamentos.</div>
+              <div class="muted">Recebiveis e pendencias financeiras.</div>
             </div>
             <button class="ghost-btn" type="button" data-admin-nav="club-finance">Abrir</button>
           </div>
@@ -2845,24 +2832,6 @@
         </section>
       </div>
 
-      <div class="club-modules">
-        <button class="club-module" type="button" id="openClientsModule">
-          <span class="club-module-kicker">Novo oficial</span>
-          <div>
-            <h2>Clientes do App</h2>
-            <p>Cadastros que entram pelo Ilha Play com nome, e-mail, telefone e senha.</p>
-          </div>
-          <span class="club-module-action">Abrir modulo</span>
-        </button>
-        <button class="club-module" type="button" id="openFinanceModule">
-          <span class="club-module-kicker">Disponivel</span>
-          <div>
-            <h2>Financeiro</h2>
-            <p>Mensalidades, pagamentos, produtos, pendencias e relatorios.</p>
-          </div>
-          <span class="club-module-action">Abrir modulo</span>
-        </button>
-      </div>
     </section>
 
     <section class="ops-module clients-module" id="clientsModule">
@@ -2870,7 +2839,7 @@
         <div class="module-head">
           <div>
             <h1>Clientes do App</h1>
-            <div class="muted">Base oficial de pessoas cadastradas no Ilha Play.</div>
+            <div class="muted">Contas criadas no portal de clientes.</div>
           </div>
           <div class="module-actions">
             <button class="ghost-btn" type="button" data-home-action>Inicio</button>
@@ -2889,7 +2858,7 @@
               <div class="ops-panel-head">
                 <div>
                   <h2>Cadastros recentes</h2>
-                  <div class="muted">Entradas feitas pelo app publico.</div>
+                  <div class="muted">Novos cadastros do portal de clientes.</div>
                 </div>
               </div>
               <div class="ops-list" id="clientList"></div>
@@ -3032,7 +3001,7 @@
         <div class="module-head">
           <div>
             <h1>Financeiro</h1>
-            <div class="muted">Mensalidades, aulas, produtos, recebiveis e despesas.</div>
+            <div class="muted">Recebiveis, pagamentos e pendencias.</div>
           </div>
           <div class="module-actions">
             <button class="ghost-btn" type="button" data-home-action>Inicio</button>
@@ -3051,13 +3020,13 @@
             <div class="ops-panel span-7 table-scroll">
               <div class="ops-panel-head">
                 <div>
-                  <h2>Recebiveis</h2>
-                  <div class="muted">Base para mensalidades, aulas e loja.</div>
+                  <h2>Lancamentos</h2>
+                  <div class="muted">Movimentacao financeira do clube.</div>
                 </div>
               </div>
               <table class="ops-table">
                 <thead>
-                  <tr><th>Aluno</th><th>Origem</th><th>Valor</th><th>Vencimento</th><th>Status</th></tr>
+                  <tr><th>Cliente</th><th>Origem</th><th>Valor</th><th>Vencimento</th><th>Status</th></tr>
                 </thead>
                 <tbody id="financeRows"></tbody>
               </table>
@@ -7425,7 +7394,7 @@
       const name = adminProfile && adminProfile.full_name;
       const role = adminProfile && adminProfile.role;
       const label = [name || email || 'Equipe Ilha', role ? roleLabel(role) : ''].filter(Boolean).join(' | ');
-      if ($('clubHomeIdentity')) $('clubHomeIdentity').textContent = label || 'Painel central para operacao do clube de tenis.';
+      if ($('clubHomeIdentity')) $('clubHomeIdentity').textContent = label || 'Administrador';
       if ($('adminSessionInfo')) $('adminSessionInfo').textContent = role ? 'Conectado como ' + roleLabel(role) + '.' : 'O primeiro e-mail cadastrado vira admin. Depois ele libera professores e secretaria.';
       if ($('adminSidebarStatus')) {
         $('adminSidebarStatus').innerHTML = isAdminDemoMode()
@@ -7846,7 +7815,7 @@
     }
 
     function exportFinanceAction() {
-      const rows = [['Aluno', 'Origem', 'Valor', 'Vencimento', 'Status', 'Categoria']].concat(opsData.finance.map(function (item) {
+      const rows = [['Cliente', 'Origem', 'Valor', 'Vencimento', 'Status', 'Categoria']].concat(opsData.finance.map(function (item) {
         return [item.student, item.source, item.amount, item.due, item.status, item.category];
       }));
       const csv = rows.map(function (row) { return row.map(quoteCsv).join(';'); }).join('\n');
