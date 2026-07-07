@@ -872,11 +872,14 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrcXRncHRlYmtnZndndXlreGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzEyNjAsImV4cCI6MjA5NzcwNzI2MH0.S-dopp-fbBgq8_YclyiAheOdK-QhXt92RYLu8JKmKCg';
     const SESSION_KEY = 'ilha-client-session';
     const DEMO_SESSION_KEY = 'ilha-client-demo-session';
+    const FALLBACK_PROFILE_KEY = 'ilha-client-profile-fallback';
+    const FALLBACK_PLANS_KEY = 'ilha-client-plans-fallback';
 
     let session = null;
     let client = null;
     let planRequests = [];
     let demoMode = false;
+    let databaseReady = true;
 
     const plans = [
       { code: 'aula_1x', name: 'Aulas 1x por semana', amount: 220, features: ['1 aula fixa por semana', 'Acompanhamento do professor', 'Comunicados pelo app'] },
@@ -984,9 +987,75 @@
       const data = text ? JSON.parse(text) : null;
       if (!response.ok) {
         const message = data && (data.message || data.msg || data.error_description || data.details);
-        throw new Error(message || 'Falha ao conversar com o Supabase.');
+        const error = new Error(message || 'Falha ao conversar com o Supabase.');
+        error.status = response.status;
+        error.code = data && data.code;
+        throw error;
       }
       return data;
+    }
+
+    function currentUser() {
+      return session && session.user ? session.user : {};
+    }
+
+    function currentUserId() {
+      return currentUser().id || currentUser().email || 'sem-usuario';
+    }
+
+    function storageKey(base) {
+      return base + ':' + currentUserId();
+    }
+
+    function readStored(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (error) {
+        localStorage.removeItem(key);
+        return fallback;
+      }
+    }
+
+    function writeStored(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function looksLikeMissingSchema(error) {
+      const message = String(error && error.message || '').toLowerCase();
+      return error && (
+        error.status === 404 ||
+        error.code === 'PGRST202' ||
+        error.code === 'PGRST205' ||
+        message.includes('schema cache') ||
+        message.includes('could not find') ||
+        message.includes('does not exist')
+      );
+    }
+
+    function fallbackClient(fullName, phone) {
+      const user = currentUser();
+      const meta = user.user_metadata || {};
+      const stored = readStored(storageKey(FALLBACK_PROFILE_KEY), {});
+      const nextClient = Object.assign({}, stored, {
+        id: user.id || stored.id || null,
+        full_name: fullName || stored.full_name || meta.full_name || user.email || 'Cliente Ilha',
+        email: user.email || stored.email || '',
+        phone: phone || stored.phone || meta.phone || '',
+        status: 'ATIVO',
+        client_type: 'cliente',
+        notes: stored.notes || ''
+      });
+      writeStored(storageKey(FALLBACK_PROFILE_KEY), nextClient);
+      return nextClient;
+    }
+
+    function fallbackPlanRequests() {
+      return readStored(storageKey(FALLBACK_PLANS_KEY), []);
+    }
+
+    function storeFallbackPlanRequests(rows) {
+      writeStored(storageKey(FALLBACK_PLANS_KEY), rows || []);
     }
 
     function storeSession(nextSession) {
@@ -1044,8 +1113,18 @@
         method: 'POST',
         body: { p_full_name: fullName || null, p_phone: phone || null },
         prefer: 'return=representation'
+      }).catch(function (error) {
+        if (!looksLikeMissingSchema(error)) throw error;
+        databaseReady = false;
+        return null;
       });
+      if (!result) {
+        client = fallbackClient(fullName, phone);
+        return client;
+      }
+      databaseReady = true;
       client = Array.isArray(result) ? result[0] : result;
+      if (client) writeStored(storageKey(FALLBACK_PROFILE_KEY), client);
       return client;
     }
 
@@ -1058,9 +1137,15 @@
       }
       try {
         const rows = await rest('app_plan_requests?select=*&order=created_at.desc');
+        databaseReady = true;
         planRequests = Array.isArray(rows) ? rows : [];
       } catch (error) {
-        planRequests = [];
+        if (looksLikeMissingSchema(error)) {
+          databaseReady = false;
+          planRequests = fallbackPlanRequests();
+          return;
+        }
+        planRequests = fallbackPlanRequests();
         toast('Plano/pagamentos ainda aguardam a atualizacao do banco.');
       }
     }
@@ -1206,7 +1291,9 @@
       $('sideClientName').textContent = name;
       $('sideStatus').innerHTML = (demoMode || (session && session.demo))
         ? '<strong>Modo demonstracao</strong> Dados locais para testar a area do aluno.'
-        : '<strong>Conta conectada</strong> Cadastro sincronizado com o Supabase.';
+        : (!databaseReady
+          ? '<strong>Conta Supabase ativa</strong> Banco do clube aguardando ativacao.'
+          : '<strong>Conta conectada</strong> Cadastro sincronizado com o Supabase.');
     }
 
     function currentPlanRequest() {
@@ -1293,6 +1380,13 @@
       }
       try {
         await ensureClient(fullName, phone);
+        if (!databaseReady) {
+          client = Object.assign({}, client, { full_name: fullName, phone: phone, notes: notes });
+          writeStored(storageKey(FALLBACK_PROFILE_KEY), client);
+          renderAll();
+          toast('Dados guardados. Falta ativar o banco para sincronizar.');
+          return;
+        }
         await rest('app_clients?id=eq.' + encodeURIComponent(session.user.id), {
           method: 'PATCH',
           body: { full_name: fullName, phone: phone, notes: notes },
@@ -1326,6 +1420,20 @@
       }
       try {
         await ensureClient(null, null);
+        if (!databaseReady) {
+          planRequests.unshift({
+            id: 'local_' + Date.now(),
+            plan_code: plan.code,
+            plan_name: plan.name,
+            amount: plan.amount,
+            status: 'SOLICITADO',
+            created_at: new Date().toISOString()
+          });
+          storeFallbackPlanRequests(planRequests);
+          renderAll();
+          toast('Plano anotado. Falta ativar o banco para a secretaria ver.');
+          return;
+        }
         const inserted = await rest('app_plan_requests', {
           method: 'POST',
           body: {
