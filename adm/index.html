@@ -1244,6 +1244,96 @@
       color: var(--teal);
     }
 
+    .finance-workspace {
+      align-items: start;
+    }
+
+    .finance-form-card {
+      position: sticky;
+      top: 84px;
+    }
+
+    .finance-list-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .finance-list-title strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .finance-list-title span {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .finance-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      border-left: 4px solid var(--line);
+    }
+
+    .finance-item.income {
+      border-left-color: var(--lime);
+    }
+
+    .finance-item.expense {
+      border-left-color: #ef4444;
+    }
+
+    .finance-item-main strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 15px;
+    }
+
+    .finance-item-main small {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .finance-item-side {
+      display: grid;
+      justify-items: end;
+      gap: 7px;
+      min-width: 148px;
+    }
+
+    .finance-amount {
+      color: var(--teal);
+      font-size: 18px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .finance-amount.expense {
+      color: #b91c1c;
+    }
+
+    .finance-action-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .finance-mini-list {
+      display: grid;
+      gap: 8px;
+    }
+
     .message-preview {
       min-height: 160px;
       padding: 12px;
@@ -2680,6 +2770,22 @@
       .cashflow-grid {
         grid-template-columns: 1fr;
       }
+      .finance-form-card {
+        position: static;
+      }
+      .finance-list-head {
+        display: grid;
+      }
+      .finance-item {
+        grid-template-columns: 1fr;
+      }
+      .finance-item-side {
+        min-width: 0;
+        justify-items: start;
+      }
+      .finance-action-row {
+        justify-content: flex-start;
+      }
       .topbar { margin: -10px -10px 10px; padding: 10px; }
       .topline { align-items: flex-start; }
       .top-actions {
@@ -3535,66 +3641,121 @@
         <div class="module-head">
           <div>
             <h1>Financeiro</h1>
-            <div class="muted">Fluxo de caixa, contas a receber, contas a pagar e pendencias.</div>
+            <div class="muted">Mensalidades, aulas, despesas e caixa do clube.</div>
           </div>
           <div class="module-actions">
             <button class="ghost-btn" type="button" data-home-action>Inicio</button>
             <button class="ghost-btn" type="button" id="financeExportBtn">Exportar</button>
-            <button class="primary-btn" type="button" id="financeNewBtn">Novo lancamento</button>
+            <button class="primary-btn" type="button" id="financeNewBtn">Lancar agora</button>
           </div>
         </div>
         <div class="ops-content">
           <div class="ops-summary">
-            <div class="ops-card"><strong id="financeExpectedMetric">R$ 0</strong><span>previsto no mes</span></div>
-            <div class="ops-card"><strong id="financeReceivedMetric">R$ 0</strong><span>recebido</span></div>
-            <div class="ops-card"><strong id="financePendingMetric">R$ 0</strong><span>em aberto</span></div>
+            <div class="ops-card"><strong id="financeBalanceMetric">R$ 0</strong><span>saldo atual</span></div>
+            <div class="ops-card"><strong id="financeReceivableMetric">R$ 0</strong><span>a receber</span></div>
+            <div class="ops-card"><strong id="financePayableMetric">R$ 0</strong><span>a pagar</span></div>
             <div class="ops-card"><strong id="financeOverdueMetric">0</strong><span>vencidos</span></div>
           </div>
-          <div class="ops-grid">
-            <div class="ops-panel span-12">
+          <div class="ops-grid finance-workspace">
+            <div class="ops-panel span-4 finance-form-card">
               <div class="ops-panel-head">
                 <div>
-                  <h2>Fluxo de caixa</h2>
-                  <div class="muted">Leitura rapida do caixa do clube.</div>
+                  <h2>Lancamento rapido</h2>
+                  <div class="muted">Use para mensalidade, aula avulsa, loja ou despesa.</div>
                 </div>
               </div>
-              <div class="cashflow-grid" id="cashflowGrid"></div>
+              <form class="form-grid" id="financeForm">
+                <div class="field">
+                  <label for="financeType">Tipo</label>
+                  <select id="financeType">
+                    <option value="RECEITA">Receber</option>
+                    <option value="DESPESA">Pagar</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="financeStatus">Status</label>
+                  <select id="financeStatus">
+                    <option value="ABERTO">Em aberto</option>
+                    <option value="RECEBIDO">Recebido</option>
+                    <option value="PAGO">Pago</option>
+                    <option value="VENCIDO">Vencido</option>
+                  </select>
+                </div>
+                <div class="field full">
+                  <label for="financeCounterparty">Aluno / fornecedor</label>
+                  <input id="financeCounterparty" placeholder="Ex.: Maria, Professor, Fornecedor" />
+                </div>
+                <div class="field full">
+                  <label for="financeDescription">Descricao</label>
+                  <input id="financeDescription" placeholder="Mensalidade, aula avulsa, bolas, limpeza..." />
+                </div>
+                <div class="field">
+                  <label for="financeAmount">Valor</label>
+                  <input id="financeAmount" inputmode="decimal" placeholder="220,00" />
+                </div>
+                <div class="field">
+                  <label for="financeDue">Vencimento</label>
+                  <input id="financeDue" type="date" />
+                </div>
+                <div class="field">
+                  <label for="financeCategory">Categoria</label>
+                  <select id="financeCategory">
+                    <option value="Mensalidade">Mensalidade</option>
+                    <option value="Aulas">Aulas</option>
+                    <option value="Quadra">Quadra</option>
+                    <option value="Loja">Loja</option>
+                    <option value="Torneio">Torneio</option>
+                    <option value="Equipe">Equipe</option>
+                    <option value="Manutencao">Manutencao</option>
+                    <option value="Operacao">Operacao</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="financeMethod">Pagamento</label>
+                  <select id="financeMethod">
+                    <option value="">A definir</option>
+                    <option value="PIX">PIX</option>
+                    <option value="Cartao">Cartao</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                    <option value="Transferencia">Transferencia</option>
+                  </select>
+                </div>
+                <div class="field full">
+                  <label for="financeNotes">Observacoes</label>
+                  <textarea id="financeNotes" placeholder="Combinado, parcela, professor, turma ou detalhe importante."></textarea>
+                </div>
+                <div class="field full">
+                  <button class="primary-btn" type="submit">Salvar lancamento</button>
+                </div>
+              </form>
+            </div>
+            <div class="ops-panel span-8">
+              <div class="finance-list-head">
+                <div class="finance-list-title">
+                  <strong>Movimentacao</strong>
+                  <span id="financeListHint">Lancamentos do clube.</span>
+                </div>
+                <div class="lesson-filters" id="financeFilters"></div>
+              </div>
+              <div class="ops-list" id="financeRows"></div>
             </div>
             <div class="ops-panel span-6">
               <div class="ops-panel-head">
                 <div>
-                  <h2>Contas a receber</h2>
-                  <div class="muted">Mensalidades, aulas, loja e torneios.</div>
+                  <h2>Vencidos</h2>
+                  <div class="muted">O que precisa de acao agora.</div>
                 </div>
               </div>
-              <div class="ops-list" id="financeReceivableList"></div>
+              <div class="finance-mini-list" id="financeOverdueList"></div>
             </div>
             <div class="ops-panel span-6">
               <div class="ops-panel-head">
                 <div>
-                  <h2>Contas a pagar</h2>
-                  <div class="muted">Fornecedores, equipe, manutencao e operacao.</div>
+                  <h2>Proximos 7 dias</h2>
+                  <div class="muted">Contas que estao chegando.</div>
                 </div>
               </div>
-              <div class="ops-list" id="financePayableList"></div>
-            </div>
-            <div class="ops-panel span-8 table-scroll">
-              <div class="ops-panel-head">
-                <div>
-                  <h2>Todos os lancamentos</h2>
-                  <div class="muted">Movimentacao completa do clube.</div>
-                </div>
-              </div>
-              <table class="ops-table">
-                <thead>
-                  <tr><th>Tipo</th><th>Cliente/Fornecedor</th><th>Origem</th><th>Valor</th><th>Vencimento</th><th>Status</th></tr>
-                </thead>
-                <tbody id="financeRows"></tbody>
-              </table>
-            </div>
-            <div class="ops-panel span-4">
-              <h2>Resumo por categoria</h2>
-              <div class="ops-list" id="financeCategoryList"></div>
+              <div class="finance-mini-list" id="financeUpcomingList"></div>
             </div>
           </div>
         </div>
@@ -7397,6 +7558,7 @@
     const opsState = {
       studentStatus: 'todos',
       agendaType: 'todos',
+      financeFilter: 'abertos',
       selectedClientId: null,
       editingPlanId: null,
       loaded: false
@@ -7610,9 +7772,11 @@
     }
 
     function mapFinanceRow(row) {
+      const counterparty = row.counterparty || row.vendor_name || row.students && row.students.name || row.description;
       return {
         id: row.id,
-        student: row.students && row.students.name ? row.students.name : row.description,
+        student: counterparty,
+        counterparty: counterparty,
         source: row.description || 'Lancamento',
         type: row.type || 'RECEITA',
         amount: Number(row.amount || 0),
@@ -7620,7 +7784,8 @@
         status: row.status || 'ABERTO',
         category: row.category || 'Geral',
         paidAt: row.paid_at || '',
-        paymentMethod: row.payment_method || ''
+        paymentMethod: row.payment_method || '',
+        notes: row.notes || ''
       };
     }
 
@@ -7735,7 +7900,7 @@
     function renderHomeDashboard() {
       if (!$('homeClientsMetric')) return;
       const activeClients = opsData.clients.filter(function (client) { return client.status === 'ATIVO'; });
-      const pendingFinance = opsData.finance.filter(function (item) { return item.status !== 'RECEBIDO'; });
+      const pendingFinance = opsData.finance.filter(function (item) { return !isFinancePaid(item); });
       const pendingAmount = pendingFinance.reduce(function (sum, item) { return sum + Number(item.amount || 0); }, 0);
       $('homeClientsMetric').textContent = opsData.clients.length;
       $('homeStudentsMetric').textContent = activeClients.length;
@@ -7748,7 +7913,7 @@
       }).join('') || '<div class="lesson-empty-state">Nenhum cliente no app ainda.</div>';
 
       $('homeFinanceList').innerHTML = pendingFinance.slice(0, 3).map(function (item) {
-        return '<article class="club-task"><strong>' + escapeHtml(item.source) + '</strong><div class="muted">' + escapeHtml(item.student) + ' | ' + escapeHtml(item.due) + '</div><div class="finance-total">' + money(item.amount) + '</div></article>';
+        return '<article class="club-task"><strong>' + escapeHtml(item.source) + '</strong><div class="muted">' + escapeHtml(item.counterparty || item.student) + ' | ' + escapeHtml(financeDateLabel(item.due)) + '</div><div class="finance-total">' + money(item.amount) + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Sem pendencias financeiras.</div>';
 
       $('homeSystemList').innerHTML = opsData.planRequests.slice(0, 5).map(function (item) {
@@ -8066,46 +8231,116 @@
       }
     }
 
+    function financeDateValue(value) {
+      if (!value) return null;
+      const date = new Date(String(value) + 'T00:00:00');
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function financeDateLabel(value) {
+      const date = financeDateValue(value);
+      return date ? date.toLocaleDateString('pt-BR') : 'Sem vencimento';
+    }
+
+    function isFinancePaid(item) {
+      return item.status === 'RECEBIDO' || item.status === 'PAGO';
+    }
+
+    function isFinanceOverdue(item) {
+      const due = financeDateValue(item.due);
+      const today = financeDateValue(localDateString());
+      return !isFinancePaid(item) && (item.status === 'VENCIDO' || Boolean(due && today && due < today));
+    }
+
+    function financeDisplayStatus(item) {
+      if (isFinancePaid(item)) return item.status;
+      if (isFinanceOverdue(item)) return 'VENCIDO';
+      return item.status || 'ABERTO';
+    }
+
+    function financeFilterLabel(filter) {
+      const labels = {
+        abertos: 'em aberto',
+        receber: 'a receber',
+        pagar: 'a pagar',
+        vencidos: 'vencidos',
+        pagos: 'pagos',
+        todos: 'todos'
+      };
+      return labels[filter] || 'lancamentos';
+    }
+
+    function financeMatchesFilter(item, filter) {
+      if (filter === 'receber') return item.type !== 'DESPESA' && !isFinancePaid(item);
+      if (filter === 'pagar') return item.type === 'DESPESA' && !isFinancePaid(item);
+      if (filter === 'vencidos') return isFinanceOverdue(item);
+      if (filter === 'pagos') return isFinancePaid(item);
+      if (filter === 'todos') return true;
+      return !isFinancePaid(item);
+    }
+
+    function sortFinanceRows(rows) {
+      return rows.slice().sort(function (a, b) {
+        const paidDiff = Number(isFinancePaid(a)) - Number(isFinancePaid(b));
+        if (paidDiff) return paidDiff;
+        return String(a.due || '9999-12-31').localeCompare(String(b.due || '9999-12-31'));
+      });
+    }
+
+    function renderFinanceItem(item, compact) {
+      const paid = isFinancePaid(item);
+      const status = financeDisplayStatus(item);
+      const isExpense = item.type === 'DESPESA';
+      const actionLabel = isExpense ? 'Marcar pago' : 'Marcar recebido';
+      const meta = [
+        item.source,
+        item.category,
+        financeDateLabel(item.due),
+        item.paymentMethod || ''
+      ].filter(Boolean).join(' | ');
+      return '<article class="ops-list-card finance-item ' + (isExpense ? 'expense' : 'income') + '">' +
+        '<div class="finance-item-main"><strong>' + escapeHtml(item.counterparty || item.student || 'Lancamento') + '</strong><small>' + escapeHtml(meta) + '</small></div>' +
+        '<div class="finance-item-side"><span class="finance-amount ' + (isExpense ? 'expense' : '') + '">' + (isExpense ? '-' : '+') + money(item.amount) + '</span>' +
+        '<div class="finance-action-row">' + statusPill(status) + (paid || compact ? '' : '<button class="small-btn" type="button" data-finance-paid="' + escapeHtml(item.id || '') + '">' + actionLabel + '</button>') + '</div></div>' +
+        '</article>';
+    }
+
     function renderFinanceModule() {
       const receivables = opsData.finance.filter(function (item) { return item.type !== 'DESPESA'; });
       const payables = opsData.finance.filter(function (item) { return item.type === 'DESPESA'; });
-      const received = receivables.filter(function (item) { return item.status === 'RECEBIDO'; }).reduce(function (sum, item) { return sum + item.amount; }, 0);
-      const toReceive = receivables.filter(function (item) { return item.status !== 'RECEBIDO'; }).reduce(function (sum, item) { return sum + item.amount; }, 0);
-      const paid = payables.filter(function (item) { return item.status === 'PAGO' || item.status === 'RECEBIDO'; }).reduce(function (sum, item) { return sum + item.amount; }, 0);
-      const toPay = payables.filter(function (item) { return item.status !== 'PAGO' && item.status !== 'RECEBIDO'; }).reduce(function (sum, item) { return sum + item.amount; }, 0);
-      const expected = received + toReceive;
-      const cashBalance = received - paid;
-      $('financeExpectedMetric').textContent = money(expected);
-      $('financeReceivedMetric').textContent = money(received);
-      $('financePendingMetric').textContent = money(toReceive + toPay);
-      $('financeOverdueMetric').textContent = opsData.finance.filter(function (item) { return item.status === 'VENCIDO'; }).length;
-      $('cashflowGrid').innerHTML =
-        '<article class="cashflow-card"><span>Recebido</span><strong>' + money(received) + '</strong></article>' +
-        '<article class="cashflow-card"><span>A receber</span><strong>' + money(toReceive) + '</strong></article>' +
-        '<article class="cashflow-card"><span>A pagar</span><strong>' + money(toPay) + '</strong></article>' +
-        '<article class="cashflow-card"><span>Despesas pagas</span><strong>' + money(paid) + '</strong></article>' +
-        '<article class="cashflow-card"><span>Saldo de caixa</span><strong>' + money(cashBalance) + '</strong></article>' +
-        '<article class="cashflow-card"><span>Resultado previsto</span><strong>' + money(expected - paid - toPay) + '</strong></article>';
-      $('financeReceivableList').innerHTML = receivables.filter(function (item) { return item.status !== 'RECEBIDO'; }).map(function (item) {
-        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(item.student) + '</strong><div class="muted">' + escapeHtml(item.source) + ' | ' + escapeHtml(item.due || 'sem vencimento') + '</div></div><div class="ops-meta">' + statusPill(item.status) + '<span class="ops-pill">' + money(item.amount) + '</span></div></div></article>';
-      }).join('') || '<div class="lesson-empty-state">Nenhuma conta a receber em aberto.</div>';
-      $('financePayableList').innerHTML = payables.filter(function (item) { return item.status !== 'PAGO' && item.status !== 'RECEBIDO'; }).map(function (item) {
-        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(item.student) + '</strong><div class="muted">' + escapeHtml(item.source) + ' | ' + escapeHtml(item.due || 'sem vencimento') + '</div></div><div class="ops-meta">' + statusPill(item.status) + '<span class="ops-pill">' + money(item.amount) + '</span></div></div></article>';
-      }).join('') || '<div class="lesson-empty-state">Nenhuma conta a pagar em aberto.</div>';
-      $('financeRows').innerHTML = opsData.finance.map(function (item) {
-        return '<tr><td>' + escapeHtml(item.type === 'DESPESA' ? 'Despesa' : 'Receita') + '</td><td>' + escapeHtml(item.student) + '</td><td>' + escapeHtml(item.source) + '</td><td>' + money(item.amount) + '</td><td>' + escapeHtml(item.due) + '</td><td>' + statusPill(item.status) + '</td></tr>';
+      const received = receivables.filter(isFinancePaid).reduce(function (sum, item) { return sum + item.amount; }, 0);
+      const toReceive = receivables.filter(function (item) { return !isFinancePaid(item); }).reduce(function (sum, item) { return sum + item.amount; }, 0);
+      const paid = payables.filter(isFinancePaid).reduce(function (sum, item) { return sum + item.amount; }, 0);
+      const toPay = payables.filter(function (item) { return !isFinancePaid(item); }).reduce(function (sum, item) { return sum + item.amount; }, 0);
+      const overdue = opsData.finance.filter(isFinanceOverdue);
+      const today = financeDateValue(localDateString());
+      const nextWeek = new Date(today.getTime());
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      const upcoming = sortFinanceRows(opsData.finance.filter(function (item) {
+        const due = financeDateValue(item.due);
+        return !isFinancePaid(item) && due && due >= today && due <= nextWeek;
+      }));
+      const visibleRows = sortFinanceRows(opsData.finance.filter(function (item) {
+        return financeMatchesFilter(item, opsState.financeFilter);
+      }));
+      $('financeBalanceMetric').textContent = money(received - paid);
+      $('financeReceivableMetric').textContent = money(toReceive);
+      $('financePayableMetric').textContent = money(toPay);
+      $('financeOverdueMetric').textContent = overdue.length;
+      $('financeFilters').innerHTML = [
+        ['abertos', 'Abertos'],
+        ['receber', 'Receber'],
+        ['pagar', 'Pagar'],
+        ['vencidos', 'Vencidos'],
+        ['pagos', 'Pagos'],
+        ['todos', 'Todos']
+      ].map(function (item) {
+        return '<button class="lesson-filter-btn' + (opsState.financeFilter === item[0] ? ' active' : '') + '" type="button" data-finance-filter="' + item[0] + '">' + item[1] + '</button>';
       }).join('');
-      const categories = {};
-      opsData.finance.forEach(function (item) {
-        categories[item.category] = categories[item.category] || { total: 0, rows: 0, receita: 0, despesa: 0 };
-        categories[item.category].total += item.type === 'DESPESA' ? -item.amount : item.amount;
-        if (item.type === 'DESPESA') categories[item.category].despesa += item.amount;
-        else categories[item.category].receita += item.amount;
-        categories[item.category].rows += 1;
-      });
-      $('financeCategoryList').innerHTML = Object.keys(categories).map(function (category) {
-        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(category) + '</strong><div class="muted">' + categories[category].rows + ' lancamentos | +' + money(categories[category].receita) + ' / -' + money(categories[category].despesa) + '</div></div><div class="finance-total">' + money(categories[category].total) + '</div></div></article>';
-      }).join('');
+      $('financeListHint').textContent = visibleRows.length + ' lancamento(s) ' + financeFilterLabel(opsState.financeFilter) + '.';
+      $('financeRows').innerHTML = visibleRows.map(function (item) { return renderFinanceItem(item, false); }).join('') || '<div class="lesson-empty-state">Nenhum lancamento para este filtro.</div>';
+      $('financeOverdueList').innerHTML = sortFinanceRows(overdue).slice(0, 6).map(function (item) { return renderFinanceItem(item, true); }).join('') || '<div class="lesson-empty-state">Nada vencido agora.</div>';
+      $('financeUpcomingList').innerHTML = upcoming.slice(0, 6).map(function (item) { return renderFinanceItem(item, true); }).join('') || '<div class="lesson-empty-state">Nada previsto para os proximos dias.</div>';
     }
 
     function renderCommunicationModule() {
@@ -8142,6 +8377,7 @@
 
     function openFinanceModule() {
       setClubMode('club-finance');
+      if (!$('financeDue').value) $('financeDue').value = localDateString();
       renderFinanceModule();
       loadOpsData(false).then(renderFinanceModule);
     }
@@ -8765,9 +9001,10 @@
           .filter(function (item) { return !existingFinance.has(String(item.source || '').toLowerCase()); })
           .map(function (item) {
             return {
+              counterparty: item.student,
               description: item.source,
               category: item.category,
-              type: 'RECEITA',
+              type: item.type || 'RECEITA',
               amount: item.amount,
               due_date: item.due,
               status: item.status
@@ -8860,60 +9097,129 @@
       toast('Agenda de hoje atualizada na tela.');
     }
 
-    async function createFinanceAction() {
+    function resetFinanceForm() {
+      $('financeForm').reset();
+      $('financeType').value = 'RECEITA';
+      $('financeStatus').value = 'ABERTO';
+      $('financeCategory').value = 'Mensalidade';
+      $('financeDue').value = localDateString();
+    }
+
+    function updateFinanceTypeDefaults() {
+      if ($('financeType').value === 'DESPESA') {
+        if ($('financeCategory').value === 'Mensalidade' || $('financeCategory').value === 'Aulas') $('financeCategory').value = 'Operacao';
+        if ($('financeStatus').value === 'RECEBIDO') $('financeStatus').value = 'PAGO';
+      } else if ($('financeCategory').value === 'Operacao') {
+        $('financeCategory').value = 'Mensalidade';
+        if ($('financeStatus').value === 'PAGO') $('financeStatus').value = 'RECEBIDO';
+      }
+    }
+
+    function focusFinanceFormAction() {
+      resetFinanceForm();
+      $('financeDescription').focus();
+      toast('Preencha o lancamento financeiro.');
+    }
+
+    async function createFinanceAction(event) {
+      if (event) event.preventDefault();
       try {
         requireAdminSession();
+        const type = $('financeType').value === 'DESPESA' ? 'DESPESA' : 'RECEITA';
+        const counterparty = $('financeCounterparty').value.trim();
+        const description = $('financeDescription').value.trim();
+        const amount = parseMoneyInput($('financeAmount').value);
+        const dueDate = $('financeDue').value || localDateString();
+        const category = $('financeCategory').value || (type === 'DESPESA' ? 'Operacao' : 'Mensalidade');
+        let status = $('financeStatus').value || 'ABERTO';
+        if (type === 'DESPESA' && status === 'RECEBIDO') status = 'PAGO';
+        if (type !== 'DESPESA' && status === 'PAGO') status = 'RECEBIDO';
+        const paymentMethod = $('financeMethod').value;
+        const notes = $('financeNotes').value.trim();
+        if (!description) throw new Error('Informe a descricao do lancamento.');
+        if (!counterparty) throw new Error('Informe o aluno ou fornecedor.');
+        const paidAt = (status === 'RECEBIDO' || status === 'PAGO') ? new Date().toISOString() : null;
+        const localItem = {
+          id: localId('finance'),
+          student: counterparty,
+          counterparty: counterparty,
+          source: description,
+          type: type,
+          amount: amount,
+          due: dueDate,
+          status: status,
+          category: category,
+          paidAt: paidAt || '',
+          paymentMethod: paymentMethod,
+          notes: notes
+        };
         if (isAdminDemoMode()) {
-          const number = opsData.finance.length + 1;
-          opsData.finance.push({
-            id: localId('finance'),
-            student: 'Cliente Demo ' + number,
-            source: 'Lancamento Demo ' + number,
-            type: 'RECEITA',
-            amount: 220,
-            due: localDateString(),
-            status: 'ABERTO',
-            category: 'Aulas'
-          });
-          renderFinanceModule();
-          renderHomeDashboard();
-          toast('Lancamento demo criado.');
-          return;
-        }
-        const description = prompt('Descricao do lancamento');
-        if (!description) return;
-        const type = String(prompt('Tipo (RECEITA ou DESPESA)', 'RECEITA') || 'RECEITA').trim().toUpperCase() === 'DESPESA' ? 'DESPESA' : 'RECEITA';
-        const amount = parseMoneyInput(prompt('Valor', '220,00'));
-        const dueDate = prompt('Vencimento (AAAA-MM-DD)', localDateString()) || localDateString();
-        const category = prompt('Categoria', type === 'DESPESA' ? 'Operacao' : 'Aulas') || (type === 'DESPESA' ? 'Operacao' : 'Aulas');
-        const status = prompt('Status', type === 'DESPESA' ? 'ABERTO' : 'ABERTO') || 'ABERTO';
-        if (isAdminDemoMode()) {
-          opsData.finance.push({
-            id: localId('finance'),
-            student: description.trim(),
-            source: description.trim(),
-            type: type,
-            amount: amount,
-            due: dueDate,
-            status: status.trim().toUpperCase(),
-            category: category.trim()
-          });
+          opsData.finance.unshift(localItem);
+          resetFinanceForm();
           renderFinanceModule();
           renderHomeDashboard();
           toast('Lancamento criado na demonstracao.');
           return;
         }
-        const inserted = await supabaseInsert('financial_transactions', {
-          description: description.trim(),
-          category: category.trim(),
+        const payload = {
+          counterparty: counterparty,
+          description: description,
+          category: category,
           type: type,
           amount: amount,
           due_date: dueDate,
-          status: status.trim().toUpperCase()
-        });
+          status: status,
+          paid_at: paidAt,
+          payment_method: paymentMethod || null,
+          notes: notes
+        };
+        let inserted = null;
+        try {
+          inserted = await supabaseInsert('financial_transactions', payload);
+        } catch (error) {
+          const fallbackPayload = Object.assign({}, payload);
+          delete fallbackPayload.counterparty;
+          inserted = await supabaseInsert('financial_transactions', fallbackPayload);
+        }
         opsData.finance.push(mapFinanceRow(inserted));
+        resetFinanceForm();
         renderFinanceModule();
+        renderHomeDashboard();
         toast('Lancamento salvo no Supabase.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function markFinancePaidAction(id) {
+      try {
+        requireAdminSession();
+        const item = opsData.finance.find(function (row) { return String(row.id) === String(id); });
+        if (!item) throw new Error('Lancamento nao encontrado.');
+        const nextStatus = item.type === 'DESPESA' ? 'PAGO' : 'RECEBIDO';
+        const paidAt = new Date().toISOString();
+        if (isAdminDemoMode() || String(item.id || '').startsWith('finance_')) {
+          item.status = nextStatus;
+          item.paidAt = paidAt;
+          renderFinanceModule();
+          renderHomeDashboard();
+          toast(item.type === 'DESPESA' ? 'Conta marcada como paga.' : 'Recebimento marcado.');
+          return;
+        }
+        const saved = await supabaseRest('financial_transactions?id=eq.' + encodeURIComponent(item.id), {
+          method: 'PATCH',
+          body: {
+            status: nextStatus,
+            paid_at: paidAt
+          },
+          prefer: 'return=representation'
+        });
+        const mapped = mapFinanceRow(Array.isArray(saved) ? saved[0] : saved);
+        const index = opsData.finance.findIndex(function (row) { return String(row.id) === String(id); });
+        if (index >= 0) opsData.finance.splice(index, 1, mapped);
+        renderFinanceModule();
+        renderHomeDashboard();
+        toast(item.type === 'DESPESA' ? 'Conta marcada como paga.' : 'Recebimento marcado.');
       } catch (error) {
         reportActionError(error);
       }
@@ -8921,7 +9227,7 @@
 
     function exportFinanceAction() {
       const rows = [['Tipo', 'Cliente/Fornecedor', 'Origem', 'Valor', 'Vencimento', 'Status', 'Categoria']].concat(opsData.finance.map(function (item) {
-        return [item.type || 'RECEITA', item.student, item.source, item.amount, item.due, item.status, item.category];
+        return [item.type || 'RECEITA', item.counterparty || item.student, item.source, item.amount, item.due, financeDisplayStatus(item), item.category];
       }));
       const csv = rows.map(function (row) { return row.map(quoteCsv).join(';'); }).join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -9387,12 +9693,26 @@
           renderAgendaModule();
         }
       });
+      $('financeModule').addEventListener('click', function (event) {
+        const filterBtn = event.target.closest('[data-finance-filter]');
+        if (filterBtn) {
+          opsState.financeFilter = filterBtn.dataset.financeFilter;
+          renderFinanceModule();
+          return;
+        }
+        const paidBtn = event.target.closest('[data-finance-paid]');
+        if (paidBtn) {
+          markFinancePaidAction(paidBtn.dataset.financePaid);
+        }
+      });
       $('studentImportBtn').addEventListener('click', importSeedBaseAction);
       $('studentNewBtn').addEventListener('click', createStudentAction);
       $('agendaTodayBtn').addEventListener('click', showTodayAgendaAction);
       $('agendaNewBtn').addEventListener('click', createAgendaEventAction);
       $('financeExportBtn').addEventListener('click', exportFinanceAction);
-      $('financeNewBtn').addEventListener('click', createFinanceAction);
+      $('financeNewBtn').addEventListener('click', focusFinanceFormAction);
+      $('financeForm').addEventListener('submit', createFinanceAction);
+      $('financeType').addEventListener('change', updateFinanceTypeDefaults);
       $('communicationTemplatesBtn').addEventListener('click', createTemplateAction);
       $('communicationNewBtn').addEventListener('click', createCampaignAction);
       $('copyMessageBtn').addEventListener('click', function () {
