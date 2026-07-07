@@ -379,6 +379,7 @@ create table if not exists public.club_agenda_events (
 create table if not exists public.financial_transactions (
   id uuid primary key default gen_random_uuid(),
   student_id uuid references public.students(id) on delete set null,
+  counterparty text,
   description text not null,
   category text not null default 'Aulas',
   type text not null default 'RECEITA' check (type in ('RECEITA', 'DESPESA')),
@@ -391,6 +392,8 @@ create table if not exists public.financial_transactions (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.financial_transactions add column if not exists counterparty text;
 
 create table if not exists public.communication_audiences (
   id uuid primary key default gen_random_uuid(),
