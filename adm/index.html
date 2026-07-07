@@ -899,6 +899,33 @@
       align-items: flex-start;
     }
 
+    .client-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .client-avatar {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: #edf4f6;
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .client-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
     .ops-list-main strong {
       display: block;
       margin-bottom: 4px;
@@ -6929,6 +6956,11 @@
         name: row.full_name || row.email || 'Cliente',
         email: row.email || '',
         phone: row.phone || '',
+        cpf: row.cpf || '',
+        age: row.age || '',
+        guardian: row.guardian_name || '',
+        guardianPhone: row.guardian_phone || '',
+        photo: row.profile_photo || row.avatar_url || '',
         status: row.status || 'ATIVO',
         type: row.client_type || 'cliente',
         created: row.created_at || '',
@@ -7033,6 +7065,16 @@
       }
     }
 
+    function clientInitials(name) {
+      return String(name || 'Ilha').trim().split(/\s+/).slice(0, 2).map(function (part) {
+        return part.charAt(0).toUpperCase();
+      }).join('') || 'IL';
+    }
+
+    function clientAvatar(client) {
+      return '<span class="client-avatar">' + (client.photo ? '<img src="' + escapeHtml(client.photo) + '" alt="" />' : escapeHtml(clientInitials(client.name))) + '</span>';
+    }
+
     function renderHomeDashboard() {
       if (!$('homeClientsMetric')) return;
       const activeClients = opsData.clients.filter(function (client) { return client.status === 'ATIVO'; });
@@ -7045,7 +7087,7 @@
       if ($('homeCommandSummary')) $('homeCommandSummary').textContent = '';
 
       $('homeClientsList').innerHTML = opsData.clients.slice(0, 3).map(function (client) {
-        return '<article class="club-task"><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(client.email || 'Sem e-mail') + '</div><div class="ops-meta">' + statusPill(client.status) + whatsappLink(client.phone) + '</div></article>';
+        return '<article class="club-task"><div class="client-line">' + clientAvatar(client) + '<div><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(client.email || 'Sem e-mail') + '</div></div></div><div class="ops-meta">' + statusPill(client.status) + whatsappLink(client.phone) + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum cliente no app ainda.</div>';
 
       $('homeFinanceList').innerHTML = pendingFinance.slice(0, 3).map(function (item) {
@@ -7071,7 +7113,14 @@
       $('clientRecentMetric').textContent = recent.length;
       $('clientList').innerHTML = opsData.clients.map(function (client) {
         const created = client.created ? new Date(client.created).toLocaleDateString('pt-BR') : 'Sem data';
-        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(client.email) + ' | cadastrado em ' + escapeHtml(created) + '</div></div><div class="ops-meta">' + statusPill(client.status) + '<span class="ops-pill">' + escapeHtml(client.type) + '</span>' + whatsappLink(client.phone) + '</div></div></article>';
+        const extra = [
+          client.email,
+          client.age ? client.age + ' anos' : '',
+          client.cpf ? 'CPF ' + client.cpf : '',
+          client.guardian ? 'Resp. ' + client.guardian : '',
+          'cadastrado em ' + created
+        ].filter(Boolean).join(' | ');
+        return '<article class="ops-list-card"><div class="ops-list-main"><div class="client-line">' + clientAvatar(client) + '<div><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(extra) + '</div></div></div><div class="ops-meta">' + statusPill(client.status) + '<span class="ops-pill">' + escapeHtml(client.type) + '</span>' + whatsappLink(client.phone || client.guardianPhone) + '</div></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum cliente cadastrado ainda.</div>';
 
       const segments = {};
