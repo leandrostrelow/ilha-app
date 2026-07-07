@@ -3284,7 +3284,7 @@
       <div class="club-metrics">
         <div class="club-metric"><strong id="homeClientsMetric">0</strong><span>alunos cadastrados</span></div>
         <div class="club-metric"><strong id="homeStudentsMetric">0</strong><span>alunos ativos</span></div>
-        <div class="club-metric"><strong id="homeAgendaMetric">0</strong><span>pedidos no app</span></div>
+        <div class="club-metric"><strong id="homeAgendaMetric">0</strong><span>planos cadastrados</span></div>
         <div class="club-metric"><strong id="homeFinanceMetric">R$ 0</strong><span>em aberto</span></div>
       </div>
 
@@ -3312,8 +3312,8 @@
         <section class="club-panel span-12">
           <div class="club-panel-head">
             <div>
-              <h2>Pedidos recebidos no app</h2>
-              <div class="muted">Solicitacoes para a equipe analisar e vincular manualmente.</div>
+              <h2>Planos do clube</h2>
+              <div class="muted">Base usada pelo ADM para vincular cada aluno.</div>
             </div>
           </div>
           <div class="club-feed" id="homeSystemList"></div>
@@ -7686,7 +7686,7 @@
       { key: 'dashboard', label: 'Inicio e indicadores', detail: 'Visualizar resumo geral e alertas do clube.' },
       { key: 'clients.read', label: 'Ver alunos', detail: 'Consultar cadastros, contatos, responsaveis e planos.' },
       { key: 'clients.write', label: 'Editar alunos', detail: 'Atualizar dados cadastrais e observacoes.' },
-      { key: 'plans', label: 'Planos', detail: 'Acompanhar e aprovar solicitacoes de planos.' },
+      { key: 'plans', label: 'Planos', detail: 'Criar e editar planos oficiais para vincular aos alunos.' },
       { key: 'finance.read', label: 'Ver financeiro', detail: 'Consultar fluxo de caixa e faturas.' },
       { key: 'finance.write', label: 'Gerenciar financeiro', detail: 'Criar contas a pagar, receber e baixar pagamentos.' },
       { key: 'classes', label: 'Aulas e agenda', detail: 'Gerenciar horarios, presenca e agenda de quadras.' },
@@ -7705,9 +7705,7 @@
       clients: [
         { name: 'Cliente exemplo', email: 'cliente@ilhatenis.com', phone: '5527999999999', status: 'ATIVO', type: 'cliente', created: '2026-06-22', lastLogin: '' }
       ],
-      planRequests: [
-        { client: 'Cliente exemplo', email: 'cliente@ilhatenis.com', plan: 'Aulas 1x por semana', amount: 220, status: 'SOLICITADO', created: '2026-06-22', weeklyLessons: 1, requestedDays: ['terca', 'quinta'], membershipType: 'aluno', preferredDueDay: 10 }
-      ],
+      planRequests: [],
       plans: [
         { id: 'plan_aula_1x', code: 'aula_1x', name: 'Aulas 1x por semana', type: 'aluno', amount: 220, weeklyLessons: 1, dueDay: 10, active: true, description: 'Uma aula fixa semanal com horario combinado pela secretaria.' },
         { id: 'plan_aula_2x', code: 'aula_2x', name: 'Aulas 2x por semana', type: 'aluno', amount: 360, weeklyLessons: 2, dueDay: 10, active: true, description: 'Duas aulas fixas semanais, conforme disponibilidade de horario.' },
@@ -8022,7 +8020,7 @@
       const pendingAmount = pendingFinance.reduce(function (sum, item) { return sum + Number(item.amount || 0); }, 0);
       $('homeClientsMetric').textContent = opsData.clients.length;
       $('homeStudentsMetric').textContent = activeClients.length;
-      $('homeAgendaMetric').textContent = opsData.planRequests.length;
+      $('homeAgendaMetric').textContent = opsData.plans.length;
       $('homeFinanceMetric').textContent = money(pendingAmount);
       if ($('homeCommandSummary')) $('homeCommandSummary').textContent = '';
 
@@ -8034,10 +8032,10 @@
         return '<article class="club-task"><strong>' + escapeHtml(item.source) + '</strong><div class="muted">' + escapeHtml(item.counterparty || item.student) + ' | ' + escapeHtml(financeDateLabel(item.due)) + '</div><div class="finance-total">' + money(item.amount) + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Sem pendencias financeiras.</div>';
 
-      $('homeSystemList').innerHTML = opsData.planRequests.slice(0, 5).map(function (item) {
-        const created = item.created ? new Date(item.created).toLocaleDateString('pt-BR') : 'Sem data';
-        return '<article class="club-task"><strong>' + escapeHtml(item.client) + '</strong><div class="muted">' + escapeHtml(item.plan) + ' | ' + escapeHtml(created) + '</div><div class="ops-meta">' + statusPill(item.status) + '<span class="finance-total">' + money(item.amount) + '</span></div></article>';
-      }).join('') || '<div class="lesson-empty-state">Nenhuma solicitacao de plano ainda.</div>';
+      $('homeSystemList').innerHTML = opsData.plans.slice(0, 5).map(function (plan) {
+        const detail = plan.description || (plan.weeklyLessons ? plan.weeklyLessons + 'x por semana' : plan.type || 'Plano');
+        return '<article class="club-task"><strong>' + escapeHtml(plan.name) + '</strong><div class="muted">' + escapeHtml(detail) + '</div><div class="ops-meta">' + statusPill(plan.active === false ? 'INATIVO' : 'ATIVO') + '<span class="finance-total">' + money(plan.amount) + '</span></div></article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhum plano cadastrado.</div>';
     }
 
     function formatDays(days) {
