@@ -238,18 +238,21 @@
       align-items: center;
       gap: 10px;
       min-width: 0;
+      justify-content: center;
+      padding: 9px 10px;
+      border-radius: 8px;
+      background: #ffffff;
     }
 
     .brand-lockup img {
       width: 118px;
       display: block;
-      filter: brightness(0) invert(1);
     }
 
     .brand-play {
-      border-left: 1px solid rgba(255, 255, 255, .28);
+      border-left: 1px solid var(--line);
       padding-left: 10px;
-      color: rgba(255, 255, 255, .78);
+      color: #718391;
       font-size: 17px;
       font-weight: 900;
       letter-spacing: 4px;
@@ -338,30 +341,13 @@
       stroke-linejoin: round;
     }
 
-    .side-status {
-      margin-top: auto;
-      padding: 11px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, .08);
-      color: rgba(255, 255, 255, .72);
-      font-size: 11px;
-      line-height: 1.35;
-      font-weight: 800;
-    }
-
-    .side-status strong {
-      display: block;
-      color: #ffffff;
-      font-size: 12px;
-      margin-bottom: 4px;
-    }
-
     .content {
       min-width: 0;
       width: min(1120px, 100%);
       justify-self: center;
       padding: 20px;
       display: grid;
+      align-content: start;
       gap: 14px;
     }
 
@@ -370,16 +356,15 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 14px;
+      padding: 10px 12px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #ffffff;
-      box-shadow: var(--shadow);
     }
 
     .topbar h1 {
-      margin: 0 0 4px;
-      font-size: 23px;
+      margin: 0 0 2px;
+      font-size: 18px;
     }
 
     .top-actions {
@@ -421,9 +406,11 @@
 
     .welcome-card {
       min-height: auto;
-      padding: clamp(18px, 4vw, 34px);
+      width: min(720px, 100%);
+      justify-self: center;
+      padding: clamp(18px, 3vw, 26px);
       display: grid;
-      gap: 22px;
+      gap: 16px;
       background:
         linear-gradient(135deg, rgba(181, 229, 0, .1), transparent 34%),
         #ffffff;
@@ -431,13 +418,13 @@
 
     .welcome-card h2 {
       margin: 0;
-      font-size: clamp(30px, 5vw, 52px);
+      font-size: clamp(28px, 4vw, 42px);
       line-height: 1;
     }
 
     .welcome-card .muted {
       max-width: 520px;
-      font-size: 15px;
+      font-size: 14px;
     }
 
     .welcome-main {
@@ -469,37 +456,6 @@
     .home-actions .primary-btn,
     .home-actions .ghost-btn {
       min-width: 150px;
-    }
-
-    .home-mini-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .home-mini {
-      min-height: 84px;
-      display: grid;
-      align-content: center;
-      gap: 5px;
-      padding: 13px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, .78);
-    }
-
-    .home-mini span {
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-
-    .home-mini strong {
-      overflow: hidden;
-      font-size: 17px;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
 
     .profile-avatar,
@@ -736,7 +692,6 @@
         width: 15px;
         height: 15px;
       }
-      .side-status { display: none; }
       .content {
         padding: 10px;
         gap: 10px;
@@ -852,19 +807,6 @@
         min-height: 40px;
         font-size: 14px;
       }
-      .home-mini-grid {
-        gap: 8px;
-      }
-      .home-mini {
-        min-height: 58px;
-        padding: 8px;
-      }
-      .home-mini span {
-        font-size: 9px;
-      }
-      .home-mini strong {
-        font-size: 13px;
-      }
       .top-actions { width: 100%; }
       .top-actions button,
       .top-actions a { flex: 1 1 auto; }
@@ -948,14 +890,13 @@
         <button type="button" data-view="plans"><span class="nav-icon"><svg><use href="#client-icon-plan"></use></svg></span><span>Planos</span></button>
         <button type="button" data-view="payments"><span class="nav-icon"><svg><use href="#client-icon-card"></use></svg></span><span>Pagamento</span></button>
       </nav>
-      <div class="side-status" id="sideStatus"><strong>Conectando</strong> Preparando sua area.</div>
     </aside>
 
     <section class="content">
       <header class="topbar">
         <div>
           <h1 id="pageTitle">Inicio</h1>
-          <div class="muted" id="pageSubtitle">Seu resumo no Ilha Tenis.</div>
+          <div class="muted" id="pageSubtitle">Sua area do aluno no Ilha Tenis.</div>
         </div>
         <div class="top-actions">
           <button class="primary-btn" type="button" id="logoutBtn" data-logout>Sair</button>
@@ -969,27 +910,13 @@
             <div class="welcome-copy">
               <span class="welcome-eyebrow">Ilha Play</span>
               <h2 id="homeWelcomeName">Bem-vindo ao Ilha</h2>
-              <p class="muted">Complete seu cadastro e acompanhe seus planos e pagamentos em um unico lugar.</p>
+              <p class="muted">Sua area do aluno no Ilha Tenis.</p>
             </div>
           </div>
           <div class="home-actions">
             <button class="primary-btn" type="button" data-view="profile">Completar cadastro</button>
             <button class="ghost-btn" type="button" data-view="plans">Ver planos</button>
             <button class="ghost-btn" type="button" data-view="payments">Pagamento</button>
-          </div>
-          <div class="home-mini-grid" aria-label="Resumo do cadastro">
-            <div class="home-mini">
-              <span>Cadastro</span>
-              <strong id="homeProfileStatus">Pendente</strong>
-            </div>
-            <div class="home-mini">
-              <span>Plano</span>
-              <strong id="homePlanStatus">Nao escolhido</strong>
-            </div>
-            <div class="home-mini">
-              <span>Pagamento</span>
-              <strong id="homePaymentStatus">Sem fatura</strong>
-            </div>
           </div>
         </div>
       </section>
@@ -1479,7 +1406,7 @@
         btn.classList.toggle('active', btn.dataset.view === view);
       });
       const labels = {
-        home: ['Inicio', 'Sua area do aluno no Ilha Play.'],
+        home: ['Inicio', 'Sua area do aluno no Ilha Tenis.'],
         profile: ['Meus dados', 'Complete seu cadastro.'],
         plans: ['Planos', 'Escolha uma opcao.'],
         payments: ['Pagamento', 'Faturas em aberto.']
@@ -1499,27 +1426,13 @@
     function renderIdentity() {
       const name = client && client.full_name ? client.full_name : (session && session.user && session.user.email) || 'Cliente Ilha';
       $('sideClientName').textContent = name;
-      $('sideStatus').innerHTML = (demoMode || (session && session.demo))
-        ? '<strong>Modo demonstracao</strong> Dados locais para testar a area do aluno.'
-        : (!databaseReady
-          ? '<strong>Conta Supabase ativa</strong> Banco do clube aguardando ativacao.'
-          : '<strong>Conta conectada</strong> Cadastro sincronizado com o Supabase.');
-    }
-
-    function currentPlanRequest() {
-      return planRequests[0] || null;
     }
 
     function renderHome() {
       const name = client && client.full_name || 'aluno';
       const firstName = name.split(' ')[0] || 'aluno';
-      const selectedPlan = currentPlanRequest();
-      const hasProfile = Boolean(client && client.full_name && client.phone && client.cpf);
       $('homeWelcomeName').textContent = 'Ola, ' + firstName;
       $('homeAvatar').innerHTML = avatarMarkup(profilePhoto(), name);
-      $('homeProfileStatus').textContent = hasProfile ? 'Completo' : 'Pendente';
-      $('homePlanStatus').textContent = selectedPlan ? (selectedPlan.plan_name || 'Solicitado') : 'Nao escolhido';
-      $('homePaymentStatus').textContent = selectedPlan && selectedPlan.amount ? money(selectedPlan.amount) : 'Sem fatura';
     }
 
     function renderProfile() {
