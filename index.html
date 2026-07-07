@@ -2,613 +2,228 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Ilha Play | Ilha Tenis Colatina</title>
-  <meta name="theme-color" content="#083f4b" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="Ilha Play" />
-  <meta name="application-name" content="Ilha Play" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ilha App | Ilha Tenis Colatina</title>
+  <meta name="theme-color" content="#10272c" />
   <link rel="manifest" href="./manifest.json" />
-  <link rel="apple-touch-icon" href="./icon.png" />
   <link rel="icon" href="./icon.png" />
   <style>
     :root {
-      --bg: #083f4b;
-      --text: #10272c;
+      --bg: #eef4f6;
+      --ink: #10272c;
       --muted: #647783;
-      --accent: #243847;
-      --card: #ffffff;
-      --soft: #f4f7f8;
-      --line: #dfe8ec;
+      --teal: #083f4b;
+      --line: #d9e5e9;
       --lime: #b5e500;
+      --card: #ffffff;
     }
 
     * { box-sizing: border-box; }
 
-    html, body {
-      margin: 0;
-      width: 100%;
-      min-height: 100%;
-      font-family: Arial, Helvetica, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-
     body {
-      padding: 12px;
-      padding-bottom: calc(18px + env(safe-area-inset-bottom));
-    }
-
-    button, a {
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 760px;
-      margin: 0 auto;
-    }
-
-    .top-card {
-      background: var(--card);
-      border-radius: 24px;
-      padding: 18px 16px;
-      border: 1px solid rgba(255,255,255,.8);
-      box-shadow: 0 10px 28px rgba(15,34,48,.08);
-    }
-
-    .top-line {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-    }
-
-    .logo {
-      width: min(56vw, 220px);
-      display: block;
-      height: auto;
-    }
-
-    .play-title {
-      border-left: 2px solid var(--line);
-      padding-left: 12px;
-      color: #718391;
-      font-size: 20px;
-      font-weight: 900;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .item {
-      width: 100%;
-      min-height: 96px;
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      padding: 15px 12px;
-      background: var(--card);
-      color: var(--text);
-      box-shadow: 0 6px 18px rgba(15,34,48,.06);
-      cursor: pointer;
-      text-align: left;
-      text-decoration: none;
-      display: grid;
-      grid-template-columns: 44px minmax(0, 1fr) 18px;
-      gap: 10px;
-      align-items: center;
-      appearance: none;
-      border-style: solid;
-    }
-
-    .item:active, .social:active, .sponsor:active, .store-item:active {
-      transform: scale(.98);
-    }
-
-    .item-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
+      min-height: 100vh;
+      margin: 0;
       display: grid;
       place-items: center;
-      background: #eef4f6;
-      color: var(--accent);
-      line-height: 1;
+      padding: 24px;
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        linear-gradient(135deg, rgba(8, 63, 75, .95), rgba(16, 39, 44, .98)),
+        var(--teal);
+      color: var(--ink);
     }
 
-    .item-icon svg {
-      width: 25px;
-      height: 25px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 2.4;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .item-icon img {
-      width: 38px;
-      height: 38px;
-      object-fit: contain;
-    }
-
-    .item h3 {
-      margin: 0 0 4px;
-      font-size: 16px;
-      line-height: 1.05;
-      color: #082131;
-      font-weight: 900;
-    }
-
-    .item p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.28;
-      font-weight: 700;
-    }
-
-    .arrow {
-      color: var(--accent);
-      font-size: 24px;
-      font-weight: 900;
-      text-align: right;
-    }
-
-    .socials {
+    .shell {
+      width: min(1040px, 100%);
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 8px;
-      margin-top: 12px;
+      grid-template-columns: minmax(0, .95fr) minmax(360px, 1fr);
+      gap: 18px;
+      align-items: stretch;
     }
 
-    .social {
-      min-height: 54px;
-      border-radius: 15px;
-      background: #214d5c;
-      color: #ffffff;
-      text-decoration: none;
+    .brand,
+    .access {
+      min-height: 560px;
+      border: 1px solid rgba(255, 255, 255, .22);
+      border-radius: 8px;
+      background: var(--card);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .24);
+    }
+
+    .brand {
+      padding: 38px;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      padding: 8px 4px;
-      font-size: 11px;
-      font-weight: 900;
-      text-align: center;
-      box-shadow: 0 8px 20px rgba(15,34,48,.08);
-    }
-
-    .social svg {
-      width: 19px;
-      height: 19px;
-      fill: currentColor;
-      stroke: currentColor;
-      stroke-width: 0;
-      flex: 0 0 auto;
-    }
-
-    .sponsors-title {
-      margin: 22px 0 12px;
-      text-align: center;
-      color: rgba(255,255,255,.72);
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-
-    .sponsors {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 8px;
-    }
-
-    .sponsor {
-      aspect-ratio: 1;
-      border-radius: 999px;
-      background: #fff;
-      display: grid;
-      place-items: center;
-      box-shadow: 0 8px 20px rgba(15,34,48,.12);
+      justify-content: space-between;
       overflow: hidden;
     }
 
-    .sponsor img {
-      width: 84%;
-      height: 84%;
-      object-fit: contain;
+    .brand img {
+      width: 210px;
+      display: block;
     }
 
-    .footer {
-      margin-top: 18px;
-      text-align: center;
-      color: rgba(255,255,255,.72);
-      font-size: 12px;
-      line-height: 1.45;
+    h1 {
+      margin: 34px 0 10px;
+      max-width: 520px;
+      color: var(--ink);
+      font-size: clamp(34px, 5vw, 62px);
+      line-height: .96;
+      letter-spacing: 0;
     }
 
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      background: rgba(8,20,28,.7);
-    }
-
-    .modal-overlay.show { display: flex; }
-
-    .modal {
-      width: 100%;
-      max-width: 440px;
-      max-height: 90vh;
-      overflow: auto;
-      background: #fff;
-      border-radius: 22px;
-      padding: 18px;
-      box-shadow: 0 18px 50px rgba(0,0,0,.25);
-    }
-
-    .modal-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-
-    .modal-header img {
-      width: 44px;
-      height: 44px;
-      object-fit: contain;
-    }
-
-    .modal h3 {
+    p {
       margin: 0;
-      color: #082131;
-      font-size: 21px;
-      font-weight: 900;
-    }
-
-    .modal p {
-      margin: 3px 0 0;
       color: var(--muted);
-      font-size: 13px;
+      font-size: 16px;
+      line-height: 1.5;
       font-weight: 700;
     }
 
-    .banner {
-      width: 100%;
-      display: block;
-      border-radius: 16px;
-      margin-bottom: 12px;
-    }
-
-    .modal-links, .store-grid {
+    .status-grid {
       display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
+      margin-top: 30px;
     }
 
-    .rank-link, .modal-main-link {
-      min-height: 48px;
-      border-radius: 14px;
-      padding: 0 14px;
+    .status-card {
+      min-height: 92px;
+      padding: 12px;
       display: flex;
+      align-items: flex-end;
+      border-radius: 8px;
+      background: #f3f8f9;
+      color: #213b42;
+      font-size: 12px;
+      line-height: 1.3;
+      font-weight: 900;
+    }
+
+    .access {
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #f8fbfc;
+    }
+
+    .access-head {
+      padding: 6px 0 10px;
+    }
+
+    .access-head h2 {
+      margin: 0 0 6px;
+      color: var(--ink);
+      font-size: 26px;
+    }
+
+    .access-link {
+      min-height: 142px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
       align-items: center;
-      justify-content: space-between;
-      background: var(--soft);
+      padding: 18px;
       border: 1px solid var(--line);
-      color: #082131;
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--ink);
       text-decoration: none;
-      font-size: 14px;
-      font-weight: 900;
+      transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
     }
 
-    .modal-main-link {
-      background: #103b48;
-      color: #fff;
+    .access-link:hover {
+      transform: translateY(-2px);
+      border-color: rgba(8, 63, 75, .42);
+      box-shadow: 0 16px 34px rgba(16, 39, 44, .12);
     }
 
-    .store-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .store-item {
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 9px;
-      background: var(--soft);
-      color: #082131;
-      text-align: center;
-      text-decoration: none;
-      font-size: 13px;
-      font-weight: 900;
-    }
-
-    .store-item img {
-      width: 100%;
-      aspect-ratio: 3 / 4;
-      object-fit: cover;
+    .access-link strong {
       display: block;
-      border-radius: 12px;
-      margin-bottom: 8px;
-      background: #fff;
+      margin-bottom: 6px;
+      font-size: 22px;
     }
 
-    .close-modal {
-      width: 100%;
-      min-height: 46px;
-      margin-top: 12px;
-      border: 0;
-      border-radius: 14px;
-      background: var(--accent);
-      color: #fff;
-      font-size: 15px;
-      font-weight: 900;
-      cursor: pointer;
-    }
-
-    .copy-alert {
-      position: fixed;
-      left: 50%;
-      bottom: 24px;
-      transform: translateX(-50%);
-      z-index: 200;
-      opacity: 0;
-      pointer-events: none;
-      border-radius: 999px;
-      background: #103b48;
-      color: #fff;
-      padding: 13px 16px;
+    .access-link span {
+      display: block;
+      color: var(--muted);
       font-size: 13px;
+      line-height: 1.42;
+      font-weight: 800;
+    }
+
+    .arrow {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--teal);
+      color: #ffffff;
+      font-size: 22px;
       font-weight: 900;
-      transition: .25s ease;
-      box-shadow: 0 10px 28px rgba(0,0,0,.18);
     }
 
-    .copy-alert.show {
-      opacity: 1;
-      bottom: 34px;
+    .note {
+      margin-top: auto;
+      padding: 12px;
+      border-radius: 8px;
+      background: #edf5f7;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      font-weight: 800;
     }
 
-    @media (min-width: 700px) {
-      body { padding-top: 22px; }
-      .top-card { padding: 24px; }
-      .grid { gap: 12px; }
-      .item { min-height: 108px; padding: 18px 16px; }
-      .item h3 { font-size: 19px; }
-      .item p { font-size: 14px; }
-      .sponsors { gap: 18px; }
-    }
-
-    @media (max-width: 430px) {
-      .item {
-        grid-template-columns: 38px minmax(0, 1fr) 14px;
-        gap: 8px;
-        padding: 14px 10px;
-      }
-
-      .item-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 12px;
-      }
-
-      .item-icon svg {
-        width: 22px;
-        height: 22px;
-      }
-
-      .item-icon img {
-        width: 32px;
-        height: 32px;
-      }
-
-      .item h3 { font-size: 15px; line-height: 1.08; }
-      .item p { font-size: 12px; }
-      .social { font-size: 10px; }
-      .social svg { width: 18px; height: 18px; }
+    @media (max-width: 860px) {
+      body { padding: 12px; }
+      .shell { grid-template-columns: 1fr; }
+      .brand,
+      .access { min-height: auto; }
+      .brand { padding: 24px; }
+      .access { padding: 18px; }
+      .status-grid { grid-template-columns: 1fr; }
+      .access-link { min-height: 118px; }
     }
   </style>
 </head>
 <body>
-  <svg aria-hidden="true" width="0" height="0" style="position:absolute">
-    <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M4 9h16M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"/><path d="m9 14 2 2 4-5"/></symbol>
-    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 6H5a2 2 0 0 0 2 4h1M16 6h3a2 2 0 0 1-2 4h-1M12 13v4M9 21h6M10 17h4"/></symbol>
-    <symbol id="i-tennis" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M5.7 7.1c4.9.5 8.7 4.3 9.2 9.2M9.1 5.3c.5 4.9 4.3 8.7 9.2 9.2"/></symbol>
-    <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8a3 3 0 0 1 6 0"/></symbol>
-    <symbol id="i-pix" viewBox="0 0 24 24"><path d="m12 3 5.5 5.5a5 5 0 0 1 0 7L12 21l-5.5-5.5a5 5 0 0 1 0-7L12 3Z"/><path d="m8 12 4-4 4 4-4 4-4-4Z"/></symbol>
-    <symbol id="i-whatsapp" viewBox="0 0 24 24"><path d="M20.5 11.8a8.4 8.4 0 0 1-12.4 7.4L4 20.2l1.1-4A8.4 8.4 0 1 1 20.5 11.8Zm-11-4c-.2-.4-.4-.4-.7-.4h-.6c-.2 0-.6.1-.9.5-.3.4-1.2 1.2-1.2 2.8s1.2 3.2 1.4 3.5c.2.2 2.4 3.7 5.9 5 .8.3 1.4.5 1.9.6.8.1 1.5.1 2.1-.1.6-.3 1.9-.8 2.2-1.5.3-.8.3-1.4.2-1.5-.1-.2-.3-.3-.7-.5l-2.2-1c-.3-.1-.6-.2-.8.2-.2.3-.9 1.1-1.1 1.3-.2.2-.4.2-.8.1-.4-.2-1.5-.6-2.8-1.8-1-1-1.7-2.1-1.9-2.4-.2-.4 0-.6.2-.8l.5-.6c.2-.2.2-.4.3-.6.1-.2 0-.5 0-.6l-1-2.2Z"/></symbol>
-    <symbol id="i-instagram" viewBox="0 0 24 24"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm5 5a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm6.2-.4h.1"/></symbol>
-    <symbol id="i-youtube" viewBox="0 0 24 24"><path d="M21.6 7.2s-.2-1.5-.8-2.1c-.8-.8-1.7-.8-2.1-.9C15.8 4 12 4 12 4s-3.8 0-6.7.2c-.4.1-1.3.1-2.1.9-.6.6-.8 2.1-.8 2.1S2.2 9 2.2 10.8v1.7c0 1.8.2 3.6.2 3.6s.2 1.5.8 2.1c.8.8 1.9.8 2.4.9 1.7.2 6.4.2 6.4.2s3.8 0 6.7-.3c.4 0 1.3-.1 2.1-.9.6-.6.8-2.1.8-2.1s.2-1.8.2-3.6v-1.7c0-1.8-.2-3.6-.2-3.6ZM10 14.8V8.9l5.4 3-5.4 2.9Z"/></symbol>
-    <symbol id="i-map" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"/></symbol>
-  </svg>
-  <main class="container">
-    <section class="top-card">
-      <div class="top-line">
-        <img class="logo" src="./logo.png" alt="Ilha Tenis Colatina" />
-        <div class="play-title">Play</div>
+  <main class="shell">
+    <section class="brand">
+      <div>
+        <img src="./logo.png" alt="Ilha Tenis Colatina" />
+        <h1>Ilha App</h1>
+        <p>O sistema oficial do Ilha Tenis agora fica separado por area: cliente/aluno de um lado, administracao do clube do outro.</p>
+      </div>
+      <div class="status-grid">
+        <div class="status-card">Area do aluno para cadastro, plano, aulas, reservas e comunicados.</div>
+        <div class="status-card">Painel administrativo para alunos, financeiro, quadras e torneios.</div>
+        <div class="status-card">Base conectada ao Supabase para evoluir sem planilhas.</div>
       </div>
     </section>
 
-    <section class="grid" aria-label="Atalhos principais">
-      <a class="item" href="./publico.html">
-        <div class="item-icon"><svg><use href="#i-trophy"></use></svg></div>
+    <section class="access" aria-label="Acessos oficiais">
+      <div class="access-head">
+        <h2>Acessos oficiais</h2>
+        <p>Escolha a area correta para continuar.</p>
+      </div>
+      <a class="access-link" href="./clientes/">
         <div>
-          <h3>II Viafor Open</h3>
-          <p>Chaves, agenda e resultados</p>
+          <strong>Clientes e alunos</strong>
+          <span>Cadastro, area do aluno, plano, pagamentos, aulas, quadras, torneios e informativos.</span>
         </div>
         <div class="arrow">&gt;</div>
       </a>
-
-      <a class="item" href="https://ilhatenis.com/agenda">
-        <div class="item-icon"><svg><use href="#i-calendar"></use></svg></div>
+      <a class="access-link" href="./adm/">
         <div>
-          <h3>Reservar Quadra</h3>
-          <p>Veja horarios livres</p>
+          <strong>Administrativo</strong>
+          <span>Gestao interna do clube, alunos, financeiro, horarios, quadras, comunicacao e torneios.</span>
         </div>
         <div class="arrow">&gt;</div>
       </a>
-
-      <a class="item" href="https://ilhatenis.com/aulas-de-tenis">
-        <div class="item-icon"><svg><use href="#i-tennis"></use></svg></div>
-        <div>
-          <h3>Aulas de Tenis</h3>
-          <p>Quero fazer aula</p>
-        </div>
-        <div class="arrow">&gt;</div>
-      </a>
-
-      <button class="item" type="button" onclick="openModal('rankingModal')">
-        <div class="item-icon"><img src="./cincate.png" alt="CINCATE" /></div>
-        <div>
-          <h3>Ranking 2026</h3>
-          <p>Circuito CINCATE</p>
-        </div>
-        <div class="arrow">&gt;</div>
-      </button>
-
-      <button class="item" type="button" onclick="openModal('storeModal')">
-        <div class="item-icon"><svg><use href="#i-bag"></use></svg></div>
-        <div>
-          <h3>Ilha Store</h3>
-          <p>Camisas, bolas e cordas</p>
-        </div>
-        <div class="arrow">&gt;</div>
-      </button>
-
-      <button class="item" type="button" onclick="copyPix()">
-        <div class="item-icon"><svg><use href="#i-pix"></use></svg></div>
-        <div>
-          <h3>Pix Ilha Tenis</h3>
-          <p>Copie a chave do clube</p>
-        </div>
-        <div class="arrow">&gt;</div>
-      </button>
+      <div class="note">Links finais: app.ilhatenis.com/clientes e app.ilhatenis.com/adm.</div>
     </section>
-
-    <section class="socials" aria-label="Redes e contato">
-      <a class="social" href="https://wa.me/5527995312150" target="_blank" rel="noopener"><svg><use href="#i-whatsapp"></use></svg>WhatsApp</a>
-      <a class="social" href="https://instagram.com/ilhateniscolatina" target="_blank" rel="noopener"><svg><use href="#i-instagram"></use></svg>Instagram</a>
-      <a class="social" href="https://youtube.com/@ilhateniscolatina" target="_blank" rel="noopener"><svg><use href="#i-youtube"></use></svg>YouTube</a>
-      <a class="social" href="https://maps.google.com/?q=Ilha+Tenis+Colatina" target="_blank" rel="noopener"><svg><use href="#i-map"></use></svg>Mapa</a>
-    </section>
-
-    <div class="sponsors-title">Patrocinadores</div>
-
-    <section class="sponsors" aria-label="Patrocinadores">
-      <a class="sponsor" href="https://www.instagram.com/viaforveiculos/" target="_blank" rel="noopener"><img src="./ford.png" alt="Viafor Ford" /></a>
-      <a class="sponsor" href="https://www.instagram.com/disksolpoente/" target="_blank" rel="noopener"><img src="./disk.png" alt="Disk Sol Poente" /></a>
-      <a class="sponsor" href="https://www.instagram.com/plusdelivery/" target="_blank" rel="noopener"><img src="./plus.png" alt="Plus Delivery" /></a>
-      <a class="sponsor" href="https://www.instagram.com/oticamaisvisaocolatina/" target="_blank" rel="noopener"><img src="./otica.png" alt="Otica Mais Visao" /></a>
-      <a class="sponsor" href="https://www.instagram.com/lotusformaturas/" target="_blank" rel="noopener"><img src="./lotus.png" alt="Lotus Formaturas" /></a>
-    </section>
-
-    <footer class="footer">
-      Ilha Tenis Colatina | Maria das Gracas<br />
-      Ilha Eventos e Servicos Ltda | CNPJ 54.969.790/0001-47
-    </footer>
   </main>
-
-  <div id="agendaModal" class="modal-overlay" onclick="closeOutside(event, 'agendaModal')">
-    <div class="modal">
-      <div class="modal-header">
-        <div>
-          <h3>II Viafor Open</h3>
-          <p>Agenda e inscricoes do torneio</p>
-        </div>
-      </div>
-      <img class="banner" src="./bannerviafor.jpg" alt="II Viafor Open" />
-      <a class="modal-main-link" href="https://ilhatenis.com/viafor-open" target="_blank" rel="noopener">Fazer inscricao <span>&gt;</span></a>
-      <button class="close-modal" type="button" onclick="closeModal('agendaModal')">Fechar</button>
-    </div>
-  </div>
-
-  <div id="rankingModal" class="modal-overlay" onclick="closeOutside(event, 'rankingModal')">
-    <div class="modal">
-      <div class="modal-header">
-        <img src="./cincate.png" alt="CINCATE" />
-        <div>
-          <h3>Ranking 2026</h3>
-          <p>Escolha uma categoria do CINCATE</p>
-        </div>
-      </div>
-      <div class="modal-links">
-        <a class="rank-link" href="https://duplafalta.com.br/ranking/finals-masculino.html" target="_blank" rel="noopener">Finals Masculino <span>&gt;</span></a>
-        <a class="rank-link" href="https://duplafalta.com.br/ranking/challenger-masculino" target="_blank" rel="noopener">Challenger Masculino <span>&gt;</span></a>
-        <a class="rank-link" href="https://duplafalta.com.br/ranking/future-masculino.html" target="_blank" rel="noopener">Future Masculino <span>&gt;</span></a>
-        <a class="rank-link" href="https://duplafalta.com.br/ranking/finals-feminino.html" target="_blank" rel="noopener">Finals Feminino <span>&gt;</span></a>
-        <a class="rank-link" href="https://duplafalta.com.br/ranking/challenger-feminino.html" target="_blank" rel="noopener">Challenger Feminino <span>&gt;</span></a>
-      </div>
-      <button class="close-modal" type="button" onclick="closeModal('rankingModal')">Fechar</button>
-    </div>
-  </div>
-
-  <div id="storeModal" class="modal-overlay" onclick="closeOutside(event, 'storeModal')">
-    <div class="modal">
-      <div class="modal-header">
-        <div>
-          <h3>Ilha Store</h3>
-          <p>Produtos e servicos do clube</p>
-        </div>
-      </div>
-      <div class="store-grid">
-        <a class="store-item" target="_blank" rel="noopener" href="https://wa.me/5527992963984?text=Fala%20Renato%2C%20quero%20uma%20camisa%20preta%20do%20Ilha.%20Pode%20me%20passar%20os%20detalhes%3F"><img src="./camisapreta.png" alt="Camisa preta Ilha" />Camisa preta</a>
-        <a class="store-item" target="_blank" rel="noopener" href="https://wa.me/5527992963984?text=Fala%20Renato%2C%20quero%20uma%20camisa%20roxa%20do%20Ilha.%20Pode%20me%20passar%20os%20detalhes%3F"><img src="./camisaroxa.png" alt="Camisa roxa Ilha" />Camisa roxa</a>
-        <a class="store-item" target="_blank" rel="noopener" href="https://wa.me/5527992963984?text=Fala%20Renato%2C%20quero%20uma%20camisa%20verde%20do%20Ilha.%20Pode%20me%20passar%20os%20detalhes%3F"><img src="./camisaverde.png" alt="Camisa verde Ilha" />Camisa verde</a>
-        <a class="store-item" target="_blank" rel="noopener" href="https://wa.me/5527992963984?text=Fala%20Renato%2C%20quero%20comprar%20bolinhas%20de%20tenis.%20Pode%20me%20passar%20os%20detalhes%3F"><img src="./bolas.png" alt="Bolinhas de tenis" />Bolinhas</a>
-        <a class="store-item" target="_blank" rel="noopener" href="https://wa.me/5527992963984?text=Fala%20Renato%2C%20quero%20ver%20sobre%20encordoamento%20de%20raquete.%20Pode%20me%20passar%20os%20detalhes%3F"><img src="./cordas.png" alt="Encordoamento" />Encordoamento</a>
-      </div>
-      <button class="close-modal" type="button" onclick="closeModal('storeModal')">Fechar</button>
-    </div>
-  </div>
-
-  <div id="copyAlert" class="copy-alert">Chave Pix copiada</div>
-
-  <script>
-    const PIX_KEY = '54.969.790/0001-47';
-
-    function openModal(id) {
-      document.getElementById(id).classList.add('show');
-    }
-
-    function closeModal(id) {
-      document.getElementById(id).classList.remove('show');
-    }
-
-    function closeOutside(event, id) {
-      if (event.target.id === id) closeModal(id);
-    }
-
-    function showCopyAlert() {
-      const box = document.getElementById('copyAlert');
-      box.classList.add('show');
-      setTimeout(function() { box.classList.remove('show'); }, 2200);
-    }
-
-    function copyPix() {
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(PIX_KEY).then(showCopyAlert).catch(showCopyAlert);
-      } else {
-        showCopyAlert();
-      }
-    }
-
-    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      navigator.serviceWorker.register('./service-worker.js').catch(function(error) {
-        console.warn(error);
-      });
-    }
-  </script>
 </body>
 </html>

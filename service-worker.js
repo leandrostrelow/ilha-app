@@ -1,7 +1,11 @@
-const CACHE_NAME = 'ilha-play-v3';
+const CACHE_NAME = 'ilha-play-v8';
 const ASSETS = [
   './',
   './index.html',
+  './clientes/',
+  './clientes/index.html',
+  './adm/',
+  './adm/index.html',
   './publico.html',
   './manifest.json',
   './icon.png',
