@@ -1005,6 +1005,18 @@
       white-space: nowrap;
     }
 
+    .client-card-name {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .client-card-name .client-avatar {
+      width: 36px;
+      height: 36px;
+    }
+
     .client-compact-field span {
       display: block;
       margin-bottom: 4px;
@@ -8169,7 +8181,7 @@
         const phone = String(client.phone || client.guardianPhone || '').replace(/\D/g, '');
         const contactButton = phone ? '<a class="small-btn" href="https://wa.me/' + phone + '" target="_blank" rel="noopener">Contato</a>' : '';
         return '<article class="ops-list-card client-card">' +
-          '<div class="client-card-name"><strong>' + escapeHtml(client.name) + '</strong></div>' +
+          '<div class="client-card-name">' + clientAvatar(client) + '<strong>' + escapeHtml(client.name) + '</strong></div>' +
           '<div class="client-compact-field"><span>Plano</span><strong>' + escapeHtml(summary.planName) + '</strong></div>' +
           '<div class="client-compact-field"><span>Valor</span><strong>' + money(summary.amount || 0) + '</strong></div>' +
           '<div class="client-compact-field"><span>Vencimento</span><strong>' + (summary.dueDay ? 'Dia ' + escapeHtml(summary.dueDay) : 'A definir') + '</strong></div>' +
