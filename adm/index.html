@@ -986,56 +986,39 @@
     }
 
     .client-card {
+      min-height: 66px;
       display: grid;
+      grid-template-columns: minmax(190px, 1.35fr) minmax(170px, 1.2fr) 112px 122px auto;
       gap: 10px;
+      align-items: center;
+      padding: 12px 14px;
     }
 
-    .client-card-top {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
-      min-width: 0;
+    .client-card-name strong,
+    .client-compact-field strong {
+      display: block;
+      overflow: hidden;
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.15;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
-    .client-card-actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 6px;
-    }
-
-    .client-finance-row {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .client-finance-chip {
-      min-height: 56px;
-      display: grid;
-      gap: 4px;
-      align-content: center;
-      padding: 10px;
-      border: 1px solid #e3edf0;
-      border-radius: 8px;
-      background: #fbfdfe;
-    }
-
-    .client-finance-chip span {
+    .client-compact-field span {
+      display: block;
+      margin-bottom: 4px;
       color: var(--muted);
       font-size: 10px;
       font-weight: 900;
       text-transform: uppercase;
     }
 
-    .client-finance-chip strong {
-      overflow: hidden;
-      color: var(--text);
-      font-size: 15px;
-      line-height: 1.1;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    .client-card-actions {
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: flex-end;
+      gap: 6px;
     }
 
     .ops-list-main {
@@ -1637,6 +1620,14 @@
     .primary-btn, .ghost-btn, .danger-btn, .pill-btn, .small-btn {
       padding: 8px 10px;
       font-size: 13px;
+    }
+
+    .small-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      white-space: nowrap;
     }
 
     .ghost-btn, .small-btn {
@@ -2878,10 +2869,11 @@
       .finance-action-row {
         justify-content: flex-start;
       }
-      .client-card-top {
-        display: grid;
+      .client-card {
+        grid-template-columns: minmax(180px, 1fr) minmax(160px, 1fr) 112px 112px;
       }
       .client-card-actions {
+        grid-column: 1 / -1;
         justify-content: flex-start;
       }
       .topbar { margin: -10px -10px 10px; padding: 10px; }
@@ -2975,8 +2967,9 @@
       .ops-list-main {
         display: grid;
       }
-      .client-finance-row {
+      .client-card {
         grid-template-columns: 1fr;
+        gap: 8px;
       }
       .agenda-item {
         grid-template-columns: 1fr;
@@ -3322,7 +3315,6 @@
         <div class="module-head">
           <div>
             <h1>Alunos</h1>
-            <div class="muted">Cadastro, plano e financeiro.</div>
           </div>
           <div class="module-actions">
             <button class="ghost-btn" type="button" data-home-action>Inicio</button>
@@ -3330,20 +3322,8 @@
           </div>
         </div>
         <div class="ops-content">
-          <div class="ops-summary">
-            <div class="ops-card"><strong id="clientTotalMetric">0</strong><span>alunos cadastrados</span></div>
-            <div class="ops-card"><strong id="clientActiveMetric">0</strong><span>ativos</span></div>
-            <div class="ops-card"><strong id="clientPhoneMetric">0</strong><span>com WhatsApp</span></div>
-            <div class="ops-card"><strong id="clientRecentMetric">0</strong><span>novos 7 dias</span></div>
-          </div>
           <div class="ops-grid">
             <div class="ops-panel span-12">
-              <div class="ops-panel-head">
-                <div>
-                  <h2>Lista de alunos</h2>
-                  <div class="muted">Valor, vencimento e situacao ficam visiveis aqui.</div>
-                </div>
-              </div>
               <div class="ops-list" id="clientList"></div>
             </div>
           </div>
@@ -8182,36 +8162,20 @@
     }
 
     function renderClientsModule() {
-      const recentLimit = Date.now() - (7 * 24 * 60 * 60 * 1000);
-      const withPhone = opsData.clients.filter(function (client) { return String(client.phone || '').replace(/\D/g, '').length >= 10; });
-      const recent = opsData.clients.filter(function (client) {
-        const created = new Date(client.created || 0).getTime();
-        return created && created >= recentLimit;
-      });
-      $('clientTotalMetric').textContent = opsData.clients.length;
-      $('clientActiveMetric').textContent = opsData.clients.filter(function (client) { return client.status === 'ATIVO'; }).length;
-      $('clientPhoneMetric').textContent = withPhone.length;
-      $('clientRecentMetric').textContent = recent.length;
       if (!opsState.selectedClientId && opsData.clients[0]) opsState.selectedClientId = opsData.clients[0].id || opsData.clients[0].email;
       $('clientList').innerHTML = opsData.clients.map(function (client) {
-        const created = client.created ? new Date(client.created).toLocaleDateString('pt-BR') : 'Sem data';
         const summary = clientFinanceSummary(client);
-        const contact = [
-          client.email,
-          client.phone || client.guardianPhone,
-          'desde ' + created
-        ].filter(Boolean).join(' | ');
         const key = client.id || client.email || client.name;
+        const phone = String(client.phone || client.guardianPhone || '').replace(/\D/g, '');
+        const contactButton = phone ? '<a class="small-btn" href="https://wa.me/' + phone + '" target="_blank" rel="noopener">Contato</a>' : '';
         return '<article class="ops-list-card client-card">' +
-          '<div class="client-card-top">' +
-            '<div class="client-line">' + clientAvatar(client) + '<div><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(contact) + '</div></div></div>' +
-            '<div class="client-card-actions">' + statusPill(client.status) + whatsappLink(client.phone || client.guardianPhone) + '<button class="small-btn" type="button" data-client-open="' + escapeHtml(key) + '">Abrir ficha</button></div>' +
-          '</div>' +
-          '<div class="client-finance-row">' +
-            '<div class="client-finance-chip"><span>Plano</span><strong>' + escapeHtml(summary.planName) + '</strong></div>' +
-            '<div class="client-finance-chip"><span>Valor</span><strong>' + money(summary.amount || 0) + '</strong></div>' +
-            '<div class="client-finance-chip"><span>Vencimento</span><strong>' + (summary.dueDay ? 'Dia ' + escapeHtml(summary.dueDay) : 'A definir') + '</strong></div>' +
-            '<div class="client-finance-chip"><span>Situacao</span><strong>' + escapeHtml(summary.status) + '</strong></div>' +
+          '<div class="client-card-name"><strong>' + escapeHtml(client.name) + '</strong></div>' +
+          '<div class="client-compact-field"><span>Plano</span><strong>' + escapeHtml(summary.planName) + '</strong></div>' +
+          '<div class="client-compact-field"><span>Valor</span><strong>' + money(summary.amount || 0) + '</strong></div>' +
+          '<div class="client-compact-field"><span>Vencimento</span><strong>' + (summary.dueDay ? 'Dia ' + escapeHtml(summary.dueDay) : 'A definir') + '</strong></div>' +
+          '<div class="client-card-actions">' +
+            contactButton +
+            '<button class="small-btn" type="button" data-client-open="' + escapeHtml(key) + '">Abrir</button>' +
           '</div>' +
           '</article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum cliente cadastrado ainda.</div>';
