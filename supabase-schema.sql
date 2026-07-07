@@ -3,12 +3,21 @@ create extension if not exists "pgcrypto";
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text,
+  email text,
+  phone text,
   role text not null default 'secretaria' check (role in ('admin', 'secretaria', 'professor')),
   teacher_id uuid,
   active boolean not null default true,
+  permissions jsonb not null default '[]'::jsonb,
+  notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.profiles add column if not exists email text;
+alter table public.profiles add column if not exists phone text;
+alter table public.profiles add column if not exists permissions jsonb not null default '[]'::jsonb;
+alter table public.profiles add column if not exists notes text;
 
 create table if not exists public.app_clients (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -115,10 +124,11 @@ begin
     else 'secretaria'
   end;
 
-  insert into public.profiles (id, full_name, role)
+  insert into public.profiles (id, full_name, email, role)
   values (
     auth.uid(),
     coalesce(auth.jwt() -> 'user_metadata' ->> 'full_name', split_part(coalesce(auth.jwt() ->> 'email', ''), '@', 1)),
+    coalesce(auth.jwt() ->> 'email', ''),
     assigned_role
   )
   returning * into profile_row;
@@ -145,10 +155,11 @@ begin
     else 'secretaria'
   end;
 
-  insert into public.profiles (id, full_name, role)
+  insert into public.profiles (id, full_name, email, role)
   values (
     new.id,
     coalesce(new.raw_user_meta_data ->> 'full_name', split_part(coalesce(new.email, ''), '@', 1)),
+    coalesce(new.email, ''),
     assigned_role
   )
   on conflict (id) do nothing;
