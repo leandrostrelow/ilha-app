@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gestao Clube Ilha</title>
+  <title>Gestão Clube Ilha</title>
   <style>
     :root {
       --bg: #eef3f5;
@@ -1085,7 +1085,7 @@
     }
 
     .court-board {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: 1fr;
     }
 
     .court-column {
@@ -1094,17 +1094,101 @@
       align-content: start;
     }
 
+    .court-day-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+
+    .court-day-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .court-day-btn {
+      min-height: 42px;
+      flex: 0 0 auto;
+      border-radius: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      color: var(--ink);
+      font-weight: 900;
+    }
+
+    .court-day-btn.active {
+      border-color: var(--lime);
+      background: #f7ffe4;
+      box-shadow: inset 4px 0 0 var(--lime);
+    }
+
+    .court-day-board {
+      display: grid;
+      gap: 12px;
+    }
+
+    .court-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
     .court-slot-card {
+      width: 100%;
       display: grid;
       grid-template-columns: 62px minmax(0, 1fr) auto;
       gap: 10px;
       align-items: center;
+      text-align: left;
+      color: inherit;
+    }
+
+    button.court-slot-card {
+      cursor: pointer;
+    }
+
+    button.court-slot-card:hover {
+      border-color: var(--teal);
+      box-shadow: 0 10px 26px rgba(16, 39, 44, .08);
+    }
+
+    .court-slot-card.is-blocked {
+      background: #f4f7f8;
+      color: var(--muted);
+    }
+
+    .court-slot-card.is-busy {
+      border-left: 5px solid var(--teal);
+    }
+
+    .court-slot-card.is-free {
+      border-left: 5px solid var(--lime);
     }
 
     .court-time {
       color: var(--teal);
       font-size: 18px;
       font-weight: 900;
+    }
+
+    .announcement-upload-preview {
+      display: none;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fbfc;
+    }
+
+    .announcement-upload-preview.show {
+      display: block;
+    }
+
+    .announcement-upload-preview img {
+      width: 100%;
+      max-height: 220px;
+      object-fit: cover;
+      display: block;
     }
 
     .announcement-preview-grid {
@@ -3226,6 +3310,16 @@
         grid-template-columns: 1fr;
         gap: 12px;
       }
+      .court-grid {
+        grid-template-columns: 1fr;
+      }
+      .court-slot-card {
+        grid-template-columns: 58px minmax(0, 1fr);
+      }
+      .court-slot-card .ops-meta {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+      }
       .agenda-court-column {
         gap: 8px;
       }
@@ -3321,9 +3415,9 @@
 
   <main class="adm-login" id="adminLogin">
     <form class="adm-login-card" id="adminLoginForm">
-      <img src="../logo.png" alt="Ilha Tenis" />
-      <h1>Gestao Clube Ilha</h1>
-      <p>Acesse a gestao do clube com seu e-mail de equipe.</p>
+      <img src="../logo.png" alt="Ilha Tênis" />
+      <h1>Gestão Clube Ilha</h1>
+      <p>Acesse a gestão do clube com seu e-mail de equipe.</p>
       <label for="adminUser">E-mail</label>
       <input id="adminUser" type="email" autocomplete="username" inputmode="email" placeholder="voce@ilhatenis.com" required />
       <label for="adminPassword">Senha</label>
@@ -3332,7 +3426,7 @@
         <button type="submit" id="adminLoginBtn">Entrar</button>
         <button class="adm-login-secondary" type="button" id="adminSignupBtn">Criar primeiro acesso</button>
       </div>
-      <button class="adm-login-demo preview-only" type="button" id="adminDemoBtn">Entrar em modo demonstracao</button>
+      <button class="adm-login-demo preview-only" type="button" id="adminDemoBtn">Entrar em modo demonstração</button>
       <div class="adm-login-note" id="adminSessionInfo">O primeiro e-mail cadastrado vira admin. Depois ele libera professores e secretaria.</div>
       <div class="adm-login-error" id="adminLoginError" aria-live="polite"></div>
     </form>
@@ -3341,10 +3435,10 @@
   <div class="app" id="adminApp" aria-hidden="true">
     <aside class="admin-sidebar" aria-label="Menu administrativo">
       <div class="admin-sidebar-brand">
-        <img src="../logo.png" alt="Ilha Tenis" />
+        <img src="../logo.png" alt="Ilha Tênis" />
       </div>
       <nav class="admin-sidebar-nav">
-        <button class="admin-nav-btn active" type="button" data-admin-nav="club-home"><span class="admin-nav-icon"><svg><use href="#admin-icon-home"></use></svg></span><span>Inicio</span></button>
+        <button class="admin-nav-btn active" type="button" data-admin-nav="club-home"><span class="admin-nav-icon"><svg><use href="#admin-icon-home"></use></svg></span><span>Início</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon"><svg><use href="#admin-icon-users"></use></svg></span><span>Alunos</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-courts"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Quadras</span></button>
@@ -3362,7 +3456,7 @@
       <div class="club-home-top">
         <div class="club-home-brand">
           <div>
-            <h1>Inicio</h1>
+            <h1>Início</h1>
           </div>
         </div>
         <div class="club-home-actions">
@@ -3405,7 +3499,7 @@
           <div class="club-panel-head">
             <div>
               <h2>Financeiro</h2>
-              <div class="muted">Recebiveis e pendencias financeiras.</div>
+              <div class="muted">Recebíveis e pendências financeiras.</div>
             </div>
             <button class="ghost-btn" type="button" data-admin-nav="club-finance">Abrir</button>
           </div>
@@ -3431,7 +3525,7 @@
             <h1>Alunos</h1>
           </div>
           <div class="module-actions">
-            <button class="ghost-btn" type="button" data-home-action>Inicio</button>
+          <button class="ghost-btn" type="button" data-home-action>Início</button>
             <button class="ghost-btn" type="button" id="clientReloadBtn">Recarregar</button>
           </div>
         </div>
@@ -3481,11 +3575,11 @@
                 <input id="clientEditAge" type="number" min="1" max="120" />
               </div>
               <div class="field">
-                <label for="clientEditGuardian">Responsavel</label>
+                <label for="clientEditGuardian">Responsável</label>
                 <input id="clientEditGuardian" />
               </div>
               <div class="field">
-                <label for="clientEditGuardianPhone">Telefone responsavel</label>
+                <label for="clientEditGuardianPhone">Telefone responsável</label>
                 <input id="clientEditGuardianPhone" type="tel" inputmode="tel" />
               </div>
               <div class="field">
@@ -3494,8 +3588,8 @@
                   <option value="aluno">Aluno de aula</option>
                   <option value="mensalista">Mensalista / joga</option>
                   <option value="cliente">Cliente</option>
-                  <option value="responsavel">Responsavel</option>
-                  <option value="socio">Socio</option>
+                  <option value="responsavel">Responsável</option>
+                  <option value="socio">Sócio</option>
                 </select>
               </div>
               <div class="field">
@@ -3527,11 +3621,51 @@
                 <div class="weekday-grid" id="clientEditDays"></div>
               </div>
               <div class="field full">
-                <label for="clientEditNotes">Observacoes internas</label>
-                <textarea id="clientEditNotes" placeholder="Horario, professor, regra combinada, restricoes e observacoes."></textarea>
+                <label for="clientEditNotes">Observações internas</label>
+                <textarea id="clientEditNotes" placeholder="Horário, professor, regra combinada, restrições e observações."></textarea>
               </div>
             </div>
             <div class="ops-list" id="clientRequestSummary" style="margin-top:12px"></div>
+            <div class="ops-panel client-invoices-panel" style="margin-top:12px">
+              <div class="ops-panel-head">
+                <div>
+                  <h2>Faturas do aluno</h2>
+                  <div class="muted">Controle mês a mês do que aparece no pagamento do aluno.</div>
+                </div>
+              </div>
+              <div class="form-grid">
+                <div class="field">
+                  <label for="clientInvoiceMonth">Mês</label>
+                  <input id="clientInvoiceMonth" type="month" />
+                </div>
+                <div class="field">
+                  <label for="clientInvoiceAmount">Valor</label>
+                  <input id="clientInvoiceAmount" inputmode="decimal" placeholder="220,00" />
+                </div>
+                <div class="field">
+                  <label for="clientInvoiceDue">Vencimento</label>
+                  <input id="clientInvoiceDue" type="date" />
+                </div>
+                <div class="field">
+                  <label for="clientInvoiceStatus">Status</label>
+                  <select id="clientInvoiceStatus">
+                    <option value="ABERTA">Aberta</option>
+                    <option value="AGUARDANDO">Aguardando pagamento</option>
+                    <option value="PAGA">Paga</option>
+                    <option value="VENCIDA">Vencida</option>
+                    <option value="CANCELADA">Cancelada</option>
+                  </select>
+                </div>
+                <div class="field full">
+                  <label for="clientInvoiceNotes">Observação</label>
+                  <input id="clientInvoiceNotes" placeholder="Ex.: mês só jogou, aula avulsa, reposição, desconto." />
+                </div>
+                <div class="field full">
+                  <button class="primary-btn" type="button" id="clientInvoiceSaveBtn">Salvar fatura</button>
+                </div>
+              </div>
+              <div class="ops-list" id="clientInvoiceList" style="margin-top:12px"></div>
+            </div>
           </div>
           <div class="modal-actions">
             <button class="ghost-btn" type="button" id="clientModalCancel">Cancelar</button>
@@ -3546,10 +3680,10 @@
         <div class="module-head">
           <div>
             <h1>Equipe</h1>
-            <div class="muted">Acessos e permissoes.</div>
+            <div class="muted">Acessos e permissões.</div>
           </div>
           <div class="module-actions">
-            <button class="ghost-btn" type="button" data-home-action>Inicio</button>
+            <button class="ghost-btn" type="button" data-home-action>Início</button>
             <button class="ghost-btn" type="button" id="teamReloadBtn">Recarregar</button>
             <button class="primary-btn" type="button" id="teamCreateBtn">Criar acesso</button>
           </div>
@@ -3570,7 +3704,7 @@
               <div class="ops-panel-head">
                 <div>
                   <h2>Novo acesso</h2>
-                  <div class="muted">Cadastre a pessoa e escolha as permissoes.</div>
+                  <div class="muted">Cadastre a pessoa e escolha as permissões.</div>
                 </div>
               </div>
               <form class="form-grid" id="teamForm">
@@ -3595,8 +3729,8 @@
                   </select>
                 </div>
                 <div class="field full">
-                  <label for="teamNotes">Observacoes</label>
-                  <textarea id="teamNotes" placeholder="Ex.: horarios, escopo de trabalho, limite de acesso."></textarea>
+                  <label for="teamNotes">Observações</label>
+                  <textarea id="teamNotes" placeholder="Ex.: horários, escopo de trabalho, limite de acesso."></textarea>
                 </div>
                 <div class="field full">
                   <button class="primary-btn" type="submit">Salvar acesso</button>
@@ -3634,7 +3768,7 @@
             <div class="muted">Planos oficiais do clube.</div>
           </div>
           <div class="module-actions">
-            <button class="ghost-btn" type="button" data-home-action>Inicio</button>
+            <button class="ghost-btn" type="button" data-home-action>Início</button>
             <button class="ghost-btn" type="button" id="plansReloadBtn">Recarregar</button>
             <button class="primary-btn" type="button" id="planNewBtn">Novo plano</button>
           </div>
@@ -3686,7 +3820,7 @@
                   <input id="planFrequency" type="number" min="0" max="7" inputmode="numeric" placeholder="1" />
                 </div>
                 <div class="field">
-                  <label for="planDueDay">Vencimento padrao</label>
+                  <label for="planDueDay">Vencimento padrão</label>
                   <input id="planDueDay" type="number" min="1" max="31" inputmode="numeric" placeholder="10" />
                 </div>
                 <div class="field">
@@ -3698,7 +3832,7 @@
                 </div>
                 <div class="field full">
                   <label for="planDescription">Descricao</label>
-                  <textarea id="planDescription" placeholder="Regra do plano, limite de uso, observacoes e combinados."></textarea>
+                  <textarea id="planDescription" placeholder="Regra do plano, limite de uso, observações e combinados."></textarea>
                 </div>
                 <div class="field full">
                   <button class="primary-btn" type="submit">Salvar plano</button>
@@ -3727,57 +3861,44 @@
             <div class="muted">Teste interno do novo agendamento com login.</div>
           </div>
           <div class="module-actions">
-            <button class="ghost-btn" type="button" data-home-action>Inicio</button>
+            <button class="ghost-btn" type="button" data-home-action>Início</button>
             <button class="ghost-btn" type="button" id="courtReloadBtn">Recarregar</button>
           </div>
         </div>
         <div class="ops-content">
           <div class="ops-summary">
             <div class="ops-card"><strong id="courtDayMetric">0</strong><span>reservas no dia</span></div>
-            <div class="ops-card"><strong id="courtFreeMetric">0</strong><span>horarios livres</span></div>
-            <div class="ops-card"><strong id="courtBusyMetric">0</strong><span>horarios ocupados</span></div>
+            <div class="ops-card"><strong id="courtFreeMetric">0</strong><span>horários livres</span></div>
+            <div class="ops-card"><strong id="courtBusyMetric">0</strong><span>horários ocupados</span></div>
             <div class="ops-card"><strong id="courtBlockedMetric">0</strong><span>bloqueios</span></div>
           </div>
           <div class="ops-grid">
             <div class="ops-panel span-4">
-              <div class="ops-panel-head"><div><h2>Nova reserva</h2><div class="muted">Por enquanto apenas teste no ADM.</div></div></div>
-              <form class="form-grid" id="courtBookingForm">
+              <div class="ops-panel-head"><div><h2>Dias e regras</h2><div class="muted">A agenda abre sábado e domingo. Adicione dias extras quando precisar.</div></div></div>
+              <div class="form-grid" id="courtBookingTools">
                 <div class="field full">
-                  <label for="courtBookingDate">Data</label>
-                  <input id="courtBookingDate" type="date" />
-                </div>
-                <div class="field">
-                  <label for="courtBookingTime">Horario</label>
-                  <select id="courtBookingTime"></select>
-                </div>
-                <div class="field">
-                  <label for="courtBookingCourt">Quadra</label>
-                  <select id="courtBookingCourt"></select>
+                  <label for="courtExtraDate">Adicionar outro dia</label>
+                  <input id="courtExtraDate" type="date" />
                 </div>
                 <div class="field full">
-                  <label for="courtBookingClient">Aluno</label>
-                  <select id="courtBookingClient"></select>
+                  <button class="primary-btn" type="button" id="courtAddDayBtn">Adicionar dia</button>
                 </div>
                 <div class="field full">
-                  <label for="courtBookingOpponent">Adversario</label>
-                  <input id="courtBookingOpponent" placeholder="Obrigatorio para reservar" />
+                  <button class="ghost-btn" type="button" id="courtResetWeekendBtn">Resetar fim de semana</button>
                 </div>
                 <div class="field full">
-                  <label for="courtBookingNotes">Observacoes</label>
-                  <textarea id="courtBookingNotes" placeholder="Aula, jogo, bloqueio ou detalhe interno."></textarea>
+                  <div class="empty">Clique em um horário livre para reservar ou bloquear. Segunda-feira a agenda já abre o próximo fim de semana limpa.</div>
                 </div>
-                <div class="field full">
-                  <button class="primary-btn" type="submit">Salvar reserva</button>
-                </div>
-              </form>
+              </div>
             </div>
             <div class="ops-panel span-8">
               <div class="ops-panel-head">
                 <div>
-                  <h2>Mapa do dia</h2>
-                  <div class="muted">Nao permite dois horarios no mesmo dia para o mesmo aluno.</div>
+                  <h2>Agenda das quadras</h2>
+                  <div class="muted">Não permite dois horários no mesmo dia para o mesmo aluno.</div>
                 </div>
               </div>
+              <div class="court-day-tabs" id="courtDayTabs"></div>
               <div class="court-board" id="courtBoard"></div>
             </div>
           </div>
@@ -3785,15 +3906,56 @@
       </div>
     </section>
 
+    <div class="admin-modal-overlay" id="courtSlotModal" aria-hidden="true">
+      <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="courtSlotModalTitle">
+        <div class="admin-modal-head">
+          <div>
+            <h2 id="courtSlotModalTitle">Horário da quadra</h2>
+            <div class="muted" id="courtSlotModalSubtitle">Escolha reservar ou bloquear.</div>
+          </div>
+          <button class="ghost-btn" type="button" id="courtSlotModalClose">Fechar</button>
+        </div>
+        <form id="courtSlotForm">
+          <div class="admin-modal-body">
+            <div class="form-grid">
+              <div class="field">
+                <label for="courtSlotStatus">Tipo</label>
+                <select id="courtSlotStatus">
+                  <option value="CONFIRMADO">Reserva</option>
+                  <option value="BLOQUEADO">Bloqueio</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="courtSlotClient">Aluno</label>
+                <select id="courtSlotClient"></select>
+              </div>
+              <div class="field">
+                <label for="courtSlotOpponent">Adversário</label>
+                <input id="courtSlotOpponent" placeholder="Obrigatório para jogo" />
+              </div>
+              <div class="field">
+                <label for="courtSlotNotes">Observações</label>
+                <input id="courtSlotNotes" placeholder="Motivo do bloqueio, dupla ou detalhe interno" />
+              </div>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="ghost-btn" type="button" id="courtSlotCancelBtn">Cancelar horário</button>
+            <button class="primary-btn" type="submit">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <section class="ops-module store-module" id="storeModule">
       <div class="module-shell">
         <div class="module-head">
           <div>
             <h1>Ilha Store</h1>
-            <div class="muted">Solicitacoes de produtos e servicos feitas no app do aluno.</div>
+            <div class="muted">Solicitações de produtos e serviços feitas no app do aluno.</div>
           </div>
           <div class="module-actions">
-            <button class="ghost-btn" type="button" data-home-action>Inicio</button>
+            <button class="ghost-btn" type="button" data-home-action>Início</button>
             <button class="ghost-btn" type="button" id="storeReloadBtn">Recarregar</button>
           </div>
         </div>
@@ -3814,28 +3976,33 @@
         <div class="module-head">
           <div>
             <h1>Comunicados</h1>
-            <div class="muted">Avisos que aparecem no inicio do app do aluno.</div>
+            <div class="muted">Avisos que aparecem no início do app do aluno.</div>
           </div>
           <div class="module-actions">
-            <button class="ghost-btn" type="button" data-home-action>Inicio</button>
+            <button class="ghost-btn" type="button" data-home-action>Início</button>
             <button class="ghost-btn" type="button" id="announcementsReloadBtn">Recarregar</button>
           </div>
         </div>
         <div class="ops-content">
           <div class="ops-grid">
             <div class="ops-panel span-5">
-              <div class="ops-panel-head"><div><h2>Novo comunicado</h2><div class="muted">Texto, imagem, link e publico.</div></div></div>
+              <div class="ops-panel-head"><div><h2>Novo comunicado</h2><div class="muted">Texto, imagem, link e público.</div></div></div>
               <form class="form-grid" id="announcementForm">
                 <div class="field full">
-                  <label for="announcementTitle">Titulo</label>
-                  <input id="announcementTitle" placeholder="Ex.: Horario especial do feriado" />
+                  <label for="announcementTitle">Título</label>
+                  <input id="announcementTitle" placeholder="Ex.: Horário especial do feriado" />
                 </div>
                 <div class="field full">
                   <label for="announcementBody">Mensagem</label>
-                  <textarea id="announcementBody" placeholder="Mensagem curta para aparecer no inicio do app."></textarea>
+                  <textarea id="announcementBody" placeholder="Mensagem curta para aparecer no início do app."></textarea>
                 </div>
                 <div class="field full">
-                  <label for="announcementImage">Imagem</label>
+                  <label for="announcementImageFile">Imagem</label>
+                  <input id="announcementImageFile" type="file" accept="image/*" />
+                  <div class="announcement-upload-preview" id="announcementImagePreview"></div>
+                </div>
+                <div class="field full">
+                  <label for="announcementImage">Link de imagem opcional</label>
                   <input id="announcementImage" placeholder="https://..." />
                 </div>
                 <div class="field full">
@@ -3843,7 +4010,7 @@
                   <input id="announcementLink" placeholder="https://..." />
                 </div>
                 <div class="field">
-                  <label for="announcementTarget">Publico</label>
+                  <label for="announcementTarget">Público</label>
                   <select id="announcementTarget">
                     <option value="todos">Todos</option>
                     <option value="aluno">Alunos de aula</option>
@@ -3878,9 +4045,9 @@
             <div class="muted" id="lessonsSubtitle">Agenda semanal, turmas, alunos e professores.</div>
           </div>
           <div class="module-actions">
-            <button class="ghost-btn" type="button" id="lessonsBackBtn">Inicio</button>
+            <button class="ghost-btn" type="button" id="lessonsBackBtn">Início</button>
             <button class="ghost-btn" type="button" id="lessonsReloadBtn">Recarregar</button>
-            <button class="primary-btn" type="button" id="lessonsNewSlotBtn">Novo horario</button>
+            <button class="primary-btn" type="button" id="lessonsNewSlotBtn">Novo horário</button>
           </div>
         </div>
 
@@ -3888,7 +4055,7 @@
           <div class="lesson-summary">
             <div class="lesson-summary-card"><strong id="lessonVacancies">0</strong><span>vagas disponiveis</span></div>
             <div class="lesson-summary-card"><strong id="lessonActiveStudents">0</strong><span>alunos ativos</span></div>
-            <div class="lesson-summary-card"><strong id="lessonSlots">0</strong><span>horarios ativos</span></div>
+            <div class="lesson-summary-card"><strong id="lessonSlots">0</strong><span>horários ativos</span></div>
             <div class="lesson-summary-card"><strong id="lessonTeachers">0</strong><span>professores</span></div>
             <div class="lesson-summary-card"><strong id="lessonCourts">0</strong><span>quadras em uso</span></div>
           </div>
@@ -3908,10 +4075,10 @@
         <div class="module-head">
           <div>
             <h1>Central do aluno</h1>
-            <div class="muted">Cadastro, relacionamento, planos, pendencias e historico.</div>
+            <div class="muted">Cadastro, relacionamento, planos, pendências e histórico.</div>
           </div>
           <div class="module-actions">
-            <button class="ghost-btn" type="button" data-home-action>Inicio</button>
+            <button class="ghost-btn" type="button" data-home-action>Início</button>
             <button class="ghost-btn" type="button" id="studentImportBtn">Importar base</button>
             <button class="primary-btn" type="button" id="studentNewBtn">Novo aluno</button>
           </div>
@@ -3920,7 +4087,7 @@
           <div class="ops-summary">
             <div class="ops-card"><strong id="studentTotalMetric">0</strong><span>alunos ativos</span></div>
             <div class="ops-card"><strong id="studentTrialMetric">0</strong><span>experiencia / avulso</span></div>
-            <div class="ops-card"><strong id="studentPendingMetric">0</strong><span>pendencias financeiras</span></div>
+            <div class="ops-card"><strong id="studentPendingMetric">0</strong><span>pendências financeiras</span></div>
             <div class="ops-card"><strong id="studentContactMetric">0</strong><span>contatos para hoje</span></div>
           </div>
           <div class="ops-grid">
@@ -3953,10 +4120,10 @@
         <div class="module-head">
           <div>
             <h1>Agenda do clube</h1>
-            <div class="muted">Quadras, aulas, torneios, reservas, eventos e manutencoes.</div>
+            <div class="muted">Quadras, aulas, torneios, reservas, eventos e manutenções.</div>
           </div>
           <div class="module-actions">
-            <button class="ghost-btn" type="button" data-home-action>Inicio</button>
+            <button class="ghost-btn" type="button" data-home-action>Início</button>
             <button class="ghost-btn" type="button" id="agendaTodayBtn">Hoje</button>
             <button class="primary-btn" type="button" id="agendaNewBtn">Novo evento</button>
           </div>
@@ -3966,22 +4133,22 @@
             <div class="ops-card"><strong id="agendaEventsMetric">0</strong><span>eventos hoje</span></div>
             <div class="ops-card"><strong id="agendaCourtMetric">0</strong><span>quadras ocupadas</span></div>
             <div class="ops-card"><strong id="agendaClassesMetric">0</strong><span>aulas no dia</span></div>
-            <div class="ops-card"><strong id="agendaAlertsMetric">0</strong><span>alertas de operacao</span></div>
+            <div class="ops-card"><strong id="agendaAlertsMetric">0</strong><span>alertas de operação</span></div>
           </div>
           <div class="ops-grid">
             <div class="ops-panel span-8">
               <div class="ops-panel-head">
                 <div>
                   <h2>Linha do tempo</h2>
-                  <div class="muted">Visao diaria consolidada.</div>
+                  <div class="muted">Visão diária consolidada.</div>
                 </div>
                 <div class="lesson-filters" id="agendaTypeFilters"></div>
               </div>
               <div class="agenda-timeline" id="agendaTimeline"></div>
             </div>
             <div class="ops-panel span-4">
-              <h2>Mapa rapido</h2>
-              <div class="muted">Resumo por quadra e periodo.</div>
+              <h2>Mapa rápido</h2>
+              <div class="muted">Resumo por quadra e período.</div>
               <div class="ops-list" id="agendaCourtMap"></div>
             </div>
           </div>
@@ -3994,12 +4161,12 @@
         <div class="module-head">
           <div>
             <h1>Financeiro</h1>
-            <div class="muted">Caixa, recebiveis e despesas.</div>
+            <div class="muted">Caixa, recebíveis e despesas.</div>
           </div>
           <div class="module-actions">
-            <button class="ghost-btn" type="button" data-home-action>Inicio</button>
+            <button class="ghost-btn" type="button" data-home-action>Início</button>
             <button class="ghost-btn" type="button" id="financeExportBtn">Exportar</button>
-            <button class="primary-btn" type="button" id="financeNewBtn">Lancar agora</button>
+            <button class="primary-btn" type="button" id="financeNewBtn">Lançar agora</button>
           </div>
         </div>
         <div class="ops-content">
@@ -4010,15 +4177,15 @@
             <div class="ops-card"><strong id="financeOverdueMetric">0</strong><span>vencidos</span></div>
           </div>
           <div class="ops-tabs" id="financeSectionTabs" role="tablist" aria-label="Financeiro">
-            <button class="ops-tab-btn active" type="button" data-finance-view="list">Movimentacao</button>
-            <button class="ops-tab-btn" type="button" data-finance-view="form">Lancar</button>
+            <button class="ops-tab-btn active" type="button" data-finance-view="list">Movimentação</button>
+            <button class="ops-tab-btn" type="button" data-finance-view="form">Lançar</button>
             <button class="ops-tab-btn" type="button" data-finance-view="due">Vencidos</button>
           </div>
           <div class="ops-grid finance-workspace">
             <div class="ops-panel span-12 finance-form-card" data-finance-panel="form">
               <div class="ops-panel-head">
                 <div>
-                  <h2>Novo lancamento</h2>
+                  <h2>Novo lançamento</h2>
                   <div class="muted">Receita ou despesa do clube.</div>
                 </div>
               </div>
@@ -4044,7 +4211,7 @@
                   <input id="financeCounterparty" placeholder="Ex.: Maria, Professor, Fornecedor" />
                 </div>
                 <div class="field full">
-                  <label for="financeDescription">Descricao</label>
+                  <label for="financeDescription">Descrição</label>
                   <input id="financeDescription" placeholder="Mensalidade, aula avulsa, bolas, limpeza..." />
                 </div>
                 <div class="field">
@@ -4064,8 +4231,8 @@
                     <option value="Loja">Loja</option>
                     <option value="Torneio">Torneio</option>
                     <option value="Equipe">Equipe</option>
-                    <option value="Manutencao">Manutencao</option>
-                    <option value="Operacao">Operacao</option>
+                    <option value="Manutenção">Manutenção</option>
+                    <option value="Operação">Operação</option>
                   </select>
                 </div>
                 <div class="field">
@@ -4073,25 +4240,25 @@
                   <select id="financeMethod">
                     <option value="">A definir</option>
                     <option value="PIX">PIX</option>
-                    <option value="Cartao">Cartao</option>
+                    <option value="Cartão">Cartão</option>
                     <option value="Dinheiro">Dinheiro</option>
-                    <option value="Transferencia">Transferencia</option>
+                    <option value="Transferência">Transferência</option>
                   </select>
                 </div>
                 <div class="field full">
-                  <label for="financeNotes">Observacoes</label>
+                  <label for="financeNotes">Observações</label>
                   <textarea id="financeNotes" placeholder="Combinado, parcela, professor, turma ou detalhe importante."></textarea>
                 </div>
                 <div class="field full">
-                  <button class="primary-btn" type="submit">Salvar lancamento</button>
+                  <button class="primary-btn" type="submit">Salvar lançamento</button>
                 </div>
               </form>
             </div>
             <div class="ops-panel span-12 active-tab-panel" data-finance-panel="list">
               <div class="finance-list-head">
                 <div class="finance-list-title">
-                  <strong>Movimentacao</strong>
-                  <span id="financeListHint">Lancamentos do clube.</span>
+                  <strong>Movimentação</strong>
+                  <span id="financeListHint">Lançamentos do clube.</span>
                 </div>
                 <div class="lesson-filters" id="financeFilters"></div>
               </div>
@@ -4101,7 +4268,7 @@
               <div class="ops-panel-head">
                 <div>
                   <h2>Vencidos</h2>
-                  <div class="muted">O que precisa de acao.</div>
+                  <div class="muted">O que precisa de ação.</div>
                 </div>
               </div>
               <div class="finance-mini-list" id="financeOverdueList"></div>
@@ -4109,7 +4276,7 @@
             <div class="ops-panel span-6" data-finance-panel="due">
               <div class="ops-panel-head">
                 <div>
-                  <h2>Proximos 7 dias</h2>
+                  <h2>Próximos 7 dias</h2>
                   <div class="muted">Contas chegando.</div>
                 </div>
               </div>
@@ -4128,7 +4295,7 @@
             <div class="muted">Listas, avisos, campanhas e mensagens para WhatsApp.</div>
           </div>
           <div class="module-actions">
-            <button class="ghost-btn" type="button" data-home-action>Inicio</button>
+            <button class="ghost-btn" type="button" data-home-action>Início</button>
             <button class="ghost-btn" type="button" id="communicationTemplatesBtn">Modelos</button>
             <button class="primary-btn" type="button" id="communicationNewBtn">Nova campanha</button>
           </div>
@@ -4173,7 +4340,7 @@
           <div class="muted" id="tournamentSubtitle">Carregando torneio...</div>
         </div>
         <div class="top-actions">
-          <button class="ghost-btn" type="button" id="backToClubHomeBtn">Inicio</button>
+          <button class="ghost-btn" type="button" id="backToClubHomeBtn">Início</button>
           <a class="obs-link" href="../live.html" target="_blank" rel="noopener">Tela OBS</a>
           <button class="ghost-btn" type="button" id="adminLogoutBtn">Sair</button>
           <div class="status" id="syncStatus">Sincronizando...</div>
@@ -7899,10 +8066,10 @@
             }).join('') +
           '</div>' +
           '<div><div class="lesson-capacity"><div class="lesson-capacity-fill" style="width:' + capacityPercent + '%"></div></div>' +
-          '<div class="lesson-slot-actions"><button class="small-btn" type="button">Editar horario</button></div></div>' +
+          '<div class="lesson-slot-actions"><button class="small-btn" type="button">Editar horário</button></div></div>' +
         '</article>';
       });
-      $('lessonSchedule').innerHTML = html || '<div class="lesson-empty-state">Nenhum horario encontrado para os filtros atuais.</div>';
+      $('lessonSchedule').innerHTML = html || '<div class="lesson-empty-state">Nenhum horário encontrado para os filtros atuais.</div>';
     }
 
     function openLessonsModule() {
@@ -7923,6 +8090,8 @@
       selectedClientId: null,
       editingPlanId: null,
       courtDate: localDateString(new Date()),
+      extraCourtDates: [],
+      selectedCourtSlot: null,
       loaded: false
     };
 
@@ -7937,18 +8106,18 @@
     ];
 
     const teamPermissionCatalog = [
-      { key: 'dashboard', label: 'Inicio e indicadores', detail: 'Visualizar resumo geral e alertas do clube.' },
+      { key: 'dashboard', label: 'Início e indicadores', detail: 'Visualizar resumo geral e alertas do clube.' },
       { key: 'clients.read', label: 'Ver alunos', detail: 'Consultar cadastros, contatos, responsaveis e planos.' },
       { key: 'clients.write', label: 'Editar alunos', detail: 'Atualizar dados cadastrais e observacoes.' },
       { key: 'plans', label: 'Planos', detail: 'Criar e editar planos oficiais para vincular aos alunos.' },
       { key: 'finance.read', label: 'Ver financeiro', detail: 'Consultar fluxo de caixa e faturas.' },
       { key: 'finance.write', label: 'Gerenciar financeiro', detail: 'Criar contas a pagar, receber e baixar pagamentos.' },
-      { key: 'classes', label: 'Aulas e agenda', detail: 'Gerenciar horarios, presenca e agenda de quadras.' },
-      { key: 'store', label: 'Ilha Store', detail: 'Acompanhar pedidos de produtos e servicos.' },
+      { key: 'classes', label: 'Aulas e agenda', detail: 'Gerenciar horários, presença e agenda de quadras.' },
+      { key: 'store', label: 'Ilha Store', detail: 'Acompanhar pedidos de produtos e serviços.' },
       { key: 'announcements', label: 'Comunicados', detail: 'Publicar avisos no app do aluno.' },
       { key: 'tournaments', label: 'Torneios', detail: 'Organizar inscricoes, chaves, agenda e resultados.' },
       { key: 'communication', label: 'Comunicacao', detail: 'Enviar avisos, campanhas e mensagens.' },
-      { key: 'team', label: 'Equipe e acessos', detail: 'Criar usuarios e alterar permissoes.' }
+      { key: 'team', label: 'Equipe e acessos', detail: 'Criar usuários e alterar permissões.' }
     ];
 
     const roleDefaultPermissions = {
@@ -7973,7 +8142,7 @@
         { id: 'plan_jogar_semestral', code: 'jogar_semestral', name: 'Somente jogar - Semestral', type: 'mensalista', amount: 140, weeklyLessons: 0, dueDay: 10, active: true, description: 'Acesso mensal as quadras conforme regras do clube. Ciclo de 6 meses. Pix 5% OFF.' },
         { id: 'plan_jogar_mensal', code: 'jogar_mensal', name: 'Somente jogar - Mensal', type: 'mensalista', amount: 150, weeklyLessons: 0, dueDay: 10, active: true, description: 'Acesso mensal as quadras conforme regras do clube.' },
         { id: 'plan_aula_avulsa', code: 'aula_avulsa', name: 'Aula avulsa', type: 'avulso', amount: 80, weeklyLessons: 0, dueDay: 10, active: true, description: 'Valor por aula avulsa.' },
-        { id: 'plan_familia', code: 'familia', name: 'Plano familia', type: 'outro', amount: 0, weeklyLessons: 0, dueDay: 10, active: true, description: 'Calculo com a equipe conforme quantidade de pessoas da mesma familia.' }
+        { id: 'plan_familia', code: 'familia', name: 'Plano família', type: 'outro', amount: 0, weeklyLessons: 0, dueDay: 10, active: true, description: 'Cálculo com a equipe conforme quantidade de pessoas da mesma família.' }
       ],
       students: [
         { name: 'Leandro Strelow', phone: '5527999805814', status: 'ATIVO', plan: 'Aula semanal', level: 'Intermediario', teacher: 'Renato', financial: 'OK', nextAction: 'Confirmar presenca hoje' },
@@ -7988,7 +8157,7 @@
         { time: '16:00', title: 'Treino Kids', type: 'aula', court: 'Quadra 1', owner: 'Gabriel', status: '4 vagas' },
         { time: '18:00', title: 'Aula intermediario adulto', type: 'aula', court: 'Quadra 1', owner: 'Renato', status: '1 vaga' },
         { time: '19:00', title: 'Reserva social', type: 'reserva', court: 'Quadra 2', owner: 'Secretaria', status: 'Confirmado' },
-        { time: '20:00', title: 'Bloqueio manutencao luz', type: 'manutencao', court: 'Quadra 2', owner: 'Operacao', status: 'Atencao' }
+        { time: '20:00', title: 'Bloqueio manutenção luz', type: 'manutencao', court: 'Quadra 2', owner: 'Operação', status: 'Atenção' }
       ],
       finance: [
         { student: 'Leandro Strelow', source: 'Mensalidade aulas', type: 'RECEITA', amount: 220, due: '2026-06-30', status: 'RECEBIDO', category: 'Aulas' },
@@ -7997,7 +8166,7 @@
         { student: 'Davi', source: 'Aula experimental', type: 'RECEITA', amount: 80, due: '2026-06-22', status: 'ABERTO', category: 'Aulas' },
         { student: 'Ilha Store', source: 'Bolinhas e encordoamento', type: 'RECEITA', amount: 160, due: '2026-06-22', status: 'RECEBIDO', category: 'Loja' },
         { student: 'Professor Renato', source: 'Repasse aulas', type: 'DESPESA', amount: 650, due: '2026-06-30', status: 'ABERTO', category: 'Equipe' },
-        { student: 'Fornecedor', source: 'Bolas e material de quadra', type: 'DESPESA', amount: 420, due: '2026-06-28', status: 'ABERTO', category: 'Operacao' }
+        { student: 'Fornecedor', source: 'Bolas e material de quadra', type: 'DESPESA', amount: 420, due: '2026-06-28', status: 'ABERTO', category: 'Operação' }
       ],
       team: [
         { name: 'Leandro Strelow', email: 'kikostrelow@gmail.com', role: 'admin', active: true, permissions: roleDefaultPermissions.admin, notes: 'Gestao geral do clube.' }
@@ -8005,7 +8174,7 @@
       audiences: [
         { name: 'Alunos ativos', contacts: 42, purpose: 'Avisos de aula, feriados e comunicados gerais' },
         { name: 'Responsaveis Kids', contacts: 18, purpose: 'Comunicados para responsaveis e turmas infantis' },
-        { name: 'Pendencias financeiras', contacts: 6, purpose: 'Lembretes de mensalidade e regularizacao' },
+        { name: 'Pendências financeiras', contacts: 6, purpose: 'Lembretes de mensalidade e regularização' },
         { name: 'Torneios e eventos', contacts: 95, purpose: 'Divulgacao de chaves, jogos e inscricoes' }
       ],
       campaigns: [
@@ -8016,9 +8185,11 @@
       storeRequests: [],
       announcements: [],
       courtBookings: [],
-      message: 'Oi, {nome}! Passando para lembrar que sua aula no Ilha esta confirmada para hoje. Se precisar ajustar o horario, fale com a secretaria pelo WhatsApp. Obrigado!'
+      paymentInvoices: [],
+      message: 'Oi, {nome}! Passando para lembrar que sua aula no Ilha está confirmada para hoje. Se precisar ajustar o horário, fale com a secretaria pelo WhatsApp. Obrigado!'
     };
     const opsSeedData = JSON.parse(JSON.stringify(opsData));
+    let courtRefreshTimer = null;
 
     function setClubMode(mode) {
       ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-courts', 'club-finance', 'club-store', 'club-announcements', 'club-communication', 'club-clients', 'club-team', 'club-database'].forEach(function (className) {
@@ -8026,6 +8197,10 @@
       });
       document.body.classList.add(mode);
       updateAdminNav(mode);
+      if (mode !== 'club-courts' && courtRefreshTimer) {
+        clearInterval(courtRefreshTimer);
+        courtRefreshTimer = null;
+      }
     }
 
     function updateAdminNav(mode) {
@@ -8050,7 +8225,7 @@
 
     function statusPill(status) {
       const value = String(status || '').toUpperCase();
-      const kind = value === 'OK' || value === 'EM DIA' || value === 'RECEBIDO' || value === 'CONFIRMADO' || value === 'ATIVO' || value === 'PAGO' ? 'good' : (value === 'VENCIDO' || value === 'PENDENTE' || value === 'BLOQUEADO' || value === 'INATIVO' ? 'bad' : 'warn');
+      const kind = value === 'OK' || value === 'EM DIA' || value === 'RECEBIDO' || value === 'CONFIRMADO' || value === 'ATIVO' || value === 'PAGO' || value === 'PAGA' ? 'good' : (value === 'VENCIDO' || value === 'VENCIDA' || value === 'PENDENTE' || value === 'BLOQUEADO' || value === 'INATIVO' ? 'bad' : 'warn');
       return '<span class="ops-pill ' + kind + '">' + escapeHtml(status) + '</span>';
     }
 
@@ -8288,6 +8463,28 @@
       };
     }
 
+    function mapPaymentInvoiceRow(row) {
+      const client = row.app_clients || {};
+      return {
+        id: row.id || '',
+        clientId: row.client_id || '',
+        client: client.full_name || row.client_name || '',
+        email: client.email || '',
+        invoiceMonth: row.invoice_month || '',
+        description: row.description || 'Mensalidade Ilha Tênis',
+        planCode: row.plan_code || '',
+        planName: row.plan_name || '',
+        amount: Number(row.amount || 0),
+        dueDate: row.due_date || '',
+        status: row.status || 'ABERTA',
+        paymentMethod: row.payment_method || '',
+        paidAt: row.paid_at || '',
+        pixPayload: row.pix_payload || '',
+        notes: row.notes || '',
+        created: row.created_at || ''
+      };
+    }
+
     async function loadOpsData(force) {
       if (!adminSession || !adminSession.access_token) return;
       if (isAdminDemoMode()) {
@@ -8304,7 +8501,8 @@
           supabaseRest('app_plans?select=*&order=created_at.desc').catch(function () { return []; }),
           supabaseRest('app_store_requests?select=*,app_clients(full_name,email,phone)&order=created_at.desc').catch(function () { return []; }),
           supabaseRest('app_announcements?select=*&order=published_at.desc').catch(function () { return []; }),
-          supabaseRest('app_court_bookings?select=*,app_clients(full_name,email,phone)&order=booking_date.asc,starts_at.asc').catch(function () { return []; })
+          supabaseRest('app_court_bookings?select=*,app_clients(full_name,email,phone)&order=booking_date.asc,starts_at.asc').catch(function () { return []; }),
+          supabaseRest('app_payment_invoices?select=*,app_clients(full_name,email)&order=invoice_month.desc').catch(function () { return []; })
         ]);
         opsData.clients = results[0].map(mapClientRow);
         opsData.finance = results[1].map(mapFinanceRow);
@@ -8314,6 +8512,7 @@
         opsData.storeRequests = (results[5] || []).map(mapStoreRequestRow);
         opsData.announcements = (results[6] || []).map(mapAnnouncementRow);
         opsData.courtBookings = (results[7] || []).map(mapCourtBookingRow);
+        opsData.paymentInvoices = (results[8] || []).map(mapPaymentInvoiceRow);
         opsData.students = [];
         opsData.agenda = [];
         opsData.audiences = [];
@@ -8321,8 +8520,8 @@
         opsData.templates = [];
         opsState.loaded = true;
       } catch (error) {
-        console.info('Supabase indisponivel para modulos administrativos; usando dados locais.', error && error.message);
-        toast('Nao consegui carregar o Supabase agora. Mantive a base local na tela.');
+        console.info('Supabase indisponível para módulos administrativos; usando dados locais.', error && error.message);
+        toast('Não consegui carregar o Supabase agora. Mantive a base local na tela.');
       }
     }
 
@@ -8353,7 +8552,7 @@
 
       $('homeFinanceList').innerHTML = pendingFinance.slice(0, 3).map(function (item) {
         return '<article class="club-task"><strong>' + escapeHtml(item.source) + '</strong><div class="muted">' + escapeHtml(item.counterparty || item.student) + ' | ' + escapeHtml(financeDateLabel(item.due)) + '</div><div class="finance-total">' + money(item.amount) + '</div></article>';
-      }).join('') || '<div class="lesson-empty-state">Sem pendencias financeiras.</div>';
+      }).join('') || '<div class="lesson-empty-state">Sem pendências financeiras.</div>';
 
       $('homeSystemList').innerHTML = opsData.plans.slice(0, 5).map(function (plan) {
         const detail = plan.description || (plan.weeklyLessons ? plan.weeklyLessons + 'x por semana' : plan.type || 'Plano');
@@ -8404,6 +8603,61 @@
       const counterparty = normalizeMatchText(item.counterparty || item.student || '');
       if (!counterparty) return false;
       return Boolean((targetEmail && counterparty === targetEmail) || (targetName && counterparty === targetName));
+    }
+
+    function invoiceMonthValue(value) {
+      return String(value || localDateString()).slice(0, 7);
+    }
+
+    function invoiceMonthStart(value) {
+      const month = invoiceMonthValue(value);
+      return month + '-01';
+    }
+
+    function invoiceMonthLabel(value) {
+      const date = new Date(invoiceMonthStart(value) + 'T12:00:00');
+      const labels = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+      return labels[date.getMonth()] + ' de ' + date.getFullYear();
+    }
+
+    function invoiceDueDate(monthValue, dueDay) {
+      const parts = invoiceMonthValue(monthValue).split('-').map(Number);
+      const lastDay = new Date(parts[0], parts[1], 0).getDate();
+      const day = Math.min(Math.max(Number(dueDay || 10), 1), lastDay);
+      return parts[0] + '-' + pad2(parts[1]) + '-' + pad2(day);
+    }
+
+    function invoicesForClient(client) {
+      return opsData.paymentInvoices.filter(function (invoice) {
+        return String(invoice.clientId || '') === String(client.id || '');
+      }).sort(function (a, b) {
+        return String(b.invoiceMonth || '').localeCompare(String(a.invoiceMonth || ''));
+      });
+    }
+
+    function findClientInvoice(client, monthValue) {
+      const month = invoiceMonthStart(monthValue);
+      return invoicesForClient(client).find(function (invoice) {
+        return String(invoice.invoiceMonth || '').slice(0, 10) === month;
+      });
+    }
+
+    function fillClientInvoiceDefaults(client) {
+      const month = $('clientInvoiceMonth').value || invoiceMonthValue(localDateString());
+      const invoice = findClientInvoice(client, month);
+      $('clientInvoiceMonth').value = invoice ? invoiceMonthValue(invoice.invoiceMonth) : month;
+      $('clientInvoiceAmount').value = invoice ? String(invoice.amount || '').replace('.', ',') : (client.planAmount ? String(client.planAmount).replace('.', ',') : '');
+      $('clientInvoiceDue').value = invoice && invoice.dueDate ? invoice.dueDate : invoiceDueDate(month, client.dueDay || 10);
+      $('clientInvoiceStatus').value = invoice ? invoice.status : 'ABERTA';
+      $('clientInvoiceNotes').value = invoice ? invoice.notes : '';
+    }
+
+    function renderClientInvoices(client) {
+      const invoices = invoicesForClient(client);
+      $('clientInvoiceList').innerHTML = invoices.length ? invoices.map(function (invoice) {
+        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(invoiceMonthLabel(invoice.invoiceMonth)) + '</strong><div class="muted">' + escapeHtml(invoice.planName || invoice.description || 'Mensalidade') + ' | vence ' + escapeHtml(invoice.dueDate ? financeDateLabel(invoice.dueDate) : 'a definir') + '</div></div><div class="ops-meta">' + statusPill(invoice.status) + '<span class="finance-total">' + money(invoice.amount) + '</span></div></div>' + (invoice.notes ? '<div class="muted" style="margin-top:8px">' + escapeHtml(invoice.notes) + '</div>' : '') + '</article>';
+      }).join('') : '<div class="lesson-empty-state">Nenhuma fatura criada para este aluno.</div>';
+      fillClientInvoiceDefaults(client);
     }
 
     function clientFinanceSummary(client) {
@@ -8468,7 +8722,7 @@
       const selectedPlanValue = selectedPlan ? (selectedPlan.id || selectedPlan.code || selectedPlan.name) : (client.officialPlanId || client.officialPlanCode || '');
       const request = findClientRequest(client);
       $('clientModalTitle').textContent = client.name || 'Ficha do aluno';
-      $('clientModalSubtitle').textContent = client.officialPlanName ? 'Plano oficial: ' + client.officialPlanName : 'Plano oficial ainda nao definido.';
+      $('clientModalSubtitle').textContent = client.officialPlanName ? 'Plano oficial: ' + client.officialPlanName : 'Plano oficial ainda não definido.';
       $('clientModalAvatar').innerHTML = client.photo ? '<img src="' + escapeHtml(client.photo) + '" alt="" />' : escapeHtml(clientInitials(client.name));
       $('clientEditName').value = client.name || '';
       $('clientEditEmail').value = client.email || '';
@@ -8486,8 +8740,9 @@
       $('clientEditNotes').value = client.notes || '';
       renderWeekdayInputs('clientEditDays', client.preferredDays && client.preferredDays.length ? client.preferredDays : request && request.requestedDays);
       $('clientRequestSummary').innerHTML = request
-        ? '<article class="ops-list-card"><div class="ops-list-main"><div><strong>Pedido recebido no app</strong><div class="muted">' + escapeHtml(request.plan) + ' | ' + escapeHtml(request.membershipType || 'tipo nao informado') + ' | ' + escapeHtml(formatDays(request.requestedDays) || 'sem dias') + '</div></div><div class="ops-meta">' + statusPill(request.status) + '<span class="ops-pill">' + money(request.amount) + '</span></div></div><div class="ops-meta"><button class="small-btn" type="button" data-plan-request-approve="' + escapeHtml(request.id) + '">Aprovar e vincular</button><button class="small-btn" type="button" data-plan-request-reject="' + escapeHtml(request.id) + '">Recusar</button></div></article>'
+        ? '<article class="ops-list-card"><div class="ops-list-main"><div><strong>Pedido recebido no app</strong><div class="muted">' + escapeHtml(request.plan) + ' | ' + escapeHtml(request.membershipType || 'tipo não informado') + ' | ' + escapeHtml(formatDays(request.requestedDays) || 'sem dias') + '</div></div><div class="ops-meta">' + statusPill(request.status) + '<span class="ops-pill">' + money(request.amount) + '</span></div></div><div class="ops-meta"><button class="small-btn" type="button" data-plan-request-approve="' + escapeHtml(request.id) + '">Aprovar e vincular</button><button class="small-btn" type="button" data-plan-request-reject="' + escapeHtml(request.id) + '">Recusar</button></div></article>'
         : '<div class="lesson-empty-state">Sem pedido registrado pelo aluno. Defina o plano manualmente.</div>';
+      renderClientInvoices(client);
       $('clientModal').classList.add('show');
       $('clientModal').setAttribute('aria-hidden', 'false');
     }
@@ -8591,7 +8846,7 @@
           const item = teamPermissionCatalog.find(function (permission) { return permission.key === key; });
           return item ? item.label : key;
         });
-        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(member.name) + '</strong><div class="muted">' + escapeHtml(member.email || 'Sem e-mail') + ' | ' + escapeHtml(roleLabel(member.role)) + '</div></div><div class="ops-meta">' + statusPill(member.active === false ? 'BLOQUEADO' : 'ATIVO') + '<span class="ops-pill">' + permissions.length + ' permissoes</span></div></div><div class="ops-meta">' + permissions.slice(0, 8).map(function (label) { return '<span class="ops-pill">' + escapeHtml(label) + '</span>'; }).join('') + '</div></article>';
+        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(member.name) + '</strong><div class="muted">' + escapeHtml(member.email || 'Sem e-mail') + ' | ' + escapeHtml(roleLabel(member.role)) + '</div></div><div class="ops-meta">' + statusPill(member.active === false ? 'BLOQUEADO' : 'ATIVO') + '<span class="ops-pill">' + permissions.length + ' permissões</span></div></div><div class="ops-meta">' + permissions.slice(0, 8).map(function (label) { return '<span class="ops-pill">' + escapeHtml(label) + '</span>'; }).join('') + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum acesso cadastrado ainda.</div>';
     }
 
@@ -8630,7 +8885,7 @@
       $('planMemberMetric').textContent = opsData.plans.filter(function (plan) { return plan.type === 'mensalista'; }).length;
       $('planList').innerHTML = opsData.plans.map(function (plan) {
         const value = plan.id || plan.code || plan.name;
-        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(plan.name) + '</strong><div class="muted">' + escapeHtml(plan.code || 'sem codigo') + ' | ' + escapeHtml(plan.type || 'plano') + ' | vence dia ' + escapeHtml(plan.dueDay || '-') + '</div></div><div class="ops-meta">' + statusPill(plan.active === false ? 'INATIVO' : 'ATIVO') + '<span class="ops-pill">' + money(plan.amount || 0) + '</span><button class="small-btn" type="button" data-plan-edit="' + escapeHtml(value) + '">Editar</button></div></div><div class="muted" style="margin-top:8px">' + escapeHtml(plan.description || 'Sem descricao.') + '</div></article>';
+        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(plan.name) + '</strong><div class="muted">' + escapeHtml(plan.code || 'sem código') + ' | ' + escapeHtml(plan.type || 'plano') + ' | vence dia ' + escapeHtml(plan.dueDay || '-') + '</div></div><div class="ops-meta">' + statusPill(plan.active === false ? 'INATIVO' : 'ATIVO') + '<span class="ops-pill">' + money(plan.amount || 0) + '</span><button class="small-btn" type="button" data-plan-edit="' + escapeHtml(value) + '">Editar</button></div></div><div class="muted" style="margin-top:8px">' + escapeHtml(plan.description || 'Sem descrição.') + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum plano cadastrado ainda.</div>';
     }
 
@@ -8641,80 +8896,161 @@
     }
 
     const courtNames = ['Quadra 1', 'Quadra 2'];
-    const courtTimes = ['06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'];
+    const courtTimes = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
+
+    function nextWeekendDates() {
+      const today = new Date();
+      const day = today.getDay();
+      const daysToSaturday = day === 6 ? 0 : day === 0 ? -1 : 6 - day;
+      const saturday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + daysToSaturday);
+      const sunday = new Date(saturday.getFullYear(), saturday.getMonth(), saturday.getDate() + 1);
+      return [localDateString(saturday), localDateString(sunday)];
+    }
+
+    function courtAgendaDates() {
+      const dates = nextWeekendDates().concat(opsState.extraCourtDates || []);
+      return Array.from(new Set(dates)).sort();
+    }
+
+    function courtDayLabel(dateValue) {
+      const date = new Date(dateValue + 'T12:00:00');
+      const names = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+      return names[date.getDay()] + ' ' + String(date.getDate()).padStart(2, '0') + '/' + String(date.getMonth() + 1).padStart(2, '0');
+    }
+
+    function isWeekendDate(dateValue) {
+      const day = new Date(dateValue + 'T12:00:00').getDay();
+      return day === 0 || day === 6;
+    }
+
+    function isFixedCourtBlock(dateValue, court, time) {
+      return isWeekendDate(dateValue) && court === 'Quadra 1' && time === '17:00';
+    }
+
+    function findCourtBooking(dateValue, court, time) {
+      return opsData.courtBookings.find(function (item) {
+        return item.status !== 'CANCELADO' && String(item.date) === String(dateValue) && item.court === court && item.time === time;
+      });
+    }
 
     function renderCourtBookingModule() {
-      if (!$('courtBookingDate').value) $('courtBookingDate').value = opsState.courtDate || localDateString(new Date());
-      opsState.courtDate = $('courtBookingDate').value || opsState.courtDate;
-      $('courtBookingTime').innerHTML = courtTimes.map(function (time) { return '<option value="' + time + '">' + time + '</option>'; }).join('');
-      $('courtBookingCourt').innerHTML = courtNames.map(function (court) { return '<option value="' + court + '">' + court + '</option>'; }).join('');
-      $('courtBookingClient').innerHTML = '<option value="">Selecione</option>' + opsData.clients.map(function (client) {
-        const value = client.id || client.email || client.name;
-        return '<option value="' + escapeHtml(value) + '">' + escapeHtml(client.name) + '</option>';
+      const dates = courtAgendaDates();
+      if (!dates.includes(opsState.courtDate)) opsState.courtDate = dates[0];
+      const selectedDate = opsState.courtDate;
+      $('courtDayTabs').innerHTML = dates.map(function (dateValue) {
+        return '<button class="court-day-btn' + (dateValue === selectedDate ? ' active' : '') + '" type="button" data-court-date="' + escapeHtml(dateValue) + '">' + escapeHtml(courtDayLabel(dateValue)) + '</button>';
       }).join('');
-      const dayRows = opsData.courtBookings.filter(function (item) {
-        return String(item.date) === String(opsState.courtDate);
+      const selectedRows = opsData.courtBookings.filter(function (item) {
+        return String(item.date) === String(selectedDate) && item.status !== 'CANCELADO';
       });
-      const occupied = dayRows.filter(function (item) { return item.status !== 'BLOQUEADO'; });
-      const blocked = dayRows.filter(function (item) { return item.status === 'BLOQUEADO'; });
+      const occupied = selectedRows.filter(function (item) { return item.status !== 'BLOQUEADO'; });
+      const manualBlocked = selectedRows.filter(function (item) { return item.status === 'BLOQUEADO'; });
+      const fixedBlocks = courtNames.reduce(function (sum, court) {
+        return sum + courtTimes.filter(function (time) { return isFixedCourtBlock(selectedDate, court, time); }).length;
+      }, 0);
       const totalSlots = courtNames.length * courtTimes.length;
-      $('courtDayMetric').textContent = dayRows.length;
+      $('courtDayMetric').textContent = selectedRows.length;
       $('courtBusyMetric').textContent = occupied.length;
-      $('courtBlockedMetric').textContent = blocked.length;
-      $('courtFreeMetric').textContent = Math.max(0, totalSlots - dayRows.length);
-      $('courtBoard').innerHTML = courtNames.map(function (court) {
-        return '<div class="court-column"><h3>' + escapeHtml(court) + '</h3>' + courtTimes.map(function (time) {
-          const booking = dayRows.find(function (item) { return item.court === court && item.time === time; });
-          if (!booking) {
-            return '<article class="court-slot-card"><div class="court-time">' + time + '</div><div><strong>Livre</strong><div class="muted">Disponivel para teste.</div></div><span class="ops-pill good">Livre</span></article>';
+      $('courtBlockedMetric').textContent = manualBlocked.length + fixedBlocks;
+      $('courtFreeMetric').textContent = Math.max(0, totalSlots - occupied.length - manualBlocked.length - fixedBlocks);
+      $('courtBoard').innerHTML = '<div class="court-day-board">' + courtNames.map(function (court) {
+        return '<section class="court-column"><h3>' + escapeHtml(court) + '</h3><div class="court-grid">' + courtTimes.map(function (time) {
+          const booking = findCourtBooking(selectedDate, court, time);
+          const fixed = isFixedCourtBlock(selectedDate, court, time);
+          if (fixed && !booking) {
+            return '<button class="court-slot-card is-blocked" type="button" disabled><div class="court-time">' + time + '</div><div><strong>Bloqueado</strong><div class="muted">Bloqueio fixo da Quadra 1.</div></div><div class="ops-meta">' + statusPill('BLOQUEADO') + '</div></button>';
           }
-          return '<article class="court-slot-card"><div class="court-time">' + time + '</div><div><strong>' + escapeHtml(booking.client) + '</strong><div class="muted">Adversario: ' + escapeHtml(booking.opponent || 'A definir') + '</div></div><div class="ops-meta">' + statusPill(booking.status) + '<button class="small-btn" type="button" data-court-cancel="' + escapeHtml(booking.id) + '">Cancelar</button></div></article>';
-        }).join('') + '</div>';
-      }).join('');
+          if (!booking) {
+            return '<button class="court-slot-card is-free" type="button" data-court-slot="' + escapeHtml([selectedDate, court, time].join('|')) + '"><div class="court-time">' + time + '</div><div><strong>Livre</strong><div class="muted">Clique para reservar ou bloquear.</div></div><div class="ops-meta"><span class="ops-pill good">Livre</span></div></button>';
+          }
+          const blocked = booking.status === 'BLOQUEADO';
+          return '<button class="court-slot-card ' + (blocked ? 'is-blocked' : 'is-busy') + '" type="button" data-court-slot="' + escapeHtml([selectedDate, court, time].join('|')) + '"><div class="court-time">' + time + '</div><div><strong>' + escapeHtml(blocked ? 'Bloqueado' : booking.client) + '</strong><div class="muted">' + escapeHtml(blocked ? (booking.notes || 'Bloqueio manual') : 'Adversário: ' + (booking.opponent || 'A definir')) + '</div></div><div class="ops-meta">' + statusPill(booking.status) + '</div></button>';
+        }).join('') + '</div></section>';
+      }).join('') + '</div>';
     }
 
     function openCourtBookingModule() {
       setClubMode('club-courts');
       renderCourtBookingModule();
       loadOpsData(false).then(renderCourtBookingModule);
+      if (!courtRefreshTimer) {
+        courtRefreshTimer = setInterval(function () {
+          if (document.body.classList.contains('club-courts')) loadOpsData(false).then(renderCourtBookingModule);
+        }, 10000);
+      }
     }
 
-    async function createCourtBookingAction(event) {
+    function openCourtSlotModal(slotKey) {
+      const parts = String(slotKey || '').split('|');
+      const date = parts[0];
+      const court = parts[1];
+      const time = parts[2];
+      const booking = findCourtBooking(date, court, time);
+      opsState.selectedCourtSlot = { date: date, court: court, time: time, bookingId: booking && booking.id || '' };
+      $('courtSlotModalTitle').textContent = court + ' • ' + time;
+      $('courtSlotModalSubtitle').textContent = courtDayLabel(date);
+      $('courtSlotStatus').value = booking && booking.status === 'BLOQUEADO' ? 'BLOQUEADO' : 'CONFIRMADO';
+      $('courtSlotClient').innerHTML = '<option value="">Selecione</option>' + opsData.clients.map(function (client) {
+        const value = client.id || client.email || client.name;
+        const selected = booking && String(booking.clientId || booking.client) === String(client.id || client.name) ? ' selected' : '';
+        return '<option value="' + escapeHtml(value) + '"' + selected + '>' + escapeHtml(client.name) + '</option>';
+      }).join('');
+      $('courtSlotOpponent').value = booking && booking.opponent || '';
+      $('courtSlotNotes').value = booking && booking.notes || '';
+      $('courtSlotCancelBtn').style.display = booking ? 'inline-flex' : 'none';
+      $('courtSlotModal').classList.add('show');
+      $('courtSlotModal').setAttribute('aria-hidden', 'false');
+    }
+
+    function closeCourtSlotModal() {
+      $('courtSlotModal').classList.remove('show');
+      $('courtSlotModal').setAttribute('aria-hidden', 'true');
+      opsState.selectedCourtSlot = null;
+    }
+
+    async function saveCourtSlotAction(event) {
       event.preventDefault();
       try {
         requireAdminSession();
-        const client = findClientByKey($('courtBookingClient').value);
-        if (!client) throw new Error('Selecione um aluno.');
-        const date = $('courtBookingDate').value || localDateString(new Date());
-        const time = $('courtBookingTime').value;
-        const court = $('courtBookingCourt').value;
-        const opponent = $('courtBookingOpponent').value.trim();
-        if (!opponent) throw new Error('Informe o adversario.');
-        const duplicateClient = opsData.courtBookings.find(function (item) {
-          return item.status !== 'CANCELADO' && String(item.date) === String(date) && String(item.clientId || item.client) === String(client.id || client.name);
-        });
-        if (duplicateClient) throw new Error('Esse aluno ja tem horario nesse dia.');
-        const duplicateSlot = opsData.courtBookings.find(function (item) {
-          return item.status !== 'CANCELADO' && String(item.date) === String(date) && item.court === court && item.time === time;
-        });
-        if (duplicateSlot) throw new Error('Esse horario ja esta ocupado.');
+        const slot = opsState.selectedCourtSlot;
+        if (!slot) return;
+        const status = $('courtSlotStatus').value;
+        const client = findClientByKey($('courtSlotClient').value);
+        const opponent = $('courtSlotOpponent').value.trim();
+        if (status !== 'BLOQUEADO') {
+          if (!client) throw new Error('Selecione um aluno.');
+          if (!opponent) throw new Error('Informe o adversário.');
+          const duplicateClient = opsData.courtBookings.find(function (item) {
+            return item.status !== 'CANCELADO' && String(item.id) !== String(slot.bookingId) && String(item.date) === String(slot.date) && String(item.clientId || item.client) === String(client.id || client.name);
+          });
+          if (duplicateClient) throw new Error('Esse aluno já tem horário nesse dia.');
+        }
+        const existing = slot.bookingId ? opsData.courtBookings.find(function (item) { return String(item.id) === String(slot.bookingId); }) : null;
         const payload = {
-          client_id: isUuid(client.id) ? client.id : null,
-          client_name: client.name,
-          opponent_name: opponent,
-          booking_date: date,
-          starts_at: time,
-          court_name: court,
-          status: 'CONFIRMADO',
-          notes: $('courtBookingNotes').value.trim()
+          client_id: status === 'BLOQUEADO' ? null : (isUuid(client.id) ? client.id : null),
+          client_name: status === 'BLOQUEADO' ? 'Bloqueado' : client.name,
+          opponent_name: status === 'BLOQUEADO' ? '' : opponent,
+          booking_date: slot.date,
+          starts_at: slot.time,
+          court_name: slot.court,
+          status: status,
+          notes: $('courtSlotNotes').value.trim()
         };
         let saved = null;
-        if (!isAdminDemoMode()) saved = await supabaseInsert('app_court_bookings', payload);
-        opsData.courtBookings.unshift(saved ? mapCourtBookingRow(saved) : mapCourtBookingRow(Object.assign({ id: localId('court') }, payload)));
-        $('courtBookingOpponent').value = '';
-        $('courtBookingNotes').value = '';
+        if (existing && !isAdminDemoMode() && isUuid(existing.id)) {
+          saved = await supabaseRest('app_court_bookings?id=eq.' + encodeURIComponent(existing.id), {
+            method: 'PATCH',
+            body: payload,
+            prefer: 'return=representation'
+          });
+          Object.assign(existing, mapCourtBookingRow(Array.isArray(saved) ? saved[0] : saved));
+        } else {
+          if (!isAdminDemoMode()) saved = await supabaseInsert('app_court_bookings', payload);
+          opsData.courtBookings.unshift(saved ? mapCourtBookingRow(saved) : mapCourtBookingRow(Object.assign({ id: localId('court') }, payload)));
+        }
+        closeCourtSlotModal();
         renderCourtBookingModule();
-        toast('Reserva salva.');
+        toast(status === 'BLOQUEADO' ? 'Horário bloqueado.' : 'Reserva salva.');
       } catch (error) {
         reportActionError(error);
       }
@@ -8736,6 +9072,42 @@
         }
         renderCourtBookingModule();
         toast('Reserva cancelada.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    function addCourtExtraDate() {
+      const value = $('courtExtraDate').value;
+      if (!value) {
+        toast('Escolha uma data.');
+        return;
+      }
+      opsState.extraCourtDates = Array.from(new Set((opsState.extraCourtDates || []).concat(value))).sort();
+      opsState.courtDate = value;
+      $('courtExtraDate').value = '';
+      renderCourtBookingModule();
+    }
+
+    async function resetWeekendBookings() {
+      try {
+        requireAdminSession();
+        const dates = nextWeekendDates();
+        const targets = opsData.courtBookings.filter(function (item) {
+          return dates.includes(item.date) && item.status !== 'CANCELADO';
+        });
+        for (const booking of targets) {
+          if (!isAdminDemoMode() && isUuid(booking.id)) {
+            await supabaseRest('app_court_bookings?id=eq.' + encodeURIComponent(booking.id), {
+              method: 'PATCH',
+              body: { status: 'CANCELADO' },
+              prefer: 'return=minimal'
+            });
+          }
+          booking.status = 'CANCELADO';
+        }
+        renderCourtBookingModule();
+        toast('Fim de semana resetado.');
       } catch (error) {
         reportActionError(error);
       }
@@ -8811,16 +9183,44 @@
       loadOpsData(false).then(renderAnnouncementsModule);
     }
 
+    function resizeAnnouncementImage(file) {
+      return new Promise(function (resolve, reject) {
+        if (!file) {
+          resolve('');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function () {
+          const img = new Image();
+          img.onload = function () {
+            const max = 1200;
+            const scale = Math.min(1, max / Math.max(img.width, img.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(img.width * scale));
+            canvas.height = Math.max(1, Math.round(img.height * scale));
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', .82));
+          };
+          img.onerror = reject;
+          img.src = reader.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
     async function createAnnouncementAction(event) {
       event.preventDefault();
       try {
         requireAdminSession();
         const title = $('announcementTitle').value.trim();
         if (!title) throw new Error('Informe o titulo do comunicado.');
+        const importedImage = await resizeAnnouncementImage($('announcementImageFile').files && $('announcementImageFile').files[0]);
         const payload = {
           title: title,
           body: $('announcementBody').value.trim(),
-          image_url: $('announcementImage').value.trim(),
+          image_url: importedImage || $('announcementImage').value.trim(),
           link_url: $('announcementLink').value.trim(),
           target_type: $('announcementTarget').value,
           target_plan_code: $('announcementTarget').value === 'plano' ? $('announcementPlan').value : null,
@@ -8831,6 +9231,8 @@
         if (!isAdminDemoMode()) saved = await supabaseInsert('app_announcements', payload);
         opsData.announcements.unshift(saved ? mapAnnouncementRow(saved) : mapAnnouncementRow(Object.assign({ id: localId('announcement') }, payload)));
         $('announcementForm').reset();
+        $('announcementImagePreview').classList.remove('show');
+        $('announcementImagePreview').innerHTML = '';
         renderAnnouncementsModule();
         toast('Comunicado publicado.');
       } catch (error) {
@@ -8866,10 +9268,10 @@
         requireAdminSession();
         const name = $('planName').value.trim();
         const code = $('planCode').value.trim() || name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
-        if (!name || !code) throw new Error('Informe nome e codigo do plano.');
+        if (!name || !code) throw new Error('Informe nome e código do plano.');
         const amount = parseOptionalMoney($('planAmount').value);
         const dueDay = $('planDueDay').value ? Number($('planDueDay').value) : null;
-        if (dueDay && (dueDay < 1 || dueDay > 31)) throw new Error('Vencimento padrao deve ser entre 1 e 31.');
+        if (dueDay && (dueDay < 1 || dueDay > 31)) throw new Error('Vencimento padrão deve ser entre 1 e 31.');
         const localPlan = {
           id: $('planEditId').value || localId('plan'),
           code: code,
@@ -8961,7 +9363,7 @@
         pagos: 'pagos',
         todos: 'todos'
       };
-      return labels[filter] || 'lancamentos';
+      return labels[filter] || 'lançamentos';
     }
 
     function financeMatchesFilter(item, filter) {
@@ -8993,7 +9395,7 @@
         item.paymentMethod || ''
       ].filter(Boolean).join(' | ');
       return '<article class="ops-list-card finance-item ' + (isExpense ? 'expense' : 'income') + '">' +
-        '<div class="finance-item-main"><strong>' + escapeHtml(item.counterparty || item.student || 'Lancamento') + '</strong><small>' + escapeHtml(meta) + '</small></div>' +
+        '<div class="finance-item-main"><strong>' + escapeHtml(item.counterparty || item.student || 'Lançamento') + '</strong><small>' + escapeHtml(meta) + '</small></div>' +
         '<div class="finance-item-side"><span class="finance-amount ' + (isExpense ? 'expense' : '') + '">' + (isExpense ? '-' : '+') + money(item.amount) + '</span>' +
         '<div class="finance-action-row">' + statusPill(status) + (paid || compact ? '' : '<button class="small-btn" type="button" data-finance-paid="' + escapeHtml(item.id || '') + '">' + actionLabel + '</button>') + '</div></div>' +
         '</article>';
@@ -9032,10 +9434,10 @@
       ].map(function (item) {
         return '<button class="lesson-filter-btn' + (opsState.financeFilter === item[0] ? ' active' : '') + '" type="button" data-finance-filter="' + item[0] + '">' + item[1] + '</button>';
       }).join('');
-      $('financeListHint').textContent = visibleRows.length + ' lancamento(s) ' + financeFilterLabel(opsState.financeFilter) + '.';
-      $('financeRows').innerHTML = visibleRows.map(function (item) { return renderFinanceItem(item, false); }).join('') || '<div class="lesson-empty-state">Nenhum lancamento para este filtro.</div>';
+      $('financeListHint').textContent = visibleRows.length + ' lançamento(s) ' + financeFilterLabel(opsState.financeFilter) + '.';
+      $('financeRows').innerHTML = visibleRows.map(function (item) { return renderFinanceItem(item, false); }).join('') || '<div class="lesson-empty-state">Nenhum lançamento para este filtro.</div>';
       $('financeOverdueList').innerHTML = sortFinanceRows(overdue).slice(0, 6).map(function (item) { return renderFinanceItem(item, true); }).join('') || '<div class="lesson-empty-state">Nada vencido agora.</div>';
-      $('financeUpcomingList').innerHTML = upcoming.slice(0, 6).map(function (item) { return renderFinanceItem(item, true); }).join('') || '<div class="lesson-empty-state">Nada previsto para os proximos dias.</div>';
+      $('financeUpcomingList').innerHTML = upcoming.slice(0, 6).map(function (item) { return renderFinanceItem(item, true); }).join('') || '<div class="lesson-empty-state">Nada previsto para os próximos dias.</div>';
     }
 
     function renderCommunicationModule() {
@@ -9164,7 +9566,7 @@
       const text = await response.text();
       const data = text ? JSON.parse(text) : {};
       if (!response.ok) {
-        throw new Error(data.error_description || data.msg || data.message || 'Falha na autenticacao.');
+        throw new Error(data.error_description || data.msg || data.message || 'Falha na autenticação.');
       }
       return data;
     }
@@ -9230,7 +9632,7 @@
         }
       }
       if (!profile || profile.active === false) {
-        throw new Error('Seu perfil ainda nao esta liberado no clube.');
+        throw new Error('Seu perfil ainda não está liberado no clube.');
       }
       adminProfile = profile;
       return profile;
@@ -9250,7 +9652,7 @@
       if ($('adminSessionInfo')) $('adminSessionInfo').textContent = role ? 'Conectado como ' + roleLabel(role) + '.' : 'O primeiro e-mail cadastrado vira admin. Depois ele libera professores e secretaria.';
       if ($('adminSidebarStatus')) {
         $('adminSidebarStatus').innerHTML = isAdminDemoMode()
-          ? '<strong>Modo demonstracao</strong> Dados locais para navegar e testar.'
+          ? '<strong>Modo demonstração</strong> Dados locais para navegar e testar.'
           : '<strong>' + escapeHtml(role ? roleLabel(role) : 'Equipe') + '</strong> ' + escapeHtml(name || email || 'Sessao ativa');
       }
     }
@@ -9326,7 +9728,7 @@
       };
       sessionStorage.setItem(ADMIN_DEMO_SESSION_KEY, '1');
       unlockAdmin();
-      if (showToast !== false) toast('Modo demonstracao ativo. Dados locais prontos para testar.');
+      if (showToast !== false) toast('Modo demonstração ativo. Dados locais prontos para testar.');
     }
 
     function unlockAdmin() {
@@ -9383,7 +9785,7 @@
 
     function reportActionError(error) {
       console.error(error);
-      toast(error && error.message ? error.message : 'Nao consegui salvar agora.');
+      toast(error && error.message ? error.message : 'Não consegui salvar agora.');
     }
 
     function renderCurrentOpsModule() {
@@ -9430,7 +9832,7 @@
       try {
         requireAdminSession();
         const client = findClientByKey(opsState.selectedClientId);
-        if (!client) throw new Error('Aluno nao encontrado.');
+        if (!client) throw new Error('Aluno não encontrado.');
         const plan = findPlanByValue($('clientEditPlan').value);
         const amount = parseOptionalMoney($('clientEditAmount').value);
         const dueDay = $('clientEditDueDay').value ? Number($('clientEditDueDay').value) : null;
@@ -9486,6 +9888,56 @@
       }
     }
 
+    async function saveClientInvoiceAction() {
+      try {
+        requireAdminSession();
+        const client = findClientByKey(opsState.selectedClientId);
+        if (!client) throw new Error('Aluno não encontrado.');
+        const month = $('clientInvoiceMonth').value;
+        if (!month) throw new Error('Escolha o mês da fatura.');
+        const amount = parseOptionalMoney($('clientInvoiceAmount').value);
+        const dueDate = $('clientInvoiceDue').value || invoiceDueDate(month, client.dueDay || 10);
+        const status = $('clientInvoiceStatus').value || 'ABERTA';
+        const existing = findClientInvoice(client, month);
+        const payload = {
+          client_id: client.id,
+          invoice_month: invoiceMonthStart(month),
+          description: 'Mensalidade ' + invoiceMonthLabel(month),
+          plan_code: client.officialPlanCode || '',
+          plan_name: client.officialPlanName || 'Plano a definir',
+          amount: amount,
+          due_date: dueDate,
+          status: status,
+          payment_method: status === 'PAGA' ? 'PIX' : '',
+          paid_at: status === 'PAGA' ? new Date().toISOString() : null,
+          notes: $('clientInvoiceNotes').value.trim()
+        };
+        let saved = null;
+        if (!isAdminDemoMode() && existing && isUuid(existing.id)) {
+          const result = await supabaseRest('app_payment_invoices?id=eq.' + encodeURIComponent(existing.id), {
+            method: 'PATCH',
+            body: payload,
+            prefer: 'return=representation'
+          });
+          saved = Array.isArray(result) ? result[0] : result;
+        } else if (!isAdminDemoMode()) {
+          saved = await supabaseInsert('app_payment_invoices', payload);
+        }
+        const mapped = saved ? mapPaymentInvoiceRow(saved) : mapPaymentInvoiceRow(Object.assign({ id: existing && existing.id || localId('invoice') }, payload));
+        const index = opsData.paymentInvoices.findIndex(function (invoice) {
+          return String(invoice.id || '') === String(mapped.id || '') ||
+            (String(invoice.clientId || '') === String(client.id || '') && String(invoice.invoiceMonth || '').slice(0, 10) === String(mapped.invoiceMonth || '').slice(0, 10));
+        });
+        if (index >= 0) opsData.paymentInvoices.splice(index, 1, mapped);
+        else opsData.paymentInvoices.unshift(mapped);
+        renderClientInvoices(client);
+        renderHomeDashboard();
+        toast('Fatura salva.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
     function findPlanRequestById(id) {
       return opsData.planRequests.find(function (request) {
         return String(request.id) === String(id);
@@ -9519,7 +9971,7 @@
       if (!request) return;
       const targetClient = clientForPlanRequest(request) || findClientByKey(opsState.selectedClientId);
       if (!targetClient) {
-        toast('Nao encontrei o aluno desse pedido.');
+        toast('Não encontrei o aluno desse pedido.');
         return;
       }
       const plan = findPlanByValue(request.planCode || request.plan) || {
@@ -9675,7 +10127,7 @@
             level: 'A definir',
             teacher: 'Equipe Ilha',
             financial: 'OK',
-            nextAction: 'Novo cadastro em demonstracao'
+            nextAction: 'Novo cadastro em demonstração'
           });
           renderStudentsModule();
           renderHomeDashboard();
@@ -9684,7 +10136,7 @@
         }
         const name = prompt('Nome do aluno');
         if (!name) return;
-        const phone = prompt('WhatsApp do aluno ou responsavel', '') || '';
+        const phone = prompt('WhatsApp do aluno ou responsável', '') || '';
         const plan = prompt('Plano ou observacao inicial', 'Plano a definir') || 'Plano a definir';
         if (isAdminDemoMode()) {
           opsData.students.push({
@@ -9696,11 +10148,11 @@
             level: 'A definir',
             teacher: 'Equipe Ilha',
             financial: 'OK',
-            nextAction: 'Novo cadastro em demonstracao'
+            nextAction: 'Novo cadastro em demonstração'
           });
           renderStudentsModule();
           renderHomeDashboard();
-          toast('Aluno criado na demonstracao.');
+          toast('Aluno criado na demonstração.');
           return;
         }
         const inserted = await supabaseInsert('students', {
@@ -9834,7 +10286,7 @@
         }
         const title = prompt('Titulo do evento');
         if (!title) return;
-        const startsAt = startsAtFromPrompt(prompt('Data e horario (AAAA-MM-DD HH:MM)', localDateString() + ' 19:00'));
+        const startsAt = startsAtFromPrompt(prompt('Data e horário (AAAA-MM-DD HH:MM)', localDateString() + ' 19:00'));
         const type = (prompt('Tipo', 'evento') || 'evento').trim().toLowerCase();
         const court = prompt('Quadra', 'Quadra 1') || 'Quadra 1';
         const owner = prompt('Responsavel', 'Secretaria') || 'Secretaria';
@@ -9850,7 +10302,7 @@
           });
           renderAgendaModule();
           renderHomeDashboard();
-          toast('Evento criado na demonstracao.');
+          toast('Evento criado na demonstração.');
           return;
         }
         const inserted = await supabaseInsert('club_agenda_events', {
@@ -9885,9 +10337,9 @@
 
     function updateFinanceTypeDefaults() {
       if ($('financeType').value === 'DESPESA') {
-        if ($('financeCategory').value === 'Mensalidade' || $('financeCategory').value === 'Aulas') $('financeCategory').value = 'Operacao';
+        if ($('financeCategory').value === 'Mensalidade' || $('financeCategory').value === 'Aulas') $('financeCategory').value = 'Operação';
         if ($('financeStatus').value === 'RECEBIDO') $('financeStatus').value = 'PAGO';
-      } else if ($('financeCategory').value === 'Operacao') {
+      } else if ($('financeCategory').value === 'Operação') {
         $('financeCategory').value = 'Mensalidade';
         if ($('financeStatus').value === 'PAGO') $('financeStatus').value = 'RECEBIDO';
       }
@@ -9898,7 +10350,7 @@
       opsState.financeView = 'form';
       renderFinanceModule();
       $('financeDescription').focus();
-      toast('Preencha o lancamento financeiro.');
+      toast('Preencha o lançamento financeiro.');
     }
 
     async function createFinanceAction(event) {
@@ -9910,13 +10362,13 @@
         const description = $('financeDescription').value.trim();
         const amount = parseMoneyInput($('financeAmount').value);
         const dueDate = $('financeDue').value || localDateString();
-        const category = $('financeCategory').value || (type === 'DESPESA' ? 'Operacao' : 'Mensalidade');
+        const category = $('financeCategory').value || (type === 'DESPESA' ? 'Operação' : 'Mensalidade');
         let status = $('financeStatus').value || 'ABERTO';
         if (type === 'DESPESA' && status === 'RECEBIDO') status = 'PAGO';
         if (type !== 'DESPESA' && status === 'PAGO') status = 'RECEBIDO';
         const paymentMethod = $('financeMethod').value;
         const notes = $('financeNotes').value.trim();
-        if (!description) throw new Error('Informe a descricao do lancamento.');
+        if (!description) throw new Error('Informe a descrição do lançamento.');
         if (!counterparty) throw new Error('Informe o aluno ou fornecedor.');
         const paidAt = (status === 'RECEBIDO' || status === 'PAGO') ? new Date().toISOString() : null;
         const localItem = {
@@ -9939,7 +10391,7 @@
           opsState.financeView = 'list';
           renderFinanceModule();
           renderHomeDashboard();
-          toast('Lancamento criado na demonstracao.');
+          toast('Lançamento criado na demonstração.');
           return;
         }
         const payload = {
@@ -9967,7 +10419,7 @@
         opsState.financeView = 'list';
         renderFinanceModule();
         renderHomeDashboard();
-        toast('Lancamento salvo no Supabase.');
+        toast('Lançamento salvo no Supabase.');
       } catch (error) {
         reportActionError(error);
       }
@@ -9977,7 +10429,7 @@
       try {
         requireAdminSession();
         const item = opsData.finance.find(function (row) { return String(row.id) === String(id); });
-        if (!item) throw new Error('Lancamento nao encontrado.');
+        if (!item) throw new Error('Lançamento não encontrado.');
         const nextStatus = item.type === 'DESPESA' ? 'PAGO' : 'RECEBIDO';
         const paidAt = new Date().toISOString();
         if (isAdminDemoMode() || String(item.id || '').startsWith('finance_')) {
@@ -10042,7 +10494,7 @@
           opsData.templates.push({ id: localId('template'), name: name.trim(), channel: 'WHATSAPP', body: body, active: true });
           opsData.message = body;
           renderCommunicationModule();
-          toast('Modelo criado na demonstracao.');
+          toast('Modelo criado na demonstração.');
           return;
         }
         const inserted = await supabaseInsert('communication_templates', {
@@ -10066,7 +10518,7 @@
         requireAdminSession();
         if (isAdminDemoMode()) {
           const number = opsData.campaigns.length + 1;
-          const body = 'Oi, {nome}! Temos uma nova comunicacao do Ilha para voce.';
+          const body = 'Oi, {nome}! Temos uma nova comunicação do Ilha para você.';
           const template = { id: localId('template'), name: 'Campanha Demo ' + number, channel: 'WHATSAPP', body: body, active: true };
           opsData.templates = opsData.templates || [];
           opsData.templates.push(template);
@@ -10089,7 +10541,7 @@
           opsData.message = body;
           renderCommunicationModule();
           renderHomeDashboard();
-          toast('Campanha criada na demonstracao.');
+          toast('Campanha criada na demonstração.');
           return;
         }
         const template = await supabaseInsert('communication_templates', {
@@ -10168,7 +10620,7 @@
           });
           lessonState.activeDay = day;
           renderLessons();
-          toast('Horario criado na demonstracao.');
+          toast('Horário criado na demonstração.');
           return;
         }
         const inserted = await supabaseInsert('lesson_slots', {
@@ -10205,10 +10657,10 @@
       try {
         requireAdminSession();
         if (lessonState.source !== 'supabase' && !isAdminDemoMode()) {
-          throw new Error('Carregue ou crie horarios do Supabase antes de agendar alunos.');
+          throw new Error('Carregue ou crie horários do Supabase antes de agendar alunos.');
         }
         const slot = lessonState.slots.find(function (item) { return String(item.id) === String(slotId); });
-        if (!slot) throw new Error('Horario nao encontrado.');
+        if (!slot) throw new Error('Horário não encontrado.');
         if (isAdminDemoMode()) {
           const number = lessonState.students.length + 1;
           const student = {
@@ -10232,13 +10684,13 @@
           toast('Aluno demo agendado.');
           return;
         }
-        const name = prompt('Nome do aluno para este horario');
+        const name = prompt('Nome do aluno para este horário');
         if (!name) return;
         let student = lessonState.students.find(function (item) {
           return String(item.name || '').trim().toLowerCase() === String(name).trim().toLowerCase();
         });
         if (!student) {
-          const phone = prompt('WhatsApp do aluno ou responsavel', '') || '';
+          const phone = prompt('WhatsApp do aluno ou responsável', '') || '';
           if (isAdminDemoMode()) {
             student = {
               id: localId('student'),
@@ -10258,7 +10710,7 @@
               level: slot.level,
               teacher: slot.teacher,
               financial: 'OK',
-              nextAction: 'Aluno agendado em demonstracao'
+              nextAction: 'Aluno agendado em demonstração'
             });
           } else {
           const insertedStudent = await supabaseInsert('students', {
@@ -10287,7 +10739,7 @@
             String(enrollment.student_id) === String(student.id);
         });
         if (alreadyInSlot) {
-          toast('Aluno ja esta nesse horario.');
+          toast('Aluno já está nesse horário.');
           return;
         }
         const insertedEnrollment = isAdminDemoMode()
@@ -10307,7 +10759,7 @@
         });
         renderLessons();
         renderHomeDashboard();
-        toast(isAdminDemoMode() ? 'Aluno agendado na demonstracao.' : 'Aluno agendado nesse horario.');
+        toast(isAdminDemoMode() ? 'Aluno agendado na demonstração.' : 'Aluno agendado nesse horário.');
       } catch (error) {
         reportActionError(error);
       }
@@ -10342,7 +10794,7 @@
         try {
           await signUpAdmin(email, password);
         } catch (error) {
-          setLoginMessage(error.message || 'Nao consegui criar o acesso.', true);
+          setLoginMessage(error.message || 'Não consegui criar o acesso.', true);
         } finally {
           setLoginBusy(false);
         }
@@ -10408,6 +10860,11 @@
       });
       $('clientModalClose').addEventListener('click', closeClientModal);
       $('clientModalCancel').addEventListener('click', closeClientModal);
+      $('clientInvoiceSaveBtn').addEventListener('click', saveClientInvoiceAction);
+      $('clientInvoiceMonth').addEventListener('change', function () {
+        const client = findClientByKey(opsState.selectedClientId);
+        if (client) fillClientInvoiceDefaults(client);
+      });
       $('clientModal').addEventListener('click', function (event) {
         const approveBtn = event.target.closest('[data-plan-request-approve]');
         if (approveBtn) {
@@ -10513,17 +10970,29 @@
           renderAgendaModule();
         }
       });
-      $('courtBookingDate').addEventListener('change', function () {
-        opsState.courtDate = this.value || localDateString(new Date());
-        renderCourtBookingModule();
-      });
       $('courtReloadBtn').addEventListener('click', function () {
         loadOpsData(true).then(renderCourtBookingModule).catch(reportActionError);
       });
-      $('courtBookingForm').addEventListener('submit', createCourtBookingAction);
+      $('courtAddDayBtn').addEventListener('click', addCourtExtraDate);
+      $('courtResetWeekendBtn').addEventListener('click', resetWeekendBookings);
       $('courtBookingModule').addEventListener('click', function (event) {
-        const cancelBtn = event.target.closest('[data-court-cancel]');
-        if (cancelBtn) cancelCourtBookingAction(cancelBtn.dataset.courtCancel);
+        const dateBtn = event.target.closest('[data-court-date]');
+        if (dateBtn) {
+          opsState.courtDate = dateBtn.dataset.courtDate;
+          renderCourtBookingModule();
+          return;
+        }
+        const slotBtn = event.target.closest('[data-court-slot]');
+        if (slotBtn) openCourtSlotModal(slotBtn.dataset.courtSlot);
+      });
+      $('courtSlotForm').addEventListener('submit', saveCourtSlotAction);
+      $('courtSlotModalClose').addEventListener('click', closeCourtSlotModal);
+      $('courtSlotModal').addEventListener('click', function (event) {
+        if (event.target.id === 'courtSlotModal') closeCourtSlotModal();
+      });
+      $('courtSlotCancelBtn').addEventListener('click', function () {
+        const slot = opsState.selectedCourtSlot;
+        if (slot && slot.bookingId) cancelCourtBookingAction(slot.bookingId).then(closeCourtSlotModal);
       });
       $('financeModule').addEventListener('click', function (event) {
         const viewBtn = event.target.closest('[data-finance-view]');
@@ -10552,6 +11021,20 @@
       });
       $('announcementsReloadBtn').addEventListener('click', function () {
         loadOpsData(true).then(renderAnnouncementsModule).catch(reportActionError);
+      });
+      $('announcementImageFile').addEventListener('change', async function () {
+        try {
+          const image = await resizeAnnouncementImage(this.files && this.files[0]);
+          if (image) {
+            $('announcementImagePreview').innerHTML = '<img src="' + image + '" alt="Prévia do comunicado" />';
+            $('announcementImagePreview').classList.add('show');
+          } else {
+            $('announcementImagePreview').classList.remove('show');
+            $('announcementImagePreview').innerHTML = '';
+          }
+        } catch (error) {
+          reportActionError(new Error('Não consegui carregar essa imagem.'));
+        }
       });
       $('announcementForm').addEventListener('submit', createAnnouncementAction);
       $('announcementsModule').addEventListener('click', function (event) {
