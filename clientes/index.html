@@ -611,16 +611,13 @@
 
     .plan-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
     }
 
     .plan-card {
-      min-height: 178px;
       padding: 15px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      display: grid;
+      gap: 14px;
     }
 
     .plan-card h3 {
@@ -633,8 +630,33 @@
       font-weight: 900;
     }
 
-    .plan-card button {
-      margin-top: auto;
+    .plan-status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .plan-status-item {
+      min-height: 62px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdfe;
+    }
+
+    .plan-status-item span {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .plan-status-item strong {
+      display: block;
+      color: var(--text);
+      font-size: 15px;
     }
 
     .form-grid {
@@ -704,7 +726,7 @@
       .client-app {
         grid-template-columns: 1fr;
       }
-      .plan-grid {
+      .plan-status-grid {
         grid-template-columns: 1fr;
       }
       .sidebar {
@@ -1070,10 +1092,6 @@
                 <input id="profileAge" type="number" min="1" max="120" inputmode="numeric" />
               </div>
               <div class="field">
-                <label for="profileDueDay">Dia de vencimento</label>
-                <input id="profileDueDay" type="number" min="1" max="31" inputmode="numeric" placeholder="10" />
-              </div>
-              <div class="field">
                 <label for="profileGuardian">Responsavel</label>
                 <input id="profileGuardian" placeholder="Obrigatorio para menores" />
               </div>
@@ -1097,29 +1115,8 @@
         <div class="panel">
           <div class="panel-head">
             <div>
-              <h2>Escolha seu plano</h2>
-              <div class="muted">Escolha uma opcao para analise. A secretaria confirma horarios, plano oficial e vencimento.</div>
-            </div>
-          </div>
-          <div class="form-grid" style="margin-bottom:12px">
-            <div class="field">
-              <label for="planMembershipType">Tipo de plano</label>
-              <select id="planMembershipType">
-                <option value="aluno">Aluno de aula</option>
-                <option value="mensalista">Mensalista / jogar</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="planWeeklyLessons">Quantas vezes por semana</label>
-              <input id="planWeeklyLessons" type="number" min="0" max="7" inputmode="numeric" placeholder="1" />
-            </div>
-            <div class="field">
-              <label for="planPreferredDueDay">Vencimento preferido</label>
-              <input id="planPreferredDueDay" type="number" min="1" max="31" inputmode="numeric" placeholder="10" />
-            </div>
-            <div class="field full">
-              <label>Dias preferidos</label>
-              <div class="weekday-grid" id="planPreferredDays"></div>
+              <h2>Meu plano</h2>
+              <div class="muted">Plano definido pela equipe do Ilha Tenis.</div>
             </div>
           </div>
           <div class="plan-grid" id="planGrid"></div>
@@ -1148,29 +1145,11 @@
     const SESSION_KEY = 'ilha-client-session';
     const DEMO_SESSION_KEY = 'ilha-client-demo-session';
     const FALLBACK_PROFILE_KEY = 'ilha-client-profile-fallback';
-    const FALLBACK_PLANS_KEY = 'ilha-client-plans-fallback';
 
     let session = null;
     let client = null;
-    let planRequests = [];
     let demoMode = false;
     let databaseReady = true;
-
-    const fallbackPlans = [
-      { code: 'aula_1x', name: 'Aulas 1x por semana', type: 'aluno', amount: 220, weeklyLessons: 1, dueDay: 10, detail: 'Uma aula fixa semanal.' },
-      { code: 'aula_2x', name: 'Aulas 2x por semana', type: 'aluno', amount: 360, weeklyLessons: 2, dueDay: 10, detail: 'Duas aulas fixas semanais.' },
-      { code: 'mensalista', name: 'Mensalista quadra', type: 'mensalista', amount: 180, weeklyLessons: 0, dueDay: 10, detail: 'Plano para jogar e reservar horarios conforme regra do clube.' }
-    ];
-    let plans = fallbackPlans.slice();
-    const weekDays = [
-      { key: 'segunda', label: 'Seg' },
-      { key: 'terca', label: 'Ter' },
-      { key: 'quarta', label: 'Qua' },
-      { key: 'quinta', label: 'Qui' },
-      { key: 'sexta', label: 'Sex' },
-      { key: 'sabado', label: 'Sab' },
-      { key: 'domingo', label: 'Dom' }
-    ];
 
     function $(id) {
       return document.getElementById(id);
@@ -1327,53 +1306,16 @@
         guardian_name: stored.guardian_name || '',
         guardian_phone: stored.guardian_phone || '',
         due_day: stored.due_day || '',
-        profile_photo: stored.profile_photo || ''
+        profile_photo: stored.profile_photo || '',
+        official_plan_id: stored.official_plan_id || null,
+        official_plan_code: stored.official_plan_code || '',
+        official_plan_name: stored.official_plan_name || '',
+        plan_amount: stored.plan_amount || 0,
+        weekly_lessons: stored.weekly_lessons || 0,
+        preferred_days: Array.isArray(stored.preferred_days) ? stored.preferred_days : []
       });
       writeStored(storageKey(FALLBACK_PROFILE_KEY), nextClient);
       return nextClient;
-    }
-
-    function fallbackPlanRequests() {
-      return readStored(storageKey(FALLBACK_PLANS_KEY), []);
-    }
-
-    function storeFallbackPlanRequests(rows) {
-      writeStored(storageKey(FALLBACK_PLANS_KEY), rows || []);
-    }
-
-    function mapPlanRow(row) {
-      return {
-        id: row.id,
-        code: row.code || row.plan_code || '',
-        name: row.name || row.plan_name || 'Plano',
-        type: row.type || 'aluno',
-        amount: Number(row.amount || 0),
-        weeklyLessons: row.weekly_lessons == null ? 0 : Number(row.weekly_lessons || 0),
-        dueDay: row.default_due_day || row.due_day || '',
-        detail: row.description || row.notes || ''
-      };
-    }
-
-    async function loadPlansData() {
-      try {
-        const rows = await rest('app_plans?select=*&active=eq.true&order=amount.asc');
-        if (Array.isArray(rows) && rows.length) plans = rows.map(mapPlanRow);
-      } catch (error) {
-        plans = fallbackPlans.slice();
-      }
-    }
-
-    function renderWeekdayInputs() {
-      if (!$('planPreferredDays')) return;
-      $('planPreferredDays').innerHTML = weekDays.map(function (day) {
-        return '<label><input type="checkbox" value="' + day.key + '" />' + day.label + '</label>';
-      }).join('');
-    }
-
-    function selectedPlanDays() {
-      return Array.from($('planPreferredDays').querySelectorAll('input:checked')).map(function (input) {
-        return input.value;
-      });
     }
 
     function storeSession(nextSession) {
@@ -1398,7 +1340,6 @@
     function clearSession() {
       session = null;
       client = null;
-      planRequests = [];
       demoMode = false;
       localStorage.removeItem(SESSION_KEY);
       sessionStorage.removeItem(DEMO_SESSION_KEY);
@@ -1430,7 +1371,13 @@
           guardian_name: stored.guardian_name || '',
           guardian_phone: stored.guardian_phone || '',
           due_day: stored.due_day || '',
-          profile_photo: stored.profile_photo || ''
+          profile_photo: stored.profile_photo || '',
+          official_plan_id: stored.official_plan_id || null,
+          official_plan_code: stored.official_plan_code || '',
+          official_plan_name: stored.official_plan_name || '',
+          plan_amount: stored.plan_amount || 0,
+          weekly_lessons: stored.weekly_lessons || 0,
+          preferred_days: Array.isArray(stored.preferred_days) ? stored.preferred_days : []
         };
         return client;
       }
@@ -1454,23 +1401,7 @@
     }
 
     async function loadClientData() {
-      if (demoMode || (session && session.demo)) {
-        planRequests = planRequests || [];
-        return;
-      }
-      try {
-        const rows = await rest('app_plan_requests?select=*&order=created_at.desc');
-        databaseReady = true;
-        planRequests = Array.isArray(rows) ? rows : [];
-      } catch (error) {
-        if (looksLikeMissingSchema(error)) {
-          databaseReady = false;
-          planRequests = fallbackPlanRequests();
-          return;
-        }
-        planRequests = fallbackPlanRequests();
-        toast('Plano/pagamentos ainda aguardam a atualizacao do banco.');
-      }
+      return null;
     }
 
     function setAuthMessage(message, isError) {
@@ -1497,7 +1428,6 @@
       const nextSession = await authRequest('token?grant_type=password', { email: email, password: password });
       storeSession(nextSession);
       await ensureClient(null, null);
-      await loadPlansData();
       await loadClientData();
       unlock();
     }
@@ -1512,7 +1442,6 @@
       if (nextSession && nextSession.access_token) {
         storeSession(nextSession);
         await ensureClient(name, phone);
-        await loadPlansData();
         await loadClientData();
         unlock();
         return;
@@ -1535,7 +1464,6 @@
         session = stored;
         if (isExpired(stored)) await refreshSession(stored);
         await ensureClient(null, null);
-        await loadPlansData();
         await loadClientData();
         unlock();
       } catch (error) {
@@ -1549,7 +1477,7 @@
       demoMode = true;
       session = { demo: true, user: { email: 'cliente.demo@ilhatenis.com' } };
       sessionStorage.setItem(DEMO_SESSION_KEY, '1');
-      ensureClient(null, null).then(loadPlansData).then(loadClientData).then(function () {
+      ensureClient(null, null).then(loadClientData).then(function () {
         unlock();
         if (show !== false) toast('Modo demonstracao ativo.');
       });
@@ -1592,7 +1520,7 @@
       const labels = {
         home: ['Inicio', 'Sua area do aluno no Ilha Tenis.'],
         profile: ['Meus dados', 'Complete seu cadastro.'],
-        plans: ['Planos', 'Escolha uma opcao.'],
+        plans: ['Planos', 'Plano definido pelo clube.'],
         payments: ['Pagamento', 'Faturas em aberto.']
       };
       $('pageTitle').textContent = labels[view][0];
@@ -1626,7 +1554,6 @@
       $('profilePhone').value = client && client.phone || '';
       $('profileCpf').value = client && client.cpf || '';
       $('profileAge').value = client && client.age || '';
-      $('profileDueDay').value = client && client.due_day || '';
       $('profileGuardian').value = client && client.guardian_name || '';
       $('profileGuardianPhone').value = client && client.guardian_phone || '';
       $('profileNotes').value = client && client.notes || '';
@@ -1634,35 +1561,31 @@
     }
 
     function renderPlans() {
-      const hasOpenRequest = planRequests.some(function (item) {
-        const status = String(item.status || '').toUpperCase();
-        return !['CANCELADO', 'RECUSADO'].includes(status);
-      });
-      $('planGrid').innerHTML = plans.map(function (plan) {
-        const disabled = hasOpenRequest ? ' disabled' : '';
-        const buttonText = hasOpenRequest ? 'Solicitacao enviada' : 'Solicitar analise';
-        return '<article class="plan-card">' +
-          '<div>' +
-            '<h3>' + escapeHtml(plan.name) + '</h3>' +
-            '<div class="price">' + (plan.amount ? money(plan.amount) : 'Sob consulta') + '</div>' +
-            '<p class="muted">' + escapeHtml(plan.detail) + '</p>' +
-          '</div>' +
-          '<button class="primary-btn" type="button" data-plan-code="' + escapeHtml(plan.code) + '"' + disabled + '>' + buttonText + '</button>' +
-        '</article>';
-      }).join('');
+      const planName = client && client.official_plan_name || '';
+      const amount = Number(client && client.plan_amount || 0);
+      const dueDay = client && client.due_day || '';
+      const weeklyLessons = Number(client && client.weekly_lessons || 0);
+      const preferredDays = Array.isArray(client && client.preferred_days) ? client.preferred_days : [];
+      const details = [
+        '<div class="plan-status-item"><span>Valor</span><strong>' + (amount ? money(amount) : 'A definir') + '</strong></div>',
+        '<div class="plan-status-item"><span>Vencimento</span><strong>' + (dueDay ? 'Dia ' + escapeHtml(dueDay) : 'A definir') + '</strong></div>',
+        '<div class="plan-status-item"><span>Aulas</span><strong>' + (weeklyLessons ? weeklyLessons + 'x por semana' : 'A definir') + '</strong></div>'
+      ];
+      if (preferredDays.length) {
+        details.push('<div class="plan-status-item"><span>Dias</span><strong>' + escapeHtml(preferredDays.join(', ')) + '</strong></div>');
+      }
+      $('planGrid').innerHTML = '<article class="plan-card">' +
+        '<div>' +
+          '<h3>' + escapeHtml(planName || 'Plano em definicao') + '</h3>' +
+          '<div class="price">' + (amount ? money(amount) : 'A definir') + '</div>' +
+        '</div>' +
+        '<div class="plan-status-grid">' + details.join('') + '</div>' +
+        '<p class="muted">Alteracoes de plano sao feitas pela equipe do clube.</p>' +
+      '</article>';
     }
 
     function paymentCards() {
-      if (!planRequests.length) {
-        return '<div class="empty">Nenhuma fatura em aberto.</div>';
-      }
-      return planRequests.map(function (item) {
-        return cardHtml({
-          title: item.plan_name || 'Fatura',
-          detail: (item.amount ? money(item.amount) : 'Sob consulta') + ' | ' + new Date(item.created_at || Date.now()).toLocaleDateString('pt-BR'),
-          status: item.status || 'SOLICITADO'
-        });
-      }).join('');
+      return '<div class="empty">Nenhuma fatura em aberto.</div>';
     }
 
     function renderPayments() {
@@ -1733,7 +1656,6 @@
           phone: phone,
           cpf: $('profileCpf').value.trim(),
           age: $('profileAge').value ? Number($('profileAge').value) : null,
-          due_day: $('profileDueDay').value ? Number($('profileDueDay').value) : null,
           guardian_name: $('profileGuardian').value.trim(),
           guardian_phone: $('profileGuardianPhone').value.trim(),
           profile_photo: photo,
@@ -1764,81 +1686,6 @@
       }
     }
 
-    async function requestPlan(code) {
-      const plan = plans.find(function (item) { return item.code === code; });
-      if (!plan) return;
-      const hasOpenRequest = planRequests.some(function (item) {
-        const status = String(item.status || '').toUpperCase();
-        return !['CANCELADO', 'RECUSADO'].includes(status);
-      });
-      if (hasOpenRequest) {
-        toast('Voce ja tem uma solicitacao em analise. A secretaria confirma o plano oficial.');
-        return;
-      }
-      const membershipType = $('planMembershipType').value || plan.type || 'aluno';
-      const weeklyLessons = $('planWeeklyLessons').value ? Number($('planWeeklyLessons').value) : Number(plan.weeklyLessons || 0);
-      const preferredDueDay = $('planPreferredDueDay').value ? Number($('planPreferredDueDay').value) : Number(plan.dueDay || 0);
-      const requestedDays = selectedPlanDays();
-      if (demoMode || (session && session.demo)) {
-        planRequests.unshift({
-          id: 'demo_' + Date.now(),
-          plan_code: plan.code,
-          plan_name: plan.name,
-          amount: plan.amount,
-          membership_type: membershipType,
-          weekly_lessons: weeklyLessons,
-          preferred_due_day: preferredDueDay || null,
-          requested_days: requestedDays,
-          status: 'SOLICITADO',
-          created_at: new Date().toISOString()
-        });
-        renderAll();
-        toast('Plano solicitado na demonstracao.');
-        return;
-      }
-      try {
-        await ensureClient(null, null);
-        if (!databaseReady) {
-          planRequests.unshift({
-            id: 'local_' + Date.now(),
-            plan_code: plan.code,
-            plan_name: plan.name,
-            amount: plan.amount,
-            membership_type: membershipType,
-            weekly_lessons: weeklyLessons,
-            preferred_due_day: preferredDueDay || null,
-            requested_days: requestedDays,
-            status: 'SOLICITADO',
-            created_at: new Date().toISOString()
-          });
-          storeFallbackPlanRequests(planRequests);
-          renderAll();
-          toast('Plano anotado. Falta ativar o banco para a secretaria ver.');
-          return;
-        }
-        const inserted = await rest('app_plan_requests', {
-          method: 'POST',
-          body: {
-            client_id: session.user.id,
-            plan_code: plan.code,
-            plan_name: plan.name,
-            amount: plan.amount,
-            membership_type: membershipType,
-            weekly_lessons: weeklyLessons,
-            preferred_due_day: preferredDueDay || null,
-            requested_days: requestedDays,
-            status: 'SOLICITADO'
-          },
-          prefer: 'return=representation'
-        });
-        planRequests.unshift(Array.isArray(inserted) ? inserted[0] : inserted);
-        renderAll();
-        toast('Plano solicitado. A secretaria vai confirmar.');
-      } catch (error) {
-        toast('Banco ainda precisa ser atualizado para solicitar planos.');
-      }
-    }
-
     async function refresh() {
       if (!session) return;
       await ensureClient(null, null);
@@ -1849,7 +1696,6 @@
 
     function init() {
       configurePreviewEnvironment();
-      renderWeekdayInputs();
       $('showLoginBtn').addEventListener('click', function () { showAuthTab('login'); });
       $('showSignupBtn').addEventListener('click', function () { showAuthTab('signup'); });
       $('demoBtn').addEventListener('click', function () { enterDemo(true); });
@@ -1870,10 +1716,6 @@
       });
       document.querySelectorAll('[data-view]').forEach(function (btn) {
         btn.addEventListener('click', function () { showView(btn.dataset.view); });
-      });
-      $('planGrid').addEventListener('click', function (event) {
-        const btn = event.target.closest('[data-plan-code]');
-        if (btn) requestPlan(btn.dataset.planCode);
       });
       $('loginForm').addEventListener('submit', async function (event) {
         event.preventDefault();
