@@ -3,10 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Clientes | Ilha Tenis Colatina</title>
+  <title>Clientes | Ilha Play</title>
   <meta name="theme-color" content="#10272c" />
-  <link rel="manifest" href="../manifest.json" />
-  <link rel="icon" href="../icon.png" />
+  <meta name="apple-mobile-web-app-title" content="Ilha Clientes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="/clientes/manifest.json" />
+  <link rel="apple-touch-icon" href="/icon.png" />
+  <link rel="icon" href="/icon.png" />
   <style>
     :root {
       --bg: #eef4f6;
@@ -202,6 +206,7 @@
       min-height: 100vh;
       display: grid;
       grid-template-columns: 248px minmax(0, 1fr);
+      align-content: start;
       background: var(--bg);
     }
 
@@ -223,6 +228,7 @@
     .side-brand {
       display: grid;
       gap: 14px;
+      position: relative;
       padding-bottom: 18px;
       border-bottom: 1px solid rgba(255, 255, 255, .12);
     }
@@ -305,6 +311,10 @@
 
     .side-nav button.active {
       box-shadow: inset 3px 0 0 var(--lime);
+    }
+
+    .side-logout {
+      display: none;
     }
 
     .nav-icon {
@@ -679,21 +689,24 @@
         top: 0;
         z-index: 20;
         min-height: auto;
-        padding: 12px;
-        gap: 10px;
+        padding: 10px 12px;
+        gap: 8px;
       }
       .side-brand {
         grid-template-columns: minmax(0, 1fr) auto;
-        gap: 12px;
+        gap: 10px;
         align-items: center;
-        padding-bottom: 10px;
+        padding-bottom: 8px;
+      }
+      .brand-lockup {
+        justify-content: center;
       }
       .brand-lockup img {
-        width: 92px;
+        width: 104px;
       }
       .brand-play {
         padding-left: 8px;
-        font-size: 14px;
+        font-size: 13px;
         letter-spacing: 3px;
       }
       .side-user {
@@ -707,21 +720,32 @@
         gap: 6px;
       }
       .side-nav button {
-        min-height: 58px;
+        min-height: 50px;
         grid-template-columns: 1fr;
         justify-items: center;
-        gap: 4px;
-        padding: 7px 4px;
+        gap: 3px;
+        padding: 5px 3px;
         text-align: center;
-        font-size: 11px;
+        font-size: 10px;
       }
       .nav-icon {
-        width: 28px;
-        height: 28px;
+        width: 26px;
+        height: 26px;
+      }
+      .nav-icon svg {
+        width: 15px;
+        height: 15px;
       }
       .side-status { display: none; }
-      .content { padding: 12px; }
-      .topbar { align-items: flex-start; flex-direction: column; }
+      .content {
+        padding: 10px;
+        gap: 10px;
+      }
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 10px;
+      }
       .span-4,
       .span-5,
       .span-6,
@@ -752,40 +776,88 @@
       .auth-tabs { margin-bottom: 18px; }
       label { margin-top: 12px; }
       .form-grid { grid-template-columns: 1fr; }
+      .client-app {
+        min-height: 100dvh;
+      }
+      .sidebar {
+        padding: 8px max(8px, env(safe-area-inset-right)) 9px max(8px, env(safe-area-inset-left));
+      }
       .side-brand {
         grid-template-columns: 1fr;
         justify-items: center;
       }
       .side-user { display: none; }
+      .side-logout {
+        min-height: 30px;
+        display: inline-grid;
+        place-items: center;
+        position: absolute;
+        top: 0;
+        right: 0;
+        padding: 0 10px;
+        border: 1px solid rgba(255, 255, 255, .18);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, .08);
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .content {
+        padding: 8px;
+        gap: 8px;
+      }
+      .topbar {
+        display: none;
+      }
       .welcome-card {
-        gap: 18px;
-        padding: 22px 16px;
+        gap: 12px;
+        padding: 14px 12px;
       }
       .welcome-main {
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
-        text-align: center;
+        gap: 12px;
+        text-align: left;
+      }
+      .welcome-card h2 {
+        font-size: 28px;
       }
       .welcome-card .muted {
-        margin: 0 auto;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+      .welcome-eyebrow {
+        font-size: 10px;
+        letter-spacing: 1.4px;
       }
       .profile-avatar {
-        width: 88px;
-        height: 88px;
-        font-size: 28px;
+        width: 58px;
+        height: 58px;
+        border-width: 3px;
+        font-size: 22px;
       }
       .home-actions {
         display: grid;
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .home-actions .primary-btn {
+        grid-column: 1 / -1;
       }
       .home-actions .primary-btn,
       .home-actions .ghost-btn {
         width: 100%;
         min-width: 0;
+        min-height: 40px;
+        font-size: 14px;
+      }
+      .home-mini-grid {
+        gap: 8px;
       }
       .home-mini {
-        min-height: 64px;
-        padding: 9px;
+        min-height: 58px;
+        padding: 8px;
       }
       .home-mini span {
         font-size: 9px;
@@ -868,6 +940,7 @@
           <strong>Area do aluno</strong>
           <span id="sideClientName">Entrando...</span>
         </div>
+        <button class="side-logout" type="button" data-logout>Sair</button>
       </div>
       <nav class="side-nav">
         <button class="active" type="button" data-view="home"><span class="nav-icon"><svg><use href="#client-icon-home"></use></svg></span><span>Inicio</span></button>
@@ -885,7 +958,7 @@
           <div class="muted" id="pageSubtitle">Seu resumo no Ilha Tenis.</div>
         </div>
         <div class="top-actions">
-          <button class="primary-btn" type="button" id="logoutBtn">Sair</button>
+          <button class="primary-btn" type="button" id="logoutBtn" data-logout>Sair</button>
         </div>
       </header>
 
@@ -1650,7 +1723,9 @@
       $('showLoginBtn').addEventListener('click', function () { showAuthTab('login'); });
       $('showSignupBtn').addEventListener('click', function () { showAuthTab('signup'); });
       $('demoBtn').addEventListener('click', function () { enterDemo(true); });
-      $('logoutBtn').addEventListener('click', logout);
+      document.querySelectorAll('[data-logout]').forEach(function (btn) {
+        btn.addEventListener('click', logout);
+      });
       $('profileForm').addEventListener('submit', saveProfile);
       $('profilePhoto').addEventListener('change', async function () {
         try {
