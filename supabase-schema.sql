@@ -26,6 +26,21 @@ create table if not exists public.app_clients (
 
 create unique index if not exists app_clients_email_idx on public.app_clients(lower(email));
 
+create table if not exists public.app_plan_requests (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid not null references public.app_clients(id) on delete cascade,
+  plan_code text not null,
+  plan_name text not null,
+  amount numeric(10, 2) not null default 0,
+  status text not null default 'SOLICITADO' check (status in ('SOLICITADO', 'EM_ANALISE', 'APROVADO', 'RECUSADO', 'CANCELADO')),
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists app_plan_requests_client_idx on public.app_plan_requests(client_id, created_at desc);
+create index if not exists app_plan_requests_status_idx on public.app_plan_requests(status, created_at desc);
+
 create or replace function public.current_user_role()
 returns text
 language sql
@@ -355,6 +370,7 @@ create index if not exists communication_campaigns_status_idx on public.communic
 
 alter table public.profiles enable row level security;
 alter table public.app_clients enable row level security;
+alter table public.app_plan_requests enable row level security;
 alter table public.teachers enable row level security;
 alter table public.students enable row level security;
 alter table public.courts enable row level security;
@@ -371,6 +387,7 @@ grant usage on schema public to authenticated;
 grant select, insert, update, delete on
   public.profiles,
   public.app_clients,
+  public.app_plan_requests,
   public.teachers,
   public.students,
   public.courts,
@@ -407,6 +424,10 @@ drop policy if exists "clients read own or staff" on public.app_clients;
 drop policy if exists "clients insert own" on public.app_clients;
 drop policy if exists "clients update own or staff" on public.app_clients;
 drop policy if exists "clients staff manage" on public.app_clients;
+drop policy if exists "plan requests read own or staff" on public.app_plan_requests;
+drop policy if exists "plan requests insert own" on public.app_plan_requests;
+drop policy if exists "plan requests update own draft or staff" on public.app_plan_requests;
+drop policy if exists "plan requests staff manage" on public.app_plan_requests;
 drop policy if exists "staff read teachers" on public.teachers;
 drop policy if exists "office manage teachers" on public.teachers;
 drop policy if exists "staff read students" on public.students;
@@ -460,6 +481,27 @@ with check (id = auth.uid() or public.is_club_staff());
 
 create policy "clients staff manage"
 on public.app_clients for delete
+to authenticated
+using (public.is_club_office());
+
+create policy "plan requests read own or staff"
+on public.app_plan_requests for select
+to authenticated
+using (client_id = auth.uid() or public.is_club_staff());
+
+create policy "plan requests insert own"
+on public.app_plan_requests for insert
+to authenticated
+with check (client_id = auth.uid());
+
+create policy "plan requests update own draft or staff"
+on public.app_plan_requests for update
+to authenticated
+using ((client_id = auth.uid() and status in ('SOLICITADO', 'CANCELADO')) or public.is_club_staff())
+with check ((client_id = auth.uid() and status in ('SOLICITADO', 'CANCELADO')) or public.is_club_staff());
+
+create policy "plan requests staff manage"
+on public.app_plan_requests for delete
 to authenticated
 using (public.is_club_office());
 

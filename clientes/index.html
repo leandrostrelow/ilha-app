@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Clientes | Ilha Tenis Colatina</title>
+  <meta name="theme-color" content="#10272c" />
+  <link rel="manifest" href="../manifest.json" />
+  <link rel="icon" href="../icon.png" />
+  <style>
+    :root {
+      --bg: #eef4f6;
+      --panel: #ffffff;
+      --ink: #10272c;
+      --muted: #647783;
+      --line: #d9e5e9;
+      --teal: #083f4b;
+      --dark: #243847;
+      --lime: #b5e500;
+      --red: #ef4444;
+      --orange: #f59e0b;
+      --shadow: 0 14px 34px rgba(16, 39, 44, .12);
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .preview-only { display: none !important; }
+    body.preview-env .preview-only { display: initial !important; }
+
+    body.client-locked {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(181, 229, 0, .2), transparent 28%),
+        linear-gradient(135deg, #083f4b 0%, #10272c 100%);
+    }
+
+    body.client-locked .client-app { display: none; }
+    body.client-unlocked .client-auth { display: none; }
+
+    .client-auth {
+      width: min(1060px, 100%);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 430px;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .auth-hero,
+    .auth-card {
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .24);
+    }
+
+    .auth-hero {
+      min-height: 560px;
+      padding: 36px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .auth-hero img {
+      width: 210px;
+      display: block;
+    }
+
+    .auth-hero h1 {
+      max-width: 560px;
+      margin: 34px 0 10px;
+      color: var(--ink);
+      font-size: clamp(34px, 5vw, 58px);
+      line-height: .96;
+      letter-spacing: 0;
+    }
+
+    .auth-hero p,
+    .muted {
+      color: var(--muted);
+      line-height: 1.45;
+      font-weight: 800;
+    }
+
+    .auth-proof {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 28px;
+    }
+
+    .auth-proof span {
+      min-height: 84px;
+      display: flex;
+      align-items: flex-end;
+      padding: 12px;
+      border-radius: 8px;
+      background: #eef4f6;
+      color: #213b42;
+      font-size: 12px;
+      line-height: 1.3;
+      font-weight: 900;
+    }
+
+    .auth-card {
+      padding: 28px;
+    }
+
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding: 4px;
+      border-radius: 8px;
+      background: #edf4f6;
+    }
+
+    .auth-tab {
+      min-height: 42px;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 900;
+    }
+
+    .auth-tab.active {
+      background: #ffffff;
+      color: var(--teal);
+      box-shadow: 0 6px 18px rgba(16, 39, 44, .12);
+    }
+
+    .auth-form { display: none; }
+    .auth-form.active { display: block; }
+
+    .auth-form h2 {
+      margin: 0 0 6px;
+      font-size: 25px;
+    }
+
+    .auth-form p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+      font-weight: 800;
+    }
+
+    label {
+      display: block;
+      margin: 14px 0 7px;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f9fcfd;
+      color: var(--ink);
+      padding: 0 13px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 84px;
+      padding-top: 12px;
+      resize: vertical;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(8, 63, 75, .12);
+    }
+
+    .primary-btn,
+    .ghost-btn,
+    .demo-btn {
+      min-height: 44px;
+      border-radius: 8px;
+      padding: 0 14px;
+      font-weight: 900;
+    }
+
+    .primary-btn {
+      background: var(--teal);
+      color: #ffffff;
+    }
+
+    .ghost-btn {
+      border: 1px solid var(--line);
+      background: #ffffff;
+      color: var(--ink);
+    }
+
+    .demo-btn {
+      display: none;
+      width: 100%;
+      margin-top: 10px;
+      border: 1px solid #dbe8a6;
+      background: #f6fbdd;
+      color: #2a3d00;
+    }
+
+    body.preview-env .demo-btn { display: block !important; }
+
+    .auth-message {
+      min-height: 18px;
+      margin-top: 14px;
+      color: var(--red);
+      font-size: 13px;
+      line-height: 1.35;
+      font-weight: 900;
+    }
+
+    .client-app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 268px minmax(0, 1fr);
+      background: var(--bg);
+    }
+
+    .sidebar {
+      min-height: 100vh;
+      position: sticky;
+      top: 0;
+      align-self: start;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 20px 16px;
+      background: #10272c;
+      color: #ffffff;
+    }
+
+    .side-brand {
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, .12);
+    }
+
+    .side-brand img {
+      width: 145px;
+      display: block;
+      margin-bottom: 14px;
+      filter: brightness(0) invert(1);
+    }
+
+    .side-brand strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .side-brand span {
+      display: block;
+      margin-top: 5px;
+      color: rgba(255, 255, 255, .64);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .side-nav {
+      display: grid;
+      gap: 6px;
+    }
+
+    .side-nav button {
+      width: 100%;
+      min-height: 44px;
+      display: grid;
+      grid-template-columns: 30px minmax(0, 1fr);
+      gap: 9px;
+      align-items: center;
+      border-radius: 8px;
+      padding: 0 10px;
+      background: transparent;
+      color: rgba(255, 255, 255, .76);
+      text-align: left;
+      font-weight: 900;
+    }
+
+    .side-nav button.active,
+    .side-nav button:hover {
+      background: rgba(255, 255, 255, .1);
+      color: #ffffff;
+    }
+
+    .nav-icon {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .1);
+      font-size: 12px;
+    }
+
+    .side-status {
+      margin-top: auto;
+      padding: 11px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .08);
+      color: rgba(255, 255, 255, .72);
+      font-size: 11px;
+      line-height: 1.35;
+      font-weight: 800;
+    }
+
+    .side-status strong {
+      display: block;
+      color: #ffffff;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .content {
+      min-width: 0;
+      padding: 20px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+    }
+
+    .topbar h1 {
+      margin: 0 0 4px;
+      font-size: 25px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .metric,
+    .panel,
+    .list-card,
+    .plan-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 10px 26px rgba(16, 39, 44, .08);
+    }
+
+    .metric {
+      min-height: 88px;
+      padding: 13px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 23px;
+      line-height: 1;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+      font-weight: 800;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-6 { grid-column: span 6; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    .panel {
+      padding: 15px;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .panel h2 {
+      margin: 0 0 4px;
+      font-size: 18px;
+    }
+
+    .list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .list-card {
+      padding: 12px;
+    }
+
+    .list-main {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .list-card strong {
+      font-size: 14px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .pill {
+      display: inline-flex;
+      min-height: 24px;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: #eef4f6;
+      color: var(--dark);
+      font-size: 11px;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    .pill.good { background: #efffd0; color: #203d00; }
+    .pill.warn { background: #fff6d8; color: #664600; }
+    .pill.bad { background: #ffe4e6; color: #7f1d1d; }
+
+    .plan-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .plan-card {
+      min-height: 226px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .plan-card h3 {
+      margin: 0;
+      font-size: 19px;
+    }
+
+    .price {
+      font-size: 26px;
+      font-weight: 900;
+    }
+
+    .plan-card ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      font-weight: 800;
+    }
+
+    .plan-card button {
+      margin-top: auto;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .field.full { grid-column: 1 / -1; }
+
+    .empty {
+      min-height: 118px;
+      display: grid;
+      place-items: center;
+      border: 1px dashed #cbd9de;
+      border-radius: 8px;
+      color: var(--muted);
+      text-align: center;
+      font-weight: 900;
+    }
+
+    .toast {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      z-index: 50;
+      max-width: min(420px, calc(100vw - 28px));
+      display: none;
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: var(--dark);
+      color: #ffffff;
+      font-size: 13px;
+      line-height: 1.35;
+      font-weight: 900;
+      box-shadow: var(--shadow);
+    }
+
+    .toast.show { display: block; }
+
+    @media (max-width: 940px) {
+      .client-auth,
+      .client-app {
+        grid-template-columns: 1fr;
+      }
+      .auth-hero { min-height: auto; padding: 24px; }
+      .auth-proof,
+      .summary-grid,
+      .plan-grid {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        position: static;
+        min-height: auto;
+      }
+      .side-nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .side-status { margin-top: 0; }
+      .content { padding: 12px; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .span-4,
+      .span-5,
+      .span-6,
+      .span-7,
+      .span-8,
+      .span-12 {
+        grid-column: span 12;
+      }
+    }
+
+    @media (max-width: 560px) {
+      body.client-locked { padding: 12px; }
+      .auth-card { padding: 18px; }
+      .auth-hero h1 { font-size: 34px; }
+      .side-nav { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .top-actions { width: 100%; }
+      .top-actions button,
+      .top-actions a { flex: 1 1 auto; }
+    }
+  </style>
+</head>
+<body class="client-locked">
+  <section class="client-auth" id="clientAuth" aria-label="Acesso do cliente">
+    <div class="auth-hero">
+      <div>
+        <img src="../logo.png" alt="Ilha Tenis Colatina" />
+        <h1>Area do aluno e cliente</h1>
+        <p>Entre para acompanhar seu cadastro, plano, aulas, pagamentos, quadras, torneios e informativos do clube.</p>
+      </div>
+      <div class="auth-proof">
+        <span>Cadastro unico ligado ao clube.</span>
+        <span>Planos, aulas e reservas em um painel.</span>
+        <span>Base online no Supabase, sem planilhas.</span>
+      </div>
+    </div>
+
+    <div class="auth-card">
+      <div class="auth-tabs" role="tablist" aria-label="Entrar ou cadastrar">
+        <button class="auth-tab active" type="button" id="showLoginBtn">Entrar</button>
+        <button class="auth-tab" type="button" id="showSignupBtn">Criar conta</button>
+      </div>
+
+      <form class="auth-form active" id="loginForm">
+        <h2>Entrar no app</h2>
+        <p>Acesse com seu e-mail e senha do Ilha App.</p>
+        <label for="loginEmail">E-mail</label>
+        <input id="loginEmail" type="email" autocomplete="username" inputmode="email" required />
+        <label for="loginPassword">Senha</label>
+        <input id="loginPassword" type="password" autocomplete="current-password" required />
+        <button class="primary-btn" type="submit" id="loginSubmit">Entrar</button>
+      </form>
+
+      <form class="auth-form" id="signupForm">
+        <h2>Criar conta</h2>
+        <p>O cadastro ja entra como cliente do clube.</p>
+        <label for="signupName">Nome completo</label>
+        <input id="signupName" type="text" autocomplete="name" required />
+        <label for="signupPhone">Telefone / WhatsApp</label>
+        <input id="signupPhone" type="tel" autocomplete="tel" inputmode="tel" required />
+        <label for="signupEmail">E-mail</label>
+        <input id="signupEmail" type="email" autocomplete="email" inputmode="email" required />
+        <label for="signupPassword">Senha</label>
+        <input id="signupPassword" type="password" autocomplete="new-password" minlength="6" required />
+        <button class="primary-btn" type="submit" id="signupSubmit">Criar e entrar</button>
+      </form>
+
+      <button class="demo-btn preview-only" type="button" id="demoBtn">Entrar em modo demonstracao</button>
+      <div class="auth-message" id="authMessage" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <main class="client-app" id="clientApp" aria-hidden="true">
+    <aside class="sidebar" aria-label="Menu do cliente">
+      <div class="side-brand">
+        <img src="../logo.png" alt="Ilha Tenis" />
+        <strong>Ilha Clientes</strong>
+        <span id="sideClientName">Area do aluno</span>
+      </div>
+      <nav class="side-nav">
+        <button class="active" type="button" data-view="home"><span class="nav-icon">IN</span><span>Inicio</span></button>
+        <button type="button" data-view="profile"><span class="nav-icon">EU</span><span>Meus dados</span></button>
+        <button type="button" data-view="plans"><span class="nav-icon">PL</span><span>Planos</span></button>
+        <button type="button" data-view="payments"><span class="nav-icon">PG</span><span>Pagamentos</span></button>
+        <button type="button" data-view="classes"><span class="nav-icon">AU</span><span>Aulas</span></button>
+        <button type="button" data-view="courts"><span class="nav-icon">QD</span><span>Quadras</span></button>
+        <button type="button" data-view="tournaments"><span class="nav-icon">TO</span><span>Torneios</span></button>
+        <button type="button" data-view="news"><span class="nav-icon">AV</span><span>Comunicados</span></button>
+      </nav>
+      <div class="side-status" id="sideStatus"><strong>Conectando</strong> Preparando sua area.</div>
+    </aside>
+
+    <section class="content">
+      <header class="topbar">
+        <div>
+          <h1 id="pageTitle">Inicio</h1>
+          <div class="muted" id="pageSubtitle">Seu resumo no Ilha Tenis.</div>
+        </div>
+        <div class="top-actions">
+          <a class="ghost-btn" href="../">Acessos</a>
+          <button class="ghost-btn" type="button" id="refreshBtn">Atualizar</button>
+          <button class="primary-btn" type="button" id="logoutBtn">Sair</button>
+        </div>
+      </header>
+
+      <section class="view active" id="view-home">
+        <div class="summary-grid">
+          <div class="metric"><strong id="metricPlan">Sem plano</strong><span>Plano atual ou solicitado</span></div>
+          <div class="metric"><strong id="metricPayment">R$ 0</strong><span>Proxima cobranca</span></div>
+          <div class="metric"><strong id="metricClasses">0</strong><span>Aulas previstas</span></div>
+          <div class="metric"><strong id="metricTournaments">0</strong><span>Torneios disponiveis</span></div>
+        </div>
+        <div class="grid">
+          <div class="panel span-7">
+            <div class="panel-head">
+              <div>
+                <h2>Proximas atividades</h2>
+                <div class="muted">Aulas, torneios e agenda do clube.</div>
+              </div>
+              <button class="ghost-btn" type="button" data-view="classes">Aulas</button>
+            </div>
+            <div class="list" id="homeActivityList"></div>
+          </div>
+          <div class="panel span-5">
+            <div class="panel-head">
+              <div>
+                <h2>Status do cadastro</h2>
+                <div class="muted">Dados basicos conectados ao clube.</div>
+              </div>
+            </div>
+            <div class="list" id="homeStatusList"></div>
+          </div>
+          <div class="panel span-6">
+            <div class="panel-head">
+              <div>
+                <h2>Pagamentos</h2>
+                <div class="muted">Base inicial para mensalidades e planos.</div>
+              </div>
+              <button class="ghost-btn" type="button" data-view="payments">Ver</button>
+            </div>
+            <div class="list" id="homePaymentList"></div>
+          </div>
+          <div class="panel span-6">
+            <div class="panel-head">
+              <div>
+                <h2>Comunicados</h2>
+                <div class="muted">Informativos do clube.</div>
+              </div>
+              <button class="ghost-btn" type="button" data-view="news">Ver</button>
+            </div>
+            <div class="list" id="homeNewsList"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-profile">
+        <div class="grid">
+          <div class="panel span-7">
+            <div class="panel-head">
+              <div>
+                <h2>Meus dados</h2>
+                <div class="muted">Cadastro basico usado pelo clube.</div>
+              </div>
+            </div>
+            <form id="profileForm" class="form-grid">
+              <div class="field full">
+                <label for="profileName">Nome completo</label>
+                <input id="profileName" required />
+              </div>
+              <div class="field">
+                <label for="profileEmail">E-mail</label>
+                <input id="profileEmail" type="email" disabled />
+              </div>
+              <div class="field">
+                <label for="profilePhone">Telefone / WhatsApp</label>
+                <input id="profilePhone" type="tel" inputmode="tel" />
+              </div>
+              <div class="field full">
+                <label for="profileNotes">Observacoes para o clube</label>
+                <textarea id="profileNotes" placeholder="Ex.: melhor horario, objetivo, responsavel..."></textarea>
+              </div>
+              <div class="field full">
+                <button class="primary-btn" type="submit">Salvar meus dados</button>
+              </div>
+            </form>
+          </div>
+          <div class="panel span-5">
+            <h2>Privacidade</h2>
+            <p class="muted">Seus dados ficam na base do Ilha Tenis e aparecem para a equipe administrativa do clube.</p>
+            <div class="meta">
+              <span class="pill good">Supabase Auth</span>
+              <span class="pill">Cadastro proprio</span>
+              <span class="pill">Sem planilha</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-plans">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Escolha seu plano</h2>
+              <div class="muted">O pedido fica registrado para a secretaria confirmar valores e horarios.</div>
+            </div>
+          </div>
+          <div class="plan-grid" id="planGrid"></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-payments">
+        <div class="grid">
+          <div class="panel span-7">
+            <div class="panel-head">
+              <div>
+                <h2>Pagamentos</h2>
+                <div class="muted">Primeira versao: acompanhamento de solicitacoes e mensalidades.</div>
+              </div>
+            </div>
+            <div class="list" id="paymentList"></div>
+          </div>
+          <div class="panel span-5">
+            <h2>Pix Ilha Tenis</h2>
+            <p class="muted">No futuro o app vai confirmar pagamentos por aqui. Por enquanto, a secretaria valida o pedido.</p>
+            <div class="meta">
+              <span class="pill">54.969.790/0001-47</span>
+              <span class="pill warn">Validacao manual</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-classes">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Minhas aulas</h2>
+              <div class="muted">Confirmacao de aula entra aqui na proxima etapa.</div>
+            </div>
+          </div>
+          <div class="list" id="classList"></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-courts">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Quadras</h2>
+              <div class="muted">Reserva online sera conectada ao calendario do clube.</div>
+            </div>
+          </div>
+          <div class="list" id="courtList"></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-tournaments">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Torneios</h2>
+              <div class="muted">Inscricoes e chaves do clube.</div>
+            </div>
+          </div>
+          <div class="list" id="tournamentList"></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-news">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Comunicados</h2>
+              <div class="muted">Avisos oficiais do Ilha Tenis.</div>
+            </div>
+          </div>
+          <div class="list" id="newsList"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrcXRncHRlYmtnZndndXlreGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzEyNjAsImV4cCI6MjA5NzcwNzI2MH0.S-dopp-fbBgq8_YclyiAheOdK-QhXt92RYLu8JKmKCg';
+    const SESSION_KEY = 'ilha-client-session';
+    const DEMO_SESSION_KEY = 'ilha-client-demo-session';
+
+    let session = null;
+    let client = null;
+    let planRequests = [];
+    let demoMode = false;
+
+    const plans = [
+      { code: 'aula_1x', name: 'Aulas 1x por semana', amount: 220, features: ['1 aula fixa por semana', 'Acompanhamento do professor', 'Comunicados pelo app'] },
+      { code: 'aula_2x', name: 'Aulas 2x por semana', amount: 360, features: ['2 aulas fixas por semana', 'Prioridade em reposicao', 'Evolucao do aluno'] },
+      { code: 'clube_social', name: 'Cliente do clube', amount: 0, features: ['Comunicados oficiais', 'Torneios e eventos', 'Reserva de quadra no futuro'] }
+    ];
+
+    const demoData = {
+      activities: [
+        { title: 'Aula confirmada', detail: 'Quarta, 18H | Quadra 1 | Prof. Renato', status: 'Confirmado' },
+        { title: 'II Viafor Open', detail: 'Inscricoes e chaves pelo app do clube', status: 'Disponivel' },
+        { title: 'Reserva de quadra', detail: 'Modulo em preparacao para horarios livres', status: 'Em breve' }
+      ],
+      classes: [
+        { title: 'Aula adulto intermediario', detail: 'Quarta, 18H | Quadra 1 | Prof. Renato', status: 'Confirmado' },
+        { title: 'Reposicao pendente', detail: 'Solicite ajuste com a secretaria', status: 'A combinar' }
+      ],
+      courts: [
+        { title: 'Quadra 1', detail: 'Aulas fixas ate 20H', status: 'Ocupada' },
+        { title: 'Quadra 2', detail: 'Reservas sociais no periodo da noite', status: 'Consultar' }
+      ],
+      tournaments: [
+        { title: 'II Viafor Open', detail: 'Chaves, agenda e resultados disponiveis', status: 'Aberto' },
+        { title: 'Ranking 2026', detail: 'Circuito CINCATE', status: 'Em breve' }
+      ],
+      news: [
+        { title: 'Bem-vindo ao Ilha App', detail: 'A area do cliente esta sendo conectada ao Supabase.', status: 'Novo' },
+        { title: 'Pagamentos pelo app', detail: 'Fluxo sera liberado depois da validacao da secretaria.', status: 'Em breve' }
+      ]
+    };
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    function isPreviewEnvironment() {
+      const host = window.location.hostname;
+      return host === '127.0.0.1' || host === 'localhost' || host.endsWith('.vercel.app') || window.location.protocol === 'file:';
+    }
+
+    function configurePreviewEnvironment() {
+      document.body.classList.toggle('preview-env', isPreviewEnvironment());
+    }
+
+    function baseUrl() {
+      return SUPABASE_URL.replace(/\/$/, '');
+    }
+
+    function headers(requireAuth) {
+      const h = { apikey: SUPABASE_ANON_KEY };
+      if (requireAuth && session && session.access_token) h.Authorization = 'Bearer ' + session.access_token;
+      else h.Authorization = 'Bearer ' + SUPABASE_ANON_KEY;
+      return h;
+    }
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, function (char) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char];
+      });
+    }
+
+    function money(value) {
+      return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function toast(message) {
+      $('toast').textContent = message || '';
+      $('toast').classList.add('show');
+      setTimeout(function () { $('toast').classList.remove('show'); }, 2400);
+    }
+
+    function pill(status) {
+      const value = String(status || '');
+      const upper = value.toUpperCase();
+      const kind = upper.includes('CONFIRM') || upper.includes('ATIVO') || upper.includes('ABERTO') ? ' good' :
+        (upper.includes('PEND') || upper.includes('BREVE') || upper.includes('COMBINAR') ? ' warn' : '');
+      return '<span class="pill' + kind + '">' + escapeHtml(value) + '</span>';
+    }
+
+    async function authRequest(path, body) {
+      const h = headers(false);
+      h['Content-Type'] = 'application/json';
+      const response = await fetch(baseUrl() + '/auth/v1/' + path, {
+        method: 'POST',
+        headers: h,
+        body: JSON.stringify(body || {})
+      });
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+      if (!response.ok) throw new Error(data.error_description || data.msg || data.message || 'Falha na autenticacao.');
+      return data;
+    }
+
+    async function rest(path, options) {
+      options = options || {};
+      const h = headers(options.auth !== false);
+      if (options.body !== undefined) h['Content-Type'] = 'application/json';
+      if (options.prefer) h.Prefer = options.prefer;
+      const response = await fetch(baseUrl() + '/rest/v1/' + path, {
+        method: options.method || 'GET',
+        headers: h,
+        body: options.body === undefined ? undefined : JSON.stringify(options.body)
+      });
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : null;
+      if (!response.ok) {
+        const message = data && (data.message || data.msg || data.error_description || data.details);
+        throw new Error(message || 'Falha ao conversar com o Supabase.');
+      }
+      return data;
+    }
+
+    function storeSession(nextSession) {
+      if (!nextSession || !nextSession.access_token) return;
+      if (!nextSession.expires_at && nextSession.expires_in) {
+        nextSession.expires_at = Math.floor(Date.now() / 1000) + Number(nextSession.expires_in || 0);
+      }
+      session = nextSession;
+      localStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));
+    }
+
+    function readSession() {
+      try {
+        const raw = localStorage.getItem(SESSION_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        localStorage.removeItem(SESSION_KEY);
+        return null;
+      }
+    }
+
+    function clearSession() {
+      session = null;
+      client = null;
+      planRequests = [];
+      demoMode = false;
+      localStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(DEMO_SESSION_KEY);
+    }
+
+    function isExpired(value) {
+      if (!value || !value.access_token) return true;
+      return value.expires_at && Number(value.expires_at) * 1000 < Date.now() + 60000;
+    }
+
+    async function refreshSession(value) {
+      const fresh = await authRequest('token?grant_type=refresh_token', { refresh_token: value.refresh_token });
+      storeSession(fresh);
+      return fresh;
+    }
+
+    async function ensureClient(fullName, phone) {
+      if (demoMode || (session && session.demo)) {
+        client = {
+          full_name: fullName || 'Cliente Ilha Demo',
+          email: 'cliente.demo@ilhatenis.com',
+          phone: phone || '5527999999999',
+          status: 'ATIVO',
+          client_type: 'cliente',
+          notes: ''
+        };
+        return client;
+      }
+      const result = await rest('rpc/ensure_current_app_client', {
+        method: 'POST',
+        body: { p_full_name: fullName || null, p_phone: phone || null },
+        prefer: 'return=representation'
+      });
+      client = Array.isArray(result) ? result[0] : result;
+      return client;
+    }
+
+    async function loadClientData() {
+      if (demoMode || (session && session.demo)) {
+        if (!planRequests.length) {
+          planRequests = [{ id: 'demo_plan', plan_name: 'Aulas 1x por semana', amount: 220, status: 'SOLICITADO', created_at: new Date().toISOString() }];
+        }
+        return;
+      }
+      try {
+        const rows = await rest('app_plan_requests?select=*&order=created_at.desc');
+        planRequests = Array.isArray(rows) ? rows : [];
+      } catch (error) {
+        planRequests = [];
+        toast('Plano/pagamentos ainda aguardam a atualizacao do banco.');
+      }
+    }
+
+    function setAuthMessage(message, isError) {
+      $('authMessage').style.color = isError ? 'var(--red)' : 'var(--teal)';
+      $('authMessage').textContent = message || '';
+    }
+
+    function setBusy(isBusy) {
+      ['loginSubmit', 'signupSubmit'].forEach(function (id) {
+        $(id).disabled = isBusy;
+      });
+    }
+
+    function showAuthTab(tab) {
+      const signup = tab === 'signup';
+      $('showLoginBtn').classList.toggle('active', !signup);
+      $('showSignupBtn').classList.toggle('active', signup);
+      $('loginForm').classList.toggle('active', !signup);
+      $('signupForm').classList.toggle('active', signup);
+      setAuthMessage('', false);
+    }
+
+    async function login(email, password) {
+      const nextSession = await authRequest('token?grant_type=password', { email: email, password: password });
+      storeSession(nextSession);
+      await ensureClient(null, null);
+      await loadClientData();
+      unlock();
+    }
+
+    async function signup(name, phone, email, password) {
+      const result = await authRequest('signup', {
+        email: email,
+        password: password,
+        data: { app_context: 'public', full_name: name, phone: phone, client_type: 'cliente' }
+      });
+      const nextSession = result.session || (result.access_token ? result : null);
+      if (nextSession && nextSession.access_token) {
+        storeSession(nextSession);
+        await ensureClient(name, phone);
+        await loadClientData();
+        unlock();
+        return;
+      }
+      showAuthTab('login');
+      setAuthMessage('Cadastro criado. Confirme seu e-mail se o Supabase pedir, depois entre aqui.', false);
+    }
+
+    async function restore() {
+      if (isPreviewEnvironment() && sessionStorage.getItem(DEMO_SESSION_KEY) === '1') {
+        enterDemo(false);
+        return;
+      }
+      const stored = readSession();
+      if (!stored) {
+        lock('');
+        return;
+      }
+      try {
+        session = stored;
+        if (isExpired(stored)) await refreshSession(stored);
+        await ensureClient(null, null);
+        await loadClientData();
+        unlock();
+      } catch (error) {
+        clearSession();
+        lock('Entre novamente para continuar.');
+      }
+    }
+
+    function enterDemo(show) {
+      if (!isPreviewEnvironment()) return;
+      demoMode = true;
+      session = { demo: true, user: { email: 'cliente.demo@ilhatenis.com' } };
+      sessionStorage.setItem(DEMO_SESSION_KEY, '1');
+      ensureClient(null, null).then(loadClientData).then(function () {
+        unlock();
+        if (show !== false) toast('Modo demonstracao ativo.');
+      });
+    }
+
+    function lock(message) {
+      document.body.classList.remove('client-unlocked');
+      document.body.classList.add('client-locked');
+      $('clientApp').setAttribute('aria-hidden', 'true');
+      if (message) setAuthMessage(message, true);
+    }
+
+    function unlock() {
+      document.body.classList.remove('client-locked');
+      document.body.classList.add('client-unlocked');
+      $('clientApp').setAttribute('aria-hidden', 'false');
+      renderAll();
+    }
+
+    function logout() {
+      const token = session && session.access_token;
+      const isDemo = session && session.demo;
+      clearSession();
+      if (token && !isDemo) {
+        fetch(baseUrl() + '/auth/v1/logout', {
+          method: 'POST',
+          headers: Object.assign(headers(false), { Authorization: 'Bearer ' + token })
+        }).catch(function () {});
+      }
+      lock('');
+    }
+
+    function showView(view) {
+      document.querySelectorAll('.view').forEach(function (el) {
+        el.classList.toggle('active', el.id === 'view-' + view);
+      });
+      document.querySelectorAll('[data-view]').forEach(function (btn) {
+        btn.classList.toggle('active', btn.dataset.view === view);
+      });
+      const labels = {
+        home: ['Inicio', 'Seu resumo no Ilha Tenis.'],
+        profile: ['Meus dados', 'Cadastro e preferencias.'],
+        plans: ['Planos', 'Escolha ou solicite seu plano.'],
+        payments: ['Pagamentos', 'Mensalidades e pagamentos do clube.'],
+        classes: ['Aulas', 'Confirmacao e horarios.'],
+        courts: ['Quadras', 'Reservas e disponibilidade.'],
+        tournaments: ['Torneios', 'Inscricoes e agenda.'],
+        news: ['Comunicados', 'Avisos oficiais do clube.']
+      };
+      $('pageTitle').textContent = labels[view][0];
+      $('pageSubtitle').textContent = labels[view][1];
+    }
+
+    function renderAll() {
+      renderIdentity();
+      renderHome();
+      renderProfile();
+      renderPlans();
+      renderPayments();
+      renderLists();
+    }
+
+    function renderIdentity() {
+      const name = client && client.full_name ? client.full_name : (session && session.user && session.user.email) || 'Cliente Ilha';
+      $('sideClientName').textContent = name;
+      $('sideStatus').innerHTML = (demoMode || (session && session.demo))
+        ? '<strong>Modo demonstracao</strong> Dados locais para testar a area do aluno.'
+        : '<strong>Conta conectada</strong> Cadastro sincronizado com o Supabase.';
+    }
+
+    function currentPlanRequest() {
+      return planRequests[0] || null;
+    }
+
+    function renderHome() {
+      const request = currentPlanRequest();
+      $('metricPlan').textContent = request ? request.plan_name : 'Sem plano';
+      $('metricPayment').textContent = request && Number(request.amount) ? money(request.amount) : 'R$ 0';
+      $('metricClasses').textContent = demoData.classes.length;
+      $('metricTournaments').textContent = demoData.tournaments.length;
+
+      $('homeActivityList').innerHTML = demoData.activities.map(cardHtml).join('');
+      $('homeStatusList').innerHTML = [
+        { title: client && client.full_name || 'Cliente Ilha', detail: client && client.email || 'E-mail conectado', status: client && client.status || 'ATIVO' },
+        { title: 'Telefone', detail: client && client.phone || 'Nao informado', status: client && client.phone ? 'OK' : 'Pendente' },
+        { title: 'Plano', detail: request ? request.plan_name : 'Escolha um plano para solicitar', status: request ? request.status : 'Sem plano' }
+      ].map(cardHtml).join('');
+      $('homePaymentList').innerHTML = paymentCards();
+      $('homeNewsList').innerHTML = demoData.news.slice(0, 2).map(cardHtml).join('');
+    }
+
+    function renderProfile() {
+      $('profileName').value = client && client.full_name || '';
+      $('profileEmail').value = client && client.email || (session && session.user && session.user.email) || '';
+      $('profilePhone').value = client && client.phone || '';
+      $('profileNotes').value = client && client.notes || '';
+    }
+
+    function renderPlans() {
+      $('planGrid').innerHTML = plans.map(function (plan) {
+        return '<article class="plan-card">' +
+          '<div>' +
+            '<h3>' + escapeHtml(plan.name) + '</h3>' +
+            '<div class="price">' + (plan.amount ? money(plan.amount) : 'Sob consulta') + '</div>' +
+          '</div>' +
+          '<ul>' + plan.features.map(function (item) { return '<li>' + escapeHtml(item) + '</li>'; }).join('') + '</ul>' +
+          '<button class="primary-btn" type="button" data-plan-code="' + escapeHtml(plan.code) + '">Solicitar plano</button>' +
+        '</article>';
+      }).join('');
+    }
+
+    function paymentCards() {
+      if (!planRequests.length) {
+        return '<div class="empty">Nenhum pagamento ou plano solicitado ainda.</div>';
+      }
+      return planRequests.map(function (item) {
+        return cardHtml({
+          title: item.plan_name || 'Solicitacao de plano',
+          detail: (item.amount ? money(item.amount) : 'Sob consulta') + ' | ' + new Date(item.created_at || Date.now()).toLocaleDateString('pt-BR'),
+          status: item.status || 'SOLICITADO'
+        });
+      }).join('');
+    }
+
+    function renderPayments() {
+      $('paymentList').innerHTML = paymentCards();
+    }
+
+    function renderLists() {
+      $('classList').innerHTML = demoData.classes.map(cardHtml).join('');
+      $('courtList').innerHTML = demoData.courts.map(cardHtml).join('');
+      $('tournamentList').innerHTML = demoData.tournaments.map(cardHtml).join('');
+      $('newsList').innerHTML = demoData.news.map(cardHtml).join('');
+    }
+
+    function cardHtml(item) {
+      return '<article class="list-card"><div class="list-main"><div><strong>' + escapeHtml(item.title) + '</strong><div class="muted">' + escapeHtml(item.detail) + '</div></div>' + pill(item.status) + '</div></article>';
+    }
+
+    async function saveProfile(event) {
+      event.preventDefault();
+      const fullName = $('profileName').value.trim();
+      const phone = $('profilePhone').value.trim();
+      const notes = $('profileNotes').value.trim();
+      if (demoMode || (session && session.demo)) {
+        client.full_name = fullName;
+        client.phone = phone;
+        client.notes = notes;
+        renderAll();
+        toast('Dados atualizados na demonstracao.');
+        return;
+      }
+      try {
+        await ensureClient(fullName, phone);
+        await rest('app_clients?id=eq.' + encodeURIComponent(session.user.id), {
+          method: 'PATCH',
+          body: { full_name: fullName, phone: phone, notes: notes },
+          prefer: 'return=representation'
+        });
+        client.full_name = fullName;
+        client.phone = phone;
+        client.notes = notes;
+        renderAll();
+        toast('Dados salvos.');
+      } catch (error) {
+        toast(error.message || 'Nao consegui salvar os dados.');
+      }
+    }
+
+    async function requestPlan(code) {
+      const plan = plans.find(function (item) { return item.code === code; });
+      if (!plan) return;
+      if (demoMode || (session && session.demo)) {
+        planRequests.unshift({
+          id: 'demo_' + Date.now(),
+          plan_code: plan.code,
+          plan_name: plan.name,
+          amount: plan.amount,
+          status: 'SOLICITADO',
+          created_at: new Date().toISOString()
+        });
+        renderAll();
+        toast('Plano solicitado na demonstracao.');
+        return;
+      }
+      try {
+        await ensureClient(null, null);
+        const inserted = await rest('app_plan_requests', {
+          method: 'POST',
+          body: {
+            client_id: session.user.id,
+            plan_code: plan.code,
+            plan_name: plan.name,
+            amount: plan.amount,
+            status: 'SOLICITADO'
+          },
+          prefer: 'return=representation'
+        });
+        planRequests.unshift(Array.isArray(inserted) ? inserted[0] : inserted);
+        renderAll();
+        toast('Plano solicitado. A secretaria vai confirmar.');
+      } catch (error) {
+        toast('Banco ainda precisa ser atualizado para solicitar planos.');
+      }
+    }
+
+    async function refresh() {
+      if (!session) return;
+      await ensureClient(null, null);
+      await loadClientData();
+      renderAll();
+      toast('Area atualizada.');
+    }
+
+    function init() {
+      configurePreviewEnvironment();
+      $('showLoginBtn').addEventListener('click', function () { showAuthTab('login'); });
+      $('showSignupBtn').addEventListener('click', function () { showAuthTab('signup'); });
+      $('demoBtn').addEventListener('click', function () { enterDemo(true); });
+      $('logoutBtn').addEventListener('click', logout);
+      $('refreshBtn').addEventListener('click', refresh);
+      $('profileForm').addEventListener('submit', saveProfile);
+      document.querySelectorAll('[data-view]').forEach(function (btn) {
+        btn.addEventListener('click', function () { showView(btn.dataset.view); });
+      });
+      $('planGrid').addEventListener('click', function (event) {
+        const btn = event.target.closest('[data-plan-code]');
+        if (btn) requestPlan(btn.dataset.planCode);
+      });
+      $('loginForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        setBusy(true);
+        setAuthMessage('', false);
+        try {
+          await login($('loginEmail').value.trim(), $('loginPassword').value);
+        } catch (error) {
+          setAuthMessage(error.message || 'Nao consegui entrar agora.', true);
+        } finally {
+          setBusy(false);
+        }
+      });
+      $('signupForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        setBusy(true);
+        setAuthMessage('', false);
+        try {
+          await signup($('signupName').value.trim(), $('signupPhone').value.trim(), $('signupEmail').value.trim(), $('signupPassword').value);
+        } catch (error) {
+          setAuthMessage(error.message || 'Nao consegui criar sua conta agora.', true);
+        } finally {
+          setBusy(false);
+        }
+      });
+      restore();
+    }
+
+    init();
+  </script>
+</body>
+</html>

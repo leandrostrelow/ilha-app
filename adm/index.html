@@ -2963,8 +2963,8 @@
             <div class="ops-panel span-4">
               <div class="ops-panel-head">
                 <div>
-                  <h2>Segmentos</h2>
-                  <div class="muted">Primeira leitura para relacionamento.</div>
+                  <h2>Planos solicitados</h2>
+                  <div class="muted">Pedidos feitos pela area do cliente.</div>
                 </div>
               </div>
               <div class="ops-list" id="clientSegmentList"></div>
@@ -6940,6 +6940,9 @@
       clients: [
         { name: 'Cliente exemplo', email: 'cliente@ilhatenis.com', phone: '5527999999999', status: 'ATIVO', type: 'cliente', created: '2026-06-22', lastLogin: '' }
       ],
+      planRequests: [
+        { client: 'Cliente exemplo', email: 'cliente@ilhatenis.com', plan: 'Aulas 1x por semana', amount: 220, status: 'SOLICITADO', created: '2026-06-22' }
+      ],
       students: [
         { name: 'Leandro Strelow', phone: '5527999805814', status: 'ATIVO', plan: 'Aula semanal', level: 'Intermediario', teacher: 'Renato', financial: 'OK', nextAction: 'Confirmar presenca hoje' },
         { name: 'Evandro Ferraco', phone: '5527999292514', status: 'ATIVO', plan: 'Aula semanal', level: 'Intermediario', teacher: 'Renato', financial: 'PENDENTE', nextAction: 'Enviar lembrete de mensalidade' },
@@ -7118,6 +7121,19 @@
       };
     }
 
+    function mapPlanRequestRow(row) {
+      const client = row.app_clients || {};
+      return {
+        id: row.id,
+        client: client.full_name || 'Cliente',
+        email: client.email || '',
+        plan: row.plan_name || 'Plano',
+        amount: Number(row.amount || 0),
+        status: row.status || 'SOLICITADO',
+        created: row.created_at || ''
+      };
+    }
+
     async function loadOpsData(force) {
       if (!adminSession || !adminSession.access_token) return;
       if (isAdminDemoMode()) {
@@ -7133,7 +7149,8 @@
           supabaseRest('financial_transactions?select=*,students(name)&order=due_date.asc'),
           supabaseRest('communication_audiences?select=*&order=name.asc'),
           supabaseRest('communication_campaigns?select=*&order=created_at.desc'),
-          supabaseRest('communication_templates?select=*&order=name.asc')
+          supabaseRest('communication_templates?select=*&order=name.asc'),
+          supabaseRest('app_plan_requests?select=*,app_clients(full_name,email,phone)&order=created_at.desc')
         ]);
         opsData.clients = results[0].map(mapClientRow);
         opsData.students = results[1].map(mapStudentRow);
@@ -7142,6 +7159,7 @@
         opsData.audiences = results[4].map(mapAudienceRow);
         opsData.campaigns = results[5].map(mapCampaignRow);
         opsData.templates = results[6];
+        opsData.planRequests = results[7].map(mapPlanRequestRow);
         opsState.loaded = true;
       } catch (error) {
         console.info('Supabase indisponivel para modulos administrativos; usando dados locais.', error && error.message);
@@ -7210,9 +7228,11 @@
         const type = client.type || 'cliente';
         segments[type] = (segments[type] || 0) + 1;
       });
-      $('clientSegmentList').innerHTML = Object.keys(segments).map(function (type) {
+      $('clientSegmentList').innerHTML = opsData.planRequests.map(function (request) {
+        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(request.plan) + '</strong><div class="muted">' + escapeHtml(request.client) + ' | ' + escapeHtml(request.email) + '</div></div><div class="ops-meta">' + statusPill(request.status) + '<span class="ops-pill">' + money(request.amount) + '</span></div></div></article>';
+      }).join('') || Object.keys(segments).map(function (type) {
         return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(type) + '</strong><div class="muted">Segmento do cadastro publico</div></div><span class="ops-pill good">' + segments[type] + ' pessoa(s)</span></div></article>';
-      }).join('') || '<div class="lesson-empty-state">Sem segmentos ainda.</div>';
+      }).join('') || '<div class="lesson-empty-state">Sem solicitacoes ainda.</div>';
     }
 
     function renderStudentsModule() {
