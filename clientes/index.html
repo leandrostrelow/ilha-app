@@ -653,6 +653,20 @@
       gap: 14px;
     }
 
+    .plan-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .plan-actions .ghost-btn,
+    .plan-actions .primary-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
     .plan-status-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1205,6 +1219,13 @@
       return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     }
 
+    function whatsappPlanChangeUrl() {
+      const name = client && client.full_name ? client.full_name : 'Aluno Ilha';
+      const planName = client && client.official_plan_name ? client.official_plan_name : 'sem plano definido';
+      const message = 'Ola, sou ' + name + '. Quero conversar sobre alterar meu plano atual: ' + planName + '.';
+      return 'https://wa.me/5527992963984?text=' + encodeURIComponent(message);
+    }
+
     function toast(message) {
       $('toast').textContent = message || '';
       $('toast').classList.add('show');
@@ -1544,6 +1565,11 @@
         payments: 'Pagamento'
       };
       $('pageTitle').textContent = labels[view];
+      if (view === 'plans') {
+        refresh(true).catch(function () {
+          toast('Nao consegui atualizar o plano agora.');
+        });
+      }
     }
 
     function renderAll() {
@@ -1593,6 +1619,10 @@
             '<h3>Ainda nao definido</h3>' +
             '<p class="muted">Quando a equipe vincular seu plano no ADM, ele aparece aqui.</p>' +
           '</div>' +
+          '<div class="plan-actions">' +
+            '<button class="ghost-btn" type="button" data-refresh-plan>Atualizar</button>' +
+            '<a class="primary-btn" href="' + escapeHtml(whatsappPlanChangeUrl()) + '" target="_blank" rel="noopener">Solicitar alteracao</a>' +
+          '</div>' +
         '</article>';
         return;
       }
@@ -1618,6 +1648,10 @@
           '<span class="pill good">Ativo</span>' +
         '</div>' +
         (details.length ? '<div class="plan-status-grid">' + details.join('') + '</div>' : '') +
+        '<div class="plan-actions">' +
+          '<button class="ghost-btn" type="button" data-refresh-plan>Atualizar</button>' +
+          '<a class="primary-btn" href="' + escapeHtml(whatsappPlanChangeUrl()) + '" target="_blank" rel="noopener">Solicitar alteracao</a>' +
+        '</div>' +
       '</article>';
     }
 
@@ -1723,12 +1757,12 @@
       }
     }
 
-    async function refresh() {
+    async function refresh(silent) {
       if (!session) return;
       await ensureClient(null, null);
       await loadClientData();
       renderAll();
-      toast('Area atualizada.');
+      if (!silent) toast('Area atualizada.');
     }
 
     function init() {
@@ -1753,6 +1787,18 @@
       });
       document.querySelectorAll('[data-view]').forEach(function (btn) {
         btn.addEventListener('click', function () { showView(btn.dataset.view); });
+      });
+      $('planGrid').addEventListener('click', function (event) {
+        if (event.target.closest('[data-refresh-plan]')) {
+          refresh(false).catch(function () {
+            toast('Nao consegui atualizar o plano agora.');
+          });
+        }
+      });
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden && session) {
+          refresh(true).catch(function () {});
+        }
       });
       $('loginForm').addEventListener('submit', async function (event) {
         event.preventDefault();
