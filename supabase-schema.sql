@@ -96,6 +96,29 @@ create index if not exists app_plan_requests_client_idx on public.app_plan_reque
 create index if not exists app_plan_requests_status_idx on public.app_plan_requests(status, created_at desc);
 create index if not exists app_plans_active_idx on public.app_plans(active, type);
 
+insert into public.app_plans (code, name, type, amount, weekly_lessons, default_due_day, active, description)
+values
+  ('aulas_anual_1x', 'Aulas 1x por semana - Anual', 'aluno', 230, 1, 10, true, 'Ciclo de 12 meses. Pix 5% OFF no pagamento do ciclo.'),
+  ('aulas_semestral_1x', 'Aulas 1x por semana - Semestral', 'aluno', 250, 1, 10, true, 'Ciclo de 6 meses. Pix 5% OFF no pagamento do ciclo.'),
+  ('aulas_mensal_1x', 'Aulas 1x por semana - Mensal', 'aluno', 270, 1, 10, true, 'Plano mensal de aulas uma vez por semana.'),
+  ('aulas_anual_2x', 'Aulas 2x por semana - Anual', 'aluno', 350, 2, 10, true, 'Ciclo de 12 meses. Pix 5% OFF no pagamento do ciclo.'),
+  ('aulas_semestral_2x', 'Aulas 2x por semana - Semestral', 'aluno', 370, 2, 10, true, 'Ciclo de 6 meses. Pix 5% OFF no pagamento do ciclo.'),
+  ('aulas_mensal_2x', 'Aulas 2x por semana - Mensal', 'aluno', 390, 2, 10, true, 'Plano mensal de aulas duas vezes por semana.'),
+  ('jogar_anual', 'Somente jogar - Anual', 'mensalista', 130, 0, 10, true, 'Acesso mensal as quadras conforme regras do clube. Ciclo de 12 meses. Pix 5% OFF.'),
+  ('jogar_semestral', 'Somente jogar - Semestral', 'mensalista', 140, 0, 10, true, 'Acesso mensal as quadras conforme regras do clube. Ciclo de 6 meses. Pix 5% OFF.'),
+  ('jogar_mensal', 'Somente jogar - Mensal', 'mensalista', 150, 0, 10, true, 'Acesso mensal as quadras conforme regras do clube.'),
+  ('aula_avulsa', 'Aula avulsa', 'avulso', 80, 0, 10, true, 'Valor por aula avulsa.'),
+  ('familia', 'Plano familia', 'outro', 0, 0, 10, true, 'Calculo com a equipe conforme quantidade de pessoas da mesma familia.')
+on conflict (code) do update
+set name = excluded.name,
+    type = excluded.type,
+    amount = excluded.amount,
+    weekly_lessons = excluded.weekly_lessons,
+    default_due_day = excluded.default_due_day,
+    active = excluded.active,
+    description = excluded.description,
+    updated_at = now();
+
 alter table public.app_plan_requests add column if not exists membership_type text not null default 'aluno';
 alter table public.app_plan_requests add column if not exists weekly_lessons integer not null default 0;
 alter table public.app_plan_requests add column if not exists requested_days jsonb not null default '[]'::jsonb;

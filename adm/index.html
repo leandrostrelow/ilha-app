@@ -3249,7 +3249,7 @@
         <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon"><svg><use href="#admin-icon-users"></use></svg></span><span>Alunos</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-team"><span class="admin-nav-icon"><svg><use href="#admin-icon-team"></use></svg></span><span>Equipe</span></button>
-        <button class="admin-nav-btn" type="button" data-admin-nav="club-database"><span class="admin-nav-icon"><svg><use href="#admin-icon-database"></use></svg></span><span>Banco de dados</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-database"><span class="admin-nav-icon"><svg><use href="#admin-icon-database"></use></svg></span><span>Planos</span></button>
       </nav>
       <div class="admin-sidebar-footer">
         <button type="button" id="sidebarLogoutBtn">Sair</button>
@@ -3528,7 +3528,7 @@
       <div class="module-shell">
         <div class="module-head">
           <div>
-            <h1>Banco de dados</h1>
+            <h1>Planos</h1>
             <div class="muted">Planos oficiais do clube.</div>
           </div>
           <div class="module-actions">
@@ -3544,7 +3544,7 @@
             <div class="ops-card"><strong id="planLessonMetric">0</strong><span>aulas</span></div>
             <div class="ops-card"><strong id="planMemberMetric">0</strong><span>mensalistas</span></div>
           </div>
-          <div class="ops-tabs" id="planTabs" role="tablist" aria-label="Banco de dados">
+          <div class="ops-tabs" id="planTabs" role="tablist" aria-label="Planos">
             <button class="ops-tab-btn active" type="button" data-plan-tab="list">Planos</button>
             <button class="ops-tab-btn" type="button" data-plan-tab="form">Novo / editar</button>
           </div>
@@ -7707,9 +7707,17 @@
       ],
       planRequests: [],
       plans: [
-        { id: 'plan_aula_1x', code: 'aula_1x', name: 'Aulas 1x por semana', type: 'aluno', amount: 220, weeklyLessons: 1, dueDay: 10, active: true, description: 'Uma aula fixa semanal com horario combinado pela secretaria.' },
-        { id: 'plan_aula_2x', code: 'aula_2x', name: 'Aulas 2x por semana', type: 'aluno', amount: 360, weeklyLessons: 2, dueDay: 10, active: true, description: 'Duas aulas fixas semanais, conforme disponibilidade de horario.' },
-        { id: 'plan_mensalista', code: 'mensalista', name: 'Mensalista quadra', type: 'mensalista', amount: 180, weeklyLessons: 0, dueDay: 10, active: true, description: 'Plano para jogar e reservar horarios conforme regra do clube.' }
+        { id: 'plan_aulas_anual_1x', code: 'aulas_anual_1x', name: 'Aulas 1x por semana - Anual', type: 'aluno', amount: 230, weeklyLessons: 1, dueDay: 10, active: true, description: 'Ciclo de 12 meses. Pix 5% OFF no pagamento do ciclo.' },
+        { id: 'plan_aulas_semestral_1x', code: 'aulas_semestral_1x', name: 'Aulas 1x por semana - Semestral', type: 'aluno', amount: 250, weeklyLessons: 1, dueDay: 10, active: true, description: 'Ciclo de 6 meses. Pix 5% OFF no pagamento do ciclo.' },
+        { id: 'plan_aulas_mensal_1x', code: 'aulas_mensal_1x', name: 'Aulas 1x por semana - Mensal', type: 'aluno', amount: 270, weeklyLessons: 1, dueDay: 10, active: true, description: 'Plano mensal de aulas uma vez por semana.' },
+        { id: 'plan_aulas_anual_2x', code: 'aulas_anual_2x', name: 'Aulas 2x por semana - Anual', type: 'aluno', amount: 350, weeklyLessons: 2, dueDay: 10, active: true, description: 'Ciclo de 12 meses. Pix 5% OFF no pagamento do ciclo.' },
+        { id: 'plan_aulas_semestral_2x', code: 'aulas_semestral_2x', name: 'Aulas 2x por semana - Semestral', type: 'aluno', amount: 370, weeklyLessons: 2, dueDay: 10, active: true, description: 'Ciclo de 6 meses. Pix 5% OFF no pagamento do ciclo.' },
+        { id: 'plan_aulas_mensal_2x', code: 'aulas_mensal_2x', name: 'Aulas 2x por semana - Mensal', type: 'aluno', amount: 390, weeklyLessons: 2, dueDay: 10, active: true, description: 'Plano mensal de aulas duas vezes por semana.' },
+        { id: 'plan_jogar_anual', code: 'jogar_anual', name: 'Somente jogar - Anual', type: 'mensalista', amount: 130, weeklyLessons: 0, dueDay: 10, active: true, description: 'Acesso mensal as quadras conforme regras do clube. Ciclo de 12 meses. Pix 5% OFF.' },
+        { id: 'plan_jogar_semestral', code: 'jogar_semestral', name: 'Somente jogar - Semestral', type: 'mensalista', amount: 140, weeklyLessons: 0, dueDay: 10, active: true, description: 'Acesso mensal as quadras conforme regras do clube. Ciclo de 6 meses. Pix 5% OFF.' },
+        { id: 'plan_jogar_mensal', code: 'jogar_mensal', name: 'Somente jogar - Mensal', type: 'mensalista', amount: 150, weeklyLessons: 0, dueDay: 10, active: true, description: 'Acesso mensal as quadras conforme regras do clube.' },
+        { id: 'plan_aula_avulsa', code: 'aula_avulsa', name: 'Aula avulsa', type: 'avulso', amount: 80, weeklyLessons: 0, dueDay: 10, active: true, description: 'Valor por aula avulsa.' },
+        { id: 'plan_familia', code: 'familia', name: 'Plano familia', type: 'outro', amount: 0, weeklyLessons: 0, dueDay: 10, active: true, description: 'Calculo com a equipe conforme quantidade de pessoas da mesma familia.' }
       ],
       students: [
         { name: 'Leandro Strelow', phone: '5527999805814', status: 'ATIVO', plan: 'Aula semanal', level: 'Intermediario', teacher: 'Renato', financial: 'OK', nextAction: 'Confirmar presenca hoje' },
