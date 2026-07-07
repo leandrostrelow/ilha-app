@@ -92,9 +92,60 @@ create table if not exists public.app_plan_requests (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.app_store_requests (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid not null references public.app_clients(id) on delete cascade,
+  product_code text not null,
+  product_name text not null,
+  quantity integer not null default 1 check (quantity > 0),
+  amount numeric(10, 2) not null default 0,
+  status text not null default 'SOLICITADO' check (status in ('SOLICITADO', 'EM_ANALISE', 'APROVADO', 'RECUSADO', 'ENTREGUE', 'CANCELADO')),
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.app_announcements (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  body text,
+  image_url text,
+  link_url text,
+  target_type text not null default 'todos' check (target_type in ('todos', 'aluno', 'mensalista', 'avulso', 'outro', 'plano')),
+  target_plan_code text,
+  active boolean not null default true,
+  published_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.app_court_bookings (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid references public.app_clients(id) on delete set null,
+  client_name text not null,
+  opponent_name text not null,
+  booking_date date not null,
+  starts_at time not null,
+  court_name text not null default 'Quadra 1',
+  status text not null default 'CONFIRMADO' check (status in ('CONFIRMADO', 'CANCELADO', 'BLOQUEADO')),
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists app_plan_requests_client_idx on public.app_plan_requests(client_id, created_at desc);
 create index if not exists app_plan_requests_status_idx on public.app_plan_requests(status, created_at desc);
 create index if not exists app_plans_active_idx on public.app_plans(active, type);
+create index if not exists app_store_requests_client_idx on public.app_store_requests(client_id, created_at desc);
+create index if not exists app_store_requests_status_idx on public.app_store_requests(status, created_at desc);
+create index if not exists app_announcements_active_idx on public.app_announcements(active, published_at desc);
+create index if not exists app_court_bookings_day_idx on public.app_court_bookings(booking_date, court_name, starts_at);
+create unique index if not exists app_court_bookings_slot_unique_idx
+  on public.app_court_bookings(booking_date, court_name, starts_at)
+  where status <> 'CANCELADO';
+create unique index if not exists app_court_bookings_client_day_unique_idx
+  on public.app_court_bookings(client_id, booking_date)
+  where client_id is not null and status <> 'CANCELADO';
 
 insert into public.app_plans (code, name, type, amount, weekly_lessons, default_due_day, active, description)
 values
@@ -493,6 +544,9 @@ alter table public.profiles enable row level security;
 alter table public.app_plans enable row level security;
 alter table public.app_clients enable row level security;
 alter table public.app_plan_requests enable row level security;
+alter table public.app_store_requests enable row level security;
+alter table public.app_announcements enable row level security;
+alter table public.app_court_bookings enable row level security;
 alter table public.teachers enable row level security;
 alter table public.students enable row level security;
 alter table public.courts enable row level security;
@@ -511,6 +565,9 @@ grant select, insert, update, delete on
   public.app_plans,
   public.app_clients,
   public.app_plan_requests,
+  public.app_store_requests,
+  public.app_announcements,
+  public.app_court_bookings,
   public.teachers,
   public.students,
   public.courts,
@@ -553,6 +610,15 @@ drop policy if exists "plan requests read own or staff" on public.app_plan_reque
 drop policy if exists "plan requests insert own" on public.app_plan_requests;
 drop policy if exists "plan requests update own draft or staff" on public.app_plan_requests;
 drop policy if exists "plan requests staff manage" on public.app_plan_requests;
+drop policy if exists "store requests read own or staff" on public.app_store_requests;
+drop policy if exists "store requests insert own" on public.app_store_requests;
+drop policy if exists "store requests staff manage" on public.app_store_requests;
+drop policy if exists "announcements read active or staff" on public.app_announcements;
+drop policy if exists "announcements staff manage" on public.app_announcements;
+drop policy if exists "court bookings read authenticated" on public.app_court_bookings;
+drop policy if exists "court bookings insert own" on public.app_court_bookings;
+drop policy if exists "court bookings update own or staff" on public.app_court_bookings;
+drop policy if exists "court bookings staff manage" on public.app_court_bookings;
 drop policy if exists "staff read teachers" on public.teachers;
 drop policy if exists "office manage teachers" on public.teachers;
 drop policy if exists "staff read students" on public.students;
@@ -625,11 +691,67 @@ on public.app_plan_requests for select
 to authenticated
 using (client_id = auth.uid() or public.is_club_staff());
 
+create policy "plan requests insert own"
+on public.app_plan_requests for insert
+to authenticated
+with check (client_id = auth.uid());
+
 create policy "plan requests staff manage"
 on public.app_plan_requests for all
 to authenticated
 using (public.is_club_office())
 with check (public.is_club_office());
+
+create policy "store requests read own or staff"
+on public.app_store_requests for select
+to authenticated
+using (client_id = auth.uid() or public.is_club_staff());
+
+create policy "store requests insert own"
+on public.app_store_requests for insert
+to authenticated
+with check (client_id = auth.uid());
+
+create policy "store requests staff manage"
+on public.app_store_requests for all
+to authenticated
+using (public.is_club_office())
+with check (public.is_club_office());
+
+create policy "announcements read active or staff"
+on public.app_announcements for select
+to authenticated
+using (active = true or public.is_club_staff());
+
+create policy "announcements staff manage"
+on public.app_announcements for all
+to authenticated
+using (public.is_club_office())
+with check (public.is_club_office());
+
+create policy "court bookings read authenticated"
+on public.app_court_bookings for select
+to authenticated
+using (status <> 'CANCELADO' or client_id = auth.uid() or public.is_club_staff());
+
+create policy "court bookings insert own"
+on public.app_court_bookings for insert
+to authenticated
+with check (
+  (client_id = auth.uid() and length(trim(opponent_name)) > 0)
+  or public.is_club_office()
+);
+
+create policy "court bookings update own or staff"
+on public.app_court_bookings for update
+to authenticated
+using (client_id = auth.uid() or public.is_club_staff())
+with check (client_id = auth.uid() or public.is_club_staff());
+
+create policy "court bookings staff manage"
+on public.app_court_bookings for delete
+to authenticated
+using (public.is_club_office());
 
 create policy "staff read teachers"
 on public.teachers for select
