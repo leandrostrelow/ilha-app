@@ -279,15 +279,6 @@
       gap: 6px;
     }
 
-    .admin-nav-group {
-      margin: 12px 8px 2px;
-      color: #8ba0a8;
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-
     .admin-nav-btn {
       width: 100%;
       min-height: 44px;
@@ -330,24 +321,6 @@
       border-top: 1px solid var(--line);
       display: grid;
       gap: 8px;
-    }
-
-    .admin-sidebar-status {
-      min-height: 52px;
-      padding: 10px;
-      border-radius: 8px;
-      background: #f5f8f9;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 800;
-      line-height: 1.35;
-    }
-
-    .admin-sidebar-status strong {
-      display: block;
-      margin-bottom: 3px;
-      color: var(--text);
-      font-size: 12px;
     }
 
     .admin-sidebar-footer a,
@@ -2766,14 +2739,11 @@
         </div>
       </div>
       <nav class="admin-sidebar-nav">
-        <div class="admin-nav-group">Comando</div>
         <button class="admin-nav-btn active" type="button" data-admin-nav="club-home"><span class="admin-nav-icon">IN</span><span>Inicio</span></button>
-        <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon">CL</span><span>Clientes do App</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon">AL</span><span>Alunos</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon">FI</span><span>Financeiro</span></button>
       </nav>
       <div class="admin-sidebar-footer">
-        <div class="admin-sidebar-status" id="adminSidebarStatus"><strong>Conectando</strong> Aguardando login da equipe.</div>
-        <a href="../clientes/" target="_blank" rel="noopener">App do cliente</a>
         <button type="button" id="sidebarLogoutBtn">Sair</button>
       </div>
     </aside>
@@ -2783,19 +2753,17 @@
         <div class="club-home-brand">
           <div>
             <h1>Painel administrativo</h1>
-            <div class="muted" id="homeCommandSummary">Clientes cadastrados pelo app e financeiro do clube.</div>
           </div>
         </div>
         <div class="club-home-actions">
-          <span class="obs-link" id="clubHomeIdentity">Admin</span>
-          <a class="obs-link" href="../clientes/" target="_blank" rel="noopener">App do cliente</a>
+          <a class="obs-link" href="../clientes/" target="_blank" rel="noopener">clientes/</a>
           <button class="ghost-btn" type="button" id="homeLogoutBtn">Sair</button>
         </div>
       </div>
 
       <div class="club-metrics">
-        <div class="club-metric"><strong id="homeClientsMetric">0</strong><span>clientes no app</span></div>
-        <div class="club-metric"><strong id="homeStudentsMetric">0</strong><span>clientes ativos</span></div>
+        <div class="club-metric"><strong id="homeClientsMetric">0</strong><span>alunos cadastrados</span></div>
+        <div class="club-metric"><strong id="homeStudentsMetric">0</strong><span>alunos ativos</span></div>
         <div class="club-metric"><strong id="homeAgendaMetric">0</strong><span>planos solicitados</span></div>
         <div class="club-metric"><strong id="homeFinanceMetric">R$ 0</strong><span>em aberto</span></div>
       </div>
@@ -2804,8 +2772,8 @@
         <section class="club-panel span-7">
           <div class="club-panel-head">
             <div>
-              <h2>Clientes cadastrados</h2>
-              <div class="muted">Contas criadas no portal de clientes.</div>
+              <h2>Alunos cadastrados</h2>
+              <div class="muted">Cadastros criados no portal.</div>
             </div>
             <button class="ghost-btn" type="button" data-admin-nav="club-clients">Abrir</button>
           </div>
@@ -2825,7 +2793,7 @@
           <div class="club-panel-head">
             <div>
               <h2>Planos solicitados</h2>
-              <div class="muted">Pedidos feitos pelos clientes dentro do portal.</div>
+              <div class="muted">Pedidos feitos dentro do portal.</div>
             </div>
           </div>
           <div class="club-feed" id="homeSystemList"></div>
@@ -2838,8 +2806,8 @@
       <div class="module-shell">
         <div class="module-head">
           <div>
-            <h1>Clientes do App</h1>
-            <div class="muted">Contas criadas no portal de clientes.</div>
+            <h1>Alunos</h1>
+            <div class="muted">Cadastros criados no portal.</div>
           </div>
           <div class="module-actions">
             <button class="ghost-btn" type="button" data-home-action>Inicio</button>
@@ -2848,7 +2816,7 @@
         </div>
         <div class="ops-content">
           <div class="ops-summary">
-            <div class="ops-card"><strong id="clientTotalMetric">0</strong><span>clientes cadastrados</span></div>
+            <div class="ops-card"><strong id="clientTotalMetric">0</strong><span>alunos cadastrados</span></div>
             <div class="ops-card"><strong id="clientActiveMetric">0</strong><span>ativos</span></div>
             <div class="ops-card"><strong id="clientPhoneMetric">0</strong><span>com WhatsApp</span></div>
             <div class="ops-card"><strong id="clientRecentMetric">0</strong><span>novos 7 dias</span></div>
@@ -2858,7 +2826,7 @@
               <div class="ops-panel-head">
                 <div>
                   <h2>Cadastros recentes</h2>
-                  <div class="muted">Novos cadastros do portal de clientes.</div>
+                  <div class="muted">Novos cadastros no portal.</div>
                 </div>
               </div>
               <div class="ops-list" id="clientList"></div>
@@ -2867,7 +2835,7 @@
               <div class="ops-panel-head">
                 <div>
                   <h2>Planos solicitados</h2>
-                  <div class="muted">Pedidos feitos pela area do cliente.</div>
+                  <div class="muted">Pedidos feitos pelo portal.</div>
                 </div>
               </div>
               <div class="ops-list" id="clientSegmentList"></div>
@@ -7074,7 +7042,7 @@
       $('homeStudentsMetric').textContent = activeClients.length;
       $('homeAgendaMetric').textContent = opsData.planRequests.length;
       $('homeFinanceMetric').textContent = money(pendingAmount);
-      $('homeCommandSummary').textContent = opsData.clients.length + ' cliente(s) no app, ' + opsData.planRequests.length + ' plano(s) solicitado(s) e ' + pendingFinance.length + ' pendencia(s) financeira(s).';
+      if ($('homeCommandSummary')) $('homeCommandSummary').textContent = '';
 
       $('homeClientsList').innerHTML = opsData.clients.slice(0, 3).map(function (client) {
         return '<article class="club-task"><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(client.email || 'Sem e-mail') + '</div><div class="ops-meta">' + statusPill(client.status) + whatsappLink(client.phone) + '</div></article>';
