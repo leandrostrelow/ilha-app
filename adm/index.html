@@ -8862,34 +8862,18 @@
       return number;
     }
 
+    function isUuid(value) {
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
+    }
+
     async function patchClientFromAdmin(client, payload) {
       if (!client || !client.id) return null;
-      try {
-        const saved = await supabaseRest('app_clients?id=eq.' + encodeURIComponent(client.id), {
-          method: 'PATCH',
-          body: payload,
-          prefer: 'return=representation'
-        });
-        return Array.isArray(saved) ? saved[0] : saved;
-      } catch (error) {
-        const basicPayload = {
-          full_name: payload.full_name,
-          phone: payload.phone,
-          cpf: payload.cpf,
-          age: payload.age,
-          guardian_name: payload.guardian_name,
-          guardian_phone: payload.guardian_phone,
-          status: payload.status,
-          client_type: payload.client_type === 'mensalista' ? 'socio' : payload.client_type,
-          notes: payload.notes
-        };
-        const saved = await supabaseRest('app_clients?id=eq.' + encodeURIComponent(client.id), {
-          method: 'PATCH',
-          body: basicPayload,
-          prefer: 'return=representation'
-        });
-        return Array.isArray(saved) ? saved[0] : saved;
-      }
+      const saved = await supabaseRest('app_clients?id=eq.' + encodeURIComponent(client.id), {
+        method: 'PATCH',
+        body: payload,
+        prefer: 'return=representation'
+      });
+      return Array.isArray(saved) ? saved[0] : saved;
     }
 
     async function saveClientModal(event) {
@@ -8931,7 +8915,7 @@
             guardian_phone: localUpdate.guardianPhone,
             status: localUpdate.status,
             client_type: localUpdate.type,
-            official_plan_id: localUpdate.officialPlanId || null,
+            official_plan_id: isUuid(localUpdate.officialPlanId) ? localUpdate.officialPlanId : null,
             official_plan_code: localUpdate.officialPlanCode,
             official_plan_name: localUpdate.officialPlanName,
             plan_amount: localUpdate.planAmount || 0,
