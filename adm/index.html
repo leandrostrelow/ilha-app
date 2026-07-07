@@ -257,15 +257,14 @@
     }
 
     .admin-sidebar-brand {
-      padding: 4px 8px 14px;
+      padding: 4px 8px 18px;
       border-bottom: 1px solid var(--line);
     }
 
     .admin-sidebar-brand img {
-      width: 132px;
+      width: 150px;
       height: auto;
       display: block;
-      margin-bottom: 16px;
     }
 
     .admin-sidebar-brand strong {
@@ -652,6 +651,7 @@
       border-radius: 8px;
       box-shadow: none;
       overflow: hidden;
+      width: 100%;
     }
 
     .module-head {
@@ -875,8 +875,8 @@
 
     .ops-summary {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
       margin-bottom: 14px;
     }
 
@@ -891,7 +891,7 @@
 
     .ops-card {
       min-height: 78px;
-      padding: 16px;
+      padding: 14px;
     }
 
     .ops-card strong {
@@ -944,6 +944,98 @@
 
     .ops-list-card {
       padding: 12px;
+    }
+
+    .ops-tabs {
+      display: flex;
+      gap: 8px;
+      margin: 0 0 14px;
+      padding-bottom: 2px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .ops-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .ops-tab-btn {
+      min-height: 38px;
+      flex: 0 0 auto;
+      border-radius: 999px;
+      padding: 8px 14px;
+      background: #edf4f6;
+      color: #385057;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .ops-tab-btn.active {
+      background: var(--dark);
+      color: #ffffff;
+    }
+
+    .ops-panel[data-finance-panel],
+    .ops-panel[data-team-panel],
+    .ops-panel[data-plan-panel] {
+      display: none;
+    }
+
+    .ops-panel.active-tab-panel {
+      display: block;
+    }
+
+    .client-card {
+      display: grid;
+      gap: 10px;
+    }
+
+    .client-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .client-card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .client-finance-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .client-finance-chip {
+      min-height: 56px;
+      display: grid;
+      gap: 4px;
+      align-content: center;
+      padding: 10px;
+      border: 1px solid #e3edf0;
+      border-radius: 8px;
+      background: #fbfdfe;
+    }
+
+    .client-finance-chip span {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .client-finance-chip strong {
+      overflow: hidden;
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .ops-list-main {
@@ -1249,8 +1341,7 @@
     }
 
     .finance-form-card {
-      position: sticky;
-      top: 84px;
+      position: static;
     }
 
     .finance-list-head {
@@ -1346,9 +1437,10 @@
     }
 
     .app {
-      width: min(1600px, 100%);
-      margin: 0 auto;
-      padding: 10px 12px;
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0;
     }
 
     .topbar {
@@ -2786,6 +2878,12 @@
       .finance-action-row {
         justify-content: flex-start;
       }
+      .client-card-top {
+        display: grid;
+      }
+      .client-card-actions {
+        justify-content: flex-start;
+      }
       .topbar { margin: -10px -10px 10px; padding: 10px; }
       .topline { align-items: flex-start; }
       .top-actions {
@@ -2876,6 +2974,9 @@
       .ops-panel-head,
       .ops-list-main {
         display: grid;
+      }
+      .client-finance-row {
+        grid-template-columns: 1fr;
       }
       .agenda-item {
         grid-template-columns: 1fr;
@@ -3137,10 +3238,6 @@
     <aside class="admin-sidebar" aria-label="Menu administrativo">
       <div class="admin-sidebar-brand">
         <img src="../logo.png" alt="Ilha Tenis" />
-        <div>
-          <strong>Gestao Clube Ilha</strong>
-          <span>Operacao do clube</span>
-        </div>
       </div>
       <nav class="admin-sidebar-nav">
         <button class="admin-nav-btn active" type="button" data-admin-nav="club-home"><span class="admin-nav-icon"><svg><use href="#admin-icon-home"></use></svg></span><span>Inicio</span></button>
@@ -3158,7 +3255,7 @@
       <div class="club-home-top">
         <div class="club-home-brand">
           <div>
-            <h1>Gestao Clube Ilha</h1>
+            <h1>Inicio</h1>
           </div>
         </div>
         <div class="club-home-actions">
@@ -3170,7 +3267,7 @@
       <section class="welcome-admin">
         <div>
           <h2>Bem-vindo ao painel do clube</h2>
-          <p>Este e o ponto de partida para acompanhar alunos cadastrados, equipe, financeiro e as proximas rotinas do Ilha Tenis.</p>
+          <p>Acompanhe alunos, equipe e financeiro em uma rotina simples para a secretaria.</p>
         </div>
         <div class="welcome-actions">
           <button class="primary-btn" type="button" data-admin-nav="club-clients">Ver alunos</button>
@@ -3187,7 +3284,7 @@
       </div>
 
       <div class="club-home-grid">
-        <section class="club-panel span-7">
+        <section class="club-panel span-12">
           <div class="club-panel-head">
             <div>
               <h2>Alunos cadastrados</h2>
@@ -3197,7 +3294,7 @@
           </div>
           <div class="club-feed" id="homeClientsList"></div>
         </section>
-        <section class="club-panel span-5">
+        <section class="club-panel span-12">
           <div class="club-panel-head">
             <div>
               <h2>Financeiro</h2>
@@ -3225,7 +3322,7 @@
         <div class="module-head">
           <div>
             <h1>Alunos</h1>
-            <div class="muted">Cadastros criados no portal.</div>
+            <div class="muted">Cadastro, plano e financeiro.</div>
           </div>
           <div class="module-actions">
             <button class="ghost-btn" type="button" data-home-action>Inicio</button>
@@ -3243,8 +3340,8 @@
             <div class="ops-panel span-12">
               <div class="ops-panel-head">
                 <div>
-                  <h2>Alunos cadastrados</h2>
-                  <div class="muted">Clique em um aluno para abrir a ficha completa.</div>
+                  <h2>Lista de alunos</h2>
+                  <div class="muted">Valor, vencimento e situacao ficam visiveis aqui.</div>
                 </div>
               </div>
               <div class="ops-list" id="clientList"></div>
@@ -3355,7 +3452,7 @@
         <div class="module-head">
           <div>
             <h1>Equipe</h1>
-            <div class="muted">Acessos internos, funcoes e permissoes do painel.</div>
+            <div class="muted">Acessos e permissoes.</div>
           </div>
           <div class="module-actions">
             <button class="ghost-btn" type="button" data-home-action>Inicio</button>
@@ -3370,12 +3467,16 @@
             <div class="ops-card"><strong id="teamTeacherMetric">0</strong><span>professores</span></div>
             <div class="ops-card"><strong id="teamActiveMetric">0</strong><span>ativos</span></div>
           </div>
+          <div class="ops-tabs" id="teamTabs" role="tablist" aria-label="Equipe">
+            <button class="ops-tab-btn active" type="button" data-team-tab="list">Acessos</button>
+            <button class="ops-tab-btn" type="button" data-team-tab="form">Novo acesso</button>
+          </div>
           <div class="ops-grid">
-            <div class="ops-panel span-5">
+            <div class="ops-panel span-12 active-tab-panel" data-team-panel="form">
               <div class="ops-panel-head">
                 <div>
                   <h2>Novo acesso</h2>
-                  <div class="muted">Use uma senha provisoria e depois a pessoa altera.</div>
+                  <div class="muted">Cadastre a pessoa e escolha as permissoes.</div>
                 </div>
               </div>
               <form class="form-grid" id="teamForm">
@@ -3403,22 +3504,25 @@
                   <label for="teamNotes">Observacoes</label>
                   <textarea id="teamNotes" placeholder="Ex.: horarios, escopo de trabalho, limite de acesso."></textarea>
                 </div>
+                <div class="field full">
+                  <button class="primary-btn" type="submit">Salvar acesso</button>
+                </div>
               </form>
             </div>
-            <div class="ops-panel span-7">
+            <div class="ops-panel span-12 active-tab-panel" data-team-panel="form">
               <div class="ops-panel-head">
                 <div>
                   <h2>Permissoes</h2>
-                  <div class="muted">Base completa para separar secretaria, professores e financeiro.</div>
+                  <div class="muted">Defina o que cada pessoa pode operar.</div>
                 </div>
               </div>
               <div class="team-permission-grid" id="teamPermissionGrid"></div>
             </div>
-            <div class="ops-panel span-12">
+            <div class="ops-panel span-12 active-tab-panel" data-team-panel="list">
               <div class="ops-panel-head">
                 <div>
                   <h2>Acessos cadastrados</h2>
-                  <div class="muted">Equipe liberada para operar o clube.</div>
+                  <div class="muted">Equipe liberada no painel.</div>
                 </div>
               </div>
               <div class="ops-list" id="teamList"></div>
@@ -3433,7 +3537,7 @@
         <div class="module-head">
           <div>
             <h1>Banco de dados</h1>
-            <div class="muted">Planos oficiais que podem ser vinculados manualmente aos alunos.</div>
+            <div class="muted">Planos oficiais do clube.</div>
           </div>
           <div class="module-actions">
             <button class="ghost-btn" type="button" data-home-action>Inicio</button>
@@ -3448,12 +3552,16 @@
             <div class="ops-card"><strong id="planLessonMetric">0</strong><span>aulas</span></div>
             <div class="ops-card"><strong id="planMemberMetric">0</strong><span>mensalistas</span></div>
           </div>
+          <div class="ops-tabs" id="planTabs" role="tablist" aria-label="Banco de dados">
+            <button class="ops-tab-btn active" type="button" data-plan-tab="list">Planos</button>
+            <button class="ops-tab-btn" type="button" data-plan-tab="form">Novo / editar</button>
+          </div>
           <div class="ops-grid">
-            <div class="ops-panel span-5">
+            <div class="ops-panel span-12" data-plan-panel="form">
               <div class="ops-panel-head">
                 <div>
                   <h2>Cadastro do plano</h2>
-                  <div class="muted">Edite valores, tipo, frequencia e regras.</div>
+                  <div class="muted">Valor, vencimento, tipo e regras.</div>
                 </div>
               </div>
               <form class="form-grid" id="planForm">
@@ -3503,11 +3611,11 @@
                 </div>
               </form>
             </div>
-            <div class="ops-panel span-7">
+            <div class="ops-panel span-12 active-tab-panel" data-plan-panel="list">
               <div class="ops-panel-head">
                 <div>
                   <h2>Planos do clube</h2>
-                  <div class="muted">Base usada para vincular planos aos alunos no admin.</div>
+                  <div class="muted">Planos usados na ficha dos alunos.</div>
                 </div>
               </div>
               <div class="ops-list" id="planList"></div>
@@ -3641,7 +3749,7 @@
         <div class="module-head">
           <div>
             <h1>Financeiro</h1>
-            <div class="muted">Mensalidades, aulas, despesas e caixa do clube.</div>
+            <div class="muted">Caixa, recebiveis e despesas.</div>
           </div>
           <div class="module-actions">
             <button class="ghost-btn" type="button" data-home-action>Inicio</button>
@@ -3656,12 +3764,17 @@
             <div class="ops-card"><strong id="financePayableMetric">R$ 0</strong><span>a pagar</span></div>
             <div class="ops-card"><strong id="financeOverdueMetric">0</strong><span>vencidos</span></div>
           </div>
+          <div class="ops-tabs" id="financeSectionTabs" role="tablist" aria-label="Financeiro">
+            <button class="ops-tab-btn active" type="button" data-finance-view="list">Movimentacao</button>
+            <button class="ops-tab-btn" type="button" data-finance-view="form">Lancar</button>
+            <button class="ops-tab-btn" type="button" data-finance-view="due">Vencidos</button>
+          </div>
           <div class="ops-grid finance-workspace">
-            <div class="ops-panel span-4 finance-form-card">
+            <div class="ops-panel span-12 finance-form-card" data-finance-panel="form">
               <div class="ops-panel-head">
                 <div>
-                  <h2>Lancamento rapido</h2>
-                  <div class="muted">Use para mensalidade, aula avulsa, loja ou despesa.</div>
+                  <h2>Novo lancamento</h2>
+                  <div class="muted">Receita ou despesa do clube.</div>
                 </div>
               </div>
               <form class="form-grid" id="financeForm">
@@ -3729,7 +3842,7 @@
                 </div>
               </form>
             </div>
-            <div class="ops-panel span-8">
+            <div class="ops-panel span-12 active-tab-panel" data-finance-panel="list">
               <div class="finance-list-head">
                 <div class="finance-list-title">
                   <strong>Movimentacao</strong>
@@ -3739,20 +3852,20 @@
               </div>
               <div class="ops-list" id="financeRows"></div>
             </div>
-            <div class="ops-panel span-6">
+            <div class="ops-panel span-6" data-finance-panel="due">
               <div class="ops-panel-head">
                 <div>
                   <h2>Vencidos</h2>
-                  <div class="muted">O que precisa de acao agora.</div>
+                  <div class="muted">O que precisa de acao.</div>
                 </div>
               </div>
               <div class="finance-mini-list" id="financeOverdueList"></div>
             </div>
-            <div class="ops-panel span-6">
+            <div class="ops-panel span-6" data-finance-panel="due">
               <div class="ops-panel-head">
                 <div>
                   <h2>Proximos 7 dias</h2>
-                  <div class="muted">Contas que estao chegando.</div>
+                  <div class="muted">Contas chegando.</div>
                 </div>
               </div>
               <div class="finance-mini-list" id="financeUpcomingList"></div>
@@ -7559,6 +7672,9 @@
       studentStatus: 'todos',
       agendaType: 'todos',
       financeFilter: 'abertos',
+      financeView: 'list',
+      teamTab: 'list',
+      planTab: 'list',
       selectedClientId: null,
       editingPlanId: null,
       loaded: false
@@ -7661,13 +7777,23 @@
       });
     }
 
+    function setPanelTabs(buttonSelector, panelSelector, activeValue, panelAttr) {
+      document.querySelectorAll(buttonSelector).forEach(function (btn) {
+        const value = btn.dataset.financeView || btn.dataset.teamTab || btn.dataset.planTab;
+        btn.classList.toggle('active', value === activeValue);
+      });
+      document.querySelectorAll(panelSelector).forEach(function (panel) {
+        panel.classList.toggle('active-tab-panel', panel.getAttribute(panelAttr) === activeValue);
+      });
+    }
+
     function money(value) {
       return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     }
 
     function statusPill(status) {
       const value = String(status || '').toUpperCase();
-      const kind = value === 'OK' || value === 'RECEBIDO' || value === 'CONFIRMADO' || value === 'ATIVO' || value === 'PAGO' ? 'good' : (value === 'VENCIDO' || value === 'PENDENTE' || value === 'BLOQUEADO' || value === 'INATIVO' ? 'bad' : 'warn');
+      const kind = value === 'OK' || value === 'EM DIA' || value === 'RECEBIDO' || value === 'CONFIRMADO' || value === 'ATIVO' || value === 'PAGO' ? 'good' : (value === 'VENCIDO' || value === 'PENDENTE' || value === 'BLOQUEADO' || value === 'INATIVO' ? 'bad' : 'warn');
       return '<span class="ops-pill ' + kind + '">' + escapeHtml(status) + '</span>';
     }
 
@@ -7949,6 +8075,43 @@
       });
     }
 
+    function normalizeMatchText(value) {
+      return String(value || '').trim().toLowerCase();
+    }
+
+    function findClientPlan(client) {
+      return findPlanByValue(client.officialPlanId || client.officialPlanCode || client.officialPlanName || '');
+    }
+
+    function financeBelongsToClient(item, client) {
+      const targetName = normalizeMatchText(client.name);
+      const targetEmail = normalizeMatchText(client.email);
+      const counterparty = normalizeMatchText(item.counterparty || item.student || '');
+      if (!counterparty) return false;
+      return Boolean((targetEmail && counterparty === targetEmail) || (targetName && counterparty === targetName));
+    }
+
+    function clientFinanceSummary(client) {
+      const plan = findClientPlan(client);
+      const request = findClientRequest(client);
+      const rows = opsData.finance.filter(function (item) { return financeBelongsToClient(item, client); });
+      const openRows = rows.filter(function (item) { return !isFinancePaid(item); });
+      const overdueRows = openRows.filter(isFinanceOverdue);
+      const nextOpen = sortFinanceRows(openRows)[0];
+      const amount = Number(client.planAmount || 0) || Number(plan && plan.amount || 0) || Number(request && request.amount || 0) || Number(nextOpen && nextOpen.amount || 0);
+      const dueDay = client.dueDay || plan && plan.dueDay || request && request.preferredDueDay || (nextOpen && nextOpen.due ? Number(String(nextOpen.due).slice(-2)) : '');
+      let status = 'EM DIA';
+      if (overdueRows.length) status = 'VENCIDO';
+      else if (openRows.length) status = 'ABERTO';
+      if (client.status === 'PENDENTE' || client.status === 'BLOQUEADO') status = client.status;
+      return {
+        amount: amount,
+        dueDay: dueDay,
+        status: status,
+        planName: client.officialPlanName || plan && plan.name || request && request.plan || 'Sem plano'
+      };
+    }
+
     function renderWeekdayInputs(containerId, selectedDays) {
       const selected = new Set(Array.isArray(selectedDays) ? selectedDays : []);
       $(containerId).innerHTML = weekDays.map(function (day) {
@@ -8032,17 +8195,25 @@
       if (!opsState.selectedClientId && opsData.clients[0]) opsState.selectedClientId = opsData.clients[0].id || opsData.clients[0].email;
       $('clientList').innerHTML = opsData.clients.map(function (client) {
         const created = client.created ? new Date(client.created).toLocaleDateString('pt-BR') : 'Sem data';
-        const extra = [
+        const summary = clientFinanceSummary(client);
+        const contact = [
           client.email,
-          client.officialPlanName ? 'Plano ' + client.officialPlanName : 'sem plano oficial',
-          client.dueDay ? 'vence dia ' + client.dueDay : '',
-          client.age ? client.age + ' anos' : '',
-          client.cpf ? 'CPF ' + client.cpf : '',
-          client.guardian ? 'Resp. ' + client.guardian : '',
-          'cadastrado em ' + created
+          client.phone || client.guardianPhone,
+          'desde ' + created
         ].filter(Boolean).join(' | ');
         const key = client.id || client.email || client.name;
-        return '<article class="ops-list-card"><div class="ops-list-main"><div class="client-line">' + clientAvatar(client) + '<div><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(extra) + '</div></div></div><div class="ops-meta">' + statusPill(client.status) + '<span class="ops-pill">' + escapeHtml(client.type) + '</span>' + whatsappLink(client.phone || client.guardianPhone) + '<button class="small-btn" type="button" data-client-open="' + escapeHtml(key) + '">Abrir</button></div></div></article>';
+        return '<article class="ops-list-card client-card">' +
+          '<div class="client-card-top">' +
+            '<div class="client-line">' + clientAvatar(client) + '<div><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(contact) + '</div></div></div>' +
+            '<div class="client-card-actions">' + statusPill(client.status) + whatsappLink(client.phone || client.guardianPhone) + '<button class="small-btn" type="button" data-client-open="' + escapeHtml(key) + '">Abrir ficha</button></div>' +
+          '</div>' +
+          '<div class="client-finance-row">' +
+            '<div class="client-finance-chip"><span>Plano</span><strong>' + escapeHtml(summary.planName) + '</strong></div>' +
+            '<div class="client-finance-chip"><span>Valor</span><strong>' + money(summary.amount || 0) + '</strong></div>' +
+            '<div class="client-finance-chip"><span>Vencimento</span><strong>' + (summary.dueDay ? 'Dia ' + escapeHtml(summary.dueDay) : 'A definir') + '</strong></div>' +
+            '<div class="client-finance-chip"><span>Situacao</span><strong>' + escapeHtml(summary.status) + '</strong></div>' +
+          '</div>' +
+          '</article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum cliente cadastrado ainda.</div>';
 
     }
@@ -8110,6 +8281,7 @@
 
     function renderTeamModule() {
       renderTeamPermissions($('teamRole') ? $('teamRole').value : 'secretaria');
+      setPanelTabs('[data-team-tab]', '[data-team-panel]', opsState.teamTab, 'data-team-panel');
       $('teamTotalMetric').textContent = opsData.team.length;
       $('teamAdminMetric').textContent = opsData.team.filter(function (member) { return member.role === 'admin'; }).length;
       $('teamTeacherMetric').textContent = opsData.team.filter(function (member) { return member.role === 'professor'; }).length;
@@ -8151,6 +8323,7 @@
     }
 
     function renderPlansModule() {
+      setPanelTabs('[data-plan-tab]', '[data-plan-panel]', opsState.planTab, 'data-plan-panel');
       $('planTotalMetric').textContent = opsData.plans.length;
       $('planActiveMetric').textContent = opsData.plans.filter(function (plan) { return plan.active !== false; }).length;
       $('planLessonMetric').textContent = opsData.plans.filter(function (plan) { return plan.type === 'aluno'; }).length;
@@ -8224,6 +8397,7 @@
         if (index >= 0) opsData.plans.splice(index, 1, finalPlan);
         else opsData.plans.unshift(finalPlan);
         resetPlanForm();
+        opsState.planTab = 'list';
         renderPlansModule();
         toast(savedLocally ? 'Plano salvo nesta tela. Aplique o SQL para gravar no Supabase.' : 'Plano salvo.');
       } catch (error) {
@@ -8306,6 +8480,7 @@
     }
 
     function renderFinanceModule() {
+      setPanelTabs('[data-finance-view]', '[data-finance-panel]', opsState.financeView, 'data-finance-panel');
       const receivables = opsData.finance.filter(function (item) { return item.type !== 'DESPESA'; });
       const payables = opsData.finance.filter(function (item) { return item.type === 'DESPESA'; });
       const received = receivables.filter(isFinancePaid).reduce(function (sum, item) { return sum + item.amount; }, 0);
@@ -8853,6 +9028,7 @@
         if (isAdminDemoMode()) {
           opsData.team.unshift(localMember);
           $('teamForm').reset();
+          opsState.teamTab = 'list';
           renderTeamModule();
           toast('Acesso demo criado.');
           return;
@@ -8876,6 +9052,7 @@
         }
         opsData.team.unshift(savedProfile ? mapProfileRow(savedProfile) : localMember);
         $('teamForm').reset();
+        opsState.teamTab = 'list';
         renderTeamModule();
         toast('Acesso criado para a equipe.');
       } catch (error) {
@@ -9117,6 +9294,8 @@
 
     function focusFinanceFormAction() {
       resetFinanceForm();
+      opsState.financeView = 'form';
+      renderFinanceModule();
       $('financeDescription').focus();
       toast('Preencha o lancamento financeiro.');
     }
@@ -9156,6 +9335,7 @@
         if (isAdminDemoMode()) {
           opsData.finance.unshift(localItem);
           resetFinanceForm();
+          opsState.financeView = 'list';
           renderFinanceModule();
           renderHomeDashboard();
           toast('Lancamento criado na demonstracao.');
@@ -9183,6 +9363,7 @@
         }
         opsData.finance.push(mapFinanceRow(inserted));
         resetFinanceForm();
+        opsState.financeView = 'list';
         renderFinanceModule();
         renderHomeDashboard();
         toast('Lancamento salvo no Supabase.');
@@ -9629,23 +9810,45 @@
         renderTeamPermissions(this.value);
       });
       $('teamForm').addEventListener('submit', createTeamAction);
-      $('teamCreateBtn').addEventListener('click', createTeamAction);
+      $('teamCreateBtn').addEventListener('click', function () {
+        opsState.teamTab = 'form';
+        renderTeamModule();
+        $('teamName').focus();
+      });
       $('teamReloadBtn').addEventListener('click', function () {
         loadOpsData(true).then(renderTeamModule).catch(reportActionError);
+      });
+      $('teamModule').addEventListener('click', function (event) {
+        const tabBtn = event.target.closest('[data-team-tab]');
+        if (!tabBtn) return;
+        opsState.teamTab = tabBtn.dataset.teamTab;
+        renderTeamModule();
       });
       $('planForm').addEventListener('submit', savePlanAction);
       $('planNewBtn').addEventListener('click', function () {
         resetPlanForm();
+        opsState.planTab = 'form';
+        renderPlansModule();
         $('planName').focus();
       });
       $('plansReloadBtn').addEventListener('click', function () {
         loadOpsData(true).then(renderPlansModule).catch(reportActionError);
       });
-      $('planList').addEventListener('click', function (event) {
+      $('databaseModule').addEventListener('click', function (event) {
+        const tabBtn = event.target.closest('[data-plan-tab]');
+        if (tabBtn) {
+          opsState.planTab = tabBtn.dataset.planTab;
+          renderPlansModule();
+          return;
+        }
         const editBtn = event.target.closest('[data-plan-edit]');
         if (!editBtn) return;
         const plan = findPlanByValue(editBtn.dataset.planEdit);
-        if (plan) fillPlanForm(plan);
+        if (plan) {
+          fillPlanForm(plan);
+          opsState.planTab = 'form';
+          renderPlansModule();
+        }
       });
       $('lessonsBackBtn').addEventListener('click', showClubHome);
       $('lessonsReloadBtn').addEventListener('click', function () {
@@ -9694,6 +9897,12 @@
         }
       });
       $('financeModule').addEventListener('click', function (event) {
+        const viewBtn = event.target.closest('[data-finance-view]');
+        if (viewBtn) {
+          opsState.financeView = viewBtn.dataset.financeView;
+          renderFinanceModule();
+          return;
+        }
         const filterBtn = event.target.closest('[data-finance-filter]');
         if (filterBtn) {
           opsState.financeFilter = filterBtn.dataset.financeFilter;
