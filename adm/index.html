@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Ilha | Gestao do Clube</title>
+  <title>Gestao Clube Ilha</title>
   <style>
     :root {
       --bg: #eef3f5;
@@ -81,6 +81,9 @@
     body.club-clients .club-home,
     body.club-clients .topbar,
     body.club-clients .section,
+    body.club-team .club-home,
+    body.club-team .topbar,
+    body.club-team .section,
     body.club-tournament .lessons-module,
     body.club-home .lessons-module,
     body.club-home .ops-module,
@@ -97,7 +100,8 @@
     body.club-agenda .agenda-module,
     body.club-finance .finance-module,
     body.club-communication .communication-module,
-    body.club-clients .clients-module {
+    body.club-clients .clients-module,
+    body.club-team .team-module {
       display: block;
     }
 
@@ -310,6 +314,17 @@
       font-size: 13px;
     }
 
+    .admin-nav-icon svg {
+      width: 17px;
+      height: 17px;
+      display: block;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
     .admin-nav-btn.active .admin-nav-icon,
     .admin-nav-btn:hover .admin-nav-icon {
       background: #dfecef;
@@ -493,6 +508,41 @@
       justify-content: flex-end;
       gap: 8px;
       flex-wrap: wrap;
+    }
+
+    .welcome-admin {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      margin-bottom: 14px;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(181, 229, 0, .14), transparent 36%),
+        #ffffff;
+    }
+
+    .welcome-admin h2 {
+      margin: 0 0 8px;
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.04;
+    }
+
+    .welcome-admin p {
+      max-width: 660px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+      font-weight: 800;
+    }
+
+    .welcome-actions {
+      display: grid;
+      gap: 8px;
+      min-width: 180px;
     }
 
     .club-metrics {
@@ -985,6 +1035,103 @@
       font-size: 11px;
       font-weight: 900;
       text-transform: uppercase;
+    }
+
+    .client-detail-grid,
+    .team-permission-grid,
+    .cashflow-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .client-detail-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .detail-item {
+      min-height: 58px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fbfc;
+    }
+
+    .detail-item span {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .detail-item strong {
+      display: block;
+      overflow-wrap: anywhere;
+      font-size: 14px;
+    }
+
+    .team-permission-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .permission-card {
+      min-height: 76px;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .permission-card label {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 0;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: none;
+    }
+
+    .permission-card input {
+      width: auto;
+      min-height: auto;
+      margin-top: 2px;
+    }
+
+    .permission-card small {
+      display: block;
+      margin: 6px 0 0 24px;
+      color: var(--muted);
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .cashflow-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .cashflow-card {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fbfc;
+    }
+
+    .cashflow-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .cashflow-card strong {
+      display: block;
+      margin-top: 7px;
+      color: var(--teal);
+      font-size: 22px;
+      line-height: 1;
     }
 
     .agenda-timeline {
@@ -2406,6 +2553,12 @@
       .club-home-top {
         grid-template-columns: 1fr;
       }
+      .welcome-admin {
+        grid-template-columns: 1fr;
+      }
+      .welcome-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
       .club-home-actions {
         justify-content: flex-start;
       }
@@ -2443,6 +2596,11 @@
       .ops-panel.span-8,
       .ops-panel.span-12 {
         grid-column: span 12;
+      }
+      .client-detail-grid,
+      .team-permission-grid,
+      .cashflow-grid {
+        grid-template-columns: 1fr;
       }
       .topbar { margin: -10px -10px 10px; padding: 10px; }
       .topline { align-items: flex-start; }
@@ -2493,6 +2651,12 @@
     @media (max-width: 520px) {
       .club-home-top {
         padding: 14px;
+      }
+      .welcome-admin {
+        padding: 16px;
+      }
+      .welcome-actions {
+        grid-template-columns: 1fr;
       }
       .club-home-brand {
         align-items: flex-start;
@@ -2737,10 +2901,34 @@
   </style>
 </head>
 <body class="adm-locked">
+  <svg aria-hidden="true" style="display:none">
+    <symbol id="admin-icon-home" viewBox="0 0 24 24">
+      <path d="M3 11.5 12 4l9 7.5" />
+      <path d="M5.5 10.5V20h13v-9.5" />
+      <path d="M9.5 20v-6h5v6" />
+    </symbol>
+    <symbol id="admin-icon-users" viewBox="0 0 24 24">
+      <path d="M16 20c0-2.7-1.8-5-4-5s-4 2.3-4 5" />
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 18c.4-1.8 1.6-3.2 3.2-3.9" />
+      <path d="M20 18c-.4-1.8-1.6-3.2-3.2-3.9" />
+    </symbol>
+    <symbol id="admin-icon-wallet" viewBox="0 0 24 24">
+      <path d="M4 7h16v12H4z" />
+      <path d="M4 7l3-3h10l3 3" />
+      <path d="M15 13h5" />
+    </symbol>
+    <symbol id="admin-icon-team" viewBox="0 0 24 24">
+      <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+      <path d="M5 21c.7-4 3-6 7-6s6.3 2 7 6" />
+      <path d="M18 8h3M19.5 6.5v3" />
+    </symbol>
+  </svg>
+
   <main class="adm-login" id="adminLogin">
     <form class="adm-login-card" id="adminLoginForm">
       <img src="../logo.png" alt="Ilha Tenis" />
-      <h1>Admin Ilha</h1>
+      <h1>Gestao Clube Ilha</h1>
       <p>Acesse a gestao do clube com seu e-mail de equipe.</p>
       <label for="adminUser">E-mail</label>
       <input id="adminUser" type="email" autocomplete="username" inputmode="email" placeholder="voce@ilhatenis.com" required />
@@ -2761,14 +2949,15 @@
       <div class="admin-sidebar-brand">
         <img src="../logo.png" alt="Ilha Tenis" />
         <div>
-          <strong>Admin Ilha</strong>
-          <span>Gestao do clube</span>
+          <strong>Gestao Clube Ilha</strong>
+          <span>Operacao do clube</span>
         </div>
       </div>
       <nav class="admin-sidebar-nav">
-        <button class="admin-nav-btn active" type="button" data-admin-nav="club-home"><span class="admin-nav-icon">IN</span><span>Inicio</span></button>
-        <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon">AL</span><span>Alunos</span></button>
-        <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon">FI</span><span>Financeiro</span></button>
+        <button class="admin-nav-btn active" type="button" data-admin-nav="club-home"><span class="admin-nav-icon"><svg><use href="#admin-icon-home"></use></svg></span><span>Inicio</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon"><svg><use href="#admin-icon-users"></use></svg></span><span>Alunos</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-team"><span class="admin-nav-icon"><svg><use href="#admin-icon-team"></use></svg></span><span>Equipe</span></button>
       </nav>
       <div class="admin-sidebar-footer">
         <button type="button" id="sidebarLogoutBtn">Sair</button>
@@ -2779,7 +2968,7 @@
       <div class="club-home-top">
         <div class="club-home-brand">
           <div>
-            <h1>Painel administrativo</h1>
+            <h1>Gestao Clube Ilha</h1>
           </div>
         </div>
         <div class="club-home-actions">
@@ -2787,6 +2976,18 @@
           <button class="ghost-btn" type="button" id="homeLogoutBtn">Sair</button>
         </div>
       </div>
+
+      <section class="welcome-admin">
+        <div>
+          <h2>Bem-vindo ao painel do clube</h2>
+          <p>Este e o ponto de partida para acompanhar alunos cadastrados, equipe, financeiro e as proximas rotinas do Ilha Tenis.</p>
+        </div>
+        <div class="welcome-actions">
+          <button class="primary-btn" type="button" data-admin-nav="club-clients">Ver alunos</button>
+          <button class="ghost-btn" type="button" data-admin-nav="club-team">Equipe</button>
+          <button class="ghost-btn" type="button" data-admin-nav="club-finance">Financeiro</button>
+        </div>
+      </section>
 
       <div class="club-metrics">
         <div class="club-metric"><strong id="homeClientsMetric">0</strong><span>alunos cadastrados</span></div>
@@ -2849,16 +3050,16 @@
             <div class="ops-card"><strong id="clientRecentMetric">0</strong><span>novos 7 dias</span></div>
           </div>
           <div class="ops-grid">
-            <div class="ops-panel span-8">
+            <div class="ops-panel span-7">
               <div class="ops-panel-head">
                 <div>
                   <h2>Cadastros recentes</h2>
-                  <div class="muted">Novos cadastros no portal.</div>
+                  <div class="muted">Clique em um aluno para abrir a ficha completa.</div>
                 </div>
               </div>
               <div class="ops-list" id="clientList"></div>
             </div>
-            <div class="ops-panel span-4">
+            <div class="ops-panel span-5">
               <div class="ops-panel-head">
                 <div>
                   <h2>Planos solicitados</h2>
@@ -2866,6 +3067,93 @@
                 </div>
               </div>
               <div class="ops-list" id="clientSegmentList"></div>
+            </div>
+            <div class="ops-panel span-12">
+              <div class="ops-panel-head">
+                <div>
+                  <h2>Ficha do aluno</h2>
+                  <div class="muted">Dados pessoais, responsavel, contato e historico inicial.</div>
+                </div>
+              </div>
+              <div id="clientDetailPanel"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ops-module team-module" id="teamModule">
+      <div class="module-shell">
+        <div class="module-head">
+          <div>
+            <h1>Equipe</h1>
+            <div class="muted">Acessos internos, funcoes e permissoes do painel.</div>
+          </div>
+          <div class="module-actions">
+            <button class="ghost-btn" type="button" data-home-action>Inicio</button>
+            <button class="ghost-btn" type="button" id="teamReloadBtn">Recarregar</button>
+            <button class="primary-btn" type="button" id="teamCreateBtn">Criar acesso</button>
+          </div>
+        </div>
+        <div class="ops-content">
+          <div class="ops-summary">
+            <div class="ops-card"><strong id="teamTotalMetric">0</strong><span>pessoas na equipe</span></div>
+            <div class="ops-card"><strong id="teamAdminMetric">0</strong><span>admins</span></div>
+            <div class="ops-card"><strong id="teamTeacherMetric">0</strong><span>professores</span></div>
+            <div class="ops-card"><strong id="teamActiveMetric">0</strong><span>ativos</span></div>
+          </div>
+          <div class="ops-grid">
+            <div class="ops-panel span-5">
+              <div class="ops-panel-head">
+                <div>
+                  <h2>Novo acesso</h2>
+                  <div class="muted">Use uma senha provisoria e depois a pessoa altera.</div>
+                </div>
+              </div>
+              <form class="form-grid" id="teamForm">
+                <div class="field full">
+                  <label for="teamName">Nome</label>
+                  <input id="teamName" placeholder="Nome da pessoa" />
+                </div>
+                <div class="field full">
+                  <label for="teamEmail">E-mail</label>
+                  <input id="teamEmail" type="email" inputmode="email" autocomplete="off" placeholder="equipe@ilhatenis.com" />
+                </div>
+                <div class="field">
+                  <label for="teamPassword">Senha provisoria</label>
+                  <input id="teamPassword" type="password" autocomplete="new-password" placeholder="minimo 6 caracteres" />
+                </div>
+                <div class="field">
+                  <label for="teamRole">Funcao</label>
+                  <select id="teamRole">
+                    <option value="secretaria">Secretaria</option>
+                    <option value="professor">Professor</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div class="field full">
+                  <label for="teamNotes">Observacoes</label>
+                  <textarea id="teamNotes" placeholder="Ex.: horarios, escopo de trabalho, limite de acesso."></textarea>
+                </div>
+              </form>
+            </div>
+            <div class="ops-panel span-7">
+              <div class="ops-panel-head">
+                <div>
+                  <h2>Permissoes</h2>
+                  <div class="muted">Base completa para separar secretaria, professores e financeiro.</div>
+                </div>
+              </div>
+              <div class="team-permission-grid" id="teamPermissionGrid"></div>
+            </div>
+            <div class="ops-panel span-12">
+              <div class="ops-panel-head">
+                <div>
+                  <h2>Acessos cadastrados</h2>
+                  <div class="muted">Equipe liberada para operar o clube.</div>
+                </div>
+              </div>
+              <div class="ops-list" id="teamList"></div>
             </div>
           </div>
         </div>
@@ -2996,7 +3284,7 @@
         <div class="module-head">
           <div>
             <h1>Financeiro</h1>
-            <div class="muted">Recebiveis, pagamentos e pendencias.</div>
+            <div class="muted">Fluxo de caixa, contas a receber, contas a pagar e pendencias.</div>
           </div>
           <div class="module-actions">
             <button class="ghost-btn" type="button" data-home-action>Inicio</button>
@@ -3012,21 +3300,48 @@
             <div class="ops-card"><strong id="financeOverdueMetric">0</strong><span>vencidos</span></div>
           </div>
           <div class="ops-grid">
-            <div class="ops-panel span-7 table-scroll">
+            <div class="ops-panel span-12">
               <div class="ops-panel-head">
                 <div>
-                  <h2>Lancamentos</h2>
-                  <div class="muted">Movimentacao financeira do clube.</div>
+                  <h2>Fluxo de caixa</h2>
+                  <div class="muted">Leitura rapida do caixa do clube.</div>
+                </div>
+              </div>
+              <div class="cashflow-grid" id="cashflowGrid"></div>
+            </div>
+            <div class="ops-panel span-6">
+              <div class="ops-panel-head">
+                <div>
+                  <h2>Contas a receber</h2>
+                  <div class="muted">Mensalidades, aulas, loja e torneios.</div>
+                </div>
+              </div>
+              <div class="ops-list" id="financeReceivableList"></div>
+            </div>
+            <div class="ops-panel span-6">
+              <div class="ops-panel-head">
+                <div>
+                  <h2>Contas a pagar</h2>
+                  <div class="muted">Fornecedores, equipe, manutencao e operacao.</div>
+                </div>
+              </div>
+              <div class="ops-list" id="financePayableList"></div>
+            </div>
+            <div class="ops-panel span-8 table-scroll">
+              <div class="ops-panel-head">
+                <div>
+                  <h2>Todos os lancamentos</h2>
+                  <div class="muted">Movimentacao completa do clube.</div>
                 </div>
               </div>
               <table class="ops-table">
                 <thead>
-                  <tr><th>Cliente</th><th>Origem</th><th>Valor</th><th>Vencimento</th><th>Status</th></tr>
+                  <tr><th>Tipo</th><th>Cliente/Fornecedor</th><th>Origem</th><th>Valor</th><th>Vencimento</th><th>Status</th></tr>
                 </thead>
                 <tbody id="financeRows"></tbody>
               </table>
             </div>
-            <div class="ops-panel span-5">
+            <div class="ops-panel span-4">
               <h2>Resumo por categoria</h2>
               <div class="ops-list" id="financeCategoryList"></div>
             </div>
@@ -6831,7 +7146,27 @@
     const opsState = {
       studentStatus: 'todos',
       agendaType: 'todos',
+      selectedClientId: null,
       loaded: false
+    };
+
+    const teamPermissionCatalog = [
+      { key: 'dashboard', label: 'Inicio e indicadores', detail: 'Visualizar resumo geral e alertas do clube.' },
+      { key: 'clients.read', label: 'Ver alunos', detail: 'Consultar cadastros, contatos, responsaveis e planos.' },
+      { key: 'clients.write', label: 'Editar alunos', detail: 'Atualizar dados cadastrais e observacoes.' },
+      { key: 'plans', label: 'Planos', detail: 'Acompanhar e aprovar solicitacoes de planos.' },
+      { key: 'finance.read', label: 'Ver financeiro', detail: 'Consultar fluxo de caixa e faturas.' },
+      { key: 'finance.write', label: 'Gerenciar financeiro', detail: 'Criar contas a pagar, receber e baixar pagamentos.' },
+      { key: 'classes', label: 'Aulas e agenda', detail: 'Gerenciar horarios, presenca e agenda de quadras.' },
+      { key: 'tournaments', label: 'Torneios', detail: 'Organizar inscricoes, chaves, agenda e resultados.' },
+      { key: 'communication', label: 'Comunicacao', detail: 'Enviar avisos, campanhas e mensagens.' },
+      { key: 'team', label: 'Equipe e acessos', detail: 'Criar usuarios e alterar permissoes.' }
+    ];
+
+    const roleDefaultPermissions = {
+      admin: teamPermissionCatalog.map(function (item) { return item.key; }),
+      secretaria: ['dashboard', 'clients.read', 'clients.write', 'plans', 'finance.read', 'finance.write', 'classes', 'communication'],
+      professor: ['dashboard', 'clients.read', 'classes', 'communication']
     };
 
     const opsData = {
@@ -6857,11 +7192,16 @@
         { time: '20:00', title: 'Bloqueio manutencao luz', type: 'manutencao', court: 'Quadra 2', owner: 'Operacao', status: 'Atencao' }
       ],
       finance: [
-        { student: 'Leandro Strelow', source: 'Mensalidade aulas', amount: 220, due: '2026-06-30', status: 'RECEBIDO', category: 'Aulas' },
-        { student: 'Evandro Ferraco', source: 'Mensalidade aulas', amount: 220, due: '2026-06-20', status: 'VENCIDO', category: 'Aulas' },
-        { student: 'Gabriela', source: 'Kids 2x semana', amount: 360, due: '2026-06-30', status: 'ABERTO', category: 'Aulas' },
-        { student: 'Davi', source: 'Aula experimental', amount: 80, due: '2026-06-22', status: 'ABERTO', category: 'Aulas' },
-        { student: 'Ilha Store', source: 'Bolinhas e encordoamento', amount: 160, due: '2026-06-22', status: 'RECEBIDO', category: 'Loja' }
+        { student: 'Leandro Strelow', source: 'Mensalidade aulas', type: 'RECEITA', amount: 220, due: '2026-06-30', status: 'RECEBIDO', category: 'Aulas' },
+        { student: 'Evandro Ferraco', source: 'Mensalidade aulas', type: 'RECEITA', amount: 220, due: '2026-06-20', status: 'VENCIDO', category: 'Aulas' },
+        { student: 'Gabriela', source: 'Kids 2x semana', type: 'RECEITA', amount: 360, due: '2026-06-30', status: 'ABERTO', category: 'Aulas' },
+        { student: 'Davi', source: 'Aula experimental', type: 'RECEITA', amount: 80, due: '2026-06-22', status: 'ABERTO', category: 'Aulas' },
+        { student: 'Ilha Store', source: 'Bolinhas e encordoamento', type: 'RECEITA', amount: 160, due: '2026-06-22', status: 'RECEBIDO', category: 'Loja' },
+        { student: 'Professor Renato', source: 'Repasse aulas', type: 'DESPESA', amount: 650, due: '2026-06-30', status: 'ABERTO', category: 'Equipe' },
+        { student: 'Fornecedor', source: 'Bolas e material de quadra', type: 'DESPESA', amount: 420, due: '2026-06-28', status: 'ABERTO', category: 'Operacao' }
+      ],
+      team: [
+        { name: 'Leandro Strelow', email: 'kikostrelow@gmail.com', role: 'admin', active: true, permissions: roleDefaultPermissions.admin, notes: 'Gestao geral do clube.' }
       ],
       audiences: [
         { name: 'Alunos ativos', contacts: 42, purpose: 'Avisos de aula, feriados e comunicados gerais' },
@@ -6879,7 +7219,7 @@
     const opsSeedData = JSON.parse(JSON.stringify(opsData));
 
     function setClubMode(mode) {
-      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-finance', 'club-communication', 'club-clients'].forEach(function (className) {
+      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-finance', 'club-communication', 'club-clients', 'club-team'].forEach(function (className) {
         document.body.classList.remove(className);
       });
       document.body.classList.add(mode);
@@ -6999,10 +7339,28 @@
         id: row.id,
         student: row.students && row.students.name ? row.students.name : row.description,
         source: row.description || 'Lancamento',
+        type: row.type || 'RECEITA',
         amount: Number(row.amount || 0),
         due: row.due_date || '',
         status: row.status || 'ABERTO',
-        category: row.category || 'Geral'
+        category: row.category || 'Geral',
+        paidAt: row.paid_at || '',
+        paymentMethod: row.payment_method || ''
+      };
+    }
+
+    function mapProfileRow(row) {
+      const role = row.role || 'secretaria';
+      const permissions = Array.isArray(row.permissions) ? row.permissions : (roleDefaultPermissions[role] || roleDefaultPermissions.secretaria);
+      return {
+        id: row.id,
+        name: row.full_name || row.email || 'Equipe Ilha',
+        email: row.email || '',
+        phone: row.phone || '',
+        role: role,
+        active: row.active !== false,
+        permissions: permissions,
+        notes: row.notes || ''
       };
     }
 
@@ -7048,11 +7406,13 @@
         const results = await Promise.all([
           supabaseRest('app_clients?select=*&order=created_at.desc'),
           supabaseRest('financial_transactions?select=*,students(name)&order=due_date.asc'),
-          supabaseRest('app_plan_requests?select=*,app_clients(full_name,email,phone)&order=created_at.desc')
+          supabaseRest('app_plan_requests?select=*,app_clients(full_name,email,phone)&order=created_at.desc'),
+          supabaseRest('profiles?select=*&order=created_at.desc').catch(function () { return []; })
         ]);
         opsData.clients = results[0].map(mapClientRow);
         opsData.finance = results[1].map(mapFinanceRow);
         opsData.planRequests = results[2].map(mapPlanRequestRow);
+        opsData.team = results[3].map(mapProfileRow);
         opsData.students = [];
         opsData.agenda = [];
         opsData.audiences = [];
@@ -7100,6 +7460,51 @@
       }).join('') || '<div class="lesson-empty-state">Nenhuma solicitacao de plano ainda.</div>';
     }
 
+    function detailItem(label, value) {
+      return '<div class="detail-item"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value || '-') + '</strong></div>';
+    }
+
+    function renderClientDetail() {
+      const panel = $('clientDetailPanel');
+      if (!panel) return;
+      const client = opsData.clients.find(function (item) { return String(item.id || item.email) === String(opsState.selectedClientId); }) || opsData.clients[0];
+      if (!client) {
+        panel.innerHTML = '<div class="lesson-empty-state">Selecione um aluno para abrir a ficha.</div>';
+        return;
+      }
+      opsState.selectedClientId = client.id || client.email;
+      const created = client.created ? new Date(client.created).toLocaleString('pt-BR') : '';
+      const lastLogin = client.lastLogin ? new Date(client.lastLogin).toLocaleString('pt-BR') : '';
+      const requests = opsData.planRequests.filter(function (request) {
+        return String(request.email || '').toLowerCase() === String(client.email || '').toLowerCase() ||
+          String(request.client || '').toLowerCase() === String(client.name || '').toLowerCase();
+      });
+      panel.innerHTML =
+        '<div class="ops-list-card">' +
+          '<div class="ops-list-main">' +
+            '<div class="client-line">' + clientAvatar(client) + '<div><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(client.email || 'Sem e-mail') + '</div></div></div>' +
+            '<div class="ops-meta">' + statusPill(client.status) + '<span class="ops-pill">' + escapeHtml(client.type || 'cliente') + '</span>' + whatsappLink(client.phone || client.guardianPhone) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="client-detail-grid" style="margin-top:10px">' +
+          detailItem('Nome completo', client.name) +
+          detailItem('E-mail', client.email) +
+          detailItem('Telefone', client.phone) +
+          detailItem('CPF', client.cpf) +
+          detailItem('Idade', client.age ? client.age + ' anos' : '') +
+          detailItem('Responsavel', client.guardian) +
+          detailItem('Telefone responsavel', client.guardianPhone) +
+          detailItem('Cadastro', created) +
+          detailItem('Ultimo acesso', lastLogin) +
+          detailItem('Origem', client.type || 'cliente') +
+        '</div>' +
+        '<div class="ops-list" style="margin-top:10px">' +
+          (requests.length ? requests.map(function (request) {
+            return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(request.plan) + '</strong><div class="muted">Solicitado no portal</div></div><div class="ops-meta">' + statusPill(request.status) + '<span class="ops-pill">' + money(request.amount) + '</span></div></div></article>';
+          }).join('') : '<div class="lesson-empty-state">Nenhum plano solicitado por este aluno.</div>') +
+        '</div>';
+    }
+
     function renderClientsModule() {
       const recentLimit = Date.now() - (7 * 24 * 60 * 60 * 1000);
       const withPhone = opsData.clients.filter(function (client) { return String(client.phone || '').replace(/\D/g, '').length >= 10; });
@@ -7111,6 +7516,7 @@
       $('clientActiveMetric').textContent = opsData.clients.filter(function (client) { return client.status === 'ATIVO'; }).length;
       $('clientPhoneMetric').textContent = withPhone.length;
       $('clientRecentMetric').textContent = recent.length;
+      if (!opsState.selectedClientId && opsData.clients[0]) opsState.selectedClientId = opsData.clients[0].id || opsData.clients[0].email;
       $('clientList').innerHTML = opsData.clients.map(function (client) {
         const created = client.created ? new Date(client.created).toLocaleDateString('pt-BR') : 'Sem data';
         const extra = [
@@ -7120,7 +7526,8 @@
           client.guardian ? 'Resp. ' + client.guardian : '',
           'cadastrado em ' + created
         ].filter(Boolean).join(' | ');
-        return '<article class="ops-list-card"><div class="ops-list-main"><div class="client-line">' + clientAvatar(client) + '<div><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(extra) + '</div></div></div><div class="ops-meta">' + statusPill(client.status) + '<span class="ops-pill">' + escapeHtml(client.type) + '</span>' + whatsappLink(client.phone || client.guardianPhone) + '</div></div></article>';
+        const key = client.id || client.email || client.name;
+        return '<article class="ops-list-card"><div class="ops-list-main"><div class="client-line">' + clientAvatar(client) + '<div><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(extra) + '</div></div></div><div class="ops-meta">' + statusPill(client.status) + '<span class="ops-pill">' + escapeHtml(client.type) + '</span>' + whatsappLink(client.phone || client.guardianPhone) + '<button class="small-btn" type="button" data-client-open="' + escapeHtml(key) + '">Abrir</button></div></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum cliente cadastrado ainda.</div>';
 
       const segments = {};
@@ -7133,6 +7540,7 @@
       }).join('') || Object.keys(segments).map(function (type) {
         return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(type) + '</strong><div class="muted">Segmento do cadastro publico</div></div><span class="ops-pill good">' + segments[type] + ' pessoa(s)</span></div></article>';
       }).join('') || '<div class="lesson-empty-state">Sem solicitacoes ainda.</div>';
+      renderClientDetail();
     }
 
     function renderStudentsModule() {
@@ -7182,25 +7590,80 @@
       }).join('');
     }
 
+    function selectedTeamPermissions() {
+      return Array.from(document.querySelectorAll('[data-team-permission]:checked')).map(function (input) {
+        return input.value;
+      });
+    }
+
+    function renderTeamPermissions(role) {
+      const defaults = roleDefaultPermissions[role || 'secretaria'] || roleDefaultPermissions.secretaria;
+      $('teamPermissionGrid').innerHTML = teamPermissionCatalog.map(function (permission) {
+        const checked = defaults.includes(permission.key) ? ' checked' : '';
+        return '<article class="permission-card"><label><input type="checkbox" data-team-permission value="' + escapeHtml(permission.key) + '"' + checked + ' /> <span>' + escapeHtml(permission.label) + '</span></label><small>' + escapeHtml(permission.detail) + '</small></article>';
+      }).join('');
+    }
+
+    function renderTeamModule() {
+      renderTeamPermissions($('teamRole') ? $('teamRole').value : 'secretaria');
+      $('teamTotalMetric').textContent = opsData.team.length;
+      $('teamAdminMetric').textContent = opsData.team.filter(function (member) { return member.role === 'admin'; }).length;
+      $('teamTeacherMetric').textContent = opsData.team.filter(function (member) { return member.role === 'professor'; }).length;
+      $('teamActiveMetric').textContent = opsData.team.filter(function (member) { return member.active !== false; }).length;
+      $('teamList').innerHTML = opsData.team.map(function (member) {
+        const permissions = (member.permissions || []).map(function (key) {
+          const item = teamPermissionCatalog.find(function (permission) { return permission.key === key; });
+          return item ? item.label : key;
+        });
+        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(member.name) + '</strong><div class="muted">' + escapeHtml(member.email || 'Sem e-mail') + ' | ' + escapeHtml(roleLabel(member.role)) + '</div></div><div class="ops-meta">' + statusPill(member.active === false ? 'BLOQUEADO' : 'ATIVO') + '<span class="ops-pill">' + permissions.length + ' permissoes</span></div></div><div class="ops-meta">' + permissions.slice(0, 8).map(function (label) { return '<span class="ops-pill">' + escapeHtml(label) + '</span>'; }).join('') + '</div></article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhum acesso cadastrado ainda.</div>';
+    }
+
+    async function openTeamModule() {
+      setClubMode('club-team');
+      renderTeamModule();
+      loadOpsData(false).then(renderTeamModule);
+    }
+
     function renderFinanceModule() {
-      const expected = opsData.finance.reduce(function (sum, item) { return sum + item.amount; }, 0);
-      const received = opsData.finance.filter(function (item) { return item.status === 'RECEBIDO'; }).reduce(function (sum, item) { return sum + item.amount; }, 0);
-      const pending = expected - received;
+      const receivables = opsData.finance.filter(function (item) { return item.type !== 'DESPESA'; });
+      const payables = opsData.finance.filter(function (item) { return item.type === 'DESPESA'; });
+      const received = receivables.filter(function (item) { return item.status === 'RECEBIDO'; }).reduce(function (sum, item) { return sum + item.amount; }, 0);
+      const toReceive = receivables.filter(function (item) { return item.status !== 'RECEBIDO'; }).reduce(function (sum, item) { return sum + item.amount; }, 0);
+      const paid = payables.filter(function (item) { return item.status === 'PAGO' || item.status === 'RECEBIDO'; }).reduce(function (sum, item) { return sum + item.amount; }, 0);
+      const toPay = payables.filter(function (item) { return item.status !== 'PAGO' && item.status !== 'RECEBIDO'; }).reduce(function (sum, item) { return sum + item.amount; }, 0);
+      const expected = received + toReceive;
+      const cashBalance = received - paid;
       $('financeExpectedMetric').textContent = money(expected);
       $('financeReceivedMetric').textContent = money(received);
-      $('financePendingMetric').textContent = money(pending);
+      $('financePendingMetric').textContent = money(toReceive + toPay);
       $('financeOverdueMetric').textContent = opsData.finance.filter(function (item) { return item.status === 'VENCIDO'; }).length;
+      $('cashflowGrid').innerHTML =
+        '<article class="cashflow-card"><span>Recebido</span><strong>' + money(received) + '</strong></article>' +
+        '<article class="cashflow-card"><span>A receber</span><strong>' + money(toReceive) + '</strong></article>' +
+        '<article class="cashflow-card"><span>A pagar</span><strong>' + money(toPay) + '</strong></article>' +
+        '<article class="cashflow-card"><span>Despesas pagas</span><strong>' + money(paid) + '</strong></article>' +
+        '<article class="cashflow-card"><span>Saldo de caixa</span><strong>' + money(cashBalance) + '</strong></article>' +
+        '<article class="cashflow-card"><span>Resultado previsto</span><strong>' + money(expected - paid - toPay) + '</strong></article>';
+      $('financeReceivableList').innerHTML = receivables.filter(function (item) { return item.status !== 'RECEBIDO'; }).map(function (item) {
+        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(item.student) + '</strong><div class="muted">' + escapeHtml(item.source) + ' | ' + escapeHtml(item.due || 'sem vencimento') + '</div></div><div class="ops-meta">' + statusPill(item.status) + '<span class="ops-pill">' + money(item.amount) + '</span></div></div></article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhuma conta a receber em aberto.</div>';
+      $('financePayableList').innerHTML = payables.filter(function (item) { return item.status !== 'PAGO' && item.status !== 'RECEBIDO'; }).map(function (item) {
+        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(item.student) + '</strong><div class="muted">' + escapeHtml(item.source) + ' | ' + escapeHtml(item.due || 'sem vencimento') + '</div></div><div class="ops-meta">' + statusPill(item.status) + '<span class="ops-pill">' + money(item.amount) + '</span></div></div></article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhuma conta a pagar em aberto.</div>';
       $('financeRows').innerHTML = opsData.finance.map(function (item) {
-        return '<tr><td>' + escapeHtml(item.student) + '</td><td>' + escapeHtml(item.source) + '</td><td>' + money(item.amount) + '</td><td>' + escapeHtml(item.due) + '</td><td>' + statusPill(item.status) + '</td></tr>';
+        return '<tr><td>' + escapeHtml(item.type === 'DESPESA' ? 'Despesa' : 'Receita') + '</td><td>' + escapeHtml(item.student) + '</td><td>' + escapeHtml(item.source) + '</td><td>' + money(item.amount) + '</td><td>' + escapeHtml(item.due) + '</td><td>' + statusPill(item.status) + '</td></tr>';
       }).join('');
       const categories = {};
       opsData.finance.forEach(function (item) {
-        categories[item.category] = categories[item.category] || { total: 0, rows: 0 };
-        categories[item.category].total += item.amount;
+        categories[item.category] = categories[item.category] || { total: 0, rows: 0, receita: 0, despesa: 0 };
+        categories[item.category].total += item.type === 'DESPESA' ? -item.amount : item.amount;
+        if (item.type === 'DESPESA') categories[item.category].despesa += item.amount;
+        else categories[item.category].receita += item.amount;
         categories[item.category].rows += 1;
       });
       $('financeCategoryList').innerHTML = Object.keys(categories).map(function (category) {
-        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(category) + '</strong><div class="muted">' + categories[category].rows + ' lancamentos</div></div><div class="finance-total">' + money(categories[category].total) + '</div></div></article>';
+        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(category) + '</strong><div class="muted">' + categories[category].rows + ' lancamentos | +' + money(categories[category].receita) + ' / -' + money(categories[category].despesa) + '</div></div><div class="finance-total">' + money(categories[category].total) + '</div></div></article>';
       }).join('');
     }
 
@@ -7529,7 +7992,7 @@
         }).catch(function () {});
       }
       document.body.classList.remove('adm-unlocked');
-      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-finance', 'club-communication', 'club-clients'].forEach(function (className) {
+      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-finance', 'club-communication', 'club-clients', 'club-team'].forEach(function (className) {
         document.body.classList.remove(className);
       });
       document.body.classList.add('adm-locked');
@@ -7557,10 +8020,91 @@
       if (document.body.classList.contains('club-agenda')) renderAgendaModule();
       if (document.body.classList.contains('club-finance')) renderFinanceModule();
       if (document.body.classList.contains('club-communication')) renderCommunicationModule();
+      if (document.body.classList.contains('club-team')) renderTeamModule();
     }
 
     function quoteCsv(value) {
       return '"' + String(value == null ? '' : value).replace(/"/g, '""') + '"';
+    }
+
+    async function patchTeamProfile(id, payload) {
+      if (!id) return null;
+      try {
+        const saved = await supabaseRest('profiles?id=eq.' + encodeURIComponent(id), {
+          method: 'PATCH',
+          body: payload,
+          prefer: 'return=representation'
+        });
+        return Array.isArray(saved) ? saved[0] : saved;
+      } catch (error) {
+        const basicPayload = {
+          full_name: payload.full_name,
+          role: payload.role,
+          active: payload.active
+        };
+        const saved = await supabaseRest('profiles?id=eq.' + encodeURIComponent(id), {
+          method: 'PATCH',
+          body: basicPayload,
+          prefer: 'return=representation'
+        });
+        return Array.isArray(saved) ? saved[0] : saved;
+      }
+    }
+
+    async function createTeamAction(event) {
+      if (event) event.preventDefault();
+      try {
+        requireAdminSession();
+        const name = $('teamName').value.trim();
+        const email = $('teamEmail').value.trim();
+        const password = $('teamPassword').value;
+        const role = $('teamRole').value || 'secretaria';
+        const permissions = selectedTeamPermissions();
+        const notes = $('teamNotes').value.trim();
+        if (!name || !email || password.length < 6) {
+          toast('Informe nome, e-mail e senha provisoria com 6 caracteres.');
+          return;
+        }
+        const localMember = {
+          id: localId('team'),
+          name: name,
+          email: email,
+          role: role,
+          active: true,
+          permissions: permissions,
+          notes: notes
+        };
+        if (isAdminDemoMode()) {
+          opsData.team.unshift(localMember);
+          $('teamForm').reset();
+          renderTeamModule();
+          toast('Acesso demo criado.');
+          return;
+        }
+        const result = await supabaseAuthRequest('signup', {
+          email: email,
+          password: password,
+          data: { full_name: name, app_context: 'admin' }
+        }, false);
+        const userId = result.user && result.user.id || result.id || (result.session && result.session.user && result.session.user.id);
+        let savedProfile = null;
+        if (userId) {
+          savedProfile = await patchTeamProfile(userId, {
+            full_name: name,
+            email: email,
+            role: role,
+            active: true,
+            permissions: permissions,
+            notes: notes
+          });
+        }
+        opsData.team.unshift(savedProfile ? mapProfileRow(savedProfile) : localMember);
+        $('teamForm').reset();
+        renderTeamModule();
+        toast('Acesso criado para a equipe.');
+      } catch (error) {
+        reportActionError(error);
+      }
     }
 
     async function createStudentAction() {
@@ -7785,6 +8329,7 @@
             id: localId('finance'),
             student: 'Cliente Demo ' + number,
             source: 'Lancamento Demo ' + number,
+            type: 'RECEITA',
             amount: 220,
             due: localDateString(),
             status: 'ABERTO',
@@ -7797,17 +8342,20 @@
         }
         const description = prompt('Descricao do lancamento');
         if (!description) return;
+        const type = String(prompt('Tipo (RECEITA ou DESPESA)', 'RECEITA') || 'RECEITA').trim().toUpperCase() === 'DESPESA' ? 'DESPESA' : 'RECEITA';
         const amount = parseMoneyInput(prompt('Valor', '220,00'));
         const dueDate = prompt('Vencimento (AAAA-MM-DD)', localDateString()) || localDateString();
-        const category = prompt('Categoria', 'Aulas') || 'Aulas';
+        const category = prompt('Categoria', type === 'DESPESA' ? 'Operacao' : 'Aulas') || (type === 'DESPESA' ? 'Operacao' : 'Aulas');
+        const status = prompt('Status', type === 'DESPESA' ? 'ABERTO' : 'ABERTO') || 'ABERTO';
         if (isAdminDemoMode()) {
           opsData.finance.push({
             id: localId('finance'),
             student: description.trim(),
             source: description.trim(),
+            type: type,
             amount: amount,
             due: dueDate,
-            status: 'ABERTO',
+            status: status.trim().toUpperCase(),
             category: category.trim()
           });
           renderFinanceModule();
@@ -7818,10 +8366,10 @@
         const inserted = await supabaseInsert('financial_transactions', {
           description: description.trim(),
           category: category.trim(),
-          type: 'RECEITA',
+          type: type,
           amount: amount,
           due_date: dueDate,
-          status: 'ABERTO'
+          status: status.trim().toUpperCase()
         });
         opsData.finance.push(mapFinanceRow(inserted));
         renderFinanceModule();
@@ -7832,8 +8380,8 @@
     }
 
     function exportFinanceAction() {
-      const rows = [['Cliente', 'Origem', 'Valor', 'Vencimento', 'Status', 'Categoria']].concat(opsData.finance.map(function (item) {
-        return [item.student, item.source, item.amount, item.due, item.status, item.category];
+      const rows = [['Tipo', 'Cliente/Fornecedor', 'Origem', 'Valor', 'Vencimento', 'Status', 'Categoria']].concat(opsData.finance.map(function (item) {
+        return [item.type || 'RECEITA', item.student, item.source, item.amount, item.due, item.status, item.category];
       }));
       const csv = rows.map(function (row) { return row.map(quoteCsv).join(';'); }).join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -8187,7 +8735,8 @@
         ['openStudentsModule', openStudentsModule],
         ['openAgendaModule', openAgendaModule],
         ['openFinanceModule', openFinanceModule],
-        ['openCommunicationModule', openCommunicationModule]
+        ['openCommunicationModule', openCommunicationModule],
+        ['openTeamModule', openTeamModule]
       ].forEach(function (entry) {
         const button = $(entry[0]);
         if (button) button.addEventListener('click', entry[1]);
@@ -8202,6 +8751,7 @@
             'club-agenda': openAgendaModule,
             'club-finance': openFinanceModule,
             'club-communication': openCommunicationModule,
+            'club-team': openTeamModule,
             'club-tournament': openTournamentModule
           };
           const action = actions[btn.dataset.adminNav];
@@ -8213,6 +8763,21 @@
       });
       $('clientReloadBtn').addEventListener('click', function () {
         loadOpsData(true).then(renderClientsModule).catch(reportActionError);
+      });
+      $('clientsModule').addEventListener('click', function (event) {
+        const openBtn = event.target.closest('[data-client-open]');
+        if (openBtn) {
+          opsState.selectedClientId = openBtn.dataset.clientOpen;
+          renderClientsModule();
+        }
+      });
+      $('teamRole').addEventListener('change', function () {
+        renderTeamPermissions(this.value);
+      });
+      $('teamForm').addEventListener('submit', createTeamAction);
+      $('teamCreateBtn').addEventListener('click', createTeamAction);
+      $('teamReloadBtn').addEventListener('click', function () {
+        loadOpsData(true).then(renderTeamModule).catch(reportActionError);
       });
       $('lessonsBackBtn').addEventListener('click', showClubHome);
       $('lessonsReloadBtn').addEventListener('click', function () {

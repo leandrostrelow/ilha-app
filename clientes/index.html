@@ -287,7 +287,8 @@
       gap: 8px;
     }
 
-    .side-nav button {
+    .side-nav button,
+    .side-nav a {
       width: 100%;
       min-height: 48px;
       display: grid;
@@ -301,11 +302,13 @@
       color: var(--dark);
       text-align: left;
       font-weight: 900;
+      text-decoration: none;
       transition: background .18s ease, color .18s ease, border-color .18s ease;
     }
 
     .side-nav button.active,
-    .side-nav button:hover {
+    .side-nav button:hover,
+    .side-nav a:hover {
       border-color: var(--line);
       background: #f4f9fa;
       color: var(--ink);
@@ -455,6 +458,46 @@
     .home-actions .primary-btn,
     .home-actions .ghost-btn {
       min-width: 150px;
+    }
+
+    .home-actions a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
+    .quick-menu {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      padding-top: 2px;
+    }
+
+    .quick-link {
+      min-height: 74px;
+      display: grid;
+      gap: 6px;
+      justify-items: center;
+      align-content: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--teal);
+      text-align: center;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .quick-link svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .profile-avatar,
@@ -674,7 +717,8 @@
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 6px;
       }
-      .side-nav button {
+      .side-nav button,
+      .side-nav a {
         min-height: 50px;
         grid-template-columns: 1fr;
         justify-items: center;
@@ -814,6 +858,12 @@
         min-height: 40px;
         font-size: 14px;
       }
+      .home-actions a {
+        display: inline-flex;
+      }
+      .quick-menu {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
       .top-actions { width: 100%; }
       .top-actions button,
       .top-actions a { flex: 1 1 auto; }
@@ -841,6 +891,24 @@
       <rect x="3" y="5" width="18" height="14" rx="2" />
       <path d="M3 10h18" />
       <path d="M7 15h4" />
+    </symbol>
+    <symbol id="client-icon-play" viewBox="0 0 24 24">
+      <path d="M7 4v16l12-8Z" />
+    </symbol>
+    <symbol id="client-icon-bag" viewBox="0 0 24 24">
+      <path d="M6 8h12l-1 12H7L6 8Z" />
+      <path d="M9 8a3 3 0 0 1 6 0" />
+    </symbol>
+    <symbol id="client-icon-ranking" viewBox="0 0 24 24">
+      <path d="M5 20V10h4v10" />
+      <path d="M10 20V4h4v16" />
+      <path d="M15 20v-7h4v7" />
+    </symbol>
+    <symbol id="client-icon-trophy" viewBox="0 0 24 24">
+      <path d="M8 4h8v5a4 4 0 0 1-8 0V4Z" />
+      <path d="M8 6H5a2 2 0 0 0 2 4h1" />
+      <path d="M16 6h3a2 2 0 0 1-2 4h-1" />
+      <path d="M12 13v4M9 21h6M10 17h4" />
     </symbol>
   </svg>
 
@@ -896,6 +964,10 @@
         <button type="button" data-view="profile"><span class="nav-icon"><svg><use href="#client-icon-user"></use></svg></span><span>Meus dados</span></button>
         <button type="button" data-view="plans"><span class="nav-icon"><svg><use href="#client-icon-plan"></use></svg></span><span>Planos</span></button>
         <button type="button" data-view="payments"><span class="nav-icon"><svg><use href="#client-icon-card"></use></svg></span><span>Pagamento</span></button>
+        <a href="https://ilhatenis.com/agenda" target="_blank" rel="noopener"><span class="nav-icon"><svg><use href="#client-icon-play"></use></svg></span><span>Jogar</span></a>
+        <a href="https://wa.me/5527992963984?text=Ola%2C%20quero%20ver%20a%20Ilha%20Store." target="_blank" rel="noopener"><span class="nav-icon"><svg><use href="#client-icon-bag"></use></svg></span><span>Loja</span></a>
+        <a href="https://duplafalta.com.br/ranking/finals-masculino.html" target="_blank" rel="noopener"><span class="nav-icon"><svg><use href="#client-icon-ranking"></use></svg></span><span>Ranking</span></a>
+        <a href="../publico.html"><span class="nav-icon"><svg><use href="#client-icon-trophy"></use></svg></span><span>Torneios</span></a>
       </nav>
     </aside>
 
@@ -924,6 +996,12 @@
             <button class="primary-btn" type="button" data-view="profile">Completar cadastro</button>
             <button class="ghost-btn" type="button" data-view="plans">Ver planos</button>
             <button class="ghost-btn" type="button" data-view="payments">Pagamento</button>
+          </div>
+          <div class="quick-menu" aria-label="Atalhos do clube">
+            <a class="quick-link" href="https://ilhatenis.com/agenda" target="_blank" rel="noopener"><svg><use href="#client-icon-play"></use></svg>Jogar</a>
+            <a class="quick-link" href="https://wa.me/5527992963984?text=Ola%2C%20quero%20ver%20a%20Ilha%20Store." target="_blank" rel="noopener"><svg><use href="#client-icon-bag"></use></svg>Loja</a>
+            <a class="quick-link" href="https://duplafalta.com.br/ranking/finals-masculino.html" target="_blank" rel="noopener"><svg><use href="#client-icon-ranking"></use></svg>Ranking</a>
+            <a class="quick-link" href="../publico.html"><svg><use href="#client-icon-trophy"></use></svg>Torneios</a>
           </div>
         </div>
       </section>
