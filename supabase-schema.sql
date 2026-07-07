@@ -15,6 +15,11 @@ create table if not exists public.app_clients (
   full_name text not null,
   email text not null,
   phone text,
+  cpf text,
+  age integer,
+  guardian_name text,
+  guardian_phone text,
+  profile_photo text,
   status text not null default 'ATIVO' check (status in ('ATIVO', 'BLOQUEADO', 'PENDENTE')),
   client_type text not null default 'cliente' check (client_type in ('cliente', 'aluno', 'responsavel', 'socio')),
   source text not null default 'app',
@@ -25,6 +30,12 @@ create table if not exists public.app_clients (
 );
 
 create unique index if not exists app_clients_email_idx on public.app_clients(lower(email));
+
+alter table public.app_clients add column if not exists cpf text;
+alter table public.app_clients add column if not exists age integer;
+alter table public.app_clients add column if not exists guardian_name text;
+alter table public.app_clients add column if not exists guardian_phone text;
+alter table public.app_clients add column if not exists profile_photo text;
 
 create table if not exists public.app_plan_requests (
   id uuid primary key default gen_random_uuid(),
