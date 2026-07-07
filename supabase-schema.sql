@@ -133,6 +133,24 @@ create table if not exists public.app_court_bookings (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.app_payment_invoices (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid not null references public.app_clients(id) on delete cascade,
+  invoice_month date not null,
+  description text not null default 'Mensalidade Ilha Tênis',
+  plan_code text,
+  plan_name text,
+  amount numeric(10, 2) not null default 0,
+  due_date date,
+  status text not null default 'ABERTA' check (status in ('ABERTA', 'AGUARDANDO', 'PAGA', 'VENCIDA', 'CANCELADA')),
+  payment_method text,
+  paid_at timestamptz,
+  pix_payload text,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists app_plan_requests_client_idx on public.app_plan_requests(client_id, created_at desc);
 create index if not exists app_plan_requests_status_idx on public.app_plan_requests(status, created_at desc);
 create index if not exists app_plans_active_idx on public.app_plans(active, type);
@@ -140,6 +158,10 @@ create index if not exists app_store_requests_client_idx on public.app_store_req
 create index if not exists app_store_requests_status_idx on public.app_store_requests(status, created_at desc);
 create index if not exists app_announcements_active_idx on public.app_announcements(active, published_at desc);
 create index if not exists app_court_bookings_day_idx on public.app_court_bookings(booking_date, court_name, starts_at);
+create index if not exists app_payment_invoices_client_idx on public.app_payment_invoices(client_id, invoice_month desc);
+create index if not exists app_payment_invoices_status_idx on public.app_payment_invoices(status, due_date);
+create unique index if not exists app_payment_invoices_client_month_idx
+  on public.app_payment_invoices(client_id, invoice_month);
 create unique index if not exists app_court_bookings_slot_unique_idx
   on public.app_court_bookings(booking_date, court_name, starts_at)
   where status <> 'CANCELADO';
@@ -155,11 +177,11 @@ values
   ('aulas_anual_2x', 'Aulas 2x por semana - Anual', 'aluno', 350, 2, 10, true, 'Ciclo de 12 meses. Pix 5% OFF no pagamento do ciclo.'),
   ('aulas_semestral_2x', 'Aulas 2x por semana - Semestral', 'aluno', 370, 2, 10, true, 'Ciclo de 6 meses. Pix 5% OFF no pagamento do ciclo.'),
   ('aulas_mensal_2x', 'Aulas 2x por semana - Mensal', 'aluno', 390, 2, 10, true, 'Plano mensal de aulas duas vezes por semana.'),
-  ('jogar_anual', 'Somente jogar - Anual', 'mensalista', 130, 0, 10, true, 'Acesso mensal as quadras conforme regras do clube. Ciclo de 12 meses. Pix 5% OFF.'),
-  ('jogar_semestral', 'Somente jogar - Semestral', 'mensalista', 140, 0, 10, true, 'Acesso mensal as quadras conforme regras do clube. Ciclo de 6 meses. Pix 5% OFF.'),
-  ('jogar_mensal', 'Somente jogar - Mensal', 'mensalista', 150, 0, 10, true, 'Acesso mensal as quadras conforme regras do clube.'),
+  ('jogar_anual', 'Somente jogar - Anual', 'mensalista', 130, 0, 10, true, 'Acesso mensal às quadras conforme regras do clube. Ciclo de 12 meses. Pix 5% OFF.'),
+  ('jogar_semestral', 'Somente jogar - Semestral', 'mensalista', 140, 0, 10, true, 'Acesso mensal às quadras conforme regras do clube. Ciclo de 6 meses. Pix 5% OFF.'),
+  ('jogar_mensal', 'Somente jogar - Mensal', 'mensalista', 150, 0, 10, true, 'Acesso mensal às quadras conforme regras do clube.'),
   ('aula_avulsa', 'Aula avulsa', 'avulso', 80, 0, 10, true, 'Valor por aula avulsa.'),
-  ('familia', 'Plano familia', 'outro', 0, 0, 10, true, 'Calculo com a equipe conforme quantidade de pessoas da mesma familia.')
+  ('familia', 'Plano família', 'outro', 0, 0, 10, true, 'Cálculo com a equipe conforme quantidade de pessoas da mesma família.')
 on conflict (code) do update
 set name = excluded.name,
     type = excluded.type,
@@ -547,6 +569,7 @@ alter table public.app_plan_requests enable row level security;
 alter table public.app_store_requests enable row level security;
 alter table public.app_announcements enable row level security;
 alter table public.app_court_bookings enable row level security;
+alter table public.app_payment_invoices enable row level security;
 alter table public.teachers enable row level security;
 alter table public.students enable row level security;
 alter table public.courts enable row level security;
@@ -568,6 +591,7 @@ grant select, insert, update, delete on
   public.app_store_requests,
   public.app_announcements,
   public.app_court_bookings,
+  public.app_payment_invoices,
   public.teachers,
   public.students,
   public.courts,
@@ -619,6 +643,8 @@ drop policy if exists "court bookings read authenticated" on public.app_court_bo
 drop policy if exists "court bookings insert own" on public.app_court_bookings;
 drop policy if exists "court bookings update own or staff" on public.app_court_bookings;
 drop policy if exists "court bookings staff manage" on public.app_court_bookings;
+drop policy if exists "payment invoices read own or staff" on public.app_payment_invoices;
+drop policy if exists "payment invoices staff manage" on public.app_payment_invoices;
 drop policy if exists "staff read teachers" on public.teachers;
 drop policy if exists "office manage teachers" on public.teachers;
 drop policy if exists "staff read students" on public.students;
@@ -752,6 +778,17 @@ create policy "court bookings staff manage"
 on public.app_court_bookings for delete
 to authenticated
 using (public.is_club_office());
+
+create policy "payment invoices read own or staff"
+on public.app_payment_invoices for select
+to authenticated
+using (client_id = auth.uid() or public.is_club_staff());
+
+create policy "payment invoices staff manage"
+on public.app_payment_invoices for all
+to authenticated
+using (public.is_club_office())
+with check (public.is_club_office());
 
 create policy "staff read teachers"
 on public.teachers for select
