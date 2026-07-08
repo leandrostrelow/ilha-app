@@ -578,6 +578,7 @@
     }
 
     .home-menu-card {
+      position: relative;
       min-height: 118px;
       display: grid;
       gap: 10px;
@@ -611,6 +612,42 @@
       stroke-width: 2.2;
       stroke-linecap: round;
       stroke-linejoin: round;
+    }
+
+    .home-notices {
+      display: grid;
+      gap: 10px;
+      padding-top: 2px;
+    }
+
+    .home-section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0;
+      color: var(--ink);
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .notice-count {
+      min-width: 22px;
+      height: 22px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--lime);
+      color: var(--teal);
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .home-menu-card .notice-count {
+      position: absolute;
+      top: 10px;
+      right: 10px;
     }
 
     .quick-menu {
@@ -652,6 +689,7 @@
 
     .mobile-bottom-nav button,
     .mobile-bottom-nav a {
+      position: relative;
       min-width: 0;
       display: grid;
       place-items: center;
@@ -677,6 +715,15 @@
 
     .mobile-bottom-nav button.active {
       color: var(--lime);
+    }
+
+    .mobile-bottom-nav .notice-count {
+      position: absolute;
+      top: 4px;
+      right: 10px;
+      min-width: 18px;
+      height: 18px;
+      font-size: 10px;
     }
 
     .profile-avatar,
@@ -1629,6 +1676,16 @@
         font-size: 15px;
         box-shadow: none;
       }
+      .home-plan-link {
+        grid-column: 1 / -1;
+        min-height: 76px;
+        grid-template-columns: 44px minmax(0, 1fr);
+        align-content: center;
+        justify-content: start;
+        justify-items: start;
+        padding: 0 18px;
+        text-align: left;
+      }
       .home-menu-card svg {
         width: 42px;
         height: 42px;
@@ -1669,12 +1726,114 @@
       .payment-toolbar {
         display: grid;
         grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 8px;
       }
       .payment-toolbar .field {
         min-width: 0;
       }
       #paymentClearFilter {
         grid-column: 1 / -1;
+      }
+      #view-payments .panel {
+        padding: 12px;
+        border-radius: 16px;
+        box-shadow: none;
+      }
+      #view-payments .panel-head {
+        margin-bottom: 8px;
+      }
+      #view-payments .panel-head h2 {
+        font-size: 18px;
+      }
+      #view-payments .panel-head .muted {
+        display: none;
+      }
+      #view-payments label {
+        margin-top: 0;
+        font-size: 10px;
+      }
+      #view-payments select {
+        min-height: 40px;
+        border-radius: 10px;
+        padding: 0 10px;
+        font-size: 13px;
+      }
+      #paymentClearFilter {
+        min-height: 38px;
+        border-radius: 10px;
+        font-size: 12px;
+      }
+      .payment-summary {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+      .payment-summary-item {
+        padding: 8px;
+        border-radius: 10px;
+      }
+      .payment-summary-item span {
+        margin-bottom: 2px;
+        font-size: 8px;
+      }
+      .payment-summary-item strong {
+        font-size: 13px;
+      }
+      .invoice-list {
+        gap: 8px;
+      }
+      .invoice-card {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        padding: 10px;
+        border-radius: 12px;
+        box-shadow: none;
+      }
+      .invoice-title {
+        gap: 5px;
+      }
+      .invoice-title h3 {
+        font-size: 14px;
+      }
+      .invoice-meta {
+        margin-top: 4px;
+        font-size: 10px;
+        line-height: 1.3;
+      }
+      .invoice-value {
+        font-size: 16px;
+      }
+      .invoice-actions {
+        gap: 6px;
+        justify-items: end;
+      }
+      .invoice-actions .primary-btn {
+        min-height: 34px;
+        border-radius: 10px;
+        padding: 0 10px;
+        font-size: 12px;
+      }
+      .invoice-card .pill {
+        min-height: 20px;
+        padding: 3px 7px;
+        font-size: 9px;
+      }
+      .pix-box {
+        width: min(190px, 42vw);
+        padding: 8px;
+        border-radius: 10px;
+        font-size: 11px;
+      }
+      .pix-box img {
+        width: 128px;
+        height: 128px;
+      }
+      .pix-copy {
+        max-height: 58px;
+        padding: 7px;
+        font-size: 9px;
       }
       .mobile-bottom-nav {
         position: fixed;
@@ -1700,6 +1859,13 @@
       }
       .mobile-bottom-nav button.active {
         background: linear-gradient(180deg, rgba(181, 229, 0, .12), transparent);
+      }
+      .mobile-bottom-nav .notification-nav .nav-label {
+        display: none;
+      }
+      .mobile-bottom-nav .notification-nav svg {
+        width: 27px;
+        height: 27px;
       }
       .mobile-bottom-nav .bottom-play {
         position: relative;
@@ -1864,10 +2030,15 @@
             </div>
           </div>
           <div class="home-menu-grid" aria-label="Menu principal">
-            <button class="home-menu-card" type="button" data-view="notifications"><svg><use href="#client-icon-bell"></use></svg>Notificações</button>
+            <button class="home-menu-card home-plan-link" type="button" data-view="plans"><svg><use href="#client-icon-plan"></use></svg>Planos</button>
+            <button class="home-menu-card" type="button" data-view="notifications"><span class="notice-count" data-notification-count hidden>0</span><svg><use href="#client-icon-bell"></use></svg>Notificações</button>
             <button class="home-menu-card" type="button" data-view="store"><svg><use href="#client-icon-bag"></use></svg>Loja</button>
             <a class="home-menu-card" href="https://duplafalta.com.br/ranking/finals-masculino.html" target="_blank" rel="noopener"><svg><use href="#client-icon-ranking"></use></svg>Ranking</a>
             <a class="home-menu-card" href="../publico.html"><svg><use href="#client-icon-trophy"></use></svg>Torneios</a>
+          </div>
+          <div class="home-notices">
+            <h3 class="home-section-title">Comunicados <span class="notice-count" data-notification-count hidden>0</span></h3>
+            <div class="notice-list" id="homeAnnouncements"></div>
           </div>
         </div>
       </section>
@@ -1994,9 +2165,9 @@
     </section>
     <nav class="mobile-bottom-nav" aria-label="Navegação inferior">
       <button class="active" type="button" data-view="home"><svg><use href="#client-icon-home"></use></svg><span>Início</span></button>
-      <button type="button" data-view="plans"><svg><use href="#client-icon-plan"></use></svg><span>Planos</span></button>
-      <a class="bottom-play" href="https://ilhatenis.com/agenda" target="_blank" rel="noopener"><svg><use href="#client-icon-play"></use></svg><span>Jogar</span></a>
       <button type="button" data-view="payments"><svg><use href="#client-icon-card"></use></svg><span>Pagamento</span></button>
+      <a class="bottom-play" href="https://ilhatenis.com/agenda" target="_blank" rel="noopener"><svg><use href="#client-icon-play"></use></svg><span>Jogar</span></a>
+      <button class="notification-nav" type="button" data-view="notifications" aria-label="Notificações"><span class="notice-count" data-notification-count hidden>0</span><svg><use href="#client-icon-bell"></use></svg><span class="nav-label">Notificação</span></button>
       <button type="button" data-view="profile"><svg><use href="#client-icon-user"></use></svg><span>Perfil</span></button>
     </nav>
   </main>
@@ -2630,6 +2801,7 @@
       document.body.classList.add('client-home-view');
       $('clientApp').setAttribute('aria-hidden', 'false');
       renderAll();
+      showView('home');
     }
 
     function logout() {
@@ -2705,6 +2877,20 @@
         '</article>';
       }).join('') : '<div class="empty">Nenhuma notificação no momento.</div>';
       $('notificationsList').innerHTML = html;
+      if ($('homeAnnouncements')) {
+        $('homeAnnouncements').innerHTML = list.length ? list.slice(0, 2).map(function (item) {
+          return '<article class="notice-card">' +
+            (item.image_url ? '<img src="' + escapeHtml(item.image_url) + '" alt="" />' : '') +
+            '<div><h3>' + escapeHtml(item.title) + '</h3>' +
+            (item.body ? '<p>' + escapeHtml(item.body) + '</p>' : '') + '</div>' +
+            (item.link_url ? '<a class="ghost-btn" href="' + escapeHtml(item.link_url) + '" target="_blank" rel="noopener">Abrir comunicado</a>' : '') +
+          '</article>';
+        }).join('') : '<div class="empty">Nenhum comunicado no momento.</div>';
+      }
+      document.querySelectorAll('[data-notification-count]').forEach(function (badge) {
+        badge.textContent = list.length > 99 ? '99+' : String(list.length);
+        badge.hidden = list.length === 0;
+      });
     }
 
     function renderHome() {
