@@ -927,6 +927,9 @@
     .pill.good { background: #efffd0; color: #203d00; }
     .pill.warn { background: #fff6d8; color: #664600; }
     .pill.bad { background: #ffe4e6; color: #7f1d1d; }
+    .pill.status-open { background: #fef3c7; color: #92400e; }
+    .pill.status-late { background: #fee2e2; color: #991b1b; }
+    .pill.status-paid { background: #dcfce7; color: #166534; }
 
     .plan-grid {
       display: grid;
@@ -1295,16 +1298,18 @@
     }
 
     .invoice-card.is-open {
-      border-left: 5px solid var(--teal);
+      border-left: 5px solid #facc15;
+      background: #fffdf3;
     }
 
     .invoice-card.is-paid {
-      border-left: 5px solid var(--lime);
-      background: #fbfff2;
+      border-left: 5px solid #22c55e;
+      background: #f7fff9;
     }
 
     .invoice-card.is-late {
-      border-left: 5px solid var(--orange);
+      border-left: 5px solid var(--red);
+      background: #fff8f8;
     }
 
     .invoice-title {
@@ -1320,10 +1325,14 @@
     }
 
     .invoice-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 8px;
       margin-top: 6px;
       color: var(--muted);
       font-size: 12px;
       font-weight: 800;
+      overflow-wrap: anywhere;
     }
 
     .invoice-value {
@@ -1368,6 +1377,107 @@
       font-size: 11px;
       line-height: 1.35;
       font-weight: 800;
+    }
+
+    .pix-modal[hidden] {
+      display: none;
+    }
+
+    .pix-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(16, 39, 44, .45);
+    }
+
+    .pix-modal-card {
+      width: min(430px, 100%);
+      max-height: calc(100dvh - 40px);
+      overflow: auto;
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #ffffff;
+      box-shadow: 0 24px 70px rgba(16, 39, 44, .22);
+    }
+
+    .pix-modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .pix-modal-head h2 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.1;
+    }
+
+    .pix-modal-close {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0 14px;
+      background: #ffffff;
+      color: var(--dark);
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .pix-modal-total {
+      display: grid;
+      gap: 2px;
+      padding: 12px;
+      border-radius: 12px;
+      background: #f5fbfc;
+    }
+
+    .pix-modal-total span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .pix-modal-total strong {
+      color: var(--teal);
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .pix-modal-qr {
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+    }
+
+    .pix-modal-qr img {
+      width: 220px;
+      height: 220px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #ffffff;
+    }
+
+    .pix-modal-code {
+      width: 100%;
+      max-height: 90px;
+      overflow: auto;
+      padding: 10px;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      background: #fbfdfe;
+      color: var(--dark);
+      font-size: 11px;
+      line-height: 1.35;
+      font-weight: 800;
+      word-break: break-all;
     }
 
     .form-grid {
@@ -1787,7 +1897,7 @@
         grid-template-columns: minmax(0, 1fr) auto;
         gap: 8px;
         align-items: center;
-        padding: 10px;
+        padding: 10px 10px 10px 12px;
         border-radius: 12px;
         box-shadow: none;
       }
@@ -1795,7 +1905,9 @@
         gap: 5px;
       }
       .invoice-title h3 {
+        max-width: 180px;
         font-size: 14px;
+        line-height: 1.12;
       }
       .invoice-meta {
         margin-top: 4px;
@@ -1834,6 +1946,25 @@
         max-height: 58px;
         padding: 7px;
         font-size: 9px;
+      }
+      .pix-modal {
+        align-items: end;
+        padding: 12px;
+      }
+      .pix-modal-card {
+        max-height: calc(100dvh - 24px);
+        border-radius: 22px;
+        padding: 16px;
+      }
+      .pix-modal-head h2 {
+        font-size: 20px;
+      }
+      .pix-modal-total strong {
+        font-size: 26px;
+      }
+      .pix-modal-qr img {
+        width: 190px;
+        height: 190px;
       }
       .mobile-bottom-nav {
         position: fixed;
@@ -2173,6 +2304,18 @@
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="pix-modal" id="pixModal" hidden role="dialog" aria-modal="true" aria-labelledby="pixModalTitle">
+    <div class="pix-modal-card">
+      <div class="pix-modal-head">
+        <div>
+          <h2 id="pixModalTitle">Pagamento Pix</h2>
+          <div class="muted" id="pixModalSubtitle">Resumo da fatura</div>
+        </div>
+        <button class="pix-modal-close" type="button" data-close-pix>Fechar</button>
+      </div>
+      <div id="pixModalBody"></div>
+    </div>
+  </div>
 
   <script>
     const SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
@@ -2219,6 +2362,7 @@
     let announcements = [];
     let activePlanTab = 'aluno';
     let paymentFilter = { month: 'all', year: 'all' };
+    let activePixPayload = '';
     const pullRefreshState = {
       active: false,
       ready: false,
@@ -2401,7 +2545,10 @@
     function pill(status) {
       const value = String(status || '');
       const upper = value.toUpperCase();
-      const kind = upper.includes('CONFIRM') || upper.includes('ATIVO') || upper.includes('ABERTO') ? ' good' :
+      if (upper === 'PAGA' || upper === 'PAGO') return '<span class="pill status-paid">PAGO</span>';
+      if (upper === 'VENCIDA' || upper === 'ATRASADA') return '<span class="pill status-late">ATRASADA</span>';
+      if (upper === 'ABERTA' || upper === 'AGUARDANDO' || upper === 'EM ABERTO') return '<span class="pill status-open">ABERTA</span>';
+      const kind = upper.includes('CONFIRM') || upper.includes('ATIVO') ? ' good' :
         (upper.includes('PEND') || upper.includes('BREVE') || upper.includes('COMBINAR') ? ' warn' : '');
       return '<span class="pill' + kind + '">' + escapeHtml(value) + '</span>';
     }
@@ -2834,6 +2981,9 @@
         store: 'Ilha Store'
       };
       $('pageTitle').textContent = labels[view];
+      if (view === 'notifications') {
+        markCurrentAnnouncementsRead();
+      }
       if (view === 'plans') {
         refresh(true).catch(function () {
           toast('Não consegui atualizar o plano agora.');
@@ -2866,8 +3016,36 @@
         String(target) === String(client && client.official_plan_name || '').toLowerCase();
     }
 
+    function announcementKey(item) {
+      return String(item && (item.id || item.created_at || item.updated_at || item.title) || '');
+    }
+
+    function readAnnouncementKeys() {
+      return readStored(storageKey('ilha-client-read-announcements'), []).map(String);
+    }
+
+    function updateNotificationBadges(count) {
+      document.querySelectorAll('[data-notification-count]').forEach(function (badge) {
+        badge.textContent = count > 99 ? '99+' : String(count);
+        badge.hidden = count === 0;
+      });
+    }
+
+    function markCurrentAnnouncementsRead() {
+      const current = announcements.filter(announcementMatchesClient).map(announcementKey).filter(Boolean);
+      const read = new Set(readAnnouncementKeys());
+      current.forEach(function (key) { read.add(key); });
+      writeStored(storageKey('ilha-client-read-announcements'), Array.from(read));
+      updateNotificationBadges(0);
+    }
+
     function renderAnnouncements() {
       const list = announcements.filter(announcementMatchesClient);
+      const read = new Set(readAnnouncementKeys());
+      const unreadCount = list.filter(function (item) {
+        const key = announcementKey(item);
+        return key && !read.has(key);
+      }).length;
       const html = list.length ? list.map(function (item) {
         return '<article class="notice-card">' +
           (item.image_url ? '<img src="' + escapeHtml(item.image_url) + '" alt="" />' : '') +
@@ -2887,10 +3065,7 @@
           '</article>';
         }).join('') : '<div class="empty">Nenhum comunicado no momento.</div>';
       }
-      document.querySelectorAll('[data-notification-count]').forEach(function (badge) {
-        badge.textContent = list.length > 99 ? '99+' : String(list.length);
-        badge.hidden = list.length === 0;
-      });
+      updateNotificationBadges(unreadCount);
     }
 
     function renderHome() {
@@ -3162,23 +3337,43 @@
         '<div class="payment-summary-item"><span>Histórico pago</span><strong>' + paid.length + '</strong></div>';
     }
 
+    function invoicePixText(invoice) {
+      return invoice.pix_payload || pixPayload(invoice.amount, invoice.description + ' ' + invoiceMonthLabel(invoice.invoice_month));
+    }
+
     function invoiceCard(invoice) {
       const status = invoiceEffectiveStatus(invoice);
-      const pix = invoice.pix_payload || pixPayload(invoice.amount, invoice.description + ' ' + invoiceMonthLabel(invoice.invoice_month));
-      const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(pix);
       const paid = status === 'PAGA';
+      const dueText = invoice.due_date ? formatShortDate(invoice.due_date) : 'a definir';
       return '<article class="invoice-card ' + (paid ? 'is-paid' : status === 'VENCIDA' ? 'is-late' : 'is-open') + '">' +
         '<div>' +
           '<div class="invoice-title"><h3>Fatura de ' + escapeHtml(invoiceMonthLabel(invoice.invoice_month)) + '</h3>' + pill(status) + '</div>' +
-          '<div class="invoice-meta">' + escapeHtml(invoice.plan_name || invoice.description || 'Mensalidade') + ' | vencimento ' + (invoice.due_date ? formatShortDate(invoice.due_date) : 'a definir') + (invoice.paid_at ? ' | pago em ' + formatShortDate(invoice.paid_at) : '') + '</div>' +
+          '<div class="invoice-meta"><span>' + escapeHtml(invoice.plan_name || invoice.description || 'Mensalidade') + '</span><span>Vencimento ' + escapeHtml(dueText) + '</span>' + (invoice.paid_at ? '<span>Pago em ' + escapeHtml(formatShortDate(invoice.paid_at)) + '</span>' : '') + '</div>' +
           (invoice.notes ? '<div class="invoice-meta">' + escapeHtml(invoice.notes) + '</div>' : '') +
         '</div>' +
         '<div class="invoice-actions">' +
           '<div class="invoice-value">' + money(invoice.amount) + '</div>' +
-          (paid ? '<span class="pill good">Pagamento confirmado</span>' : '<button class="primary-btn" type="button" data-copy-pix="' + escapeHtml(invoice.id) + '">Gerar Pix</button>') +
-          (!paid ? '<details class="pix-box"><summary>Ver QR Code</summary><img src="' + qrUrl + '" alt="QR Code Pix" /><div class="pix-copy" data-pix-payload="' + escapeHtml(invoice.id) + '">' + escapeHtml(pix) + '</div></details>' : '') +
+          (paid ? '<span class="pill status-paid">PAGO</span>' : '<button class="primary-btn" type="button" data-open-pix="' + escapeHtml(invoice.id) + '">Gerar Pix</button>') +
         '</div>' +
       '</article>';
+    }
+
+    function openPixModal(invoice) {
+      const pix = invoicePixText(invoice);
+      const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(pix);
+      activePixPayload = pix;
+      $('pixModalSubtitle').textContent = 'Fatura de ' + invoiceMonthLabel(invoice.invoice_month);
+      $('pixModalBody').innerHTML =
+        '<div class="pix-modal-total"><span>Valor da fatura</span><strong>' + money(invoice.amount) + '</strong></div>' +
+        '<div class="invoice-meta"><span>' + escapeHtml(invoice.plan_name || invoice.description || 'Mensalidade') + '</span><span>Vencimento ' + escapeHtml(invoice.due_date ? formatShortDate(invoice.due_date) : 'a definir') + '</span>' + pill(invoiceEffectiveStatus(invoice)) + '</div>' +
+        '<div class="pix-modal-qr"><img src="' + qrUrl + '" alt="QR Code Pix" /><div class="pix-modal-code">' + escapeHtml(pix) + '</div></div>' +
+        '<button class="primary-btn" type="button" data-copy-modal-pix>Copiar código Pix</button>';
+      $('pixModal').hidden = false;
+    }
+
+    function closePixModal() {
+      activePixPayload = '';
+      $('pixModal').hidden = true;
     }
 
     function renderPayments() {
@@ -3463,14 +3658,29 @@
         }
       });
       $('paymentList').addEventListener('click', function (event) {
-        const pixBtn = event.target.closest('[data-copy-pix]');
+        const pixBtn = event.target.closest('[data-open-pix]');
         if (!pixBtn) return;
-        const invoice = buildMonthlyInvoices().find(function (item) { return String(item.id) === String(pixBtn.dataset.copyPix); });
-        const text = invoice ? (invoice.pix_payload || pixPayload(invoice.amount, invoice.description + ' ' + invoiceMonthLabel(invoice.invoice_month))) : '';
-        if (navigator.clipboard && text) {
-          navigator.clipboard.writeText(text).then(function () { toast('Pix copiado.'); }).catch(function () { toast('Pix pronto para copiar.'); });
+        const invoice = buildMonthlyInvoices().find(function (item) { return String(item.id) === String(pixBtn.dataset.openPix); });
+        if (invoice) openPixModal(invoice);
+      });
+      $('pixModal').addEventListener('click', function (event) {
+        if (event.target === $('pixModal') || event.target.closest('[data-close-pix]')) {
+          closePixModal();
+          return;
+        }
+        if (event.target.closest('[data-copy-modal-pix]')) {
+          if (navigator.clipboard && activePixPayload) {
+            navigator.clipboard.writeText(activePixPayload).then(function () { toast('Código Pix copiado.'); }).catch(function () { toast('Código Pix pronto para copiar.'); });
+          } else {
+            toast('Código Pix pronto para copiar.');
+          }
+        }
+      });
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && !$('pixModal').hidden) {
+          closePixModal();
         } else {
-          toast('Pix pronto para copiar.');
+          return;
         }
       });
       $('paymentMonth').addEventListener('change', function () {
