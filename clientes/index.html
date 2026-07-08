@@ -217,45 +217,49 @@
     .pull-refresh {
       --pull-offset: 0px;
       position: fixed;
-      top: max(10px, env(safe-area-inset-top));
+      top: 50%;
       left: 50%;
-      z-index: 80;
-      display: inline-flex;
+      z-index: 130;
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 8px;
-      min-height: 38px;
-      padding: 0 14px;
+      justify-content: center;
+      gap: 12px;
+      width: 150px;
+      height: 150px;
+      padding: 16px;
       border: 1px solid var(--line);
-      border-radius: 999px;
-      background: rgba(255, 255, 255, .96);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, .97);
       color: var(--teal);
-      box-shadow: var(--shadow);
-      font-size: 12px;
+      box-shadow: 0 22px 60px rgba(16, 39, 44, .18);
+      font-size: 13px;
       font-weight: 900;
       opacity: 0;
       pointer-events: none;
-      transform: translate(-50%, calc(-72px + var(--pull-offset)));
+      text-align: center;
+      transform: translate(-50%, -50%) scale(.86);
       transition: opacity .16s ease, transform .16s ease;
     }
 
     .pull-refresh.visible {
       opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
     }
 
     .pull-refresh-icon {
       position: relative;
-      width: 20px;
-      height: 20px;
-      flex: 0 0 20px;
+      width: 72px;
+      height: 72px;
+      flex: 0 0 72px;
       overflow: hidden;
       border-radius: 999px;
       background:
-        radial-gradient(circle at 32% 26%, #f8ffd7 0 13%, transparent 14%),
-        radial-gradient(circle at 42% 42%, #d8ff43 0 42%, #a6db00 72%, #76b900 100%);
+        radial-gradient(circle at 48% 46%, #dcff39 0 48%, #b7ec00 72%, #86c900 100%);
       box-shadow:
-        inset -3px -4px 7px rgba(45, 78, 0, .22),
-        inset 2px 2px 5px rgba(255, 255, 255, .62),
-        0 4px 10px rgba(16, 39, 44, .12);
+        inset -8px -10px 16px rgba(51, 84, 0, .2),
+        inset 5px 6px 12px rgba(255, 255, 255, .42),
+        0 12px 24px rgba(16, 39, 44, .18);
       transition: transform .16s ease;
     }
 
@@ -263,21 +267,21 @@
     .pull-refresh-icon::after {
       content: "";
       position: absolute;
-      top: -5px;
-      width: 18px;
-      height: 30px;
-      border: 2px solid rgba(255, 255, 255, .82);
+      top: -13px;
+      width: 44px;
+      height: 98px;
+      border: 4px solid rgba(255, 255, 255, .82);
       border-top-color: transparent;
       border-bottom-color: transparent;
       border-radius: 999px;
     }
 
     .pull-refresh-icon::before {
-      left: -8px;
+      left: -22px;
     }
 
     .pull-refresh-icon::after {
-      right: -8px;
+      right: -22px;
     }
 
     .pull-refresh.ready .pull-refresh-icon {
@@ -644,6 +648,10 @@
       line-height: 1;
     }
 
+    .notice-count[hidden] {
+      display: none !important;
+    }
+
     .home-menu-card .notice-count {
       position: absolute;
       top: 10px;
@@ -986,7 +994,8 @@
     }
 
     .plan-tabs {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 8px;
       overflow-x: auto;
       padding: 2px 0 4px;
@@ -998,13 +1007,14 @@
     }
 
     .plan-tab {
-      min-height: 40px;
-      flex: 0 0 auto;
-      border-radius: 999px;
-      padding: 8px 14px;
+      min-height: 42px;
+      min-width: 0;
+      border-radius: 10px;
+      padding: 8px 10px;
       border: 1px solid var(--line);
       background: #ffffff;
       color: var(--dark);
+      font-size: 13px;
       font-weight: 900;
     }
 
@@ -1020,14 +1030,17 @@
     }
 
     .plan-card {
-      padding: 18px;
+      padding: 14px;
       display: grid;
-      gap: 16px;
+      gap: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
     }
 
     .plan-card h3 {
       margin: 0;
-      font-size: 22px;
+      font-size: 19px;
       line-height: 1.1;
     }
 
@@ -1070,8 +1083,8 @@
 
     .plan-status-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 8px;
     }
 
     .plan-status-item {
@@ -1119,10 +1132,11 @@
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      padding: 12px 14px;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
       border-radius: 8px;
-      background: var(--dark);
-      color: #ffffff;
+      background: #f8fbfc;
+      color: var(--ink);
     }
 
     .plan-catalog-title h3 {
@@ -1131,25 +1145,25 @@
     }
 
     .plan-catalog-title span {
-      color: rgba(255, 255, 255, .78);
+      color: var(--muted);
       font-size: 12px;
       font-weight: 900;
     }
 
     .plan-period-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
       gap: 10px;
     }
 
     .plan-sale-card {
       position: relative;
       overflow: hidden;
-      min-height: 246px;
+      min-height: 0;
       align-content: stretch;
       border: 1px solid var(--line);
       background: #ffffff;
-      box-shadow: 0 12px 30px rgba(16, 39, 44, .08);
+      box-shadow: none;
     }
 
     .plan-sale-card::before {
@@ -1162,7 +1176,7 @@
 
     .plan-sale-card.featured {
       border-color: rgba(181, 229, 0, .85);
-      box-shadow: 0 16px 34px rgba(8, 63, 75, .16);
+      box-shadow: 0 10px 22px rgba(8, 63, 75, .08);
     }
 
     .plan-period {
@@ -1186,7 +1200,11 @@
     }
 
     .catalog-plan h3 {
-      font-size: 19px;
+      font-size: 16px;
+    }
+
+    .plan-sale-card h3 {
+      font-size: 16px;
     }
 
     .catalog-price {
@@ -1194,7 +1212,7 @@
       align-items: baseline;
       gap: 6px;
       color: var(--teal);
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 900;
       line-height: 1;
     }
@@ -1203,6 +1221,11 @@
       color: var(--muted);
       font-size: 12px;
       font-weight: 900;
+    }
+
+    .plan-sale-card .primary-btn,
+    .plan-sale-card .ghost-btn {
+      min-height: 40px;
     }
 
     .store-grid {
@@ -1554,6 +1577,9 @@
       .plan-status-grid {
         grid-template-columns: 1fr;
       }
+      .plan-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
       .plan-category-grid,
       .plan-period-grid,
       .store-grid,
@@ -1786,16 +1812,6 @@
         font-size: 15px;
         box-shadow: none;
       }
-      .home-plan-link {
-        grid-column: 1 / -1;
-        min-height: 76px;
-        grid-template-columns: 44px minmax(0, 1fr);
-        align-content: center;
-        justify-content: start;
-        justify-items: start;
-        padding: 0 18px;
-        text-align: left;
-      }
       .home-menu-card svg {
         width: 42px;
         height: 42px;
@@ -1948,8 +1964,8 @@
         font-size: 9px;
       }
       .pix-modal {
-        align-items: end;
-        padding: 12px;
+        place-items: center;
+        padding: 16px;
       }
       .pix-modal-card {
         max-height: calc(100dvh - 24px);
@@ -2162,13 +2178,12 @@
           </div>
           <div class="home-menu-grid" aria-label="Menu principal">
             <button class="home-menu-card home-plan-link" type="button" data-view="plans"><svg><use href="#client-icon-plan"></use></svg>Planos</button>
-            <button class="home-menu-card" type="button" data-view="notifications"><span class="notice-count" data-notification-count hidden>0</span><svg><use href="#client-icon-bell"></use></svg>Notificações</button>
             <button class="home-menu-card" type="button" data-view="store"><svg><use href="#client-icon-bag"></use></svg>Loja</button>
             <a class="home-menu-card" href="https://duplafalta.com.br/ranking/finals-masculino.html" target="_blank" rel="noopener"><svg><use href="#client-icon-ranking"></use></svg>Ranking</a>
             <a class="home-menu-card" href="../publico.html"><svg><use href="#client-icon-trophy"></use></svg>Torneios</a>
           </div>
           <div class="home-notices">
-            <h3 class="home-section-title">Comunicados <span class="notice-count" data-notification-count hidden>0</span></h3>
+            <h3 class="home-section-title">Comunicados <span class="notice-count" data-notification-count hidden></span></h3>
             <div class="notice-list" id="homeAnnouncements"></div>
           </div>
         </div>
@@ -2296,7 +2311,7 @@
       <button class="active" type="button" data-view="home"><svg><use href="#client-icon-home"></use></svg><span>Início</span></button>
       <button type="button" data-view="payments"><svg><use href="#client-icon-card"></use></svg><span>Pagamento</span></button>
       <a class="bottom-play" href="https://ilhatenis.com/agenda" target="_blank" rel="noopener"><svg><use href="#client-icon-play"></use></svg><span>Jogar</span></a>
-      <button class="notification-nav" type="button" data-view="notifications" aria-label="Notificações"><span class="notice-count" data-notification-count hidden>0</span><svg><use href="#client-icon-bell"></use></svg><span class="nav-label">Notificação</span></button>
+      <button class="notification-nav" type="button" data-view="notifications" aria-label="Notificações"><span class="notice-count" data-notification-count hidden></span><svg><use href="#client-icon-bell"></use></svg><span class="nav-label">Notificação</span></button>
       <button type="button" data-view="profile"><svg><use href="#client-icon-user"></use></svg><span>Perfil</span></button>
     </nav>
   </main>
@@ -2382,7 +2397,7 @@
     function setPullRefresh(offset, label, stateClass) {
       const indicator = $('pullRefreshIndicator');
       if (!indicator) return;
-      indicator.style.setProperty('--pull-offset', Math.max(0, Math.min(offset || 0, 84)) + 'px');
+      indicator.style.setProperty('--pull-offset', Math.max(0, Math.min(offset || 0, 96)) + 'px');
       indicator.classList.toggle('visible', Boolean(offset));
       indicator.classList.toggle('ready', stateClass === 'ready');
       indicator.classList.toggle('refreshing', stateClass === 'refreshing');
@@ -2437,19 +2452,46 @@
       setPullRefresh(offset, pullRefreshState.ready ? 'Solte para atualizar' : 'Puxe para atualizar', pullRefreshState.ready ? 'ready' : '');
     }
 
+    async function updateAppShell() {
+      try {
+        if ('serviceWorker' in navigator) {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            await registration.update();
+            if (registration.waiting) {
+              registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+          }
+        }
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.filter(function (key) {
+            return key.indexOf('ilha-play-v') === 0;
+          }).map(function (key) {
+            return caches.delete(key);
+          }));
+        }
+      } catch (error) {}
+    }
+
     async function runPullRefresh() {
       if (pullRefreshState.refreshing) return;
       pullRefreshState.refreshing = true;
-      setPullRefresh(84, 'Atualizando...', 'refreshing');
+      let reloading = false;
+      setPullRefresh(96, 'Atualizando...', 'refreshing');
       try {
         await refresh(true);
-        setPullRefresh(84, 'Atualizado', 'ready');
-        toast('Tela atualizada.');
+        await updateAppShell();
+        setPullRefresh(96, 'Abrindo versão nova...', 'refreshing');
+        reloading = true;
+        window.setTimeout(function () {
+          window.location.reload();
+        }, 260);
       } catch (error) {
-        setPullRefresh(84, 'Tente novamente', '');
+        setPullRefresh(96, 'Tente novamente', '');
         toast('Não consegui atualizar agora.');
       } finally {
-        resetPullRefresh(650);
+        if (!reloading) resetPullRefresh(650);
       }
     }
 
@@ -3024,7 +3066,7 @@
 
     function updateNotificationBadges(count) {
       document.querySelectorAll('[data-notification-count]').forEach(function (badge) {
-        badge.textContent = count > 99 ? '99+' : String(count);
+        badge.textContent = count > 0 ? (count > 99 ? '99+' : String(count)) : '';
         badge.hidden = count === 0;
       });
     }
@@ -3102,7 +3144,6 @@
           '<div>' +
             '<span class="plan-kicker">Plano atual</span>' +
             '<h3>Ainda não definido</h3>' +
-            '<p class="muted">Quando a equipe vincular seu plano no ADM, ele aparece aqui.</p>' +
           '</div>' +
           '<div class="plan-actions">' +
             '<button class="ghost-btn" type="button" data-refresh-plan>Atualizar</button>' +
@@ -3202,7 +3243,7 @@
           '<div class="plan-period-grid">' + (plans.map(renderCatalogPlanCard).join('') || '<div class="empty">Sem planos nessa categoria.</div>') + '</div>' +
         '</section>';
       }
-      return '<section class="panel"><div class="panel-head"><div><h2>Solicitar alteração</h2><div class="muted">Você escolhe o plano desejado e a equipe confirma disponibilidade de horário.</div></div></div><div class="plan-tabs">' + tabs + '</div><div class="plan-catalog">' + grouped + '</div></section>';
+      return '<section class="panel"><div class="panel-head"><div><h2>Planos disponíveis</h2></div></div><div class="plan-tabs">' + tabs + '</div><div class="plan-catalog">' + grouped + '</div></section>';
     }
 
     function renderCatalogPlanCard(plan) {
@@ -3215,13 +3256,12 @@
         '<div class="plan-period"><span class="plan-kicker">' + escapeHtml(period) + '</span>' + (featured ? '<span class="best-badge">Melhor escolha</span>' : '') + '</div>' +
         '<div><h3>' + escapeHtml(plan.name) + '</h3></div>' +
         price +
-        '<p class="muted">' + escapeHtml(plan.description || 'Plano oficial do clube.') + '</p>' +
         '<div class="meta">' +
           (plan.weekly_lessons ? '<span class="pill">' + plan.weekly_lessons + 'x por semana</span>' : '') +
           (plan.default_due_day ? '<span class="pill">Vence dia ' + escapeHtml(plan.default_due_day) + '</span>' : '') +
           (request ? pill(request.status) : '') +
         '</div>' +
-        '<button class="' + (disabled ? 'ghost-btn' : 'primary-btn') + '" type="button" data-request-plan="' + escapeHtml(plan.code || plan.id || plan.name) + '"' + (disabled ? ' disabled' : '') + '>' + (disabled ? 'Pedido enviado' : 'Solicitar alteração') + '</button>' +
+        '<button class="' + (disabled ? 'ghost-btn' : 'primary-btn') + '" type="button" data-request-plan="' + escapeHtml(plan.code || plan.id || plan.name) + '"' + (disabled ? ' disabled' : '') + '>' + (disabled ? 'Pedido enviado' : 'Solicitar') + '</button>' +
       '</article>';
     }
 

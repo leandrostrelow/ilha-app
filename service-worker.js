@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v39';
+const CACHE_NAME = 'ilha-play-v40';
 const ASSETS = [
   './',
   './index.html',
@@ -37,9 +37,22 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-  if (event.request.mode === 'navigate') {
+  const url = new URL(event.request.url);
+  const isAppShell = url.origin === self.location.origin && (
+    event.request.mode === 'navigate' ||
+    url.pathname === '/' ||
+    url.pathname.endsWith('/') ||
+    url.pathname.endsWith('.html')
+  );
+  if (isAppShell) {
     event.respondWith(
       fetch(event.request)
         .then(response => {
