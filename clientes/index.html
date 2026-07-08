@@ -1546,6 +1546,82 @@
       background: #f4f9fa;
     }
 
+    .external-modal-card.is-link .external-frame {
+      display: none;
+    }
+
+    .external-modal-card.is-frame .external-fallback {
+      display: none;
+    }
+
+    .external-fallback {
+      display: grid;
+      place-items: center;
+      gap: 16px;
+      padding: 22px;
+      background:
+        linear-gradient(135deg, rgba(181, 229, 0, .12), transparent 42%),
+        #f7fbfc;
+      text-align: center;
+    }
+
+    .external-fallback-inner {
+      width: min(420px, 100%);
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #ffffff;
+      box-shadow: 0 16px 36px rgba(16, 39, 44, .1);
+    }
+
+    .external-fallback-icon {
+      width: 76px;
+      height: 76px;
+      display: grid;
+      place-items: center;
+      border-radius: 22px;
+      background: #ecfccb;
+      color: var(--teal);
+    }
+
+    .external-fallback-icon svg {
+      width: 42px;
+      height: 42px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .external-fallback h3 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .external-fallback p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.4;
+      font-weight: 800;
+    }
+
+    .external-fallback-link {
+      min-height: 46px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      padding: 0 18px;
+      background: var(--teal);
+      color: #ffffff;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
     .tournament-panel {
       padding: 18px;
       overflow: auto;
@@ -2421,7 +2497,7 @@
         <button type="button" data-view="profile"><span class="nav-icon"><svg><use href="#client-icon-user"></use></svg></span><span>Meus dados</span></button>
         <button type="button" data-view="plans"><span class="nav-icon"><svg><use href="#client-icon-plan"></use></svg></span><span>Planos</span></button>
         <button type="button" data-view="payments"><span class="nav-icon"><svg><use href="#client-icon-card"></use></svg></span><span>Pagamento</span></button>
-        <a href="https://ilhatenis.com/agenda" data-embed-url="https://ilhatenis.com/agenda" data-embed-title="Jogar" data-embed-subtitle="Agenda de quadras do Ilha Tênis"><span class="nav-icon"><svg><use href="#client-icon-play"></use></svg></span><span>Jogar</span></a>
+        <a href="https://ilhatenis.com/agenda" data-embed-url="https://ilhatenis.com/agenda" data-embed-title="Jogar" data-embed-subtitle="Agenda de quadras do Ilha Tênis" data-embed-mode="link"><span class="nav-icon"><svg><use href="#client-icon-play"></use></svg></span><span>Jogar</span></a>
         <button type="button" data-view="store"><span class="nav-icon"><svg><use href="#client-icon-bag"></use></svg></span><span>Loja</span></button>
         <a href="https://duplafalta.com.br/ranking/finals-masculino.html" data-embed-url="https://duplafalta.com.br/ranking/finals-masculino.html" data-embed-title="Ranking" data-embed-subtitle="Circuito CINCATE"><span class="nav-icon"><svg><use href="#client-icon-ranking"></use></svg></span><span>Ranking</span></a>
         <button type="button" data-open-tournaments><span class="nav-icon"><svg><use href="#client-icon-trophy"></use></svg></span><span>Torneios</span></button>
@@ -2581,7 +2657,7 @@
     <nav class="mobile-bottom-nav" aria-label="Navegação inferior">
       <button class="active" type="button" data-view="home" aria-label="Início"><svg><use href="#client-icon-home"></use></svg><span>Início</span></button>
       <button type="button" data-view="payments" aria-label="Pagamento"><svg><use href="#client-icon-card"></use></svg><span>Pagamento</span></button>
-      <a class="bottom-play" href="https://ilhatenis.com/agenda" data-embed-url="https://ilhatenis.com/agenda" data-embed-title="Jogar" data-embed-subtitle="Agenda de quadras do Ilha Tênis" aria-label="Jogar"><svg><use href="#client-icon-play"></use></svg><span>Jogar</span></a>
+      <a class="bottom-play" href="https://ilhatenis.com/agenda" data-embed-url="https://ilhatenis.com/agenda" data-embed-title="Jogar" data-embed-subtitle="Agenda de quadras do Ilha Tênis" data-embed-mode="link" aria-label="Jogar"><svg><use href="#client-icon-play"></use></svg><span>Jogar</span></a>
       <button class="notification-nav" type="button" data-view="notifications" aria-label="Notificações"><span class="notice-count" data-notification-count hidden></span><svg><use href="#client-icon-bell"></use></svg><span class="nav-label">Notificação</span></button>
       <button type="button" data-view="profile" aria-label="Perfil"><svg><use href="#client-icon-user"></use></svg><span>Perfil</span></button>
     </nav>
@@ -2600,6 +2676,14 @@
         </div>
       </div>
       <iframe class="external-frame" id="externalFrame" title="Conteúdo externo"></iframe>
+      <div class="external-fallback">
+        <div class="external-fallback-inner">
+          <span class="external-fallback-icon"><svg><use href="#client-icon-play"></use></svg></span>
+          <h3 id="externalFallbackTitle">Abrir conteúdo</h3>
+          <p id="externalFallbackText">Este conteúdo precisa abrir em uma tela própria.</p>
+          <a class="external-fallback-link" id="externalFallbackLink" href="#">Abrir agora</a>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2894,12 +2978,22 @@
       setTimeout(function () { $('toast').classList.remove('show'); }, 2400);
     }
 
-    function openExternalModal(title, url, subtitle) {
+    function openExternalModal(title, url, subtitle, mode) {
       if (!url) return;
+      const linkOnly = mode === 'link';
       $('externalModalTitle').textContent = title || 'Ilha Play';
       $('externalModalSubtitle').textContent = subtitle || 'Abrindo dentro do app.';
       $('externalModalOpen').href = url;
-      $('externalFrame').src = url;
+      $('externalFallbackTitle').textContent = title || 'Abrir conteúdo';
+      $('externalFallbackText').textContent = linkOnly ?
+        'Este conteúdo não permite abertura embutida. Abra por aqui para continuar.' :
+        'Se a página não carregar, abra por aqui para continuar.';
+      $('externalFallbackLink').href = url;
+      $('externalFallbackLink').target = linkOnly ? '_self' : '_blank';
+      $('externalFallbackLink').rel = linkOnly ? '' : 'noopener';
+      $('externalModal').querySelector('.external-modal-card').classList.toggle('is-link', linkOnly);
+      $('externalModal').querySelector('.external-modal-card').classList.toggle('is-frame', !linkOnly);
+      $('externalFrame').src = linkOnly ? 'about:blank' : url;
       $('externalModal').hidden = false;
       document.body.style.overflow = 'hidden';
     }
@@ -2907,6 +3001,7 @@
     function closeExternalModal() {
       $('externalModal').hidden = true;
       $('externalFrame').src = 'about:blank';
+      $('externalModal').querySelector('.external-modal-card').classList.remove('is-link', 'is-frame');
       document.body.style.overflow = '';
     }
 
@@ -4022,14 +4117,19 @@
       document.querySelectorAll('[data-back-home]').forEach(function (btn) {
         btn.addEventListener('click', function () { showView('home'); });
       });
-      document.querySelectorAll('[data-embed-url]').forEach(function (link) {
-        link.addEventListener('click', function (event) {
+      document.addEventListener('click', function (event) {
+        const link = event.target.closest('[data-embed-url]');
+        if (link) {
           event.preventDefault();
-          openExternalModal(link.dataset.embedTitle, link.dataset.embedUrl || link.href, link.dataset.embedSubtitle);
-        });
-      });
-      document.querySelectorAll('[data-open-tournaments]').forEach(function (btn) {
-        btn.addEventListener('click', function () { openTournamentModal(); });
+          event.stopPropagation();
+          openExternalModal(link.dataset.embedTitle, link.dataset.embedUrl || link.href, link.dataset.embedSubtitle, link.dataset.embedMode);
+          return;
+        }
+        if (event.target.closest('[data-open-tournaments]')) {
+          event.preventDefault();
+          event.stopPropagation();
+          openTournamentModal();
+        }
       });
       $('profileForm').addEventListener('submit', saveProfile);
       $('profilePhoto').addEventListener('change', async function () {
