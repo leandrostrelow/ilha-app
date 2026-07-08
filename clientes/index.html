@@ -1484,23 +1484,69 @@
         overflow-x: hidden;
       }
       body.client-locked {
-        align-items: start;
-        padding: max(14px, env(safe-area-inset-top)) 12px max(14px, env(safe-area-inset-bottom));
+        display: block;
+        padding: 0;
+        background: #ffffff;
       }
-      .client-auth { width: 100%; }
+      .client-auth {
+        width: 100%;
+        min-height: 100dvh;
+        display: grid;
+        align-items: start;
+        padding: max(56px, calc(env(safe-area-inset-top) + 42px)) 26px max(28px, env(safe-area-inset-bottom));
+        background:
+          linear-gradient(180deg, #ffffff 0%, #ffffff 76%, #f5fafb 100%);
+      }
       .auth-card {
-        min-height: calc(100dvh - 28px);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding: 22px 18px;
+        width: 100%;
+        min-height: auto;
+        display: block;
+        padding: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
       }
       .auth-logo {
-        width: min(190px, 70%);
-        margin-bottom: 24px;
+        width: min(230px, 72vw);
+        margin: clamp(36px, 9dvh, 84px) auto 34px;
       }
-      .auth-tabs { margin-bottom: 18px; }
-      label { margin-top: 12px; }
+      .auth-tabs {
+        gap: 6px;
+        margin-bottom: 26px;
+        padding: 5px;
+        border-radius: 16px;
+        background: #edf4f6;
+      }
+      .auth-tab {
+        min-height: 54px;
+        border-radius: 12px;
+        font-size: 17px;
+      }
+      .auth-tab.active {
+        box-shadow: 0 8px 24px rgba(16, 39, 44, .1);
+      }
+      label {
+        margin-top: 16px;
+        margin-bottom: 8px;
+        font-size: 11px;
+      }
+      input,
+      select,
+      textarea {
+        min-height: 58px;
+        border-radius: 14px;
+        background: #fbfdfe;
+        font-size: 16px;
+      }
+      .auth-form .primary-btn {
+        min-height: 58px;
+        margin-top: 24px;
+        border-radius: 14px;
+        font-size: 18px;
+      }
+      .auth-message {
+        margin-top: 14px;
+      }
       .form-grid { grid-template-columns: 1fr; }
       .weekday-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       .client-app {
