@@ -243,20 +243,52 @@
     }
 
     .pull-refresh-icon {
-      width: 18px;
-      height: 18px;
+      position: relative;
+      width: 20px;
+      height: 20px;
+      flex: 0 0 20px;
+      overflow: hidden;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 32% 26%, #f8ffd7 0 13%, transparent 14%),
+        radial-gradient(circle at 42% 42%, #d8ff43 0 42%, #a6db00 72%, #76b900 100%);
+      box-shadow:
+        inset -3px -4px 7px rgba(45, 78, 0, .22),
+        inset 2px 2px 5px rgba(255, 255, 255, .62),
+        0 4px 10px rgba(16, 39, 44, .12);
       transition: transform .16s ease;
     }
 
+    .pull-refresh-icon::before,
+    .pull-refresh-icon::after {
+      content: "";
+      position: absolute;
+      top: -5px;
+      width: 18px;
+      height: 30px;
+      border: 2px solid rgba(255, 255, 255, .82);
+      border-top-color: transparent;
+      border-bottom-color: transparent;
+      border-radius: 999px;
+    }
+
+    .pull-refresh-icon::before {
+      left: -8px;
+    }
+
+    .pull-refresh-icon::after {
+      right: -8px;
+    }
+
     .pull-refresh.ready .pull-refresh-icon {
-      transform: rotate(180deg);
+      transform: rotate(32deg);
     }
 
     .pull-refresh.refreshing .pull-refresh-icon {
-      animation: pullRefreshSpin .8s linear infinite;
+      animation: tennisBallSpin .8s linear infinite;
     }
 
-    @keyframes pullRefreshSpin {
+    @keyframes tennisBallSpin {
       to { transform: rotate(360deg); }
     }
 
@@ -1354,45 +1386,6 @@
 
     .toast.show { display: block; }
 
-    @media (min-width: 941px) {
-      body.client-home-view .client-app {
-        grid-template-columns: 1fr;
-      }
-      body.client-home-view .sidebar {
-        position: relative;
-        min-height: auto;
-        display: block;
-        padding: 28px 32px 18px;
-        border-right: 0;
-        border-bottom: 1px solid var(--line);
-      }
-      body.client-home-view .side-brand {
-        display: grid;
-        grid-template-columns: 1fr;
-        justify-items: center;
-        padding-bottom: 0;
-        border-bottom: 0;
-      }
-      body.client-home-view .brand-lockup img {
-        width: clamp(170px, 18vw, 230px);
-      }
-      body.client-home-view .brand-play {
-        font-size: clamp(20px, 2vw, 26px);
-        letter-spacing: 5px;
-      }
-      body.client-home-view .side-user,
-      body.client-home-view .side-nav,
-      body.client-home-view .side-logout {
-        display: none;
-      }
-      body.client-home-view .content {
-        padding-top: 28px;
-      }
-      body.client-home-view .welcome-card {
-        width: min(980px, 100%);
-      }
-    }
-
     @media (max-width: 940px) {
       body.client-unlocked {
         background: #ffffff;
@@ -1671,16 +1664,27 @@
         align-self: start;
         margin-top: -24px;
         border-radius: 999px;
-        background: var(--teal);
-        color: #ffffff;
-        box-shadow: 0 14px 30px rgba(8, 63, 75, .32);
+        background:
+          radial-gradient(ellipse 34px 80px at -7px 50%, transparent 57%, rgba(255, 255, 255, .92) 58% 63%, transparent 64%),
+          radial-gradient(ellipse 34px 80px at calc(100% + 7px) 50%, transparent 57%, rgba(255, 255, 255, .92) 58% 63%, transparent 64%),
+          radial-gradient(circle at 31% 25%, #f8ffd8 0 12%, transparent 13%),
+          radial-gradient(circle at 42% 42%, #d9ff42 0 42%, #aee600 72%, #78bd00 100%);
+        color: var(--teal);
+        box-shadow:
+          inset -7px -9px 18px rgba(55, 82, 0, .22),
+          inset 5px 5px 12px rgba(255, 255, 255, .7),
+          0 16px 34px rgba(109, 168, 0, .34);
       }
       .mobile-bottom-nav .bottom-play svg {
+        position: relative;
+        z-index: 1;
         width: 30px;
         height: 30px;
+        filter: drop-shadow(0 2px 1px rgba(255, 255, 255, .4));
       }
       .mobile-bottom-nav .bottom-play span {
         position: absolute;
+        z-index: 1;
         bottom: 7px;
         color: var(--teal);
         transform: translateY(24px);
@@ -1773,7 +1777,7 @@
 
   <main class="client-app" id="clientApp" aria-hidden="true">
     <div class="pull-refresh" id="pullRefreshIndicator" aria-hidden="true">
-      <svg class="pull-refresh-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="pull-refresh-icon" aria-hidden="true"></span>
       <span id="pullRefreshLabel">Puxe para atualizar</span>
     </div>
     <aside class="sidebar" aria-label="Menu do cliente">
