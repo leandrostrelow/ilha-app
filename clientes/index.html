@@ -210,6 +210,52 @@
       background: var(--bg);
     }
 
+    .pull-refresh {
+      --pull-offset: 0px;
+      position: fixed;
+      top: max(10px, env(safe-area-inset-top));
+      left: 50%;
+      z-index: 80;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .96);
+      color: var(--teal);
+      box-shadow: var(--shadow);
+      font-size: 12px;
+      font-weight: 900;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, calc(-72px + var(--pull-offset)));
+      transition: opacity .16s ease, transform .16s ease;
+    }
+
+    .pull-refresh.visible {
+      opacity: 1;
+    }
+
+    .pull-refresh-icon {
+      width: 18px;
+      height: 18px;
+      transition: transform .16s ease;
+    }
+
+    .pull-refresh.ready .pull-refresh-icon {
+      transform: rotate(180deg);
+    }
+
+    .pull-refresh.refreshing .pull-refresh-icon {
+      animation: pullRefreshSpin .8s linear infinite;
+    }
+
+    @keyframes pullRefreshSpin {
+      to { transform: rotate(360deg); }
+    }
+
     .sidebar {
       min-height: 100vh;
       position: sticky;
@@ -1536,6 +1582,10 @@
   </section>
 
   <main class="client-app" id="clientApp" aria-hidden="true">
+    <div class="pull-refresh" id="pullRefreshIndicator" aria-hidden="true">
+      <svg class="pull-refresh-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span id="pullRefreshLabel">Puxe para atualizar</span>
+    </div>
     <aside class="sidebar" aria-label="Menu do cliente">
       <div class="side-brand">
         <div class="brand-lockup" aria-label="Ilha Play">
@@ -1750,10 +1800,108 @@
     let announcements = [];
     let activePlanTab = 'aluno';
     let paymentFilter = { month: 'all', year: 'all' };
+    const pullRefreshState = {
+      active: false,
+      ready: false,
+      refreshing: false,
+      startX: 0,
+      startY: 0
+    };
     const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
     function $(id) {
       return document.getElementById(id);
+    }
+
+    function setPullRefresh(offset, label, stateClass) {
+      const indicator = $('pullRefreshIndicator');
+      if (!indicator) return;
+      indicator.style.setProperty('--pull-offset', Math.max(0, Math.min(offset || 0, 84)) + 'px');
+      indicator.classList.toggle('visible', Boolean(offset));
+      indicator.classList.toggle('ready', stateClass === 'ready');
+      indicator.classList.toggle('refreshing', stateClass === 'refreshing');
+      $('pullRefreshLabel').textContent = label || 'Puxe para atualizar';
+    }
+
+    function resetPullRefresh(delay) {
+      setTimeout(function () {
+        pullRefreshState.active = false;
+        pullRefreshState.ready = false;
+        pullRefreshState.refreshing = false;
+        setPullRefresh(0, 'Puxe para atualizar', '');
+      }, delay || 0);
+    }
+
+    function pageIsAtTop() {
+      const scroller = document.scrollingElement || document.documentElement;
+      return !scroller || scroller.scrollTop <= 1;
+    }
+
+    function canStartPullRefresh(event) {
+      if (!session || pullRefreshState.refreshing || !document.body.classList.contains('client-unlocked')) return false;
+      if (!pageIsAtTop()) return false;
+      const target = event.target;
+      return !target.closest('input, textarea, select, details, summary');
+    }
+
+    function handlePullStart(event) {
+      if (!event.touches || event.touches.length !== 1 || !canStartPullRefresh(event)) return;
+      pullRefreshState.active = true;
+      pullRefreshState.ready = false;
+      pullRefreshState.startX = event.touches[0].clientX;
+      pullRefreshState.startY = event.touches[0].clientY;
+    }
+
+    function handlePullMove(event) {
+      if (!pullRefreshState.active || pullRefreshState.refreshing || !event.touches || event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      const distanceY = touch.clientY - pullRefreshState.startY;
+      const distanceX = Math.abs(touch.clientX - pullRefreshState.startX);
+      if (distanceY <= 0 || distanceX > distanceY) {
+        resetPullRefresh(0);
+        return;
+      }
+      if (!pageIsAtTop()) {
+        resetPullRefresh(0);
+        return;
+      }
+      const offset = Math.min(84, distanceY * .5);
+      if (distanceY > 8) event.preventDefault();
+      pullRefreshState.ready = offset >= 62;
+      setPullRefresh(offset, pullRefreshState.ready ? 'Solte para atualizar' : 'Puxe para atualizar', pullRefreshState.ready ? 'ready' : '');
+    }
+
+    async function runPullRefresh() {
+      if (pullRefreshState.refreshing) return;
+      pullRefreshState.refreshing = true;
+      setPullRefresh(84, 'Atualizando...', 'refreshing');
+      try {
+        await refresh(true);
+        setPullRefresh(84, 'Atualizado', 'ready');
+        toast('Tela atualizada.');
+      } catch (error) {
+        setPullRefresh(84, 'Tente novamente', '');
+        toast('Não consegui atualizar agora.');
+      } finally {
+        resetPullRefresh(650);
+      }
+    }
+
+    function handlePullEnd() {
+      if (!pullRefreshState.active) return;
+      if (pullRefreshState.ready) {
+        runPullRefresh();
+        return;
+      }
+      resetPullRefresh(0);
+    }
+
+    function setupPullToRefresh() {
+      if (!('ontouchstart' in window)) return;
+      window.addEventListener('touchstart', handlePullStart, { passive: true });
+      window.addEventListener('touchmove', handlePullMove, { passive: false });
+      window.addEventListener('touchend', handlePullEnd, { passive: true });
+      window.addEventListener('touchcancel', function () { resetPullRefresh(0); }, { passive: true });
     }
 
     function isPreviewEnvironment() {
@@ -2794,11 +2942,12 @@
       await ensureClient(null, null);
       await loadClientData();
       renderAll();
-      if (!silent) toast('Area atualizada.');
+      if (!silent) toast('Área atualizada.');
     }
 
     function init() {
       configurePreviewEnvironment();
+      setupPullToRefresh();
       $('showLoginBtn').addEventListener('click', function () { showAuthTab('login'); });
       $('showSignupBtn').addEventListener('click', function () { showAuthTab('signup'); });
       $('demoBtn').addEventListener('click', function () { enterDemo(true); });
