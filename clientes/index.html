@@ -707,7 +707,7 @@
       display: block;
       fill: none;
       stroke: currentColor;
-      stroke-width: 2.1;
+      stroke-width: 2.35;
       stroke-linecap: round;
       stroke-linejoin: round;
     }
@@ -720,6 +720,7 @@
       position: absolute;
       top: 4px;
       right: 10px;
+      z-index: 2;
       min-width: 18px;
       height: 18px;
       font-size: 10px;
@@ -1997,16 +1998,33 @@
         min-height: 50px;
         border-radius: 16px;
       }
-      .mobile-bottom-nav button > span:not(.notice-count),
-      .mobile-bottom-nav a > span {
+      .mobile-bottom-nav button > span:not(.notice-count) {
         display: none;
+      }
+      .mobile-bottom-nav button::before {
+        content: "";
+        position: absolute;
+        inset: 50% auto auto 50%;
+        z-index: 0;
+        width: 44px;
+        height: 44px;
+        border-radius: 16px;
+        background: #f3f8fa;
+        transform: translate(-50%, -50%);
+        transition: background .18s ease, border-color .18s ease, transform .18s ease;
+      }
+      .mobile-bottom-nav button.active::before {
+        border: 1px solid rgba(181, 229, 0, .52);
+        background: rgba(181, 229, 0, .12);
       }
       .mobile-bottom-nav svg {
         width: 29px;
         height: 29px;
+        position: relative;
+        z-index: 1;
       }
       .mobile-bottom-nav button.active {
-        background: rgba(181, 229, 0, .08);
+        background: transparent;
       }
       .mobile-bottom-nav .notification-nav .nav-label {
         display: none;
@@ -2028,7 +2046,7 @@
           radial-gradient(ellipse 34px 80px at -7px 50%, transparent 57%, rgba(255, 255, 255, .92) 58% 63%, transparent 64%),
           radial-gradient(ellipse 34px 80px at calc(100% + 7px) 50%, transparent 57%, rgba(255, 255, 255, .92) 58% 63%, transparent 64%),
           linear-gradient(145deg, #d7ff31 0%, #b8ed00 54%, #99d400 100%);
-        color: var(--teal);
+        color: #ffffff;
         box-shadow: none;
       }
       .mobile-bottom-nav .bottom-play svg {
@@ -2036,12 +2054,16 @@
         z-index: 1;
         width: 30px;
         height: 30px;
+        stroke-width: 2.6;
       }
       .mobile-bottom-nav .bottom-play span {
         position: absolute;
+        display: block;
         z-index: 1;
         bottom: 7px;
         color: var(--teal);
+        font-size: 14px;
+        font-weight: 950;
         transform: translateY(24px);
       }
       .top-actions { width: auto; }
@@ -2053,13 +2075,15 @@
 <body class="client-locked">
   <svg aria-hidden="true" style="display:none">
     <symbol id="client-icon-home" viewBox="0 0 24 24">
-      <path d="M3 11.5 12 4l9 7.5" />
-      <path d="M5.5 10.5V20h13v-9.5" />
-      <path d="M9.5 20v-6h5v6" />
+      <path d="M4 11.8 12 5l8 6.8" />
+      <path d="M6.5 10.8V20h11v-9.2" />
+      <path d="M9.8 20v-5.4h4.4V20" />
+      <path d="M10.2 10.9h3.6" />
     </symbol>
     <symbol id="client-icon-user" viewBox="0 0 24 24">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4.5 20c1.5-4 4-6 7.5-6s6 2 7.5 6" />
+      <circle cx="12" cy="7.8" r="3.6" />
+      <path d="M5 20c1.15-4.3 3.5-6.45 7-6.45S17.85 15.7 19 20" />
+      <path d="M8.2 18.8h7.6" />
     </symbol>
     <symbol id="client-icon-plan" viewBox="0 0 24 24">
       <path d="M7 3h8l4 4v14H7z" />
@@ -2068,13 +2092,12 @@
       <path d="M10 16h4" />
     </symbol>
     <symbol id="client-icon-card" viewBox="0 0 24 24">
-      <path d="M6 3h12v18l-2-1-2 1-2-1-2 1-2-1-2 1V3Z" />
-      <path d="M9 8h6" />
-      <path d="M9 12h6" />
-      <path d="M9 16h3" />
+      <circle cx="12" cy="12" r="8.2" />
+      <path d="M12 7.4v9.2" />
+      <path d="M15.2 9.2c-.65-.8-1.55-1.15-2.75-1.15-1.55 0-2.55.68-2.55 1.72 0 2.6 5.35 1.18 5.35 4.12 0 1.18-1.1 2.05-2.85 2.05-1.35 0-2.45-.42-3.2-1.32" />
     </symbol>
     <symbol id="client-icon-play" viewBox="0 0 24 24">
-      <path d="M7 4v16l12-8Z" />
+      <path d="M8 5.5v13l10-6.5Z" />
     </symbol>
     <symbol id="client-icon-bag" viewBox="0 0 24 24">
       <path d="M6 8h12l-1 12H7L6 8Z" />
@@ -2092,8 +2115,8 @@
       <path d="M12 13v4M9 21h6M10 17h4" />
     </symbol>
     <symbol id="client-icon-bell" viewBox="0 0 24 24">
-      <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-      <path d="M10 21h4" />
+      <path d="M18 10a6 6 0 0 0-12 0c0 5.4-2.4 6.25-3 7.6h18c-.6-1.35-3-2.2-3-7.6Z" />
+      <path d="M9.8 20.2a2.5 2.5 0 0 0 4.4 0" />
     </symbol>
   </svg>
 
