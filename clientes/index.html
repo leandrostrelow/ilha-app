@@ -65,6 +65,10 @@
     body.client-locked .client-app { display: none; }
     body.client-unlocked .client-auth { display: none; }
 
+    body.client-unlocked {
+      background: var(--bg);
+    }
+
     .client-auth {
       width: min(420px, 100%);
     }
@@ -305,6 +309,16 @@
       line-height: 1;
     }
 
+    .brand-play::after {
+      content: "";
+      display: inline-block;
+      margin-left: 7px;
+      border-top: 7px solid transparent;
+      border-bottom: 7px solid transparent;
+      border-left: 9px solid var(--lime);
+      transform: translateY(1px);
+    }
+
     .side-user {
       padding: 10px 12px;
       border: 1px solid var(--line);
@@ -391,8 +405,8 @@
 
     .content {
       min-width: 0;
-      width: min(980px, 100%);
-      justify-self: start;
+      width: min(1120px, 100%);
+      justify-self: center;
       padding: 20px 24px;
       display: grid;
       align-content: start;
@@ -408,6 +422,10 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #ffffff;
+    }
+
+    body.client-home-view .topbar {
+      display: none;
     }
 
     .topbar h1 {
@@ -458,7 +476,7 @@
 
     .welcome-card {
       min-height: auto;
-      width: min(720px, 100%);
+      width: min(880px, 100%);
       justify-self: center;
       padding: clamp(18px, 3vw, 26px);
       display: grid;
@@ -517,6 +535,48 @@
       text-decoration: none;
     }
 
+    .home-menu-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .home-menu-card {
+      min-height: 118px;
+      display: grid;
+      gap: 10px;
+      justify-items: center;
+      align-content: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .92);
+      color: var(--ink);
+      text-align: center;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 900;
+      box-shadow: 0 12px 28px rgba(16, 39, 44, .05);
+      transition: border-color .18s ease, box-shadow .18s ease, color .18s ease, background .18s ease;
+    }
+
+    .home-menu-card:hover,
+    .home-menu-card.active {
+      border-color: rgba(181, 229, 0, .78);
+      color: var(--lime);
+      background: linear-gradient(135deg, rgba(181, 229, 0, .12), #ffffff 70%);
+      box-shadow: 0 16px 34px rgba(16, 39, 44, .08);
+    }
+
+    .home-menu-card svg {
+      width: 36px;
+      height: 36px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
     .quick-menu {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -550,6 +610,39 @@
       stroke-linejoin: round;
     }
 
+    .mobile-bottom-nav {
+      display: none;
+    }
+
+    .mobile-bottom-nav button,
+    .mobile-bottom-nav a {
+      min-width: 0;
+      display: grid;
+      place-items: center;
+      gap: 4px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .mobile-bottom-nav svg {
+      width: 24px;
+      height: 24px;
+      display: block;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.1;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .mobile-bottom-nav button.active {
+      color: var(--lime);
+    }
+
     .profile-avatar,
     .client-avatar {
       overflow: hidden;
@@ -563,11 +656,38 @@
     }
 
     .profile-avatar {
+      position: relative;
       width: 112px;
       height: 112px;
       border: 4px solid #ffffff;
       box-shadow: 0 12px 30px rgba(16, 39, 44, .15);
       font-size: 34px;
+    }
+
+    .welcome-main .profile-avatar {
+      border-color: #ffffff;
+      box-shadow:
+        0 0 0 3px rgba(181, 229, 0, .7),
+        0 14px 32px rgba(16, 39, 44, .16);
+    }
+
+    .welcome-main .profile-avatar::after {
+      content: "✓";
+      position: absolute;
+      right: -3px;
+      bottom: 3px;
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border: 4px solid #ffffff;
+      border-radius: 999px;
+      background: var(--lime);
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 900;
+      line-height: 1;
+      box-shadow: 0 8px 18px rgba(16, 39, 44, .16);
     }
 
     .client-avatar {
@@ -1238,9 +1358,66 @@
 
     .toast.show { display: block; }
 
+    @media (min-width: 941px) {
+      body.client-home-view .client-app {
+        grid-template-columns: 1fr;
+      }
+      body.client-home-view .sidebar {
+        position: relative;
+        min-height: auto;
+        display: block;
+        padding: 28px 32px 18px;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      body.client-home-view .side-brand {
+        display: grid;
+        grid-template-columns: 1fr;
+        justify-items: center;
+        padding-bottom: 0;
+        border-bottom: 0;
+      }
+      body.client-home-view .brand-lockup img {
+        width: clamp(170px, 18vw, 230px);
+      }
+      body.client-home-view .brand-play {
+        font-size: clamp(20px, 2vw, 26px);
+        letter-spacing: 5px;
+      }
+      body.client-home-view .side-user,
+      body.client-home-view .side-nav {
+        display: none;
+      }
+      body.client-home-view .side-logout {
+        min-height: 44px;
+        display: inline-grid;
+        place-items: center;
+        position: absolute;
+        top: 50%;
+        right: 32px;
+        transform: translateY(-50%);
+        padding: 0 18px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #ffffff;
+        color: var(--ink);
+        font-weight: 900;
+      }
+      body.client-home-view .content {
+        padding-top: 28px;
+      }
+      body.client-home-view .welcome-card {
+        width: min(980px, 100%);
+      }
+    }
+
     @media (max-width: 940px) {
+      body.client-unlocked {
+        background: #ffffff;
+      }
       .client-app {
         grid-template-columns: 1fr;
+        background: #ffffff;
       }
       .plan-status-grid {
         grid-template-columns: 1fr;
@@ -1272,58 +1449,57 @@
         top: 0;
         z-index: 20;
         min-height: auto;
-        padding: 10px 12px;
-        gap: 8px;
+        padding: max(14px, env(safe-area-inset-top)) 18px 12px;
+        gap: 0;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, .98);
       }
       .side-brand {
         grid-template-columns: minmax(0, 1fr) auto;
         gap: 10px;
         align-items: center;
-        padding-bottom: 8px;
+        padding-bottom: 0;
+        border-bottom: 0;
       }
       .brand-lockup {
         justify-content: center;
       }
       .brand-lockup img {
-        width: 104px;
+        width: 156px;
       }
       .brand-play {
         padding-left: 8px;
-        font-size: 13px;
-        letter-spacing: 3px;
+        font-size: 17px;
+        letter-spacing: 4px;
       }
       .side-user {
-        min-width: 132px;
-        padding: 9px 10px;
+        display: none;
       }
-      .side-user strong { font-size: 12px; }
-      .side-user span { margin-top: 2px; }
+      .side-logout {
+        min-height: 42px;
+        display: inline-grid;
+        place-items: center;
+        position: absolute;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #ffffff;
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 900;
+      }
       .side-nav {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 6px;
-      }
-      .side-nav button,
-      .side-nav a {
-        min-height: 66px;
-        grid-template-columns: 1fr;
-        justify-items: center;
-        gap: 6px;
-        padding: 7px 3px;
-        text-align: center;
-        font-size: 12px;
-        line-height: 1.1;
-      }
-      .nav-icon {
-        width: 38px;
-        height: 38px;
-      }
-      .nav-icon svg {
-        width: 22px;
-        height: 22px;
+        display: none;
       }
       .content {
-        padding: 10px;
-        gap: 10px;
+        width: 100%;
+        padding: 18px;
+        gap: 14px;
+        background: #ffffff;
       }
       .topbar {
         align-items: flex-start;
@@ -1341,6 +1517,10 @@
     }
 
     @media (max-width: 560px) {
+      body.client-unlocked {
+        background: #ffffff;
+        overflow-x: hidden;
+      }
       body.client-locked {
         align-items: start;
         padding: max(14px, env(safe-area-inset-top)) 12px max(14px, env(safe-area-inset-bottom));
@@ -1363,103 +1543,105 @@
       .weekday-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       .client-app {
         min-height: 100dvh;
+        padding-bottom: calc(94px + env(safe-area-inset-bottom));
+        background: #ffffff;
       }
       .sidebar {
-        padding: 8px max(8px, env(safe-area-inset-right)) 9px max(8px, env(safe-area-inset-left));
+        padding: max(16px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) 16px max(18px, env(safe-area-inset-left));
+        border-bottom: 1px solid var(--line);
+        background: #ffffff;
       }
       .side-brand {
         grid-template-columns: 1fr;
         justify-items: center;
+        align-items: center;
       }
       .brand-lockup img {
-        width: 138px;
+        width: clamp(145px, 38vw, 172px);
       }
       .brand-play {
         padding-left: 10px;
-        font-size: 15px;
-        letter-spacing: 3.5px;
+        font-size: clamp(15px, 4vw, 20px);
+        letter-spacing: 3.8px;
       }
-      .side-user { display: none; }
       .side-logout {
-        min-height: 30px;
+        min-height: 44px;
         display: inline-grid;
         place-items: center;
         position: absolute;
-        top: 0;
+        top: 50%;
         right: 0;
-        padding: 0 10px;
+        transform: translateY(-50%);
+        padding: 0 15px;
         border: 1px solid var(--line);
-        border-radius: 8px;
+        border-radius: 14px;
         background: #ffffff;
         color: var(--ink);
-        font-size: 11px;
+        font-size: 14px;
         font-weight: 900;
       }
       .content {
-        padding: 8px;
-        gap: 8px;
+        padding: 18px;
+        gap: 14px;
+        background: linear-gradient(180deg, #ffffff 0%, #f4fafb 100%);
       }
       .topbar {
         display: none;
       }
       .welcome-card {
-        gap: 12px;
-        padding: 14px 12px;
+        gap: 22px;
+        padding: 20px 16px;
+        border-radius: 20px;
+        box-shadow: 0 18px 48px rgba(16, 39, 44, .08);
       }
       .welcome-main {
         flex-direction: row;
         align-items: center;
-        gap: 12px;
+        gap: 18px;
         text-align: left;
+        padding: 8px 0 4px;
       }
       .welcome-card h2 {
-        font-size: 28px;
+        font-size: clamp(36px, 11vw, 52px);
+        line-height: .96;
       }
       .welcome-card .muted {
         margin: 0;
-        font-size: 12px;
+        font-size: 16px;
         line-height: 1.35;
       }
       .welcome-eyebrow {
-        font-size: 10px;
-        letter-spacing: 1.4px;
+        display: none;
       }
       .profile-avatar {
-        width: 58px;
-        height: 58px;
-        border-width: 3px;
-        font-size: 22px;
+        width: 106px;
+        height: 106px;
+        border-width: 5px;
+        font-size: 30px;
       }
-      .home-actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-      }
-      .home-actions .primary-btn {
-        grid-column: 1 / -1;
-      }
-      .home-actions .primary-btn,
-      .home-actions .ghost-btn {
-        width: 100%;
-        min-width: 0;
-        min-height: 40px;
-        font-size: 14px;
-      }
-      .home-actions a {
-        display: inline-flex;
-      }
-      .quick-menu {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-      }
-      .quick-link {
-        min-height: 92px;
-        gap: 9px;
-        font-size: 15px;
-      }
-      .quick-link svg {
+      .welcome-main .profile-avatar::after {
         width: 34px;
         height: 34px;
+        font-size: 18px;
+      }
+      .home-menu-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .home-menu-card {
+        min-height: 118px;
+        border-radius: 16px;
+        font-size: 13px;
+        box-shadow: none;
+      }
+      .home-menu-card svg {
+        width: 42px;
+        height: 42px;
+      }
+      .home-menu-card.active,
+      .home-menu-card:hover {
+        color: var(--lime);
+        box-shadow: 0 14px 28px rgba(16, 39, 44, .08);
       }
       .store-card img {
         aspect-ratio: 16 / 9;
@@ -1498,6 +1680,54 @@
       }
       #paymentClearFilter {
         grid-column: 1 / -1;
+      }
+      .mobile-bottom-nav {
+        position: fixed;
+        right: max(12px, env(safe-area-inset-right));
+        bottom: max(12px, env(safe-area-inset-bottom));
+        left: max(12px, env(safe-area-inset-left));
+        z-index: 75;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        align-items: end;
+        min-height: 74px;
+        padding: 8px 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 26px;
+        background: rgba(255, 255, 255, .96);
+        box-shadow: 0 18px 44px rgba(16, 39, 44, .14);
+        backdrop-filter: blur(14px);
+      }
+      .mobile-bottom-nav button,
+      .mobile-bottom-nav a {
+        min-height: 52px;
+        border-radius: 16px;
+      }
+      .mobile-bottom-nav button.active {
+        background: linear-gradient(180deg, rgba(181, 229, 0, .12), transparent);
+      }
+      .mobile-bottom-nav .bottom-play {
+        position: relative;
+        width: 62px;
+        height: 62px;
+        min-height: 62px;
+        justify-self: center;
+        align-self: start;
+        margin-top: -24px;
+        border-radius: 999px;
+        background: var(--teal);
+        color: #ffffff;
+        box-shadow: 0 14px 30px rgba(8, 63, 75, .32);
+      }
+      .mobile-bottom-nav .bottom-play svg {
+        width: 30px;
+        height: 30px;
+      }
+      .mobile-bottom-nav .bottom-play span {
+        position: absolute;
+        bottom: 7px;
+        color: var(--teal);
+        transform: translateY(24px);
       }
       .top-actions { width: 100%; }
       .top-actions button,
@@ -1630,16 +1860,15 @@
               <p class="muted">Sua área do aluno no Ilha Tênis.</p>
             </div>
           </div>
-          <div class="home-actions">
-            <button class="primary-btn" type="button" data-view="profile">Completar cadastro</button>
-            <button class="ghost-btn" type="button" data-view="plans">Ver planos</button>
-            <button class="ghost-btn" type="button" data-view="payments">Pagamento</button>
-          </div>
-          <div class="quick-menu" aria-label="Atalhos do clube">
-            <a class="quick-link" href="https://ilhatenis.com/agenda" target="_blank" rel="noopener"><svg><use href="#client-icon-play"></use></svg>Jogar</a>
-            <button class="quick-link" type="button" data-view="store"><svg><use href="#client-icon-bag"></use></svg>Loja</button>
-            <a class="quick-link" href="https://duplafalta.com.br/ranking/finals-masculino.html" target="_blank" rel="noopener"><svg><use href="#client-icon-ranking"></use></svg>Ranking</a>
-            <a class="quick-link" href="../publico.html"><svg><use href="#client-icon-trophy"></use></svg>Torneios</a>
+          <div class="home-menu-grid" aria-label="Menu principal">
+            <button class="home-menu-card active" type="button" data-view="home"><svg><use href="#client-icon-home"></use></svg>Início</button>
+            <button class="home-menu-card" type="button" data-view="profile"><svg><use href="#client-icon-user"></use></svg>Meus dados</button>
+            <button class="home-menu-card" type="button" data-view="plans"><svg><use href="#client-icon-plan"></use></svg>Planos</button>
+            <button class="home-menu-card" type="button" data-view="payments"><svg><use href="#client-icon-card"></use></svg>Pagamento</button>
+            <a class="home-menu-card" href="https://ilhatenis.com/agenda" target="_blank" rel="noopener"><svg><use href="#client-icon-play"></use></svg>Jogar</a>
+            <button class="home-menu-card" type="button" data-view="store"><svg><use href="#client-icon-bag"></use></svg>Loja</button>
+            <a class="home-menu-card" href="https://duplafalta.com.br/ranking/finals-masculino.html" target="_blank" rel="noopener"><svg><use href="#client-icon-ranking"></use></svg>Ranking</a>
+            <a class="home-menu-card" href="../publico.html"><svg><use href="#client-icon-trophy"></use></svg>Torneios</a>
           </div>
           <div class="notice-list" id="homeAnnouncements"></div>
         </div>
@@ -1751,6 +1980,13 @@
         </div>
       </section>
     </section>
+    <nav class="mobile-bottom-nav" aria-label="Navegação inferior">
+      <button class="active" type="button" data-view="home"><svg><use href="#client-icon-home"></use></svg><span>Início</span></button>
+      <button type="button" data-view="plans"><svg><use href="#client-icon-plan"></use></svg><span>Planos</span></button>
+      <a class="bottom-play" href="https://ilhatenis.com/agenda" target="_blank" rel="noopener"><svg><use href="#client-icon-play"></use></svg><span>Jogar</span></a>
+      <button type="button" data-view="payments"><svg><use href="#client-icon-card"></use></svg><span>Pagamento</span></button>
+      <button type="button" data-view="profile"><svg><use href="#client-icon-user"></use></svg><span>Perfil</span></button>
+    </nav>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -2338,6 +2574,7 @@
 
     function lock(message) {
       document.body.classList.remove('client-unlocked');
+      document.body.classList.remove('client-home-view');
       document.body.classList.add('client-locked');
       $('clientApp').setAttribute('aria-hidden', 'true');
       if (message) setAuthMessage(message, true);
@@ -2346,6 +2583,7 @@
     function unlock() {
       document.body.classList.remove('client-locked');
       document.body.classList.add('client-unlocked');
+      document.body.classList.add('client-home-view');
       $('clientApp').setAttribute('aria-hidden', 'false');
       renderAll();
     }
@@ -2364,6 +2602,7 @@
     }
 
     function showView(view) {
+      document.body.classList.toggle('client-home-view', view === 'home');
       document.querySelectorAll('.view').forEach(function (el) {
         el.classList.toggle('active', el.id === 'view-' + view);
       });
