@@ -2263,7 +2263,6 @@
           <div class="panel-head">
             <div>
               <h2>Faturas</h2>
-              <div class="muted">Faturas mês a mês, histórico e Pix por mensalidade.</div>
             </div>
           </div>
           <div class="payment-toolbar">
@@ -2277,7 +2276,6 @@
             </div>
             <button class="ghost-btn" type="button" id="paymentClearFilter">Ver tudo</button>
           </div>
-          <div class="payment-summary" id="paymentSummary"></div>
           <div class="invoice-list" id="paymentList"></div>
         </div>
       </section>
@@ -3327,16 +3325,6 @@
       $('paymentYear').value = paymentFilter.year;
     }
 
-    function renderPaymentSummary(invoices) {
-      const open = invoices.filter(function (invoice) { return ['ABERTA', 'AGUARDANDO', 'VENCIDA'].includes(invoiceEffectiveStatus(invoice)); });
-      const paid = invoices.filter(function (invoice) { return invoiceEffectiveStatus(invoice) === 'PAGA'; });
-      const totalOpen = open.reduce(function (sum, invoice) { return sum + Number(invoice.amount || 0); }, 0);
-      $('paymentSummary').innerHTML =
-        '<div class="payment-summary-item"><span>Em aberto</span><strong>' + money(totalOpen) + '</strong></div>' +
-        '<div class="payment-summary-item"><span>Faturas abertas</span><strong>' + open.length + '</strong></div>' +
-        '<div class="payment-summary-item"><span>Histórico pago</span><strong>' + paid.length + '</strong></div>';
-    }
-
     function invoicePixText(invoice) {
       return invoice.pix_payload || pixPayload(invoice.amount, invoice.description + ' ' + invoiceMonthLabel(invoice.invoice_month));
     }
@@ -3380,7 +3368,6 @@
       const invoices = buildMonthlyInvoices();
       renderPaymentFilters(invoices);
       const list = filteredInvoices();
-      renderPaymentSummary(list);
       $('paymentList').innerHTML = list.length ? list.map(invoiceCard).join('') : '<div class="empty">Nenhuma fatura neste filtro.</div>';
     }
 
