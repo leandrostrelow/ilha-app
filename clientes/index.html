@@ -444,6 +444,10 @@
       justify-content: flex-end;
     }
 
+    .back-btn {
+      min-width: 96px;
+    }
+
     .view { display: none; }
     .view.active { display: block; }
 
@@ -671,25 +675,6 @@
         0 14px 32px rgba(16, 39, 44, .16);
     }
 
-    .welcome-main .profile-avatar::after {
-      content: "✓";
-      position: absolute;
-      right: -3px;
-      bottom: 3px;
-      width: 30px;
-      height: 30px;
-      display: grid;
-      place-items: center;
-      border: 4px solid #ffffff;
-      border-radius: 999px;
-      background: var(--lime);
-      color: #ffffff;
-      font-size: 16px;
-      font-weight: 900;
-      line-height: 1;
-      box-shadow: 0 8px 18px rgba(16, 39, 44, .16);
-    }
-
     .client-avatar {
       width: 38px;
       height: 38px;
@@ -794,6 +779,17 @@
       border-radius: 8px;
       background: #ffffff;
       box-shadow: 0 8px 24px rgba(16, 39, 44, .06);
+    }
+
+    .profile-exit {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .profile-exit .ghost-btn {
+      width: 100%;
+      color: var(--red);
     }
 
     .panel-head {
@@ -1385,23 +1381,9 @@
         letter-spacing: 5px;
       }
       body.client-home-view .side-user,
-      body.client-home-view .side-nav {
-        display: none;
-      }
+      body.client-home-view .side-nav,
       body.client-home-view .side-logout {
-        min-height: 44px;
-        display: inline-grid;
-        place-items: center;
-        position: absolute;
-        top: 50%;
-        right: 32px;
-        transform: translateY(-50%);
-        padding: 0 18px;
-        border: 1px solid var(--line);
-        border-radius: 14px;
-        background: #ffffff;
-        color: var(--ink);
-        font-weight: 900;
+        display: none;
       }
       body.client-home-view .content {
         padding-top: 28px;
@@ -1477,20 +1459,7 @@
         display: none;
       }
       .side-logout {
-        min-height: 42px;
-        display: inline-grid;
-        place-items: center;
-        position: absolute;
-        top: 50%;
-        right: 0;
-        transform: translateY(-50%);
-        padding: 0 14px;
-        border: 1px solid var(--line);
-        border-radius: 14px;
-        background: #ffffff;
-        color: var(--ink);
-        font-size: 13px;
-        font-weight: 900;
+        display: none;
       }
       .side-nav {
         display: none;
@@ -1565,20 +1534,7 @@
         letter-spacing: 3.8px;
       }
       .side-logout {
-        min-height: 44px;
-        display: inline-grid;
-        place-items: center;
-        position: absolute;
-        top: 50%;
-        right: 0;
-        transform: translateY(-50%);
-        padding: 0 15px;
-        border: 1px solid var(--line);
-        border-radius: 14px;
-        background: #ffffff;
-        color: var(--ink);
-        font-size: 14px;
-        font-weight: 900;
+        display: none;
       }
       .content {
         padding: 18px;
@@ -1586,7 +1542,12 @@
         background: linear-gradient(180deg, #ffffff 0%, #f4fafb 100%);
       }
       .topbar {
-        display: none;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-radius: 14px;
       }
       .welcome-card {
         gap: 22px;
@@ -1619,19 +1580,14 @@
         border-width: 5px;
         font-size: 30px;
       }
-      .welcome-main .profile-avatar::after {
-        width: 34px;
-        height: 34px;
-        font-size: 18px;
-      }
       .home-menu-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 12px;
       }
       .home-menu-card {
-        min-height: 118px;
+        min-height: 112px;
         border-radius: 16px;
-        font-size: 13px;
+        font-size: 15px;
         box-shadow: none;
       }
       .home-menu-card svg {
@@ -1729,9 +1685,9 @@
         color: var(--teal);
         transform: translateY(24px);
       }
-      .top-actions { width: 100%; }
+      .top-actions { width: auto; }
       .top-actions button,
-      .top-actions a { flex: 1 1 auto; }
+      .top-actions a { flex: 0 0 auto; }
     }
   </style>
 </head>
@@ -1774,6 +1730,10 @@
       <path d="M8 6H5a2 2 0 0 0 2 4h1" />
       <path d="M16 6h3a2 2 0 0 1-2 4h-1" />
       <path d="M12 13v4M9 21h6M10 17h4" />
+    </symbol>
+    <symbol id="client-icon-bell" viewBox="0 0 24 24">
+      <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+      <path d="M10 21h4" />
     </symbol>
   </svg>
 
@@ -1826,7 +1786,6 @@
           <strong>Aluno</strong>
           <span id="sideClientName">Entrando...</span>
         </div>
-        <button class="side-logout" type="button" data-logout>Sair</button>
       </div>
       <nav class="side-nav">
         <button class="active" type="button" data-view="home"><span class="nav-icon"><svg><use href="#client-icon-home"></use></svg></span><span>Início</span></button>
@@ -1846,7 +1805,7 @@
           <h1 id="pageTitle">Início</h1>
         </div>
         <div class="top-actions">
-          <button class="primary-btn" type="button" id="logoutBtn" data-logout>Sair</button>
+          <button class="ghost-btn back-btn" type="button" data-back-home>Voltar</button>
         </div>
       </header>
 
@@ -1857,20 +1816,14 @@
             <div class="welcome-copy">
               <span class="welcome-eyebrow">Ilha Play</span>
               <h2 id="homeWelcomeName">Bem-vindo ao Ilha</h2>
-              <p class="muted">Sua área do aluno no Ilha Tênis.</p>
             </div>
           </div>
           <div class="home-menu-grid" aria-label="Menu principal">
-            <button class="home-menu-card active" type="button" data-view="home"><svg><use href="#client-icon-home"></use></svg>Início</button>
-            <button class="home-menu-card" type="button" data-view="profile"><svg><use href="#client-icon-user"></use></svg>Meus dados</button>
-            <button class="home-menu-card" type="button" data-view="plans"><svg><use href="#client-icon-plan"></use></svg>Planos</button>
-            <button class="home-menu-card" type="button" data-view="payments"><svg><use href="#client-icon-card"></use></svg>Pagamento</button>
-            <a class="home-menu-card" href="https://ilhatenis.com/agenda" target="_blank" rel="noopener"><svg><use href="#client-icon-play"></use></svg>Jogar</a>
+            <button class="home-menu-card" type="button" data-view="notifications"><svg><use href="#client-icon-bell"></use></svg>Notificações</button>
             <button class="home-menu-card" type="button" data-view="store"><svg><use href="#client-icon-bag"></use></svg>Loja</button>
             <a class="home-menu-card" href="https://duplafalta.com.br/ranking/finals-masculino.html" target="_blank" rel="noopener"><svg><use href="#client-icon-ranking"></use></svg>Ranking</a>
             <a class="home-menu-card" href="../publico.html"><svg><use href="#client-icon-trophy"></use></svg>Torneios</a>
           </div>
-          <div class="notice-list" id="homeAnnouncements"></div>
         </div>
       </section>
 
@@ -1936,7 +1889,21 @@
                 <button class="primary-btn" type="submit">Salvar meus dados</button>
               </div>
             </form>
+            <div class="profile-exit">
+              <button class="ghost-btn" type="button" data-logout>Sair da conta</button>
+            </div>
           </section>
+        </div>
+      </section>
+
+      <section class="view" id="view-notifications">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Notificações</h2>
+            </div>
+          </div>
+          <div class="notice-list" id="notificationsList"></div>
         </div>
       </section>
 
@@ -2043,6 +2010,11 @@
       startX: 0,
       startY: 0
     };
+    const swipeBackState = {
+      active: false,
+      startX: 0,
+      startY: 0
+    };
     const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
     function $(id) {
@@ -2138,6 +2110,33 @@
       window.addEventListener('touchmove', handlePullMove, { passive: false });
       window.addEventListener('touchend', handlePullEnd, { passive: true });
       window.addEventListener('touchcancel', function () { resetPullRefresh(0); }, { passive: true });
+    }
+
+    function handleSwipeBackStart(event) {
+      if (!document.body.classList.contains('client-unlocked') || document.body.classList.contains('client-home-view')) return;
+      if (!event.touches || event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      if (touch.clientX > 48) return;
+      swipeBackState.active = true;
+      swipeBackState.startX = touch.clientX;
+      swipeBackState.startY = touch.clientY;
+    }
+
+    function handleSwipeBackEnd(event) {
+      if (!swipeBackState.active) return;
+      swipeBackState.active = false;
+      const touch = event.changedTouches && event.changedTouches[0];
+      if (!touch) return;
+      const distanceX = touch.clientX - swipeBackState.startX;
+      const distanceY = Math.abs(touch.clientY - swipeBackState.startY);
+      if (distanceX > 86 && distanceY < 70) showView('home');
+    }
+
+    function setupSwipeBack() {
+      if (!('ontouchstart' in window)) return;
+      window.addEventListener('touchstart', handleSwipeBackStart, { passive: true });
+      window.addEventListener('touchend', handleSwipeBackEnd, { passive: true });
+      window.addEventListener('touchcancel', function () { swipeBackState.active = false; }, { passive: true });
     }
 
     function isPreviewEnvironment() {
@@ -2611,6 +2610,7 @@
       });
       const labels = {
         home: 'Início',
+        notifications: 'Notificações',
         profile: 'Meus dados',
         plans: 'Planos',
         payments: 'Pagamento',
@@ -2628,6 +2628,7 @@
       renderIdentity();
       renderHome();
       renderProfile();
+      renderAnnouncements();
       renderPlans();
       renderPayments();
       renderStore();
@@ -2649,15 +2650,16 @@
     }
 
     function renderAnnouncements() {
-      const list = announcements.filter(announcementMatchesClient).slice(0, 3);
-      $('homeAnnouncements').innerHTML = list.map(function (item) {
+      const list = announcements.filter(announcementMatchesClient);
+      const html = list.length ? list.map(function (item) {
         return '<article class="notice-card">' +
           (item.image_url ? '<img src="' + escapeHtml(item.image_url) + '" alt="" />' : '') +
           '<div><h3>' + escapeHtml(item.title) + '</h3>' +
           (item.body ? '<p>' + escapeHtml(item.body) + '</p>' : '') + '</div>' +
           (item.link_url ? '<a class="ghost-btn" href="' + escapeHtml(item.link_url) + '" target="_blank" rel="noopener">Abrir comunicado</a>' : '') +
         '</article>';
-      }).join('');
+      }).join('') : '<div class="empty">Nenhuma notificação no momento.</div>';
+      $('notificationsList').innerHTML = html;
     }
 
     function renderHome() {
@@ -2665,7 +2667,6 @@
       const firstName = name.split(' ')[0] || 'aluno';
       $('homeWelcomeName').textContent = 'Olá, ' + firstName;
       $('homeAvatar').innerHTML = avatarMarkup(profilePhoto(), name);
-      renderAnnouncements();
     }
 
     function renderProfile() {
@@ -3187,11 +3188,15 @@
     function init() {
       configurePreviewEnvironment();
       setupPullToRefresh();
+      setupSwipeBack();
       $('showLoginBtn').addEventListener('click', function () { showAuthTab('login'); });
       $('showSignupBtn').addEventListener('click', function () { showAuthTab('signup'); });
       $('demoBtn').addEventListener('click', function () { enterDemo(true); });
       document.querySelectorAll('[data-logout]').forEach(function (btn) {
         btn.addEventListener('click', logout);
+      });
+      document.querySelectorAll('[data-back-home]').forEach(function (btn) {
+        btn.addEventListener('click', function () { showView('home'); });
       });
       $('profileForm').addEventListener('submit', saveProfile);
       $('profilePhoto').addEventListener('change', async function () {
