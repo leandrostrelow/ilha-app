@@ -69,6 +69,46 @@
       background: var(--bg);
     }
 
+    body.client-checking {
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: max(18px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      background: #ffffff;
+    }
+
+    body.client-checking .client-auth,
+    body.client-checking .client-app {
+      display: none;
+    }
+
+    body:not(.client-checking) .client-loading-screen {
+      display: none;
+    }
+
+    .client-loading-screen {
+      width: min(320px, 90vw);
+      display: grid;
+      gap: 18px;
+      justify-items: center;
+      color: var(--teal);
+      text-align: center;
+      font-weight: 900;
+    }
+
+    .client-loading-screen img {
+      width: min(220px, 70vw);
+      display: block;
+    }
+
+    .client-loading-ball {
+      width: 58px;
+      height: 58px;
+      border-radius: 999px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3CradialGradient id='g' cx='34%25' cy='28%25' r='78%25'%3E%3Cstop offset='0' stop-color='%23f3ff74'/%3E%3Cstop offset='.5' stop-color='%23d7ff28'/%3E%3Cstop offset='1' stop-color='%238ed000'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='49' fill='url(%23g)'/%3E%3Cpath d='M19 -8C46 18 46 82 19 108' fill='none' stroke='%23fff7d6' stroke-width='7' stroke-linecap='round'/%3E%3Cpath d='M81 -8C54 18 54 82 81 108' fill='none' stroke='%23fff7d6' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E") center / cover no-repeat;
+      animation: tennisBallSpin .8s linear infinite;
+    }
+
     .client-auth {
       width: min(420px, 100%);
     }
@@ -576,35 +616,58 @@
       position: relative;
       min-height: 118px;
       display: grid;
-      gap: 10px;
+      gap: 11px;
       justify-items: center;
       align-content: center;
       border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, .92);
+      border-radius: 18px;
+      background: #ffffff;
       color: var(--ink);
       text-align: center;
       text-decoration: none;
       font-size: 15px;
       font-weight: 900;
-      box-shadow: 0 12px 28px rgba(16, 39, 44, .05);
-      transition: border-color .18s ease, box-shadow .18s ease, color .18s ease, background .18s ease;
+      box-shadow: 0 12px 28px rgba(16, 39, 44, .06);
+      overflow: hidden;
+      transition: border-color .18s ease, box-shadow .18s ease, color .18s ease, background .18s ease, transform .18s ease;
     }
 
     .home-menu-card:hover,
     .home-menu-card.active {
-      border-color: rgba(181, 229, 0, .78);
-      color: var(--lime);
-      background: linear-gradient(135deg, rgba(181, 229, 0, .12), #ffffff 70%);
-      box-shadow: 0 16px 34px rgba(16, 39, 44, .08);
+      border-color: rgba(181, 229, 0, .62);
+      color: var(--ink);
+      background: #ffffff;
+      box-shadow: 0 16px 34px rgba(16, 39, 44, .1);
+      transform: translateY(-1px);
+    }
+
+    .home-menu-icon {
+      width: 58px;
+      height: 58px;
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      color: var(--teal);
+      background: #edf4f6;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .72);
+    }
+
+    .home-menu-icon.plan { color: #004d97; background: #e9f2ff; }
+    .home-menu-icon.store { color: #b45309; background: #fff3d6; }
+    .home-menu-icon.ranking { color: #0f766e; background: #dcfce7; }
+    .home-menu-icon.tournament { color: #6d28d9; background: #f1e8ff; }
+
+    .home-menu-label {
+      display: block;
+      line-height: 1.1;
     }
 
     .home-menu-card svg {
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       fill: none;
       stroke: currentColor;
-      stroke-width: 2.2;
+      stroke-width: 2.45;
       stroke-linecap: round;
       stroke-linejoin: round;
     }
@@ -1398,6 +1461,148 @@
       display: none;
     }
 
+    .external-modal[hidden] {
+      display: none;
+    }
+
+    .external-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 118;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(16, 39, 44, .52);
+    }
+
+    .external-modal-card {
+      width: min(1120px, 100%);
+      height: min(760px, calc(100dvh - 36px));
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: #ffffff;
+      box-shadow: 0 26px 80px rgba(16, 39, 44, .26);
+    }
+
+    .external-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+      background: #ffffff;
+    }
+
+    .external-modal-head h2 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.12;
+    }
+
+    .external-modal-head p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .external-modal-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .external-modal-actions a,
+    .external-modal-actions button {
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0 13px;
+      background: #ffffff;
+      color: var(--dark);
+      font-size: 12px;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    .external-modal-actions button {
+      cursor: pointer;
+    }
+
+    .external-frame {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border: 0;
+      background: #f4f9fa;
+    }
+
+    .tournament-panel {
+      padding: 18px;
+      overflow: auto;
+      background: #f7fbfc;
+    }
+
+    .tournament-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .tournament-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #ffffff;
+    }
+
+    .tournament-card h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .tournament-card p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      font-weight: 800;
+    }
+
+    .tournament-status {
+      display: inline-flex;
+      width: max-content;
+      margin-bottom: 8px;
+      border-radius: 999px;
+      padding: 5px 9px;
+      background: #ecfccb;
+      color: #3f6212;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .tournament-card button {
+      min-height: 42px;
+      border-radius: 12px;
+      padding: 0 16px;
+      background: var(--teal);
+      color: #ffffff;
+      font-weight: 900;
+    }
+
     .pix-modal {
       position: fixed;
       inset: 0;
@@ -1805,14 +2010,19 @@
         font-size: 15px;
         box-shadow: none;
       }
+      .home-menu-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 18px;
+      }
       .home-menu-card svg {
-        width: 42px;
-        height: 42px;
+        width: 33px;
+        height: 33px;
       }
       .home-menu-card.active,
       .home-menu-card:hover {
-        color: var(--lime);
-        background: rgba(181, 229, 0, .05);
+        color: var(--ink);
+        background: #ffffff;
         box-shadow: none;
       }
       .store-card img {
@@ -1961,6 +2171,36 @@
         place-items: center;
         padding: 16px;
       }
+      .external-modal {
+        padding: 10px;
+      }
+      .external-modal-card {
+        width: 100%;
+        height: calc(100dvh - 20px);
+        border-radius: 20px;
+      }
+      .external-modal-head {
+        align-items: flex-start;
+        padding: 12px;
+      }
+      .external-modal-head h2 {
+        font-size: 18px;
+      }
+      .external-modal-actions a,
+      .external-modal-actions button {
+        min-height: 36px;
+        padding: 0 11px;
+        font-size: 11px;
+      }
+      .tournament-panel {
+        padding: 12px;
+      }
+      .tournament-card {
+        grid-template-columns: 1fr;
+      }
+      .tournament-card button {
+        width: 100%;
+      }
       .pix-modal-card {
         max-height: calc(100dvh - 24px);
         border-radius: 22px;
@@ -2072,7 +2312,7 @@
     }
   </style>
 </head>
-<body class="client-locked">
+<body class="client-checking">
   <svg aria-hidden="true" style="display:none">
     <symbol id="client-icon-home" viewBox="0 0 24 24">
       <path d="M4 11.8 12 5l8 6.8" />
@@ -2119,6 +2359,12 @@
       <path d="M9.8 20.2a2.5 2.5 0 0 0 4.4 0" />
     </symbol>
   </svg>
+
+  <div class="client-loading-screen" aria-live="polite">
+    <img src="../logo.png" alt="Ilha Tênis Colatina" />
+    <div class="client-loading-ball" aria-hidden="true"></div>
+    <span>Entrando no Ilha Play</span>
+  </div>
 
   <section class="client-auth" id="clientAuth" aria-label="Acesso do cliente">
     <div class="auth-card">
@@ -2175,10 +2421,10 @@
         <button type="button" data-view="profile"><span class="nav-icon"><svg><use href="#client-icon-user"></use></svg></span><span>Meus dados</span></button>
         <button type="button" data-view="plans"><span class="nav-icon"><svg><use href="#client-icon-plan"></use></svg></span><span>Planos</span></button>
         <button type="button" data-view="payments"><span class="nav-icon"><svg><use href="#client-icon-card"></use></svg></span><span>Pagamento</span></button>
-        <a href="https://ilhatenis.com/agenda" target="_blank" rel="noopener"><span class="nav-icon"><svg><use href="#client-icon-play"></use></svg></span><span>Jogar</span></a>
+        <a href="https://ilhatenis.com/agenda" data-embed-url="https://ilhatenis.com/agenda" data-embed-title="Jogar" data-embed-subtitle="Agenda de quadras do Ilha Tênis"><span class="nav-icon"><svg><use href="#client-icon-play"></use></svg></span><span>Jogar</span></a>
         <button type="button" data-view="store"><span class="nav-icon"><svg><use href="#client-icon-bag"></use></svg></span><span>Loja</span></button>
-        <a href="https://duplafalta.com.br/ranking/finals-masculino.html" target="_blank" rel="noopener"><span class="nav-icon"><svg><use href="#client-icon-ranking"></use></svg></span><span>Ranking</span></a>
-        <a href="../publico.html"><span class="nav-icon"><svg><use href="#client-icon-trophy"></use></svg></span><span>Torneios</span></a>
+        <a href="https://duplafalta.com.br/ranking/finals-masculino.html" data-embed-url="https://duplafalta.com.br/ranking/finals-masculino.html" data-embed-title="Ranking" data-embed-subtitle="Circuito CINCATE"><span class="nav-icon"><svg><use href="#client-icon-ranking"></use></svg></span><span>Ranking</span></a>
+        <button type="button" data-open-tournaments><span class="nav-icon"><svg><use href="#client-icon-trophy"></use></svg></span><span>Torneios</span></button>
       </nav>
     </aside>
 
@@ -2202,10 +2448,10 @@
             </div>
           </div>
           <div class="home-menu-grid" aria-label="Menu principal">
-            <button class="home-menu-card home-plan-link" type="button" data-view="plans"><svg><use href="#client-icon-plan"></use></svg>Planos</button>
-            <button class="home-menu-card" type="button" data-view="store"><svg><use href="#client-icon-bag"></use></svg>Loja</button>
-            <a class="home-menu-card" href="https://duplafalta.com.br/ranking/finals-masculino.html" target="_blank" rel="noopener"><svg><use href="#client-icon-ranking"></use></svg>Ranking</a>
-            <a class="home-menu-card" href="../publico.html"><svg><use href="#client-icon-trophy"></use></svg>Torneios</a>
+            <button class="home-menu-card home-plan-link" type="button" data-view="plans"><span class="home-menu-icon plan"><svg><use href="#client-icon-plan"></use></svg></span><span class="home-menu-label">Planos</span></button>
+            <button class="home-menu-card" type="button" data-view="store"><span class="home-menu-icon store"><svg><use href="#client-icon-bag"></use></svg></span><span class="home-menu-label">Loja</span></button>
+            <a class="home-menu-card" href="https://duplafalta.com.br/ranking/finals-masculino.html" data-embed-url="https://duplafalta.com.br/ranking/finals-masculino.html" data-embed-title="Ranking" data-embed-subtitle="Circuito CINCATE"><span class="home-menu-icon ranking"><svg><use href="#client-icon-ranking"></use></svg></span><span class="home-menu-label">Ranking</span></a>
+            <button class="home-menu-card" type="button" data-open-tournaments><span class="home-menu-icon tournament"><svg><use href="#client-icon-trophy"></use></svg></span><span class="home-menu-label">Torneios</span></button>
           </div>
           <div class="home-notices">
             <h3 class="home-section-title">Comunicados <span class="notice-count" data-notification-count hidden></span></h3>
@@ -2335,11 +2581,44 @@
     <nav class="mobile-bottom-nav" aria-label="Navegação inferior">
       <button class="active" type="button" data-view="home" aria-label="Início"><svg><use href="#client-icon-home"></use></svg><span>Início</span></button>
       <button type="button" data-view="payments" aria-label="Pagamento"><svg><use href="#client-icon-card"></use></svg><span>Pagamento</span></button>
-      <a class="bottom-play" href="https://ilhatenis.com/agenda" target="_blank" rel="noopener" aria-label="Jogar"><svg><use href="#client-icon-play"></use></svg><span>Jogar</span></a>
+      <a class="bottom-play" href="https://ilhatenis.com/agenda" data-embed-url="https://ilhatenis.com/agenda" data-embed-title="Jogar" data-embed-subtitle="Agenda de quadras do Ilha Tênis" aria-label="Jogar"><svg><use href="#client-icon-play"></use></svg><span>Jogar</span></a>
       <button class="notification-nav" type="button" data-view="notifications" aria-label="Notificações"><span class="notice-count" data-notification-count hidden></span><svg><use href="#client-icon-bell"></use></svg><span class="nav-label">Notificação</span></button>
       <button type="button" data-view="profile" aria-label="Perfil"><svg><use href="#client-icon-user"></use></svg><span>Perfil</span></button>
     </nav>
   </main>
+
+  <div class="external-modal" id="externalModal" hidden role="dialog" aria-modal="true" aria-labelledby="externalModalTitle">
+    <div class="external-modal-card">
+      <div class="external-modal-head">
+        <div>
+          <h2 id="externalModalTitle">Ilha Play</h2>
+          <p id="externalModalSubtitle">Abrindo dentro do app.</p>
+        </div>
+        <div class="external-modal-actions">
+          <a id="externalModalOpen" href="#" target="_blank" rel="noopener">Abrir fora</a>
+          <button type="button" data-close-external>Fechar</button>
+        </div>
+      </div>
+      <iframe class="external-frame" id="externalFrame" title="Conteúdo externo"></iframe>
+    </div>
+  </div>
+
+  <div class="external-modal" id="tournamentModal" hidden role="dialog" aria-modal="true" aria-labelledby="tournamentModalTitle">
+    <div class="external-modal-card">
+      <div class="external-modal-head">
+        <div>
+          <h2 id="tournamentModalTitle">Torneios ativos</h2>
+          <p>Escolha um torneio para acompanhar dentro do Ilha Play.</p>
+        </div>
+        <div class="external-modal-actions">
+          <button type="button" data-close-tournaments>Fechar</button>
+        </div>
+      </div>
+      <div class="tournament-panel">
+        <div class="tournament-list" id="tournamentList"></div>
+      </div>
+    </div>
+  </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="pix-modal" id="pixModal" hidden role="dialog" aria-modal="true" aria-labelledby="pixModalTitle">
@@ -2381,6 +2660,14 @@
       { code: 'camisa_verde', name: 'Camisa verde Ilha', image: '../camisaverde.png', amount: 0, description: 'Uniforme oficial do clube.' },
       { code: 'bolinhas', name: 'Bolinhas de tênis', image: '../bolas.png', amount: 0, description: 'Compra de bolas na secretaria.' },
       { code: 'encordoamento', name: 'Encordoamento', image: '../cordas.png', amount: 0, description: 'Serviço de corda para raquete.' }
+    ];
+    const activeTournaments = [
+      {
+        name: 'II Viafor Open',
+        status: 'Ativo',
+        description: 'Chaves, agenda, atletas e resultados atualizados durante o torneio.',
+        url: '../publico.html'
+      }
     ];
     const planTabs = [
       { key: 'aluno', label: 'Aulas' },
@@ -2605,6 +2892,63 @@
       $('toast').textContent = message || '';
       $('toast').classList.add('show');
       setTimeout(function () { $('toast').classList.remove('show'); }, 2400);
+    }
+
+    function openExternalModal(title, url, subtitle) {
+      if (!url) return;
+      $('externalModalTitle').textContent = title || 'Ilha Play';
+      $('externalModalSubtitle').textContent = subtitle || 'Abrindo dentro do app.';
+      $('externalModalOpen').href = url;
+      $('externalFrame').src = url;
+      $('externalModal').hidden = false;
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeExternalModal() {
+      $('externalModal').hidden = true;
+      $('externalFrame').src = 'about:blank';
+      document.body.style.overflow = '';
+    }
+
+    function renderTournaments() {
+      const list = $('tournamentList');
+      if (!list) return;
+      list.innerHTML = activeTournaments.map(function (item, index) {
+        return '<article class="tournament-card">' +
+          '<div><span class="tournament-status">' + escapeHtml(item.status || 'Ativo') + '</span>' +
+          '<h3>' + escapeHtml(item.name) + '</h3>' +
+          '<p>' + escapeHtml(item.description || '') + '</p></div>' +
+          '<button type="button" data-tournament-index="' + index + '">Abrir torneio</button>' +
+        '</article>';
+      }).join('') || '<div class="empty">Nenhum torneio ativo agora.</div>';
+    }
+
+    function openTournamentModal() {
+      renderTournaments();
+      $('tournamentModal').hidden = false;
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeTournamentModal() {
+      $('tournamentModal').hidden = true;
+      document.body.style.overflow = '';
+    }
+
+    function closeAnyModal() {
+      let closed = false;
+      if (!$('pixModal').hidden) {
+        closePixModal();
+        closed = true;
+      }
+      if (!$('externalModal').hidden) {
+        closeExternalModal();
+        closed = true;
+      }
+      if (!$('tournamentModal').hidden) {
+        closeTournamentModal();
+        closed = true;
+      }
+      return closed;
     }
 
     function pill(status) {
@@ -3002,6 +3346,7 @@
     function lock(message) {
       document.body.classList.remove('client-unlocked');
       document.body.classList.remove('client-home-view');
+      document.body.classList.remove('client-checking');
       document.body.classList.add('client-locked');
       $('clientApp').setAttribute('aria-hidden', 'true');
       if (message) setAuthMessage(message, true);
@@ -3009,6 +3354,7 @@
 
     function unlock() {
       document.body.classList.remove('client-locked');
+      document.body.classList.remove('client-checking');
       document.body.classList.add('client-unlocked');
       document.body.classList.add('client-home-view');
       $('clientApp').setAttribute('aria-hidden', 'false');
@@ -3676,6 +4022,15 @@
       document.querySelectorAll('[data-back-home]').forEach(function (btn) {
         btn.addEventListener('click', function () { showView('home'); });
       });
+      document.querySelectorAll('[data-embed-url]').forEach(function (link) {
+        link.addEventListener('click', function (event) {
+          event.preventDefault();
+          openExternalModal(link.dataset.embedTitle, link.dataset.embedUrl || link.href, link.dataset.embedSubtitle);
+        });
+      });
+      document.querySelectorAll('[data-open-tournaments]').forEach(function (btn) {
+        btn.addEventListener('click', function () { openTournamentModal(); });
+      });
       $('profileForm').addEventListener('submit', saveProfile);
       $('profilePhoto').addEventListener('change', async function () {
         try {
@@ -3728,12 +4083,26 @@
           }
         }
       });
-      document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape' && !$('pixModal').hidden) {
-          closePixModal();
-        } else {
-          return;
+      $('externalModal').addEventListener('click', function (event) {
+        if (event.target === $('externalModal') || event.target.closest('[data-close-external]')) {
+          closeExternalModal();
         }
+      });
+      $('tournamentModal').addEventListener('click', function (event) {
+        if (event.target === $('tournamentModal') || event.target.closest('[data-close-tournaments]')) {
+          closeTournamentModal();
+        }
+      });
+      $('tournamentList').addEventListener('click', function (event) {
+        const btn = event.target.closest('[data-tournament-index]');
+        if (!btn) return;
+        const item = activeTournaments[Number(btn.dataset.tournamentIndex)];
+        if (!item) return;
+        closeTournamentModal();
+        openExternalModal(item.name, item.url, item.description);
+      });
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') closeAnyModal();
       });
       $('paymentMonth').addEventListener('change', function () {
         paymentFilter.month = this.value;
