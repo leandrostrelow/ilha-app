@@ -81,6 +81,9 @@
     body.club-store .club-home,
     body.club-store .topbar,
     body.club-store .section,
+    body.club-bar .club-home,
+    body.club-bar .topbar,
+    body.club-bar .section,
     body.club-announcements .club-home,
     body.club-announcements .topbar,
     body.club-announcements .section,
@@ -113,6 +116,7 @@
     body.club-courts .court-booking-module,
     body.club-finance .finance-module,
     body.club-store .store-module,
+    body.club-bar .bar-module,
     body.club-announcements .announcements-module,
     body.club-communication .communication-module,
     body.club-clients .clients-module,
@@ -2910,6 +2914,439 @@
       color: var(--dark);
     }
 
+    .bar-module .ops-content {
+      display: grid;
+      gap: 14px;
+    }
+
+    .bar-module .ops-tabs {
+      margin-bottom: 0;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .bar-module .ops-tab-btn {
+      min-height: 42px;
+      border-radius: 6px;
+      background: transparent;
+    }
+
+    .bar-module .ops-tab-btn.active {
+      background: var(--teal);
+    }
+
+    [data-bar-panel] {
+      display: none;
+    }
+
+    [data-bar-panel].active-tab-panel {
+      display: block;
+    }
+
+    .bar-summary-card {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+    }
+
+    .bar-summary-icon {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #eaf3f4;
+      color: var(--teal);
+    }
+
+    .bar-summary-icon svg,
+    .bar-action-icon svg,
+    .bar-table-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .bar-summary-card.warn .bar-summary-icon {
+      background: #fff4dd;
+      color: #a45d00;
+    }
+
+    .bar-summary-card.good .bar-summary-icon {
+      background: #effbd0;
+      color: #557800;
+    }
+
+    .bar-dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(300px, .75fr);
+      gap: 14px;
+    }
+
+    .bar-order-board,
+    .bar-table-grid,
+    .bar-product-list,
+    .bar-finance-list,
+    .bar-qr-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .bar-order-board {
+      grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+    }
+
+    .bar-order-card,
+    .bar-table-card,
+    .bar-product-row,
+    .bar-finance-row,
+    .bar-qr-card,
+    .bar-item-row {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .bar-order-card {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border-top: 3px solid var(--teal);
+    }
+
+    .bar-order-card.is-ready {
+      border-top-color: var(--lime);
+    }
+
+    .bar-order-top,
+    .bar-order-total,
+    .bar-product-main,
+    .bar-finance-main,
+    .bar-item-main,
+    .bar-modal-summary,
+    .bar-qr-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .bar-order-top strong,
+    .bar-table-card strong,
+    .bar-product-row strong,
+    .bar-finance-row strong,
+    .bar-item-row strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .bar-order-number {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .bar-order-total strong {
+      font-size: 20px;
+    }
+
+    .bar-order-actions,
+    .bar-row-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .bar-table-grid,
+    .bar-qr-grid {
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    }
+
+    .bar-table-card {
+      min-height: 150px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 10px;
+      padding: 14px;
+    }
+
+    .bar-table-card.is-open {
+      border-color: #86aab2;
+      background: #f7fbfb;
+    }
+
+    .bar-table-icon {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #edf4f6;
+      color: var(--teal);
+    }
+
+    .bar-table-card h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .bar-table-card p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .bar-product-row,
+    .bar-finance-row,
+    .bar-item-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+    }
+
+    .bar-product-copy,
+    .bar-finance-copy,
+    .bar-item-copy {
+      min-width: 0;
+    }
+
+    .bar-product-copy small,
+    .bar-finance-copy small,
+    .bar-item-copy small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .bar-stock-value {
+      min-width: 90px;
+      text-align: right;
+    }
+
+    .bar-stock-value strong {
+      font-size: 16px;
+    }
+
+    .bar-stock-value.low strong {
+      color: var(--red);
+    }
+
+    .bar-stock-alert {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .bar-stock-alert:last-child {
+      border-bottom: 0;
+    }
+
+    .bar-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .bar-search {
+      width: min(360px, 100%);
+    }
+
+    .bar-modal-order-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .bar-item-row.cancelled {
+      opacity: .55;
+    }
+
+    .bar-item-price {
+      white-space: nowrap;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .bar-modal-summary {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 8px;
+      background: #eff5f6;
+    }
+
+    .bar-modal-summary strong {
+      font-size: 22px;
+    }
+
+    .bar-checkout-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .bar-qr-card {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .bar-qr-card code,
+    .bar-qr-url {
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 11px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-qr-preview {
+      width: min(230px, 70vw);
+      aspect-ratio: 1;
+      display: block;
+      margin: 14px auto;
+      border: 10px solid #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 0 0 1px var(--line);
+    }
+
+    .bar-schema-note {
+      display: none;
+      padding: 12px 14px;
+      border: 1px solid #f2d6a2;
+      border-radius: 8px;
+      background: #fff8e9;
+      color: #764d08;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .bar-schema-note.show {
+      display: block;
+    }
+
+    @media (max-width: 860px) {
+      .bar-dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .bar-checkout-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 520px) {
+      body.club-bar .admin-sidebar {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        display: block;
+        width: 100%;
+        min-width: 0;
+        max-width: 100vw;
+        padding: 8px;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+        overflow: hidden;
+      }
+
+      body.club-bar .admin-sidebar-brand,
+      body.club-bar .admin-sidebar-footer {
+        display: none;
+      }
+
+      body.club-bar .admin-sidebar-nav {
+        width: 100%;
+        min-width: 0;
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+      }
+
+      body.club-bar .admin-sidebar-nav::-webkit-scrollbar {
+        display: none;
+      }
+
+      body.club-bar .admin-nav-btn {
+        width: auto;
+        min-width: 96px;
+        min-height: 42px;
+        flex: 0 0 auto;
+        grid-template-columns: 24px auto;
+        gap: 7px;
+        padding: 0 9px;
+        font-size: 12px;
+      }
+
+      body.club-bar .admin-nav-icon {
+        width: 24px;
+        height: 24px;
+      }
+
+      body.club-bar .app > :not(.admin-sidebar) {
+        padding: 8px;
+      }
+
+      .bar-module .ops-content {
+        padding: 10px;
+      }
+
+      .bar-module .ops-tabs {
+        margin: 0 -2px;
+      }
+
+      .bar-module .ops-tab-btn {
+        min-height: 40px;
+        padding: 8px 11px;
+      }
+
+      .bar-order-board,
+      .bar-table-grid,
+      .bar-qr-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .bar-product-row,
+      .bar-finance-row,
+      .bar-item-row {
+        grid-template-columns: 1fr;
+      }
+
+      .bar-stock-value {
+        text-align: left;
+      }
+
+      .bar-order-actions .small-btn,
+      .bar-row-actions .small-btn {
+        flex: 1 1 auto;
+      }
+
+      .bar-modal-summary {
+        align-items: flex-start;
+      }
+    }
+
     .empty {
       min-height: 84px;
       display: grid;
@@ -3411,6 +3848,26 @@
       <path d="M8 13l2 6h3" />
       <path d="M19 9v4" />
     </symbol>
+    <symbol id="admin-icon-bar" viewBox="0 0 24 24">
+      <path d="M5 4h11l-1 8a5 5 0 0 1-5 4 5 5 0 0 1-5-4L5 4Z" />
+      <path d="M16 7h2a3 3 0 0 1 0 6h-3" />
+      <path d="M7 20h7M10.5 16v4" />
+    </symbol>
+    <symbol id="admin-icon-table" viewBox="0 0 24 24">
+      <path d="M4 8h16v5H4zM6 13v7M18 13v7" />
+    </symbol>
+    <symbol id="admin-icon-box" viewBox="0 0 24 24">
+      <path d="m4 7 8-4 8 4-8 4-8-4Z" />
+      <path d="M4 7v10l8 4 8-4V7M12 11v10" />
+    </symbol>
+    <symbol id="admin-icon-receipt" viewBox="0 0 24 24">
+      <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" />
+      <path d="M9 8h6M9 12h6M9 16h3" />
+    </symbol>
+    <symbol id="admin-icon-qr" viewBox="0 0 24 24">
+      <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z" />
+      <path d="M14 14h2v2h-2zM18 14h2v4h-2zM14 18h4v2h-4z" />
+    </symbol>
   </svg>
 
   <main class="adm-login" id="adminLogin">
@@ -3442,6 +3899,7 @@
         <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon"><svg><use href="#admin-icon-users"></use></svg></span><span>Alunos</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-courts"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Quadras</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-bar"><span class="admin-nav-icon"><svg><use href="#admin-icon-bar"></use></svg></span><span>Bar</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-store"><span class="admin-nav-icon"><svg><use href="#admin-icon-bag"></use></svg></span><span>Ilha Store</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-announcements"><span class="admin-nav-icon"><svg><use href="#admin-icon-megaphone"></use></svg></span><span>Comunicados</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-team"><span class="admin-nav-icon"><svg><use href="#admin-icon-team"></use></svg></span><span>Equipe</span></button>
@@ -3725,6 +4183,7 @@
                   <select id="teamRole">
                     <option value="secretaria">Secretaria</option>
                     <option value="professor">Professor</option>
+                    <option value="bar">Bar / Garçom</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
@@ -3944,6 +4403,214 @@
             <button class="primary-btn" type="submit">Salvar</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <section class="ops-module bar-module" id="barModule">
+      <div class="module-shell">
+        <div class="module-head">
+          <div>
+            <h1>Bar</h1>
+            <div class="muted">Comandas, estoque e caixa.</div>
+          </div>
+          <div class="module-actions">
+            <button class="ghost-btn" type="button" data-home-action>Início</button>
+            <button class="ghost-btn" type="button" id="barReloadBtn">Atualizar</button>
+            <button class="primary-btn" type="button" id="barNewOrderBtn">Nova comanda</button>
+          </div>
+        </div>
+        <div class="ops-content">
+          <div class="bar-schema-note" id="barSchemaNote">O módulo está em modo de teste local. Aplique a atualização do banco para gravar tudo no Supabase.</div>
+
+          <div class="ops-summary">
+            <div class="ops-card bar-summary-card">
+              <span class="bar-summary-icon"><svg><use href="#admin-icon-receipt"></use></svg></span>
+              <div><strong id="barOpenOrdersMetric">0</strong><span>comandas abertas</span></div>
+            </div>
+            <div class="ops-card bar-summary-card warn">
+              <span class="bar-summary-icon"><svg><use href="#admin-icon-bar"></use></svg></span>
+              <div><strong id="barPendingItemsMetric">0</strong><span>itens em preparo</span></div>
+            </div>
+            <div class="ops-card bar-summary-card warn">
+              <span class="bar-summary-icon"><svg><use href="#admin-icon-box"></use></svg></span>
+              <div><strong id="barLowStockMetric">0</strong><span>estoque baixo</span></div>
+            </div>
+            <div class="ops-card bar-summary-card good">
+              <span class="bar-summary-icon"><svg><use href="#admin-icon-wallet"></use></svg></span>
+              <div><strong id="barTodaySalesMetric">R$ 0</strong><span>vendas de hoje</span></div>
+            </div>
+          </div>
+
+          <div class="ops-tabs" role="tablist" aria-label="Gestão do bar">
+            <button class="ops-tab-btn active" type="button" data-bar-tab="overview">Visão geral</button>
+            <button class="ops-tab-btn" type="button" data-bar-tab="orders">Mesas e comandas</button>
+            <button class="ops-tab-btn" type="button" data-bar-tab="products">Produtos e estoque</button>
+            <button class="ops-tab-btn" type="button" data-bar-tab="finance">Financeiro</button>
+            <button class="ops-tab-btn" type="button" data-bar-tab="tables">Mesas e QR Codes</button>
+          </div>
+
+          <div data-bar-panel="overview" class="active-tab-panel">
+            <div class="bar-dashboard-grid">
+              <section class="ops-panel">
+                <div class="ops-panel-head">
+                  <div><h2>Operação agora</h2><div class="muted">Comandas que precisam de atenção.</div></div>
+                  <button class="small-btn" type="button" data-bar-go="orders">Ver mesas</button>
+                </div>
+                <div class="bar-order-board" id="barOverviewOrders"></div>
+              </section>
+              <section class="ops-panel">
+                <div class="ops-panel-head"><div><h2>Estoque baixo</h2><div class="muted">Itens no limite mínimo.</div></div></div>
+                <div id="barLowStockList"></div>
+              </section>
+            </div>
+          </div>
+
+          <div data-bar-panel="orders">
+            <section class="ops-panel">
+              <div class="ops-panel-head">
+                <div><h2>Mesas</h2><div class="muted">Abra a mesa para lançar ou acompanhar pedidos.</div></div>
+                <button class="small-btn" type="button" data-bar-go="tables">Gerenciar mesas</button>
+              </div>
+              <div class="bar-table-grid" id="barTableBoard"></div>
+            </section>
+            <section class="ops-panel" style="margin-top:14px">
+              <div class="ops-panel-head"><div><h2>Últimas comandas fechadas</h2></div></div>
+              <div class="bar-finance-list" id="barClosedOrders"></div>
+            </section>
+          </div>
+
+          <div data-bar-panel="products">
+            <div class="ops-grid">
+              <section class="ops-panel span-4">
+                <div class="ops-panel-head"><div><h2>Produto</h2><div class="muted">Cadastre ou edite o cardápio.</div></div></div>
+                <form class="form-grid" id="barProductForm">
+                  <input id="barProductId" type="hidden" />
+                  <div class="field full"><label for="barProductName">Nome</label><input id="barProductName" placeholder="Ex.: Água mineral" required /></div>
+                  <div class="field"><label for="barProductSku">Código</label><input id="barProductSku" placeholder="AGUA500" /></div>
+                  <div class="field"><label for="barProductCategory">Categoria</label><input id="barProductCategory" list="barCategoryOptions" placeholder="Bebidas" required /></div>
+                  <div class="field"><label for="barProductPrice">Venda</label><input id="barProductPrice" inputmode="decimal" placeholder="5,00" required /></div>
+                  <div class="field"><label for="barProductCost">Custo</label><input id="barProductCost" inputmode="decimal" placeholder="2,50" /></div>
+                  <div class="field"><label for="barProductStock">Estoque inicial</label><input id="barProductStock" type="number" min="0" step="0.001" placeholder="0" /></div>
+                  <div class="field"><label for="barProductMinimum">Estoque mínimo</label><input id="barProductMinimum" type="number" min="0" step="0.001" placeholder="5" /></div>
+                  <div class="field"><label for="barProductUnit">Unidade</label><select id="barProductUnit"><option value="un">Unidade</option><option value="kg">Quilo</option><option value="l">Litro</option><option value="pct">Pacote</option></select></div>
+                  <div class="field"><label for="barProductActive">Status</label><select id="barProductActive"><option value="true">Ativo</option><option value="false">Inativo</option></select></div>
+                  <div class="field full"><label for="barProductNotes">Observação</label><input id="barProductNotes" placeholder="Marca, tamanho ou detalhe" /></div>
+                  <div class="field full"><button class="primary-btn" type="submit">Salvar produto</button></div>
+                </form>
+                <datalist id="barCategoryOptions"><option value="Bebidas"></option><option value="Cervejas"></option><option value="Lanches"></option><option value="Porções"></option><option value="Doces"></option><option value="Outros"></option></datalist>
+              </section>
+              <section class="ops-panel span-8">
+                <div class="bar-toolbar">
+                  <div><h2>Produtos</h2><div class="muted" id="barProductCount">0 cadastrados</div></div>
+                  <input class="bar-search" id="barProductSearch" type="search" placeholder="Buscar produto" />
+                </div>
+                <div class="bar-product-list" id="barProductList"></div>
+              </section>
+              <section class="ops-panel span-12">
+                <div class="ops-panel-head"><div><h2>Movimentar estoque</h2><div class="muted">Entradas, perdas e ajustes ficam registrados.</div></div></div>
+                <form class="form-grid" id="barStockForm">
+                  <div class="field"><label for="barStockProduct">Produto</label><select id="barStockProduct" required></select></div>
+                  <div class="field"><label for="barStockType">Movimento</label><select id="barStockType"><option value="ENTRADA">Entrada</option><option value="SAIDA">Saída manual</option><option value="PERDA">Perda</option><option value="AJUSTE">Ajuste para menos</option></select></div>
+                  <div class="field"><label for="barStockQuantity">Quantidade</label><input id="barStockQuantity" type="number" min="0.001" step="0.001" required /></div>
+                  <div class="field"><label for="barStockCost">Novo custo</label><input id="barStockCost" inputmode="decimal" placeholder="Opcional" /></div>
+                  <div class="field full"><label for="barStockReason">Motivo</label><input id="barStockReason" placeholder="Ex.: compra do fornecedor, quebra ou contagem" required /></div>
+                  <div class="field full"><button class="primary-btn" type="submit">Registrar movimento</button></div>
+                </form>
+              </section>
+            </div>
+          </div>
+
+          <div data-bar-panel="finance">
+            <div class="ops-grid">
+              <section class="ops-panel span-4">
+                <div class="ops-panel-head"><div><h2>Novo lançamento</h2><div class="muted">Contas a pagar e receber do bar.</div></div></div>
+                <form class="form-grid" id="barFinanceForm">
+                  <div class="field"><label for="barFinanceType">Tipo</label><select id="barFinanceType"><option value="DESPESA">Conta a pagar</option><option value="RECEITA">Conta a receber</option></select></div>
+                  <div class="field"><label for="barFinanceStatus">Status</label><select id="barFinanceStatus"><option value="ABERTO">Em aberto</option><option value="PAGO">Pago</option><option value="RECEBIDO">Recebido</option></select></div>
+                  <div class="field full"><label for="barFinanceDescription">Descrição</label><input id="barFinanceDescription" placeholder="Ex.: Compra de bebidas" required /></div>
+                  <div class="field full"><label for="barFinanceCounterparty">Fornecedor / cliente</label><input id="barFinanceCounterparty" placeholder="Nome" /></div>
+                  <div class="field"><label for="barFinanceAmount">Valor</label><input id="barFinanceAmount" inputmode="decimal" placeholder="0,00" required /></div>
+                  <div class="field"><label for="barFinanceDue">Vencimento</label><input id="barFinanceDue" type="date" /></div>
+                  <div class="field full"><label for="barFinanceMethod">Forma de pagamento</label><select id="barFinanceMethod"><option value="">A definir</option><option value="PIX">Pix</option><option value="DINHEIRO">Dinheiro</option><option value="CARTAO">Cartão</option><option value="BOLETO">Boleto</option><option value="TRANSFERENCIA">Transferência</option></select></div>
+                  <div class="field full"><label for="barFinanceNotes">Observação</label><input id="barFinanceNotes" placeholder="Número da nota ou detalhe" /></div>
+                  <div class="field full"><button class="primary-btn" type="submit">Salvar lançamento</button></div>
+                </form>
+              </section>
+              <section class="ops-panel span-8">
+                <div class="bar-toolbar">
+                  <div><h2>Movimentação</h2><div class="muted" id="barFinanceTotals">R$ 0 em aberto</div></div>
+                  <div class="bar-order-actions" id="barFinanceFilters"></div>
+                </div>
+                <div class="bar-finance-list" id="barFinanceList"></div>
+              </section>
+            </div>
+          </div>
+
+          <div data-bar-panel="tables">
+            <div class="ops-grid">
+              <section class="ops-panel span-4">
+                <div class="ops-panel-head"><div><h2>Nova mesa</h2><div class="muted">O QR apontará para o futuro /bar.</div></div></div>
+                <form class="form-grid" id="barTableForm">
+                  <div class="field"><label for="barTableNumber">Número</label><input id="barTableNumber" type="number" min="1" inputmode="numeric" required /></div>
+                  <div class="field"><label for="barTableSeats">Lugares</label><input id="barTableSeats" type="number" min="1" value="4" required /></div>
+                  <div class="field full"><label for="barTableName">Nome</label><input id="barTableName" placeholder="Ex.: Mesa 1" required /></div>
+                  <div class="field full"><label for="barTableNotes">Observação</label><input id="barTableNotes" placeholder="Ex.: varanda" /></div>
+                  <div class="field full"><button class="primary-btn" type="submit">Criar mesa</button></div>
+                </form>
+              </section>
+              <section class="ops-panel span-8">
+                <div class="ops-panel-head"><div><h2>Mesas e QR Codes</h2><div class="muted">Use o código individual para identificar cada mesa.</div></div></div>
+                <div class="bar-qr-grid" id="barQrGrid"></div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="admin-modal-overlay" id="barCommandModal" aria-hidden="true">
+      <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="barCommandModalTitle">
+        <div class="admin-modal-head">
+          <div><h2 id="barCommandModalTitle">Comanda</h2><div class="muted" id="barCommandModalSubtitle"></div></div>
+          <button class="ghost-btn" type="button" id="barCommandModalClose">Fechar</button>
+        </div>
+        <div class="admin-modal-body">
+          <form class="form-grid" id="barOrderItemForm">
+            <div class="field full"><label for="barOrderProduct">Adicionar produto</label><select id="barOrderProduct" required></select></div>
+            <div class="field"><label for="barOrderQuantity">Quantidade</label><input id="barOrderQuantity" type="number" min="1" step="1" value="1" required /></div>
+            <div class="field"><label for="barOrderItemNotes">Observação</label><input id="barOrderItemNotes" placeholder="Sem gelo, ponto, sabor..." /></div>
+            <div class="field full"><button class="primary-btn" type="submit">Adicionar à comanda</button></div>
+          </form>
+          <div class="bar-modal-order-list" id="barCommandItems"></div>
+          <div class="bar-modal-summary"><span>Total da comanda</span><strong id="barCommandTotal">R$ 0</strong></div>
+          <div class="bar-checkout-grid">
+            <div class="field"><label for="barCheckoutService">Taxa de serviço</label><input id="barCheckoutService" inputmode="decimal" value="0,00" /></div>
+            <div class="field"><label for="barCheckoutDiscount">Desconto</label><input id="barCheckoutDiscount" inputmode="decimal" value="0,00" /></div>
+            <div class="field"><label for="barCheckoutMethod">Pagamento</label><select id="barCheckoutMethod"><option value="PIX">Pix</option><option value="DINHEIRO">Dinheiro</option><option value="CARTAO_CREDITO">Cartão de crédito</option><option value="CARTAO_DEBITO">Cartão de débito</option><option value="CONTA_CLIENTE">Conta do cliente</option></select></div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="ghost-btn" type="button" id="barOrderPrepBtn">Enviar para preparo</button>
+          <button class="ghost-btn" type="button" id="barOrderReadyBtn">Marcar pronta</button>
+          <button class="primary-btn" type="button" id="barOrderCloseBtn">Fechar e receber</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-modal-overlay" id="barQrModal" aria-hidden="true">
+      <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="barQrModalTitle">
+        <div class="admin-modal-head">
+          <div><h2 id="barQrModalTitle">QR Code da mesa</h2><div class="muted">Identificação individual da comanda.</div></div>
+          <button class="ghost-btn" type="button" id="barQrModalClose">Fechar</button>
+        </div>
+        <div class="admin-modal-body">
+          <img class="bar-qr-preview" id="barQrPreview" alt="QR Code da mesa" />
+          <div class="bar-qr-url" id="barQrUrl"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="ghost-btn" type="button" id="barQrCopyBtn">Copiar link</button>
+          <a class="primary-btn" id="barQrOpenBtn" href="#" target="_blank" rel="noopener">Abrir QR Code</a>
+        </div>
       </div>
     </div>
 
@@ -8092,6 +8759,12 @@
       courtDate: localDateString(new Date()),
       extraCourtDates: [],
       selectedCourtSlot: null,
+      barTab: 'overview',
+      barFinanceFilter: 'abertos',
+      selectedBarOrderId: null,
+      selectedBarQrUrl: '',
+      barDataLoaded: false,
+      barSchemaReady: true,
       loaded: false
     };
 
@@ -8114,6 +8787,7 @@
       { key: 'finance.write', label: 'Gerenciar financeiro', detail: 'Criar contas a pagar, receber e baixar pagamentos.' },
       { key: 'classes', label: 'Aulas e agenda', detail: 'Gerenciar horários, presença e agenda de quadras.' },
       { key: 'store', label: 'Ilha Store', detail: 'Acompanhar pedidos de produtos e serviços.' },
+      { key: 'bar', label: 'Bar', detail: 'Gerenciar mesas, comandas, estoque e financeiro do bar.' },
       { key: 'announcements', label: 'Comunicados', detail: 'Publicar avisos no app do aluno.' },
       { key: 'tournaments', label: 'Torneios', detail: 'Organizar inscricoes, chaves, agenda e resultados.' },
       { key: 'communication', label: 'Comunicacao', detail: 'Enviar avisos, campanhas e mensagens.' },
@@ -8122,8 +8796,9 @@
 
     const roleDefaultPermissions = {
       admin: teamPermissionCatalog.map(function (item) { return item.key; }),
-      secretaria: ['dashboard', 'clients.read', 'clients.write', 'plans', 'finance.read', 'finance.write', 'classes', 'communication'],
-      professor: ['dashboard', 'clients.read', 'classes', 'communication']
+      secretaria: ['dashboard', 'clients.read', 'clients.write', 'plans', 'finance.read', 'finance.write', 'classes', 'bar', 'communication'],
+      professor: ['dashboard', 'clients.read', 'classes', 'communication'],
+      bar: ['dashboard', 'bar']
     };
 
     const opsData = {
@@ -8186,13 +8861,40 @@
       announcements: [],
       courtBookings: [],
       paymentInvoices: [],
+      barProducts: [
+        { id: 'bar_product_water', name: 'Água mineral', sku: 'AGUA500', category: 'Bebidas', salePrice: 5, costPrice: 2, stock: 24, minimumStock: 8, unit: 'un', active: true, notes: '500 ml' },
+        { id: 'bar_product_soda', name: 'Refrigerante lata', sku: 'REFRI350', category: 'Bebidas', salePrice: 7, costPrice: 3.5, stock: 18, minimumStock: 8, unit: 'un', active: true, notes: '350 ml' },
+        { id: 'bar_product_beer', name: 'Cerveja long neck', sku: 'CERV330', category: 'Cervejas', salePrice: 12, costPrice: 6, stock: 12, minimumStock: 12, unit: 'un', active: true, notes: '330 ml' },
+        { id: 'bar_product_isotonic', name: 'Isotônico', sku: 'ISO500', category: 'Bebidas', salePrice: 10, costPrice: 5.5, stock: 6, minimumStock: 6, unit: 'un', active: true, notes: '' },
+        { id: 'bar_product_sandwich', name: 'Sanduíche natural', sku: 'LANCHE01', category: 'Lanches', salePrice: 16, costPrice: 8, stock: 5, minimumStock: 3, unit: 'un', active: true, notes: '' },
+        { id: 'bar_product_fries', name: 'Porção de fritas', sku: 'PORCAO01', category: 'Porções', salePrice: 28, costPrice: 11, stock: 10, minimumStock: 4, unit: 'un', active: true, notes: '' }
+      ],
+      barTables: [
+        { id: 'bar_table_1', number: 1, name: 'Mesa 1', seats: 4, qrToken: 'ilha-mesa-1', active: true, notes: '' },
+        { id: 'bar_table_2', number: 2, name: 'Mesa 2', seats: 4, qrToken: 'ilha-mesa-2', active: true, notes: '' },
+        { id: 'bar_table_3', number: 3, name: 'Mesa 3', seats: 4, qrToken: 'ilha-mesa-3', active: true, notes: '' },
+        { id: 'bar_table_4', number: 4, name: 'Mesa 4', seats: 6, qrToken: 'ilha-mesa-4', active: true, notes: '' },
+        { id: 'bar_table_5', number: 5, name: 'Mesa 5', seats: 4, qrToken: 'ilha-mesa-5', active: true, notes: '' },
+        { id: 'bar_table_6', number: 6, name: 'Mesa 6', seats: 4, qrToken: 'ilha-mesa-6', active: true, notes: '' }
+      ],
+      barOrders: [
+        { id: 'bar_order_1', tableId: 'bar_table_2', commandNumber: 101, customerName: 'Mesa 2', status: 'EM_PREPARO', subtotal: 33, serviceCharge: 0, discount: 0, total: 33, paymentStatus: 'ABERTO', paymentMethod: '', openedAt: new Date().toISOString(), closedAt: '' }
+      ],
+      barOrderItems: [
+        { id: 'bar_item_1', orderId: 'bar_order_1', productId: 'bar_product_beer', productName: 'Cerveja long neck', quantity: 1, unitPrice: 12, costPrice: 6, status: 'ENTREGUE', notes: '' },
+        { id: 'bar_item_2', orderId: 'bar_order_1', productId: 'bar_product_sandwich', productName: 'Sanduíche natural', quantity: 1, unitPrice: 16, costPrice: 8, status: 'EM_PREPARO', notes: 'Sem tomate' },
+        { id: 'bar_item_3', orderId: 'bar_order_1', productId: 'bar_product_water', productName: 'Água mineral', quantity: 1, unitPrice: 5, costPrice: 2, status: 'SOLICITADO', notes: 'Sem gelo' }
+      ],
+      barInventory: [],
+      barFinance: [],
       message: 'Oi, {nome}! Passando para lembrar que sua aula no Ilha está confirmada para hoje. Se precisar ajustar o horário, fale com a secretaria pelo WhatsApp. Obrigado!'
     };
     const opsSeedData = JSON.parse(JSON.stringify(opsData));
     let courtRefreshTimer = null;
+    let barRefreshTimer = null;
 
     function setClubMode(mode) {
-      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-courts', 'club-finance', 'club-store', 'club-announcements', 'club-communication', 'club-clients', 'club-team', 'club-database'].forEach(function (className) {
+      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-courts', 'club-finance', 'club-bar', 'club-store', 'club-announcements', 'club-communication', 'club-clients', 'club-team', 'club-database'].forEach(function (className) {
         document.body.classList.remove(className);
       });
       document.body.classList.add(mode);
@@ -8200,6 +8902,10 @@
       if (mode !== 'club-courts' && courtRefreshTimer) {
         clearInterval(courtRefreshTimer);
         courtRefreshTimer = null;
+      }
+      if (mode !== 'club-bar' && barRefreshTimer) {
+        clearInterval(barRefreshTimer);
+        barRefreshTimer = null;
       }
     }
 
@@ -8483,6 +9189,143 @@
         notes: row.notes || '',
         created: row.created_at || ''
       };
+    }
+
+    function mapBarProductRow(row) {
+      return {
+        id: row.id || '',
+        name: row.name || 'Produto',
+        sku: row.sku || '',
+        category: row.category || 'Outros',
+        salePrice: Number(row.sale_price || 0),
+        costPrice: Number(row.cost_price || 0),
+        stock: Number(row.stock_quantity || 0),
+        minimumStock: Number(row.minimum_stock || 0),
+        unit: row.unit || 'un',
+        imageUrl: row.image_url || '',
+        active: row.active !== false,
+        notes: row.notes || '',
+        created: row.created_at || ''
+      };
+    }
+
+    function mapBarTableRow(row) {
+      return {
+        id: row.id || '',
+        number: Number(row.number || 0),
+        name: row.name || ('Mesa ' + (row.number || '')),
+        seats: Number(row.seats || 4),
+        qrToken: row.qr_token || '',
+        active: row.active !== false,
+        notes: row.notes || '',
+        created: row.created_at || ''
+      };
+    }
+
+    function mapBarOrderRow(row) {
+      const table = row.bar_tables || {};
+      return {
+        id: row.id || '',
+        tableId: row.table_id || '',
+        tableName: table.name || '',
+        tableNumber: table.number || '',
+        commandNumber: row.command_number || '',
+        customerName: row.customer_name || '',
+        status: row.status || 'ABERTA',
+        subtotal: Number(row.subtotal || 0),
+        serviceCharge: Number(row.service_charge || 0),
+        discount: Number(row.discount || 0),
+        total: Number(row.total || 0),
+        paymentStatus: row.payment_status || 'ABERTO',
+        paymentMethod: row.payment_method || '',
+        notes: row.notes || '',
+        openedAt: row.opened_at || row.created_at || '',
+        closedAt: row.closed_at || ''
+      };
+    }
+
+    function mapBarOrderItemRow(row) {
+      return {
+        id: row.id || '',
+        orderId: row.order_id || '',
+        productId: row.product_id || '',
+        productName: row.product_name || 'Produto',
+        quantity: Number(row.quantity || 0),
+        unitPrice: Number(row.unit_price || 0),
+        costPrice: Number(row.cost_price || 0),
+        status: row.status || 'SOLICITADO',
+        notes: row.notes || '',
+        created: row.created_at || ''
+      };
+    }
+
+    function mapBarInventoryRow(row) {
+      return {
+        id: row.id || '',
+        productId: row.product_id || '',
+        orderItemId: row.order_item_id || '',
+        type: row.type || 'AJUSTE',
+        quantity: Number(row.quantity || 0),
+        unitCost: Number(row.unit_cost || 0),
+        reason: row.reason || '',
+        occurredAt: row.occurred_at || row.created_at || ''
+      };
+    }
+
+    function mapBarFinanceRow(row) {
+      return {
+        id: row.id || '',
+        orderId: row.order_id || '',
+        type: row.type || 'RECEITA',
+        description: row.description || 'Lançamento do bar',
+        counterparty: row.counterparty || '',
+        category: row.category || 'Bar',
+        amount: Number(row.amount || 0),
+        dueDate: row.due_date || '',
+        status: row.status || 'ABERTO',
+        paymentMethod: row.payment_method || '',
+        paidAt: row.paid_at || '',
+        notes: row.notes || '',
+        created: row.created_at || ''
+      };
+    }
+
+    async function loadBarData(force) {
+      if (!adminSession || !adminSession.access_token) return;
+      if (isAdminDemoMode()) {
+        opsState.barDataLoaded = true;
+        opsState.barSchemaReady = false;
+        return;
+      }
+      if (opsState.barDataLoaded && !force) return;
+      try {
+        const results = await Promise.all([
+          supabaseRest('bar_products?select=*&order=category.asc,name.asc'),
+          supabaseRest('bar_tables?select=*&order=number.asc'),
+          supabaseRest('bar_orders?select=*,bar_tables(number,name)&order=opened_at.desc'),
+          supabaseRest('bar_order_items?select=*&order=created_at.asc'),
+          supabaseRest('bar_inventory_movements?select=*&order=occurred_at.desc&limit=200'),
+          supabaseRest('bar_financial_entries?select=*&order=created_at.desc')
+        ]);
+        opsData.barProducts = results[0].map(mapBarProductRow);
+        opsData.barTables = results[1].map(mapBarTableRow);
+        opsData.barOrders = results[2].map(mapBarOrderRow);
+        opsData.barOrderItems = results[3].map(mapBarOrderItemRow);
+        opsData.barInventory = results[4].map(mapBarInventoryRow);
+        opsData.barFinance = results[5].map(mapBarFinanceRow);
+        opsState.barDataLoaded = true;
+        opsState.barSchemaReady = true;
+      } catch (error) {
+        opsData.barProducts = [];
+        opsData.barTables = [];
+        opsData.barOrders = [];
+        opsData.barOrderItems = [];
+        opsData.barInventory = [];
+        opsData.barFinance = [];
+        opsState.barSchemaReady = false;
+        opsState.barDataLoaded = true;
+        console.info('Tabelas do Bar ainda nao disponiveis no Supabase.', error && error.message);
+      }
     }
 
     async function loadOpsData(force) {
@@ -9113,6 +9956,677 @@
       }
     }
 
+    function barOrderIsOpen(order) {
+      return ['ABERTA', 'EM_PREPARO', 'PRONTA'].includes(String(order && order.status || '').toUpperCase());
+    }
+
+    function barTableById(id) {
+      return opsData.barTables.find(function (table) { return String(table.id) === String(id); });
+    }
+
+    function barProductById(id) {
+      return opsData.barProducts.find(function (product) { return String(product.id) === String(id); });
+    }
+
+    function barOrderById(id) {
+      return opsData.barOrders.find(function (order) { return String(order.id) === String(id); });
+    }
+
+    function barOrderForTable(tableId) {
+      return opsData.barOrders.find(function (order) {
+        return String(order.tableId) === String(tableId) && barOrderIsOpen(order);
+      });
+    }
+
+    function barItemsForOrder(orderId) {
+      return opsData.barOrderItems.filter(function (item) {
+        return String(item.orderId) === String(orderId);
+      });
+    }
+
+    function barActiveItemsForOrder(orderId) {
+      return barItemsForOrder(orderId).filter(function (item) { return item.status !== 'CANCELADO'; });
+    }
+
+    function barOrderSubtotal(order) {
+      const items = barActiveItemsForOrder(order.id);
+      if (!items.length) return Number(order.subtotal || 0);
+      return items.reduce(function (sum, item) { return sum + Number(item.quantity || 0) * Number(item.unitPrice || 0); }, 0);
+    }
+
+    function barOrderTotal(order) {
+      return Math.max(0, barOrderSubtotal(order) + Number(order.serviceCharge || 0) - Number(order.discount || 0));
+    }
+
+    function recalculateLocalBarOrder(order) {
+      if (!order) return;
+      order.subtotal = barOrderSubtotal(order);
+      order.total = Math.max(0, order.subtotal + Number(order.serviceCharge || 0) - Number(order.discount || 0));
+    }
+
+    function barStatusLabel(status) {
+      const labels = {
+        ABERTA: 'Aberta',
+        EM_PREPARO: 'Em preparo',
+        PRONTA: 'Pronta',
+        FECHADA: 'Fechada',
+        CANCELADA: 'Cancelada',
+        SOLICITADO: 'Solicitado',
+        PRONTO: 'Pronto',
+        ENTREGUE: 'Entregue',
+        ABERTO: 'Em aberto',
+        RECEBIDO: 'Recebido',
+        PAGO: 'Pago',
+        VENCIDO: 'Vencido'
+      };
+      return labels[String(status || '').toUpperCase()] || String(status || '');
+    }
+
+    function barStatusPill(status) {
+      const value = String(status || '').toUpperCase();
+      const kind = ['PRONTA', 'PRONTO', 'ENTREGUE', 'FECHADA', 'RECEBIDO', 'PAGO'].includes(value) ? 'good' : (['CANCELADA', 'CANCELADO', 'VENCIDO'].includes(value) ? 'bad' : 'warn');
+      return '<span class="ops-pill ' + kind + '">' + escapeHtml(barStatusLabel(value)) + '</span>';
+    }
+
+    function barDateTimeLabel(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function barTableLabel(order) {
+      const table = barTableById(order.tableId);
+      return order.tableName || table && table.name || order.customerName || 'Balcão';
+    }
+
+    function barOrderCard(order) {
+      const items = barActiveItemsForOrder(order.id);
+      const pending = items.filter(function (item) { return ['SOLICITADO', 'EM_PREPARO'].includes(item.status); }).length;
+      return '<article class="bar-order-card' + (order.status === 'PRONTA' ? ' is-ready' : '') + '">' +
+        '<div class="bar-order-top"><div><strong>' + escapeHtml(barTableLabel(order)) + '</strong><span class="bar-order-number">Comanda #' + escapeHtml(order.commandNumber || String(order.id).slice(-4)) + '</span></div>' + barStatusPill(order.status) + '</div>' +
+        '<div class="muted">' + items.length + ' item(ns)' + (pending ? ' | ' + pending + ' aguardando' : '') + (order.openedAt ? ' | ' + escapeHtml(barDateTimeLabel(order.openedAt)) : '') + '</div>' +
+        '<div class="bar-order-total"><strong>' + money(barOrderTotal(order)) + '</strong><button class="small-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button></div>' +
+      '</article>';
+    }
+
+    function barTableCard(table) {
+      const order = barOrderForTable(table.id);
+      return '<article class="bar-table-card' + (order ? ' is-open' : '') + '">' +
+        '<div class="bar-order-top"><span class="bar-table-icon"><svg><use href="#admin-icon-table"></use></svg></span>' + (order ? barStatusPill(order.status) : '<span class="ops-pill good">Livre</span>') + '</div>' +
+        '<div><h3>' + escapeHtml(table.name) + '</h3><p>' + table.seats + ' lugares' + (order ? ' | ' + money(barOrderTotal(order)) : '') + '</p></div>' +
+        '<button class="' + (order ? 'primary-btn' : 'ghost-btn') + '" type="button" data-bar-table-open="' + escapeHtml(table.id) + '">' + (order ? 'Abrir comanda' : 'Abrir mesa') + '</button>' +
+      '</article>';
+    }
+
+    function barFinanceIsSettled(item) {
+      return ['PAGO', 'RECEBIDO', 'CANCELADO'].includes(String(item.status || '').toUpperCase());
+    }
+
+    function renderBarFinanceRow(item) {
+      const isExpense = item.type === 'DESPESA';
+      const meta = [item.counterparty, item.category, item.dueDate ? financeDateLabel(item.dueDate) : '', item.paymentMethod].filter(Boolean).join(' | ');
+      return '<article class="bar-finance-row"><div class="bar-finance-copy"><strong>' + escapeHtml(item.description) + '</strong><small>' + escapeHtml(meta || 'Sem detalhes') + '</small></div>' +
+        '<div class="bar-row-actions"><span class="finance-amount' + (isExpense ? ' expense' : '') + '">' + (isExpense ? '-' : '+') + money(item.amount) + '</span>' + barStatusPill(item.status) +
+        (barFinanceIsSettled(item) ? '' : '<button class="small-btn" type="button" data-bar-finance-paid="' + escapeHtml(item.id) + '">' + (isExpense ? 'Marcar pago' : 'Receber') + '</button>') + '</div></article>';
+    }
+
+    function setBarTab(tab) {
+      opsState.barTab = tab || 'overview';
+      document.querySelectorAll('[data-bar-tab]').forEach(function (button) {
+        button.classList.toggle('active', button.dataset.barTab === opsState.barTab);
+      });
+      document.querySelectorAll('[data-bar-panel]').forEach(function (panel) {
+        panel.classList.toggle('active-tab-panel', panel.dataset.barPanel === opsState.barTab);
+      });
+    }
+
+    function renderBarProducts() {
+      const search = normalizeMatchText($('barProductSearch').value);
+      const products = opsData.barProducts.filter(function (product) {
+        return !search || normalizeMatchText([product.name, product.sku, product.category].join(' ')).includes(search);
+      }).sort(function (a, b) {
+        return String(a.category).localeCompare(String(b.category)) || String(a.name).localeCompare(String(b.name));
+      });
+      $('barProductCount').textContent = products.length + ' produto(s)';
+      $('barProductList').innerHTML = products.map(function (product) {
+        const low = product.active && Number(product.stock) <= Number(product.minimumStock || 0);
+        return '<article class="bar-product-row"><div class="bar-product-main"><div class="bar-product-copy"><strong>' + escapeHtml(product.name) + '</strong><small>' + escapeHtml([product.category, product.sku, product.notes].filter(Boolean).join(' | ')) + '</small></div><span class="finance-total">' + money(product.salePrice) + '</span></div>' +
+          '<div class="bar-row-actions"><div class="bar-stock-value' + (low ? ' low' : '') + '"><strong>' + escapeHtml(Number(product.stock || 0).toLocaleString('pt-BR')) + ' ' + escapeHtml(product.unit) + '</strong><span class="muted">em estoque</span></div>' + (low ? '<span class="ops-pill bad">Estoque baixo</span>' : statusPill(product.active ? 'ATIVO' : 'INATIVO')) + '<button class="small-btn" type="button" data-bar-product-edit="' + escapeHtml(product.id) + '">Editar</button></div></article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhum produto encontrado.</div>';
+
+      const options = opsData.barProducts.filter(function (product) { return product.active; }).map(function (product) {
+        return '<option value="' + escapeHtml(product.id) + '">' + escapeHtml(product.name) + ' | ' + escapeHtml(Number(product.stock || 0).toLocaleString('pt-BR')) + ' ' + escapeHtml(product.unit) + '</option>';
+      }).join('');
+      $('barStockProduct').innerHTML = '<option value="">Selecione</option>' + options;
+      $('barOrderProduct').innerHTML = '<option value="">Selecione um produto</option>' + options;
+    }
+
+    function renderBarFinance() {
+      const filters = [
+        ['abertos', 'Em aberto'],
+        ['receber', 'A receber'],
+        ['pagar', 'A pagar'],
+        ['pagos', 'Baixados'],
+        ['todos', 'Todos']
+      ];
+      $('barFinanceFilters').innerHTML = filters.map(function (filter) {
+        return '<button class="lesson-filter-btn' + (opsState.barFinanceFilter === filter[0] ? ' active' : '') + '" type="button" data-bar-finance-filter="' + filter[0] + '">' + filter[1] + '</button>';
+      }).join('');
+      const rows = opsData.barFinance.filter(function (item) {
+        if (opsState.barFinanceFilter === 'receber') return item.type === 'RECEITA' && !barFinanceIsSettled(item);
+        if (opsState.barFinanceFilter === 'pagar') return item.type === 'DESPESA' && !barFinanceIsSettled(item);
+        if (opsState.barFinanceFilter === 'pagos') return barFinanceIsSettled(item);
+        if (opsState.barFinanceFilter === 'todos') return true;
+        return !barFinanceIsSettled(item);
+      });
+      const openBalance = opsData.barFinance.filter(function (item) { return !barFinanceIsSettled(item); }).reduce(function (sum, item) {
+        return sum + (item.type === 'DESPESA' ? -Number(item.amount || 0) : Number(item.amount || 0));
+      }, 0);
+      $('barFinanceTotals').textContent = money(openBalance) + ' em aberto';
+      $('barFinanceList').innerHTML = rows.map(renderBarFinanceRow).join('') || '<div class="lesson-empty-state">Nenhum lançamento neste filtro.</div>';
+    }
+
+    function barQrUrl(table) {
+      const origin = window.location.origin && window.location.origin !== 'null' ? window.location.origin : 'https://app.ilhatenis.com';
+      return origin + '/bar/?mesa=' + encodeURIComponent(table.number) + '&token=' + encodeURIComponent(table.qrToken || table.id);
+    }
+
+    function renderBarTablesAndQr() {
+      const tables = opsData.barTables.filter(function (table) { return table.active; }).sort(function (a, b) { return a.number - b.number; });
+      $('barTableBoard').innerHTML = tables.map(barTableCard).join('') || '<div class="lesson-empty-state">Cadastre a primeira mesa na aba Mesas e QR Codes.</div>';
+      $('barQrGrid').innerHTML = tables.map(function (table) {
+        return '<article class="bar-qr-card"><div class="bar-order-top"><div><strong>' + escapeHtml(table.name) + '</strong><div class="muted">' + table.seats + ' lugares</div></div><span class="bar-table-icon"><svg><use href="#admin-icon-qr"></use></svg></span></div><code>' + escapeHtml(table.qrToken || 'QR em preparação') + '</code><div class="bar-qr-actions"><button class="small-btn" type="button" data-bar-qr="' + escapeHtml(table.id) + '">Ver QR Code</button><button class="small-btn" type="button" data-bar-table-open="' + escapeHtml(table.id) + '">Abrir mesa</button></div></article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhuma mesa cadastrada.</div>';
+    }
+
+    function renderBarModule() {
+      setBarTab(opsState.barTab);
+      $('barSchemaNote').classList.toggle('show', !opsState.barSchemaReady);
+      const openOrders = opsData.barOrders.filter(barOrderIsOpen);
+      const pendingItems = opsData.barOrderItems.filter(function (item) { return ['SOLICITADO', 'EM_PREPARO'].includes(item.status); });
+      const lowStock = opsData.barProducts.filter(function (product) {
+        return product.active && Number(product.stock) <= Number(product.minimumStock || 0);
+      });
+      const today = localDateString();
+      const todaySales = opsData.barFinance.filter(function (item) {
+        return item.type === 'RECEITA' && item.status === 'RECEBIDO' && String(item.paidAt || item.created || '').slice(0, 10) === today;
+      }).reduce(function (sum, item) { return sum + Number(item.amount || 0); }, 0);
+      $('barOpenOrdersMetric').textContent = openOrders.length;
+      $('barPendingItemsMetric').textContent = pendingItems.length;
+      $('barLowStockMetric').textContent = lowStock.length;
+      $('barTodaySalesMetric').textContent = money(todaySales);
+      $('barOverviewOrders').innerHTML = openOrders.map(barOrderCard).join('') || '<div class="lesson-empty-state">Nenhuma comanda aberta.</div>';
+      $('barLowStockList').innerHTML = lowStock.map(function (product) {
+        return '<div class="bar-stock-alert"><div><strong>' + escapeHtml(product.name) + '</strong><div class="muted">Mínimo: ' + escapeHtml(Number(product.minimumStock || 0).toLocaleString('pt-BR')) + ' ' + escapeHtml(product.unit) + '</div></div><span class="ops-pill bad">' + escapeHtml(Number(product.stock || 0).toLocaleString('pt-BR')) + ' ' + escapeHtml(product.unit) + '</span></div>';
+      }).join('') || '<div class="empty">Estoque em ordem.</div>';
+      $('barClosedOrders').innerHTML = opsData.barOrders.filter(function (order) { return order.status === 'FECHADA'; }).slice(0, 12).map(function (order) {
+        return '<article class="bar-finance-row"><div class="bar-finance-copy"><strong>' + escapeHtml(barTableLabel(order)) + ' | Comanda #' + escapeHtml(order.commandNumber || '') + '</strong><small>' + escapeHtml(barDateTimeLabel(order.closedAt || order.openedAt)) + ' | ' + escapeHtml(order.paymentMethod || 'Pagamento não informado') + '</small></div><div class="bar-row-actions">' + barStatusPill(order.paymentStatus) + '<span class="finance-total">' + money(barOrderTotal(order)) + '</span></div></article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhuma comanda fechada ainda.</div>';
+      renderBarTablesAndQr();
+      renderBarProducts();
+      renderBarFinance();
+    }
+
+    function renderBarCommandModal() {
+      const order = barOrderById(opsState.selectedBarOrderId);
+      if (!order) return;
+      const items = barItemsForOrder(order.id);
+      $('barCommandModalTitle').textContent = barTableLabel(order);
+      $('barCommandModalSubtitle').textContent = 'Comanda #' + (order.commandNumber || String(order.id).slice(-4)) + ' | ' + barStatusLabel(order.status);
+      $('barCommandItems').innerHTML = items.map(function (item) {
+        const cancelled = item.status === 'CANCELADO';
+        let nextAction = '';
+        if (!cancelled && item.status === 'SOLICITADO') nextAction = '<button class="small-btn" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="EM_PREPARO">Preparar</button>';
+        if (!cancelled && item.status === 'EM_PREPARO') nextAction = '<button class="small-btn" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="PRONTO">Pronto</button>';
+        if (!cancelled && item.status === 'PRONTO') nextAction = '<button class="small-btn" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="ENTREGUE">Entregar</button>';
+        return '<article class="bar-item-row' + (cancelled ? ' cancelled' : '') + '"><div class="bar-item-main"><div class="bar-item-copy"><strong>' + escapeHtml(item.quantity + 'x ' + item.productName) + '</strong><small>' + escapeHtml(item.notes || barStatusLabel(item.status)) + '</small></div><span class="bar-item-price">' + money(item.quantity * item.unitPrice) + '</span></div><div class="bar-row-actions">' + barStatusPill(item.status) + nextAction + (cancelled ? '' : '<button class="small-btn" type="button" data-bar-item-cancel="' + escapeHtml(item.id) + '">Cancelar</button>') + '</div></article>';
+      }).join('') || '<div class="lesson-empty-state">Comanda vazia. Adicione o primeiro produto.</div>';
+      $('barCommandTotal').textContent = money(barOrderTotal(order));
+      $('barOrderItemForm').style.display = barOrderIsOpen(order) ? 'grid' : 'none';
+      $('barOrderPrepBtn').style.display = order.status === 'ABERTA' ? '' : 'none';
+      $('barOrderReadyBtn').style.display = ['ABERTA', 'EM_PREPARO'].includes(order.status) ? '' : 'none';
+      $('barOrderCloseBtn').style.display = barOrderIsOpen(order) ? '' : 'none';
+      renderBarProducts();
+    }
+
+    function openBarCommandModal(orderId) {
+      const order = barOrderById(orderId);
+      if (!order) return;
+      opsState.selectedBarOrderId = order.id;
+      $('barCheckoutService').value = Number(order.serviceCharge || 0).toFixed(2).replace('.', ',');
+      $('barCheckoutDiscount').value = Number(order.discount || 0).toFixed(2).replace('.', ',');
+      $('barCheckoutMethod').value = order.paymentMethod || 'PIX';
+      renderBarCommandModal();
+      $('barCommandModal').classList.add('show');
+      $('barCommandModal').setAttribute('aria-hidden', 'false');
+    }
+
+    function closeBarCommandModal() {
+      $('barCommandModal').classList.remove('show');
+      $('barCommandModal').setAttribute('aria-hidden', 'true');
+      opsState.selectedBarOrderId = null;
+    }
+
+    function openBarQrModal(tableId) {
+      const table = barTableById(tableId);
+      if (!table) return;
+      const url = barQrUrl(table);
+      const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=20&data=' + encodeURIComponent(url);
+      opsState.selectedBarQrUrl = url;
+      $('barQrModalTitle').textContent = 'QR Code | ' + table.name;
+      $('barQrPreview').src = qrUrl;
+      $('barQrUrl').textContent = url;
+      $('barQrOpenBtn').href = qrUrl;
+      $('barQrModal').classList.add('show');
+      $('barQrModal').setAttribute('aria-hidden', 'false');
+    }
+
+    function closeBarQrModal() {
+      $('barQrModal').classList.remove('show');
+      $('barQrModal').setAttribute('aria-hidden', 'true');
+    }
+
+    function openBarModule() {
+      setClubMode('club-bar');
+      renderBarModule();
+      loadBarData(false).then(renderBarModule).catch(reportActionError);
+      if (!barRefreshTimer) {
+        barRefreshTimer = setInterval(function () {
+          if (!document.body.classList.contains('club-bar') || isAdminDemoMode()) return;
+          loadBarData(true).then(function () {
+            renderBarModule();
+            if (opsState.selectedBarOrderId) renderBarCommandModal();
+          }).catch(reportActionError);
+        }, 6000);
+      }
+    }
+
+    function barCanPersist(id) {
+      return !isAdminDemoMode() && opsState.barSchemaReady && (!id || isUuid(id));
+    }
+
+    function resetBarProductForm() {
+      $('barProductForm').reset();
+      $('barProductId').value = '';
+      $('barProductUnit').value = 'un';
+      $('barProductActive').value = 'true';
+    }
+
+    async function saveBarProductAction(event) {
+      event.preventDefault();
+      try {
+        requireAdminSession();
+        const name = $('barProductName').value.trim();
+        if (!name) throw new Error('Informe o nome do produto.');
+        const currentId = $('barProductId').value;
+        const localProduct = {
+          id: currentId || localId('bar_product'),
+          name: name,
+          sku: $('barProductSku').value.trim(),
+          category: $('barProductCategory').value.trim() || 'Outros',
+          salePrice: parseOptionalMoney($('barProductPrice').value),
+          costPrice: parseOptionalMoney($('barProductCost').value),
+          stock: Number($('barProductStock').value || 0),
+          minimumStock: Number($('barProductMinimum').value || 0),
+          unit: $('barProductUnit').value || 'un',
+          active: $('barProductActive').value === 'true',
+          notes: $('barProductNotes').value.trim()
+        };
+        if (localProduct.salePrice <= 0) throw new Error('Informe o preço de venda.');
+        let finalProduct = localProduct;
+        const payload = {
+          name: localProduct.name,
+          sku: localProduct.sku || null,
+          category: localProduct.category,
+          sale_price: localProduct.salePrice,
+          cost_price: localProduct.costPrice,
+          stock_quantity: localProduct.stock,
+          minimum_stock: localProduct.minimumStock,
+          unit: localProduct.unit,
+          active: localProduct.active,
+          notes: localProduct.notes || null,
+          updated_at: new Date().toISOString()
+        };
+        if (barCanPersist(currentId)) {
+          if (currentId) {
+            const saved = await supabaseRest('bar_products?id=eq.' + encodeURIComponent(currentId), { method: 'PATCH', body: payload, prefer: 'return=representation' });
+            finalProduct = mapBarProductRow(Array.isArray(saved) ? saved[0] : saved);
+          } else {
+            finalProduct = mapBarProductRow(await supabaseInsert('bar_products', payload));
+          }
+        }
+        const index = opsData.barProducts.findIndex(function (product) { return String(product.id) === String(currentId || finalProduct.id); });
+        if (index >= 0) opsData.barProducts.splice(index, 1, finalProduct);
+        else opsData.barProducts.push(finalProduct);
+        resetBarProductForm();
+        renderBarModule();
+        toast('Produto salvo.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    function editBarProductAction(id) {
+      const product = barProductById(id);
+      if (!product) return;
+      opsState.barTab = 'products';
+      setBarTab('products');
+      $('barProductId').value = product.id;
+      $('barProductName').value = product.name;
+      $('barProductSku').value = product.sku;
+      $('barProductCategory').value = product.category;
+      $('barProductPrice').value = String(product.salePrice || '').replace('.', ',');
+      $('barProductCost').value = String(product.costPrice || '').replace('.', ',');
+      $('barProductStock').value = product.stock;
+      $('barProductMinimum').value = product.minimumStock;
+      $('barProductUnit').value = product.unit || 'un';
+      $('barProductActive').value = String(product.active !== false);
+      $('barProductNotes').value = product.notes || '';
+      $('barProductName').focus();
+      $('barProductForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function saveBarStockAction(event) {
+      event.preventDefault();
+      try {
+        requireAdminSession();
+        const product = barProductById($('barStockProduct').value);
+        const type = $('barStockType').value;
+        const quantity = Number($('barStockQuantity').value || 0);
+        const reason = $('barStockReason').value.trim();
+        const unitCost = $('barStockCost').value.trim() ? parseOptionalMoney($('barStockCost').value) : null;
+        if (!product) throw new Error('Escolha o produto.');
+        if (quantity <= 0) throw new Error('Informe uma quantidade válida.');
+        if (!reason) throw new Error('Informe o motivo da movimentação.');
+        const signedQuantity = type === 'ENTRADA' ? quantity : -quantity;
+        if (Number(product.stock) + signedQuantity < 0) throw new Error('Estoque insuficiente para esta saída.');
+        if (barCanPersist(product.id)) {
+          const saved = await supabaseRest('rpc/bar_adjust_stock', {
+            method: 'POST',
+            body: { p_product_id: product.id, p_type: type, p_quantity: quantity, p_reason: reason, p_unit_cost: unitCost },
+            prefer: 'return=representation'
+          });
+          Object.assign(product, mapBarProductRow(Array.isArray(saved) ? saved[0] : saved));
+          await loadBarData(true);
+        } else {
+          product.stock = Number(product.stock) + signedQuantity;
+          if (unitCost != null) product.costPrice = unitCost;
+          opsData.barInventory.unshift({ id: localId('bar_stock'), productId: product.id, type: type, quantity: signedQuantity, unitCost: unitCost || product.costPrice, reason: reason, occurredAt: new Date().toISOString() });
+        }
+        $('barStockForm').reset();
+        renderBarModule();
+        toast('Estoque atualizado.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function saveBarTableAction(event) {
+      event.preventDefault();
+      try {
+        requireAdminSession();
+        const number = Number($('barTableNumber').value || 0);
+        const name = $('barTableName').value.trim() || 'Mesa ' + number;
+        if (number <= 0) throw new Error('Informe o número da mesa.');
+        if (opsData.barTables.some(function (table) { return table.number === number; })) throw new Error('Já existe uma mesa com este número.');
+        const localTable = { id: localId('bar_table'), number: number, name: name, seats: Number($('barTableSeats').value || 4), qrToken: localId('mesa'), active: true, notes: $('barTableNotes').value.trim() };
+        let finalTable = localTable;
+        if (barCanPersist()) {
+          finalTable = mapBarTableRow(await supabaseInsert('bar_tables', {
+            number: localTable.number,
+            name: localTable.name,
+            seats: localTable.seats,
+            notes: localTable.notes || null
+          }));
+        }
+        opsData.barTables.push(finalTable);
+        $('barTableForm').reset();
+        $('barTableSeats').value = 4;
+        renderBarModule();
+        toast('Mesa criada.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function openBarTableAction(tableId) {
+      try {
+        requireAdminSession();
+        const table = barTableById(tableId);
+        if (!table) throw new Error('Mesa não encontrada.');
+        const current = barOrderForTable(table.id);
+        if (current) {
+          openBarCommandModal(current.id);
+          return;
+        }
+        const nextNumber = opsData.barOrders.reduce(function (max, order) { return Math.max(max, Number(order.commandNumber || 100)); }, 100) + 1;
+        let order = {
+          id: localId('bar_order'),
+          tableId: table.id,
+          commandNumber: nextNumber,
+          customerName: table.name,
+          status: 'ABERTA',
+          subtotal: 0,
+          serviceCharge: 0,
+          discount: 0,
+          total: 0,
+          paymentStatus: 'ABERTO',
+          paymentMethod: '',
+          openedAt: new Date().toISOString(),
+          closedAt: ''
+        };
+        if (barCanPersist(table.id)) {
+          order = mapBarOrderRow(await supabaseInsert('bar_orders', {
+            table_id: table.id,
+            customer_name: table.name,
+            opened_by: adminProfile && adminProfile.id || null
+          }));
+        }
+        opsData.barOrders.unshift(order);
+        renderBarModule();
+        openBarCommandModal(order.id);
+        toast('Comanda aberta para ' + table.name + '.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function addBarOrderItemAction(event) {
+      event.preventDefault();
+      try {
+        requireAdminSession();
+        const order = barOrderById(opsState.selectedBarOrderId);
+        const product = barProductById($('barOrderProduct').value);
+        const quantity = Number($('barOrderQuantity').value || 0);
+        const notes = $('barOrderItemNotes').value.trim();
+        if (!order || !barOrderIsOpen(order)) throw new Error('Abra uma comanda válida.');
+        if (!product) throw new Error('Escolha o produto.');
+        if (quantity <= 0) throw new Error('Informe a quantidade.');
+        if (Number(product.stock) < quantity) throw new Error('Estoque insuficiente para ' + product.name + '.');
+        let item = {
+          id: localId('bar_item'), orderId: order.id, productId: product.id, productName: product.name,
+          quantity: quantity, unitPrice: product.salePrice, costPrice: product.costPrice,
+          status: 'SOLICITADO', notes: notes, created: new Date().toISOString()
+        };
+        if (barCanPersist(order.id) && isUuid(product.id)) {
+          const saved = await supabaseRest('rpc/bar_add_order_item', {
+            method: 'POST',
+            body: { p_order_id: order.id, p_product_id: product.id, p_quantity: quantity, p_notes: notes || null },
+            prefer: 'return=representation'
+          });
+          item = mapBarOrderItemRow(Array.isArray(saved) ? saved[0] : saved);
+          await loadBarData(true);
+        } else {
+          product.stock = Number(product.stock) - quantity;
+          opsData.barOrderItems.push(item);
+          recalculateLocalBarOrder(order);
+        }
+        $('barOrderQuantity').value = 1;
+        $('barOrderItemNotes').value = '';
+        renderBarModule();
+        renderBarCommandModal();
+        toast('Item adicionado.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function updateBarItemStatusAction(itemId, status) {
+      const item = opsData.barOrderItems.find(function (row) { return String(row.id) === String(itemId); });
+      if (!item) return;
+      try {
+        if (barCanPersist(item.id)) {
+          const saved = await supabaseRest('bar_order_items?id=eq.' + encodeURIComponent(item.id), { method: 'PATCH', body: { status: status, updated_at: new Date().toISOString() }, prefer: 'return=representation' });
+          Object.assign(item, mapBarOrderItemRow(Array.isArray(saved) ? saved[0] : saved));
+        } else {
+          item.status = status;
+        }
+        renderBarModule();
+        renderBarCommandModal();
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function cancelBarItemAction(itemId) {
+      const item = opsData.barOrderItems.find(function (row) { return String(row.id) === String(itemId); });
+      if (!item || item.status === 'CANCELADO') return;
+      try {
+        if (barCanPersist(item.id)) {
+          const saved = await supabaseRest('rpc/bar_cancel_order_item', { method: 'POST', body: { p_item_id: item.id }, prefer: 'return=representation' });
+          Object.assign(item, mapBarOrderItemRow(Array.isArray(saved) ? saved[0] : saved));
+          await loadBarData(true);
+        } else {
+          item.status = 'CANCELADO';
+          const product = barProductById(item.productId);
+          if (product) product.stock = Number(product.stock) + Number(item.quantity || 0);
+          recalculateLocalBarOrder(barOrderById(item.orderId));
+        }
+        renderBarModule();
+        renderBarCommandModal();
+        toast('Item cancelado e devolvido ao estoque.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function updateBarOrderStatusAction(status) {
+      const order = barOrderById(opsState.selectedBarOrderId);
+      if (!order) return;
+      try {
+        if (barCanPersist(order.id)) {
+          const saved = await supabaseRest('bar_orders?id=eq.' + encodeURIComponent(order.id), { method: 'PATCH', body: { status: status, updated_at: new Date().toISOString() }, prefer: 'return=representation' });
+          Object.assign(order, mapBarOrderRow(Array.isArray(saved) ? saved[0] : saved));
+        } else {
+          order.status = status;
+        }
+        renderBarModule();
+        renderBarCommandModal();
+        toast('Comanda atualizada.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function closeBarOrderAction() {
+      const order = barOrderById(opsState.selectedBarOrderId);
+      if (!order) return;
+      try {
+        requireAdminSession();
+        if (!barActiveItemsForOrder(order.id).length) throw new Error('Adicione ao menos um item antes de fechar.');
+        const serviceCharge = parseOptionalMoney($('barCheckoutService').value);
+        const discount = parseOptionalMoney($('barCheckoutDiscount').value);
+        const paymentMethod = $('barCheckoutMethod').value;
+        if (barCanPersist(order.id)) {
+          await supabaseRest('rpc/bar_close_order', {
+            method: 'POST',
+            body: { p_order_id: order.id, p_payment_method: paymentMethod, p_discount: discount, p_service_charge: serviceCharge },
+            prefer: 'return=representation'
+          });
+          await loadBarData(true);
+        } else {
+          order.serviceCharge = serviceCharge;
+          order.discount = discount;
+          order.paymentMethod = paymentMethod;
+          order.paymentStatus = 'PAGO';
+          order.status = 'FECHADA';
+          order.closedAt = new Date().toISOString();
+          recalculateLocalBarOrder(order);
+          opsData.barFinance.unshift({
+            id: localId('bar_finance'), orderId: order.id, type: 'RECEITA', description: 'Venda da comanda #' + order.commandNumber,
+            counterparty: barTableLabel(order), category: 'Vendas', amount: order.total, dueDate: localDateString(), status: 'RECEBIDO',
+            paymentMethod: paymentMethod, paidAt: new Date().toISOString(), created: new Date().toISOString(), notes: ''
+          });
+        }
+        closeBarCommandModal();
+        renderBarModule();
+        toast('Comanda fechada e venda registrada.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function saveBarFinanceAction(event) {
+      event.preventDefault();
+      try {
+        requireAdminSession();
+        const type = $('barFinanceType').value;
+        const status = $('barFinanceStatus').value;
+        const localEntry = {
+          id: localId('bar_finance'), orderId: '', type: type, description: $('barFinanceDescription').value.trim(),
+          counterparty: $('barFinanceCounterparty').value.trim(), category: 'Bar', amount: parseOptionalMoney($('barFinanceAmount').value),
+          dueDate: $('barFinanceDue').value, status: status, paymentMethod: $('barFinanceMethod').value,
+          paidAt: barFinanceIsSettled({ status: status }) ? new Date().toISOString() : '', notes: $('barFinanceNotes').value.trim(), created: new Date().toISOString()
+        };
+        if (!localEntry.description || localEntry.amount <= 0) throw new Error('Informe descrição e valor.');
+        let entry = localEntry;
+        if (barCanPersist()) {
+          entry = mapBarFinanceRow(await supabaseInsert('bar_financial_entries', {
+            type: localEntry.type,
+            description: localEntry.description,
+            counterparty: localEntry.counterparty || null,
+            category: 'Bar',
+            amount: localEntry.amount,
+            due_date: localEntry.dueDate || null,
+            status: localEntry.status,
+            payment_method: localEntry.paymentMethod || null,
+            paid_at: localEntry.paidAt || null,
+            notes: localEntry.notes || null,
+            created_by: adminProfile && adminProfile.id || null
+          }));
+        }
+        opsData.barFinance.unshift(entry);
+        $('barFinanceForm').reset();
+        $('barFinanceType').value = 'DESPESA';
+        $('barFinanceStatus').value = 'ABERTO';
+        renderBarModule();
+        toast('Lançamento salvo.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function settleBarFinanceAction(id) {
+      const item = opsData.barFinance.find(function (row) { return String(row.id) === String(id); });
+      if (!item) return;
+      const status = item.type === 'DESPESA' ? 'PAGO' : 'RECEBIDO';
+      try {
+        if (barCanPersist(item.id)) {
+          const saved = await supabaseRest('bar_financial_entries?id=eq.' + encodeURIComponent(item.id), {
+            method: 'PATCH', body: { status: status, paid_at: new Date().toISOString(), updated_at: new Date().toISOString() }, prefer: 'return=representation'
+          });
+          Object.assign(item, mapBarFinanceRow(Array.isArray(saved) ? saved[0] : saved));
+        } else {
+          item.status = status;
+          item.paidAt = new Date().toISOString();
+        }
+        renderBarModule();
+        toast('Lançamento baixado.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
     function renderStoreModule() {
       const open = opsData.storeRequests.filter(function (item) { return ['SOLICITADO', 'EM_ANALISE'].includes(String(item.status).toUpperCase()); });
       const approved = opsData.storeRequests.filter(function (item) { return String(item.status).toUpperCase() === 'APROVADO'; });
@@ -9639,7 +11153,7 @@
     }
 
     function roleLabel(role) {
-      const labels = { admin: 'Admin', secretaria: 'Secretaria', professor: 'Professor' };
+      const labels = { admin: 'Admin', secretaria: 'Secretaria', professor: 'Professor', bar: 'Bar / Garçom' };
       return labels[role] || 'Equipe';
     }
 
@@ -9766,7 +11280,7 @@
         }).catch(function () {});
       }
       document.body.classList.remove('adm-unlocked');
-      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-finance', 'club-communication', 'club-clients', 'club-team', 'club-database'].forEach(function (className) {
+      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-courts', 'club-finance', 'club-bar', 'club-store', 'club-announcements', 'club-communication', 'club-clients', 'club-team', 'club-database'].forEach(function (className) {
         document.body.classList.remove(className);
       });
       document.body.classList.add('adm-locked');
@@ -10816,6 +12330,7 @@
         ['openAgendaModule', openAgendaModule],
         ['openCourtBookingModule', openCourtBookingModule],
         ['openFinanceModule', openFinanceModule],
+        ['openBarModule', openBarModule],
         ['openStoreModule', openStoreModule],
         ['openAnnouncementsModule', openAnnouncementsModule],
         ['openCommunicationModule', openCommunicationModule],
@@ -10835,6 +12350,7 @@
             'club-agenda': openAgendaModule,
             'club-courts': openCourtBookingModule,
             'club-finance': openFinanceModule,
+            'club-bar': openBarModule,
             'club-store': openStoreModule,
             'club-announcements': openAnnouncementsModule,
             'club-communication': openCommunicationModule,
@@ -11010,6 +12526,91 @@
         const paidBtn = event.target.closest('[data-finance-paid]');
         if (paidBtn) {
           markFinancePaidAction(paidBtn.dataset.financePaid);
+        }
+      });
+      $('barReloadBtn').addEventListener('click', function () {
+        opsState.barDataLoaded = false;
+        loadBarData(true).then(renderBarModule).catch(reportActionError);
+      });
+      $('barNewOrderBtn').addEventListener('click', function () {
+        const hasTables = opsData.barTables.some(function (table) { return table.active; });
+        opsState.barTab = hasTables ? 'orders' : 'tables';
+        renderBarModule();
+        toast(hasTables ? 'Escolha a mesa para abrir a comanda.' : 'Cadastre a primeira mesa.');
+      });
+      $('barProductForm').addEventListener('submit', saveBarProductAction);
+      $('barStockForm').addEventListener('submit', saveBarStockAction);
+      $('barTableForm').addEventListener('submit', saveBarTableAction);
+      $('barFinanceForm').addEventListener('submit', saveBarFinanceAction);
+      $('barOrderItemForm').addEventListener('submit', addBarOrderItemAction);
+      $('barProductSearch').addEventListener('input', renderBarProducts);
+      $('barModule').addEventListener('click', function (event) {
+        const tabBtn = event.target.closest('[data-bar-tab]');
+        if (tabBtn) {
+          setBarTab(tabBtn.dataset.barTab);
+          return;
+        }
+        const goBtn = event.target.closest('[data-bar-go]');
+        if (goBtn) {
+          setBarTab(goBtn.dataset.barGo);
+          return;
+        }
+        const tableBtn = event.target.closest('[data-bar-table-open]');
+        if (tableBtn) {
+          openBarTableAction(tableBtn.dataset.barTableOpen);
+          return;
+        }
+        const orderBtn = event.target.closest('[data-bar-order-open]');
+        if (orderBtn) {
+          openBarCommandModal(orderBtn.dataset.barOrderOpen);
+          return;
+        }
+        const productBtn = event.target.closest('[data-bar-product-edit]');
+        if (productBtn) {
+          editBarProductAction(productBtn.dataset.barProductEdit);
+          return;
+        }
+        const financeBtn = event.target.closest('[data-bar-finance-paid]');
+        if (financeBtn) {
+          settleBarFinanceAction(financeBtn.dataset.barFinancePaid);
+          return;
+        }
+        const financeFilter = event.target.closest('[data-bar-finance-filter]');
+        if (financeFilter) {
+          opsState.barFinanceFilter = financeFilter.dataset.barFinanceFilter;
+          renderBarFinance();
+          return;
+        }
+        const qrBtn = event.target.closest('[data-bar-qr]');
+        if (qrBtn) openBarQrModal(qrBtn.dataset.barQr);
+      });
+      $('barCommandModal').addEventListener('click', function (event) {
+        const statusBtn = event.target.closest('[data-bar-item-status]');
+        if (statusBtn) {
+          updateBarItemStatusAction(statusBtn.dataset.barItemStatus, statusBtn.dataset.nextStatus);
+          return;
+        }
+        const cancelBtn = event.target.closest('[data-bar-item-cancel]');
+        if (cancelBtn) {
+          cancelBarItemAction(cancelBtn.dataset.barItemCancel);
+          return;
+        }
+        if (event.target.id === 'barCommandModal') closeBarCommandModal();
+      });
+      $('barCommandModalClose').addEventListener('click', closeBarCommandModal);
+      $('barOrderPrepBtn').addEventListener('click', function () { updateBarOrderStatusAction('EM_PREPARO'); });
+      $('barOrderReadyBtn').addEventListener('click', function () { updateBarOrderStatusAction('PRONTA'); });
+      $('barOrderCloseBtn').addEventListener('click', closeBarOrderAction);
+      $('barQrModalClose').addEventListener('click', closeBarQrModal);
+      $('barQrModal').addEventListener('click', function (event) {
+        if (event.target.id === 'barQrModal') closeBarQrModal();
+      });
+      $('barQrCopyBtn').addEventListener('click', function () {
+        const value = opsState.selectedBarQrUrl || '';
+        if (navigator.clipboard && value) {
+          navigator.clipboard.writeText(value).then(function () { toast('Link da mesa copiado.'); }).catch(function () { toast(value); });
+        } else if (value) {
+          toast(value);
         }
       });
       $('storeReloadBtn').addEventListener('click', function () {
