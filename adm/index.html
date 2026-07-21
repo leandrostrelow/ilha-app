@@ -3009,6 +3009,16 @@
       background: #ffffff;
     }
 
+    body.bar-admin-surface .bar-module .ops-tabs {
+      display: none;
+    }
+
+    @media (min-width: 521px) {
+      body.bar-admin-surface .bar-module [data-home-action] {
+        display: none;
+      }
+    }
+
     .bar-module .ops-tab-btn {
       min-height: 42px;
       border-radius: 6px;
@@ -3392,6 +3402,10 @@
         width: 100%;
         min-height: 42px;
         padding: 8px;
+      }
+
+      body.bar-admin-surface .bar-module .ops-tabs {
+        display: flex;
       }
 
       body.club-bar .admin-sidebar-nav {
@@ -4023,7 +4037,11 @@
         <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon"><svg><use href="#admin-icon-users"></use></svg></span><span>Alunos</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-courts"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Quadras</span></button>
-        <button class="admin-nav-btn" type="button" data-admin-nav="club-bar" data-bar-entry><span class="admin-nav-icon"><svg><use href="#admin-icon-bar"></use></svg></span><span>Operação</span></button>
+        <button class="admin-nav-btn active" type="button" data-bar-entry data-bar-side-tab="overview"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Visão geral</span></button>
+        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="orders"><span class="admin-nav-icon"><svg><use href="#admin-icon-table"></use></svg></span><span>Mesas e comandas</span></button>
+        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="products"><span class="admin-nav-icon"><svg><use href="#admin-icon-box"></use></svg></span><span>Produtos e estoque</span></button>
+        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
+        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="tables"><span class="admin-nav-icon"><svg><use href="#admin-icon-qr"></use></svg></span><span>Mesas e QR Codes</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-store"><span class="admin-nav-icon"><svg><use href="#admin-icon-bag"></use></svg></span><span>Ilha Store</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-announcements"><span class="admin-nav-icon"><svg><use href="#admin-icon-megaphone"></use></svg></span><span>Comunicados</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-team"><span class="admin-nav-icon"><svg><use href="#admin-icon-team"></use></svg></span><span>Equipe</span></button>
@@ -10201,6 +10219,9 @@
       document.querySelectorAll('[data-bar-tab]').forEach(function (button) {
         button.classList.toggle('active', button.dataset.barTab === opsState.barTab);
       });
+      document.querySelectorAll('[data-bar-side-tab]').forEach(function (button) {
+        button.classList.toggle('active', button.dataset.barSideTab === opsState.barTab);
+      });
       document.querySelectorAll('[data-bar-panel]').forEach(function (panel) {
         panel.classList.toggle('active-tab-panel', panel.dataset.barPanel === opsState.barTab);
       });
@@ -12547,6 +12568,11 @@
           } else {
             showClubHome();
           }
+        });
+      });
+      document.querySelectorAll('[data-bar-side-tab]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          setBarTab(btn.dataset.barSideTab);
         });
       });
       $('clientReloadBtn').addEventListener('click', function () {
