@@ -4347,6 +4347,886 @@
       margin-top: 12px;
     }
 
+    #barCommandModal.show {
+      place-items: center;
+    }
+
+    .bar-command-modal {
+      width: min(1080px, 100%);
+      max-height: calc(100dvh - 36px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border-color: #cbdde1;
+      box-shadow: 0 28px 90px rgba(8, 63, 75, .26);
+    }
+
+    .bar-command-head {
+      min-height: 104px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--line);
+      background: #ffffff;
+    }
+
+    .bar-command-modal svg {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .bar-command-customer,
+    .bar-command-head-actions,
+    .bar-command-reference,
+    .bar-command-contact,
+    .bar-command-footer-actions {
+      display: flex;
+      align-items: center;
+    }
+
+    .bar-command-customer {
+      min-width: 0;
+      gap: 14px;
+    }
+
+    .bar-command-avatar {
+      width: 62px;
+      height: 62px;
+      flex: 0 0 62px;
+      display: grid;
+      place-items: center;
+      border: 2px solid #a6d900;
+      border-radius: 50%;
+      color: #ffffff;
+      background: var(--teal);
+      font-size: 20px;
+      font-weight: 950;
+    }
+
+    .bar-command-identity {
+      min-width: 0;
+    }
+
+    .bar-command-location {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      margin-bottom: 4px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      color: #426000;
+      background: #eefbc6;
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .bar-command-identity h2 {
+      max-width: 560px;
+      margin: 0;
+      overflow: hidden;
+      color: #0c292f;
+      font-size: 27px;
+      line-height: 1.08;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-command-contact {
+      min-width: 0;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .bar-command-contact a,
+    .bar-command-contact span {
+      min-width: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .bar-command-contact a:hover {
+      color: var(--teal);
+      text-decoration: underline;
+    }
+
+    .bar-command-contact svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .bar-command-head-actions {
+      flex: 0 0 auto;
+      gap: 14px;
+    }
+
+    .bar-command-reference {
+      align-items: flex-end;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .bar-command-reference > strong {
+      color: #334a52;
+      font-size: 13px;
+    }
+
+    .bar-command-close {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 1px solid #cfdee2;
+      border-radius: 8px;
+      color: #344c54;
+      background: #f4f8f9;
+      cursor: pointer;
+    }
+
+    .bar-command-close:hover {
+      color: #ffffff;
+      border-color: #c83e4d;
+      background: #c83e4d;
+    }
+
+    .bar-command-close svg {
+      width: 21px;
+      height: 21px;
+    }
+
+    .bar-command-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      padding: 0 22px;
+      border-bottom: 1px solid var(--line);
+      background: #ffffff;
+    }
+
+    .bar-command-tab {
+      min-width: 0;
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 8px 12px;
+      border: 0;
+      border-bottom: 3px solid transparent;
+      color: #60747d;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .bar-command-tab:hover {
+      color: var(--teal);
+      background: #f7fafb;
+    }
+
+    .bar-command-tab.active {
+      color: var(--teal);
+      border-bottom-color: var(--lime);
+      background: #f7fce9;
+    }
+
+    .bar-command-tab svg {
+      width: 19px;
+      height: 19px;
+    }
+
+    .bar-command-tab small {
+      min-width: 23px;
+      height: 23px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0 6px;
+      border-radius: 12px;
+      color: #ffffff;
+      background: var(--teal);
+      font-size: 10px;
+    }
+
+    .bar-command-body {
+      min-height: 350px;
+      flex: 1 1 auto;
+      overflow: auto;
+      padding: 22px;
+      background: #f3f7f8;
+    }
+
+    .bar-command-panel {
+      display: none;
+    }
+
+    .bar-command-panel.active-command-panel {
+      display: block;
+    }
+
+    .bar-command-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .bar-command-panel-head h3,
+    .bar-command-panel-head p {
+      margin: 0;
+    }
+
+    .bar-command-panel-head h3 {
+      color: #102f35;
+      font-size: 18px;
+    }
+
+    .bar-command-panel-head p {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .bar-command-add-shortcut,
+    .bar-command-submit-product,
+    .bar-command-receive,
+    .bar-command-stage {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 8px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .bar-command-add-shortcut {
+      min-height: 40px;
+      padding: 9px 14px;
+      color: #ffffff;
+      background: var(--teal);
+    }
+
+    .bar-command-add-shortcut:hover,
+    .bar-command-submit-product:hover,
+    .bar-command-receive:hover {
+      background: #0d5a68;
+    }
+
+    .bar-command-add-shortcut svg,
+    .bar-command-submit-product svg,
+    .bar-command-receive svg,
+    .bar-command-stage svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .bar-command-modal .bar-modal-order-list {
+      gap: 10px;
+      margin: 0;
+    }
+
+    .bar-command-modal .bar-command-item {
+      position: relative;
+      grid-template-columns: 48px minmax(0, 1fr) auto;
+      gap: 12px;
+      padding: 13px;
+      overflow: hidden;
+      border-left: 4px solid #e3a133;
+      box-shadow: 0 5px 18px rgba(30, 67, 76, .05);
+    }
+
+    .bar-command-modal .bar-command-item.is-preparing {
+      border-left-color: #ef7f2d;
+    }
+
+    .bar-command-modal .bar-command-item.is-ready,
+    .bar-command-modal .bar-command-item.is-delivered {
+      border-left-color: #8fbd00;
+    }
+
+    .bar-command-modal .bar-command-item.cancelled {
+      border-left-color: #aebbc0;
+      background: #f3f5f6;
+    }
+
+    .bar-command-item-quantity {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      color: var(--teal);
+      background: #edf4f5;
+      font-size: 15px;
+      font-weight: 950;
+    }
+
+    .bar-command-item-content {
+      min-width: 0;
+    }
+
+    .bar-command-item-customer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 5px;
+      color: #527078;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .bar-command-item-customer svg {
+      width: 14px;
+      height: 14px;
+      color: #7ca600;
+    }
+
+    .bar-command-item-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .bar-command-item-title strong {
+      overflow: hidden;
+      color: #102d33;
+      font-size: 15px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-command-item-title .bar-item-price {
+      color: var(--teal);
+      font-size: 16px;
+    }
+
+    .bar-command-item-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px 12px;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .bar-command-item-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .bar-command-item-meta svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .bar-command-item-actions {
+      min-width: 172px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .bar-command-item-actions .small-btn {
+      min-height: 34px;
+    }
+
+    .bar-command-item-actions .bar-item-next {
+      color: #ffffff;
+      border-color: var(--teal);
+      background: var(--teal);
+    }
+
+    .bar-command-item-actions .bar-item-remove {
+      color: #9b2f3d;
+      background: #fff2f3;
+    }
+
+    .bar-command-modal .bar-modal-summary {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border: 1px solid #d4e3e6;
+      background: #ffffff;
+    }
+
+    .bar-command-modal .bar-modal-summary span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .bar-command-modal .bar-modal-summary strong {
+      color: var(--teal);
+      font-size: 24px;
+    }
+
+    .bar-command-product-form {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border: 1px solid #d3e2e5;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .bar-command-product-form > .field select {
+      min-height: 48px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .bar-command-product-preview {
+      min-height: 92px;
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      padding: 10px;
+      border: 1px solid #d8e5e8;
+      border-radius: 8px;
+      background: #f8fbfc;
+    }
+
+    .bar-command-product-preview.is-empty {
+      grid-template-columns: 46px minmax(0, 1fr);
+      color: var(--muted);
+    }
+
+    .bar-command-product-image,
+    .bar-command-product-icon {
+      width: 72px;
+      height: 72px;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #eaf2f4;
+    }
+
+    .bar-command-product-preview.is-empty .bar-command-product-icon {
+      width: 46px;
+      height: 46px;
+    }
+
+    .bar-command-product-image img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .bar-command-product-icon svg {
+      width: 32px;
+      height: 32px;
+      color: var(--teal);
+    }
+
+    .bar-command-product-copy {
+      min-width: 0;
+    }
+
+    .bar-command-product-copy strong,
+    .bar-command-product-copy span {
+      display: block;
+    }
+
+    .bar-command-product-copy strong {
+      color: #102d33;
+      font-size: 16px;
+    }
+
+    .bar-command-product-copy span {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .bar-command-product-price {
+      text-align: right;
+    }
+
+    .bar-command-product-price span,
+    .bar-command-product-price strong {
+      display: block;
+    }
+
+    .bar-command-product-price span {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .bar-command-product-price strong {
+      margin-top: 4px;
+      color: var(--teal);
+      font-size: 20px;
+    }
+
+    .bar-command-product-fields {
+      display: grid;
+      grid-template-columns: 190px minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    .bar-quantity-control {
+      min-height: 46px;
+      display: grid;
+      grid-template-columns: 46px minmax(60px, 1fr) 46px;
+      overflow: hidden;
+      border: 1px solid #cddde1;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .bar-quantity-control button {
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      color: var(--teal);
+      background: #edf4f5;
+      cursor: pointer;
+    }
+
+    .bar-quantity-control button:hover {
+      color: #ffffff;
+      background: var(--teal);
+    }
+
+    .bar-quantity-control button svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .bar-quantity-control input {
+      min-width: 0;
+      min-height: 44px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 950;
+      -moz-appearance: textfield;
+    }
+
+    .bar-quantity-control input::-webkit-outer-spin-button,
+    .bar-quantity-control input::-webkit-inner-spin-button {
+      margin: 0;
+      -webkit-appearance: none;
+    }
+
+    .bar-command-submit-product {
+      min-height: 50px;
+      width: 100%;
+      padding: 11px 18px;
+      color: #ffffff;
+      background: var(--teal);
+      font-size: 14px;
+    }
+
+    .bar-checkout-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .bar-checkout-summary > div {
+      min-height: 82px;
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+      padding: 13px 15px;
+      border: 1px solid #d4e2e5;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .bar-checkout-summary span,
+    .bar-checkout-summary strong {
+      display: block;
+    }
+
+    .bar-checkout-summary span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .bar-checkout-summary strong {
+      margin-top: 7px;
+      color: #18363d;
+      font-size: 20px;
+    }
+
+    .bar-checkout-summary .total {
+      border-color: #b7db4a;
+      background: #f5fbdc;
+    }
+
+    .bar-checkout-summary .total strong {
+      color: #416000;
+      font-size: 23px;
+    }
+
+    .bar-command-modal .bar-checkout-grid {
+      margin-top: 14px;
+      padding: 16px;
+      border: 1px solid #d4e2e5;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .bar-command-receive {
+      min-height: 52px;
+      width: 100%;
+      margin-top: 14px;
+      padding: 12px 18px;
+      color: #ffffff;
+      background: var(--teal);
+      font-size: 14px;
+    }
+
+    .bar-command-footer {
+      min-height: 76px;
+      align-items: center;
+      justify-content: space-between;
+      flex: 0 0 auto;
+      padding: 12px 22px;
+      background: #ffffff;
+    }
+
+    .bar-command-footer-status span,
+    .bar-command-footer-status strong {
+      display: block;
+    }
+
+    .bar-command-footer-status span {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .bar-command-footer-status strong {
+      margin-top: 3px;
+      color: #18363d;
+      font-size: 14px;
+    }
+
+    .bar-command-footer-actions {
+      gap: 8px;
+    }
+
+    .bar-command-stage {
+      min-height: 42px;
+      padding: 9px 14px;
+      color: #223942;
+      background: #edf3f5;
+    }
+
+    .bar-command-stage.prepare {
+      color: #704000;
+      background: #fff0d3;
+    }
+
+    .bar-command-stage.ready {
+      color: #345000;
+      background: #ecf9c4;
+    }
+
+    .bar-command-stage:hover {
+      filter: brightness(.96);
+    }
+
+    @media (max-width: 760px) {
+      #barCommandModal {
+        padding: 0;
+      }
+
+      .bar-command-modal {
+        width: 100%;
+        height: 100dvh;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+      }
+
+      .bar-command-head {
+        min-height: 88px;
+        align-items: flex-start;
+        padding: 13px 14px;
+      }
+
+      .bar-command-avatar {
+        width: 50px;
+        height: 50px;
+        flex-basis: 50px;
+        font-size: 16px;
+      }
+
+      .bar-command-identity h2 {
+        max-width: calc(100vw - 172px);
+        font-size: 21px;
+      }
+
+      .bar-command-contact {
+        gap: 4px 8px;
+        font-size: 10px;
+      }
+
+      .bar-command-reference {
+        display: none;
+      }
+
+      .bar-command-close {
+        width: 40px;
+        height: 40px;
+      }
+
+      .bar-command-tabs {
+        padding: 0;
+      }
+
+      .bar-command-tab {
+        min-height: 56px;
+        gap: 5px;
+        padding: 7px 5px;
+        font-size: 11px;
+      }
+
+      .bar-command-tab svg {
+        width: 17px;
+        height: 17px;
+      }
+
+      .bar-command-tab small {
+        min-width: 20px;
+        height: 20px;
+      }
+
+      .bar-command-body {
+        min-height: 0;
+        padding: 13px;
+      }
+
+      .bar-command-panel-head {
+        align-items: flex-start;
+      }
+
+      .bar-command-panel-head p {
+        display: none;
+      }
+
+      .bar-command-add-shortcut {
+        min-height: 38px;
+        padding: 8px 10px;
+        font-size: 11px;
+      }
+
+      .bar-command-modal .bar-command-item {
+        grid-template-columns: 40px minmax(0, 1fr);
+        padding: 11px;
+      }
+
+      .bar-command-item-quantity {
+        width: 38px;
+        height: 38px;
+      }
+
+      .bar-command-item-title {
+        display: block;
+      }
+
+      .bar-command-item-title .bar-item-price {
+        display: block;
+        margin-top: 4px;
+      }
+
+      .bar-command-item-actions {
+        min-width: 0;
+        grid-column: 1 / -1;
+        justify-content: stretch;
+      }
+
+      .bar-command-item-actions .ops-pill {
+        margin-right: auto;
+      }
+
+      .bar-command-item-actions .small-btn {
+        flex: 1 1 auto;
+        justify-content: center;
+      }
+
+      .bar-command-product-preview {
+        grid-template-columns: 58px minmax(0, 1fr);
+      }
+
+      .bar-command-product-image,
+      .bar-command-product-icon {
+        width: 58px;
+        height: 58px;
+      }
+
+      .bar-command-product-price {
+        grid-column: 1 / -1;
+        text-align: left;
+      }
+
+      .bar-command-product-fields,
+      .bar-checkout-summary,
+      .bar-command-modal .bar-checkout-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .bar-checkout-summary > div {
+        min-height: 66px;
+      }
+
+      .bar-command-footer {
+        min-height: 68px;
+        padding: 10px 13px;
+      }
+
+      .bar-command-footer-status {
+        display: none;
+      }
+
+      .bar-command-footer-actions {
+        width: 100%;
+      }
+
+      .bar-command-stage {
+        min-height: 44px;
+        flex: 1 1 0;
+        padding: 8px;
+        font-size: 11px;
+      }
+    }
+
     .bar-qr-card {
       min-width: 0;
       display: grid;
@@ -5278,6 +6158,19 @@
     <symbol id="bar-icon-plus" viewBox="0 0 24 24">
       <path d="M12 5v14M5 12h14" />
     </symbol>
+    <symbol id="bar-icon-minus" viewBox="0 0 24 24">
+      <path d="M5 12h14" />
+    </symbol>
+    <symbol id="bar-icon-close" viewBox="0 0 24 24">
+      <path d="M18 6 6 18M6 6l12 12" />
+    </symbol>
+    <symbol id="bar-icon-flame" viewBox="0 0 24 24">
+      <path d="M12 22c4.4 0 8-3.6 8-8 0-3-1.4-5.2-4-7.5.1 2.2-.8 3.8-2.2 4.7.2-3.7-1.8-6.8-5-9.2.1 3.3-1.7 5.3-3.1 7.2C4.7 10.6 4 12.1 4 14c0 4.4 3.6 8 8 8Z" />
+      <path d="M9 18c0 1.7 1.3 3 3 3s3-1.3 3-3c0-1.3-.7-2.4-2-3.5 0 1-.4 1.7-1.1 2.1.1-1.6-.8-3-2.1-4.1.1 1.5-.8 2.4-1.4 3.3-.3.6-.4 1.3-.4 2.2Z" />
+    </symbol>
+    <symbol id="bar-icon-check" viewBox="0 0 24 24">
+      <path d="M20 6 9 17l-5-5" />
+    </symbol>
     <symbol id="bar-icon-grid" viewBox="0 0 24 24">
       <rect x="4" y="4" width="6" height="6" rx="1" />
       <rect x="14" y="4" width="6" height="6" rx="1" />
@@ -6173,30 +7066,90 @@
     </div>
 
     <div class="admin-modal-overlay" id="barCommandModal" aria-hidden="true">
-      <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="barCommandModalTitle">
-        <div class="admin-modal-head">
-          <div><h2 id="barCommandModalTitle">Comanda</h2><div class="muted" id="barCommandModalSubtitle"></div></div>
-          <button class="ghost-btn" type="button" id="barCommandModalClose">Fechar</button>
-        </div>
-        <div class="admin-modal-body">
-          <form class="form-grid" id="barOrderItemForm">
-            <div class="field full"><label for="barOrderProduct">Adicionar produto</label><select id="barOrderProduct" required></select></div>
-            <div class="field"><label for="barOrderQuantity">Quantidade</label><input id="barOrderQuantity" type="number" min="1" step="1" value="1" required /></div>
-            <div class="field"><label for="barOrderItemNotes">Observação</label><input id="barOrderItemNotes" placeholder="Sem gelo, ponto, sabor..." /></div>
-            <div class="field full"><button class="primary-btn" type="submit">Adicionar à comanda</button></div>
-          </form>
-          <div class="bar-modal-order-list" id="barCommandItems"></div>
-          <div class="bar-modal-summary"><span>Total da comanda</span><strong id="barCommandTotal">R$ 0</strong></div>
-          <div class="bar-checkout-grid">
-            <div class="field"><label for="barCheckoutService">Taxa de serviço</label><input id="barCheckoutService" inputmode="decimal" value="0,00" /></div>
-            <div class="field"><label for="barCheckoutDiscount">Desconto</label><input id="barCheckoutDiscount" inputmode="decimal" value="0,00" /></div>
-            <div class="field"><label for="barCheckoutMethod">Pagamento</label><select id="barCheckoutMethod"><option value="PIX">Pix</option><option value="DINHEIRO">Dinheiro</option><option value="CARTAO_CREDITO">Cartão de crédito</option><option value="CARTAO_DEBITO">Cartão de débito</option><option value="CONTA_CLIENTE">Conta do cliente</option></select></div>
+      <div class="admin-modal bar-command-modal" role="dialog" aria-modal="true" aria-labelledby="barCommandModalTitle">
+        <div class="bar-command-head">
+          <div class="bar-command-customer">
+            <span class="bar-command-avatar" id="barCommandAvatar">IL</span>
+            <div class="bar-command-identity">
+              <span class="bar-command-location" id="barCommandLocation">Mesa</span>
+              <h2 id="barCommandModalTitle">Cliente</h2>
+              <div class="bar-command-contact" id="barCommandModalSubtitle"></div>
+            </div>
+          </div>
+          <div class="bar-command-head-actions">
+            <div class="bar-command-reference"><strong id="barCommandNumber">Comanda</strong><span id="barCommandStatus"></span></div>
+            <button class="bar-command-close" type="button" id="barCommandModalClose" aria-label="Fechar comanda"><svg><use href="#bar-icon-close"></use></svg></button>
           </div>
         </div>
-        <div class="modal-actions">
-          <button class="ghost-btn" type="button" id="barOrderPrepBtn">Enviar para preparo</button>
-          <button class="ghost-btn" type="button" id="barOrderReadyBtn">Marcar pronta</button>
-          <button class="primary-btn" type="button" id="barOrderCloseBtn">Fechar e receber</button>
+
+        <div class="bar-command-tabs" role="tablist" aria-label="Seções da comanda">
+          <button class="bar-command-tab active" type="button" data-bar-command-tab="items" role="tab" aria-selected="true">
+            <svg><use href="#admin-icon-receipt"></use></svg><span>Itens</span><small id="barCommandItemsCount">0</small>
+          </button>
+          <button class="bar-command-tab" type="button" data-bar-command-tab="add" role="tab" aria-selected="false" id="barCommandAddTab">
+            <svg><use href="#bar-icon-plus"></use></svg><span>Adicionar produto</span>
+          </button>
+          <button class="bar-command-tab" type="button" data-bar-command-tab="checkout" role="tab" aria-selected="false">
+            <svg><use href="#admin-icon-wallet"></use></svg><span>Fechamento</span>
+          </button>
+        </div>
+
+        <div class="admin-modal-body bar-command-body">
+          <section class="bar-command-panel active-command-panel" data-bar-command-panel="items">
+            <div class="bar-command-panel-head">
+              <div><h3>Itens da comanda</h3><p>Acompanhe o preparo e a entrega de cada produto.</p></div>
+              <button class="bar-command-add-shortcut" type="button" data-bar-command-tab-target="add"><svg><use href="#bar-icon-plus"></use></svg>Adicionar produto</button>
+            </div>
+            <div class="bar-modal-order-list" id="barCommandItems"></div>
+            <div class="bar-modal-summary"><span>Total da comanda</span><strong id="barCommandTotal">R$ 0</strong></div>
+          </section>
+
+          <section class="bar-command-panel" data-bar-command-panel="add">
+            <div class="bar-command-panel-head">
+              <div><h3>Adicionar produto</h3><p>Escolha o item, confirme a quantidade e inclua uma observação se precisar.</p></div>
+            </div>
+            <form class="bar-command-product-form" id="barOrderItemForm">
+              <div class="field"><label for="barOrderProduct">Produto</label><select id="barOrderProduct" required></select></div>
+              <div class="bar-command-product-preview" id="barOrderProductPreview"></div>
+              <div class="bar-command-product-fields">
+                <div class="field">
+                  <label for="barOrderQuantity">Quantidade</label>
+                  <div class="bar-quantity-control">
+                    <button type="button" data-bar-quantity-step="-1" aria-label="Diminuir quantidade"><svg><use href="#bar-icon-minus"></use></svg></button>
+                    <input id="barOrderQuantity" type="number" min="1" step="1" value="1" required />
+                    <button type="button" data-bar-quantity-step="1" aria-label="Aumentar quantidade"><svg><use href="#bar-icon-plus"></use></svg></button>
+                  </div>
+                </div>
+                <div class="field"><label for="barOrderItemNotes">Observação do pedido</label><input id="barOrderItemNotes" placeholder="Ex.: sem gelo, sem cebola, carne bem passada" /></div>
+              </div>
+              <button class="bar-command-submit-product" type="submit"><svg><use href="#bar-icon-plus"></use></svg><span id="barOrderSubmitLabel">Adicionar produto à comanda</span></button>
+            </form>
+          </section>
+
+          <section class="bar-command-panel" data-bar-command-panel="checkout">
+            <div class="bar-command-panel-head">
+              <div><h3>Fechamento da comanda</h3><p>Confira os valores e selecione como o cliente vai pagar.</p></div>
+            </div>
+            <div class="bar-checkout-summary">
+              <div><span>Itens ativos</span><strong id="barCheckoutItemCount">0</strong></div>
+              <div><span>Subtotal</span><strong id="barCheckoutSubtotal">R$ 0</strong></div>
+              <div class="total"><span>Total atual</span><strong id="barCheckoutTotal">R$ 0</strong></div>
+            </div>
+            <div class="bar-checkout-grid">
+              <div class="field"><label for="barCheckoutService">Taxa de serviço</label><input id="barCheckoutService" inputmode="decimal" value="0,00" /></div>
+              <div class="field"><label for="barCheckoutDiscount">Desconto</label><input id="barCheckoutDiscount" inputmode="decimal" value="0,00" /></div>
+              <div class="field"><label for="barCheckoutMethod">Forma de pagamento</label><select id="barCheckoutMethod"><option value="PIX">Pix</option><option value="DINHEIRO">Dinheiro</option><option value="CARTAO_CREDITO">Cartão de crédito</option><option value="CARTAO_DEBITO">Cartão de débito</option><option value="CONTA_CLIENTE">Conta do cliente</option></select></div>
+            </div>
+            <button class="bar-command-receive" type="button" id="barOrderCloseBtn"><svg><use href="#admin-icon-wallet"></use></svg><span>Receber e encerrar comanda</span></button>
+          </section>
+        </div>
+
+        <div class="modal-actions bar-command-footer">
+          <div class="bar-command-footer-status"><span>Etapa atual</span><strong id="barCommandFooterStatus">Aberta</strong></div>
+          <div class="bar-command-footer-actions">
+            <button class="bar-command-stage prepare" type="button" id="barOrderPrepBtn"><svg><use href="#bar-icon-flame"></use></svg><span>Iniciar preparo</span></button>
+            <button class="bar-command-stage ready" type="button" id="barOrderReadyBtn"><svg><use href="#bar-icon-check"></use></svg><span>Marcar tudo pronto</span></button>
+          </div>
         </div>
       </div>
     </div>
@@ -10373,6 +11326,7 @@
       removeBarProductImage: false,
       barFinanceFilter: 'abertos',
       selectedBarOrderId: null,
+      barCommandTab: 'items',
       selectedBarQrUrl: '',
       selectedBarQrLabel: '',
       barAlertsEnabled: localStorage.getItem('ilha-bar-alerts-enabled') === 'true',
@@ -12031,7 +12985,7 @@
       if (value.includes('cervej') || value.includes('chopp')) return 'beer';
       if (value.includes('bebid') || value.includes('agua') || value.includes('suco') || value.includes('refriger') || value.includes('isoton')) return 'drink';
       if (value.includes('lanche') || value.includes('sandu') || value.includes('hamburg') || value.includes('torrada')) return 'snack';
-      if (value.includes('porcao') || value.includes('frita') || value.includes('petisco')) return 'portion';
+      if (value.includes('porc') || value.includes('frita') || value.includes('petisco')) return 'portion';
       if (value.includes('doce') || value.includes('chocolate') || value.includes('sorvete') || value.includes('bala')) return 'candy';
       return 'default';
     }
@@ -12059,6 +13013,7 @@
     }
 
     function renderBarProducts() {
+      const selectedOrderProduct = $('barOrderProduct').value;
       const allProducts = opsData.barProducts.slice().sort(function (a, b) {
         return String(a.category).localeCompare(String(b.category)) || String(a.name).localeCompare(String(b.name));
       });
@@ -12122,6 +13077,9 @@
       }).join('');
       $('barStockProduct').innerHTML = '<option value="">Selecione</option>' + options;
       $('barOrderProduct').innerHTML = '<option value="">Selecione um produto</option>' + options;
+      if (activeProducts.some(function (product) { return String(product.id) === String(selectedOrderProduct); })) {
+        $('barOrderProduct').value = selectedOrderProduct;
+      }
       setBarProductView(opsState.barProductView);
     }
 
@@ -12224,36 +13182,158 @@
       renderBarFinance();
     }
 
+    function barOrderCustomerDetails(order, items) {
+      const table = barTableById(order.tableId);
+      const card = barAccessCardById(order.publicAccessId);
+      const location = table && table.name || card && card.label || 'Comanda avulsa';
+      const locationNames = [location, table && table.name, card && card.label].filter(Boolean).map(normalizeMatchText);
+      const itemNames = Array.from(new Set(items.map(function (item) { return String(item.customerName || '').trim(); }).filter(Boolean)));
+      const isLocationName = function (name) {
+        const normalized = normalizeMatchText(name);
+        return locationNames.includes(normalized) || /^(mesa|deck|balcao|comanda)(\s|$)/.test(normalized);
+      };
+      const customerNames = itemNames.filter(function (name) { return !isLocationName(name); });
+      const orderName = String(order.customerName || '').trim();
+      if (!customerNames.length && orderName && !isLocationName(orderName)) customerNames.push(orderName);
+      const name = customerNames[0] || (table ? 'Cliente da mesa' : 'Cliente');
+      const matchingItem = items.find(function (item) { return item.customerName === name && item.customerPhone; }) || items.find(function (item) { return item.customerPhone; });
+      return {
+        name: name,
+        phone: matchingItem && matchingItem.customerPhone || order.customerPhone || '',
+        location: location,
+        names: customerNames
+      };
+    }
+
+    function barCommandMoneyValue(value) {
+      const clean = String(value || '').trim().replace(/\./g, '').replace(',', '.');
+      const number = Number(clean);
+      return Number.isFinite(number) && number >= 0 ? number : 0;
+    }
+
+    function updateBarCheckoutPreview(order) {
+      order = order || barOrderById(opsState.selectedBarOrderId);
+      if (!order) return;
+      const subtotal = barOrderSubtotal(order);
+      const serviceCharge = barCommandMoneyValue($('barCheckoutService').value);
+      const discount = barCommandMoneyValue($('barCheckoutDiscount').value);
+      $('barCheckoutSubtotal').textContent = money(subtotal);
+      $('barCheckoutTotal').textContent = money(Math.max(0, subtotal + serviceCharge - discount));
+    }
+
+    function renderBarOrderProductPreview() {
+      const preview = $('barOrderProductPreview');
+      const product = barProductById($('barOrderProduct').value);
+      const quantity = Math.max(1, Number($('barOrderQuantity').value || 1));
+      if (!product) {
+        preview.className = 'bar-command-product-preview is-empty';
+        preview.innerHTML = '<span class="bar-command-product-icon"><svg><use href="#admin-icon-box"></use></svg></span><div class="bar-command-product-copy"><strong>Escolha um produto</strong><span>Preço e estoque aparecerão aqui antes de adicionar.</span></div>';
+        $('barOrderSubmitLabel').textContent = 'Adicionar produto à comanda';
+        return;
+      }
+      const media = product.imageUrl
+        ? '<span class="bar-command-product-image"><img src="' + escapeHtml(product.imageUrl) + '" alt="' + escapeHtml(product.name) + '" data-bar-order-preview-image /></span>'
+        : '<span class="bar-command-product-icon">' + barProductCategoryIcon(product.category) + '</span>';
+      preview.className = 'bar-command-product-preview';
+      preview.innerHTML = media + '<div class="bar-command-product-copy"><strong>' + escapeHtml(product.name) + '</strong><span>' + escapeHtml((product.category || 'Produto') + ' | ' + Number(product.stock || 0).toLocaleString('pt-BR') + ' ' + (product.unit || 'unidade') + ' em estoque') + '</span></div><div class="bar-command-product-price"><span>' + escapeHtml(quantity + (quantity === 1 ? ' item' : ' itens')) + '</span><strong>' + money(Number(product.salePrice || 0) * quantity) + '</strong></div>';
+      const image = preview.querySelector('[data-bar-order-preview-image]');
+      if (image) image.addEventListener('error', function () {
+        const holder = image.parentElement;
+        if (holder) {
+          holder.className = 'bar-command-product-icon';
+          holder.innerHTML = barProductCategoryIcon(product.category);
+        }
+      }, { once: true });
+      $('barOrderSubmitLabel').textContent = 'Adicionar ' + quantity + 'x ' + product.name + ' | ' + money(Number(product.salePrice || 0) * quantity);
+    }
+
+    function setBarCommandTab(tab) {
+      const order = barOrderById(opsState.selectedBarOrderId);
+      const normalized = ['items', 'add', 'checkout'].includes(tab) ? tab : 'items';
+      opsState.barCommandTab = normalized === 'add' && order && !barOrderIsOpen(order) ? 'items' : normalized;
+      document.querySelectorAll('[data-bar-command-tab]').forEach(function (button) {
+        const active = button.dataset.barCommandTab === opsState.barCommandTab;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      document.querySelectorAll('[data-bar-command-panel]').forEach(function (panel) {
+        panel.classList.toggle('active-command-panel', panel.dataset.barCommandPanel === opsState.barCommandTab);
+      });
+      if (opsState.barCommandTab === 'add') renderBarOrderProductPreview();
+      if (opsState.barCommandTab === 'checkout') updateBarCheckoutPreview(order);
+    }
+
     function renderBarCommandModal() {
       const order = barOrderById(opsState.selectedBarOrderId);
       if (!order) return;
       const items = barItemsForOrder(order.id);
-      $('barCommandModalTitle').textContent = barTableLabel(order);
-      $('barCommandModalSubtitle').textContent = ['Comanda #' + (order.commandNumber || String(order.id).slice(-4)), order.customerName, barPhoneLabel(order.customerPhone), barOrderSourceLabel(order.source), barStatusLabel(order.status)].filter(Boolean).join(' | ');
+      const activeItems = items.filter(function (item) { return item.status !== 'CANCELADO'; });
+      const customer = barOrderCustomerDetails(order, activeItems.length ? activeItems : items);
+      const itemQuantity = activeItems.reduce(function (sum, item) { return sum + Number(item.quantity || 0); }, 0);
+      const phoneDigits = barPhoneDigits(customer.phone);
+      const contactBits = [];
+      if (phoneDigits) contactBits.push('<a href="https://wa.me/' + escapeHtml(barPhoneWhatsApp(phoneDigits)) + '" target="_blank" rel="noopener"><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(phoneDigits)) + '</a>');
+      contactBits.push('<span><svg><use href="#admin-icon-qr"></use></svg>' + escapeHtml(barOrderSourceLabel(order.source)) + '</span>');
+      if (customer.names.length > 1) contactBits.push('<span><svg><use href="#admin-icon-users"></use></svg>' + escapeHtml(customer.names.length + ' pessoas nesta comanda') + '</span>');
+
+      $('barCommandAvatar').textContent = clientInitials(customer.name);
+      $('barCommandLocation').textContent = customer.location;
+      $('barCommandModalTitle').textContent = customer.name;
+      $('barCommandModalSubtitle').innerHTML = contactBits.join('');
+      $('barCommandNumber').textContent = 'Comanda #' + (order.commandNumber || String(order.id).slice(-4));
+      $('barCommandStatus').innerHTML = barStatusPill(order.status);
+      $('barCommandFooterStatus').textContent = barStatusLabel(order.status);
+      $('barCommandItemsCount').textContent = itemQuantity;
+      $('barCheckoutItemCount').textContent = itemQuantity;
+
       $('barCommandItems').innerHTML = items.map(function (item) {
-        const cancelled = item.status === 'CANCELADO';
-        const itemMeta = [item.customerName, barPhoneLabel(item.customerPhone), item.notes, barStatusLabel(item.status)].filter(Boolean).join(' | ');
+        const status = String(item.status || '').toUpperCase();
+        const cancelled = status === 'CANCELADO';
+        const statusClass = status === 'EM_PREPARO' ? ' is-preparing' : (status === 'PRONTO' ? ' is-ready' : (status === 'ENTREGUE' ? ' is-delivered' : ''));
+        const itemCustomer = item.customerName || customer.name;
+        const itemPhone = barPhoneDigits(item.customerPhone || customer.phone);
+        const meta = [];
+        if (itemPhone) meta.push('<span><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(itemPhone)) + '</span>');
+        meta.push('<span>' + escapeHtml(money(item.unitPrice) + ' cada') + '</span>');
+        if (item.notes) meta.push('<span><strong>Obs.:</strong> ' + escapeHtml(item.notes) + '</span>');
         let nextAction = '';
-        if (!cancelled && item.status === 'SOLICITADO') nextAction = '<button class="small-btn" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="EM_PREPARO">Preparar</button>';
-        if (!cancelled && item.status === 'EM_PREPARO') nextAction = '<button class="small-btn" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="PRONTO">Pronto</button>';
-        if (!cancelled && item.status === 'PRONTO') nextAction = '<button class="small-btn" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="ENTREGUE">Entregar</button>';
-        return '<article class="bar-item-row' + (cancelled ? ' cancelled' : '') + '"><div class="bar-item-main"><div class="bar-item-copy"><strong>' + escapeHtml(item.quantity + 'x ' + item.productName) + '</strong><small>' + escapeHtml(itemMeta) + '</small></div><span class="bar-item-price">' + money(item.quantity * item.unitPrice) + '</span></div><div class="bar-row-actions">' + barStatusPill(item.status) + nextAction + (cancelled ? '' : '<button class="small-btn" type="button" data-bar-item-cancel="' + escapeHtml(item.id) + '">Cancelar</button>') + '</div></article>';
-      }).join('') || '<div class="lesson-empty-state">Comanda vazia. Adicione o primeiro produto.</div>';
+        if (!cancelled && status === 'SOLICITADO') nextAction = '<button class="small-btn bar-item-next" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="EM_PREPARO">Iniciar preparo</button>';
+        if (!cancelled && status === 'EM_PREPARO') nextAction = '<button class="small-btn bar-item-next" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="PRONTO">Marcar pronto</button>';
+        if (!cancelled && status === 'PRONTO') nextAction = '<button class="small-btn bar-item-next" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="ENTREGUE">Entregar</button>';
+        return '<article class="bar-item-row bar-command-item' + statusClass + (cancelled ? ' cancelled' : '') + '">' +
+          '<span class="bar-command-item-quantity">' + escapeHtml(item.quantity + 'x') + '</span>' +
+          '<div class="bar-command-item-content"><div class="bar-command-item-customer"><svg><use href="#admin-icon-users"></use></svg><span>Pedido de <strong>' + escapeHtml(itemCustomer) + '</strong></span></div>' +
+          '<div class="bar-command-item-title"><strong>' + escapeHtml(item.productName) + '</strong><span class="bar-item-price">' + money(item.quantity * item.unitPrice) + '</span></div>' +
+          '<div class="bar-command-item-meta">' + meta.join('') + '</div></div>' +
+          '<div class="bar-command-item-actions">' + barStatusPill(item.status) + nextAction + (cancelled ? '' : '<button class="small-btn bar-item-remove" type="button" data-bar-item-cancel="' + escapeHtml(item.id) + '">Remover</button>') + '</div></article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhum item nesta comanda. Use “Adicionar produto” para começar.</div>';
+
+      const open = barOrderIsOpen(order);
       $('barCommandTotal').textContent = money(barOrderTotal(order));
-      $('barOrderItemForm').style.display = barOrderIsOpen(order) ? 'grid' : 'none';
-      $('barOrderPrepBtn').style.display = order.status === 'ABERTA' ? '' : 'none';
-      $('barOrderReadyBtn').style.display = ['ABERTA', 'EM_PREPARO'].includes(order.status) ? '' : 'none';
-      $('barOrderCloseBtn').style.display = barOrderIsOpen(order) ? '' : 'none';
+      $('barCheckoutSubtotal').textContent = money(barOrderSubtotal(order));
+      $('barOrderItemForm').style.display = open ? 'grid' : 'none';
+      $('barCommandAddTab').hidden = !open;
+      document.querySelectorAll('[data-bar-command-tab-target="add"]').forEach(function (button) { button.hidden = !open; });
+      $('barOrderPrepBtn').style.display = open && order.status === 'ABERTA' ? '' : 'none';
+      $('barOrderReadyBtn').style.display = open && ['ABERTA', 'EM_PREPARO'].includes(order.status) ? '' : 'none';
+      $('barOrderCloseBtn').style.display = open ? 'inline-flex' : 'none';
       renderBarProducts();
+      renderBarOrderProductPreview();
+      updateBarCheckoutPreview(order);
+      setBarCommandTab(opsState.barCommandTab);
     }
 
     function openBarCommandModal(orderId) {
       const order = barOrderById(orderId);
       if (!order) return;
       opsState.selectedBarOrderId = order.id;
+      opsState.barCommandTab = barActiveItemsForOrder(order.id).length ? 'items' : 'add';
       $('barCheckoutService').value = Number(order.serviceCharge || 0).toFixed(2).replace('.', ',');
       $('barCheckoutDiscount').value = Number(order.discount || 0).toFixed(2).replace('.', ',');
       $('barCheckoutMethod').value = order.paymentMethod || 'PIX';
+      $('barOrderProduct').value = '';
+      $('barOrderQuantity').value = 1;
+      $('barOrderItemNotes').value = '';
       renderBarCommandModal();
       $('barCommandModal').classList.add('show');
       $('barCommandModal').setAttribute('aria-hidden', 'false');
@@ -12876,11 +13956,13 @@
           opsData.barOrderItems.push(item);
           recalculateLocalBarOrder(order);
         }
+        $('barOrderProduct').value = '';
         $('barOrderQuantity').value = 1;
         $('barOrderItemNotes').value = '';
+        opsState.barCommandTab = 'items';
         renderBarModule();
         renderBarCommandModal();
-        toast('Item adicionado.');
+        toast(quantity + 'x ' + product.name + (quantity === 1 ? ' adicionado.' : ' adicionados.'));
       } catch (error) {
         reportActionError(error);
       }
@@ -15157,6 +16239,23 @@
         }
       });
       $('barCommandModal').addEventListener('click', function (event) {
+        const tabBtn = event.target.closest('[data-bar-command-tab]');
+        if (tabBtn) {
+          setBarCommandTab(tabBtn.dataset.barCommandTab);
+          return;
+        }
+        const tabTargetBtn = event.target.closest('[data-bar-command-tab-target]');
+        if (tabTargetBtn) {
+          setBarCommandTab(tabTargetBtn.dataset.barCommandTabTarget);
+          return;
+        }
+        const quantityBtn = event.target.closest('[data-bar-quantity-step]');
+        if (quantityBtn) {
+          const nextQuantity = Math.max(1, Number($('barOrderQuantity').value || 1) + Number(quantityBtn.dataset.barQuantityStep || 0));
+          $('barOrderQuantity').value = nextQuantity;
+          renderBarOrderProductPreview();
+          return;
+        }
         const statusBtn = event.target.closest('[data-bar-item-status]');
         if (statusBtn) {
           updateBarItemStatusAction(statusBtn.dataset.barItemStatus, statusBtn.dataset.nextStatus);
@@ -15170,6 +16269,10 @@
         if (event.target.id === 'barCommandModal') closeBarCommandModal();
       });
       $('barCommandModalClose').addEventListener('click', closeBarCommandModal);
+      $('barOrderProduct').addEventListener('change', renderBarOrderProductPreview);
+      $('barOrderQuantity').addEventListener('input', renderBarOrderProductPreview);
+      $('barCheckoutService').addEventListener('input', function () { updateBarCheckoutPreview(); });
+      $('barCheckoutDiscount').addEventListener('input', function () { updateBarCheckoutPreview(); });
       $('barOrderPrepBtn').addEventListener('click', function () { updateBarOrderStatusAction('EM_PREPARO'); });
       $('barOrderReadyBtn').addEventListener('click', function () { updateBarOrderStatusAction('PRONTA'); });
       $('barOrderCloseBtn').addEventListener('click', closeBarOrderAction);
