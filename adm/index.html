@@ -46,6 +46,88 @@
       display: none;
     }
 
+    body:not(.bar-admin-surface) [data-bar-entry],
+    body:not(.bar-admin-surface) [data-bar-surface-only] {
+      display: none !important;
+    }
+
+    body.bar-admin-surface [data-admin-nav]:not([data-bar-entry]) {
+      display: none !important;
+    }
+
+    body.bar-admin-surface #adminSignupBtn {
+      display: none;
+    }
+
+    body.bar-admin-surface #barSurfaceLogoutBtn {
+      display: none;
+    }
+
+    body.bar-admin-surface .admin-sidebar {
+      background: #0b3138;
+      border-right-color: #21474d;
+      color: #ffffff;
+    }
+
+    body.bar-admin-surface .admin-sidebar-brand {
+      border-bottom-color: rgba(255, 255, 255, .14);
+    }
+
+    body.bar-admin-surface .admin-sidebar-brand img {
+      width: 164px;
+    }
+
+    .bar-admin-context {
+      display: none;
+      padding: 0 10px 2px;
+    }
+
+    body.bar-admin-surface .bar-admin-context {
+      display: block;
+    }
+
+    .bar-admin-context strong,
+    .bar-admin-context span {
+      display: block;
+    }
+
+    .bar-admin-context strong {
+      font-size: 18px;
+    }
+
+    .bar-admin-context span {
+      margin-top: 4px;
+      color: #b7c8cc;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    body.bar-admin-surface .admin-nav-btn {
+      color: #d9e5e7;
+    }
+
+    body.bar-admin-surface .admin-nav-btn:hover,
+    body.bar-admin-surface .admin-nav-btn.active {
+      background: rgba(255, 255, 255, .11);
+      color: #ffffff;
+    }
+
+    body.bar-admin-surface .admin-nav-icon,
+    body.bar-admin-surface .admin-nav-btn:hover .admin-nav-icon,
+    body.bar-admin-surface .admin-nav-btn.active .admin-nav-icon {
+      background: rgba(181, 229, 0, .14);
+      color: var(--lime);
+    }
+
+    body.bar-admin-surface .admin-sidebar-footer {
+      border-top-color: rgba(255, 255, 255, .14);
+    }
+
+    body.bar-admin-surface .admin-sidebar-footer button {
+      background: rgba(255, 255, 255, .1);
+      color: #ffffff;
+    }
+
     .preview-only {
       display: none !important;
     }
@@ -3274,6 +3356,44 @@
         display: none;
       }
 
+      body.bar-admin-surface.club-bar .admin-sidebar-brand {
+        display: block;
+        padding: 4px 8px 10px;
+        border-bottom: 0;
+      }
+
+      body.bar-admin-surface.club-bar .admin-sidebar-brand img {
+        width: 138px;
+        margin: 0 auto;
+      }
+
+      body.bar-admin-surface.club-bar .bar-admin-context,
+      body.bar-admin-surface.club-bar .admin-sidebar-nav {
+        display: none;
+      }
+
+      body.bar-admin-surface #barSurfaceLogoutBtn {
+        display: inline-grid;
+      }
+
+      body.bar-admin-surface .bar-module .module-head {
+        display: grid;
+        gap: 12px;
+      }
+
+      body.bar-admin-surface .bar-module .module-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      body.bar-admin-surface .bar-module .module-actions button {
+        width: 100%;
+        min-height: 42px;
+        padding: 8px;
+      }
+
       body.club-bar .admin-sidebar-nav {
         width: 100%;
         min-width: 0;
@@ -3873,8 +3993,8 @@
   <main class="adm-login" id="adminLogin">
     <form class="adm-login-card" id="adminLoginForm">
       <img src="../logo.png" alt="Ilha Tênis" />
-      <h1>Gestão Clube Ilha</h1>
-      <p>Acesse a gestão do clube com seu e-mail de equipe.</p>
+      <h1 id="adminLoginTitle">Gestão Clube Ilha</h1>
+      <p id="adminLoginSubtitle">Acesse a gestão do clube com seu e-mail de equipe.</p>
       <label for="adminUser">E-mail</label>
       <input id="adminUser" type="email" autocomplete="username" inputmode="email" placeholder="voce@ilhatenis.com" required />
       <label for="adminPassword">Senha</label>
@@ -3894,12 +4014,16 @@
       <div class="admin-sidebar-brand">
         <img src="../logo.png" alt="Ilha Tênis" />
       </div>
+      <div class="bar-admin-context" data-bar-surface-only>
+        <strong>Ilha Bar</strong>
+        <span>Operação e gestão</span>
+      </div>
       <nav class="admin-sidebar-nav">
         <button class="admin-nav-btn active" type="button" data-admin-nav="club-home"><span class="admin-nav-icon"><svg><use href="#admin-icon-home"></use></svg></span><span>Início</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon"><svg><use href="#admin-icon-users"></use></svg></span><span>Alunos</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-courts"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Quadras</span></button>
-        <button class="admin-nav-btn" type="button" data-admin-nav="club-bar"><span class="admin-nav-icon"><svg><use href="#admin-icon-bar"></use></svg></span><span>Bar</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-bar" data-bar-entry><span class="admin-nav-icon"><svg><use href="#admin-icon-bar"></use></svg></span><span>Operação</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-store"><span class="admin-nav-icon"><svg><use href="#admin-icon-bag"></use></svg></span><span>Ilha Store</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-announcements"><span class="admin-nav-icon"><svg><use href="#admin-icon-megaphone"></use></svg></span><span>Comunicados</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-team"><span class="admin-nav-icon"><svg><use href="#admin-icon-team"></use></svg></span><span>Equipe</span></button>
@@ -4410,13 +4534,14 @@
       <div class="module-shell">
         <div class="module-head">
           <div>
-            <h1>Bar</h1>
+            <h1>Gestão do Bar</h1>
             <div class="muted">Comandas, estoque e caixa.</div>
           </div>
           <div class="module-actions">
-            <button class="ghost-btn" type="button" data-home-action>Início</button>
+            <button class="ghost-btn" type="button" data-home-action>Visão geral</button>
             <button class="ghost-btn" type="button" id="barReloadBtn">Atualizar</button>
             <button class="primary-btn" type="button" id="barNewOrderBtn">Nova comanda</button>
+            <button class="ghost-btn" type="button" id="barSurfaceLogoutBtn" data-bar-surface-only>Sair</button>
           </div>
         </div>
         <div class="ops-content">
@@ -8529,6 +8654,7 @@
 
     const LESSONS_SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
     const LESSONS_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrcXRncHRlYmtnZndndXlreGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzEyNjAsImV4cCI6MjA5NzcwNzI2MH0.S-dopp-fbBgq8_YclyiAheOdK-QhXt92RYLu8JKmKCg';
+    const IS_BAR_ADMIN_SURFACE = /^\/admbar(?:\/|$)/.test(window.location.pathname) || new URLSearchParams(window.location.search).get('surface') === 'bar';
     const lessonDays = [
       { key: 'segunda', label: 'SEG' },
       { key: 'terca', label: 'TER' },
@@ -10227,7 +10353,19 @@
     }
 
     function openBarModule() {
+      if (!IS_BAR_ADMIN_SURFACE) {
+        window.location.href = '/admbar';
+        return;
+      }
       setClubMode('club-bar');
+      if (!isAdminDemoMode() && !opsState.barDataLoaded) {
+        opsData.barProducts = [];
+        opsData.barTables = [];
+        opsData.barOrders = [];
+        opsData.barOrderItems = [];
+        opsData.barInventory = [];
+        opsData.barFinance = [];
+      }
       renderBarModule();
       loadBarData(false).then(renderBarModule).catch(reportActionError);
       if (!barRefreshTimer) {
@@ -11014,6 +11152,39 @@
       document.body.classList.toggle('preview-env', isPreviewEnvironment());
     }
 
+    function configureAdminSurface() {
+      document.body.classList.toggle('bar-admin-surface', IS_BAR_ADMIN_SURFACE);
+      if (!IS_BAR_ADMIN_SURFACE) return;
+      document.title = 'Gestão do Bar | Ilha Tênis';
+      $('adminLoginTitle').textContent = 'Gestão do Bar';
+      $('adminLoginSubtitle').textContent = 'Entre com seu acesso da equipe do Bar.';
+      $('adminSessionInfo').textContent = 'Os acessos do Bar são liberados pela administração do clube.';
+      const sidebarLogo = document.querySelector('.admin-sidebar-brand img');
+      if (sidebarLogo) sidebarLogo.src = '/logo%20ilha%20branca.png';
+    }
+
+    function profilePermissions(profile) {
+      return Array.isArray(profile && profile.permissions) ? profile.permissions : [];
+    }
+
+    function canOpenBarSurface(profile) {
+      if (!profile || profile.active === false) return false;
+      return profile.role === 'admin' || profile.role === 'bar' || profilePermissions(profile).includes('bar');
+    }
+
+    function routeProfileToAdminSurface() {
+      if (!adminProfile || isAdminDemoMode()) return true;
+      if (IS_BAR_ADMIN_SURFACE && !canOpenBarSurface(adminProfile)) {
+        window.location.replace('/adm');
+        return false;
+      }
+      if (!IS_BAR_ADMIN_SURFACE && adminProfile.role === 'bar') {
+        window.location.replace('/admbar');
+        return false;
+      }
+      return true;
+    }
+
     function isAdminDemoMode() {
       return adminDemoMode || Boolean(adminSession && adminSession.demo);
     }
@@ -11163,7 +11334,9 @@
       const role = adminProfile && adminProfile.role;
       const label = [name || email || 'Equipe Ilha', role ? roleLabel(role) : ''].filter(Boolean).join(' | ');
       if ($('clubHomeIdentity')) $('clubHomeIdentity').textContent = label || 'Administrador';
-      if ($('adminSessionInfo')) $('adminSessionInfo').textContent = role ? 'Conectado como ' + roleLabel(role) + '.' : 'O primeiro e-mail cadastrado vira admin. Depois ele libera professores e secretaria.';
+      if ($('adminSessionInfo')) $('adminSessionInfo').textContent = role
+        ? 'Conectado como ' + roleLabel(role) + '.'
+        : (IS_BAR_ADMIN_SURFACE ? 'Os acessos do Bar são liberados pela administração do clube.' : 'O primeiro e-mail cadastrado vira admin. Depois ele libera professores e secretaria.');
       if ($('adminSidebarStatus')) {
         $('adminSidebarStatus').innerHTML = isAdminDemoMode()
           ? '<strong>Modo demonstração</strong> Dados locais para navegar e testar.'
@@ -11246,10 +11419,12 @@
     }
 
     function unlockAdmin() {
+      if (!routeProfileToAdminSurface()) return;
       document.body.classList.remove('adm-locked');
       document.body.classList.add('adm-unlocked');
       updateAdminIdentity();
-      showClubHome();
+      if (IS_BAR_ADMIN_SURFACE) openBarModule();
+      else showClubHome();
       $('adminApp').setAttribute('aria-hidden', 'false');
     }
 
@@ -12281,6 +12456,7 @@
 
     function initAdminLogin() {
       configurePreviewEnvironment();
+      configureAdminSurface();
       $('adminLoginForm').addEventListener('submit', async function (event) {
         event.preventDefault();
         const email = $('adminUser').value.trim();
@@ -12321,6 +12497,7 @@
       $('adminLogoutBtn').addEventListener('click', lockAdmin);
       $('homeLogoutBtn').addEventListener('click', lockAdmin);
       $('sidebarLogoutBtn').addEventListener('click', lockAdmin);
+      $('barSurfaceLogoutBtn').addEventListener('click', lockAdmin);
       $('backToClubHomeBtn').addEventListener('click', showClubHome);
       [
         ['openTournamentModule', openTournamentModule],
@@ -12363,7 +12540,14 @@
         });
       });
       document.querySelectorAll('[data-home-action]').forEach(function (btn) {
-        btn.addEventListener('click', showClubHome);
+        btn.addEventListener('click', function () {
+          if (IS_BAR_ADMIN_SURFACE) {
+            setBarTab('overview');
+            renderBarModule();
+          } else {
+            showClubHome();
+          }
+        });
       });
       $('clientReloadBtn').addEventListener('click', function () {
         loadOpsData(true).then(renderClientsModule).catch(reportActionError);
