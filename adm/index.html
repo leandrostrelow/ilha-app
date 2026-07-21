@@ -399,6 +399,11 @@
       font-weight: 900;
     }
 
+    .admin-nav-btn[data-bar-side-tab="orders"] {
+      position: relative;
+      grid-template-columns: 28px minmax(0, 1fr) auto;
+    }
+
     .admin-nav-btn:hover,
     .admin-nav-btn.active {
       background: #eef5f6;
@@ -3029,6 +3034,53 @@
       background: var(--teal);
     }
 
+    .bar-module .module-actions button svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    #barEnableAlertsBtn.alerts-active {
+      color: #315000;
+      border-color: #b7dc45;
+      background: #f1fbd2;
+    }
+
+    .bar-nav-badge,
+    .bar-tab-badge {
+      min-width: 22px;
+      height: 22px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0 6px;
+      color: #ffffff;
+      background: #dc4545;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 950;
+      line-height: 1;
+    }
+
+    .bar-nav-badge {
+      justify-self: end;
+      margin-left: auto;
+    }
+
+    .bar-tab-badge {
+      margin-left: 5px;
+      color: #8b220f;
+      background: #ffd9ce;
+    }
+
+    .ops-tab-btn.active .bar-tab-badge {
+      color: #ffffff;
+      background: #dc4545;
+    }
+
     [data-bar-panel] {
       display: none;
     }
@@ -3091,6 +3143,7 @@
     }
 
     .bar-order-board,
+    .bar-incoming-orders,
     .bar-table-grid,
     .bar-product-list,
     .bar-finance-list,
@@ -3101,6 +3154,98 @@
 
     .bar-order-board {
       grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+    }
+
+    .bar-incoming-panel {
+      margin-bottom: 14px;
+      border-top: 4px solid #e87b35;
+    }
+
+    .bar-live-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .bar-live-status > span {
+      width: 9px;
+      height: 9px;
+      background: #79a800;
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px #effbd0;
+    }
+
+    .bar-incoming-card {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 14px;
+      border: 1px solid #f0d8bd;
+      border-left: 5px solid #e87b35;
+      border-radius: 8px;
+      background: #fffaf5;
+    }
+
+    .bar-incoming-main,
+    .bar-incoming-copy {
+      min-width: 0;
+    }
+
+    .bar-incoming-head {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .bar-incoming-head strong {
+      font-size: 16px;
+    }
+
+    .bar-incoming-meta {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .bar-incoming-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .bar-incoming-item {
+      max-width: 100%;
+      padding: 6px 8px;
+      overflow: hidden;
+      color: #334a52;
+      background: #ffffff;
+      border: 1px solid #eadfd5;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-incoming-actions {
+      display: grid;
+      justify-items: end;
+      gap: 8px;
+    }
+
+    .bar-incoming-time {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
     }
 
     .bar-order-card,
@@ -3532,6 +3677,19 @@
 
     .bar-qr-grid {
       grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    }
+
+    .bar-qr-section {
+      min-width: 0;
+    }
+
+    .bar-qr-section .bar-qr-grid {
+      margin-top: 12px;
+    }
+
+    .bar-qr-card.is-inactive {
+      opacity: .62;
+      background: #f6f8f9;
     }
 
     .bar-product-row,
@@ -4314,6 +4472,12 @@
         font-size: 12px;
       }
 
+      .bar-nav-badge {
+        position: absolute;
+        top: 3px;
+        right: 3px;
+      }
+
       body.club-bar .admin-nav-icon {
         width: 24px;
         height: 24px;
@@ -4455,6 +4619,21 @@
       .bar-table-grid,
       .bar-qr-grid {
         grid-template-columns: 1fr;
+      }
+
+      .bar-incoming-card {
+        grid-template-columns: 1fr;
+      }
+
+      .bar-incoming-actions {
+        width: 100%;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        justify-items: start;
+      }
+
+      .bar-incoming-actions .small-btn {
+        min-height: 40px;
       }
 
       .bar-product-row,
@@ -4998,6 +5177,10 @@
       <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z" />
       <path d="M14 14h2v2h-2zM18 14h2v4h-2zM14 18h4v2h-4z" />
     </symbol>
+    <symbol id="admin-icon-bell" viewBox="0 0 24 24">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z" />
+      <path d="M10 21h4" />
+    </symbol>
     <symbol id="bar-icon-plus" viewBox="0 0 24 24">
       <path d="M12 5v14M5 12h14" />
     </symbol>
@@ -5079,7 +5262,7 @@
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-courts"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Quadras</span></button>
         <button class="admin-nav-btn active" type="button" data-bar-entry data-bar-side-tab="overview"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Visão geral</span></button>
-        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="orders"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Comandas</span></button>
+        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="orders"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Pedidos</span><span class="bar-nav-badge" id="barOrdersNavBadge" hidden>0</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="tables"><span class="admin-nav-icon"><svg><use href="#admin-icon-table"></use></svg></span><span>Mesas</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="products"><span class="admin-nav-icon"><svg><use href="#admin-icon-box"></use></svg></span><span>Produtos e estoque</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
@@ -5600,6 +5783,7 @@
           <div class="module-actions">
             <button class="ghost-btn" type="button" data-home-action>Visão geral</button>
             <button class="ghost-btn" type="button" id="barReloadBtn">Atualizar</button>
+            <button class="ghost-btn" type="button" id="barEnableAlertsBtn"><svg><use href="#admin-icon-bell"></use></svg><span>Ativar alertas</span></button>
             <button class="primary-btn" type="button" id="barNewOrderBtn">Nova comanda</button>
             <button class="ghost-btn" type="button" id="barSurfaceLogoutBtn" data-bar-surface-only>Sair</button>
           </div>
@@ -5628,7 +5812,7 @@
 
           <div class="ops-tabs" role="tablist" aria-label="Gestão do bar">
             <button class="ops-tab-btn active" type="button" data-bar-tab="overview">Visão geral</button>
-            <button class="ops-tab-btn" type="button" data-bar-tab="orders">Comandas</button>
+            <button class="ops-tab-btn" type="button" data-bar-tab="orders">Pedidos <span class="bar-tab-badge" id="barOrdersTabBadge" hidden>0</span></button>
             <button class="ops-tab-btn" type="button" data-bar-tab="tables">Mesas</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="products">Produtos e estoque</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="finance">Financeiro</button>
@@ -5652,9 +5836,16 @@
           </div>
 
           <div data-bar-panel="orders">
+            <section class="ops-panel bar-incoming-panel">
+              <div class="ops-panel-head">
+                <div><h2>Pedidos recebidos</h2><div class="muted">Pedidos enviados pelo cardápio online.</div></div>
+                <span class="bar-live-status"><span></span>Atualização automática</span>
+              </div>
+              <div class="bar-incoming-orders" id="barIncomingOrders"></div>
+            </section>
             <section class="ops-panel">
               <div class="ops-panel-head">
-                <div><h2>Comandas por mesa</h2><div class="muted">Abra uma mesa livre ou acompanhe o pedido em andamento.</div></div>
+                <div><h2>Mesas e comandas</h2><div class="muted">Abra uma mesa livre ou acompanhe uma comanda em andamento.</div></div>
                 <button class="small-btn" type="button" data-bar-go="tables">Gerenciar mesas</button>
               </div>
               <div class="bar-table-grid" id="barTableBoard"></div>
@@ -5756,13 +5947,21 @@
           <div data-bar-panel="qrcodes">
             <div class="bar-qr-page">
               <div class="bar-section-header">
-                <div><h2>QR Codes</h2><div class="muted">Cada mesa possui um acesso próprio para o cardápio e os pedidos.</div></div>
+                <div><h2>QR Codes</h2><div class="muted">Acessos do cardápio online para mesas e clientes.</div></div>
+                <button class="primary-btn bar-icon-button" type="button" id="barAddAccessCardBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Novo cartão</span></button>
               </div>
               <div class="bar-qr-info">
                 <span><svg><use href="#admin-icon-qr"></use></svg></span>
-                <div><strong>QR Code individual por mesa</strong><small>Abra para imprimir ou copie o link para testar o atendimento da mesa.</small></div>
+                <div><strong>Dois tipos de acesso</strong><small>O QR da mesa já identifica o local. O cartão individual pede a mesa ou permite retirada no balcão.</small></div>
               </div>
-              <div class="bar-qr-grid" id="barQrGrid"></div>
+              <section class="ops-panel bar-qr-section">
+                <div class="ops-panel-head"><div><h2>QR Codes das mesas</h2><div class="muted">Fixos em cada mesa do Bar.</div></div></div>
+                <div class="bar-qr-grid" id="barQrGrid"></div>
+              </section>
+              <section class="ops-panel bar-qr-section">
+                <div class="ops-panel-head"><div><h2>Cartões individuais</h2><div class="muted">Para entregar ao cliente e usar com mesa ou no balcão.</div></div></div>
+                <div class="bar-qr-grid" id="barAccessCardGrid"></div>
+              </section>
             </div>
           </div>
         </div>
@@ -5851,6 +6050,27 @@
       </div>
     </div>
 
+    <div class="admin-modal-overlay" id="barAccessCardModal" aria-hidden="true">
+      <div class="admin-modal bar-table-modal" role="dialog" aria-modal="true" aria-labelledby="barAccessCardModalTitle">
+        <div class="admin-modal-head">
+          <div><h2 id="barAccessCardModalTitle">Novo cartão individual</h2><div class="muted">Crie um acesso reutilizável para o cardápio online.</div></div>
+          <button class="ghost-btn" type="button" id="barAccessCardModalClose">Fechar</button>
+        </div>
+        <div class="admin-modal-body">
+          <form class="form-grid" id="barAccessCardForm">
+            <input id="barAccessCardId" type="hidden" />
+            <div class="field full"><label for="barAccessCardLabel">Nome do cartão</label><input id="barAccessCardLabel" placeholder="Ex.: Cartão avulso 04" maxlength="80" required /></div>
+            <div class="field full"><label for="barAccessCardNotes">Observação interna</label><input id="barAccessCardNotes" placeholder="Ex.: uso no deck ou retirada no balcão" maxlength="180" /></div>
+            <div class="field full"><label for="barAccessCardActive">Status</label><select id="barAccessCardActive"><option value="true">Ativo</option><option value="false">Inativo</option></select></div>
+          </form>
+        </div>
+        <div class="modal-actions">
+          <button class="ghost-btn" type="button" id="barAccessCardCancelBtn">Cancelar</button>
+          <button class="primary-btn" type="submit" form="barAccessCardForm" id="barAccessCardSaveBtn">Salvar cartão</button>
+        </div>
+      </div>
+    </div>
+
     <div class="admin-modal-overlay" id="barCommandModal" aria-hidden="true">
       <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="barCommandModalTitle">
         <div class="admin-modal-head">
@@ -5892,7 +6112,8 @@
         </div>
         <div class="modal-actions">
           <button class="ghost-btn" type="button" id="barQrCopyBtn">Copiar link</button>
-          <a class="primary-btn" id="barQrOpenBtn" href="#" target="_blank" rel="noopener">Abrir QR Code</a>
+          <a class="ghost-btn" id="barQrOpenBtn" href="#" target="_blank" rel="noopener">Abrir QR Code</a>
+          <a class="primary-btn" id="barQrTestBtn" href="#" target="_blank" rel="noopener">Testar cardápio</a>
         </div>
       </div>
     </div>
@@ -10052,6 +10273,9 @@
       barFinanceFilter: 'abertos',
       selectedBarOrderId: null,
       selectedBarQrUrl: '',
+      selectedBarQrLabel: '',
+      barAlertsEnabled: localStorage.getItem('ilha-bar-alerts-enabled') === 'true',
+      barKnownIncomingIds: null,
       barDataLoaded: false,
       barSchemaReady: true,
       loaded: false
@@ -10166,13 +10390,18 @@
         { id: 'bar_table_5', number: 5, name: 'Mesa 5', seats: 4, qrToken: 'ilha-mesa-5', active: true, notes: '' },
         { id: 'bar_table_6', number: 6, name: 'Mesa 6', seats: 4, qrToken: 'ilha-mesa-6', active: true, notes: '' }
       ],
+      barAccessCards: [
+        { id: 'bar_card_1', code: 1, label: 'Cartão avulso 01', token: 'ilha-cartao-avulso-01', active: true, notes: 'Mesa ou retirada no balcão' },
+        { id: 'bar_card_2', code: 2, label: 'Cartão avulso 02', token: 'ilha-cartao-avulso-02', active: true, notes: 'Mesa ou retirada no balcão' },
+        { id: 'bar_card_3', code: 3, label: 'Cartão avulso 03', token: 'ilha-cartao-avulso-03', active: true, notes: 'Mesa ou retirada no balcão' }
+      ],
       barOrders: [
-        { id: 'bar_order_1', tableId: 'bar_table_2', commandNumber: 101, customerName: 'Mesa 2', status: 'EM_PREPARO', subtotal: 33, serviceCharge: 0, discount: 0, total: 33, paymentStatus: 'ABERTO', paymentMethod: '', openedAt: new Date().toISOString(), closedAt: '' }
+        { id: 'bar_order_1', tableId: 'bar_table_2', commandNumber: 101, customerName: 'Leandro', source: 'QR_MESA', status: 'EM_PREPARO', subtotal: 33, serviceCharge: 0, discount: 0, total: 33, paymentStatus: 'ABERTO', paymentMethod: '', openedAt: new Date().toISOString(), closedAt: '' }
       ],
       barOrderItems: [
-        { id: 'bar_item_1', orderId: 'bar_order_1', productId: 'bar_product_beer', productName: 'Cerveja long neck', quantity: 1, unitPrice: 12, costPrice: 6, status: 'ENTREGUE', notes: '' },
-        { id: 'bar_item_2', orderId: 'bar_order_1', productId: 'bar_product_sandwich', productName: 'Sanduíche natural', quantity: 1, unitPrice: 16, costPrice: 8, status: 'EM_PREPARO', notes: 'Sem tomate' },
-        { id: 'bar_item_3', orderId: 'bar_order_1', productId: 'bar_product_water', productName: 'Água mineral', quantity: 1, unitPrice: 5, costPrice: 2, status: 'SOLICITADO', notes: 'Sem gelo' }
+        { id: 'bar_item_1', orderId: 'bar_order_1', productId: 'bar_product_beer', productName: 'Cerveja long neck', customerName: 'Leandro', source: 'QR_MESA', quantity: 1, unitPrice: 12, costPrice: 6, status: 'ENTREGUE', notes: '' },
+        { id: 'bar_item_2', orderId: 'bar_order_1', productId: 'bar_product_sandwich', productName: 'Sanduíche natural', customerName: 'Leandro', source: 'QR_MESA', quantity: 1, unitPrice: 16, costPrice: 8, status: 'EM_PREPARO', notes: 'Sem tomate' },
+        { id: 'bar_item_3', orderId: 'bar_order_1', productId: 'bar_product_water', productName: 'Água mineral', customerName: 'Leandro', source: 'QR_MESA', quantity: 1, unitPrice: 5, costPrice: 2, status: 'SOLICITADO', notes: 'Sem gelo' }
       ],
       barInventory: [],
       barFinance: [],
@@ -10181,6 +10410,7 @@
     const opsSeedData = JSON.parse(JSON.stringify(opsData));
     let courtRefreshTimer = null;
     let barRefreshTimer = null;
+    let barAudioContext = null;
 
     function setClubMode(mode) {
       ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-courts', 'club-finance', 'club-bar', 'club-store', 'club-announcements', 'club-communication', 'club-clients', 'club-team', 'club-database'].forEach(function (className) {
@@ -10511,6 +10741,18 @@
       };
     }
 
+    function mapBarAccessCardRow(row) {
+      return {
+        id: row.id || '',
+        code: Number(row.code || 0),
+        label: row.label || ('Cartão avulso ' + String(row.code || '').padStart(2, '0')),
+        token: row.token || '',
+        active: row.active !== false,
+        notes: row.notes || '',
+        created: row.created_at || ''
+      };
+    }
+
     function mapBarOrderRow(row) {
       const table = row.bar_tables || {};
       return {
@@ -10520,6 +10762,8 @@
         tableNumber: table.number || '',
         commandNumber: row.command_number || '',
         customerName: row.customer_name || '',
+        publicAccessId: row.public_access_id || '',
+        source: row.source || 'EQUIPE',
         status: row.status || 'ABERTA',
         subtotal: Number(row.subtotal || 0),
         serviceCharge: Number(row.service_charge || 0),
@@ -10542,6 +10786,8 @@
         quantity: Number(row.quantity || 0),
         unitPrice: Number(row.unit_price || 0),
         costPrice: Number(row.cost_price || 0),
+        customerName: row.customer_name || '',
+        source: row.source || 'EQUIPE',
         status: row.status || 'SOLICITADO',
         notes: row.notes || '',
         created: row.created_at || ''
@@ -10594,7 +10840,8 @@
           supabaseRest('bar_orders?select=*,bar_tables(number,name)&order=opened_at.desc'),
           supabaseRest('bar_order_items?select=*&order=created_at.asc'),
           supabaseRest('bar_inventory_movements?select=*&order=occurred_at.desc&limit=200'),
-          supabaseRest('bar_financial_entries?select=*&order=created_at.desc')
+          supabaseRest('bar_financial_entries?select=*&order=created_at.desc'),
+          supabaseRest('bar_public_cards?select=*&order=code.asc')
         ]);
         opsData.barProducts = results[0].map(mapBarProductRow);
         opsData.barTables = results[1].map(mapBarTableRow);
@@ -10602,6 +10849,8 @@
         opsData.barOrderItems = results[3].map(mapBarOrderItemRow);
         opsData.barInventory = results[4].map(mapBarInventoryRow);
         opsData.barFinance = results[5].map(mapBarFinanceRow);
+        opsData.barAccessCards = results[6].map(mapBarAccessCardRow);
+        handleBarIncomingChanges(opsData.barOrderItems);
         opsState.barDataLoaded = true;
         opsState.barSchemaReady = true;
       } catch (error) {
@@ -10611,6 +10860,7 @@
         opsData.barOrderItems = [];
         opsData.barInventory = [];
         opsData.barFinance = [];
+        opsData.barAccessCards = [];
         opsState.barSchemaReady = false;
         opsState.barDataLoaded = true;
         console.info('Tabelas do Bar ainda nao disponiveis no Supabase.', error && error.message);
@@ -11253,6 +11503,10 @@
       return opsData.barTables.find(function (table) { return String(table.id) === String(id); });
     }
 
+    function barAccessCardById(id) {
+      return (opsData.barAccessCards || []).find(function (card) { return String(card.id) === String(id); });
+    }
+
     function barProductById(id) {
       return opsData.barProducts.find(function (product) { return String(product.id) === String(id); });
     }
@@ -11317,6 +11571,119 @@
       return '<span class="ops-pill ' + kind + '">' + escapeHtml(barStatusLabel(value)) + '</span>';
     }
 
+    function barOrderSourceLabel(source) {
+      const labels = { QR_MESA: 'QR da mesa', QR_CARTAO: 'Cartão QR', EQUIPE: 'Equipe' };
+      return labels[String(source || '').toUpperCase()] || 'Equipe';
+    }
+
+    function isPublicBarItem(item) {
+      return ['QR_MESA', 'QR_CARTAO'].includes(String(item && item.source || '').toUpperCase());
+    }
+
+    function incomingBarItems() {
+      return opsData.barOrderItems.filter(function (item) {
+        return isPublicBarItem(item) && ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(String(item.status || '').toUpperCase());
+      });
+    }
+
+    function newIncomingBarOrderCount() {
+      return new Set(opsData.barOrderItems.filter(function (item) {
+        return isPublicBarItem(item) && String(item.status || '').toUpperCase() === 'SOLICITADO';
+      }).map(function (item) { return String(item.orderId); })).size;
+    }
+
+    function updateBarOrderBadges() {
+      const count = newIncomingBarOrderCount();
+      ['barOrdersNavBadge', 'barOrdersTabBadge'].forEach(function (id) {
+        const badge = $(id);
+        if (!badge) return;
+        badge.textContent = count;
+        badge.hidden = count === 0;
+      });
+    }
+
+    function updateBarAlertsButton() {
+      const button = $('barEnableAlertsBtn');
+      if (!button) return;
+      button.classList.toggle('alerts-active', opsState.barAlertsEnabled);
+      const label = button.querySelector('span');
+      if (label) label.textContent = opsState.barAlertsEnabled ? 'Alertas ativos' : 'Ativar alertas';
+    }
+
+    function playBarOrderSound() {
+      if (!opsState.barAlertsEnabled) return;
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        barAudioContext = barAudioContext || new AudioContextClass();
+        const now = barAudioContext.currentTime;
+        const oscillator = barAudioContext.createOscillator();
+        const gain = barAudioContext.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(740, now);
+        oscillator.frequency.setValueAtTime(980, now + .12);
+        gain.gain.setValueAtTime(.0001, now);
+        gain.gain.exponentialRampToValueAtTime(.2, now + .02);
+        gain.gain.exponentialRampToValueAtTime(.0001, now + .34);
+        oscillator.connect(gain);
+        gain.connect(barAudioContext.destination);
+        oscillator.start(now);
+        oscillator.stop(now + .36);
+      } catch (error) {
+        console.info('Alerta sonoro indisponível.', error && error.message);
+      }
+    }
+
+    function notifyNewBarOrders(items) {
+      if (!items.length) return;
+      const orderIds = new Set(items.map(function (item) { return String(item.orderId); }));
+      const message = orderIds.size === 1 ? 'Novo pedido recebido no Bar.' : orderIds.size + ' novos pedidos recebidos no Bar.';
+      toast(message);
+      playBarOrderSound();
+      if (opsState.barAlertsEnabled && 'Notification' in window && Notification.permission === 'granted' && document.hidden) {
+        const notification = new Notification('Ilha Bar', { body: message, icon: '../icon.png', tag: 'ilha-bar-pedido' });
+        notification.onclick = function () {
+          window.focus();
+          setBarTab('orders');
+          notification.close();
+        };
+      }
+    }
+
+    function handleBarIncomingChanges(items) {
+      const publicItems = (items || []).filter(isPublicBarItem);
+      const currentIds = new Set(publicItems.map(function (item) { return String(item.id); }));
+      if (opsState.barKnownIncomingIds === null) {
+        opsState.barKnownIncomingIds = currentIds;
+        return;
+      }
+      const fresh = publicItems.filter(function (item) {
+        return !opsState.barKnownIncomingIds.has(String(item.id)) && String(item.status || '').toUpperCase() === 'SOLICITADO';
+      });
+      opsState.barKnownIncomingIds = currentIds;
+      notifyNewBarOrders(fresh);
+    }
+
+    async function enableBarAlerts() {
+      opsState.barAlertsEnabled = true;
+      localStorage.setItem('ilha-bar-alerts-enabled', 'true');
+      if ('Notification' in window && Notification.permission === 'default') {
+        try { await Notification.requestPermission(); } catch (error) { console.info('Notificação do navegador indisponível.'); }
+      }
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          barAudioContext = barAudioContext || new AudioContextClass();
+          if (barAudioContext.state === 'suspended') await barAudioContext.resume();
+        }
+      } catch (error) {
+        console.info('Áudio do navegador indisponível.');
+      }
+      updateBarAlertsButton();
+      playBarOrderSound();
+      toast('Alertas de novos pedidos ativados.');
+    }
+
     function barDateTimeLabel(value) {
       if (!value) return '';
       const date = new Date(value);
@@ -11331,11 +11698,49 @@
     function barOrderCard(order) {
       const items = barActiveItemsForOrder(order.id);
       const pending = items.filter(function (item) { return ['SOLICITADO', 'EM_PREPARO'].includes(item.status); }).length;
+      const sourceMeta = order.source && order.source !== 'EQUIPE' ? ' | ' + barOrderSourceLabel(order.source) : '';
+      const customerMeta = order.customerName && order.customerName !== barTableLabel(order) ? ' | ' + order.customerName : '';
       return '<article class="bar-order-card' + (order.status === 'PRONTA' ? ' is-ready' : '') + '">' +
         '<div class="bar-order-top"><div><strong>' + escapeHtml(barTableLabel(order)) + '</strong><span class="bar-order-number">Comanda #' + escapeHtml(order.commandNumber || String(order.id).slice(-4)) + '</span></div>' + barStatusPill(order.status) + '</div>' +
-        '<div class="muted">' + items.length + ' item(ns)' + (pending ? ' | ' + pending + ' aguardando' : '') + (order.openedAt ? ' | ' + escapeHtml(barDateTimeLabel(order.openedAt)) : '') + '</div>' +
+        '<div class="muted">' + items.length + ' item(ns)' + (pending ? ' | ' + pending + ' aguardando' : '') + escapeHtml(customerMeta + sourceMeta) + (order.openedAt ? ' | ' + escapeHtml(barDateTimeLabel(order.openedAt)) : '') + '</div>' +
         '<div class="bar-order-total"><strong>' + money(barOrderTotal(order)) + '</strong><button class="small-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button></div>' +
       '</article>';
+    }
+
+    function renderBarIncomingOrders() {
+      const items = incomingBarItems();
+      const grouped = new Map();
+      items.forEach(function (item) {
+        const key = String(item.orderId);
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(item);
+      });
+      const rows = Array.from(grouped.entries()).map(function (entry) {
+        const order = barOrderById(entry[0]);
+        const orderItems = entry[1].slice().sort(function (a, b) { return String(a.created).localeCompare(String(b.created)); });
+        return { order: order, items: orderItems, created: orderItems[0] && orderItems[0].created || order && order.openedAt || '' };
+      }).filter(function (entry) { return entry.order; }).sort(function (a, b) {
+        return String(a.created).localeCompare(String(b.created));
+      });
+
+      $('barIncomingOrders').innerHTML = rows.map(function (entry) {
+        const order = entry.order;
+        const requested = entry.items.filter(function (item) { return item.status === 'SOLICITADO'; }).length;
+        const names = Array.from(new Set(entry.items.map(function (item) { return item.customerName; }).filter(Boolean)));
+        const table = barTableById(order.tableId);
+        const card = barAccessCardById(order.publicAccessId);
+        const location = table ? table.name : 'Retirada no balcão';
+        const access = card ? card.label : barOrderSourceLabel(order.source || entry.items[0].source);
+        const itemTags = entry.items.map(function (item) {
+          const customer = item.customerName && names.length > 1 ? ' | ' + item.customerName : '';
+          return '<span class="bar-incoming-item">' + escapeHtml(Number(item.quantity).toLocaleString('pt-BR') + 'x ' + item.productName + customer) + '</span>';
+        }).join('');
+        return '<article class="bar-incoming-card"><div class="bar-incoming-main"><div class="bar-incoming-head"><strong>' + escapeHtml(location) + '</strong>' + (requested ? '<span class="ops-pill warn">Novo</span>' : barStatusPill(entry.items[0].status)) + '</div>' +
+          '<div class="bar-incoming-meta">' + escapeHtml((names.join(', ') || order.customerName || 'Cliente') + ' | ' + access + ' | Comanda #' + (order.commandNumber || String(order.id).slice(-4))) + '</div>' +
+          '<div class="bar-incoming-items">' + itemTags + '</div></div>' +
+          '<div class="bar-incoming-actions"><span class="bar-incoming-time">' + escapeHtml(barDateTimeLabel(entry.created)) + '</span><button class="small-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir pedido</button></div></article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhum pedido online aguardando.</div>';
+      updateBarOrderBadges();
     }
 
     function barTableCard(table) {
@@ -11514,12 +11919,26 @@
       return origin + '/bar/?mesa=' + encodeURIComponent(table.number) + '&token=' + encodeURIComponent(table.qrToken || table.id);
     }
 
+    function barAccessCardUrl(card) {
+      const origin = window.location.origin && window.location.origin !== 'null' ? window.location.origin : 'https://app.ilhatenis.com';
+      return origin + '/bar/?cartao=' + encodeURIComponent(card.code) + '&token=' + encodeURIComponent(card.token || card.id);
+    }
+
+    function barQrImageFromUrl(url, size) {
+      return 'https://api.qrserver.com/v1/create-qr-code/?size=' + (size || 320) + 'x' + (size || 320) + '&margin=16&data=' + encodeURIComponent(url);
+    }
+
     function barQrImageUrl(table, size) {
-      return 'https://api.qrserver.com/v1/create-qr-code/?size=' + (size || 320) + 'x' + (size || 320) + '&margin=16&data=' + encodeURIComponent(barQrUrl(table));
+      return barQrImageFromUrl(barQrUrl(table), size);
     }
 
     function barQrCard(table) {
-      return '<article class="bar-qr-card"><div class="bar-qr-card-visual"><img src="' + escapeHtml(barQrImageUrl(table, 240)) + '" alt="QR Code da ' + escapeHtml(table.name) + '" loading="lazy" /></div><div class="bar-qr-card-content"><div class="bar-qr-card-head"><div><h3>' + escapeHtml(table.name) + '</h3><p>Mesa ' + escapeHtml(table.number) + ' | ' + escapeHtml(table.seats) + ' lugares</p></div><span class="ops-pill good">Ativo</span></div><div class="bar-qr-card-actions"><button class="small-btn" type="button" data-bar-qr="' + escapeHtml(table.id) + '"><svg><use href="#admin-icon-qr"></use></svg>Ampliar</button><button class="small-btn" type="button" data-bar-copy-qr="' + escapeHtml(table.id) + '"><svg><use href="#bar-icon-link"></use></svg>Copiar link</button></div></div></article>';
+      return '<article class="bar-qr-card"><div class="bar-qr-card-visual"><img src="' + escapeHtml(barQrImageUrl(table, 240)) + '" alt="QR Code da ' + escapeHtml(table.name) + '" loading="lazy" /></div><div class="bar-qr-card-content"><div class="bar-qr-card-head"><div><h3>' + escapeHtml(table.name) + '</h3><p>Mesa ' + escapeHtml(table.number) + ' | ' + escapeHtml(table.seats) + ' lugares</p></div><span class="ops-pill good">Ativo</span></div><div class="bar-qr-card-actions"><button class="small-btn" type="button" data-bar-qr-kind="table" data-bar-qr="' + escapeHtml(table.id) + '"><svg><use href="#admin-icon-qr"></use></svg>Ampliar</button><button class="small-btn" type="button" data-bar-copy-qr-kind="table" data-bar-copy-qr="' + escapeHtml(table.id) + '"><svg><use href="#bar-icon-link"></use></svg>Copiar link</button></div></div></article>';
+    }
+
+    function barAccessCardQrCard(card) {
+      const url = barAccessCardUrl(card);
+      return '<article class="bar-qr-card' + (card.active ? '' : ' is-inactive') + '"><div class="bar-qr-card-visual"><img src="' + escapeHtml(barQrImageFromUrl(url, 240)) + '" alt="QR Code do ' + escapeHtml(card.label) + '" loading="lazy" /></div><div class="bar-qr-card-content"><div class="bar-qr-card-head"><div><h3>' + escapeHtml(card.label) + '</h3><p>' + escapeHtml(card.notes || 'Mesa ou retirada no balcão') + '</p></div>' + statusPill(card.active ? 'ATIVO' : 'INATIVO') + '</div><div class="bar-qr-card-actions"><button class="small-btn" type="button" data-bar-qr-kind="card" data-bar-qr="' + escapeHtml(card.id) + '"><svg><use href="#admin-icon-qr"></use></svg>Ampliar</button><button class="small-btn" type="button" data-bar-copy-qr-kind="card" data-bar-copy-qr="' + escapeHtml(card.id) + '"><svg><use href="#bar-icon-link"></use></svg>Copiar link</button><button class="small-btn" type="button" data-bar-card-edit="' + escapeHtml(card.id) + '"><svg><use href="#bar-icon-edit"></use></svg>Editar</button></div></div></article>';
     }
 
     function renderBarTablesAndQr() {
@@ -11534,6 +11953,7 @@
       $('barTableBoard').innerHTML = activeTables.map(barTableCard).join('') || '<div class="lesson-empty-state">Cadastre a primeira mesa na área Mesas.</div>';
       $('barTableManagementGrid').innerHTML = allTables.map(barTableManagementCard).join('') || '<div class="lesson-empty-state">Nenhuma mesa cadastrada.</div>';
       $('barQrGrid').innerHTML = activeTables.map(barQrCard).join('') || '<div class="lesson-empty-state">Cadastre uma mesa ativa para gerar o QR Code.</div>';
+      $('barAccessCardGrid').innerHTML = (opsData.barAccessCards || []).map(barAccessCardQrCard).join('') || '<div class="lesson-empty-state">Crie o primeiro cartão individual.</div>';
     }
 
     function renderBarModule() {
@@ -11552,6 +11972,8 @@
       $('barPendingItemsMetric').textContent = pendingItems.length;
       $('barLowStockMetric').textContent = lowStock.length;
       $('barTodaySalesMetric').textContent = money(todaySales);
+      renderBarIncomingOrders();
+      updateBarAlertsButton();
       $('barOverviewOrders').innerHTML = openOrders.map(barOrderCard).join('') || '<div class="lesson-empty-state">Nenhuma comanda aberta.</div>';
       $('barLowStockList').innerHTML = lowStock.map(function (product) {
         return '<div class="bar-stock-alert"><div><strong>' + escapeHtml(product.name) + '</strong><div class="muted">Mínimo: ' + escapeHtml(Number(product.minimumStock || 0).toLocaleString('pt-BR')) + ' ' + escapeHtml(product.unit) + '</div></div><span class="ops-pill bad">' + escapeHtml(Number(product.stock || 0).toLocaleString('pt-BR')) + ' ' + escapeHtml(product.unit) + '</span></div>';
@@ -11569,14 +11991,15 @@
       if (!order) return;
       const items = barItemsForOrder(order.id);
       $('barCommandModalTitle').textContent = barTableLabel(order);
-      $('barCommandModalSubtitle').textContent = 'Comanda #' + (order.commandNumber || String(order.id).slice(-4)) + ' | ' + barStatusLabel(order.status);
+      $('barCommandModalSubtitle').textContent = ['Comanda #' + (order.commandNumber || String(order.id).slice(-4)), order.customerName, barOrderSourceLabel(order.source), barStatusLabel(order.status)].filter(Boolean).join(' | ');
       $('barCommandItems').innerHTML = items.map(function (item) {
         const cancelled = item.status === 'CANCELADO';
+        const itemMeta = [item.customerName, item.notes, barStatusLabel(item.status)].filter(Boolean).join(' | ');
         let nextAction = '';
         if (!cancelled && item.status === 'SOLICITADO') nextAction = '<button class="small-btn" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="EM_PREPARO">Preparar</button>';
         if (!cancelled && item.status === 'EM_PREPARO') nextAction = '<button class="small-btn" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="PRONTO">Pronto</button>';
         if (!cancelled && item.status === 'PRONTO') nextAction = '<button class="small-btn" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="ENTREGUE">Entregar</button>';
-        return '<article class="bar-item-row' + (cancelled ? ' cancelled' : '') + '"><div class="bar-item-main"><div class="bar-item-copy"><strong>' + escapeHtml(item.quantity + 'x ' + item.productName) + '</strong><small>' + escapeHtml(item.notes || barStatusLabel(item.status)) + '</small></div><span class="bar-item-price">' + money(item.quantity * item.unitPrice) + '</span></div><div class="bar-row-actions">' + barStatusPill(item.status) + nextAction + (cancelled ? '' : '<button class="small-btn" type="button" data-bar-item-cancel="' + escapeHtml(item.id) + '">Cancelar</button>') + '</div></article>';
+        return '<article class="bar-item-row' + (cancelled ? ' cancelled' : '') + '"><div class="bar-item-main"><div class="bar-item-copy"><strong>' + escapeHtml(item.quantity + 'x ' + item.productName) + '</strong><small>' + escapeHtml(itemMeta) + '</small></div><span class="bar-item-price">' + money(item.quantity * item.unitPrice) + '</span></div><div class="bar-row-actions">' + barStatusPill(item.status) + nextAction + (cancelled ? '' : '<button class="small-btn" type="button" data-bar-item-cancel="' + escapeHtml(item.id) + '">Cancelar</button>') + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Comanda vazia. Adicione o primeiro produto.</div>';
       $('barCommandTotal').textContent = money(barOrderTotal(order));
       $('barOrderItemForm').style.display = barOrderIsOpen(order) ? 'grid' : 'none';
@@ -11604,16 +12027,20 @@
       opsState.selectedBarOrderId = null;
     }
 
-    function openBarQrModal(tableId) {
-      const table = barTableById(tableId);
-      if (!table) return;
-      const url = barQrUrl(table);
-      const qrUrl = barQrImageUrl(table, 500);
+    function openBarQrModal(kind, id) {
+      const entry = barQrAccess(kind, id);
+      if (!entry) return;
+      const url = barQrAccessUrl(kind, entry);
+      const qrUrl = barQrImageFromUrl(url, 500);
+      const label = kind === 'card' ? entry.label : entry.name;
       opsState.selectedBarQrUrl = url;
-      $('barQrModalTitle').textContent = 'QR Code | ' + table.name;
+      opsState.selectedBarQrLabel = label;
+      $('barQrModalTitle').textContent = 'QR Code | ' + label;
       $('barQrPreview').src = qrUrl;
+      $('barQrPreview').alt = 'QR Code | ' + label;
       $('barQrUrl').textContent = url;
       $('barQrOpenBtn').href = qrUrl;
+      $('barQrTestBtn').href = url;
       $('barQrModal').classList.add('show');
       $('barQrModal').setAttribute('aria-hidden', 'false');
     }
@@ -11621,6 +12048,7 @@
     function closeBarQrModal() {
       $('barQrModal').classList.remove('show');
       $('barQrModal').setAttribute('aria-hidden', 'true');
+      opsState.selectedBarQrLabel = '';
     }
 
     function openBarModule() {
@@ -11636,6 +12064,7 @@
         opsData.barOrderItems = [];
         opsData.barInventory = [];
         opsData.barFinance = [];
+        opsData.barAccessCards = [];
       }
       renderBarModule();
       loadBarData(false).then(renderBarModule).catch(reportActionError);
@@ -11646,7 +12075,7 @@
             renderBarModule();
             if (opsState.selectedBarOrderId) renderBarCommandModal();
           }).catch(reportActionError);
-        }, 6000);
+        }, 4000);
       }
     }
 
@@ -11987,14 +12416,99 @@
       openBarTableModal(table);
     }
 
-    function copyBarQrLink(tableId) {
-      const table = barTableById(tableId);
-      if (!table) return;
-      const value = barQrUrl(table);
+    function barQrAccess(kind, id) {
+      return kind === 'card' ? barAccessCardById(id) : barTableById(id);
+    }
+
+    function barQrAccessUrl(kind, entry) {
+      return kind === 'card' ? barAccessCardUrl(entry) : barQrUrl(entry);
+    }
+
+    function copyBarQrLink(kind, id) {
+      const entry = barQrAccess(kind, id);
+      if (!entry) return;
+      const value = barQrAccessUrl(kind, entry);
       if (navigator.clipboard) {
-        navigator.clipboard.writeText(value).then(function () { toast('Link da mesa copiado.'); }).catch(function () { toast(value); });
+        navigator.clipboard.writeText(value).then(function () { toast('Link do cardápio copiado.'); }).catch(function () { toast(value); });
       } else {
         toast(value);
+      }
+    }
+
+    function resetBarAccessCardForm() {
+      $('barAccessCardForm').reset();
+      $('barAccessCardId').value = '';
+      $('barAccessCardActive').value = 'true';
+      const nextCode = (opsData.barAccessCards || []).reduce(function (max, item) { return Math.max(max, Number(item.code || 0)); }, 0) + 1;
+      $('barAccessCardLabel').value = 'Cartão avulso ' + String(nextCode).padStart(2, '0');
+      $('barAccessCardModalTitle').textContent = 'Novo cartão individual';
+      $('barAccessCardSaveBtn').textContent = 'Salvar cartão';
+    }
+
+    function openBarAccessCardModal(card) {
+      resetBarAccessCardForm();
+      if (card) {
+        $('barAccessCardId').value = card.id;
+        $('barAccessCardLabel').value = card.label;
+        $('barAccessCardNotes').value = card.notes || '';
+        $('barAccessCardActive').value = String(card.active !== false);
+        $('barAccessCardModalTitle').textContent = 'Editar cartão individual';
+        $('barAccessCardSaveBtn').textContent = 'Salvar alterações';
+      }
+      $('barAccessCardModal').classList.add('show');
+      $('barAccessCardModal').setAttribute('aria-hidden', 'false');
+      setTimeout(function () { $('barAccessCardLabel').focus(); }, 80);
+    }
+
+    function closeBarAccessCardModal() {
+      $('barAccessCardModal').classList.remove('show');
+      $('barAccessCardModal').setAttribute('aria-hidden', 'true');
+      resetBarAccessCardForm();
+    }
+
+    async function saveBarAccessCardAction(event) {
+      event.preventDefault();
+      try {
+        requireAdminSession();
+        const currentId = $('barAccessCardId').value;
+        const current = currentId ? barAccessCardById(currentId) : null;
+        const label = $('barAccessCardLabel').value.trim();
+        if (label.length < 3) throw new Error('Informe o nome do cartão.');
+        const payload = {
+          label: label,
+          notes: $('barAccessCardNotes').value.trim() || null,
+          active: $('barAccessCardActive').value === 'true',
+          updated_at: new Date().toISOString()
+        };
+        let finalCard;
+        if (barCanPersist(currentId)) {
+          if (currentId) {
+            const saved = await supabaseRest('bar_public_cards?id=eq.' + encodeURIComponent(currentId), { method: 'PATCH', body: payload, prefer: 'return=representation' });
+            finalCard = mapBarAccessCardRow(Array.isArray(saved) ? saved[0] : saved);
+          } else {
+            delete payload.updated_at;
+            finalCard = mapBarAccessCardRow(await supabaseInsert('bar_public_cards', payload));
+          }
+        } else {
+          const nextCode = (opsData.barAccessCards || []).reduce(function (max, item) { return Math.max(max, Number(item.code || 0)); }, 0) + 1;
+          finalCard = {
+            id: currentId || localId('bar_card'),
+            code: current && current.code || nextCode,
+            label: label,
+            token: current && current.token || localId('ilha-cartao'),
+            active: payload.active,
+            notes: payload.notes || '',
+            created: current && current.created || new Date().toISOString()
+          };
+        }
+        const index = (opsData.barAccessCards || []).findIndex(function (card) { return String(card.id) === String(finalCard.id); });
+        if (index >= 0) opsData.barAccessCards.splice(index, 1, finalCard);
+        else opsData.barAccessCards.push(finalCard);
+        closeBarAccessCardModal();
+        renderBarModule();
+        toast(currentId ? 'Cartão atualizado.' : 'Cartão criado.');
+      } catch (error) {
+        reportActionError(error);
       }
     }
 
@@ -14245,6 +14759,7 @@
         opsState.barDataLoaded = false;
         loadBarData(true).then(renderBarModule).catch(reportActionError);
       });
+      $('barEnableAlertsBtn').addEventListener('click', enableBarAlerts);
       $('barNewOrderBtn').addEventListener('click', function () {
         const hasTables = opsData.barTables.some(function (table) { return table.active; });
         opsState.barTab = hasTables ? 'orders' : 'tables';
@@ -14281,6 +14796,15 @@
       $('barTableCancelBtn').addEventListener('click', closeBarTableModal);
       $('barTableModal').addEventListener('click', function (event) {
         if (event.target.id === 'barTableModal') closeBarTableModal();
+      });
+      $('barAddAccessCardBtn').addEventListener('click', function () {
+        openBarAccessCardModal();
+      });
+      $('barAccessCardForm').addEventListener('submit', saveBarAccessCardAction);
+      $('barAccessCardModalClose').addEventListener('click', closeBarAccessCardModal);
+      $('barAccessCardCancelBtn').addEventListener('click', closeBarAccessCardModal);
+      $('barAccessCardModal').addEventListener('click', function (event) {
+        if (event.target.id === 'barAccessCardModal') closeBarAccessCardModal();
       });
       $('barFinanceForm').addEventListener('submit', saveBarFinanceAction);
       $('barOrderItemForm').addEventListener('submit', addBarOrderItemAction);
@@ -14340,11 +14864,19 @@
         }
         const qrCopyBtn = event.target.closest('[data-bar-copy-qr]');
         if (qrCopyBtn) {
-          copyBarQrLink(qrCopyBtn.dataset.barCopyQr);
+          copyBarQrLink(qrCopyBtn.dataset.barCopyQrKind || 'table', qrCopyBtn.dataset.barCopyQr);
           return;
         }
         const qrBtn = event.target.closest('[data-bar-qr]');
-        if (qrBtn) openBarQrModal(qrBtn.dataset.barQr);
+        if (qrBtn) {
+          openBarQrModal(qrBtn.dataset.barQrKind || 'table', qrBtn.dataset.barQr);
+          return;
+        }
+        const cardEditBtn = event.target.closest('[data-bar-card-edit]');
+        if (cardEditBtn) {
+          const card = barAccessCardById(cardEditBtn.dataset.barCardEdit);
+          if (card) openBarAccessCardModal(card);
+        }
       });
       $('barCommandModal').addEventListener('click', function (event) {
         const statusBtn = event.target.closest('[data-bar-item-status]');
@@ -14370,7 +14902,7 @@
       $('barQrCopyBtn').addEventListener('click', function () {
         const value = opsState.selectedBarQrUrl || '';
         if (navigator.clipboard && value) {
-          navigator.clipboard.writeText(value).then(function () { toast('Link da mesa copiado.'); }).catch(function () { toast(value); });
+          navigator.clipboard.writeText(value).then(function () { toast('Link do cardápio copiado.'); }).catch(function () { toast(value); });
         } else if (value) {
           toast(value);
         }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v48';
+const CACHE_NAME = 'ilha-play-v49';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,9 @@ const ASSETS = [
   './clientes/manifest.json',
   './adm/',
   './adm/index.html',
+  './bar/',
+  './bar/index.html',
+  './bar/manifest.json',
   './publico.html',
   './manifest.json',
   './icon.png',
