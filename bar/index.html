@@ -374,6 +374,14 @@
     .order-item-row > span { white-space: nowrap; font-weight: 900; }
     .order-total { display: flex; justify-content: space-between; gap: 12px; padding-top: 18px; font-size: 21px; font-weight: 900; }
     .order-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 22px; }
+    .service-request-panel { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); }
+    .service-request-panel h2 { margin: 0; font-size: 18px; }
+    .service-request-panel > p { margin: 5px 0 14px; color: var(--muted); font-size: 13px; line-height: 1.4; }
+    .service-request-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .service-request-btn { min-width: 0; padding: 10px 12px; }
+    .service-request-btn svg { flex: 0 0 auto; }
+    .service-request-btn.is-active { color: #725000; background: #fff5cf; border-color: #f0d37a; }
+    .service-request-note { margin-top: 12px; padding: 10px 12px; color: #365700; background: var(--lime-soft); border-radius: 7px; font-size: 12px; font-weight: 800; line-height: 1.4; }
 
     .toast {
       position: fixed;
@@ -423,6 +431,7 @@
       .sheet { max-height: calc(100vh - 16px); border-radius: 8px 8px 0 0; }
       .order-panel { padding: 19px 16px; }
       .order-actions { grid-template-columns: 1fr; }
+      .service-request-actions { grid-template-columns: 1fr; }
       .status-step { font-size: 10px; }
     }
     @media (max-width: 370px) {
@@ -442,6 +451,8 @@
     <symbol id="icon-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
     <symbol id="icon-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
     <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 6v5h-5M4 18v-5h5"/><path d="M6.1 9A7 7 0 0 1 18 6l2 2M17.9 15A7 7 0 0 1 6 18l-2-2"/></symbol>
+    <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></symbol>
+    <symbol id="icon-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6M9 12h6"/></symbol>
     <symbol id="icon-glass" viewBox="0 0 24 24"><path d="M8 2h8l-1 9a3 3 0 0 1-6 0L8 2Z"/><path d="M12 14v7M8 21h8"/></symbol>
     <symbol id="icon-beer" viewBox="0 0 24 24"><path d="M6 7h10v13H6zM16 10h2a3 3 0 0 1 0 6h-2M8 4h6M9 7V4M13 7V4"/></symbol>
     <symbol id="icon-water" viewBox="0 0 24 24"><path d="M12 2s6 7 6 12a6 6 0 0 1-12 0c0-5 6-12 6-12Z"/></symbol>
@@ -468,9 +479,10 @@
           <form class="access-panel" id="accessForm">
             <div class="access-mark"><svg><use href="#icon-user"></use></svg></div>
             <h1>Bem-vindo ao Ilha Bar</h1>
-            <p>Informe seu nome para abrir o cardápio e fazer o pedido.</p>
+            <p>Informe seu nome e telefone para abrir o cardápio e acompanhar sua comanda.</p>
             <div class="access-location"><span><svg><use href="#icon-pin"></use></svg></span><div><strong id="accessLabel">Acesso do Bar</strong><small id="accessHint">Escolha onde você está.</small></div></div>
             <div class="form-field"><label for="customerName">Seu nome</label><input id="customerName" name="customerName" autocomplete="name" maxlength="80" placeholder="Como podemos chamar você?" required /></div>
+            <div class="form-field"><label for="customerPhone">Telefone</label><input id="customerPhone" name="customerPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="(27) 99999-9999" required /></div>
             <div class="form-field" id="tableField"><label for="tableSelect">Mesa</label><select id="tableSelect" name="tableSelect"></select></div>
             <button class="primary-btn access-submit" type="submit">Ver cardápio <svg><use href="#icon-arrow"></use></svg></button>
           </form>
@@ -524,6 +536,15 @@
 
     function money(value) {
       return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function normalizePhone(value) {
+      return String(value || '').replace(/\D/g, '');
+    }
+
+    function validPhone(value) {
+      const digits = normalizePhone(value);
+      return digits.length >= 10 && digits.length <= 13;
     }
 
     function escapeHtml(value) {
@@ -593,6 +614,7 @@
       if (fixed && state.tables[0]) $('tableSelect').value = state.tables[0].id;
       const saved = readSession();
       if (saved && saved.name) $('customerName').value = saved.name;
+      if (saved && saved.phone) $('customerPhone').value = saved.phone;
       if (!fixed && saved && saved.tableId && tableById(saved.tableId)) $('tableSelect').value = saved.tableId;
     }
 
@@ -689,11 +711,21 @@
       const steps = ['ABERTA', 'EM_PREPARO', 'PRONTA', 'FECHADA'];
       const index = order.status === 'CANCELADA' ? -1 : Math.max(0, steps.indexOf(order.status));
       const pillClass = order.status === 'EM_PREPARO' ? ' preparing' : order.status === 'PRONTA' ? ' ready' : order.status === 'FECHADA' ? ' closed' : '';
+      const openServiceRequests = (order.service_requests || []).filter(request => ['PENDENTE', 'EM_ATENDIMENTO'].includes(request.status));
+      const attendanceRequest = openServiceRequests.find(request => request.type === 'ATENDIMENTO');
+      const closeRequest = openServiceRequests.find(request => request.type === 'FECHAR_CONTA');
+      const requestNotes = openServiceRequests.map(request => request.type === 'FECHAR_CONTA'
+        ? (request.status === 'EM_ATENDIMENTO' ? 'A equipe está preparando sua conta.' : 'Pedido para fechar a conta enviado.')
+        : (request.status === 'EM_ATENDIMENTO' ? 'A equipe está indo atender você.' : 'Atendimento solicitado.')).join(' ');
       const items = (order.items || []).map(item => '<div class="order-item-row"><div><strong>' + escapeHtml(Number(item.quantity).toLocaleString('pt-BR') + 'x ' + item.name) + '</strong><small>' + escapeHtml([item.notes, itemStatusLabel(item.status)].filter(Boolean).join(' | ')) + '</small></div><span>' + money(Number(item.quantity) * Number(item.unit_price)) + '</span></div>').join('');
       $('orderPanel').innerHTML = '<div class="order-number"><div><span>Comanda</span><strong>#' + escapeHtml(order.command_number) + '</strong><small>' + escapeHtml(order.table_name || 'Balcão') + '</small></div><div class="status-pill' + pillClass + '">' + escapeHtml(orderStatusLabel(order.status)) + '</div></div>' +
         '<div class="status-track">' + ['Recebido', 'Preparando', 'Pronto', 'Finalizado'].map((label, stepIndex) => '<div class="status-step' + (index >= stepIndex ? ' done' : '') + '">' + label + '</div>').join('') + '</div>' +
         '<h2 class="order-items-title">Itens</h2>' + (items || '<div class="empty-menu">Carregando os itens...</div>') +
         '<div class="order-total"><span>Total</span><strong>' + money(order.total) + '</strong></div>' +
+        (['FECHADA', 'CANCELADA'].includes(order.status) ? '' : '<div class="service-request-panel"><h2>Precisa da equipe?</h2><p>Chame o atendimento ou avise quando quiser fechar a conta.</p><div class="service-request-actions">' +
+          '<button class="secondary-btn service-request-btn' + (attendanceRequest ? ' is-active' : '') + '" type="button" data-service-request="ATENDIMENTO"' + (attendanceRequest ? ' disabled' : '') + '><svg><use href="#icon-bell"></use></svg>' + (attendanceRequest ? 'Atendimento solicitado' : 'Solicitar atendimento') + '</button>' +
+          '<button class="secondary-btn service-request-btn' + (closeRequest ? ' is-active' : '') + '" type="button" data-service-request="FECHAR_CONTA"' + (closeRequest ? ' disabled' : '') + '><svg><use href="#icon-receipt"></use></svg>' + (closeRequest ? 'Conta solicitada' : 'Fechar a conta') + '</button></div>' +
+          (requestNotes ? '<div class="service-request-note">' + escapeHtml(requestNotes) + '</div>' : '') + '</div>') +
         '<div class="order-actions"><button class="secondary-btn" type="button" data-order-refresh><svg><use href="#icon-refresh"></use></svg>Atualizar</button><button class="primary-btn" type="button" data-order-more>Fazer outro pedido</button></div>';
       renderActiveOrderStrip();
     }
@@ -701,7 +733,10 @@
     async function loadOrderStatus(showErrors) {
       if (!state.identity || !state.identity.trackingToken) return null;
       try {
-        state.order = await rpc('bar_public_order_status', { p_tracking_token: state.identity.trackingToken });
+        state.order = await rpc('bar_public_order_status', {
+          p_tracking_token: state.identity.trackingToken,
+          p_customer_phone: state.identity.phone || null
+        });
         renderOrder();
         renderActiveOrderStrip();
         return state.order;
@@ -738,6 +773,7 @@
         const result = await rpc('bar_public_submit_order', {
           p_token: qrToken,
           p_customer_name: state.identity.name,
+          p_customer_phone: state.identity.phone,
           p_table_id: state.identity.tableId || null,
           p_items: entries.map(item => ({ product_id: item.product.id, quantity: item.quantity, notes: item.notes || '' })),
           p_notes: $('orderNotes').value.trim() || null
@@ -760,6 +796,35 @@
       }
     }
 
+    async function requestService(type, button) {
+      if (!state.identity || !state.identity.trackingToken) {
+        showToast('Envie um pedido antes de chamar a equipe.', true);
+        return;
+      }
+      const original = button && button.innerHTML;
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Enviando...';
+      }
+      try {
+        await rpc('bar_public_request_service', {
+          p_tracking_token: state.identity.trackingToken,
+          p_request_type: type,
+          p_customer_name: state.identity.name,
+          p_customer_phone: state.identity.phone,
+          p_message: null
+        });
+        await loadOrderStatus(true);
+        showToast(type === 'FECHAR_CONTA' ? 'Pedido para fechar a conta enviado.' : 'Atendimento solicitado.');
+      } catch (error) {
+        showToast(error.message, true);
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = original;
+        }
+      }
+    }
+
     async function loadMenu() {
       showView('loadingView');
       if (!qrToken) {
@@ -774,10 +839,10 @@
         state.products = data.products || [];
         renderAccess();
         const saved = readSession();
-        if (saved && saved.name) {
+        if (saved && saved.name && validPhone(saved.phone)) {
           const fixedTableId = state.access.fixed_table_id || '';
           const savedTableId = fixedTableId || (saved.tableId && tableById(saved.tableId) ? saved.tableId : '');
-          state.identity = { name: saved.name, tableId: savedTableId, trackingToken: saved.trackingToken || '' };
+          state.identity = { name: saved.name, phone: normalizePhone(saved.phone), tableId: savedTableId, trackingToken: saved.trackingToken || '' };
           enterMenu();
           startPolling();
         } else {
@@ -793,8 +858,10 @@
       event.preventDefault();
       const name = $('customerName').value.trim();
       if (name.length < 2) { showToast('Informe seu nome.', true); return; }
+      const phone = normalizePhone($('customerPhone').value);
+      if (!validPhone(phone)) { showToast('Informe um telefone válido com DDD.', true); return; }
       const fixedTableId = state.access.fixed_table_id || '';
-      state.identity = { name, tableId: fixedTableId || $('tableSelect').value || '', trackingToken: readSession() && readSession().trackingToken || '' };
+      state.identity = { name, phone, tableId: fixedTableId || $('tableSelect').value || '', trackingToken: readSession() && readSession().trackingToken || '' };
       saveSession();
       enterMenu();
       startPolling();
@@ -814,6 +881,8 @@
       if (decrease) setQuantity(decrease.dataset.productDec, -1);
       if (event.target.closest('[data-order-refresh]')) loadOrderStatus(true);
       if (event.target.closest('[data-order-more]')) enterMenu();
+      const serviceButton = event.target.closest('[data-service-request]');
+      if (serviceButton) requestService(serviceButton.dataset.serviceRequest, serviceButton);
     });
 
     $('cartItems').addEventListener('input', event => {

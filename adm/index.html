@@ -3144,6 +3144,7 @@
 
     .bar-order-board,
     .bar-incoming-orders,
+    .bar-service-requests,
     .bar-table-grid,
     .bar-product-list,
     .bar-finance-list,
@@ -3160,6 +3161,61 @@
       margin-bottom: 14px;
       border-top: 4px solid #e87b35;
     }
+
+    .bar-service-panel {
+      margin-bottom: 14px;
+      border-top: 4px solid #2678b8;
+    }
+
+    .bar-service-card {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 46px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+      border: 1px solid #cfe1ed;
+      border-left: 5px solid #2678b8;
+      border-radius: 8px;
+      background: #f7fbfe;
+    }
+
+    .bar-service-card.is-close-request {
+      border-color: #f0d8bd;
+      border-left-color: #e87b35;
+      background: #fffaf5;
+    }
+
+    .bar-service-icon {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      color: #1d659d;
+      background: #e6f2fa;
+      border-radius: 8px;
+    }
+
+    .bar-service-card.is-close-request .bar-service-icon {
+      color: #9b5a00;
+      background: #fff0d5;
+    }
+
+    .bar-service-icon svg {
+      width: 23px;
+      height: 23px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .bar-service-copy { min-width: 0; }
+    .bar-service-copy strong { display: block; font-size: 15px; }
+    .bar-service-copy small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; font-weight: 750; line-height: 1.4; }
+    .bar-service-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+    .bar-service-phone { color: var(--teal); font-weight: 900; text-decoration: none; }
 
     .bar-live-status {
       display: inline-flex;
@@ -3329,6 +3385,11 @@
       background: #fffdf7;
     }
 
+    .bar-table-card.is-loose {
+      border-color: #2e7d8a;
+      background: #f7fbfc;
+    }
+
     .bar-table-card-top,
     .bar-table-card-actions,
     .bar-table-management-head,
@@ -3357,6 +3418,21 @@
     .bar-table-card.is-open .bar-table-number {
       background: #fff0d5;
       color: #9b5a00;
+    }
+
+    .bar-table-card.is-loose .bar-table-number {
+      background: #e6f2f4;
+      color: var(--teal);
+    }
+
+    .bar-table-number svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .bar-table-icon {
@@ -4625,6 +4701,21 @@
         grid-template-columns: 1fr;
       }
 
+      .bar-service-card {
+        grid-template-columns: 42px minmax(0, 1fr);
+      }
+
+      .bar-service-actions {
+        grid-column: 1 / -1;
+        justify-content: stretch;
+      }
+
+      .bar-service-actions .small-btn {
+        flex: 1 1 auto;
+        min-height: 40px;
+        justify-content: center;
+      }
+
       .bar-incoming-actions {
         width: 100%;
         grid-template-columns: minmax(0, 1fr) auto;
@@ -5180,6 +5271,9 @@
     <symbol id="admin-icon-bell" viewBox="0 0 24 24">
       <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z" />
       <path d="M10 21h4" />
+    </symbol>
+    <symbol id="admin-icon-phone" viewBox="0 0 24 24">
+      <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z" />
     </symbol>
     <symbol id="bar-icon-plus" viewBox="0 0 24 24">
       <path d="M12 5v14M5 12h14" />
@@ -5836,6 +5930,13 @@
           </div>
 
           <div data-bar-panel="orders">
+            <section class="ops-panel bar-service-panel">
+              <div class="ops-panel-head">
+                <div><h2>Solicitações dos clientes</h2><div class="muted">Chamadas de atendimento e pedidos para fechar a conta.</div></div>
+                <span class="bar-live-status"><span></span>Atualização automática</span>
+              </div>
+              <div class="bar-service-requests" id="barServiceRequests"></div>
+            </section>
             <section class="ops-panel bar-incoming-panel">
               <div class="ops-panel-head">
                 <div><h2>Pedidos recebidos</h2><div class="muted">Pedidos enviados pelo cardápio online.</div></div>
@@ -5845,7 +5946,7 @@
             </section>
             <section class="ops-panel">
               <div class="ops-panel-head">
-                <div><h2>Mesas e comandas</h2><div class="muted">Abra uma mesa livre ou acompanhe uma comanda em andamento.</div></div>
+                <div><h2>Mesas e comandas abertas</h2><div class="muted">Mesas físicas e comandas individuais em um só lugar.</div></div>
                 <button class="small-btn" type="button" data-bar-go="tables">Gerenciar mesas</button>
               </div>
               <div class="bar-table-grid" id="barTableBoard"></div>
@@ -10276,6 +10377,7 @@
       selectedBarQrLabel: '',
       barAlertsEnabled: localStorage.getItem('ilha-bar-alerts-enabled') === 'true',
       barKnownIncomingIds: null,
+      barKnownServiceRequestIds: null,
       barDataLoaded: false,
       barSchemaReady: true,
       loaded: false
@@ -10396,12 +10498,17 @@
         { id: 'bar_card_3', code: 3, label: 'Cartão avulso 03', token: 'ilha-cartao-avulso-03', active: true, notes: 'Mesa ou retirada no balcão' }
       ],
       barOrders: [
-        { id: 'bar_order_1', tableId: 'bar_table_2', commandNumber: 101, customerName: 'Leandro', source: 'QR_MESA', status: 'EM_PREPARO', subtotal: 33, serviceCharge: 0, discount: 0, total: 33, paymentStatus: 'ABERTO', paymentMethod: '', openedAt: new Date().toISOString(), closedAt: '' }
+        { id: 'bar_order_1', tableId: 'bar_table_2', commandNumber: 101, customerName: 'Leandro', customerPhone: '5527999999999', source: 'QR_MESA', status: 'EM_PREPARO', subtotal: 33, serviceCharge: 0, discount: 0, total: 33, paymentStatus: 'ABERTO', paymentMethod: '', openedAt: new Date().toISOString(), closedAt: '' },
+        { id: 'bar_order_2', tableId: '', publicAccessId: 'bar_card_1', commandNumber: 102, customerName: 'Cliente avulso', customerPhone: '5527988887777', source: 'QR_CARTAO', status: 'ABERTA', subtotal: 12, serviceCharge: 0, discount: 0, total: 12, paymentStatus: 'ABERTO', paymentMethod: '', openedAt: new Date().toISOString(), closedAt: '' }
       ],
       barOrderItems: [
-        { id: 'bar_item_1', orderId: 'bar_order_1', productId: 'bar_product_beer', productName: 'Cerveja long neck', customerName: 'Leandro', source: 'QR_MESA', quantity: 1, unitPrice: 12, costPrice: 6, status: 'ENTREGUE', notes: '' },
-        { id: 'bar_item_2', orderId: 'bar_order_1', productId: 'bar_product_sandwich', productName: 'Sanduíche natural', customerName: 'Leandro', source: 'QR_MESA', quantity: 1, unitPrice: 16, costPrice: 8, status: 'EM_PREPARO', notes: 'Sem tomate' },
-        { id: 'bar_item_3', orderId: 'bar_order_1', productId: 'bar_product_water', productName: 'Água mineral', customerName: 'Leandro', source: 'QR_MESA', quantity: 1, unitPrice: 5, costPrice: 2, status: 'SOLICITADO', notes: 'Sem gelo' }
+        { id: 'bar_item_1', orderId: 'bar_order_1', productId: 'bar_product_beer', productName: 'Cerveja long neck', customerName: 'Leandro', customerPhone: '5527999999999', source: 'QR_MESA', quantity: 1, unitPrice: 12, costPrice: 6, status: 'ENTREGUE', notes: '' },
+        { id: 'bar_item_2', orderId: 'bar_order_1', productId: 'bar_product_sandwich', productName: 'Sanduíche natural', customerName: 'Leandro', customerPhone: '5527999999999', source: 'QR_MESA', quantity: 1, unitPrice: 16, costPrice: 8, status: 'EM_PREPARO', notes: 'Sem tomate' },
+        { id: 'bar_item_3', orderId: 'bar_order_1', productId: 'bar_product_water', productName: 'Água mineral', customerName: 'Leandro', customerPhone: '5527999999999', source: 'QR_MESA', quantity: 1, unitPrice: 5, costPrice: 2, status: 'SOLICITADO', notes: 'Sem gelo' },
+        { id: 'bar_item_4', orderId: 'bar_order_2', productId: 'bar_product_beer', productName: 'Cerveja long neck', customerName: 'Cliente avulso', customerPhone: '5527988887777', source: 'QR_CARTAO', quantity: 1, unitPrice: 12, costPrice: 6, status: 'SOLICITADO', notes: '' }
+      ],
+      barServiceRequests: [
+        { id: 'bar_request_1', orderId: 'bar_order_2', type: 'ATENDIMENTO', status: 'PENDENTE', customerName: 'Cliente avulso', customerPhone: '5527988887777', message: '', created: new Date().toISOString(), handledAt: '' }
       ],
       barInventory: [],
       barFinance: [],
@@ -10762,6 +10869,7 @@
         tableNumber: table.number || '',
         commandNumber: row.command_number || '',
         customerName: row.customer_name || '',
+        customerPhone: row.customer_phone || '',
         publicAccessId: row.public_access_id || '',
         source: row.source || 'EQUIPE',
         status: row.status || 'ABERTA',
@@ -10787,9 +10895,25 @@
         unitPrice: Number(row.unit_price || 0),
         costPrice: Number(row.cost_price || 0),
         customerName: row.customer_name || '',
+        customerPhone: row.customer_phone || '',
         source: row.source || 'EQUIPE',
         status: row.status || 'SOLICITADO',
         notes: row.notes || '',
+        created: row.created_at || ''
+      };
+    }
+
+    function mapBarServiceRequestRow(row) {
+      return {
+        id: row.id || '',
+        orderId: row.order_id || '',
+        type: row.request_type || 'ATENDIMENTO',
+        status: row.status || 'PENDENTE',
+        customerName: row.customer_name || 'Cliente',
+        customerPhone: row.customer_phone || '',
+        message: row.message || '',
+        handledBy: row.handled_by || '',
+        handledAt: row.handled_at || '',
         created: row.created_at || ''
       };
     }
@@ -10841,7 +10965,8 @@
           supabaseRest('bar_order_items?select=*&order=created_at.asc'),
           supabaseRest('bar_inventory_movements?select=*&order=occurred_at.desc&limit=200'),
           supabaseRest('bar_financial_entries?select=*&order=created_at.desc'),
-          supabaseRest('bar_public_cards?select=*&order=code.asc')
+          supabaseRest('bar_public_cards?select=*&order=code.asc'),
+          supabaseRest('bar_service_requests?select=*&order=created_at.desc')
         ]);
         opsData.barProducts = results[0].map(mapBarProductRow);
         opsData.barTables = results[1].map(mapBarTableRow);
@@ -10850,7 +10975,9 @@
         opsData.barInventory = results[4].map(mapBarInventoryRow);
         opsData.barFinance = results[5].map(mapBarFinanceRow);
         opsData.barAccessCards = results[6].map(mapBarAccessCardRow);
+        opsData.barServiceRequests = results[7].map(mapBarServiceRequestRow);
         handleBarIncomingChanges(opsData.barOrderItems);
+        handleBarServiceRequestChanges(opsData.barServiceRequests);
         opsState.barDataLoaded = true;
         opsState.barSchemaReady = true;
       } catch (error) {
@@ -10861,6 +10988,7 @@
         opsData.barInventory = [];
         opsData.barFinance = [];
         opsData.barAccessCards = [];
+        opsData.barServiceRequests = [];
         opsState.barSchemaReady = false;
         opsState.barDataLoaded = true;
         console.info('Tabelas do Bar ainda nao disponiveis no Supabase.', error && error.message);
@@ -11560,14 +11688,17 @@
         ABERTO: 'Em aberto',
         RECEBIDO: 'Recebido',
         PAGO: 'Pago',
-        VENCIDO: 'Vencido'
+        VENCIDO: 'Vencido',
+        PENDENTE: 'Pendente',
+        EM_ATENDIMENTO: 'Em atendimento',
+        CONCLUIDO: 'Concluído'
       };
       return labels[String(status || '').toUpperCase()] || String(status || '');
     }
 
     function barStatusPill(status) {
       const value = String(status || '').toUpperCase();
-      const kind = ['PRONTA', 'PRONTO', 'ENTREGUE', 'FECHADA', 'RECEBIDO', 'PAGO'].includes(value) ? 'good' : (['CANCELADA', 'CANCELADO', 'VENCIDO'].includes(value) ? 'bad' : 'warn');
+      const kind = ['PRONTA', 'PRONTO', 'ENTREGUE', 'FECHADA', 'RECEBIDO', 'PAGO', 'CONCLUIDO'].includes(value) ? 'good' : (['CANCELADA', 'CANCELADO', 'VENCIDO'].includes(value) ? 'bad' : 'warn');
       return '<span class="ops-pill ' + kind + '">' + escapeHtml(barStatusLabel(value)) + '</span>';
     }
 
@@ -11592,8 +11723,20 @@
       }).map(function (item) { return String(item.orderId); })).size;
     }
 
+    function openBarServiceRequests() {
+      return (opsData.barServiceRequests || []).filter(function (request) {
+        return ['PENDENTE', 'EM_ATENDIMENTO'].includes(String(request.status || '').toUpperCase());
+      });
+    }
+
+    function newBarServiceRequestCount() {
+      return (opsData.barServiceRequests || []).filter(function (request) {
+        return String(request.status || '').toUpperCase() === 'PENDENTE';
+      }).length;
+    }
+
     function updateBarOrderBadges() {
-      const count = newIncomingBarOrderCount();
+      const count = newIncomingBarOrderCount() + newBarServiceRequestCount();
       ['barOrdersNavBadge', 'barOrdersTabBadge'].forEach(function (id) {
         const badge = $(id);
         if (!badge) return;
@@ -11664,6 +11807,37 @@
       notifyNewBarOrders(fresh);
     }
 
+    function notifyNewBarServiceRequests(requests) {
+      if (!requests.length) return;
+      const closeCount = requests.filter(function (request) { return request.type === 'FECHAR_CONTA'; }).length;
+      const message = requests.length === 1
+        ? (closeCount ? 'Cliente pediu para fechar a conta.' : 'Cliente solicitou atendimento no Bar.')
+        : requests.length + ' novas solicitações de clientes no Bar.';
+      toast(message);
+      playBarOrderSound();
+      if (opsState.barAlertsEnabled && 'Notification' in window && Notification.permission === 'granted' && document.hidden) {
+        const notification = new Notification('Ilha Bar', { body: message, icon: '../icon.png', tag: 'ilha-bar-atendimento' });
+        notification.onclick = function () {
+          window.focus();
+          setBarTab('orders');
+          notification.close();
+        };
+      }
+    }
+
+    function handleBarServiceRequestChanges(requests) {
+      const currentIds = new Set((requests || []).map(function (request) { return String(request.id); }));
+      if (opsState.barKnownServiceRequestIds === null) {
+        opsState.barKnownServiceRequestIds = currentIds;
+        return;
+      }
+      const fresh = (requests || []).filter(function (request) {
+        return !opsState.barKnownServiceRequestIds.has(String(request.id)) && String(request.status || '').toUpperCase() === 'PENDENTE';
+      });
+      opsState.barKnownServiceRequestIds = currentIds;
+      notifyNewBarServiceRequests(fresh);
+    }
+
     async function enableBarAlerts() {
       opsState.barAlertsEnabled = true;
       localStorage.setItem('ilha-bar-alerts-enabled', 'true');
@@ -11707,6 +11881,56 @@
       '</article>';
     }
 
+    function barPhoneDigits(value) {
+      return String(value || '').replace(/\D/g, '');
+    }
+
+    function barPhoneLabel(value) {
+      const digits = barPhoneDigits(value);
+      const local = digits.startsWith('55') && digits.length >= 12 ? digits.slice(2) : digits;
+      if (local.length === 11) return '(' + local.slice(0, 2) + ') ' + local.slice(2, 7) + '-' + local.slice(7);
+      if (local.length === 10) return '(' + local.slice(0, 2) + ') ' + local.slice(2, 6) + '-' + local.slice(6);
+      return value || '';
+    }
+
+    function barPhoneWhatsApp(value) {
+      const digits = barPhoneDigits(value);
+      return digits && !digits.startsWith('55') && digits.length <= 11 ? '55' + digits : digits;
+    }
+
+    function barServiceRequestTypeLabel(type) {
+      return type === 'FECHAR_CONTA' ? 'Fechar a conta' : 'Solicitação de atendimento';
+    }
+
+    function barServiceRequestLocation(request, order) {
+      const table = order && barTableById(order.tableId);
+      const card = order && barAccessCardById(order.publicAccessId);
+      return table && table.name || card && card.label || 'Comanda avulsa';
+    }
+
+    function renderBarServiceRequests() {
+      const requests = openBarServiceRequests().slice().sort(function (a, b) {
+        return String(a.created).localeCompare(String(b.created));
+      });
+      $('barServiceRequests').innerHTML = requests.map(function (request) {
+        const order = barOrderById(request.orderId);
+        if (!order) return '';
+        const digits = barPhoneDigits(request.customerPhone || order.customerPhone);
+        const phone = digits ? '<a class="bar-service-phone" href="https://wa.me/' + escapeHtml(barPhoneWhatsApp(digits)) + '" target="_blank" rel="noopener">' + escapeHtml(barPhoneLabel(digits)) + '</a>' : 'Telefone não informado';
+        const isClose = request.type === 'FECHAR_CONTA';
+        const nextButton = request.status === 'PENDENTE'
+          ? '<button class="small-btn" type="button" data-bar-request-status="' + escapeHtml(request.id) + '" data-next-status="EM_ATENDIMENTO">Em atendimento</button>'
+          : '';
+        return '<article class="bar-service-card' + (isClose ? ' is-close-request' : '') + '">' +
+          '<span class="bar-service-icon"><svg><use href="#' + (isClose ? 'admin-icon-receipt' : 'admin-icon-bell') + '"></use></svg></span>' +
+          '<div class="bar-service-copy"><strong>' + escapeHtml(barServiceRequestTypeLabel(request.type)) + ' | ' + escapeHtml(request.customerName || order.customerName || 'Cliente') + '</strong>' +
+          '<small>' + escapeHtml(barServiceRequestLocation(request, order)) + ' | Comanda #' + escapeHtml(order.commandNumber || String(order.id).slice(-4)) + ' | ' + phone + ' | ' + escapeHtml(barDateTimeLabel(request.created)) + (request.message ? '<br>' + escapeHtml(request.message) : '') + '</small></div>' +
+          '<div class="bar-service-actions">' + barStatusPill(request.status) + nextButton + '<button class="small-btn" type="button" data-bar-request-status="' + escapeHtml(request.id) + '" data-next-status="CONCLUIDO">Concluir</button><button class="small-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button></div>' +
+        '</article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhuma solicitação aguardando.</div>';
+      updateBarOrderBadges();
+    }
+
     function renderBarIncomingOrders() {
       const items = incomingBarItems();
       const grouped = new Map();
@@ -11729,14 +11953,14 @@
         const names = Array.from(new Set(entry.items.map(function (item) { return item.customerName; }).filter(Boolean)));
         const table = barTableById(order.tableId);
         const card = barAccessCardById(order.publicAccessId);
-        const location = table ? table.name : 'Retirada no balcão';
+        const location = table ? table.name : card ? 'Comanda avulsa' : 'Retirada no balcão';
         const access = card ? card.label : barOrderSourceLabel(order.source || entry.items[0].source);
         const itemTags = entry.items.map(function (item) {
           const customer = item.customerName && names.length > 1 ? ' | ' + item.customerName : '';
           return '<span class="bar-incoming-item">' + escapeHtml(Number(item.quantity).toLocaleString('pt-BR') + 'x ' + item.productName + customer) + '</span>';
         }).join('');
         return '<article class="bar-incoming-card"><div class="bar-incoming-main"><div class="bar-incoming-head"><strong>' + escapeHtml(location) + '</strong>' + (requested ? '<span class="ops-pill warn">Novo</span>' : barStatusPill(entry.items[0].status)) + '</div>' +
-          '<div class="bar-incoming-meta">' + escapeHtml((names.join(', ') || order.customerName || 'Cliente') + ' | ' + access + ' | Comanda #' + (order.commandNumber || String(order.id).slice(-4))) + '</div>' +
+          '<div class="bar-incoming-meta">' + escapeHtml((names.join(', ') || order.customerName || 'Cliente') + (order.customerPhone ? ' | ' + barPhoneLabel(order.customerPhone) : '') + ' | ' + access + ' | Comanda #' + (order.commandNumber || String(order.id).slice(-4))) + '</div>' +
           '<div class="bar-incoming-items">' + itemTags + '</div></div>' +
           '<div class="bar-incoming-actions"><span class="bar-incoming-time">' + escapeHtml(barDateTimeLabel(entry.created)) + '</span><button class="small-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir pedido</button></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum pedido online aguardando.</div>';
@@ -11751,6 +11975,18 @@
         '<div><h3>' + escapeHtml(table.name) + '</h3><div class="bar-table-card-meta"><span><svg><use href="#bar-icon-seat"></use></svg>' + escapeHtml(table.seats) + ' lugares</span>' + (table.notes ? '<span>' + escapeHtml(table.notes) + '</span>' : '') + '</div></div>' +
         '<div class="bar-table-command-summary">' + (order ? '<div><span>Comanda #' + escapeHtml(commandNumber) + '</span><strong>' + escapeHtml(barStatusLabel(order.status)) + '</strong></div><strong>' + money(barOrderTotal(order)) + '</strong>' : '<div><span>Disponível</span><strong>Pronta para novo pedido</strong></div>') + '</div>' +
         '<div class="bar-table-card-actions"><button class="' + (order ? 'primary-btn' : 'ghost-btn') + '" type="button" data-bar-table-open="' + escapeHtml(table.id) + '">' + (order ? 'Ver comanda' : 'Abrir mesa') + '</button></div>' +
+      '</article>';
+    }
+
+    function barLooseOrderCard(order) {
+      const card = barAccessCardById(order.publicAccessId);
+      const commandNumber = order.commandNumber || String(order.id).slice(-4);
+      const phone = order.customerPhone ? '<span><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(order.customerPhone)) + '</span>' : '';
+      return '<article class="bar-table-card is-open is-loose">' +
+        '<div class="bar-table-card-top"><span class="bar-table-number"><svg><use href="#admin-icon-receipt"></use></svg></span><span class="ops-pill warn">Avulsa</span></div>' +
+        '<div><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3><div class="bar-table-card-meta"><span><svg><use href="#admin-icon-qr"></use></svg>' + escapeHtml(card && card.label || barOrderSourceLabel(order.source)) + '</span>' + phone + '</div></div>' +
+        '<div class="bar-table-command-summary"><div><span>Comanda #' + escapeHtml(commandNumber) + '</span><strong>' + escapeHtml(barStatusLabel(order.status)) + '</strong></div><strong>' + money(barOrderTotal(order)) + '</strong></div>' +
+        '<div class="bar-table-card-actions"><button class="primary-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Ver comanda</button></div>' +
       '</article>';
     }
 
@@ -11945,12 +12181,13 @@
       const allTables = opsData.barTables.slice().sort(function (a, b) { return a.number - b.number; });
       const activeTables = allTables.filter(function (table) { return table.active; });
       const busyTables = activeTables.filter(function (table) { return Boolean(barOrderForTable(table.id)); });
+      const looseOrders = opsData.barOrders.filter(function (order) { return !order.tableId && barOrderIsOpen(order); });
       const seats = activeTables.reduce(function (sum, table) { return sum + Number(table.seats || 0); }, 0);
       $('barTablesTotalMetric').textContent = activeTables.length;
       $('barTablesFreeMetric').textContent = activeTables.length - busyTables.length;
       $('barTablesBusyMetric').textContent = busyTables.length;
       $('barTablesSeatsMetric').textContent = seats;
-      $('barTableBoard').innerHTML = activeTables.map(barTableCard).join('') || '<div class="lesson-empty-state">Cadastre a primeira mesa na área Mesas.</div>';
+      $('barTableBoard').innerHTML = looseOrders.map(barLooseOrderCard).concat(activeTables.map(barTableCard)).join('') || '<div class="lesson-empty-state">Nenhuma mesa ou comanda aberta.</div>';
       $('barTableManagementGrid').innerHTML = allTables.map(barTableManagementCard).join('') || '<div class="lesson-empty-state">Nenhuma mesa cadastrada.</div>';
       $('barQrGrid').innerHTML = activeTables.map(barQrCard).join('') || '<div class="lesson-empty-state">Cadastre uma mesa ativa para gerar o QR Code.</div>';
       $('barAccessCardGrid').innerHTML = (opsData.barAccessCards || []).map(barAccessCardQrCard).join('') || '<div class="lesson-empty-state">Crie o primeiro cartão individual.</div>';
@@ -11972,6 +12209,7 @@
       $('barPendingItemsMetric').textContent = pendingItems.length;
       $('barLowStockMetric').textContent = lowStock.length;
       $('barTodaySalesMetric').textContent = money(todaySales);
+      renderBarServiceRequests();
       renderBarIncomingOrders();
       updateBarAlertsButton();
       $('barOverviewOrders').innerHTML = openOrders.map(barOrderCard).join('') || '<div class="lesson-empty-state">Nenhuma comanda aberta.</div>';
@@ -11991,10 +12229,10 @@
       if (!order) return;
       const items = barItemsForOrder(order.id);
       $('barCommandModalTitle').textContent = barTableLabel(order);
-      $('barCommandModalSubtitle').textContent = ['Comanda #' + (order.commandNumber || String(order.id).slice(-4)), order.customerName, barOrderSourceLabel(order.source), barStatusLabel(order.status)].filter(Boolean).join(' | ');
+      $('barCommandModalSubtitle').textContent = ['Comanda #' + (order.commandNumber || String(order.id).slice(-4)), order.customerName, barPhoneLabel(order.customerPhone), barOrderSourceLabel(order.source), barStatusLabel(order.status)].filter(Boolean).join(' | ');
       $('barCommandItems').innerHTML = items.map(function (item) {
         const cancelled = item.status === 'CANCELADO';
-        const itemMeta = [item.customerName, item.notes, barStatusLabel(item.status)].filter(Boolean).join(' | ');
+        const itemMeta = [item.customerName, barPhoneLabel(item.customerPhone), item.notes, barStatusLabel(item.status)].filter(Boolean).join(' | ');
         let nextAction = '';
         if (!cancelled && item.status === 'SOLICITADO') nextAction = '<button class="small-btn" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="EM_PREPARO">Preparar</button>';
         if (!cancelled && item.status === 'EM_PREPARO') nextAction = '<button class="small-btn" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="PRONTO">Pronto</button>';
@@ -12065,6 +12303,7 @@
         opsData.barInventory = [];
         opsData.barFinance = [];
         opsData.barAccessCards = [];
+        opsData.barServiceRequests = [];
       }
       renderBarModule();
       loadBarData(false).then(renderBarModule).catch(reportActionError);
@@ -12664,6 +12903,31 @@
       }
     }
 
+    async function updateBarServiceRequestStatusAction(requestId, status) {
+      const request = (opsData.barServiceRequests || []).find(function (row) { return String(row.id) === String(requestId); });
+      if (!request) return;
+      try {
+        const now = new Date().toISOString();
+        const patch = { status: status, updated_at: now };
+        if (status === 'CONCLUIDO') patch.handled_at = now;
+        if (barCanPersist(request.id)) {
+          const saved = await supabaseRest('bar_service_requests?id=eq.' + encodeURIComponent(request.id), {
+            method: 'PATCH',
+            body: patch,
+            prefer: 'return=representation'
+          });
+          Object.assign(request, mapBarServiceRequestRow(Array.isArray(saved) ? saved[0] : saved));
+        } else {
+          request.status = status;
+          request.handledAt = status === 'CONCLUIDO' ? now : request.handledAt;
+        }
+        renderBarModule();
+        toast(status === 'CONCLUIDO' ? 'Solicitação concluída.' : 'Atendimento assumido pela equipe.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
     async function cancelBarItemAction(itemId) {
       const item = opsData.barOrderItems.find(function (row) { return String(row.id) === String(itemId); });
       if (!item || item.status === 'CANCELADO') return;
@@ -12732,6 +12996,12 @@
             id: localId('bar_finance'), orderId: order.id, type: 'RECEITA', description: 'Venda da comanda #' + order.commandNumber,
             counterparty: barTableLabel(order), category: 'Vendas', amount: order.total, dueDate: localDateString(), status: 'RECEBIDO',
             paymentMethod: paymentMethod, paidAt: new Date().toISOString(), created: new Date().toISOString(), notes: ''
+          });
+          (opsData.barServiceRequests || []).forEach(function (request) {
+            if (String(request.orderId) === String(order.id) && ['PENDENTE', 'EM_ATENDIMENTO'].includes(request.status)) {
+              request.status = 'CONCLUIDO';
+              request.handledAt = new Date().toISOString();
+            }
           });
         }
         closeBarCommandModal();
@@ -13271,6 +13541,9 @@
       localStorage.removeItem(ADMIN_SESSION_KEY);
       sessionStorage.removeItem('ilha-admin-authenticated');
       sessionStorage.removeItem(ADMIN_DEMO_SESSION_KEY);
+      opsState.barKnownIncomingIds = null;
+      opsState.barKnownServiceRequestIds = null;
+      opsState.barDataLoaded = false;
     }
 
     function isSessionExpired(session) {
@@ -14829,6 +15102,11 @@
         const goBtn = event.target.closest('[data-bar-go]');
         if (goBtn) {
           setBarTab(goBtn.dataset.barGo);
+          return;
+        }
+        const requestStatusBtn = event.target.closest('[data-bar-request-status]');
+        if (requestStatusBtn) {
+          updateBarServiceRequestStatusAction(requestStatusBtn.dataset.barRequestStatus, requestStatusBtn.dataset.nextStatus);
           return;
         }
         const tableEditBtn = event.target.closest('[data-bar-table-edit]');
