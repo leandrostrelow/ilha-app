@@ -3165,22 +3165,53 @@
       align-items: center;
     }
 
-    .bar-table-grid,
-    .bar-qr-grid {
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    .bar-table-grid {
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
     }
 
     .bar-table-card {
-      min-height: 150px;
+      min-height: 208px;
+      overflow: hidden;
       display: grid;
-      grid-template-rows: auto 1fr auto;
-      gap: 10px;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 12px;
       padding: 14px;
+      border-top: 4px solid #9bd100;
     }
 
     .bar-table-card.is-open {
-      border-color: #86aab2;
-      background: #f7fbfb;
+      border-color: #d89019;
+      background: #fffdf7;
+    }
+
+    .bar-table-card-top,
+    .bar-table-card-actions,
+    .bar-table-management-head,
+    .bar-table-management-actions,
+    .bar-qr-card-head,
+    .bar-qr-card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .bar-table-number {
+      width: 48px;
+      height: 48px;
+      flex: 0 0 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #effbd0;
+      color: #456600;
+      font-size: 20px;
+      font-weight: 950;
+    }
+
+    .bar-table-card.is-open .bar-table-number {
+      background: #fff0d5;
+      color: #9b5a00;
     }
 
     .bar-table-icon {
@@ -3203,6 +3234,304 @@
       color: var(--muted);
       font-size: 12px;
       font-weight: 700;
+    }
+
+    .bar-table-card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 7px;
+    }
+
+    .bar-table-card-meta span,
+    .bar-table-fact {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .bar-table-card-meta svg,
+    .bar-table-fact svg,
+    .bar-icon-button svg,
+    .bar-table-card-actions svg,
+    .bar-table-management-actions svg,
+    .bar-qr-card-actions svg,
+    .bar-qr-info svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .bar-table-command-summary {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #f2f7f8;
+    }
+
+    .bar-table-card.is-open .bar-table-command-summary {
+      background: #fff4df;
+    }
+
+    .bar-table-command-summary span,
+    .bar-table-command-summary strong {
+      display: block;
+    }
+
+    .bar-table-command-summary span {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .bar-table-command-summary strong {
+      margin-top: 3px;
+      font-size: 15px;
+    }
+
+    .bar-table-command-summary > strong {
+      margin: 0;
+      color: var(--teal);
+      font-size: 20px;
+      white-space: nowrap;
+    }
+
+    .bar-table-card-actions .primary-btn,
+    .bar-table-card-actions .ghost-btn {
+      width: 100%;
+      min-height: 40px;
+      justify-content: center;
+    }
+
+    .bar-table-page,
+    .bar-qr-page {
+      min-width: 0;
+      display: grid;
+      gap: 14px;
+    }
+
+    .bar-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .bar-section-header h2 {
+      margin: 0 0 4px;
+      font-size: 22px;
+    }
+
+    .bar-icon-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bar-table-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .bar-table-metric {
+      min-width: 0;
+      min-height: 78px;
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .bar-table-metric > span {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #eaf3f4;
+      color: var(--teal);
+    }
+
+    .bar-table-metric.good > span {
+      background: #effbd0;
+      color: #557800;
+    }
+
+    .bar-table-metric.busy > span {
+      background: #fff0d5;
+      color: #9b5a00;
+    }
+
+    .bar-table-metric svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .bar-table-metric strong,
+    .bar-table-metric small {
+      display: block;
+    }
+
+    .bar-table-metric strong {
+      font-size: 20px;
+      line-height: 1.1;
+    }
+
+    .bar-table-metric small {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .bar-table-management-grid {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 10px;
+    }
+
+    .bar-table-management-card {
+      min-width: 0;
+      display: grid;
+      gap: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .bar-table-management-card.is-inactive {
+      opacity: .68;
+      background: #f6f8f9;
+    }
+
+    .bar-table-management-identity {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr);
+      gap: 11px;
+      align-items: center;
+    }
+
+    .bar-table-management-identity .bar-table-number {
+      width: 52px;
+      height: 52px;
+      background: #edf4f6;
+      color: var(--teal);
+    }
+
+    .bar-table-management-identity h3 {
+      margin: 0;
+      overflow: hidden;
+      font-size: 17px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-table-management-identity p {
+      margin: 4px 0 0;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-table-facts {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .bar-table-fact {
+      min-height: 42px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #f4f8f9;
+      color: var(--dark);
+    }
+
+    .bar-table-fact strong,
+    .bar-table-fact small {
+      display: block;
+    }
+
+    .bar-table-fact small {
+      color: var(--muted);
+      font-size: 9px;
+      text-transform: uppercase;
+    }
+
+    .bar-table-management-actions {
+      justify-content: flex-end;
+    }
+
+    .bar-table-management-actions .small-btn {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bar-qr-info {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr);
+      gap: 11px;
+      align-items: center;
+      padding: 12px 14px;
+      border: 1px solid #cfe0e4;
+      border-radius: 8px;
+      background: #f5fafb;
+    }
+
+    .bar-qr-info > span {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #e5f2f4;
+      color: var(--teal);
+    }
+
+    .bar-qr-info strong,
+    .bar-qr-info small {
+      display: block;
+    }
+
+    .bar-qr-info small {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .bar-qr-grid {
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
     }
 
     .bar-product-row,
@@ -3785,9 +4114,65 @@
     }
 
     .bar-qr-card {
+      min-width: 0;
       display: grid;
+      grid-template-columns: 112px minmax(0, 1fr);
       gap: 12px;
       padding: 14px;
+    }
+
+    .bar-qr-card-visual {
+      width: 112px;
+      aspect-ratio: 1;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      padding: 7px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .bar-qr-card-visual img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+
+    .bar-qr-card-content {
+      min-width: 0;
+      display: grid;
+      gap: 10px;
+      align-content: space-between;
+    }
+
+    .bar-qr-card-head {
+      align-items: flex-start;
+    }
+
+    .bar-qr-card h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .bar-qr-card p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .bar-qr-card-actions {
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .bar-qr-card-actions .small-btn {
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .bar-qr-card code,
@@ -3807,6 +4192,10 @@
       border: 10px solid #ffffff;
       border-radius: 8px;
       box-shadow: 0 0 0 1px var(--line);
+    }
+
+    .bar-table-modal {
+      width: min(590px, 100%);
     }
 
     .bar-schema-note {
@@ -3831,6 +4220,10 @@
 
       .bar-checkout-grid {
         grid-template-columns: 1fr;
+      }
+
+      .bar-table-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
 
@@ -3948,6 +4341,17 @@
         flex-direction: column;
       }
 
+      .bar-section-header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .bar-section-header .primary-btn {
+        width: 100%;
+        min-height: 44px;
+        justify-content: center;
+      }
+
       .bar-product-page .bar-toolbar {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
@@ -4010,6 +4414,28 @@
 
       .bar-product-list {
         grid-template-columns: 1fr;
+      }
+
+      .bar-table-management-grid,
+      .bar-qr-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .bar-table-management-actions {
+        align-items: stretch;
+      }
+
+      .bar-table-management-actions .small-btn {
+        flex: 1 1 auto;
+        justify-content: center;
+      }
+
+      .bar-qr-card {
+        grid-template-columns: 96px minmax(0, 1fr);
+      }
+
+      .bar-qr-card-visual {
+        width: 96px;
       }
 
       .bar-product-photo-layout {
@@ -4606,6 +5032,17 @@
     <symbol id="bar-icon-candy" viewBox="0 0 24 24">
       <path d="m8 8 8 8M9 6l-3 3 1 3-3 3 5 1 3-3M15 18l3-3-1-3 3-3-5-1-3 3" />
     </symbol>
+    <symbol id="bar-icon-seat" viewBox="0 0 24 24">
+      <path d="M7 12V7a3 3 0 0 1 6 0v5M5 12h14v4H5zM7 16v4M17 16v4" />
+    </symbol>
+    <symbol id="bar-icon-edit" viewBox="0 0 24 24">
+      <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+      <path d="m13.5 6.5 4 4" />
+    </symbol>
+    <symbol id="bar-icon-link" viewBox="0 0 24 24">
+      <path d="M9 15 15 9" />
+      <path d="M7.5 17.5H6a4 4 0 0 1 0-8h3M16.5 6.5H18a4 4 0 0 1 0 8h-3" />
+    </symbol>
   </svg>
 
   <main class="adm-login" id="adminLogin">
@@ -4642,10 +5079,11 @@
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-courts"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Quadras</span></button>
         <button class="admin-nav-btn active" type="button" data-bar-entry data-bar-side-tab="overview"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Visão geral</span></button>
-        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="orders"><span class="admin-nav-icon"><svg><use href="#admin-icon-table"></use></svg></span><span>Mesas e comandas</span></button>
+        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="orders"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Comandas</span></button>
+        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="tables"><span class="admin-nav-icon"><svg><use href="#admin-icon-table"></use></svg></span><span>Mesas</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="products"><span class="admin-nav-icon"><svg><use href="#admin-icon-box"></use></svg></span><span>Produtos e estoque</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
-        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="tables"><span class="admin-nav-icon"><svg><use href="#admin-icon-qr"></use></svg></span><span>Mesas e QR Codes</span></button>
+        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="qrcodes"><span class="admin-nav-icon"><svg><use href="#admin-icon-qr"></use></svg></span><span>QR Codes</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-store"><span class="admin-nav-icon"><svg><use href="#admin-icon-bag"></use></svg></span><span>Ilha Store</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-announcements"><span class="admin-nav-icon"><svg><use href="#admin-icon-megaphone"></use></svg></span><span>Comunicados</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-team"><span class="admin-nav-icon"><svg><use href="#admin-icon-team"></use></svg></span><span>Equipe</span></button>
@@ -5190,10 +5628,11 @@
 
           <div class="ops-tabs" role="tablist" aria-label="Gestão do bar">
             <button class="ops-tab-btn active" type="button" data-bar-tab="overview">Visão geral</button>
-            <button class="ops-tab-btn" type="button" data-bar-tab="orders">Mesas e comandas</button>
+            <button class="ops-tab-btn" type="button" data-bar-tab="orders">Comandas</button>
+            <button class="ops-tab-btn" type="button" data-bar-tab="tables">Mesas</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="products">Produtos e estoque</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="finance">Financeiro</button>
-            <button class="ops-tab-btn" type="button" data-bar-tab="tables">Mesas e QR Codes</button>
+            <button class="ops-tab-btn" type="button" data-bar-tab="qrcodes">QR Codes</button>
           </div>
 
           <div data-bar-panel="overview" class="active-tab-panel">
@@ -5201,7 +5640,7 @@
               <section class="ops-panel">
                 <div class="ops-panel-head">
                   <div><h2>Operação agora</h2><div class="muted">Comandas que precisam de atenção.</div></div>
-                  <button class="small-btn" type="button" data-bar-go="orders">Ver mesas</button>
+                  <button class="small-btn" type="button" data-bar-go="orders">Ver comandas</button>
                 </div>
                 <div class="bar-order-board" id="barOverviewOrders"></div>
               </section>
@@ -5215,7 +5654,7 @@
           <div data-bar-panel="orders">
             <section class="ops-panel">
               <div class="ops-panel-head">
-                <div><h2>Mesas</h2><div class="muted">Abra a mesa para lançar ou acompanhar pedidos.</div></div>
+                <div><h2>Comandas por mesa</h2><div class="muted">Abra uma mesa livre ou acompanhe o pedido em andamento.</div></div>
                 <button class="small-btn" type="button" data-bar-go="tables">Gerenciar mesas</button>
               </div>
               <div class="bar-table-grid" id="barTableBoard"></div>
@@ -5299,21 +5738,31 @@
           </div>
 
           <div data-bar-panel="tables">
-            <div class="ops-grid">
-              <section class="ops-panel span-4">
-                <div class="ops-panel-head"><div><h2>Nova mesa</h2><div class="muted">O QR apontará para o futuro /bar.</div></div></div>
-                <form class="form-grid" id="barTableForm">
-                  <div class="field"><label for="barTableNumber">Número</label><input id="barTableNumber" type="number" min="1" inputmode="numeric" required /></div>
-                  <div class="field"><label for="barTableSeats">Lugares</label><input id="barTableSeats" type="number" min="1" value="4" required /></div>
-                  <div class="field full"><label for="barTableName">Nome</label><input id="barTableName" placeholder="Ex.: Mesa 1" required /></div>
-                  <div class="field full"><label for="barTableNotes">Observação</label><input id="barTableNotes" placeholder="Ex.: varanda" /></div>
-                  <div class="field full"><button class="primary-btn" type="submit">Criar mesa</button></div>
-                </form>
-              </section>
-              <section class="ops-panel span-8">
-                <div class="ops-panel-head"><div><h2>Mesas e QR Codes</h2><div class="muted">Use o código individual para identificar cada mesa.</div></div></div>
-                <div class="bar-qr-grid" id="barQrGrid"></div>
-              </section>
+            <div class="bar-table-page">
+              <div class="bar-section-header">
+                <div><h2>Mesas</h2><div class="muted">Organize os espaços e acompanhe a ocupação do Bar.</div></div>
+                <button class="primary-btn bar-icon-button" type="button" id="barAddTableBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Adicionar mesa</span></button>
+              </div>
+              <div class="bar-table-metrics">
+                <div class="bar-table-metric"><span><svg><use href="#admin-icon-table"></use></svg></span><div><strong id="barTablesTotalMetric">0</strong><small>mesas ativas</small></div></div>
+                <div class="bar-table-metric good"><span><svg><use href="#admin-icon-table"></use></svg></span><div><strong id="barTablesFreeMetric">0</strong><small>livres agora</small></div></div>
+                <div class="bar-table-metric busy"><span><svg><use href="#admin-icon-receipt"></use></svg></span><div><strong id="barTablesBusyMetric">0</strong><small>ocupadas</small></div></div>
+                <div class="bar-table-metric"><span><svg><use href="#bar-icon-seat"></use></svg></span><div><strong id="barTablesSeatsMetric">0</strong><small>lugares</small></div></div>
+              </div>
+              <div class="bar-table-management-grid" id="barTableManagementGrid"></div>
+            </div>
+          </div>
+
+          <div data-bar-panel="qrcodes">
+            <div class="bar-qr-page">
+              <div class="bar-section-header">
+                <div><h2>QR Codes</h2><div class="muted">Cada mesa possui um acesso próprio para o cardápio e os pedidos.</div></div>
+              </div>
+              <div class="bar-qr-info">
+                <span><svg><use href="#admin-icon-qr"></use></svg></span>
+                <div><strong>QR Code individual por mesa</strong><small>Abra para imprimir ou copie o link para testar o atendimento da mesa.</small></div>
+              </div>
+              <div class="bar-qr-grid" id="barQrGrid"></div>
             </div>
           </div>
         </div>
@@ -5375,6 +5824,29 @@
         <div class="modal-actions">
           <button class="ghost-btn" type="button" id="barProductCancelBtn">Cancelar</button>
           <button class="primary-btn" type="submit" form="barProductForm" id="barProductSaveBtn">Salvar produto</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-modal-overlay" id="barTableModal" aria-hidden="true">
+      <div class="admin-modal bar-table-modal" role="dialog" aria-modal="true" aria-labelledby="barTableModalTitle">
+        <div class="admin-modal-head">
+          <div><h2 id="barTableModalTitle">Adicionar mesa</h2><div class="muted">Defina a identificação e a capacidade da mesa.</div></div>
+          <button class="ghost-btn" type="button" id="barTableModalClose">Fechar</button>
+        </div>
+        <div class="admin-modal-body">
+          <form class="form-grid" id="barTableForm">
+            <input id="barTableId" type="hidden" />
+            <div class="field"><label for="barTableNumber">Número</label><input id="barTableNumber" type="number" min="1" inputmode="numeric" required /></div>
+            <div class="field"><label for="barTableSeats">Lugares</label><input id="barTableSeats" type="number" min="1" value="4" required /></div>
+            <div class="field full"><label for="barTableName">Nome</label><input id="barTableName" placeholder="Ex.: Mesa 1" required /></div>
+            <div class="field full"><label for="barTableNotes">Local ou observação</label><input id="barTableNotes" placeholder="Ex.: varanda, próximo à quadra" /></div>
+            <div class="field full"><label for="barTableActive">Status</label><select id="barTableActive"><option value="true">Ativa</option><option value="false">Inativa</option></select></div>
+          </form>
+        </div>
+        <div class="modal-actions">
+          <button class="ghost-btn" type="button" id="barTableCancelBtn">Cancelar</button>
+          <button class="primary-btn" type="submit" form="barTableForm" id="barTableSaveBtn">Salvar mesa</button>
         </div>
       </div>
     </div>
@@ -10868,10 +11340,23 @@
 
     function barTableCard(table) {
       const order = barOrderForTable(table.id);
+      const commandNumber = order && (order.commandNumber || String(order.id).slice(-4));
       return '<article class="bar-table-card' + (order ? ' is-open' : '') + '">' +
-        '<div class="bar-order-top"><span class="bar-table-icon"><svg><use href="#admin-icon-table"></use></svg></span>' + (order ? barStatusPill(order.status) : '<span class="ops-pill good">Livre</span>') + '</div>' +
-        '<div><h3>' + escapeHtml(table.name) + '</h3><p>' + table.seats + ' lugares' + (order ? ' | ' + money(barOrderTotal(order)) : '') + '</p></div>' +
-        '<button class="' + (order ? 'primary-btn' : 'ghost-btn') + '" type="button" data-bar-table-open="' + escapeHtml(table.id) + '">' + (order ? 'Abrir comanda' : 'Abrir mesa') + '</button>' +
+        '<div class="bar-table-card-top"><span class="bar-table-number">' + escapeHtml(String(table.number).padStart(2, '0')) + '</span>' + (order ? '<span class="ops-pill warn">Ocupada</span>' : '<span class="ops-pill good">Livre</span>') + '</div>' +
+        '<div><h3>' + escapeHtml(table.name) + '</h3><div class="bar-table-card-meta"><span><svg><use href="#bar-icon-seat"></use></svg>' + escapeHtml(table.seats) + ' lugares</span>' + (table.notes ? '<span>' + escapeHtml(table.notes) + '</span>' : '') + '</div></div>' +
+        '<div class="bar-table-command-summary">' + (order ? '<div><span>Comanda #' + escapeHtml(commandNumber) + '</span><strong>' + escapeHtml(barStatusLabel(order.status)) + '</strong></div><strong>' + money(barOrderTotal(order)) + '</strong>' : '<div><span>Disponível</span><strong>Pronta para novo pedido</strong></div>') + '</div>' +
+        '<div class="bar-table-card-actions"><button class="' + (order ? 'primary-btn' : 'ghost-btn') + '" type="button" data-bar-table-open="' + escapeHtml(table.id) + '">' + (order ? 'Ver comanda' : 'Abrir mesa') + '</button></div>' +
+      '</article>';
+    }
+
+    function barTableManagementCard(table) {
+      const order = table.active ? barOrderForTable(table.id) : null;
+      const status = !table.active ? '<span class="ops-pill">Inativa</span>' : (order ? '<span class="ops-pill warn">Ocupada</span>' : '<span class="ops-pill good">Livre</span>');
+      const operationLabel = !table.active ? 'Fora de operação' : (order ? 'Comanda #' + (order.commandNumber || String(order.id).slice(-4)) : 'Disponível');
+      return '<article class="bar-table-management-card' + (table.active ? '' : ' is-inactive') + '">' +
+        '<div class="bar-table-management-head"><div class="bar-table-management-identity"><span class="bar-table-number">' + escapeHtml(String(table.number).padStart(2, '0')) + '</span><div><h3>' + escapeHtml(table.name) + '</h3><p>' + escapeHtml(table.notes || 'Sem observação') + '</p></div></div>' + status + '</div>' +
+        '<div class="bar-table-facts"><div class="bar-table-fact"><svg><use href="#bar-icon-seat"></use></svg><div><small>Capacidade</small><strong>' + escapeHtml(table.seats) + ' lugares</strong></div></div><div class="bar-table-fact"><svg><use href="#admin-icon-receipt"></use></svg><div><small>Operação</small><strong>' + escapeHtml(operationLabel) + '</strong></div></div></div>' +
+        '<div class="bar-table-management-actions">' + (table.active ? '<button class="small-btn" type="button" data-bar-table-open="' + escapeHtml(table.id) + '">' + (order ? 'Ver comanda' : 'Abrir mesa') + '</button>' : '') + '<button class="small-btn" type="button" data-bar-table-edit="' + escapeHtml(table.id) + '"><svg><use href="#bar-icon-edit"></use></svg>Editar</button></div>' +
       '</article>';
     }
 
@@ -11029,12 +11514,26 @@
       return origin + '/bar/?mesa=' + encodeURIComponent(table.number) + '&token=' + encodeURIComponent(table.qrToken || table.id);
     }
 
+    function barQrImageUrl(table, size) {
+      return 'https://api.qrserver.com/v1/create-qr-code/?size=' + (size || 320) + 'x' + (size || 320) + '&margin=16&data=' + encodeURIComponent(barQrUrl(table));
+    }
+
+    function barQrCard(table) {
+      return '<article class="bar-qr-card"><div class="bar-qr-card-visual"><img src="' + escapeHtml(barQrImageUrl(table, 240)) + '" alt="QR Code da ' + escapeHtml(table.name) + '" loading="lazy" /></div><div class="bar-qr-card-content"><div class="bar-qr-card-head"><div><h3>' + escapeHtml(table.name) + '</h3><p>Mesa ' + escapeHtml(table.number) + ' | ' + escapeHtml(table.seats) + ' lugares</p></div><span class="ops-pill good">Ativo</span></div><div class="bar-qr-card-actions"><button class="small-btn" type="button" data-bar-qr="' + escapeHtml(table.id) + '"><svg><use href="#admin-icon-qr"></use></svg>Ampliar</button><button class="small-btn" type="button" data-bar-copy-qr="' + escapeHtml(table.id) + '"><svg><use href="#bar-icon-link"></use></svg>Copiar link</button></div></div></article>';
+    }
+
     function renderBarTablesAndQr() {
-      const tables = opsData.barTables.filter(function (table) { return table.active; }).sort(function (a, b) { return a.number - b.number; });
-      $('barTableBoard').innerHTML = tables.map(barTableCard).join('') || '<div class="lesson-empty-state">Cadastre a primeira mesa na aba Mesas e QR Codes.</div>';
-      $('barQrGrid').innerHTML = tables.map(function (table) {
-        return '<article class="bar-qr-card"><div class="bar-order-top"><div><strong>' + escapeHtml(table.name) + '</strong><div class="muted">' + table.seats + ' lugares</div></div><span class="bar-table-icon"><svg><use href="#admin-icon-qr"></use></svg></span></div><code>' + escapeHtml(table.qrToken || 'QR em preparação') + '</code><div class="bar-qr-actions"><button class="small-btn" type="button" data-bar-qr="' + escapeHtml(table.id) + '">Ver QR Code</button><button class="small-btn" type="button" data-bar-table-open="' + escapeHtml(table.id) + '">Abrir mesa</button></div></article>';
-      }).join('') || '<div class="lesson-empty-state">Nenhuma mesa cadastrada.</div>';
+      const allTables = opsData.barTables.slice().sort(function (a, b) { return a.number - b.number; });
+      const activeTables = allTables.filter(function (table) { return table.active; });
+      const busyTables = activeTables.filter(function (table) { return Boolean(barOrderForTable(table.id)); });
+      const seats = activeTables.reduce(function (sum, table) { return sum + Number(table.seats || 0); }, 0);
+      $('barTablesTotalMetric').textContent = activeTables.length;
+      $('barTablesFreeMetric').textContent = activeTables.length - busyTables.length;
+      $('barTablesBusyMetric').textContent = busyTables.length;
+      $('barTablesSeatsMetric').textContent = seats;
+      $('barTableBoard').innerHTML = activeTables.map(barTableCard).join('') || '<div class="lesson-empty-state">Cadastre a primeira mesa na área Mesas.</div>';
+      $('barTableManagementGrid').innerHTML = allTables.map(barTableManagementCard).join('') || '<div class="lesson-empty-state">Nenhuma mesa cadastrada.</div>';
+      $('barQrGrid').innerHTML = activeTables.map(barQrCard).join('') || '<div class="lesson-empty-state">Cadastre uma mesa ativa para gerar o QR Code.</div>';
     }
 
     function renderBarModule() {
@@ -11109,7 +11608,7 @@
       const table = barTableById(tableId);
       if (!table) return;
       const url = barQrUrl(table);
-      const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=20&data=' + encodeURIComponent(url);
+      const qrUrl = barQrImageUrl(table, 500);
       opsState.selectedBarQrUrl = url;
       $('barQrModalTitle').textContent = 'QR Code | ' + table.name;
       $('barQrPreview').src = qrUrl;
@@ -11446,29 +11945,107 @@
       }
     }
 
+    function resetBarTableForm() {
+      $('barTableForm').reset();
+      $('barTableId').value = '';
+      $('barTableSeats').value = 4;
+      $('barTableActive').value = 'true';
+      $('barTableModalTitle').textContent = 'Adicionar mesa';
+      $('barTableSaveBtn').textContent = 'Salvar mesa';
+    }
+
+    function openBarTableModal(table) {
+      resetBarTableForm();
+      if (table) {
+        $('barTableModalTitle').textContent = 'Editar mesa';
+        $('barTableId').value = table.id;
+        $('barTableNumber').value = table.number;
+        $('barTableSeats').value = table.seats;
+        $('barTableName').value = table.name;
+        $('barTableNotes').value = table.notes || '';
+        $('barTableActive').value = String(table.active !== false);
+      } else {
+        const nextNumber = opsData.barTables.reduce(function (max, item) { return Math.max(max, Number(item.number || 0)); }, 0) + 1;
+        $('barTableNumber').value = nextNumber;
+        $('barTableName').value = 'Mesa ' + nextNumber;
+      }
+      $('barTableModal').classList.add('show');
+      $('barTableModal').setAttribute('aria-hidden', 'false');
+      setTimeout(function () { $('barTableName').focus(); }, 80);
+    }
+
+    function closeBarTableModal() {
+      $('barTableModal').classList.remove('show');
+      $('barTableModal').setAttribute('aria-hidden', 'true');
+      resetBarTableForm();
+    }
+
+    function editBarTableAction(tableId) {
+      const table = barTableById(tableId);
+      if (!table) return;
+      setBarTab('tables');
+      openBarTableModal(table);
+    }
+
+    function copyBarQrLink(tableId) {
+      const table = barTableById(tableId);
+      if (!table) return;
+      const value = barQrUrl(table);
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(value).then(function () { toast('Link da mesa copiado.'); }).catch(function () { toast(value); });
+      } else {
+        toast(value);
+      }
+    }
+
     async function saveBarTableAction(event) {
       event.preventDefault();
       try {
         requireAdminSession();
+        const currentId = $('barTableId').value;
+        const currentTable = currentId ? barTableById(currentId) : null;
         const number = Number($('barTableNumber').value || 0);
+        const seats = Number($('barTableSeats').value || 0);
         const name = $('barTableName').value.trim() || 'Mesa ' + number;
+        const active = $('barTableActive').value === 'true';
         if (number <= 0) throw new Error('Informe o número da mesa.');
-        if (opsData.barTables.some(function (table) { return table.number === number; })) throw new Error('Já existe uma mesa com este número.');
-        const localTable = { id: localId('bar_table'), number: number, name: name, seats: Number($('barTableSeats').value || 4), qrToken: localId('mesa'), active: true, notes: $('barTableNotes').value.trim() };
+        if (seats <= 0) throw new Error('Informe a quantidade de lugares.');
+        if (opsData.barTables.some(function (table) { return String(table.id) !== String(currentId) && table.number === number; })) throw new Error('Já existe uma mesa com este número.');
+        if (!active && currentTable && barOrderForTable(currentTable.id)) throw new Error('Feche a comanda antes de desativar esta mesa.');
+        const localTable = {
+          id: currentId || localId('bar_table'),
+          number: number,
+          name: name,
+          seats: seats,
+          qrToken: currentTable && currentTable.qrToken || localId('mesa'),
+          active: active,
+          notes: $('barTableNotes').value.trim(),
+          created: currentTable && currentTable.created || new Date().toISOString()
+        };
         let finalTable = localTable;
-        if (barCanPersist()) {
-          finalTable = mapBarTableRow(await supabaseInsert('bar_tables', {
-            number: localTable.number,
-            name: localTable.name,
-            seats: localTable.seats,
-            notes: localTable.notes || null
-          }));
+        const payload = {
+          number: localTable.number,
+          name: localTable.name,
+          seats: localTable.seats,
+          active: localTable.active,
+          notes: localTable.notes || null,
+          updated_at: new Date().toISOString()
+        };
+        if (barCanPersist(currentId)) {
+          if (currentId) {
+            const saved = await supabaseRest('bar_tables?id=eq.' + encodeURIComponent(currentId), { method: 'PATCH', body: payload, prefer: 'return=representation' });
+            finalTable = mapBarTableRow(Array.isArray(saved) ? saved[0] : saved);
+          } else {
+            delete payload.updated_at;
+            finalTable = mapBarTableRow(await supabaseInsert('bar_tables', payload));
+          }
         }
-        opsData.barTables.push(finalTable);
-        $('barTableForm').reset();
-        $('barTableSeats').value = 4;
+        const index = opsData.barTables.findIndex(function (table) { return String(table.id) === String(finalTable.id); });
+        if (index >= 0) opsData.barTables.splice(index, 1, finalTable);
+        else opsData.barTables.push(finalTable);
+        closeBarTableModal();
         renderBarModule();
-        toast('Mesa criada.');
+        toast(currentId ? 'Mesa atualizada.' : 'Mesa criada.');
       } catch (error) {
         reportActionError(error);
       }
@@ -13696,7 +14273,15 @@
       });
       $('barProductImageRemoveBtn').addEventListener('click', removeBarProductImage);
       $('barStockForm').addEventListener('submit', saveBarStockAction);
+      $('barAddTableBtn').addEventListener('click', function () {
+        openBarTableModal();
+      });
       $('barTableForm').addEventListener('submit', saveBarTableAction);
+      $('barTableModalClose').addEventListener('click', closeBarTableModal);
+      $('barTableCancelBtn').addEventListener('click', closeBarTableModal);
+      $('barTableModal').addEventListener('click', function (event) {
+        if (event.target.id === 'barTableModal') closeBarTableModal();
+      });
       $('barFinanceForm').addEventListener('submit', saveBarFinanceAction);
       $('barOrderItemForm').addEventListener('submit', addBarOrderItemAction);
       $('barProductSearch').addEventListener('input', renderBarProducts);
@@ -13720,6 +14305,11 @@
         const goBtn = event.target.closest('[data-bar-go]');
         if (goBtn) {
           setBarTab(goBtn.dataset.barGo);
+          return;
+        }
+        const tableEditBtn = event.target.closest('[data-bar-table-edit]');
+        if (tableEditBtn) {
+          editBarTableAction(tableEditBtn.dataset.barTableEdit);
           return;
         }
         const tableBtn = event.target.closest('[data-bar-table-open]');
@@ -13746,6 +14336,11 @@
         if (financeFilter) {
           opsState.barFinanceFilter = financeFilter.dataset.barFinanceFilter;
           renderBarFinance();
+          return;
+        }
+        const qrCopyBtn = event.target.closest('[data-bar-copy-qr]');
+        if (qrCopyBtn) {
+          copyBarQrLink(qrCopyBtn.dataset.barCopyQr);
           return;
         }
         const qrBtn = event.target.closest('[data-bar-qr]');
