@@ -3270,6 +3270,486 @@
       width: min(360px, 100%);
     }
 
+    .bar-product-page {
+      width: 100%;
+      min-width: 0;
+      display: grid;
+      gap: 14px;
+    }
+
+    .bar-product-page > *,
+    .bar-product-page .ops-panel,
+    [data-bar-panel="products"],
+    [data-bar-product-panel] {
+      min-width: 0;
+    }
+
+    .bar-products-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .bar-products-header h2 {
+      margin: 0 0 4px;
+      font-size: 22px;
+    }
+
+    .bar-products-header .primary-btn,
+    .bar-product-view-btn,
+    .bar-category-filter-btn {
+      display: inline-grid;
+      align-items: center;
+    }
+
+    .bar-products-header .primary-btn {
+      grid-template-columns: 20px auto;
+      gap: 8px;
+    }
+
+    .bar-products-header svg,
+    .bar-product-view-btn svg,
+    .bar-category-filter-btn svg,
+    .bar-product-category-icon svg,
+    .bar-product-placeholder svg,
+    .bar-product-form-section-title svg,
+    .bar-product-photo-placeholder svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .bar-product-view-nav {
+      display: flex;
+      gap: 6px;
+      padding: 5px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .bar-product-view-btn {
+      min-height: 42px;
+      grid-template-columns: 28px auto;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 900;
+    }
+
+    .bar-product-view-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .bar-product-view-btn:hover,
+    .bar-product-view-btn.active {
+      background: #eaf3f4;
+      color: var(--teal);
+    }
+
+    [data-bar-product-panel] {
+      display: none;
+    }
+
+    [data-bar-product-panel].active-product-panel {
+      display: block;
+    }
+
+    .bar-product-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .bar-product-metric {
+      min-height: 82px;
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .bar-product-metric-icon {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #eaf3f4;
+      color: var(--teal);
+    }
+
+    .bar-product-metric-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .bar-product-metric.warn .bar-product-metric-icon {
+      background: #fff0e8;
+      color: #b64b1a;
+    }
+
+    .bar-product-metric.good .bar-product-metric-icon {
+      background: #effbd0;
+      color: #557800;
+    }
+
+    .bar-product-metric strong,
+    .bar-product-metric span {
+      display: block;
+    }
+
+    .bar-product-metric strong {
+      font-size: 20px;
+      line-height: 1.1;
+    }
+
+    .bar-product-metric span {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .bar-category-filters {
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin: 12px 0 14px;
+    }
+
+    .bar-category-filter-btn {
+      min-height: 36px;
+      display: grid;
+      grid-template-columns: 22px auto;
+      gap: 6px;
+      align-items: center;
+      padding: 7px 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .bar-category-filter-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .bar-category-filter-btn:hover,
+    .bar-category-filter-btn.active {
+      border-color: #9bc5cd;
+      background: #edf7f8;
+      color: var(--teal);
+    }
+
+    .bar-product-list {
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    }
+
+    .bar-product-card {
+      min-width: 0;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .bar-product-card.is-inactive {
+      opacity: .7;
+    }
+
+    .bar-product-media {
+      position: relative;
+      aspect-ratio: 16 / 10;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      background: #f3f7f8;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .bar-product-media img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .bar-product-placeholder {
+      width: 72px;
+      height: 72px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #ffffff;
+      color: var(--teal);
+      box-shadow: 0 8px 24px rgba(16, 39, 44, .08);
+    }
+
+    .bar-product-placeholder svg {
+      width: 38px;
+      height: 38px;
+    }
+
+    .bar-product-placeholder.is-fallback {
+      display: none;
+    }
+
+    .bar-product-placeholder.is-fallback.show {
+      display: grid;
+    }
+
+    .bar-product-category-icon {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, .8);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .92);
+      color: var(--teal);
+      box-shadow: 0 6px 18px rgba(16, 39, 44, .08);
+    }
+
+    .bar-product-category-icon.drink,
+    .bar-product-placeholder.drink { color: #08769b; background: #e8f6fb; }
+    .bar-product-category-icon.beer,
+    .bar-product-placeholder.beer { color: #a45d00; background: #fff4df; }
+    .bar-product-category-icon.snack,
+    .bar-product-placeholder.snack { color: #557800; background: #effbd0; }
+    .bar-product-category-icon.portion,
+    .bar-product-placeholder.portion { color: #b64b1a; background: #fff0e8; }
+    .bar-product-category-icon.candy,
+    .bar-product-placeholder.candy { color: #7a458f; background: #f6eefa; }
+
+    .bar-product-card-body {
+      min-width: 0;
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+    }
+
+    .bar-product-card-title {
+      min-width: 0;
+    }
+
+    .bar-product-card-title h3 {
+      margin: 0;
+      overflow: hidden;
+      font-size: 17px;
+      line-height: 1.25;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-product-card-title small {
+      display: block;
+      margin-top: 4px;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-product-card-values {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .bar-product-card-price strong,
+    .bar-product-card-stock strong {
+      display: block;
+    }
+
+    .bar-product-card-price strong {
+      color: var(--teal);
+      font-size: 22px;
+    }
+
+    .bar-product-card-stock {
+      text-align: right;
+    }
+
+    .bar-product-card-stock strong {
+      font-size: 14px;
+    }
+
+    .bar-product-card-stock.low strong {
+      color: var(--red);
+    }
+
+    .bar-product-card-stock span,
+    .bar-product-card-price span {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .bar-product-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 14px 14px;
+    }
+
+    .bar-product-modal {
+      width: min(780px, 100%);
+      max-height: calc(100vh - 36px);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+    }
+
+    .bar-product-modal .admin-modal-body {
+      overflow: auto;
+    }
+
+    .bar-product-form {
+      display: grid;
+      gap: 18px;
+    }
+
+    .bar-product-form-section {
+      display: grid;
+      gap: 12px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .bar-product-form-section:first-child {
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .bar-product-form-section-title {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--dark);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .bar-product-form-section-title span {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #edf4f6;
+      color: var(--teal);
+    }
+
+    .bar-product-form-section-title svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .bar-product-photo-layout {
+      display: grid;
+      grid-template-columns: 180px minmax(0, 1fr);
+      gap: 14px;
+      align-items: center;
+    }
+
+    .bar-product-photo-preview {
+      width: 180px;
+      aspect-ratio: 1;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      border: 1px dashed #aec8ce;
+      border-radius: 8px;
+      background: #f5f9fa;
+    }
+
+    .bar-product-photo-preview img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .bar-product-photo-placeholder {
+      display: grid;
+      place-items: center;
+      gap: 8px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .bar-product-photo-placeholder svg {
+      width: 34px;
+      height: 34px;
+      color: var(--teal);
+    }
+
+    .bar-product-photo-copy {
+      display: grid;
+      gap: 10px;
+      align-content: center;
+    }
+
+    .bar-product-photo-copy strong,
+    .bar-product-photo-copy span {
+      display: block;
+    }
+
+    .bar-product-photo-copy span {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .bar-product-photo-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    #barProductImageFile {
+      display: none;
+    }
+
     .bar-modal-order-list {
       display: grid;
       gap: 8px;
@@ -3461,6 +3941,88 @@
       .bar-module .ops-tab-btn {
         min-height: 40px;
         padding: 8px 11px;
+      }
+
+      .bar-products-header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .bar-product-page .bar-toolbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+      }
+
+      .bar-product-page .bar-search {
+        width: 100%;
+      }
+
+      .bar-products-header .primary-btn {
+        width: 100%;
+        min-height: 44px;
+        justify-content: center;
+      }
+
+      .bar-product-view-nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .bar-product-view-btn {
+        justify-content: center;
+        padding: 8px;
+      }
+
+      .bar-product-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .bar-product-metric {
+        min-height: 72px;
+        grid-template-columns: 32px minmax(0, 1fr);
+        padding: 10px;
+      }
+
+      .bar-product-metric-icon {
+        width: 32px;
+        height: 32px;
+      }
+
+      .bar-product-metric strong {
+        font-size: 17px;
+      }
+
+      .bar-category-filters {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 3px;
+        scrollbar-width: none;
+      }
+
+      .bar-category-filters::-webkit-scrollbar {
+        display: none;
+      }
+
+      .bar-category-filter-btn {
+        flex: 0 0 auto;
+      }
+
+      .bar-product-list {
+        grid-template-columns: 1fr;
+      }
+
+      .bar-product-photo-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .bar-product-photo-preview {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+      }
+
+      .bar-product-modal {
+        max-height: calc(100dvh - 16px);
       }
 
       .bar-order-board,
@@ -4009,6 +4571,40 @@
     <symbol id="admin-icon-qr" viewBox="0 0 24 24">
       <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z" />
       <path d="M14 14h2v2h-2zM18 14h2v4h-2zM14 18h4v2h-4z" />
+    </symbol>
+    <symbol id="bar-icon-plus" viewBox="0 0 24 24">
+      <path d="M12 5v14M5 12h14" />
+    </symbol>
+    <symbol id="bar-icon-grid" viewBox="0 0 24 24">
+      <rect x="4" y="4" width="6" height="6" rx="1" />
+      <rect x="14" y="4" width="6" height="6" rx="1" />
+      <rect x="4" y="14" width="6" height="6" rx="1" />
+      <rect x="14" y="14" width="6" height="6" rx="1" />
+    </symbol>
+    <symbol id="bar-icon-photo" viewBox="0 0 24 24">
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="8.5" cy="9" r="2" />
+      <path d="m4 17 5-5 4 4 2-2 5 5" />
+    </symbol>
+    <symbol id="bar-icon-drink" viewBox="0 0 24 24">
+      <path d="M9 3h6M10 3v4l-2 3v9a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-9l-2-3V3" />
+      <path d="M8 12h8" />
+    </symbol>
+    <symbol id="bar-icon-beer" viewBox="0 0 24 24">
+      <path d="M5 7h11v12H7a2 2 0 0 1-2-2V7Z" />
+      <path d="M16 9h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2M8 10v6M12 10v6" />
+      <path d="M6 7c0-2 2-3 4-2 1-2 5-1 5 2" />
+    </symbol>
+    <symbol id="bar-icon-snack" viewBox="0 0 24 24">
+      <path d="M4 10h16L13 5a2 2 0 0 0-2 0l-7 5Z" />
+      <path d="m5 13 3 2 4-2 4 2 3-2M5 18h14" />
+    </symbol>
+    <symbol id="bar-icon-portion" viewBox="0 0 24 24">
+      <path d="M4 11h16l-2 7H6l-2-7Z" />
+      <path d="M8 11 7 5M12 11V4M16 11l1-6" />
+    </symbol>
+    <symbol id="bar-icon-candy" viewBox="0 0 24 24">
+      <path d="m8 8 8 8M9 6l-3 3 1 3-3 3 5 1 3-3M15 18l3-3-1-3 3-3-5-1-3 3" />
     </symbol>
   </svg>
 
@@ -4631,43 +5227,48 @@
           </div>
 
           <div data-bar-panel="products">
-            <div class="ops-grid">
-              <section class="ops-panel span-4">
-                <div class="ops-panel-head"><div><h2>Produto</h2><div class="muted">Cadastre ou edite o cardápio.</div></div></div>
-                <form class="form-grid" id="barProductForm">
-                  <input id="barProductId" type="hidden" />
-                  <div class="field full"><label for="barProductName">Nome</label><input id="barProductName" placeholder="Ex.: Água mineral" required /></div>
-                  <div class="field"><label for="barProductSku">Código</label><input id="barProductSku" placeholder="AGUA500" /></div>
-                  <div class="field"><label for="barProductCategory">Categoria</label><input id="barProductCategory" list="barCategoryOptions" placeholder="Bebidas" required /></div>
-                  <div class="field"><label for="barProductPrice">Venda</label><input id="barProductPrice" inputmode="decimal" placeholder="5,00" required /></div>
-                  <div class="field"><label for="barProductCost">Custo</label><input id="barProductCost" inputmode="decimal" placeholder="2,50" /></div>
-                  <div class="field"><label for="barProductStock">Estoque inicial</label><input id="barProductStock" type="number" min="0" step="0.001" placeholder="0" /></div>
-                  <div class="field"><label for="barProductMinimum">Estoque mínimo</label><input id="barProductMinimum" type="number" min="0" step="0.001" placeholder="5" /></div>
-                  <div class="field"><label for="barProductUnit">Unidade</label><select id="barProductUnit"><option value="un">Unidade</option><option value="kg">Quilo</option><option value="l">Litro</option><option value="pct">Pacote</option></select></div>
-                  <div class="field"><label for="barProductActive">Status</label><select id="barProductActive"><option value="true">Ativo</option><option value="false">Inativo</option></select></div>
-                  <div class="field full"><label for="barProductNotes">Observação</label><input id="barProductNotes" placeholder="Marca, tamanho ou detalhe" /></div>
-                  <div class="field full"><button class="primary-btn" type="submit">Salvar produto</button></div>
-                </form>
-                <datalist id="barCategoryOptions"><option value="Bebidas"></option><option value="Cervejas"></option><option value="Lanches"></option><option value="Porções"></option><option value="Doces"></option><option value="Outros"></option></datalist>
-              </section>
-              <section class="ops-panel span-8">
+            <div class="bar-product-page">
+              <div class="bar-products-header">
+                <div><h2>Produtos</h2><div class="muted">Cardápio, preços e controle de estoque do Bar.</div></div>
+                <button class="primary-btn" type="button" id="barAddProductBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Adicionar produto</span></button>
+              </div>
+
+              <div class="bar-product-view-nav" role="tablist" aria-label="Produtos e estoque">
+                <button class="bar-product-view-btn active" type="button" data-bar-product-view="catalog"><svg><use href="#bar-icon-grid"></use></svg><span>Catálogo</span></button>
+                <button class="bar-product-view-btn" type="button" data-bar-product-view="stock"><svg><use href="#admin-icon-box"></use></svg><span>Estoque</span></button>
+              </div>
+
+              <div class="bar-product-metrics">
+                <div class="bar-product-metric"><span class="bar-product-metric-icon"><svg><use href="#bar-icon-grid"></use></svg></span><div><strong id="barProductsTotalMetric">0</strong><span>produtos cadastrados</span></div></div>
+                <div class="bar-product-metric good"><span class="bar-product-metric-icon"><svg><use href="#admin-icon-bag"></use></svg></span><div><strong id="barProductsActiveMetric">0</strong><span>ativos no cardápio</span></div></div>
+                <div class="bar-product-metric warn"><span class="bar-product-metric-icon"><svg><use href="#admin-icon-box"></use></svg></span><div><strong id="barProductsLowMetric">0</strong><span>com estoque baixo</span></div></div>
+                <div class="bar-product-metric"><span class="bar-product-metric-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><div><strong id="barProductsValueMetric">R$ 0</strong><span>valor em estoque</span></div></div>
+              </div>
+
+              <div data-bar-product-panel="catalog" class="active-product-panel">
+                <section class="ops-panel">
                 <div class="bar-toolbar">
-                  <div><h2>Produtos</h2><div class="muted" id="barProductCount">0 cadastrados</div></div>
+                  <div><h2>Catálogo</h2><div class="muted" id="barProductCount">0 produtos</div></div>
                   <input class="bar-search" id="barProductSearch" type="search" placeholder="Buscar produto" />
                 </div>
+                <div class="bar-category-filters" id="barProductCategoryFilters" aria-label="Filtrar por categoria"></div>
                 <div class="bar-product-list" id="barProductList"></div>
               </section>
-              <section class="ops-panel span-12">
-                <div class="ops-panel-head"><div><h2>Movimentar estoque</h2><div class="muted">Entradas, perdas e ajustes ficam registrados.</div></div></div>
-                <form class="form-grid" id="barStockForm">
-                  <div class="field"><label for="barStockProduct">Produto</label><select id="barStockProduct" required></select></div>
-                  <div class="field"><label for="barStockType">Movimento</label><select id="barStockType"><option value="ENTRADA">Entrada</option><option value="SAIDA">Saída manual</option><option value="PERDA">Perda</option><option value="AJUSTE">Ajuste para menos</option></select></div>
-                  <div class="field"><label for="barStockQuantity">Quantidade</label><input id="barStockQuantity" type="number" min="0.001" step="0.001" required /></div>
-                  <div class="field"><label for="barStockCost">Novo custo</label><input id="barStockCost" inputmode="decimal" placeholder="Opcional" /></div>
-                  <div class="field full"><label for="barStockReason">Motivo</label><input id="barStockReason" placeholder="Ex.: compra do fornecedor, quebra ou contagem" required /></div>
-                  <div class="field full"><button class="primary-btn" type="submit">Registrar movimento</button></div>
-                </form>
-              </section>
+              </div>
+
+              <div data-bar-product-panel="stock">
+                <section class="ops-panel">
+                  <div class="ops-panel-head"><div><h2>Movimentar estoque</h2><div class="muted">Registre entradas, perdas e ajustes de forma segura.</div></div></div>
+                  <form class="form-grid" id="barStockForm">
+                    <div class="field"><label for="barStockProduct">Produto</label><select id="barStockProduct" required></select></div>
+                    <div class="field"><label for="barStockType">Movimento</label><select id="barStockType"><option value="ENTRADA">Entrada</option><option value="SAIDA">Saída manual</option><option value="PERDA">Perda</option><option value="AJUSTE">Ajuste para menos</option></select></div>
+                    <div class="field"><label for="barStockQuantity">Quantidade</label><input id="barStockQuantity" type="number" min="0.001" step="0.001" required /></div>
+                    <div class="field"><label for="barStockCost">Novo custo</label><input id="barStockCost" inputmode="decimal" placeholder="Opcional" /></div>
+                    <div class="field full"><label for="barStockReason">Motivo</label><input id="barStockReason" placeholder="Ex.: compra do fornecedor, quebra ou contagem" required /></div>
+                    <div class="field full"><button class="primary-btn" type="submit">Registrar movimento</button></div>
+                  </form>
+                </section>
+              </div>
             </div>
           </div>
 
@@ -4718,6 +5319,65 @@
         </div>
       </div>
     </section>
+
+    <div class="admin-modal-overlay" id="barProductModal" aria-hidden="true">
+      <div class="admin-modal bar-product-modal" role="dialog" aria-modal="true" aria-labelledby="barProductModalTitle">
+        <div class="admin-modal-head">
+          <div><h2 id="barProductModalTitle">Adicionar produto</h2><div class="muted">Preencha os dados que aparecerão no cardápio do Bar.</div></div>
+          <button class="ghost-btn" type="button" id="barProductModalClose">Fechar</button>
+        </div>
+        <div class="admin-modal-body">
+          <form class="bar-product-form" id="barProductForm">
+            <input id="barProductId" type="hidden" />
+            <input id="barProductImageCurrent" type="hidden" />
+
+            <section class="bar-product-form-section">
+              <div class="bar-product-form-section-title"><span><svg><use href="#bar-icon-photo"></use></svg></span>Foto do produto</div>
+              <div class="bar-product-photo-layout">
+                <div class="bar-product-photo-preview" id="barProductImagePreview">
+                  <div class="bar-product-photo-placeholder"><svg><use href="#bar-icon-photo"></use></svg><span>Sem foto</span></div>
+                </div>
+                <div class="bar-product-photo-copy">
+                  <div><strong>Uma boa foto facilita o pedido</strong><span>Use JPG, PNG ou WebP. A imagem será cortada em formato quadrado e otimizada antes do envio.</span></div>
+                  <input id="barProductImageFile" type="file" accept="image/jpeg,image/png,image/webp" />
+                  <div class="bar-product-photo-actions">
+                    <button class="primary-btn" type="button" id="barProductImagePickBtn">Escolher foto</button>
+                    <button class="ghost-btn" type="button" id="barProductImageRemoveBtn">Remover foto</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="bar-product-form-section">
+              <div class="bar-product-form-section-title"><span><svg><use href="#admin-icon-receipt"></use></svg></span>Informações do produto</div>
+              <div class="form-grid">
+                <div class="field full"><label for="barProductName">Nome</label><input id="barProductName" placeholder="Ex.: Água mineral" required /></div>
+                <div class="field"><label for="barProductCategory">Categoria</label><input id="barProductCategory" list="barCategoryOptions" placeholder="Bebidas" required /></div>
+                <div class="field"><label for="barProductSku">Código</label><input id="barProductSku" placeholder="AGUA500" /></div>
+              </div>
+            </section>
+
+            <section class="bar-product-form-section">
+              <div class="bar-product-form-section-title"><span><svg><use href="#admin-icon-wallet"></use></svg></span>Preço e estoque</div>
+              <div class="form-grid">
+                <div class="field"><label for="barProductPrice">Preço de venda</label><input id="barProductPrice" inputmode="decimal" placeholder="5,00" required /></div>
+                <div class="field"><label for="barProductCost">Preço de custo</label><input id="barProductCost" inputmode="decimal" placeholder="2,50" /></div>
+                <div class="field"><label for="barProductStock">Estoque inicial</label><input id="barProductStock" type="number" min="0" step="0.001" placeholder="0" /></div>
+                <div class="field"><label for="barProductMinimum">Estoque mínimo</label><input id="barProductMinimum" type="number" min="0" step="0.001" placeholder="5" /></div>
+                <div class="field"><label for="barProductUnit">Unidade</label><select id="barProductUnit"><option value="un">Unidade</option><option value="kg">Quilo</option><option value="l">Litro</option><option value="pct">Pacote</option></select></div>
+                <div class="field"><label for="barProductActive">Status</label><select id="barProductActive"><option value="true">Ativo no cardápio</option><option value="false">Inativo</option></select></div>
+                <div class="field full"><label for="barProductNotes">Descrição curta</label><input id="barProductNotes" placeholder="Ex.: Garrafa 500 ml, gelada" /></div>
+              </div>
+            </section>
+          </form>
+          <datalist id="barCategoryOptions"><option value="Bebidas"></option><option value="Cervejas"></option><option value="Lanches"></option><option value="Porções"></option><option value="Doces"></option><option value="Outros"></option></datalist>
+        </div>
+        <div class="modal-actions">
+          <button class="ghost-btn" type="button" id="barProductCancelBtn">Cancelar</button>
+          <button class="primary-btn" type="submit" form="barProductForm" id="barProductSaveBtn">Salvar produto</button>
+        </div>
+      </div>
+    </div>
 
     <div class="admin-modal-overlay" id="barCommandModal" aria-hidden="true">
       <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="barCommandModalTitle">
@@ -8912,6 +9572,11 @@
       extraCourtDates: [],
       selectedCourtSlot: null,
       barTab: 'overview',
+      barProductView: 'catalog',
+      barProductCategory: 'todos',
+      pendingBarProductImage: null,
+      pendingBarProductImagePreview: '',
+      removeBarProductImage: false,
       barFinanceFilter: 'abertos',
       selectedBarOrderId: null,
       selectedBarQrUrl: '',
@@ -10235,25 +10900,103 @@
       });
     }
 
+    function barProductCategoryKey(category) {
+      const value = normalizeMatchText(category || '');
+      if (value.includes('cervej') || value.includes('chopp')) return 'beer';
+      if (value.includes('bebid') || value.includes('agua') || value.includes('suco') || value.includes('refriger') || value.includes('isoton')) return 'drink';
+      if (value.includes('lanche') || value.includes('sandu') || value.includes('hamburg') || value.includes('torrada')) return 'snack';
+      if (value.includes('porcao') || value.includes('frita') || value.includes('petisco')) return 'portion';
+      if (value.includes('doce') || value.includes('chocolate') || value.includes('sorvete') || value.includes('bala')) return 'candy';
+      return 'default';
+    }
+
+    function barProductCategoryIcon(category) {
+      const icons = {
+        beer: 'bar-icon-beer',
+        drink: 'bar-icon-drink',
+        snack: 'bar-icon-snack',
+        portion: 'bar-icon-portion',
+        candy: 'bar-icon-candy',
+        default: 'admin-icon-box'
+      };
+      return '<svg aria-hidden="true"><use href="#' + icons[barProductCategoryKey(category)] + '"></use></svg>';
+    }
+
+    function setBarProductView(view) {
+      opsState.barProductView = view === 'stock' ? 'stock' : 'catalog';
+      document.querySelectorAll('[data-bar-product-view]').forEach(function (button) {
+        button.classList.toggle('active', button.dataset.barProductView === opsState.barProductView);
+      });
+      document.querySelectorAll('[data-bar-product-panel]').forEach(function (panel) {
+        panel.classList.toggle('active-product-panel', panel.dataset.barProductPanel === opsState.barProductView);
+      });
+    }
+
     function renderBarProducts() {
-      const search = normalizeMatchText($('barProductSearch').value);
-      const products = opsData.barProducts.filter(function (product) {
-        return !search || normalizeMatchText([product.name, product.sku, product.category].join(' ')).includes(search);
-      }).sort(function (a, b) {
+      const allProducts = opsData.barProducts.slice().sort(function (a, b) {
         return String(a.category).localeCompare(String(b.category)) || String(a.name).localeCompare(String(b.name));
       });
-      $('barProductCount').textContent = products.length + ' produto(s)';
+      const categories = Array.from(new Set(allProducts.map(function (product) { return product.category || 'Outros'; }))).sort(function (a, b) {
+        return String(a).localeCompare(String(b));
+      });
+      if (opsState.barProductCategory !== 'todos' && !categories.includes(opsState.barProductCategory)) {
+        opsState.barProductCategory = 'todos';
+      }
+
+      const categoryButtons = [{ value: 'todos', label: 'Todos', icon: 'bar-icon-grid' }].concat(categories.map(function (category) {
+        return { value: category, label: category };
+      }));
+      $('barProductCategoryFilters').innerHTML = categoryButtons.map(function (item) {
+        const icon = item.icon ? '<svg aria-hidden="true"><use href="#' + item.icon + '"></use></svg>' : barProductCategoryIcon(item.value);
+        return '<button class="bar-category-filter-btn' + (opsState.barProductCategory === item.value ? ' active' : '') + '" type="button" data-bar-product-category="' + escapeHtml(item.value) + '">' + icon + '<span>' + escapeHtml(item.label) + '</span></button>';
+      }).join('');
+
+      const search = normalizeMatchText($('barProductSearch').value);
+      const products = allProducts.filter(function (product) {
+        const categoryMatches = opsState.barProductCategory === 'todos' || product.category === opsState.barProductCategory;
+        const searchMatches = !search || normalizeMatchText([product.name, product.sku, product.category, product.notes].join(' ')).includes(search);
+        return categoryMatches && searchMatches;
+      });
+      const activeProducts = allProducts.filter(function (product) { return product.active; });
+      const lowStock = activeProducts.filter(function (product) { return Number(product.stock) <= Number(product.minimumStock || 0); });
+      const stockValue = allProducts.reduce(function (sum, product) {
+        return sum + Number(product.stock || 0) * Number(product.costPrice || 0);
+      }, 0);
+
+      $('barProductsTotalMetric').textContent = allProducts.length;
+      $('barProductsActiveMetric').textContent = activeProducts.length;
+      $('barProductsLowMetric').textContent = lowStock.length;
+      $('barProductsValueMetric').textContent = money(stockValue);
+      $('barProductCount').textContent = products.length === allProducts.length ? products.length + ' produto(s)' : products.length + ' de ' + allProducts.length + ' produto(s)';
       $('barProductList').innerHTML = products.map(function (product) {
         const low = product.active && Number(product.stock) <= Number(product.minimumStock || 0);
-        return '<article class="bar-product-row"><div class="bar-product-main"><div class="bar-product-copy"><strong>' + escapeHtml(product.name) + '</strong><small>' + escapeHtml([product.category, product.sku, product.notes].filter(Boolean).join(' | ')) + '</small></div><span class="finance-total">' + money(product.salePrice) + '</span></div>' +
-          '<div class="bar-row-actions"><div class="bar-stock-value' + (low ? ' low' : '') + '"><strong>' + escapeHtml(Number(product.stock || 0).toLocaleString('pt-BR')) + ' ' + escapeHtml(product.unit) + '</strong><span class="muted">em estoque</span></div>' + (low ? '<span class="ops-pill bad">Estoque baixo</span>' : statusPill(product.active ? 'ATIVO' : 'INATIVO')) + '<button class="small-btn" type="button" data-bar-product-edit="' + escapeHtml(product.id) + '">Editar</button></div></article>';
+        const categoryKey = barProductCategoryKey(product.category);
+        const placeholder = '<div class="bar-product-placeholder ' + categoryKey + '">' + barProductCategoryIcon(product.category) + '</div>';
+        const media = product.imageUrl
+          ? '<img src="' + escapeHtml(product.imageUrl) + '" alt="' + escapeHtml(product.name) + '" loading="lazy" data-bar-product-image />' + '<div class="bar-product-placeholder ' + categoryKey + ' is-fallback">' + barProductCategoryIcon(product.category) + '</div>'
+          : placeholder;
+        const meta = [product.category, product.sku, product.notes].filter(Boolean).join(' | ');
+        return '<article class="bar-product-card' + (product.active ? '' : ' is-inactive') + '">' +
+          '<div class="bar-product-media">' + media + '<span class="bar-product-category-icon ' + categoryKey + '" title="' + escapeHtml(product.category) + '">' + barProductCategoryIcon(product.category) + '</span></div>' +
+          '<div class="bar-product-card-body"><div class="bar-product-card-title"><h3>' + escapeHtml(product.name) + '</h3><small>' + escapeHtml(meta || 'Sem detalhes') + '</small></div>' +
+          '<div class="bar-product-card-values"><div class="bar-product-card-price"><span>Venda</span><strong>' + money(product.salePrice) + '</strong></div><div class="bar-product-card-stock' + (low ? ' low' : '') + '"><span>Estoque</span><strong>' + escapeHtml(Number(product.stock || 0).toLocaleString('pt-BR')) + ' ' + escapeHtml(product.unit) + '</strong></div></div></div>' +
+          '<div class="bar-product-card-footer">' + (low ? '<span class="ops-pill bad">Estoque baixo</span>' : statusPill(product.active ? 'ATIVO' : 'INATIVO')) + '<button class="small-btn" type="button" data-bar-product-edit="' + escapeHtml(product.id) + '">Editar produto</button></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum produto encontrado.</div>';
 
-      const options = opsData.barProducts.filter(function (product) { return product.active; }).map(function (product) {
+      $('barProductList').querySelectorAll('img[data-bar-product-image]').forEach(function (image) {
+        image.addEventListener('error', function () {
+          image.style.display = 'none';
+          const fallback = image.nextElementSibling;
+          if (fallback) fallback.classList.add('show');
+        }, { once: true });
+      });
+
+      const options = activeProducts.map(function (product) {
         return '<option value="' + escapeHtml(product.id) + '">' + escapeHtml(product.name) + ' | ' + escapeHtml(Number(product.stock || 0).toLocaleString('pt-BR')) + ' ' + escapeHtml(product.unit) + '</option>';
       }).join('');
       $('barStockProduct').innerHTML = '<option value="">Selecione</option>' + options;
       $('barOrderProduct').innerHTML = '<option value="">Selecione um produto</option>' + options;
+      setBarProductView(opsState.barProductView);
     }
 
     function renderBarFinance() {
@@ -10412,20 +11155,198 @@
       return !isAdminDemoMode() && opsState.barSchemaReady && (!id || isUuid(id));
     }
 
+    function barProductImagePlaceholder() {
+      return '<div class="bar-product-photo-placeholder"><svg><use href="#bar-icon-photo"></use></svg><span>Sem foto</span></div>';
+    }
+
+    function updateBarProductImagePreview(url) {
+      const preview = $('barProductImagePreview');
+      if (!url) {
+        preview.innerHTML = barProductImagePlaceholder();
+        return;
+      }
+      preview.innerHTML = '<img src="' + escapeHtml(url) + '" alt="Prévia do produto" />';
+      const image = preview.querySelector('img');
+      image.addEventListener('error', function () {
+        preview.innerHTML = barProductImagePlaceholder();
+      }, { once: true });
+    }
+
+    function resizeBarProductImage(file) {
+      return new Promise(function (resolve, reject) {
+        if (!file) {
+          resolve(null);
+          return;
+        }
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+          reject(new Error('Use uma imagem JPG, PNG ou WebP.'));
+          return;
+        }
+        if (file.size > 8 * 1024 * 1024) {
+          reject(new Error('A foto precisa ter no máximo 8 MB.'));
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function () {
+          const image = new Image();
+          image.onload = function () {
+            const sourceSize = Math.min(image.naturalWidth || image.width, image.naturalHeight || image.height);
+            const sourceX = Math.max(0, ((image.naturalWidth || image.width) - sourceSize) / 2);
+            const sourceY = Math.max(0, ((image.naturalHeight || image.height) - sourceSize) / 2);
+            const targetSize = Math.max(1, Math.min(1200, sourceSize));
+            const canvas = document.createElement('canvas');
+            canvas.width = targetSize;
+            canvas.height = targetSize;
+            const context = canvas.getContext('2d');
+            context.drawImage(image, sourceX, sourceY, sourceSize, sourceSize, 0, 0, targetSize, targetSize);
+            const previewUrl = canvas.toDataURL('image/webp', .84);
+            canvas.toBlob(function (blob) {
+              if (!blob) {
+                reject(new Error('Não consegui preparar essa foto.'));
+                return;
+              }
+              resolve({ blob: blob, previewUrl: previewUrl });
+            }, 'image/webp', .84);
+          };
+          image.onerror = function () { reject(new Error('Não consegui abrir essa foto.')); };
+          image.src = reader.result;
+        };
+        reader.onerror = function () { reject(new Error('Não consegui ler essa foto.')); };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function barProductImageSlug(name) {
+      return normalizeMatchText(name || 'produto').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 56) || 'produto';
+    }
+
+    function encodeStoragePath(path) {
+      return String(path || '').split('/').map(encodeURIComponent).join('/');
+    }
+
+    async function uploadBarProductImage(blob, productName) {
+      if (!blob) return '';
+      requireAdminSession();
+      const objectPath = 'catalogo/' + Date.now() + '-' + barProductImageSlug(productName) + '-' + Math.random().toString(36).slice(2, 7) + '.webp';
+      const headers = supabaseHeaders(true);
+      headers['Content-Type'] = blob.type || 'image/webp';
+      headers['cache-control'] = '31536000';
+      const response = await fetch(supabaseBaseUrl() + '/storage/v1/object/bar-products/' + encodeStoragePath(objectPath), {
+        method: 'POST',
+        headers: headers,
+        body: blob
+      });
+      const text = await response.text();
+      let data = null;
+      try { data = text ? JSON.parse(text) : null; } catch (error) { data = null; }
+      if (!response.ok) {
+        throw new Error(data && (data.message || data.error) || 'Não consegui enviar a foto do produto.');
+      }
+      return supabaseBaseUrl() + '/storage/v1/object/public/bar-products/' + encodeStoragePath(objectPath);
+    }
+
+    function barProductStoragePath(imageUrl) {
+      const marker = '/storage/v1/object/public/bar-products/';
+      const index = String(imageUrl || '').indexOf(marker);
+      if (index < 0) return '';
+      return String(imageUrl).slice(index + marker.length).split('/').map(function (part) {
+        try { return decodeURIComponent(part); } catch (error) { return part; }
+      }).join('/');
+    }
+
+    async function deleteBarProductImage(imageUrl) {
+      const objectPath = barProductStoragePath(imageUrl);
+      if (!objectPath || !adminSession || !adminSession.access_token) return;
+      const response = await fetch(supabaseBaseUrl() + '/storage/v1/object/bar-products/' + encodeStoragePath(objectPath), {
+        method: 'DELETE',
+        headers: supabaseHeaders(true)
+      });
+      if (!response.ok && response.status !== 404) {
+        console.info('A foto antiga do produto não pôde ser removida.');
+      }
+    }
+
     function resetBarProductForm() {
       $('barProductForm').reset();
       $('barProductId').value = '';
+      $('barProductImageCurrent').value = '';
       $('barProductUnit').value = 'un';
       $('barProductActive').value = 'true';
+      opsState.pendingBarProductImage = null;
+      opsState.pendingBarProductImagePreview = '';
+      opsState.removeBarProductImage = false;
+      $('barProductModalTitle').textContent = 'Adicionar produto';
+      $('barProductSaveBtn').textContent = 'Salvar produto';
+      updateBarProductImagePreview('');
+    }
+
+    function openBarProductModal(product) {
+      resetBarProductForm();
+      if (product) {
+        $('barProductModalTitle').textContent = 'Editar produto';
+        $('barProductId').value = product.id;
+        $('barProductImageCurrent').value = product.imageUrl || '';
+        $('barProductName').value = product.name;
+        $('barProductSku').value = product.sku;
+        $('barProductCategory').value = product.category;
+        $('barProductPrice').value = String(product.salePrice || '').replace('.', ',');
+        $('barProductCost').value = String(product.costPrice || '').replace('.', ',');
+        $('barProductStock').value = product.stock;
+        $('barProductMinimum').value = product.minimumStock;
+        $('barProductUnit').value = product.unit || 'un';
+        $('barProductActive').value = String(product.active !== false);
+        $('barProductNotes').value = product.notes || '';
+        updateBarProductImagePreview(product.imageUrl || '');
+      }
+      $('barProductModal').classList.add('show');
+      $('barProductModal').setAttribute('aria-hidden', 'false');
+      setTimeout(function () { $('barProductName').focus(); }, 80);
+    }
+
+    function closeBarProductModal() {
+      $('barProductModal').classList.remove('show');
+      $('barProductModal').setAttribute('aria-hidden', 'true');
+      resetBarProductForm();
+    }
+
+    async function selectBarProductImage(file) {
+      const prepared = await resizeBarProductImage(file);
+      if (!prepared) return;
+      opsState.pendingBarProductImage = prepared.blob;
+      opsState.pendingBarProductImagePreview = prepared.previewUrl;
+      opsState.removeBarProductImage = false;
+      updateBarProductImagePreview(prepared.previewUrl);
+    }
+
+    function removeBarProductImage() {
+      opsState.pendingBarProductImage = null;
+      opsState.pendingBarProductImagePreview = '';
+      opsState.removeBarProductImage = true;
+      $('barProductImageFile').value = '';
+      updateBarProductImagePreview('');
     }
 
     async function saveBarProductAction(event) {
       event.preventDefault();
+      let uploadedImageUrl = '';
       try {
         requireAdminSession();
         const name = $('barProductName').value.trim();
         if (!name) throw new Error('Informe o nome do produto.');
         const currentId = $('barProductId').value;
+        const currentProduct = currentId ? barProductById(currentId) : null;
+        const previousImageUrl = currentProduct && currentProduct.imageUrl || $('barProductImageCurrent').value || '';
+        let imageUrl = opsState.removeBarProductImage ? '' : previousImageUrl;
+        $('barProductSaveBtn').disabled = true;
+        $('barProductSaveBtn').textContent = 'Salvando...';
+        if (opsState.pendingBarProductImage) {
+          if (barCanPersist(currentId)) {
+            uploadedImageUrl = await uploadBarProductImage(opsState.pendingBarProductImage, name);
+            imageUrl = uploadedImageUrl;
+          } else {
+            imageUrl = opsState.pendingBarProductImagePreview;
+          }
+        }
         const localProduct = {
           id: currentId || localId('bar_product'),
           name: name,
@@ -10436,6 +11357,7 @@
           stock: Number($('barProductStock').value || 0),
           minimumStock: Number($('barProductMinimum').value || 0),
           unit: $('barProductUnit').value || 'un',
+          imageUrl: imageUrl,
           active: $('barProductActive').value === 'true',
           notes: $('barProductNotes').value.trim()
         };
@@ -10450,6 +11372,7 @@
           stock_quantity: localProduct.stock,
           minimum_stock: localProduct.minimumStock,
           unit: localProduct.unit,
+          image_url: localProduct.imageUrl || null,
           active: localProduct.active,
           notes: localProduct.notes || null,
           updated_at: new Date().toISOString()
@@ -10465,11 +11388,18 @@
         const index = opsData.barProducts.findIndex(function (product) { return String(product.id) === String(currentId || finalProduct.id); });
         if (index >= 0) opsData.barProducts.splice(index, 1, finalProduct);
         else opsData.barProducts.push(finalProduct);
-        resetBarProductForm();
+        if (barCanPersist(currentId) && previousImageUrl && previousImageUrl !== finalProduct.imageUrl) {
+          deleteBarProductImage(previousImageUrl).catch(function () {});
+        }
+        closeBarProductModal();
         renderBarModule();
         toast('Produto salvo.');
       } catch (error) {
+        if (uploadedImageUrl) deleteBarProductImage(uploadedImageUrl).catch(function () {});
         reportActionError(error);
+      } finally {
+        $('barProductSaveBtn').disabled = false;
+        if ($('barProductModal').classList.contains('show')) $('barProductSaveBtn').textContent = 'Salvar produto';
       }
     }
 
@@ -10478,19 +11408,7 @@
       if (!product) return;
       opsState.barTab = 'products';
       setBarTab('products');
-      $('barProductId').value = product.id;
-      $('barProductName').value = product.name;
-      $('barProductSku').value = product.sku;
-      $('barProductCategory').value = product.category;
-      $('barProductPrice').value = String(product.salePrice || '').replace('.', ',');
-      $('barProductCost').value = String(product.costPrice || '').replace('.', ',');
-      $('barProductStock').value = product.stock;
-      $('barProductMinimum').value = product.minimumStock;
-      $('barProductUnit').value = product.unit || 'un';
-      $('barProductActive').value = String(product.active !== false);
-      $('barProductNotes').value = product.notes || '';
-      $('barProductName').focus();
-      $('barProductForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      openBarProductModal(product);
     }
 
     async function saveBarStockAction(event) {
@@ -12756,13 +13674,44 @@
         renderBarModule();
         toast(hasTables ? 'Escolha a mesa para abrir a comanda.' : 'Cadastre a primeira mesa.');
       });
+      $('barAddProductBtn').addEventListener('click', function () {
+        openBarProductModal();
+      });
       $('barProductForm').addEventListener('submit', saveBarProductAction);
+      $('barProductModalClose').addEventListener('click', closeBarProductModal);
+      $('barProductCancelBtn').addEventListener('click', closeBarProductModal);
+      $('barProductModal').addEventListener('click', function (event) {
+        if (event.target.id === 'barProductModal') closeBarProductModal();
+      });
+      $('barProductImagePickBtn').addEventListener('click', function () {
+        $('barProductImageFile').click();
+      });
+      $('barProductImageFile').addEventListener('change', function (event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        selectBarProductImage(file).catch(function (error) {
+          $('barProductImageFile').value = '';
+          reportActionError(error);
+        });
+      });
+      $('barProductImageRemoveBtn').addEventListener('click', removeBarProductImage);
       $('barStockForm').addEventListener('submit', saveBarStockAction);
       $('barTableForm').addEventListener('submit', saveBarTableAction);
       $('barFinanceForm').addEventListener('submit', saveBarFinanceAction);
       $('barOrderItemForm').addEventListener('submit', addBarOrderItemAction);
       $('barProductSearch').addEventListener('input', renderBarProducts);
       $('barModule').addEventListener('click', function (event) {
+        const productViewBtn = event.target.closest('[data-bar-product-view]');
+        if (productViewBtn) {
+          setBarProductView(productViewBtn.dataset.barProductView);
+          return;
+        }
+        const productCategoryBtn = event.target.closest('[data-bar-product-category]');
+        if (productCategoryBtn) {
+          opsState.barProductCategory = productCategoryBtn.dataset.barProductCategory;
+          renderBarProducts();
+          return;
+        }
         const tabBtn = event.target.closest('[data-bar-tab]');
         if (tabBtn) {
           setBarTab(tabBtn.dataset.barTab);

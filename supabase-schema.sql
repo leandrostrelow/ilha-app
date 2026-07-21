@@ -1243,6 +1243,45 @@ to authenticated
 using (public.is_bar_staff())
 with check (public.is_bar_staff());
 
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'bar-products',
+  'bar-products',
+  true,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/webp']
+)
+on conflict (id) do update
+set public = excluded.public,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "bar staff view product images" on storage.objects;
+drop policy if exists "bar staff upload product images" on storage.objects;
+drop policy if exists "bar staff update product images" on storage.objects;
+drop policy if exists "bar staff delete product images" on storage.objects;
+
+create policy "bar staff view product images"
+on storage.objects for select
+to authenticated
+using (bucket_id = 'bar-products' and public.is_bar_staff());
+
+create policy "bar staff upload product images"
+on storage.objects for insert
+to authenticated
+with check (bucket_id = 'bar-products' and public.is_bar_staff());
+
+create policy "bar staff update product images"
+on storage.objects for update
+to authenticated
+using (bucket_id = 'bar-products' and public.is_bar_staff())
+with check (bucket_id = 'bar-products' and public.is_bar_staff());
+
+create policy "bar staff delete product images"
+on storage.objects for delete
+to authenticated
+using (bucket_id = 'bar-products' and public.is_bar_staff());
+
 create policy "staff read teachers"
 on public.teachers for select
 to authenticated
