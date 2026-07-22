@@ -7593,6 +7593,721 @@
         display: none;
       }
     }
+
+    /* Financeiro do Bar: relatórios operacionais */
+    .bar-finance-page {
+      display: grid;
+      gap: 18px;
+    }
+
+    .bar-finance-report-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 22px 24px;
+      overflow: hidden;
+      border: 1px solid #243653;
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 90% 0%, rgba(36, 164, 177, .2), transparent 34%),
+        linear-gradient(120deg, #111b2d, #1a2a44);
+      color: #ffffff;
+      box-shadow: 0 18px 44px rgba(21, 34, 56, .14);
+    }
+
+    .bar-finance-report-title {
+      min-width: 250px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .bar-finance-report-title > span {
+      width: 48px;
+      height: 48px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, .18);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .bar-finance-report-title svg,
+    .bar-finance-export-btn svg,
+    .bar-finance-kpi-icon svg,
+    .bar-finance-entry-icon svg,
+    .bar-finance-save-btn svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .bar-finance-report-title h2 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 21px;
+      letter-spacing: -.02em;
+    }
+
+    .bar-finance-report-title p {
+      margin: 4px 0 0;
+      color: #bdc8d8;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .bar-finance-report-controls {
+      display: flex;
+      align-items: end;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .bar-finance-period-switch {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 3px;
+      padding: 4px;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 11px;
+      background: rgba(255, 255, 255, .07);
+    }
+
+    .bar-finance-period-switch button {
+      min-height: 36px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 8px;
+      color: #bdc8d8;
+      background: transparent;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .bar-finance-period-switch button.active {
+      color: #123a42;
+      background: #dff5f4;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, .16);
+    }
+
+    .bar-finance-date-control {
+      display: grid;
+      gap: 5px;
+      color: #aebacd;
+      font-size: 9px;
+      font-weight: 850;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .bar-finance-date-control[hidden] {
+      display: none;
+    }
+
+    .bar-finance-date-control input {
+      width: 154px;
+      min-height: 44px;
+      padding: 0 12px;
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 10px;
+      outline: 0;
+      color: #ffffff;
+      color-scheme: dark;
+      background: rgba(255, 255, 255, .08);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .bar-finance-date-control input:focus {
+      border-color: #7cd1d3;
+      box-shadow: 0 0 0 3px rgba(124, 209, 211, .16);
+    }
+
+    .bar-finance-export-btn {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 14px;
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 10px;
+      color: #ffffff;
+      background: rgba(255, 255, 255, .08);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .bar-finance-export-btn:hover {
+      border-color: rgba(255, 255, 255, .3);
+      background: rgba(255, 255, 255, .14);
+    }
+
+    .bar-finance-export-btn svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .bar-finance-kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .bar-finance-kpi {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      padding: 18px;
+      border: 1px solid #d6e5e7;
+      border-radius: 16px;
+      background: #f4fbfb;
+      box-shadow: 0 10px 28px rgba(30, 55, 62, .06);
+    }
+
+    .bar-finance-kpi.expense {
+      border-color: #f0d8d2;
+      background: #fff7f5;
+    }
+
+    .bar-finance-kpi.net {
+      border-color: #dbe2ed;
+      background: #f7f9fc;
+    }
+
+    .bar-finance-kpi.ticket {
+      border-color: #ede0bf;
+      background: #fffbf0;
+    }
+
+    .bar-finance-kpi-icon {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      color: #087d83;
+      border-radius: 13px;
+      background: #dff3f2;
+    }
+
+    .bar-finance-kpi.expense .bar-finance-kpi-icon {
+      color: #c0523b;
+      background: #fde6df;
+    }
+
+    .bar-finance-kpi.net .bar-finance-kpi-icon {
+      color: #263b5c;
+      background: #e6ebf3;
+    }
+
+    .bar-finance-kpi.ticket .bar-finance-kpi-icon {
+      color: #9b6b0a;
+      background: #f9eccb;
+    }
+
+    .bar-finance-kpi small,
+    .bar-finance-kpi strong,
+    .bar-finance-kpi em {
+      display: block;
+      min-width: 0;
+    }
+
+    .bar-finance-kpi small {
+      color: #667085;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .035em;
+      text-transform: uppercase;
+    }
+
+    .bar-finance-kpi strong {
+      margin-top: 5px;
+      overflow: hidden;
+      color: #14232b;
+      font-size: clamp(21px, 2vw, 28px);
+      line-height: 1.05;
+      letter-spacing: -.045em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-finance-kpi em {
+      margin-top: 6px;
+      color: #75818e;
+      font-size: 10px;
+      font-style: normal;
+      font-weight: 700;
+    }
+
+    .bar-finance-open-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      overflow: hidden;
+      border: 1px solid #dce4e7;
+      border-radius: 14px;
+      background: #ffffff;
+      box-shadow: 0 8px 22px rgba(30, 55, 62, .04);
+    }
+
+    .bar-finance-open-strip > div {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+    }
+
+    .bar-finance-open-strip > div + div {
+      border-left: 1px solid #e7edef;
+    }
+
+    .bar-finance-open-strip span {
+      color: #687785;
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .bar-finance-open-strip strong {
+      color: #17283a;
+      font-size: 16px;
+    }
+
+    .bar-finance-report-grid,
+    .bar-finance-bottom-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+
+    .bar-finance-bottom-grid {
+      grid-template-columns: minmax(0, 1.55fr) minmax(330px, .75fr);
+    }
+
+    .bar-finance-method-panel,
+    .bar-finance-chart-panel,
+    .bar-finance-movement-panel,
+    .bar-finance-entry-panel {
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .bar-finance-method-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .bar-finance-method-card {
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid #e2e9ec;
+      border-radius: 13px;
+      background: #fbfcfd;
+    }
+
+    .bar-finance-method-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .bar-finance-method-card-head span:first-child {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #4c5c68;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .bar-finance-method-dot {
+      width: 10px;
+      height: 10px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--method-color, #138a8f);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--method-color, #138a8f) 14%, transparent);
+    }
+
+    .bar-finance-method-card-head em {
+      color: #7b8792;
+      font-size: 10px;
+      font-style: normal;
+      font-weight: 750;
+    }
+
+    .bar-finance-method-card strong {
+      display: block;
+      margin-top: 12px;
+      color: #17262f;
+      font-size: 20px;
+      letter-spacing: -.035em;
+    }
+
+    .bar-finance-method-card small {
+      display: block;
+      margin-top: 4px;
+      color: #73808c;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .bar-finance-method-progress {
+      height: 5px;
+      margin-top: 12px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #e9eef0;
+    }
+
+    .bar-finance-method-progress span {
+      display: block;
+      width: var(--method-share, 0%);
+      height: 100%;
+      border-radius: inherit;
+      background: var(--method-color, #138a8f);
+    }
+
+    .bar-finance-chart {
+      min-height: 204px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 8px 2px 0;
+      scrollbar-width: thin;
+    }
+
+    .bar-finance-chart-bars {
+      min-width: 520px;
+      height: 196px;
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(22px, 1fr);
+      gap: 6px;
+      align-items: end;
+      padding: 22px 4px 0;
+      border-bottom: 1px solid #dfe6e9;
+      background: repeating-linear-gradient(to top, transparent 0 47px, #edf1f3 48px 49px);
+    }
+
+    .bar-finance-chart-column {
+      height: 174px;
+      display: grid;
+      grid-template-rows: 1fr 18px;
+      gap: 5px;
+      align-items: end;
+      text-align: center;
+    }
+
+    .bar-finance-chart-track {
+      height: 100%;
+      display: flex;
+      align-items: end;
+      justify-content: center;
+    }
+
+    .bar-finance-chart-bar {
+      width: min(17px, 72%);
+      min-height: 3px;
+      border-radius: 5px 5px 2px 2px;
+      background: linear-gradient(180deg, #1eacaa, #087d83);
+      box-shadow: 0 5px 10px rgba(8, 125, 131, .15);
+      transition: height .2s ease;
+    }
+
+    .bar-finance-chart-column.is-zero .bar-finance-chart-bar {
+      background: #dce5e7;
+      box-shadow: none;
+    }
+
+    .bar-finance-chart-label {
+      overflow: hidden;
+      color: #7b8792;
+      font-size: 9px;
+      font-weight: 750;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-finance-chart-empty {
+      min-height: 196px;
+      display: grid;
+      place-items: center;
+      color: #788692;
+      border: 1px dashed #d8e1e4;
+      border-radius: 12px;
+      background: #fafcfc;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .bar-finance-movement-head {
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin: -20px -20px 18px;
+      padding: 16px 20px;
+      background: linear-gradient(105deg, #172238, #1d2c45);
+      color: #ffffff;
+    }
+
+    .bar-finance-movement-head h2 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 18px;
+    }
+
+    .bar-finance-movement-head .muted {
+      margin-top: 4px;
+      color: #b9c4d4;
+    }
+
+    .bar-finance-filter-buttons {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .bar-finance-filter-buttons .lesson-filter-btn {
+      min-height: 32px;
+      padding: 0 10px;
+      border-color: rgba(255, 255, 255, .14);
+      color: #c5cfdd;
+      background: rgba(255, 255, 255, .06);
+      font-size: 10px;
+    }
+
+    .bar-finance-filter-buttons .lesson-filter-btn.active {
+      color: #173e44;
+      border-color: #dff5f4;
+      background: #dff5f4;
+    }
+
+    .bar-finance-list {
+      gap: 8px;
+    }
+
+    .bar-finance-row {
+      grid-template-columns: 38px minmax(0, 1fr) auto;
+      gap: 11px;
+      padding: 12px 13px;
+      border-radius: 12px;
+      box-shadow: none;
+    }
+
+    .bar-finance-row.is-expense {
+      background: #fffdfc;
+    }
+
+    .bar-finance-entry-icon {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      color: #087d83;
+      border-radius: 11px;
+      background: #e4f4f3;
+    }
+
+    .bar-finance-row.is-expense .bar-finance-entry-icon {
+      color: #bd543e;
+      background: #fbe8e2;
+    }
+
+    .bar-finance-entry-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .bar-finance-copy strong {
+      overflow: hidden;
+      color: #1b2935;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-finance-copy small {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-finance-payment-label {
+      display: inline-flex;
+      align-items: center;
+      min-height: 21px;
+      margin-top: 6px;
+      padding: 0 7px;
+      color: #4a606c;
+      border-radius: 999px;
+      background: #edf2f4;
+      font-size: 9px;
+      font-weight: 800;
+    }
+
+    .bar-finance-row .bar-row-actions {
+      justify-content: flex-end;
+    }
+
+    .bar-finance-row .finance-amount {
+      min-width: 92px;
+      color: #087d83;
+      font-size: 14px;
+      font-weight: 850;
+      text-align: right;
+    }
+
+    .bar-finance-row .finance-amount.expense {
+      color: #bd543e;
+    }
+
+    .bar-finance-entry-panel {
+      position: sticky;
+      top: 16px;
+    }
+
+    .bar-finance-form {
+      gap: 12px;
+    }
+
+    .bar-finance-form .field label {
+      color: #53626e;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .025em;
+    }
+
+    .bar-finance-form input,
+    .bar-finance-form select {
+      border-radius: 10px;
+      background: #fbfcfd;
+    }
+
+    .bar-finance-save-btn {
+      width: 100%;
+      min-height: 46px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .bar-finance-save-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    @media (max-width: 1120px) {
+      .bar-finance-report-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .bar-finance-report-controls {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .bar-finance-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .bar-finance-bottom-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .bar-finance-entry-panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 820px) {
+      .bar-finance-report-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .bar-finance-movement-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .bar-finance-filter-buttons {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .bar-finance-page {
+        gap: 12px;
+      }
+
+      .bar-finance-report-head {
+        padding: 18px;
+      }
+
+      .bar-finance-report-controls,
+      .bar-finance-date-control,
+      .bar-finance-date-control input,
+      .bar-finance-export-btn {
+        width: 100%;
+      }
+
+      .bar-finance-period-switch {
+        width: 100%;
+      }
+
+      .bar-finance-kpis,
+      .bar-finance-method-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .bar-finance-open-strip {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .bar-finance-open-strip > div + div {
+        border-top: 1px solid #e7edef;
+        border-left: 0;
+      }
+
+      .bar-finance-row {
+        grid-template-columns: 38px minmax(0, 1fr);
+      }
+
+      .bar-finance-row .bar-row-actions {
+        grid-column: 1 / -1;
+        justify-content: space-between;
+        padding-top: 8px;
+        border-top: 1px solid #edf1f2;
+      }
+
+      .bar-finance-row .finance-amount {
+        text-align: left;
+      }
+    }
   </style>
 </head>
 <body class="adm-locked">
@@ -7678,6 +8393,10 @@
     </symbol>
     <symbol id="bar-icon-check" viewBox="0 0 24 24">
       <path d="M20 6 9 17l-5-5" />
+    </symbol>
+    <symbol id="bar-icon-trend" viewBox="0 0 24 24">
+      <path d="M4 17 9 12l4 4 7-9" />
+      <path d="M14 7h6v6" />
     </symbol>
     <symbol id="bar-icon-grid" viewBox="0 0 24 24">
       <rect x="4" y="4" width="6" height="6" rx="1" />
@@ -8494,28 +9213,68 @@
           </div>
 
           <div data-bar-panel="finance">
-            <div class="ops-grid">
-              <section class="ops-panel span-4">
-                <div class="ops-panel-head"><div><h2>Novo lançamento</h2><div class="muted">Contas a pagar e receber do bar.</div></div></div>
-                <form class="form-grid" id="barFinanceForm">
-                  <div class="field"><label for="barFinanceType">Tipo</label><select id="barFinanceType"><option value="DESPESA">Conta a pagar</option><option value="RECEITA">Conta a receber</option></select></div>
-                  <div class="field"><label for="barFinanceStatus">Status</label><select id="barFinanceStatus"><option value="ABERTO">Em aberto</option><option value="PAGO">Pago</option><option value="RECEBIDO">Recebido</option></select></div>
-                  <div class="field full"><label for="barFinanceDescription">Descrição</label><input id="barFinanceDescription" placeholder="Ex.: Compra de bebidas" required /></div>
-                  <div class="field full"><label for="barFinanceCounterparty">Fornecedor / cliente</label><input id="barFinanceCounterparty" placeholder="Nome" /></div>
-                  <div class="field"><label for="barFinanceAmount">Valor</label><input id="barFinanceAmount" inputmode="decimal" placeholder="0,00" required /></div>
-                  <div class="field"><label for="barFinanceDue">Vencimento</label><input id="barFinanceDue" type="date" /></div>
-                  <div class="field full"><label for="barFinanceMethod">Forma de pagamento</label><select id="barFinanceMethod"><option value="">A definir</option><option value="PIX">Pix</option><option value="DINHEIRO">Dinheiro</option><option value="CARTAO">Cartão</option><option value="BOLETO">Boleto</option><option value="TRANSFERENCIA">Transferência</option></select></div>
-                  <div class="field full"><label for="barFinanceNotes">Observação</label><input id="barFinanceNotes" placeholder="Número da nota ou detalhe" /></div>
-                  <div class="field full"><button class="primary-btn" type="submit">Salvar lançamento</button></div>
-                </form>
-              </section>
-              <section class="ops-panel span-8">
-                <div class="bar-toolbar">
-                  <div><h2>Movimentação</h2><div class="muted" id="barFinanceTotals">R$ 0 em aberto</div></div>
-                  <div class="bar-order-actions" id="barFinanceFilters"></div>
+            <div class="bar-finance-page">
+              <div class="bar-finance-report-head">
+                <div class="bar-finance-report-title"><span><svg><use href="#admin-icon-wallet"></use></svg></span><div><h2>Relatórios financeiros</h2><p>Acompanhe recebimentos, despesas e resultado do Bar.</p></div></div>
+                <div class="bar-finance-report-controls">
+                  <div class="bar-finance-period-switch" role="tablist" aria-label="Período do relatório">
+                    <button class="active" type="button" data-bar-finance-period="daily" role="tab" aria-selected="true">Diário</button>
+                    <button type="button" data-bar-finance-period="monthly" role="tab" aria-selected="false">Mensal</button>
+                  </div>
+                  <label class="bar-finance-date-control" data-bar-finance-date-control="daily"><span>Dia</span><input id="barFinanceReportDate" type="date" /></label>
+                  <label class="bar-finance-date-control" data-bar-finance-date-control="monthly"><span>Mês</span><input id="barFinanceReportMonth" type="month" /></label>
+                  <button class="bar-finance-export-btn" type="button" id="barFinanceExportBtn"><svg><use href="#admin-icon-database"></use></svg><span>Exportar CSV</span></button>
                 </div>
-                <div class="bar-finance-list" id="barFinanceList"></div>
-              </section>
+              </div>
+
+              <div class="bar-finance-kpis">
+                <article class="bar-finance-kpi revenue"><span class="bar-finance-kpi-icon"><svg><use href="#bar-icon-trend"></use></svg></span><div><small>Faturamento recebido</small><strong id="barFinanceRevenueMetric">R$ 0,00</strong><em id="barFinanceRevenueCount">0 recebimentos</em></div></article>
+                <article class="bar-finance-kpi expense"><span class="bar-finance-kpi-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><div><small>Despesas pagas</small><strong id="barFinanceExpenseMetric">R$ 0,00</strong><em id="barFinanceExpenseCount">0 pagamentos</em></div></article>
+                <article class="bar-finance-kpi net"><span class="bar-finance-kpi-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><div><small>Resultado líquido</small><strong id="barFinanceNetMetric">R$ 0,00</strong><em>Entradas menos saídas</em></div></article>
+                <article class="bar-finance-kpi ticket"><span class="bar-finance-kpi-icon"><svg><use href="#admin-icon-bar"></use></svg></span><div><small>Ticket médio</small><strong id="barFinanceTicketMetric">R$ 0,00</strong><em>Por recebimento</em></div></article>
+              </div>
+
+              <div class="bar-finance-open-strip">
+                <div><span>A receber</span><strong id="barFinanceReceivableMetric">R$ 0,00</strong></div>
+                <div><span>A pagar</span><strong id="barFinancePayableMetric">R$ 0,00</strong></div>
+                <div><span>Saldo pendente</span><strong id="barFinanceOpenBalanceMetric">R$ 0,00</strong></div>
+              </div>
+
+              <div class="bar-finance-report-grid">
+                <section class="ops-panel bar-finance-method-panel">
+                  <div class="ops-panel-head"><div><h2>Recebido por forma de pagamento</h2><div class="muted" id="barFinanceMethodsSubtitle">Composição dos recebimentos do período.</div></div></div>
+                  <div class="bar-finance-method-grid" id="barFinanceMethods"></div>
+                </section>
+                <section class="ops-panel bar-finance-chart-panel">
+                  <div class="ops-panel-head"><div><h2 id="barFinanceChartTitle">Recebimentos por hora</h2><div class="muted" id="barFinanceChartSubtitle">Evolução das entradas confirmadas.</div></div></div>
+                  <div class="bar-finance-chart" id="barFinanceChart"></div>
+                </section>
+              </div>
+
+              <div class="bar-finance-bottom-grid">
+                <section class="ops-panel bar-finance-movement-panel">
+                  <div class="bar-finance-movement-head">
+                    <div><h2>Lançamentos do período</h2><div class="muted" id="barFinanceTotals">Nenhuma movimentação</div></div>
+                    <div class="bar-finance-filter-buttons" id="barFinanceFilters"></div>
+                  </div>
+                  <div class="bar-finance-list" id="barFinanceList"></div>
+                </section>
+
+                <section class="ops-panel bar-finance-entry-panel">
+                  <div class="ops-panel-head"><div><h2>Novo lançamento</h2><div class="muted">Registre contas, despesas e outras receitas.</div></div></div>
+                  <form class="form-grid bar-finance-form" id="barFinanceForm">
+                    <div class="field"><label for="barFinanceType">Tipo</label><select id="barFinanceType"><option value="DESPESA">Conta a pagar</option><option value="RECEITA">Conta a receber</option></select></div>
+                    <div class="field"><label for="barFinanceStatus">Status</label><select id="barFinanceStatus"><option value="ABERTO">Em aberto</option><option value="PAGO">Pago</option><option value="RECEBIDO">Recebido</option></select></div>
+                    <div class="field full"><label for="barFinanceDescription">Descrição</label><input id="barFinanceDescription" placeholder="Ex.: Compra de bebidas" required /></div>
+                    <div class="field full"><label for="barFinanceCounterparty">Fornecedor / cliente</label><input id="barFinanceCounterparty" placeholder="Nome" /></div>
+                    <div class="field"><label for="barFinanceAmount">Valor</label><input id="barFinanceAmount" inputmode="decimal" placeholder="0,00" required /></div>
+                    <div class="field"><label for="barFinanceDue">Vencimento</label><input id="barFinanceDue" type="date" /></div>
+                    <div class="field full"><label for="barFinanceMethod">Forma de pagamento</label><select id="barFinanceMethod"><option value="">A definir</option><option value="PIX">Pix</option><option value="DINHEIRO">Dinheiro</option><option value="CARTAO_CREDITO">Cartão de crédito</option><option value="CARTAO_DEBITO">Cartão de débito</option><option value="CARTAO">Cartão — outro</option><option value="BOLETO">Boleto</option><option value="TRANSFERENCIA">Transferência</option></select></div>
+                    <div class="field full"><label for="barFinanceNotes">Observação</label><input id="barFinanceNotes" placeholder="Número da nota ou detalhe" /></div>
+                    <div class="field full"><button class="primary-btn bar-finance-save-btn" type="submit"><svg><use href="#bar-icon-check"></use></svg>Salvar lançamento</button></div>
+                  </form>
+                </section>
+              </div>
             </div>
           </div>
 
@@ -12960,7 +13719,10 @@
       pendingBarProductImage: null,
       pendingBarProductImagePreview: '',
       removeBarProductImage: false,
-      barFinanceFilter: 'abertos',
+      barFinanceFilter: 'todos',
+      barFinancePeriod: 'daily',
+      barFinanceReportDate: localDateString(new Date()),
+      barFinanceReportMonth: localDateString(new Date()).slice(0, 7),
       selectedBarOrderId: null,
       barCommandTab: 'items',
       selectedBarQrUrl: '',
@@ -14626,10 +15388,73 @@
       return ['PAGO', 'RECEBIDO', 'CANCELADO'].includes(String(item.status || '').toUpperCase());
     }
 
+    function barFinanceIsConfirmed(item) {
+      return barFinanceIsSettled(item) && String(item.status || '').toUpperCase() !== 'CANCELADO';
+    }
+
+    function barFinanceDateKey(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return '';
+      const dateOnly = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (dateOnly && raw.length <= 10) return dateOnly[1];
+      const date = new Date(raw);
+      return Number.isNaN(date.getTime()) ? (dateOnly ? dateOnly[1] : '') : localDateString(date);
+    }
+
+    function barFinanceEntryDateKey(item) {
+      const value = barFinanceIsSettled(item)
+        ? (item.paidAt || item.created || item.dueDate)
+        : (item.dueDate || item.created);
+      return barFinanceDateKey(value);
+    }
+
+    function barFinancePeriodEntries() {
+      const period = opsState.barFinancePeriod === 'monthly' ? 'monthly' : 'daily';
+      const reference = period === 'monthly' ? opsState.barFinanceReportMonth : opsState.barFinanceReportDate;
+      return (opsData.barFinance || []).filter(function (item) {
+        const key = barFinanceEntryDateKey(item);
+        return period === 'monthly' ? key.slice(0, 7) === reference : key === reference;
+      });
+    }
+
+    function barFinancePaymentGroup(method) {
+      const value = String(method || '').toUpperCase();
+      if (value === 'PIX') return 'PIX';
+      if (value === 'DINHEIRO') return 'CASH';
+      if (value.indexOf('CARTAO') === 0 || value.indexOf('CARTÃO') === 0) return 'CARD';
+      return 'OTHER';
+    }
+
+    function barFinancePaymentLabel(method) {
+      const value = String(method || '').toUpperCase();
+      const labels = {
+        PIX: 'Pix',
+        DINHEIRO: 'Dinheiro',
+        CARTAO_CREDITO: 'Cartão de crédito',
+        CARTAO_DEBITO: 'Cartão de débito',
+        CARTAO: 'Cartão',
+        BOLETO: 'Boleto',
+        TRANSFERENCIA: 'Transferência',
+        CONTA_CLIENTE: 'Conta do cliente'
+      };
+      return labels[value] || (value ? String(method).replace(/_/g, ' ') : 'A definir');
+    }
+
+    function barFinanceEntryDateLabel(item) {
+      if (!barFinanceIsSettled(item) && item.dueDate) return 'Vence em ' + financeDateLabel(item.dueDate);
+      const value = item.paidAt || item.created || item.dueDate;
+      if (!value) return 'Data não informada';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return financeDateLabel(barFinanceDateKey(value));
+      const hasTime = String(value).indexOf('T') !== -1;
+      return date.toLocaleDateString('pt-BR') + (hasTime ? ' às ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '');
+    }
+
     function renderBarFinanceRow(item) {
-      const isExpense = item.type === 'DESPESA';
-      const meta = [item.counterparty, item.category, item.dueDate ? financeDateLabel(item.dueDate) : '', item.paymentMethod].filter(Boolean).join(' | ');
-      return '<article class="bar-finance-row"><div class="bar-finance-copy"><strong>' + escapeHtml(item.description) + '</strong><small>' + escapeHtml(meta || 'Sem detalhes') + '</small></div>' +
+      const isExpense = String(item.type || '').toUpperCase() === 'DESPESA';
+      const meta = [item.counterparty, item.category, barFinanceEntryDateLabel(item)].filter(Boolean).join(' · ');
+      const payment = '<span class="bar-finance-payment-label">' + escapeHtml(barFinancePaymentLabel(item.paymentMethod)) + '</span>';
+      return '<article class="bar-finance-row' + (isExpense ? ' is-expense' : '') + '"><span class="bar-finance-entry-icon"><svg><use href="#' + (isExpense ? 'admin-icon-receipt' : 'admin-icon-wallet') + '"></use></svg></span><div class="bar-finance-copy"><strong>' + escapeHtml(item.description) + '</strong><small>' + escapeHtml(meta || 'Sem detalhes') + '</small>' + payment + '</div>' +
         '<div class="bar-row-actions"><span class="finance-amount' + (isExpense ? ' expense' : '') + '">' + (isExpense ? '-' : '+') + money(item.amount) + '</span>' + barStatusPill(item.status) +
         (barFinanceIsSettled(item) ? '' : '<button class="small-btn" type="button" data-bar-finance-paid="' + escapeHtml(item.id) + '">' + (isExpense ? 'Marcar pago' : 'Receber') + '</button>') + '</div></article>';
     }
@@ -14750,29 +15575,176 @@
       setBarProductView(opsState.barProductView);
     }
 
+    function barFinancePeriodLabel() {
+      if (opsState.barFinancePeriod === 'monthly') {
+        const parts = String(opsState.barFinanceReportMonth || '').split('-').map(Number);
+        if (parts.length === 2 && parts.every(Number.isFinite)) {
+          const label = new Date(parts[0], parts[1] - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+          return label.charAt(0).toUpperCase() + label.slice(1);
+        }
+      }
+      const date = financeDateValue(opsState.barFinanceReportDate);
+      return date ? date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : 'Período selecionado';
+    }
+
+    function barFinanceCsvCell(value) {
+      let text = String(value == null ? '' : value);
+      if (/^[=+\-@]/.test(text)) text = "'" + text;
+      return '"' + text.replace(/"/g, '""') + '"';
+    }
+
+    function exportBarFinanceReport() {
+      const entries = barFinancePeriodEntries().slice().sort(function (a, b) {
+        return String(barFinanceEntryDateKey(a)).localeCompare(String(barFinanceEntryDateKey(b)));
+      });
+      if (!entries.length) {
+        toast('Não há lançamentos para exportar neste período.');
+        return;
+      }
+      const rows = [['Data', 'Tipo', 'Descrição', 'Cliente / fornecedor', 'Categoria', 'Forma de pagamento', 'Status', 'Valor']].concat(entries.map(function (item) {
+        return [
+          barFinanceEntryDateKey(item).split('-').reverse().join('/'),
+          String(item.type || '').toUpperCase() === 'DESPESA' ? 'Despesa' : 'Receita',
+          item.description || '',
+          item.counterparty || '',
+          item.category || '',
+          barFinancePaymentLabel(item.paymentMethod),
+          item.status || '',
+          Number(item.amount || 0).toFixed(2).replace('.', ',')
+        ];
+      }));
+      const csv = '\uFEFF' + rows.map(function (row) { return row.map(barFinanceCsvCell).join(';'); }).join('\r\n');
+      const blobUrl = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+      const link = document.createElement('a');
+      const reference = opsState.barFinancePeriod === 'monthly' ? opsState.barFinanceReportMonth : opsState.barFinanceReportDate;
+      link.href = blobUrl;
+      link.download = 'financeiro-bar-' + reference + '.csv';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 0);
+      toast('Relatório exportado.');
+    }
+
     function renderBarFinance() {
+      if (!opsState.barFinanceReportDate) opsState.barFinanceReportDate = localDateString(new Date());
+      if (!opsState.barFinanceReportMonth) opsState.barFinanceReportMonth = localDateString(new Date()).slice(0, 7);
+      const period = opsState.barFinancePeriod === 'monthly' ? 'monthly' : 'daily';
+      $('barFinanceReportDate').value = opsState.barFinanceReportDate;
+      $('barFinanceReportMonth').value = opsState.barFinanceReportMonth;
+      document.querySelectorAll('[data-bar-finance-period]').forEach(function (button) {
+        const active = button.dataset.barFinancePeriod === period;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', String(active));
+      });
+      document.querySelectorAll('[data-bar-finance-date-control]').forEach(function (control) {
+        control.hidden = control.dataset.barFinanceDateControl !== period;
+      });
+
+      const entries = barFinancePeriodEntries();
+      const confirmedRevenue = entries.filter(function (item) {
+        return String(item.type || '').toUpperCase() === 'RECEITA' && barFinanceIsConfirmed(item);
+      });
+      const confirmedExpenses = entries.filter(function (item) {
+        return String(item.type || '').toUpperCase() === 'DESPESA' && barFinanceIsConfirmed(item);
+      });
+      const pendingRevenue = entries.filter(function (item) {
+        return String(item.type || '').toUpperCase() === 'RECEITA' && !barFinanceIsSettled(item);
+      });
+      const pendingExpenses = entries.filter(function (item) {
+        return String(item.type || '').toUpperCase() === 'DESPESA' && !barFinanceIsSettled(item);
+      });
+      const sumAmount = function (items) {
+        return items.reduce(function (sum, item) { return sum + Number(item.amount || 0); }, 0);
+      };
+      const revenueTotal = sumAmount(confirmedRevenue);
+      const expenseTotal = sumAmount(confirmedExpenses);
+      const receivableTotal = sumAmount(pendingRevenue);
+      const payableTotal = sumAmount(pendingExpenses);
+      const netTotal = revenueTotal - expenseTotal;
+
+      $('barFinanceRevenueMetric').textContent = money(revenueTotal);
+      $('barFinanceRevenueCount').textContent = confirmedRevenue.length + (confirmedRevenue.length === 1 ? ' recebimento' : ' recebimentos');
+      $('barFinanceExpenseMetric').textContent = money(expenseTotal);
+      $('barFinanceExpenseCount').textContent = confirmedExpenses.length + (confirmedExpenses.length === 1 ? ' pagamento' : ' pagamentos');
+      $('barFinanceNetMetric').textContent = money(netTotal);
+      $('barFinanceTicketMetric').textContent = money(confirmedRevenue.length ? revenueTotal / confirmedRevenue.length : 0);
+      $('barFinanceReceivableMetric').textContent = money(receivableTotal);
+      $('barFinancePayableMetric').textContent = money(payableTotal);
+      $('barFinanceOpenBalanceMetric').textContent = money(receivableTotal - payableTotal);
+
+      const methods = [
+        { key: 'PIX', label: 'Pix', color: '#0b9c91' },
+        { key: 'CARD', label: 'Cartões', color: '#516fc3' },
+        { key: 'CASH', label: 'Dinheiro', color: '#d89326' },
+        { key: 'OTHER', label: 'Outros', color: '#7c8796' }
+      ].map(function (method) {
+        const items = confirmedRevenue.filter(function (item) { return barFinancePaymentGroup(item.paymentMethod) === method.key; });
+        const total = sumAmount(items);
+        return Object.assign({}, method, { count: items.length, total: total, share: revenueTotal ? total / revenueTotal * 100 : 0 });
+      });
+      $('barFinanceMethodsSubtitle').textContent = barFinancePeriodLabel() + ' · ' + money(revenueTotal) + ' confirmado';
+      $('barFinanceMethods').innerHTML = methods.map(function (method) {
+        return '<article class="bar-finance-method-card" style="--method-color:' + method.color + ';--method-share:' + method.share.toFixed(2) + '%"><div class="bar-finance-method-card-head"><span><i class="bar-finance-method-dot"></i>' + escapeHtml(method.label) + '</span><em>' + method.share.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%</em></div><strong>' + money(method.total) + '</strong><small>' + method.count + (method.count === 1 ? ' recebimento' : ' recebimentos') + '</small><div class="bar-finance-method-progress"><span></span></div></article>';
+      }).join('');
+
+      let chartBuckets = [];
+      if (period === 'monthly') {
+        const parts = opsState.barFinanceReportMonth.split('-').map(Number);
+        const daysInMonth = new Date(parts[0], parts[1], 0).getDate();
+        chartBuckets = Array.from({ length: daysInMonth }, function (_, index) {
+          return { label: String(index + 1), value: 0 };
+        });
+        confirmedRevenue.forEach(function (item) {
+          const day = Number(barFinanceEntryDateKey(item).slice(-2));
+          if (day >= 1 && day <= chartBuckets.length) chartBuckets[day - 1].value += Number(item.amount || 0);
+        });
+        $('barFinanceChartTitle').textContent = 'Recebimentos por dia';
+      } else {
+        chartBuckets = Array.from({ length: 12 }, function (_, index) {
+          return { label: pad2(index * 2) + 'h', value: 0 };
+        });
+        confirmedRevenue.forEach(function (item) {
+          const date = new Date(item.paidAt || item.created || item.dueDate);
+          if (!Number.isNaN(date.getTime())) chartBuckets[Math.min(11, Math.floor(date.getHours() / 2))].value += Number(item.amount || 0);
+        });
+        $('barFinanceChartTitle').textContent = 'Recebimentos por hora';
+      }
+      $('barFinanceChartSubtitle').textContent = barFinancePeriodLabel() + ' · ' + confirmedRevenue.length + (confirmedRevenue.length === 1 ? ' entrada confirmada' : ' entradas confirmadas');
+      const chartMax = Math.max.apply(null, chartBuckets.map(function (bucket) { return bucket.value; }).concat([0]));
+      if (!chartMax) {
+        $('barFinanceChart').innerHTML = '<div class="bar-finance-chart-empty">Nenhum recebimento confirmado neste período.</div>';
+      } else {
+        const chartMinWidth = period === 'monthly' ? Math.max(560, chartBuckets.length * 28) : 520;
+        $('barFinanceChart').innerHTML = '<div class="bar-finance-chart-bars" style="min-width:' + chartMinWidth + 'px">' + chartBuckets.map(function (bucket) {
+          const height = bucket.value ? Math.max(5, bucket.value / chartMax * 100) : 2;
+          return '<div class="bar-finance-chart-column' + (bucket.value ? '' : ' is-zero') + '" title="' + escapeHtml(bucket.label + ': ' + money(bucket.value)) + '"><div class="bar-finance-chart-track"><span class="bar-finance-chart-bar" style="height:' + height.toFixed(2) + '%"></span></div><span class="bar-finance-chart-label">' + escapeHtml(bucket.label) + '</span></div>';
+        }).join('') + '</div>';
+      }
+
       const filters = [
-        ['abertos', 'Em aberto'],
-        ['receber', 'A receber'],
-        ['pagar', 'A pagar'],
-        ['pagos', 'Baixados'],
-        ['todos', 'Todos']
+        ['todos', 'Todas'],
+        ['receitas', 'Entradas'],
+        ['despesas', 'Saídas'],
+        ['pendentes', 'Pendentes']
       ];
+      if (!filters.some(function (filter) { return filter[0] === opsState.barFinanceFilter; })) opsState.barFinanceFilter = 'todos';
       $('barFinanceFilters').innerHTML = filters.map(function (filter) {
         return '<button class="lesson-filter-btn' + (opsState.barFinanceFilter === filter[0] ? ' active' : '') + '" type="button" data-bar-finance-filter="' + filter[0] + '">' + filter[1] + '</button>';
       }).join('');
-      const rows = opsData.barFinance.filter(function (item) {
-        if (opsState.barFinanceFilter === 'receber') return item.type === 'RECEITA' && !barFinanceIsSettled(item);
-        if (opsState.barFinanceFilter === 'pagar') return item.type === 'DESPESA' && !barFinanceIsSettled(item);
-        if (opsState.barFinanceFilter === 'pagos') return barFinanceIsSettled(item);
-        if (opsState.barFinanceFilter === 'todos') return true;
-        return !barFinanceIsSettled(item);
+      const rows = entries.filter(function (item) {
+        const type = String(item.type || '').toUpperCase();
+        if (opsState.barFinanceFilter === 'receitas') return type === 'RECEITA';
+        if (opsState.barFinanceFilter === 'despesas') return type === 'DESPESA';
+        if (opsState.barFinanceFilter === 'pendentes') return !barFinanceIsSettled(item);
+        return true;
+      }).sort(function (a, b) {
+        const aDate = String(a.paidAt || a.dueDate || a.created || '');
+        const bDate = String(b.paidAt || b.dueDate || b.created || '');
+        return bDate.localeCompare(aDate);
       });
-      const openBalance = opsData.barFinance.filter(function (item) { return !barFinanceIsSettled(item); }).reduce(function (sum, item) {
-        return sum + (item.type === 'DESPESA' ? -Number(item.amount || 0) : Number(item.amount || 0));
-      }, 0);
-      $('barFinanceTotals').textContent = money(openBalance) + ' em aberto';
-      $('barFinanceList').innerHTML = rows.map(renderBarFinanceRow).join('') || '<div class="lesson-empty-state">Nenhum lançamento neste filtro.</div>';
+      $('barFinanceTotals').textContent = entries.length + (entries.length === 1 ? ' lançamento' : ' lançamentos') + ' · ' + money(revenueTotal) + ' recebidos · ' + money(expenseTotal) + ' pagos';
+      $('barFinanceList').innerHTML = rows.map(renderBarFinanceRow).join('') || '<div class="lesson-empty-state">Nenhum lançamento neste filtro e período.</div>';
     }
 
     function barEventById(id) {
@@ -18101,6 +19073,15 @@
         if (event.target.id === 'barAccessCardModal') closeBarAccessCardModal();
       });
       $('barFinanceForm').addEventListener('submit', saveBarFinanceAction);
+      $('barFinanceReportDate').addEventListener('change', function (event) {
+        opsState.barFinanceReportDate = event.target.value || localDateString(new Date());
+        renderBarFinance();
+      });
+      $('barFinanceReportMonth').addEventListener('change', function (event) {
+        opsState.barFinanceReportMonth = event.target.value || localDateString(new Date()).slice(0, 7);
+        renderBarFinance();
+      });
+      $('barFinanceExportBtn').addEventListener('click', exportBarFinanceReport);
       $('barOrderItemForm').addEventListener('submit', addBarOrderItemAction);
       $('barProductSearch').addEventListener('input', renderBarProducts);
       $('barModule').addEventListener('click', function (event) {
@@ -18164,6 +19145,12 @@
         const financeBtn = event.target.closest('[data-bar-finance-paid]');
         if (financeBtn) {
           settleBarFinanceAction(financeBtn.dataset.barFinancePaid);
+          return;
+        }
+        const financePeriod = event.target.closest('[data-bar-finance-period]');
+        if (financePeriod) {
+          opsState.barFinancePeriod = financePeriod.dataset.barFinancePeriod === 'monthly' ? 'monthly' : 'daily';
+          renderBarFinance();
           return;
         }
         const financeFilter = event.target.closest('[data-bar-finance-filter]');
