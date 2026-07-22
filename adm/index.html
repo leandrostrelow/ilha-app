@@ -6660,6 +6660,272 @@
       box-shadow: 0 24px 70px rgba(23, 32, 51, .14);
     }
 
+    .bar-events-page {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .bar-events-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(300px, .75fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .bar-event-calendar-panel,
+    .bar-event-day-panel,
+    .bar-event-history-panel {
+      min-width: 0;
+    }
+
+    .bar-calendar-actions {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .bar-calendar-actions .small-btn:first-child,
+    .bar-calendar-actions .small-btn:last-child {
+      width: 36px;
+      min-width: 36px;
+      padding: 0;
+      font-size: 22px;
+    }
+
+    .bar-calendar-weekdays,
+    .bar-calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .bar-calendar-weekdays {
+      margin-bottom: 7px;
+      color: #7b8493;
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .09em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .bar-calendar-day {
+      position: relative;
+      min-width: 0;
+      min-height: 92px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      align-content: start;
+      gap: 7px;
+      padding: 9px;
+      border: 1px solid #e4e9ef;
+      border-radius: 12px;
+      background: #ffffff;
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease, background .18s ease;
+    }
+
+    .bar-calendar-day:hover {
+      border-color: #cfe09c;
+      box-shadow: 0 7px 16px rgba(23, 32, 51, .08);
+      transform: translateY(-1px);
+    }
+
+    .bar-calendar-day.outside {
+      background: #f7f9fb;
+      color: #a0a8b5;
+    }
+
+    .bar-calendar-day.today {
+      border-color: #a8d534;
+      box-shadow: inset 0 0 0 1px #a8d534;
+    }
+
+    .bar-calendar-day.selected {
+      border-color: var(--dark);
+      background: #f5f8ee;
+      box-shadow: inset 0 0 0 1px var(--dark);
+    }
+
+    .bar-calendar-day-number {
+      width: 26px;
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .bar-calendar-day.today .bar-calendar-day-number {
+      background: var(--dark);
+      color: #ffffff;
+    }
+
+    .bar-calendar-day-events {
+      min-width: 0;
+      display: grid;
+      align-content: start;
+      gap: 4px;
+    }
+
+    .bar-calendar-event-line {
+      overflow: hidden;
+      padding: 3px 5px;
+      border-radius: 6px;
+      background: #eef8cf;
+      color: #587a16;
+      font-size: 9px;
+      font-weight: 780;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-calendar-event-line.type-musica { background: #e6f7f8; color: #087984; }
+    .bar-calendar-event-line.type-torneio { background: #eaf0ff; color: #365db0; }
+    .bar-calendar-event-line.type-promocao { background: #fff1d8; color: #9c6111; }
+    .bar-calendar-event-line.type-manutencao { background: #fdeae6; color: #a7462e; }
+    .bar-calendar-event-line.is-cancelled { background: #f0f1f3; color: #8a919c; text-decoration: line-through; }
+
+    .bar-event-day-list,
+    .bar-event-history-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .bar-event-card {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 58px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 13px;
+      border: 1px solid #e5e9ef;
+      border-radius: 13px;
+      background: #ffffff;
+      transition: border-color .18s ease, box-shadow .18s ease;
+    }
+
+    .bar-event-card:hover {
+      border-color: #d5dfbb;
+      box-shadow: 0 8px 20px rgba(23, 32, 51, .06);
+    }
+
+    .bar-event-card.is-cancelled {
+      background: #fafafa;
+      opacity: .76;
+    }
+
+    .bar-event-date-badge {
+      width: 58px;
+      min-height: 58px;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #f1f8dc, #e8f4c7);
+      color: #587a16;
+      line-height: 1;
+    }
+
+    .bar-event-date-badge strong {
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .bar-event-date-badge span {
+      margin-top: 5px;
+      font-size: 9px;
+      font-weight: 850;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .bar-event-card-copy {
+      min-width: 0;
+      display: grid;
+      gap: 5px;
+    }
+
+    .bar-event-card-copy h3 {
+      overflow: hidden;
+      margin: 0;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 850;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-event-card-copy p {
+      margin: 0;
+      color: #667085;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .bar-event-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px 10px;
+      color: #687386;
+      font-size: 10px;
+      font-weight: 690;
+    }
+
+    .bar-event-card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .bar-event-type-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #eef8cf;
+      color: #587a16;
+      font-size: 9px;
+      font-weight: 850;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .bar-event-type-badge.type-musica { background: #e6f7f8; color: #087984; }
+    .bar-event-type-badge.type-torneio { background: #eaf0ff; color: #365db0; }
+    .bar-event-type-badge.type-promocao { background: #fff1d8; color: #9c6111; }
+    .bar-event-type-badge.type-manutencao { background: #fdeae6; color: #a7462e; }
+
+    .bar-event-history-panel .ops-panel-head select {
+      width: min(190px, 100%);
+      min-height: 38px;
+      border: 1px solid rgba(255, 255, 255, .2);
+      border-radius: 9px;
+      background: rgba(255, 255, 255, .1);
+      color: #ffffff;
+      padding: 0 10px;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .bar-event-history-panel .ops-panel-head select option {
+      background: #ffffff;
+      color: var(--text);
+    }
+
+    .bar-event-modal {
+      width: min(760px, calc(100vw - 24px));
+    }
+
     @media (max-width: 860px) {
       .app {
         grid-template-columns: 1fr;
@@ -6730,6 +6996,14 @@
         min-height: 94px;
         padding: 14px;
       }
+
+      .bar-events-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .bar-calendar-day {
+        min-height: 76px;
+      }
     }
 
     @media (max-width: 520px) {
@@ -6781,6 +7055,52 @@
       .welcome-admin {
         padding: 22px;
         border-radius: 16px;
+      }
+
+      .bar-calendar-weekdays,
+      .bar-calendar-grid {
+        gap: 3px;
+      }
+
+      .bar-calendar-day {
+        min-height: 60px;
+        gap: 4px;
+        padding: 5px;
+        border-radius: 8px;
+      }
+
+      .bar-calendar-day-number {
+        width: 22px;
+        height: 22px;
+        font-size: 10px;
+      }
+
+      .bar-calendar-event-line {
+        height: 5px;
+        padding: 0;
+        border-radius: 999px;
+        color: transparent;
+        font-size: 0;
+      }
+
+      .bar-event-card {
+        grid-template-columns: 50px minmax(0, 1fr);
+        gap: 10px;
+        padding: 11px;
+      }
+
+      .bar-event-date-badge {
+        width: 50px;
+        min-height: 50px;
+      }
+
+      .bar-event-card-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+      }
+
+      .bar-calendar-actions .small-btn {
+        min-height: 34px;
       }
     }
   </style>
@@ -6981,6 +7301,7 @@
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-courts"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Quadras</span></button>
         <button class="admin-nav-btn active" type="button" data-bar-entry data-bar-side-tab="overview"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Visão geral</span></button>
+        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="events"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Agenda</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="orders"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Pedidos</span><span class="bar-nav-badge" id="barOrdersNavBadge" hidden>0</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="tables"><span class="admin-nav-icon"><svg><use href="#admin-icon-table"></use></svg></span><span>Mesas</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="products"><span class="admin-nav-icon"><svg><use href="#admin-icon-box"></use></svg></span><span>Produtos e estoque</span></button>
@@ -7531,6 +7852,7 @@
 
           <div class="ops-tabs" role="tablist" aria-label="Gestão do bar">
             <button class="ops-tab-btn active" type="button" data-bar-tab="overview">Visão geral</button>
+            <button class="ops-tab-btn" type="button" data-bar-tab="events">Agenda</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="orders">Pedidos <span class="bar-tab-badge" id="barOrdersTabBadge" hidden>0</span></button>
             <button class="ops-tab-btn" type="button" data-bar-tab="tables">Mesas</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="products">Produtos e estoque</button>
@@ -7550,6 +7872,59 @@
               <section class="ops-panel">
                 <div class="ops-panel-head"><div><h2>Estoque baixo</h2><div class="muted">Itens no limite mínimo.</div></div></div>
                 <div id="barLowStockList"></div>
+              </section>
+            </div>
+          </div>
+
+          <div data-bar-panel="events">
+            <div class="bar-events-page">
+              <div class="bar-section-header">
+                <div><h2>Agenda de eventos</h2><div class="muted">Planeje a programação do Bar e preserve o histórico de cada dia.</div></div>
+                <button class="primary-btn bar-icon-button" type="button" id="barAddEventBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Novo evento</span></button>
+              </div>
+
+              <div class="bar-product-metrics bar-event-metrics">
+                <div class="bar-product-metric"><span class="bar-product-metric-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><div><strong id="barEventsUpcomingMetric">0</strong><span>próximos eventos</span></div></div>
+                <div class="bar-product-metric good"><span class="bar-product-metric-icon"><svg><use href="#bar-icon-check"></use></svg></span><div><strong id="barEventsMonthMetric">0</strong><span>eventos no mês</span></div></div>
+                <div class="bar-product-metric warn"><span class="bar-product-metric-icon"><svg><use href="#admin-icon-users"></use></svg></span><div><strong id="barEventsGuestsMetric">0</strong><span>público previsto</span></div></div>
+                <div class="bar-product-metric"><span class="bar-product-metric-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><div><strong id="barEventsHistoryMetric">0</strong><span>eventos no histórico</span></div></div>
+              </div>
+
+              <div class="bar-events-layout">
+                <section class="ops-panel bar-calendar-panel">
+                  <div class="ops-panel-head bar-calendar-head">
+                    <div><h2 id="barEventMonthLabel">Mês</h2><div class="muted">Selecione um dia para ver a programação.</div></div>
+                    <div class="bar-calendar-actions">
+                      <button class="small-btn" type="button" id="barEventPrevMonthBtn" aria-label="Mês anterior">‹</button>
+                      <button class="small-btn" type="button" id="barEventTodayBtn">Hoje</button>
+                      <button class="small-btn" type="button" id="barEventNextMonthBtn" aria-label="Próximo mês">›</button>
+                    </div>
+                  </div>
+                  <div class="bar-calendar-weekdays" aria-hidden="true"><span>DOM</span><span>SEG</span><span>TER</span><span>QUA</span><span>QUI</span><span>SEX</span><span>SÁB</span></div>
+                  <div class="bar-calendar-grid" id="barEventCalendar"></div>
+                </section>
+
+                <section class="ops-panel bar-event-day-panel">
+                  <div class="ops-panel-head">
+                    <div><h2 id="barEventSelectedDateLabel">Programação do dia</h2><div class="muted" id="barEventSelectedDateHint">Eventos e horários selecionados.</div></div>
+                    <button class="small-btn" type="button" id="barAddEventForDayBtn">Adicionar</button>
+                  </div>
+                  <div class="bar-event-day-list" id="barEventDayList"></div>
+                </section>
+              </div>
+
+              <section class="ops-panel bar-event-history-panel">
+                <div class="ops-panel-head">
+                  <div><h2>Histórico e próximos eventos</h2><div class="muted">Os registros permanecem salvos mesmo depois da data ou do cancelamento.</div></div>
+                  <select id="barEventHistoryFilter" aria-label="Filtrar histórico">
+                    <option value="todos">Todos</option>
+                    <option value="proximos">Próximos</option>
+                    <option value="concluidos">Concluídos</option>
+                    <option value="cancelados">Cancelados</option>
+                    <option value="passados">Dias anteriores</option>
+                  </select>
+                </div>
+                <div class="bar-event-history-list" id="barEventHistoryList"></div>
               </section>
             </div>
           </div>
@@ -7693,6 +8068,37 @@
         </div>
       </div>
     </section>
+
+    <div class="admin-modal-overlay" id="barEventModal" aria-hidden="true">
+      <div class="admin-modal bar-event-modal" role="dialog" aria-modal="true" aria-labelledby="barEventModalTitle">
+        <div class="admin-modal-head">
+          <div><h2 id="barEventModalTitle">Novo evento</h2><div class="muted">Organize a programação e mantenha o histórico do Bar.</div></div>
+          <button class="ghost-btn" type="button" id="barEventModalClose">Fechar</button>
+        </div>
+        <form id="barEventForm">
+          <input id="barEventId" type="hidden" />
+          <div class="admin-modal-body">
+            <div class="form-grid">
+              <div class="field full"><label for="barEventTitle">Nome do evento</label><input id="barEventTitle" maxlength="120" placeholder="Ex.: Música ao vivo" required /></div>
+              <div class="field"><label for="barEventType">Tipo</label><select id="barEventType"><option value="EVENTO">Evento</option><option value="TORNEIO">Torneio</option><option value="MUSICA">Música ao vivo</option><option value="PROMOCAO">Promoção</option><option value="MANUTENCAO">Manutenção</option><option value="OUTRO">Outro</option></select></div>
+              <div class="field"><label for="barEventStatus">Status</label><select id="barEventStatus"><option value="AGENDADO">Agendado</option><option value="CONFIRMADO">Confirmado</option><option value="CONCLUIDO">Concluído</option><option value="CANCELADO">Cancelado</option></select></div>
+              <div class="field"><label for="barEventDate">Data</label><input id="barEventDate" type="date" required /></div>
+              <div class="field"><label for="barEventLocation">Local</label><input id="barEventLocation" placeholder="Ex.: Deck do Bar" /></div>
+              <div class="field"><label for="barEventStart">Início</label><input id="barEventStart" type="time" required /></div>
+              <div class="field"><label for="barEventEnd">Fim</label><input id="barEventEnd" type="time" /></div>
+              <div class="field"><label for="barEventGuests">Público previsto</label><input id="barEventGuests" type="number" min="0" step="1" value="0" /></div>
+              <div class="field full"><label for="barEventDescription">Descrição</label><textarea id="barEventDescription" placeholder="Programação, atrações ou informações para a equipe."></textarea></div>
+              <div class="field full"><label for="barEventNotes">Observações internas</label><textarea id="barEventNotes" placeholder="Montagem, fornecedores, equipe necessária ou outros detalhes."></textarea></div>
+            </div>
+          </div>
+          <div class="modal-actions bar-event-modal-actions">
+            <button class="danger-btn" type="button" id="barEventCancelEventBtn" hidden>Cancelar evento</button>
+            <button class="ghost-btn" type="button" id="barEventModalCancel">Voltar</button>
+            <button class="primary-btn" type="submit" id="barEventSaveBtn">Salvar evento</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <div class="admin-modal-overlay" id="barProductModal" aria-hidden="true">
       <div class="admin-modal bar-product-modal" role="dialog" aria-modal="true" aria-labelledby="barProductModalTitle">
@@ -12053,6 +12459,10 @@
       barTab: 'overview',
       barProductView: 'catalog',
       barProductCategory: 'todos',
+      barEventMonth: localDateString(new Date()).slice(0, 7),
+      barEventSelectedDate: localDateString(new Date()),
+      barEventHistoryFilter: 'todos',
+      editingBarEventId: null,
       pendingBarProductImage: null,
       pendingBarProductImagePreview: '',
       removeBarProductImage: false,
@@ -12198,6 +12608,12 @@
       ],
       barInventory: [],
       barFinance: [],
+      barEvents: [
+        { id: 'bar_event_happy_hour', title: 'Happy hour do Bar', eventType: 'PROMOCAO', eventDate: localDateString(new Date()), startsAt: '18:00', endsAt: '21:00', location: 'Deck do Bar', expectedGuests: 45, status: 'CONFIRMADO', description: 'Promoção especial e música ambiente para os clientes.', notes: 'Preparar equipe e estoque até 17h.', created: new Date().toISOString(), updated: new Date().toISOString() },
+        { id: 'bar_event_music', title: 'Música ao vivo', eventType: 'MUSICA', eventDate: localDateString(new Date(Date.now() + 2 * 86400000)), startsAt: '19:30', endsAt: '22:30', location: 'Deck principal', expectedGuests: 80, status: 'AGENDADO', description: 'Noite de música ao vivo aberta aos associados e convidados.', notes: 'Confirmar passagem de som.', created: new Date().toISOString(), updated: new Date().toISOString() },
+        { id: 'bar_event_tournament', title: 'Final do torneio interno', eventType: 'TORNEIO', eventDate: localDateString(new Date(Date.now() + 7 * 86400000)), startsAt: '16:00', endsAt: '20:00', location: 'Quadras e Bar', expectedGuests: 120, status: 'CONFIRMADO', description: 'Final do torneio com confraternização no Bar.', notes: 'Reservar mesas para premiação.', created: new Date().toISOString(), updated: new Date().toISOString() },
+        { id: 'bar_event_history', title: 'Confraternização dos alunos', eventType: 'EVENTO', eventDate: localDateString(new Date(Date.now() - 8 * 86400000)), startsAt: '18:30', endsAt: '22:00', location: 'Salão e Bar', expectedGuests: 65, status: 'CONCLUIDO', description: 'Evento encerrado e mantido no histórico.', notes: '', created: new Date().toISOString(), updated: new Date().toISOString() }
+      ],
       message: 'Oi, {nome}! Passando para lembrar que sua aula no Ilha está confirmada para hoje. Se precisar ajustar o horário, fale com a secretaria pelo WhatsApp. Obrigado!'
     };
     const opsSeedData = JSON.parse(JSON.stringify(opsData));
@@ -12635,6 +13051,25 @@
       };
     }
 
+    function mapBarEventRow(row) {
+      return {
+        id: row.id || '',
+        title: row.title || 'Evento do Bar',
+        eventType: row.event_type || 'EVENTO',
+        eventDate: row.event_date || '',
+        startsAt: String(row.starts_at || '').slice(0, 5),
+        endsAt: String(row.ends_at || '').slice(0, 5),
+        location: row.location || '',
+        expectedGuests: Number(row.expected_guests || 0),
+        status: row.status || 'AGENDADO',
+        description: row.description || '',
+        notes: row.notes || '',
+        createdBy: row.created_by || '',
+        created: row.created_at || '',
+        updated: row.updated_at || ''
+      };
+    }
+
     async function loadBarData(force) {
       if (!adminSession || !adminSession.access_token) return;
       if (isAdminDemoMode()) {
@@ -12652,7 +13087,8 @@
           supabaseRest('bar_inventory_movements?select=*&order=occurred_at.desc&limit=200'),
           supabaseRest('bar_financial_entries?select=*&order=created_at.desc'),
           supabaseRest('bar_public_cards?select=*&order=code.asc'),
-          supabaseRest('bar_service_requests?select=*&order=created_at.desc')
+          supabaseRest('bar_service_requests?select=*&order=created_at.desc'),
+          supabaseRest('bar_events?select=*&order=event_date.asc,starts_at.asc')
         ]);
         opsData.barProducts = results[0].map(mapBarProductRow);
         opsData.barTables = results[1].map(mapBarTableRow);
@@ -12662,6 +13098,7 @@
         opsData.barFinance = results[5].map(mapBarFinanceRow);
         opsData.barAccessCards = results[6].map(mapBarAccessCardRow);
         opsData.barServiceRequests = results[7].map(mapBarServiceRequestRow);
+        opsData.barEvents = results[8].map(mapBarEventRow);
         handleBarIncomingChanges(opsData.barOrderItems);
         handleBarServiceRequestChanges(opsData.barServiceRequests);
         opsState.barDataLoaded = true;
@@ -12675,6 +13112,7 @@
         opsData.barFinance = [];
         opsData.barAccessCards = [];
         opsData.barServiceRequests = [];
+        opsData.barEvents = [];
         opsState.barSchemaReady = false;
         opsState.barDataLoaded = true;
         console.info('Tabelas do Bar ainda nao disponiveis no Supabase.', error && error.message);
@@ -13377,7 +13815,10 @@
         VENCIDO: 'Vencido',
         PENDENTE: 'Pendente',
         EM_ATENDIMENTO: 'Em atendimento',
-        CONCLUIDO: 'Concluído'
+        CONCLUIDO: 'Concluído',
+        AGENDADO: 'Agendado',
+        CONFIRMADO: 'Confirmado',
+        CANCELADO: 'Cancelado'
       };
       return labels[String(status || '').toUpperCase()] || String(status || '');
     }
@@ -13840,6 +14281,260 @@
       $('barFinanceList').innerHTML = rows.map(renderBarFinanceRow).join('') || '<div class="lesson-empty-state">Nenhum lançamento neste filtro.</div>';
     }
 
+    function barEventById(id) {
+      return (opsData.barEvents || []).find(function (item) { return String(item.id) === String(id); });
+    }
+
+    function barEventDateValue(value) {
+      if (!value) return null;
+      const parts = String(value).split('-').map(Number);
+      if (parts.length !== 3 || parts.some(function (part) { return !Number.isFinite(part); })) return null;
+      const date = new Date(parts[0], parts[1] - 1, parts[2]);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function barEventDateLabel(value, options) {
+      const date = barEventDateValue(value);
+      if (!date) return 'Data não informada';
+      const label = date.toLocaleDateString('pt-BR', options || { weekday: 'long', day: '2-digit', month: 'long' });
+      return label.charAt(0).toUpperCase() + label.slice(1);
+    }
+
+    function barEventTypeLabel(type) {
+      const labels = { EVENTO: 'Evento', TORNEIO: 'Torneio', MUSICA: 'Música ao vivo', PROMOCAO: 'Promoção', MANUTENCAO: 'Manutenção', OUTRO: 'Outro' };
+      return labels[String(type || '').toUpperCase()] || 'Evento';
+    }
+
+    function barEventTypeClass(type) {
+      return 'type-' + normalizeMatchText(type || 'evento').replace(/[^a-z0-9]+/g, '-');
+    }
+
+    function barEventTimeLabel(item) {
+      const start = String(item.startsAt || '').slice(0, 5) || '--:--';
+      const end = String(item.endsAt || '').slice(0, 5);
+      return end ? start + '–' + end : start;
+    }
+
+    function barEventIsPast(item) {
+      return String(item.eventDate || '') < localDateString();
+    }
+
+    function barEventIsUpcoming(item) {
+      return String(item.eventDate || '') >= localDateString() && !['CONCLUIDO', 'CANCELADO'].includes(String(item.status || '').toUpperCase());
+    }
+
+    function renderBarEventCard(item) {
+      const date = barEventDateValue(item.eventDate);
+      const day = date ? pad2(date.getDate()) : '--';
+      const month = date ? date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '') : 'data';
+      const meta = [barEventTimeLabel(item), item.location, Number(item.expectedGuests || 0) ? Number(item.expectedGuests || 0).toLocaleString('pt-BR') + ' pessoas previstas' : 'Público não informado'].filter(Boolean);
+      const cancelled = String(item.status || '').toUpperCase() === 'CANCELADO';
+      return '<article class="bar-event-card' + (cancelled ? ' is-cancelled' : '') + '">' +
+        '<div class="bar-event-date-badge"><strong>' + escapeHtml(day) + '</strong><span>' + escapeHtml(month) + '</span></div>' +
+        '<div class="bar-event-card-copy"><h3>' + escapeHtml(item.title) + '</h3><div class="bar-event-meta"><span>' + meta.map(escapeHtml).join('</span><span>') + '</span></div>' + (item.description ? '<p>' + escapeHtml(item.description) + '</p>' : '') + '</div>' +
+        '<div class="bar-event-card-actions"><span class="bar-event-type-badge ' + barEventTypeClass(item.eventType) + '">' + escapeHtml(barEventTypeLabel(item.eventType)) + '</span>' + barStatusPill(item.status) + '<button class="small-btn" type="button" data-bar-event-edit="' + escapeHtml(item.id) + '"><svg><use href="#bar-icon-edit"></use></svg>Editar</button></div>' +
+      '</article>';
+    }
+
+    function renderBarEventCalendar() {
+      const monthParts = String(opsState.barEventMonth || localDateString().slice(0, 7)).split('-').map(Number);
+      const year = monthParts[0] || new Date().getFullYear();
+      const monthIndex = Number.isFinite(monthParts[1]) ? monthParts[1] - 1 : new Date().getMonth();
+      const monthDate = new Date(year, monthIndex, 1);
+      const startOffset = monthDate.getDay();
+      const today = localDateString();
+      const eventsByDate = (opsData.barEvents || []).reduce(function (grouped, item) {
+        const key = String(item.eventDate || '');
+        if (!key) return grouped;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(item);
+        return grouped;
+      }, {});
+      const cells = [];
+      for (let index = 0; index < 42; index += 1) {
+        const cellDate = new Date(year, monthIndex, index - startOffset + 1);
+        const dateValue = localDateString(cellDate);
+        const events = (eventsByDate[dateValue] || []).slice().sort(function (a, b) { return String(a.startsAt).localeCompare(String(b.startsAt)); });
+        const classes = ['bar-calendar-day'];
+        if (cellDate.getMonth() !== monthIndex) classes.push('outside');
+        if (dateValue === today) classes.push('today');
+        if (dateValue === opsState.barEventSelectedDate) classes.push('selected');
+        if (events.length) classes.push('has-events');
+        const visibleEvents = events.slice(0, 2).map(function (item) {
+          return '<span class="bar-calendar-event-line ' + barEventTypeClass(item.eventType) + (item.status === 'CANCELADO' ? ' is-cancelled' : '') + '">' + escapeHtml(String(item.startsAt || '').slice(0, 5) + ' ' + item.title) + '</span>';
+        });
+        if (events.length > 2) visibleEvents.push('<span class="bar-calendar-event-line">+' + (events.length - 2) + ' evento(s)</span>');
+        cells.push('<button class="' + classes.join(' ') + '" type="button" data-bar-event-date="' + dateValue + '" aria-label="' + escapeHtml(barEventDateLabel(dateValue) + (events.length ? ', ' + events.length + ' evento(s)' : '')) + '"><span class="bar-calendar-day-number">' + cellDate.getDate() + '</span><span class="bar-calendar-day-events">' + visibleEvents.join('') + '</span></button>');
+      }
+      $('barEventMonthLabel').textContent = barEventDateLabel(localDateString(monthDate), { month: 'long', year: 'numeric' });
+      $('barEventCalendar').innerHTML = cells.join('');
+    }
+
+    function renderBarEvents() {
+      const events = (opsData.barEvents || []).slice();
+      const today = localDateString();
+      const month = String(opsState.barEventMonth || today.slice(0, 7));
+      const upcoming = events.filter(barEventIsUpcoming);
+      const monthEvents = events.filter(function (item) { return String(item.eventDate || '').slice(0, 7) === month && item.status !== 'CANCELADO'; });
+      const history = events.filter(function (item) { return barEventIsPast(item) || ['CONCLUIDO', 'CANCELADO'].includes(String(item.status || '').toUpperCase()); });
+      const expectedGuests = upcoming.filter(function (item) { return String(item.eventDate || '').slice(0, 7) === month; }).reduce(function (sum, item) { return sum + Number(item.expectedGuests || 0); }, 0);
+      $('barEventsUpcomingMetric').textContent = upcoming.length;
+      $('barEventsMonthMetric').textContent = monthEvents.length;
+      $('barEventsGuestsMetric').textContent = expectedGuests.toLocaleString('pt-BR');
+      $('barEventsHistoryMetric').textContent = history.length;
+      renderBarEventCalendar();
+
+      const selectedDate = opsState.barEventSelectedDate || today;
+      const dayEvents = events.filter(function (item) { return item.eventDate === selectedDate; }).sort(function (a, b) { return String(a.startsAt).localeCompare(String(b.startsAt)); });
+      $('barEventSelectedDateLabel').textContent = barEventDateLabel(selectedDate);
+      $('barEventSelectedDateHint').textContent = dayEvents.length ? dayEvents.length + ' evento(s) programado(s) neste dia.' : 'Nenhum evento programado neste dia.';
+      $('barEventDayList').innerHTML = dayEvents.map(renderBarEventCard).join('') || '<div class="lesson-empty-state">Dia livre. Use “Adicionar” para criar a programação.</div>';
+
+      const filter = opsState.barEventHistoryFilter || 'todos';
+      $('barEventHistoryFilter').value = filter;
+      const filtered = events.filter(function (item) {
+        if (filter === 'proximos') return barEventIsUpcoming(item);
+        if (filter === 'concluidos') return item.status === 'CONCLUIDO';
+        if (filter === 'cancelados') return item.status === 'CANCELADO';
+        if (filter === 'passados') return String(item.eventDate || '') < today;
+        return true;
+      }).sort(function (a, b) {
+        return String(b.eventDate || '').localeCompare(String(a.eventDate || '')) || String(b.startsAt || '').localeCompare(String(a.startsAt || ''));
+      });
+      $('barEventHistoryList').innerHTML = filtered.map(renderBarEventCard).join('') || '<div class="lesson-empty-state">Nenhum evento encontrado neste filtro.</div>';
+    }
+
+    function setBarEventSelectedDate(dateValue) {
+      if (!barEventDateValue(dateValue)) return;
+      opsState.barEventSelectedDate = dateValue;
+      opsState.barEventMonth = dateValue.slice(0, 7);
+      renderBarEvents();
+    }
+
+    function moveBarEventMonth(offset) {
+      const parts = String(opsState.barEventMonth || localDateString().slice(0, 7)).split('-').map(Number);
+      const date = new Date(parts[0], (parts[1] || 1) - 1 + offset, 1);
+      opsState.barEventMonth = localDateString(date).slice(0, 7);
+      opsState.barEventSelectedDate = localDateString(date);
+      renderBarEvents();
+    }
+
+    function openBarEventModal(item, dateValue) {
+      $('barEventForm').reset();
+      opsState.editingBarEventId = item && item.id || null;
+      $('barEventId').value = item && item.id || '';
+      $('barEventModalTitle').textContent = item ? 'Editar evento' : 'Novo evento';
+      $('barEventTitle').value = item && item.title || '';
+      $('barEventType').value = item && item.eventType || 'EVENTO';
+      $('barEventStatus').value = item && item.status || 'AGENDADO';
+      $('barEventDate').value = item && item.eventDate || dateValue || opsState.barEventSelectedDate || localDateString();
+      $('barEventLocation').value = item && item.location || '';
+      $('barEventStart').value = item && item.startsAt || '18:00';
+      $('barEventEnd').value = item && item.endsAt || '';
+      $('barEventGuests').value = Number(item && item.expectedGuests || 0);
+      $('barEventDescription').value = item && item.description || '';
+      $('barEventNotes').value = item && item.notes || '';
+      $('barEventCancelEventBtn').hidden = !item || item.status === 'CANCELADO';
+      $('barEventModal').classList.add('show');
+      $('barEventModal').setAttribute('aria-hidden', 'false');
+      window.setTimeout(function () { $('barEventTitle').focus(); }, 0);
+    }
+
+    function closeBarEventModal() {
+      $('barEventModal').classList.remove('show');
+      $('barEventModal').setAttribute('aria-hidden', 'true');
+      opsState.editingBarEventId = null;
+      $('barEventId').value = '';
+    }
+
+    async function saveBarEventAction(event) {
+      event.preventDefault();
+      try {
+        requireAdminSession();
+        const currentId = $('barEventId').value;
+        const title = $('barEventTitle').value.trim();
+        const eventDate = $('barEventDate').value;
+        const startsAt = $('barEventStart').value;
+        const endsAt = $('barEventEnd').value;
+        if (title.length < 2) throw new Error('Informe o nome do evento.');
+        if (!eventDate || !startsAt) throw new Error('Informe a data e o horário de início.');
+        if (endsAt && endsAt <= startsAt) throw new Error('O horário final precisa ser depois do início.');
+        const localEvent = {
+          id: currentId || localId('bar_event'),
+          title: title,
+          eventType: $('barEventType').value,
+          eventDate: eventDate,
+          startsAt: startsAt,
+          endsAt: endsAt,
+          location: $('barEventLocation').value.trim(),
+          expectedGuests: Math.max(0, Number($('barEventGuests').value || 0)),
+          status: $('barEventStatus').value,
+          description: $('barEventDescription').value.trim(),
+          notes: $('barEventNotes').value.trim(),
+          created: barEventById(currentId) && barEventById(currentId).created || new Date().toISOString(),
+          updated: new Date().toISOString()
+        };
+        const payload = {
+          title: localEvent.title,
+          event_type: localEvent.eventType,
+          event_date: localEvent.eventDate,
+          starts_at: localEvent.startsAt,
+          ends_at: localEvent.endsAt || null,
+          location: localEvent.location || null,
+          expected_guests: localEvent.expectedGuests,
+          status: localEvent.status,
+          description: localEvent.description || null,
+          notes: localEvent.notes || null,
+          updated_at: localEvent.updated
+        };
+        $('barEventSaveBtn').disabled = true;
+        $('barEventSaveBtn').textContent = 'Salvando...';
+        let savedEvent = localEvent;
+        if (barCanPersist(currentId)) {
+          if (currentId) {
+            const saved = await supabaseRest('bar_events?id=eq.' + encodeURIComponent(currentId), { method: 'PATCH', body: payload, prefer: 'return=representation' });
+            savedEvent = mapBarEventRow(Array.isArray(saved) ? saved[0] : saved);
+          } else {
+            savedEvent = mapBarEventRow(await supabaseInsert('bar_events', payload));
+          }
+        }
+        const index = (opsData.barEvents || []).findIndex(function (item) { return String(item.id) === String(currentId || savedEvent.id); });
+        if (index >= 0) opsData.barEvents.splice(index, 1, savedEvent);
+        else opsData.barEvents.push(savedEvent);
+        opsState.barEventSelectedDate = savedEvent.eventDate;
+        opsState.barEventMonth = savedEvent.eventDate.slice(0, 7);
+        closeBarEventModal();
+        renderBarModule();
+        toast(currentId ? 'Evento atualizado.' : 'Evento adicionado à agenda.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        $('barEventSaveBtn').disabled = false;
+        $('barEventSaveBtn').textContent = 'Salvar evento';
+      }
+    }
+
+    async function cancelBarEventAction() {
+      const item = barEventById($('barEventId').value);
+      if (!item || item.status === 'CANCELADO') return;
+      if (!window.confirm('Cancelar este evento? Ele continuará salvo no histórico.')) return;
+      try {
+        const updatedAt = new Date().toISOString();
+        if (barCanPersist(item.id)) {
+          const saved = await supabaseRest('bar_events?id=eq.' + encodeURIComponent(item.id), { method: 'PATCH', body: { status: 'CANCELADO', updated_at: updatedAt }, prefer: 'return=representation' });
+          Object.assign(item, mapBarEventRow(Array.isArray(saved) ? saved[0] : saved));
+        } else {
+          item.status = 'CANCELADO';
+          item.updated = updatedAt;
+        }
+        closeBarEventModal();
+        renderBarModule();
+        toast('Evento cancelado e mantido no histórico.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
     function barQrUrl(table) {
       const origin = window.location.origin && window.location.origin !== 'null' ? window.location.origin : 'https://app.ilhatenis.com';
       return origin + '/bar/?mesa=' + encodeURIComponent(table.number) + '&token=' + encodeURIComponent(table.qrToken || table.id);
@@ -13909,6 +14604,7 @@
       $('barClosedOrders').innerHTML = opsData.barOrders.filter(function (order) { return order.status === 'FECHADA'; }).slice(0, 12).map(function (order) {
         return '<article class="bar-finance-row"><div class="bar-finance-copy"><strong>' + escapeHtml(barTableLabel(order)) + ' | Comanda #' + escapeHtml(order.commandNumber || '') + '</strong><small>' + escapeHtml(barDateTimeLabel(order.closedAt || order.openedAt)) + ' | ' + escapeHtml(order.paymentMethod || 'Pagamento não informado') + '</small></div><div class="bar-row-actions">' + barStatusPill(order.paymentStatus) + '<span class="finance-total">' + money(barOrderTotal(order)) + '</span></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhuma comanda fechada ainda.</div>';
+      renderBarEvents();
       renderBarTablesAndQr();
       renderBarProducts();
       renderBarFinance();
@@ -14116,6 +14812,7 @@
         opsData.barFinance = [];
         opsData.barAccessCards = [];
         opsData.barServiceRequests = [];
+        opsData.barEvents = [];
       }
       renderBarModule();
       loadBarData(false).then(renderBarModule).catch(reportActionError);
@@ -16847,6 +17544,22 @@
         loadBarData(true).then(renderBarModule).catch(reportActionError);
       });
       $('barEnableAlertsBtn').addEventListener('click', enableBarAlerts);
+      $('barAddEventBtn').addEventListener('click', function () { openBarEventModal(null, opsState.barEventSelectedDate); });
+      $('barAddEventForDayBtn').addEventListener('click', function () { openBarEventModal(null, opsState.barEventSelectedDate); });
+      $('barEventPrevMonthBtn').addEventListener('click', function () { moveBarEventMonth(-1); });
+      $('barEventNextMonthBtn').addEventListener('click', function () { moveBarEventMonth(1); });
+      $('barEventTodayBtn').addEventListener('click', function () { setBarEventSelectedDate(localDateString()); });
+      $('barEventHistoryFilter').addEventListener('change', function () {
+        opsState.barEventHistoryFilter = this.value;
+        renderBarEvents();
+      });
+      $('barEventForm').addEventListener('submit', saveBarEventAction);
+      $('barEventCancelEventBtn').addEventListener('click', cancelBarEventAction);
+      $('barEventModalClose').addEventListener('click', closeBarEventModal);
+      $('barEventModalCancel').addEventListener('click', closeBarEventModal);
+      $('barEventModal').addEventListener('click', function (event) {
+        if (event.target.id === 'barEventModal') closeBarEventModal();
+      });
       $('barNewOrderBtn').addEventListener('click', function () {
         const hasTables = opsData.barTables.some(function (table) { return table.active; });
         opsState.barTab = hasTables ? 'orders' : 'tables';
@@ -16911,6 +17624,17 @@
         const tabBtn = event.target.closest('[data-bar-tab]');
         if (tabBtn) {
           setBarTab(tabBtn.dataset.barTab);
+          return;
+        }
+        const eventDateBtn = event.target.closest('[data-bar-event-date]');
+        if (eventDateBtn) {
+          setBarEventSelectedDate(eventDateBtn.dataset.barEventDate);
+          return;
+        }
+        const eventEditBtn = event.target.closest('[data-bar-event-edit]');
+        if (eventEditBtn) {
+          const barEvent = barEventById(eventEditBtn.dataset.barEventEdit);
+          if (barEvent) openBarEventModal(barEvent);
           return;
         }
         const goBtn = event.target.closest('[data-bar-go]');

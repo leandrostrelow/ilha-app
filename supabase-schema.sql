@@ -312,6 +312,24 @@ create table if not exists public.bar_financial_entries (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.bar_events (
+  id uuid primary key default gen_random_uuid(),
+  title text not null check (length(trim(title)) between 2 and 120),
+  event_type text not null default 'EVENTO' check (event_type in ('EVENTO', 'TORNEIO', 'MUSICA', 'PROMOCAO', 'MANUTENCAO', 'OUTRO')),
+  event_date date not null,
+  starts_at time not null,
+  ends_at time,
+  location text,
+  expected_guests integer not null default 0 check (expected_guests >= 0),
+  status text not null default 'AGENDADO' check (status in ('AGENDADO', 'CONFIRMADO', 'CONCLUIDO', 'CANCELADO')),
+  description text,
+  notes text,
+  created_by uuid references public.profiles(id) on delete set null default auth.uid(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint bar_events_time_range_check check (ends_at is null or ends_at > starts_at)
+);
+
 create index if not exists app_plan_requests_client_idx on public.app_plan_requests(client_id, created_at desc);
 create index if not exists app_plan_requests_status_idx on public.app_plan_requests(status, created_at desc);
 create index if not exists app_plans_active_idx on public.app_plans(active, type);
@@ -341,6 +359,9 @@ create index if not exists bar_order_items_order_idx on public.bar_order_items(o
 create index if not exists bar_order_items_status_idx on public.bar_order_items(status, created_at);
 create index if not exists bar_service_requests_order_idx on public.bar_service_requests(order_id, created_at desc);
 create index if not exists bar_service_requests_status_idx on public.bar_service_requests(status, created_at);
+create index if not exists bar_events_date_idx on public.bar_events(event_date, starts_at);
+create index if not exists bar_events_status_idx on public.bar_events(status, event_date desc);
+create index if not exists bar_events_created_by_idx on public.bar_events(created_by);
 create unique index if not exists bar_service_requests_active_unique_idx
   on public.bar_service_requests(order_id, request_type, customer_phone)
   where status in ('PENDENTE', 'EM_ATENDIMENTO');
@@ -1562,6 +1583,7 @@ alter table public.bar_order_items enable row level security;
 alter table public.bar_service_requests enable row level security;
 alter table public.bar_inventory_movements enable row level security;
 alter table public.bar_financial_entries enable row level security;
+alter table public.bar_events enable row level security;
 alter table public.teachers enable row level security;
 alter table public.students enable row level security;
 alter table public.courts enable row level security;
@@ -1593,6 +1615,7 @@ grant select, insert, update, delete on
   public.bar_service_requests,
   public.bar_inventory_movements,
   public.bar_financial_entries,
+  public.bar_events,
   public.teachers,
   public.students,
   public.courts,
@@ -1606,6 +1629,7 @@ grant select, insert, update, delete on
   public.communication_campaigns
 to authenticated;
 revoke all on table public.bar_service_requests from anon;
+revoke all on table public.bar_events from anon;
 grant execute on function public.current_user_role() to authenticated;
 grant execute on function public.is_club_staff() to authenticated;
 grant execute on function public.is_club_office() to authenticated;
@@ -1674,6 +1698,7 @@ drop policy if exists "bar staff manage order items" on public.bar_order_items;
 drop policy if exists "bar staff manage service requests" on public.bar_service_requests;
 drop policy if exists "bar staff manage inventory" on public.bar_inventory_movements;
 drop policy if exists "bar staff manage finance" on public.bar_financial_entries;
+drop policy if exists "bar staff manage events" on public.bar_events;
 drop policy if exists "staff read teachers" on public.teachers;
 drop policy if exists "office manage teachers" on public.teachers;
 drop policy if exists "staff read students" on public.students;
@@ -1863,6 +1888,12 @@ with check (public.is_bar_staff());
 
 create policy "bar staff manage finance"
 on public.bar_financial_entries for all
+to authenticated
+using (public.is_bar_staff())
+with check (public.is_bar_staff());
+
+create policy "bar staff manage events"
+on public.bar_events for all
 to authenticated
 using (public.is_bar_staff())
 with check (public.is_bar_staff());
