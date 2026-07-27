@@ -7380,6 +7380,81 @@
       border-color: #dff3a8;
     }
 
+    .bar-command-screen-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .bar-command-screen-btn svg {
+      width: 17px;
+      height: 17px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .bar-command-screen-empty {
+      display: none;
+    }
+
+    body.bar-command-screen-fallback {
+      overflow: hidden;
+    }
+
+    .bar-command-board-panel.is-command-screen {
+      width: 100vw;
+      height: 100vh;
+      max-width: none;
+      margin: 0;
+      padding: 0;
+      overflow: auto;
+      border: 0;
+      border-top: 4px solid var(--teal);
+      border-radius: 0;
+      background: #f3f6f8;
+      box-shadow: none;
+    }
+
+    body.bar-command-screen-fallback .bar-command-board-panel.is-command-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+    }
+
+    .bar-command-board-panel.is-command-screen > .ops-panel-head:first-child {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      min-height: 82px;
+      margin: 0;
+      padding: 20px 24px;
+      border-radius: 0;
+      box-shadow: 0 10px 28px rgba(12, 25, 43, .16);
+    }
+
+    .bar-command-board-panel.is-command-screen > .bar-table-grid {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      align-content: start;
+      padding: 24px;
+    }
+
+    .bar-command-board-panel.is-command-screen .bar-table-card:not(.is-open),
+    .bar-command-board-panel.is-command-screen .bar-command-board-empty,
+    .bar-command-board-panel.is-command-screen #barNewLooseOrderBtn,
+    .bar-command-board-panel.is-command-screen [data-bar-go="tables"] {
+      display: none;
+    }
+
+    .bar-command-board-panel.is-command-screen .bar-command-screen-empty {
+      display: block;
+      grid-column: 1 / -1;
+      min-height: calc(100vh - 154px);
+      background: #ffffff;
+    }
+
     .bar-setup-modal-body,
     .bar-qr-modal-body {
       padding: 22px;
@@ -7563,6 +7638,21 @@
       .bar-command-board-actions,
       .bar-command-board-actions > * {
         width: 100%;
+      }
+
+      .bar-command-board-panel.is-command-screen > .ops-panel-head:first-child {
+        position: static;
+        padding: 16px;
+      }
+
+      .bar-command-board-panel.is-command-screen > .bar-table-grid {
+        grid-template-columns: 1fr;
+        padding: 14px;
+      }
+
+      .bar-command-board-panel.is-command-screen .bar-command-screen-btn {
+        width: 100%;
+        justify-content: center;
       }
 
       .bar-table-management-grid,
@@ -8520,6 +8610,10 @@
       <circle cx="16" cy="16" r="5" />
       <path d="M16 13.5v5M18 14.5c-.5-.7-1.2-1-2-1-1.1 0-2 .6-2 1.4 0 2.2 4 1 4 2.7 0 .8-.9 1.4-2 1.4-.8 0-1.6-.3-2-.9" />
     </symbol>
+    <symbol id="bar-icon-screen" viewBox="0 0 24 24">
+      <rect x="3" y="4" width="18" height="13" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+    </symbol>
   </svg>
 
   <main class="adm-login" id="adminLogin">
@@ -9185,11 +9279,12 @@
           </div>
 
           <div data-bar-panel="orders">
-            <section class="ops-panel bar-command-board-panel">
+            <section class="ops-panel bar-command-board-panel" id="barCommandBoardPanel">
               <div class="ops-panel-head">
-                <div><h2>Comandas abertas</h2><div class="muted">Abra no balcão sem mesa ou vincule a uma mesa disponível.</div></div>
+                <div><h2>Comandas abertas</h2><div class="muted" id="barCommandBoardHint">Abra no balcão sem mesa ou vincule a uma mesa disponível.</div></div>
                 <div class="bar-command-board-actions">
                   <button class="primary-btn bar-icon-button" type="button" id="barNewLooseOrderBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Nova comanda</span></button>
+                  <button class="small-btn bar-command-screen-btn" type="button" id="barCommandScreenBtn" aria-pressed="false"><svg><use href="#bar-icon-screen"></use></svg><span>Tela de comandas</span></button>
                   <button class="small-btn" type="button" data-bar-go="tables">Ver mesas</button>
                 </div>
               </div>
@@ -15443,6 +15538,53 @@
       });
     }
 
+    function barCommandScreenIsActive() {
+      const panel = $('barCommandBoardPanel');
+      return Boolean(panel && (document.fullscreenElement === panel || document.body.classList.contains('bar-command-screen-fallback')));
+    }
+
+    function syncBarCommandScreen() {
+      const panel = $('barCommandBoardPanel');
+      const button = $('barCommandScreenBtn');
+      if (!panel || !button) return;
+      const active = barCommandScreenIsActive();
+      panel.classList.toggle('is-command-screen', active);
+      button.setAttribute('aria-pressed', String(active));
+      const label = button.querySelector('span');
+      if (label) label.textContent = active ? 'Sair da tela' : 'Tela de comandas';
+      $('barCommandBoardHint').textContent = active
+        ? 'Acompanhamento em tempo real somente das comandas abertas.'
+        : 'Abra no balcão sem mesa ou vincule a uma mesa disponível.';
+    }
+
+    async function closeBarCommandScreen() {
+      const panel = $('barCommandBoardPanel');
+      document.body.classList.remove('bar-command-screen-fallback');
+      if (panel && document.fullscreenElement === panel && document.exitFullscreen) {
+        await document.exitFullscreen();
+      }
+      syncBarCommandScreen();
+    }
+
+    async function toggleBarCommandScreen() {
+      const panel = $('barCommandBoardPanel');
+      if (!panel) return;
+      if (barCommandScreenIsActive()) {
+        await closeBarCommandScreen();
+        return;
+      }
+      if (panel.requestFullscreen) {
+        try {
+          await panel.requestFullscreen();
+        } catch (error) {
+          document.body.classList.add('bar-command-screen-fallback');
+        }
+      } else {
+        document.body.classList.add('bar-command-screen-fallback');
+      }
+      syncBarCommandScreen();
+    }
+
     function barProductCategoryKey(category) {
       const value = normalizeMatchText(category || '');
       if (value.includes('cervej') || value.includes('chopp')) return 'beer';
@@ -16009,7 +16151,11 @@
       $('barTablesFreeMetric').textContent = activeTables.length - busyTables.length;
       $('barTablesBusyMetric').textContent = busyTables.length;
       $('barTablesSeatsMetric').textContent = seats;
-      $('barTableBoard').innerHTML = looseOrders.map(barLooseOrderCard).concat(activeTables.map(barTableCard)).join('') || '<div class="lesson-empty-state">Nenhuma mesa ou comanda aberta.</div>';
+      const boardCards = looseOrders.map(barLooseOrderCard).concat(activeTables.map(barTableCard)).join('');
+      const screenEmpty = looseOrders.length || busyTables.length
+        ? ''
+        : '<div class="lesson-empty-state bar-command-screen-empty">Nenhuma comanda aberta.</div>';
+      $('barTableBoard').innerHTML = (boardCards || '<div class="lesson-empty-state bar-command-board-empty">Nenhuma mesa ou comanda aberta.</div>') + screenEmpty;
       $('barTableManagementGrid').innerHTML = allTables.map(barTableManagementCard).join('') || '<div class="lesson-empty-state">Nenhuma mesa cadastrada.</div>';
       $('barQrGrid').innerHTML = activeTables.map(barQrCard).join('') || '<div class="lesson-empty-state">Cadastre uma mesa ativa para gerar o QR Code.</div>';
       $('barAccessCardGrid').innerHTML = (opsData.barAccessCards || []).map(barAccessCardQrCard).join('') || '<div class="lesson-empty-state">Crie o primeiro cartão individual.</div>';
@@ -19058,6 +19204,15 @@
       });
       $('barNewOrderBtn').addEventListener('click', openBarNewOrderModal);
       $('barNewLooseOrderBtn').addEventListener('click', openBarNewOrderModal);
+      $('barCommandScreenBtn').addEventListener('click', function () {
+        toggleBarCommandScreen().catch(reportActionError);
+      });
+      document.addEventListener('fullscreenchange', syncBarCommandScreen);
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && barCommandScreenIsActive()) {
+          closeBarCommandScreen().catch(reportActionError);
+        }
+      });
       $('barNewOrderForm').addEventListener('submit', saveBarNewOrderAction);
       $('barNewOrderModalClose').addEventListener('click', closeBarNewOrderModal);
       $('barNewOrderCancelBtn').addEventListener('click', closeBarNewOrderModal);
@@ -19156,12 +19311,22 @@
         }
         const tableBtn = event.target.closest('[data-bar-table-open]');
         if (tableBtn) {
-          openBarTableAction(tableBtn.dataset.barTableOpen);
+          const tableId = tableBtn.dataset.barTableOpen;
+          if (barCommandScreenIsActive()) {
+            closeBarCommandScreen().then(function () { openBarTableAction(tableId); }).catch(reportActionError);
+          } else {
+            openBarTableAction(tableId);
+          }
           return;
         }
         const orderBtn = event.target.closest('[data-bar-order-open]');
         if (orderBtn) {
-          openBarCommandModal(orderBtn.dataset.barOrderOpen);
+          const orderId = orderBtn.dataset.barOrderOpen;
+          if (barCommandScreenIsActive()) {
+            closeBarCommandScreen().then(function () { openBarCommandModal(orderId); }).catch(reportActionError);
+          } else {
+            openBarCommandModal(orderId);
+          }
           return;
         }
         const productBtn = event.target.closest('[data-bar-product-edit]');
