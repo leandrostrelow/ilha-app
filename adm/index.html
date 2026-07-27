@@ -3149,7 +3149,6 @@
 
     .bar-order-board,
     .bar-incoming-orders,
-    .bar-service-requests,
     .bar-table-grid,
     .bar-product-list,
     .bar-finance-list,
@@ -3166,61 +3165,6 @@
       margin-bottom: 14px;
       border-top: 4px solid #e87b35;
     }
-
-    .bar-service-panel {
-      margin-bottom: 14px;
-      border-top: 4px solid #2678b8;
-    }
-
-    .bar-service-card {
-      min-width: 0;
-      display: grid;
-      grid-template-columns: 46px minmax(0, 1fr) auto;
-      gap: 12px;
-      align-items: center;
-      padding: 14px;
-      border: 1px solid #cfe1ed;
-      border-left: 5px solid #2678b8;
-      border-radius: 8px;
-      background: #f7fbfe;
-    }
-
-    .bar-service-card.is-close-request {
-      border-color: #f0d8bd;
-      border-left-color: #e87b35;
-      background: #fffaf5;
-    }
-
-    .bar-service-icon {
-      width: 46px;
-      height: 46px;
-      display: grid;
-      place-items: center;
-      color: #1d659d;
-      background: #e6f2fa;
-      border-radius: 8px;
-    }
-
-    .bar-service-card.is-close-request .bar-service-icon {
-      color: #9b5a00;
-      background: #fff0d5;
-    }
-
-    .bar-service-icon svg {
-      width: 23px;
-      height: 23px;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .bar-service-copy { min-width: 0; }
-    .bar-service-copy strong { display: block; font-size: 15px; }
-    .bar-service-copy small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; font-weight: 750; line-height: 1.4; }
-    .bar-service-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
-    .bar-service-phone { color: var(--teal); font-weight: 900; text-decoration: none; }
 
     .bar-live-status {
       display: inline-flex;
@@ -5582,21 +5526,6 @@
         grid-template-columns: 1fr;
       }
 
-      .bar-service-card {
-        grid-template-columns: 42px minmax(0, 1fr);
-      }
-
-      .bar-service-actions {
-        grid-column: 1 / -1;
-        justify-content: stretch;
-      }
-
-      .bar-service-actions .small-btn {
-        flex: 1 1 auto;
-        min-height: 40px;
-        justify-content: center;
-      }
-
       .bar-incoming-actions {
         width: 100%;
         grid-template-columns: minmax(0, 1fr) auto;
@@ -7339,6 +7268,58 @@
       width: min(650px, calc(100vw - 24px));
     }
 
+    .bar-new-order-modal {
+      width: min(560px, calc(100vw - 24px));
+    }
+
+    .bar-new-order-intro {
+      border-color: #cfe6df;
+      background: linear-gradient(135deg, #f7fcfb, #eef8f6);
+    }
+
+    .bar-new-order-hint {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+      color: #687785;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .bar-new-order-hint span {
+      padding: 3px 7px;
+      border-radius: 999px;
+      color: #356300;
+      background: #e9f8c6;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .bar-command-board-panel {
+      margin-bottom: 14px;
+      border-top: 4px solid var(--teal);
+    }
+
+    .bar-command-board-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .bar-command-board-actions .primary-btn {
+      min-height: 38px;
+      color: #14372f;
+      background: #dff3a8;
+      border-color: #dff3a8;
+    }
+
     .bar-setup-modal-body,
     .bar-qr-modal-body {
       padding: 22px;
@@ -7519,6 +7500,11 @@
     }
 
     @media (max-width: 620px) {
+      .bar-command-board-actions,
+      .bar-command-board-actions > * {
+        width: 100%;
+      }
+
       .bar-table-management-grid,
       .bar-qr-grid {
         grid-template-columns: 1fr;
@@ -8511,7 +8497,7 @@
         <button class="admin-nav-btn" type="button" data-admin-nav="club-courts"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Quadras</span></button>
         <button class="admin-nav-btn active" type="button" data-bar-entry data-bar-side-tab="overview"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Visão geral</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="events"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Agenda</span></button>
-        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="orders"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Pedidos</span><span class="bar-nav-badge" id="barOrdersNavBadge" hidden>0</span></button>
+        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="orders"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Comandas</span><span class="bar-nav-badge" id="barOrdersNavBadge" hidden>0</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="tables"><span class="admin-nav-icon"><svg><use href="#admin-icon-table"></use></svg></span><span>Mesas</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="products"><span class="admin-nav-icon"><svg><use href="#admin-icon-box"></use></svg></span><span>Produtos e estoque</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
@@ -9033,7 +9019,7 @@
             <button class="ghost-btn" type="button" data-home-action>Visão geral</button>
             <button class="ghost-btn" type="button" id="barReloadBtn">Atualizar</button>
             <button class="ghost-btn" type="button" id="barEnableAlertsBtn"><svg><use href="#admin-icon-bell"></use></svg><span>Ativar alertas</span></button>
-            <button class="primary-btn" type="button" id="barNewOrderBtn">Nova comanda</button>
+            <button class="primary-btn bar-icon-button" type="button" id="barNewOrderBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Nova comanda</span></button>
             <button class="ghost-btn" type="button" id="barSurfaceLogoutBtn" data-bar-surface-only>Sair</button>
           </div>
         </div>
@@ -9062,7 +9048,7 @@
           <div class="ops-tabs" role="tablist" aria-label="Gestão do bar">
             <button class="ops-tab-btn active" type="button" data-bar-tab="overview">Visão geral</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="events">Agenda</button>
-            <button class="ops-tab-btn" type="button" data-bar-tab="orders">Pedidos <span class="bar-tab-badge" id="barOrdersTabBadge" hidden>0</span></button>
+            <button class="ops-tab-btn" type="button" data-bar-tab="orders">Comandas <span class="bar-tab-badge" id="barOrdersTabBadge" hidden>0</span></button>
             <button class="ops-tab-btn" type="button" data-bar-tab="tables">Mesas</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="products">Produtos e estoque</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="finance">Financeiro</button>
@@ -9139,12 +9125,15 @@
           </div>
 
           <div data-bar-panel="orders">
-            <section class="ops-panel bar-service-panel">
+            <section class="ops-panel bar-command-board-panel">
               <div class="ops-panel-head">
-                <div><h2>Solicitações dos clientes</h2><div class="muted">Chamadas de atendimento e pedidos para fechar a conta.</div></div>
-                <span class="bar-live-status"><span></span>Atualização automática</span>
+                <div><h2>Comandas abertas</h2><div class="muted">Abra no balcão sem mesa ou vincule a uma mesa disponível.</div></div>
+                <div class="bar-command-board-actions">
+                  <button class="primary-btn bar-icon-button" type="button" id="barNewLooseOrderBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Nova comanda</span></button>
+                  <button class="small-btn" type="button" data-bar-go="tables">Ver mesas</button>
+                </div>
               </div>
-              <div class="bar-service-requests" id="barServiceRequests"></div>
+              <div class="bar-table-grid" id="barTableBoard"></div>
             </section>
             <section class="ops-panel bar-incoming-panel">
               <div class="ops-panel-head">
@@ -9152,13 +9141,6 @@
                 <span class="bar-live-status"><span></span>Atualização automática</span>
               </div>
               <div class="bar-incoming-orders" id="barIncomingOrders"></div>
-            </section>
-            <section class="ops-panel">
-              <div class="ops-panel-head">
-                <div><h2>Mesas e comandas abertas</h2><div class="muted">Mesas físicas e comandas individuais em um só lugar.</div></div>
-                <button class="small-btn" type="button" data-bar-go="tables">Gerenciar mesas</button>
-              </div>
-              <div class="bar-table-grid" id="barTableBoard"></div>
             </section>
             <section class="ops-panel" style="margin-top:14px">
               <div class="ops-panel-head"><div><h2>Últimas comandas fechadas</h2></div></div>
@@ -9450,6 +9432,37 @@
         <div class="modal-actions">
           <button class="ghost-btn bar-modal-secondary" type="button" id="barAccessCardCancelBtn">Cancelar</button>
           <button class="primary-btn bar-modal-primary" type="submit" form="barAccessCardForm" id="barAccessCardSaveBtn"><svg><use href="#bar-icon-check"></use></svg>Salvar cartão</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-modal-overlay" id="barNewOrderModal" aria-hidden="true">
+      <div class="admin-modal bar-setup-modal bar-new-order-modal" role="dialog" aria-modal="true" aria-labelledby="barNewOrderModalTitle">
+        <div class="admin-modal-head">
+          <div><h2 id="barNewOrderModalTitle">Abrir nova comanda</h2><div class="muted">A comanda avulsa sem mesa é o atendimento padrão.</div></div>
+          <button class="ghost-btn bar-modal-close" type="button" id="barNewOrderModalClose"><svg><use href="#bar-icon-close"></use></svg><span>Fechar</span></button>
+        </div>
+        <div class="admin-modal-body bar-setup-modal-body">
+          <div class="bar-modal-intro bar-new-order-intro"><span><svg><use href="#admin-icon-receipt"></use></svg></span><div><strong>Atendimento rápido no balcão</strong><small>Informe uma identificação e comece a adicionar os produtos. A mesa é opcional.</small></div></div>
+          <form class="form-grid bar-setup-form" id="barNewOrderForm">
+            <div class="field full">
+              <label for="barNewOrderCustomer">Nome ou identificação</label>
+              <input id="barNewOrderCustomer" maxlength="80" placeholder="Ex.: João, Deck ou Balcão 1" required />
+            </div>
+            <div class="field full">
+              <label for="barNewOrderTable">Local da comanda</label>
+              <select id="barNewOrderTable"></select>
+              <div class="bar-new-order-hint"><span>Mais usado</span> Sem mesa, para atendimento direto no balcão ou deck.</div>
+            </div>
+            <div class="field full">
+              <label for="barNewOrderPhone">Telefone <small>opcional</small></label>
+              <input id="barNewOrderPhone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="(27) 99999-9999" />
+            </div>
+          </form>
+        </div>
+        <div class="modal-actions">
+          <button class="ghost-btn bar-modal-secondary" type="button" id="barNewOrderCancelBtn">Cancelar</button>
+          <button class="primary-btn bar-modal-primary" type="submit" form="barNewOrderForm" id="barNewOrderSaveBtn"><svg><use href="#bar-icon-plus"></use></svg>Abrir e adicionar produtos</button>
         </div>
       </div>
     </div>
@@ -13729,7 +13742,6 @@
       selectedBarQrLabel: '',
       barAlertsEnabled: localStorage.getItem('ilha-bar-alerts-enabled') === 'true',
       barKnownIncomingIds: null,
-      barKnownServiceRequestIds: null,
       barDataLoaded: false,
       barSchemaReady: true,
       loaded: false
@@ -13858,9 +13870,6 @@
         { id: 'bar_item_2', orderId: 'bar_order_1', productId: 'bar_product_sandwich', productName: 'Sanduíche natural', customerName: 'Leandro', customerPhone: '5527999999999', source: 'QR_MESA', quantity: 1, unitPrice: 16, costPrice: 8, status: 'EM_PREPARO', notes: 'Sem tomate' },
         { id: 'bar_item_3', orderId: 'bar_order_1', productId: 'bar_product_water', productName: 'Água mineral', customerName: 'Leandro', customerPhone: '5527999999999', source: 'QR_MESA', quantity: 1, unitPrice: 5, costPrice: 2, status: 'SOLICITADO', notes: 'Sem gelo' },
         { id: 'bar_item_4', orderId: 'bar_order_2', productId: 'bar_product_beer', productName: 'Cerveja long neck', customerName: 'Cliente avulso', customerPhone: '5527988887777', source: 'QR_CARTAO', quantity: 1, unitPrice: 12, costPrice: 6, status: 'SOLICITADO', notes: '' }
-      ],
-      barServiceRequests: [
-        { id: 'bar_request_1', orderId: 'bar_order_2', type: 'ATENDIMENTO', status: 'PENDENTE', customerName: 'Cliente avulso', customerPhone: '5527988887777', message: '', created: new Date().toISOString(), handledAt: '' }
       ],
       barInventory: [],
       barFinance: [],
@@ -14261,21 +14270,6 @@
       };
     }
 
-    function mapBarServiceRequestRow(row) {
-      return {
-        id: row.id || '',
-        orderId: row.order_id || '',
-        type: row.request_type || 'ATENDIMENTO',
-        status: row.status || 'PENDENTE',
-        customerName: row.customer_name || 'Cliente',
-        customerPhone: row.customer_phone || '',
-        message: row.message || '',
-        handledBy: row.handled_by || '',
-        handledAt: row.handled_at || '',
-        created: row.created_at || ''
-      };
-    }
-
     function mapBarInventoryRow(row) {
       return {
         id: row.id || '',
@@ -14343,7 +14337,6 @@
           supabaseRest('bar_inventory_movements?select=*&order=occurred_at.desc&limit=200'),
           supabaseRest('bar_financial_entries?select=*&order=created_at.desc'),
           supabaseRest('bar_public_cards?select=*&order=code.asc'),
-          supabaseRest('bar_service_requests?select=*&order=created_at.desc'),
           supabaseRest('bar_events?select=*&order=event_date.asc,starts_at.asc')
         ]);
         opsData.barProducts = results[0].map(mapBarProductRow);
@@ -14353,10 +14346,8 @@
         opsData.barInventory = results[4].map(mapBarInventoryRow);
         opsData.barFinance = results[5].map(mapBarFinanceRow);
         opsData.barAccessCards = results[6].map(mapBarAccessCardRow);
-        opsData.barServiceRequests = results[7].map(mapBarServiceRequestRow);
-        opsData.barEvents = results[8].map(mapBarEventRow);
+        opsData.barEvents = results[7].map(mapBarEventRow);
         handleBarIncomingChanges(opsData.barOrderItems);
-        handleBarServiceRequestChanges(opsData.barServiceRequests);
         opsState.barDataLoaded = true;
         opsState.barSchemaReady = true;
       } catch (error) {
@@ -14367,7 +14358,6 @@
         opsData.barInventory = [];
         opsData.barFinance = [];
         opsData.barAccessCards = [];
-        opsData.barServiceRequests = [];
         opsData.barEvents = [];
         opsState.barSchemaReady = false;
         opsState.barDataLoaded = true;
@@ -15106,20 +15096,8 @@
       }).map(function (item) { return String(item.orderId); })).size;
     }
 
-    function openBarServiceRequests() {
-      return (opsData.barServiceRequests || []).filter(function (request) {
-        return ['PENDENTE', 'EM_ATENDIMENTO'].includes(String(request.status || '').toUpperCase());
-      });
-    }
-
-    function newBarServiceRequestCount() {
-      return (opsData.barServiceRequests || []).filter(function (request) {
-        return String(request.status || '').toUpperCase() === 'PENDENTE';
-      }).length;
-    }
-
     function updateBarOrderBadges() {
-      const count = newIncomingBarOrderCount() + newBarServiceRequestCount();
+      const count = newIncomingBarOrderCount();
       ['barOrdersNavBadge', 'barOrdersTabBadge'].forEach(function (id) {
         const badge = $(id);
         if (!badge) return;
@@ -15190,37 +15168,6 @@
       notifyNewBarOrders(fresh);
     }
 
-    function notifyNewBarServiceRequests(requests) {
-      if (!requests.length) return;
-      const closeCount = requests.filter(function (request) { return request.type === 'FECHAR_CONTA'; }).length;
-      const message = requests.length === 1
-        ? (closeCount ? 'Cliente pediu para fechar a conta.' : 'Cliente solicitou atendimento no Bar.')
-        : requests.length + ' novas solicitações de clientes no Bar.';
-      toast(message);
-      playBarOrderSound();
-      if (opsState.barAlertsEnabled && 'Notification' in window && Notification.permission === 'granted' && document.hidden) {
-        const notification = new Notification('Ilha Bar', { body: message, icon: '../icon.png', tag: 'ilha-bar-atendimento' });
-        notification.onclick = function () {
-          window.focus();
-          setBarTab('orders');
-          notification.close();
-        };
-      }
-    }
-
-    function handleBarServiceRequestChanges(requests) {
-      const currentIds = new Set((requests || []).map(function (request) { return String(request.id); }));
-      if (opsState.barKnownServiceRequestIds === null) {
-        opsState.barKnownServiceRequestIds = currentIds;
-        return;
-      }
-      const fresh = (requests || []).filter(function (request) {
-        return !opsState.barKnownServiceRequestIds.has(String(request.id)) && String(request.status || '').toUpperCase() === 'PENDENTE';
-      });
-      opsState.barKnownServiceRequestIds = currentIds;
-      notifyNewBarServiceRequests(fresh);
-    }
-
     async function enableBarAlerts() {
       opsState.barAlertsEnabled = true;
       localStorage.setItem('ilha-bar-alerts-enabled', 'true');
@@ -15281,39 +15228,6 @@
       return digits && !digits.startsWith('55') && digits.length <= 11 ? '55' + digits : digits;
     }
 
-    function barServiceRequestTypeLabel(type) {
-      return type === 'FECHAR_CONTA' ? 'Fechar a conta' : 'Solicitação de atendimento';
-    }
-
-    function barServiceRequestLocation(request, order) {
-      const table = order && barTableById(order.tableId);
-      const card = order && barAccessCardById(order.publicAccessId);
-      return table && table.name || card && card.label || 'Comanda avulsa';
-    }
-
-    function renderBarServiceRequests() {
-      const requests = openBarServiceRequests().slice().sort(function (a, b) {
-        return String(a.created).localeCompare(String(b.created));
-      });
-      $('barServiceRequests').innerHTML = requests.map(function (request) {
-        const order = barOrderById(request.orderId);
-        if (!order) return '';
-        const digits = barPhoneDigits(request.customerPhone || order.customerPhone);
-        const phone = digits ? '<a class="bar-service-phone" href="https://wa.me/' + escapeHtml(barPhoneWhatsApp(digits)) + '" target="_blank" rel="noopener">' + escapeHtml(barPhoneLabel(digits)) + '</a>' : 'Telefone não informado';
-        const isClose = request.type === 'FECHAR_CONTA';
-        const nextButton = request.status === 'PENDENTE'
-          ? '<button class="small-btn" type="button" data-bar-request-status="' + escapeHtml(request.id) + '" data-next-status="EM_ATENDIMENTO">Em atendimento</button>'
-          : '';
-        return '<article class="bar-service-card' + (isClose ? ' is-close-request' : '') + '">' +
-          '<span class="bar-service-icon"><svg><use href="#' + (isClose ? 'admin-icon-receipt' : 'admin-icon-bell') + '"></use></svg></span>' +
-          '<div class="bar-service-copy"><strong>' + escapeHtml(barServiceRequestTypeLabel(request.type)) + ' | ' + escapeHtml(request.customerName || order.customerName || 'Cliente') + '</strong>' +
-          '<small>' + escapeHtml(barServiceRequestLocation(request, order)) + ' | Comanda #' + escapeHtml(order.commandNumber || String(order.id).slice(-4)) + ' | ' + phone + ' | ' + escapeHtml(barDateTimeLabel(request.created)) + (request.message ? '<br>' + escapeHtml(request.message) : '') + '</small></div>' +
-          '<div class="bar-service-actions">' + barStatusPill(request.status) + nextButton + '<button class="small-btn" type="button" data-bar-request-status="' + escapeHtml(request.id) + '" data-next-status="CONCLUIDO">Concluir</button><button class="small-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button></div>' +
-        '</article>';
-      }).join('') || '<div class="lesson-empty-state">Nenhuma solicitação aguardando.</div>';
-      updateBarOrderBadges();
-    }
-
     function renderBarIncomingOrders() {
       const items = incomingBarItems();
       const grouped = new Map();
@@ -15365,9 +15279,10 @@
       const card = barAccessCardById(order.publicAccessId);
       const commandNumber = order.commandNumber || String(order.id).slice(-4);
       const phone = order.customerPhone ? '<span><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(order.customerPhone)) + '</span>' : '';
+      const locationLabel = card ? card.label : 'Balcão / sem mesa';
       return '<article class="bar-table-card is-open is-loose">' +
         '<div class="bar-table-card-top"><span class="bar-table-number"><svg><use href="#admin-icon-receipt"></use></svg></span><span class="ops-pill warn">Avulsa</span></div>' +
-        '<div><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3><div class="bar-table-card-meta"><span><svg><use href="#admin-icon-qr"></use></svg>' + escapeHtml(card && card.label || barOrderSourceLabel(order.source)) + '</span>' + phone + '</div></div>' +
+        '<div><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3><div class="bar-table-card-meta"><span><svg><use href="#' + (card ? 'admin-icon-qr' : 'admin-icon-bar') + '"></use></svg>' + escapeHtml(locationLabel) + '</span>' + phone + '</div></div>' +
         '<div class="bar-table-command-summary"><div><span>Comanda #' + escapeHtml(commandNumber) + '</span><strong>' + escapeHtml(barStatusLabel(order.status)) + '</strong></div><strong>' + money(barOrderTotal(order)) + '</strong></div>' +
         '<div class="bar-table-card-actions"><button class="primary-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Ver comanda</button></div>' +
       '</article>';
@@ -16060,7 +15975,6 @@
       $('barPendingItemsMetric').textContent = pendingItems.length;
       $('barLowStockMetric').textContent = lowStock.length;
       $('barTodaySalesMetric').textContent = money(todaySales);
-      renderBarServiceRequests();
       renderBarIncomingOrders();
       updateBarAlertsButton();
       $('barOverviewOrders').innerHTML = openOrders.map(barOrderCard).join('') || '<div class="lesson-empty-state">Nenhuma comanda aberta.</div>';
@@ -16277,7 +16191,6 @@
         opsData.barInventory = [];
         opsData.barFinance = [];
         opsData.barAccessCards = [];
-        opsData.barServiceRequests = [];
         opsData.barEvents = [];
       }
       renderBarModule();
@@ -16623,6 +16536,95 @@
       resetBarTableForm();
     }
 
+    function resetBarNewOrderForm() {
+      $('barNewOrderForm').reset();
+      const freeTables = opsData.barTables.filter(function (table) {
+        return table.active && !barOrderForTable(table.id);
+      }).sort(function (a, b) {
+        return Number(a.number || 0) - Number(b.number || 0);
+      });
+      $('barNewOrderTable').innerHTML = '<option value="">Sem mesa — Balcão / Deck (mais usado)</option>' + freeTables.map(function (table) {
+        return '<option value="' + escapeHtml(table.id) + '">' + escapeHtml(table.name) + ' · ' + escapeHtml(table.seats) + ' lugares</option>';
+      }).join('');
+      $('barNewOrderTable').value = '';
+    }
+
+    function openBarNewOrderModal() {
+      resetBarNewOrderForm();
+      $('barNewOrderModal').classList.add('show');
+      $('barNewOrderModal').setAttribute('aria-hidden', 'false');
+      setTimeout(function () { $('barNewOrderCustomer').focus(); }, 80);
+    }
+
+    function closeBarNewOrderModal() {
+      $('barNewOrderModal').classList.remove('show');
+      $('barNewOrderModal').setAttribute('aria-hidden', 'true');
+      resetBarNewOrderForm();
+    }
+
+    async function saveBarNewOrderAction(event) {
+      event.preventDefault();
+      const saveButton = $('barNewOrderSaveBtn');
+      const originalLabel = saveButton.innerHTML;
+      saveButton.disabled = true;
+      saveButton.textContent = 'Abrindo comanda...';
+      try {
+        requireAdminSession();
+        const tableId = $('barNewOrderTable').value;
+        const table = tableId ? barTableById(tableId) : null;
+        const customerName = $('barNewOrderCustomer').value.trim();
+        const customerPhone = barPhoneDigits($('barNewOrderPhone').value);
+        if (customerName.length < 2) throw new Error('Informe o nome ou uma identificação para a comanda.');
+        if (tableId && !table) throw new Error('A mesa selecionada não está disponível.');
+        if (table && barOrderForTable(table.id)) throw new Error('Essa mesa já possui uma comanda aberta.');
+        if (customerPhone && (customerPhone.length < 10 || customerPhone.length > 13)) throw new Error('Confira o telefone informado.');
+
+        const nextNumber = opsData.barOrders.reduce(function (max, order) {
+          return Math.max(max, Number(order.commandNumber || 0));
+        }, 0) + 1;
+        let order = {
+          id: localId('bar_order'),
+          tableId: table && table.id || '',
+          tableName: table && table.name || '',
+          commandNumber: nextNumber,
+          customerName: customerName,
+          customerPhone: customerPhone,
+          source: 'EQUIPE',
+          status: 'ABERTA',
+          subtotal: 0,
+          serviceCharge: 0,
+          discount: 0,
+          total: 0,
+          paymentStatus: 'ABERTO',
+          paymentMethod: '',
+          openedAt: new Date().toISOString(),
+          closedAt: ''
+        };
+        if (barCanPersist()) {
+          order = mapBarOrderRow(await supabaseInsert('bar_orders', {
+            table_id: table && table.id || null,
+            customer_name: customerName,
+            customer_phone: customerPhone || null,
+            source: 'EQUIPE',
+            opened_by: adminProfile && adminProfile.id || null
+          }));
+        }
+
+        opsData.barOrders.unshift(order);
+        closeBarNewOrderModal();
+        opsState.barTab = 'orders';
+        opsState.barCommandTab = 'add';
+        renderBarModule();
+        openBarCommandModal(order.id);
+        toast('Comanda #' + (order.commandNumber || '') + ' aberta' + (table ? ' na ' + table.name + '.' : ' sem mesa.'));
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        saveButton.disabled = false;
+        saveButton.innerHTML = originalLabel;
+      }
+    }
+
     function editBarTableAction(tableId) {
       const table = barTableById(tableId);
       if (!table) return;
@@ -16880,31 +16882,6 @@
       }
     }
 
-    async function updateBarServiceRequestStatusAction(requestId, status) {
-      const request = (opsData.barServiceRequests || []).find(function (row) { return String(row.id) === String(requestId); });
-      if (!request) return;
-      try {
-        const now = new Date().toISOString();
-        const patch = { status: status, updated_at: now };
-        if (status === 'CONCLUIDO') patch.handled_at = now;
-        if (barCanPersist(request.id)) {
-          const saved = await supabaseRest('bar_service_requests?id=eq.' + encodeURIComponent(request.id), {
-            method: 'PATCH',
-            body: patch,
-            prefer: 'return=representation'
-          });
-          Object.assign(request, mapBarServiceRequestRow(Array.isArray(saved) ? saved[0] : saved));
-        } else {
-          request.status = status;
-          request.handledAt = status === 'CONCLUIDO' ? now : request.handledAt;
-        }
-        renderBarModule();
-        toast(status === 'CONCLUIDO' ? 'Solicitação concluída.' : 'Atendimento assumido pela equipe.');
-      } catch (error) {
-        reportActionError(error);
-      }
-    }
-
     async function cancelBarItemAction(itemId) {
       const item = opsData.barOrderItems.find(function (row) { return String(row.id) === String(itemId); });
       if (!item || item.status === 'CANCELADO') return;
@@ -16973,12 +16950,6 @@
             id: localId('bar_finance'), orderId: order.id, type: 'RECEITA', description: 'Venda da comanda #' + order.commandNumber,
             counterparty: barTableLabel(order), category: 'Vendas', amount: order.total, dueDate: localDateString(), status: 'RECEBIDO',
             paymentMethod: paymentMethod, paidAt: new Date().toISOString(), created: new Date().toISOString(), notes: ''
-          });
-          (opsData.barServiceRequests || []).forEach(function (request) {
-            if (String(request.orderId) === String(order.id) && ['PENDENTE', 'EM_ATENDIMENTO'].includes(request.status)) {
-              request.status = 'CONCLUIDO';
-              request.handledAt = new Date().toISOString();
-            }
           });
         }
         closeBarCommandModal();
@@ -17519,7 +17490,6 @@
       sessionStorage.removeItem('ilha-admin-authenticated');
       sessionStorage.removeItem(ADMIN_DEMO_SESSION_KEY);
       opsState.barKnownIncomingIds = null;
-      opsState.barKnownServiceRequestIds = null;
       opsState.barDataLoaded = false;
     }
 
@@ -19026,11 +18996,13 @@
       $('barEventModal').addEventListener('click', function (event) {
         if (event.target.id === 'barEventModal') closeBarEventModal();
       });
-      $('barNewOrderBtn').addEventListener('click', function () {
-        const hasTables = opsData.barTables.some(function (table) { return table.active; });
-        opsState.barTab = hasTables ? 'orders' : 'tables';
-        renderBarModule();
-        toast(hasTables ? 'Escolha a mesa para abrir a comanda.' : 'Cadastre a primeira mesa.');
+      $('barNewOrderBtn').addEventListener('click', openBarNewOrderModal);
+      $('barNewLooseOrderBtn').addEventListener('click', openBarNewOrderModal);
+      $('barNewOrderForm').addEventListener('submit', saveBarNewOrderAction);
+      $('barNewOrderModalClose').addEventListener('click', closeBarNewOrderModal);
+      $('barNewOrderCancelBtn').addEventListener('click', closeBarNewOrderModal);
+      $('barNewOrderModal').addEventListener('click', function (event) {
+        if (event.target.id === 'barNewOrderModal') closeBarNewOrderModal();
       });
       $('barAddProductBtn').addEventListener('click', function () {
         openBarProductModal();
@@ -19115,11 +19087,6 @@
         const goBtn = event.target.closest('[data-bar-go]');
         if (goBtn) {
           setBarTab(goBtn.dataset.barGo);
-          return;
-        }
-        const requestStatusBtn = event.target.closest('[data-bar-request-status]');
-        if (requestStatusBtn) {
-          updateBarServiceRequestStatusAction(requestStatusBtn.dataset.barRequestStatus, requestStatusBtn.dataset.nextStatus);
           return;
         }
         const tableEditBtn = event.target.closest('[data-bar-table-edit]');
