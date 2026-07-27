@@ -3166,6 +3166,66 @@
       border-top: 4px solid #e87b35;
     }
 
+    .bar-collapsible-panel {
+      margin-top: 14px;
+      overflow: hidden;
+    }
+
+    .bar-collapsible-panel > .bar-collapsible-summary {
+      cursor: pointer;
+      list-style: none;
+      user-select: none;
+    }
+
+    .bar-collapsible-panel > .bar-collapsible-summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .bar-collapsible-panel:not([open]) {
+      padding: 0;
+    }
+
+    .bar-collapsible-panel:not([open]) > .bar-collapsible-summary {
+      margin: 0;
+      border-radius: 16px;
+    }
+
+    .bar-collapse-control {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 10px;
+      min-height: 36px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .1);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .bar-collapse-label::before {
+      content: "Mostrar";
+    }
+
+    .bar-collapsible-panel[open] .bar-collapse-label::before {
+      content: "Ocultar";
+    }
+
+    .bar-collapse-chevron {
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      transform: translateY(-2px) rotate(45deg);
+      transition: transform .18s ease;
+    }
+
+    .bar-collapsible-panel[open] .bar-collapse-chevron {
+      transform: translateY(2px) rotate(225deg);
+    }
+
     .bar-live-status {
       display: inline-flex;
       align-items: center;
@@ -9135,17 +9195,13 @@
               </div>
               <div class="bar-table-grid" id="barTableBoard"></div>
             </section>
-            <section class="ops-panel bar-incoming-panel">
-              <div class="ops-panel-head">
-                <div><h2>Pedidos recebidos</h2><div class="muted">Pedidos enviados pelo cardápio online.</div></div>
-                <span class="bar-live-status"><span></span>Atualização automática</span>
-              </div>
-              <div class="bar-incoming-orders" id="barIncomingOrders"></div>
-            </section>
-            <section class="ops-panel" style="margin-top:14px">
-              <div class="ops-panel-head"><div><h2>Últimas comandas fechadas</h2></div></div>
+            <details class="ops-panel bar-collapsible-panel" id="barClosedOrdersPanel">
+              <summary class="ops-panel-head bar-collapsible-summary">
+                <div><h2>Últimas comandas fechadas</h2><div class="muted" id="barClosedOrdersCount">Nenhuma recente</div></div>
+                <span class="bar-collapse-control" aria-hidden="true"><span class="bar-collapse-label"></span><span class="bar-collapse-chevron"></span></span>
+              </summary>
               <div class="bar-finance-list" id="barClosedOrders"></div>
-            </section>
+            </details>
           </div>
 
           <div data-bar-panel="products">
@@ -15975,13 +16031,17 @@
       $('barPendingItemsMetric').textContent = pendingItems.length;
       $('barLowStockMetric').textContent = lowStock.length;
       $('barTodaySalesMetric').textContent = money(todaySales);
-      renderBarIncomingOrders();
+      updateBarOrderBadges();
       updateBarAlertsButton();
       $('barOverviewOrders').innerHTML = openOrders.map(barOrderCard).join('') || '<div class="lesson-empty-state">Nenhuma comanda aberta.</div>';
       $('barLowStockList').innerHTML = lowStock.map(function (product) {
         return '<div class="bar-stock-alert"><div><strong>' + escapeHtml(product.name) + '</strong><div class="muted">Mínimo: ' + escapeHtml(Number(product.minimumStock || 0).toLocaleString('pt-BR')) + ' ' + escapeHtml(product.unit) + '</div></div><span class="ops-pill bad">' + escapeHtml(Number(product.stock || 0).toLocaleString('pt-BR')) + ' ' + escapeHtml(product.unit) + '</span></div>';
       }).join('') || '<div class="empty">Estoque em ordem.</div>';
-      $('barClosedOrders').innerHTML = opsData.barOrders.filter(function (order) { return order.status === 'FECHADA'; }).slice(0, 12).map(function (order) {
+      const recentClosedOrders = opsData.barOrders.filter(function (order) { return order.status === 'FECHADA'; }).slice(0, 12);
+      $('barClosedOrdersCount').textContent = recentClosedOrders.length
+        ? recentClosedOrders.length + (recentClosedOrders.length === 1 ? ' comanda recente' : ' comandas recentes')
+        : 'Nenhuma recente';
+      $('barClosedOrders').innerHTML = recentClosedOrders.map(function (order) {
         return '<article class="bar-finance-row"><div class="bar-finance-copy"><strong>' + escapeHtml(barTableLabel(order)) + ' | Comanda #' + escapeHtml(order.commandNumber || '') + '</strong><small>' + escapeHtml(barDateTimeLabel(order.closedAt || order.openedAt)) + ' | ' + escapeHtml(order.paymentMethod || 'Pagamento não informado') + '</small></div><div class="bar-row-actions">' + barStatusPill(order.paymentStatus) + '<span class="finance-total">' + money(barOrderTotal(order)) + '</span></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhuma comanda fechada ainda.</div>';
       renderBarEvents();
