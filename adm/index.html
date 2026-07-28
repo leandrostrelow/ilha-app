@@ -4406,12 +4406,12 @@
     }
 
     .bar-command-head {
-      min-height: 104px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-      padding: 18px 22px;
+      min-height: 96px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 16px;
+      padding: 16px 22px;
       border-bottom: 1px solid var(--line);
       background: #ffffff;
     }
@@ -4434,8 +4434,9 @@
     }
 
     .bar-command-customer {
+      width: 100%;
       min-width: 0;
-      gap: 14px;
+      gap: 0;
     }
 
     .bar-command-avatar {
@@ -4453,21 +4454,28 @@
     }
 
     .bar-command-identity {
+      width: 100%;
       min-width: 0;
     }
 
-    .bar-command-location {
-      display: inline-flex;
+    .bar-command-identity-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .bar-command-identity-copy {
+      min-width: 0;
+    }
+
+    .bar-command-head-badges {
+      flex: 0 0 auto;
+      display: flex;
       align-items: center;
-      min-height: 24px;
-      margin-bottom: 4px;
-      padding: 3px 8px;
-      border-radius: 6px;
-      color: #426000;
-      background: #eefbc6;
-      font-size: 11px;
-      font-weight: 950;
-      text-transform: uppercase;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
     }
 
     .bar-command-identity h2 {
@@ -4481,11 +4489,20 @@
       white-space: nowrap;
     }
 
+    .bar-command-number {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
     .bar-command-contact {
       min-width: 0;
       flex-wrap: wrap;
       gap: 6px 12px;
-      margin-top: 7px;
+      margin-top: 10px;
       color: var(--muted);
       font-size: 12px;
       font-weight: 800;
@@ -5359,7 +5376,7 @@
       }
 
       .bar-command-head {
-        min-height: 88px;
+        min-height: 0;
         align-items: flex-start;
         padding: 13px 14px;
       }
@@ -5372,8 +5389,16 @@
       }
 
       .bar-command-identity h2 {
-        max-width: calc(100vw - 172px);
+        max-width: 100%;
         font-size: 21px;
+      }
+
+      .bar-command-identity-top {
+        gap: 8px;
+      }
+
+      .bar-command-head-badges {
+        max-width: 118px;
       }
 
       .bar-command-contact {
@@ -9970,17 +9995,18 @@
       <div class="admin-modal bar-command-modal" role="dialog" aria-modal="true" aria-labelledby="barCommandModalTitle">
         <div class="bar-command-head">
           <div class="bar-command-customer">
-            <span class="bar-command-avatar" id="barCommandAvatar">IL</span>
             <div class="bar-command-identity">
-              <span class="bar-command-location" id="barCommandLocation">Mesa</span>
-              <h2 id="barCommandModalTitle">Cliente</h2>
+              <div class="bar-command-identity-top">
+                <div class="bar-command-identity-copy">
+                  <h2 id="barCommandModalTitle">Cliente</h2>
+                  <strong class="bar-command-number" id="barCommandNumber">Comanda</strong>
+                </div>
+                <div class="bar-command-head-badges"><span id="barCommandStatus"></span><span class="ops-pill warn" id="barCommandLocation">Avulsa</span></div>
+              </div>
               <div class="bar-command-contact" id="barCommandModalSubtitle"></div>
             </div>
           </div>
-          <div class="bar-command-head-actions">
-            <div class="bar-command-reference"><strong id="barCommandNumber">Comanda</strong><span id="barCommandStatus"></span></div>
-            <button class="bar-command-close" type="button" id="barCommandModalClose" aria-label="Fechar comanda"><svg><use href="#bar-icon-close"></use></svg></button>
-          </div>
+          <button class="bar-command-close" type="button" id="barCommandModalClose" aria-label="Fechar comanda"><svg><use href="#bar-icon-close"></use></svg></button>
         </div>
 
         <div class="bar-command-tabs" role="tablist" aria-label="Seções da comanda">
@@ -9998,7 +10024,7 @@
         <div class="admin-modal-body bar-command-body">
           <section class="bar-command-panel active-command-panel" data-bar-command-panel="items">
             <div class="bar-command-panel-head">
-              <div><h3>Itens da comanda</h3><p>Acompanhe o preparo e a entrega de cada produto.</p></div>
+              <div><h3>Itens</h3></div>
               <button class="bar-command-add-shortcut" type="button" data-bar-command-tab-target="add"><svg><use href="#bar-icon-plus"></use></svg>Adicionar produto</button>
             </div>
             <div class="bar-modal-order-list" id="barCommandItems"></div>
@@ -10051,13 +10077,6 @@
           </section>
         </div>
 
-        <div class="modal-actions bar-command-footer">
-          <div class="bar-command-footer-status"><span>Etapa atual</span><strong id="barCommandFooterStatus">Aberta</strong></div>
-          <div class="bar-command-footer-actions">
-            <button class="bar-command-stage prepare" type="button" id="barOrderPrepBtn"><svg><use href="#bar-icon-flame"></use></svg><span>Iniciar preparo</span></button>
-            <button class="bar-command-stage ready" type="button" id="barOrderReadyBtn"><svg><use href="#bar-icon-check"></use></svg><span>Marcar tudo pronto</span></button>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -16780,18 +16799,18 @@
       const customer = barOrderCustomerDetails(order, activeItems.length ? activeItems : items);
       const itemQuantity = activeItems.reduce(function (sum, item) { return sum + Number(item.quantity || 0); }, 0);
       const phoneDigits = barPhoneDigits(customer.phone);
+      const table = barTableById(order.tableId);
       const contactBits = [];
+      contactBits.push('<span><svg><use href="#' + (table ? 'admin-icon-table' : 'admin-icon-bar') + '"></use></svg>' + escapeHtml(table ? customer.location : 'Balcão / sem mesa') + '</span>');
       if (phoneDigits) contactBits.push('<a href="https://wa.me/' + escapeHtml(barPhoneWhatsApp(phoneDigits)) + '" target="_blank" rel="noopener"><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(phoneDigits)) + '</a>');
-      contactBits.push('<span><svg><use href="#admin-icon-qr"></use></svg>' + escapeHtml(barOrderSourceLabel(order.source)) + '</span>');
       if (customer.names.length > 1) contactBits.push('<span><svg><use href="#admin-icon-users"></use></svg>' + escapeHtml(customer.names.length + ' pessoas nesta comanda') + '</span>');
 
-      $('barCommandAvatar').textContent = clientInitials(customer.name);
-      $('barCommandLocation').textContent = customer.location;
+      $('barCommandLocation').textContent = table ? customer.location : 'Avulsa';
+      $('barCommandLocation').className = 'ops-pill ' + (table ? '' : 'warn');
       $('barCommandModalTitle').textContent = customer.name;
       $('barCommandModalSubtitle').innerHTML = contactBits.join('');
       $('barCommandNumber').textContent = 'Comanda #' + (order.commandNumber || String(order.id).slice(-4));
-      $('barCommandStatus').innerHTML = barStatusPill(order.status);
-      $('barCommandFooterStatus').textContent = barStatusLabel(order.status);
+      $('barCommandStatus').innerHTML = String(order.status || '').toUpperCase() === 'ABERTA' ? '<span class="ops-pill good">Aberta</span>' : barStatusPill(order.status);
       $('barCommandItemsCount').textContent = itemQuantity;
       $('barCheckoutItemCount').textContent = itemQuantity;
 
@@ -16799,7 +16818,6 @@
         const status = String(item.status || '').toUpperCase();
         const cancelled = status === 'CANCELADO';
         const statusClass = status === 'EM_PREPARO' ? ' is-preparing' : (status === 'PRONTO' ? ' is-ready' : (status === 'ENTREGUE' ? ' is-delivered' : ''));
-        const itemCustomer = item.customerName || customer.name;
         const itemPhone = barPhoneDigits(item.customerPhone || customer.phone);
         const meta = [];
         if (itemPhone) meta.push('<span><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(itemPhone)) + '</span>');
@@ -16808,8 +16826,7 @@
         const deliveryAction = cancelled ? '' : '<button class="small-btn bar-item-deliver" type="button"' + (status === 'ENTREGUE' ? ' disabled' : ' data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="ENTREGUE"') + '>Entregue</button>';
         return '<article class="bar-item-row bar-command-item' + statusClass + (cancelled ? ' cancelled' : '') + '">' +
           '<span class="bar-command-item-quantity">' + escapeHtml(item.quantity + 'x') + '</span>' +
-          '<div class="bar-command-item-content"><div class="bar-command-item-customer"><svg><use href="#admin-icon-users"></use></svg><span>Pedido de <strong>' + escapeHtml(itemCustomer) + '</strong></span></div>' +
-          '<div class="bar-command-item-title"><strong>' + escapeHtml(item.productName) + '</strong><span class="bar-item-price">' + money(item.quantity * item.unitPrice) + '</span></div>' +
+          '<div class="bar-command-item-content"><div class="bar-command-item-title"><strong>' + escapeHtml(item.productName) + '</strong><span class="bar-item-price">' + money(item.quantity * item.unitPrice) + '</span></div>' +
           '<div class="bar-command-item-meta">' + meta.join('') + '</div></div>' +
           '<div class="bar-command-item-actions">' + deliveryAction + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum item nesta comanda. Use “Adicionar produto” para começar.</div>';
@@ -16820,8 +16837,6 @@
       $('barOrderItemForm').style.display = open ? 'grid' : 'none';
       $('barCommandAddTab').hidden = !open;
       document.querySelectorAll('[data-bar-command-tab-target="add"]').forEach(function (button) { button.hidden = !open; });
-      $('barOrderPrepBtn').style.display = open && order.status === 'ABERTA' ? '' : 'none';
-      $('barOrderReadyBtn').style.display = open && ['ABERTA', 'EM_PREPARO'].includes(order.status) ? '' : 'none';
       $('barOrderCloseBtn').style.display = open ? 'inline-flex' : 'none';
       renderBarProducts();
       renderBarOrderProductPreview();
@@ -19937,8 +19952,6 @@
       $('barOrderQuantity').addEventListener('input', renderBarOrderProductPreview);
       $('barCheckoutService').addEventListener('input', function () { updateBarCheckoutPreview(); });
       $('barCheckoutDiscount').addEventListener('input', function () { updateBarCheckoutPreview(); });
-      $('barOrderPrepBtn').addEventListener('click', function () { updateBarOrderStatusAction('EM_PREPARO'); });
-      $('barOrderReadyBtn').addEventListener('click', function () { updateBarOrderStatusAction('PRONTA'); });
       $('barOrderCloseBtn').addEventListener('click', closeBarOrderAction);
       $('barQrModalClose').addEventListener('click', closeBarQrModal);
       $('barQrModal').addEventListener('click', function (event) {
