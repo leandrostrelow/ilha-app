@@ -6727,38 +6727,61 @@
     }
 
     .bar-module .ops-summary {
-      gap: 10px;
-      margin-bottom: 14px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
     }
 
     .bar-module .ops-summary .bar-summary-card {
-      min-height: 76px;
-      grid-template-columns: 32px minmax(0, 1fr);
-      gap: 9px;
-      padding: 11px 14px;
-      border-radius: 12px;
+      min-height: 54px;
+      grid-template-columns: 26px minmax(0, 1fr);
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 10px;
       box-shadow: none;
     }
 
     .bar-module .ops-summary .bar-summary-icon {
-      width: 32px;
-      height: 32px;
+      width: 26px;
+      height: 26px;
       margin: 0;
     }
 
     .bar-module .ops-summary .bar-summary-icon svg {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
+    }
+
+    .bar-module .ops-summary .bar-summary-card > div {
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+      white-space: nowrap;
     }
 
     .bar-module .ops-summary .bar-summary-card strong {
-      font-size: clamp(20px, 1.5vw, 25px);
+      flex: 0 0 auto;
+      font-size: clamp(18px, 1.35vw, 22px);
     }
 
     .bar-module .ops-summary .bar-summary-card > div > span {
-      margin-top: 4px;
-      font-size: 11px;
-      line-height: 1.2;
+      min-width: 0;
+      overflow: hidden;
+      margin: 0;
+      font-size: 10.5px;
+      line-height: 1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 900px) {
+      .bar-module .ops-summary {
+        grid-template-columns: repeat(4, minmax(190px, 1fr));
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: thin;
+      }
     }
 
     .ops-panel,
