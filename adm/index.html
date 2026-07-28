@@ -4794,18 +4794,192 @@
       background: #ffffff;
     }
 
-    .bar-command-product-form > .field select {
-      min-height: 48px;
-      font-size: 14px;
+    .bar-order-product-picker {
+      display: grid;
+      gap: 10px;
+    }
+
+    .bar-order-product-picker-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .bar-order-product-picker-head label {
+      color: #3d5360;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .bar-order-product-picker-head span {
+      color: var(--muted);
+      font-size: 10px;
       font-weight: 800;
     }
 
-    .bar-command-product-preview {
-      min-height: 92px;
+    .bar-order-product-search {
+      min-height: 42px;
+      padding: 9px 12px;
+      border-color: #d4e2e5;
+      background: #f8fbfc;
+      font-size: 13px;
+    }
+
+    .bar-order-product-grid {
+      max-height: 330px;
       display: grid;
-      grid-template-columns: 72px minmax(0, 1fr) auto;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 9px;
+      overflow: auto;
+      padding: 2px;
+      scrollbar-width: thin;
+    }
+
+    .bar-order-product-card {
+      position: relative;
+      min-width: 0;
+      min-height: 148px;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: 82px minmax(0, 1fr);
+      padding: 0;
+      border: 1px solid #d7e3e6;
+      border-radius: 10px;
+      color: #17323a;
+      background: #ffffff;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+    }
+
+    .bar-order-product-card:hover {
+      border-color: #7bb8c1;
+      box-shadow: 0 8px 18px rgba(20, 93, 105, .1);
+      transform: translateY(-1px);
+    }
+
+    .bar-order-product-card.is-selected {
+      border: 2px solid var(--teal);
+      box-shadow: 0 0 0 3px rgba(181, 229, 0, .32);
+    }
+
+    .bar-order-product-card:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+      filter: grayscale(.3);
+      transform: none;
+    }
+
+    .bar-order-product-card-media {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      background: #f2f7f8;
+    }
+
+    .bar-order-product-card-media img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      padding: 5px;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .bar-order-product-card-placeholder {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      color: var(--teal);
+      background: #edf5f6;
+    }
+
+    .bar-order-product-card-placeholder.is-fallback {
+      display: none;
+    }
+
+    .bar-order-product-card-placeholder.is-fallback.show {
+      display: grid;
+    }
+
+    .bar-order-product-card-placeholder svg {
+      width: 31px;
+      height: 31px;
+    }
+
+    .bar-order-product-card-status {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      padding: 3px 6px;
+      border-radius: 999px;
+      color: #416000;
+      background: #effbcf;
+      font-size: 8px;
+      font-weight: 950;
+    }
+
+    .bar-order-product-card-status.out {
+      color: #9b2f3d;
+      background: #fff0f1;
+    }
+
+    .bar-order-product-card-copy {
+      min-width: 0;
+      display: grid;
+      align-content: space-between;
+      gap: 7px;
+      padding: 8px 9px 9px;
+    }
+
+    .bar-order-product-card-copy strong {
+      display: -webkit-box;
+      overflow: hidden;
+      color: #153139;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.25;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .bar-order-product-card-meta {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .bar-order-product-card-meta b {
+      color: var(--teal);
+      font-size: 13px;
+    }
+
+    .bar-order-product-card-meta small {
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 800;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-order-product-picker-empty {
+      grid-column: 1 / -1;
+      min-height: 112px;
+    }
+
+    .bar-command-product-preview {
+      min-height: 78px;
+      display: grid;
+      grid-template-columns: 58px minmax(0, 1fr) auto;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       padding: 10px;
       border: 1px solid #d8e5e8;
       border-radius: 8px;
@@ -4819,8 +4993,8 @@
 
     .bar-command-product-image,
     .bar-command-product-icon {
-      width: 72px;
-      height: 72px;
+      width: 58px;
+      height: 58px;
       overflow: hidden;
       display: grid;
       place-items: center;
@@ -4837,7 +5011,9 @@
       width: 100%;
       height: 100%;
       display: block;
-      object-fit: cover;
+      padding: 3px;
+      object-fit: contain;
+      background: #ffffff;
     }
 
     .bar-command-product-icon svg {
@@ -4857,7 +5033,7 @@
 
     .bar-command-product-copy strong {
       color: #102d33;
-      font-size: 16px;
+      font-size: 14px;
     }
 
     .bar-command-product-copy span {
@@ -5187,13 +5363,43 @@
       }
 
       .bar-command-product-preview {
-        grid-template-columns: 58px minmax(0, 1fr);
+        grid-template-columns: 50px minmax(0, 1fr);
       }
 
       .bar-command-product-image,
       .bar-command-product-icon {
-        width: 58px;
-        height: 58px;
+        width: 50px;
+        height: 50px;
+      }
+
+      .bar-command-product-form {
+        gap: 12px;
+        padding: 12px;
+      }
+
+      .bar-order-product-picker-head {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .bar-order-product-grid {
+        max-height: min(42dvh, 360px);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .bar-order-product-card {
+        min-height: 138px;
+        grid-template-rows: 72px minmax(0, 1fr);
+      }
+
+      .bar-order-product-card-copy {
+        padding: 7px 8px 8px;
+      }
+
+      .bar-order-product-card-copy strong {
+        font-size: 11px;
       }
 
       .bar-command-product-price {
@@ -9675,7 +9881,12 @@
               <div><h3>Adicionar produto</h3><p>Escolha o item, confirme a quantidade e inclua uma observação se precisar.</p></div>
             </div>
             <form class="bar-command-product-form" id="barOrderItemForm">
-              <div class="field"><label for="barOrderProduct">Produto</label><select id="barOrderProduct" required></select></div>
+              <input id="barOrderProduct" type="hidden" />
+              <div class="bar-order-product-picker">
+                <div class="bar-order-product-picker-head"><label for="barOrderProductSearch">Escolha o produto</label><span id="barOrderProductCount">0 disponíveis</span></div>
+                <input class="bar-order-product-search" id="barOrderProductSearch" type="search" placeholder="Buscar produto..." autocomplete="off" />
+                <div class="bar-order-product-grid" id="barOrderProductGrid" role="listbox" aria-label="Produtos disponíveis"></div>
+              </div>
               <div class="bar-command-product-preview" id="barOrderProductPreview"></div>
               <div class="bar-command-product-fields">
                 <div class="field">
@@ -15694,10 +15905,11 @@
         return '<option value="' + escapeHtml(product.id) + '">' + escapeHtml(product.name) + ' | ' + escapeHtml(Number(product.stock || 0).toLocaleString('pt-BR')) + ' ' + escapeHtml(product.unit) + '</option>';
       }).join('');
       $('barStockProduct').innerHTML = '<option value="">Selecione</option>' + options;
-      $('barOrderProduct').innerHTML = '<option value="">Selecione um produto</option>' + options;
-      if (activeProducts.some(function (product) { return String(product.id) === String(selectedOrderProduct); })) {
-        $('barOrderProduct').value = selectedOrderProduct;
-      }
+      const selectedProduct = activeProducts.find(function (product) {
+        return String(product.id) === String(selectedOrderProduct) && Number(product.stock || 0) > 0;
+      });
+      $('barOrderProduct').value = selectedProduct ? selectedProduct.id : '';
+      renderBarOrderProductPicker();
       setBarProductView(opsState.barProductView);
     }
 
@@ -16248,6 +16460,46 @@
       $('barCheckoutTotal').textContent = money(Math.max(0, subtotal + serviceCharge - discount));
     }
 
+    function renderBarOrderProductPicker() {
+      const grid = $('barOrderProductGrid');
+      const count = $('barOrderProductCount');
+      if (!grid || !count) return;
+      const selectedId = String($('barOrderProduct').value || '');
+      const search = normalizeMatchText($('barOrderProductSearch').value);
+      const activeProducts = opsData.barProducts.filter(function (product) {
+        return product.active;
+      }).sort(function (a, b) {
+        return String(a.category || '').localeCompare(String(b.category || '')) || String(a.name || '').localeCompare(String(b.name || ''));
+      });
+      const products = activeProducts.filter(function (product) {
+        return !search || normalizeMatchText([product.name, product.category, product.sku, product.notes].join(' ')).includes(search);
+      });
+      count.textContent = products.length === activeProducts.length
+        ? products.length + (products.length === 1 ? ' produto' : ' produtos')
+        : products.length + ' de ' + activeProducts.length + ' produtos';
+      grid.innerHTML = products.map(function (product) {
+        const stock = Number(product.stock || 0);
+        const available = stock > 0;
+        const selected = String(product.id) === selectedId;
+        const categoryKey = barProductCategoryKey(product.category);
+        const placeholder = '<span class="bar-order-product-card-placeholder ' + categoryKey + '">' + barProductCategoryIcon(product.category) + '</span>';
+        const media = product.imageUrl
+          ? '<img src="' + escapeHtml(product.imageUrl) + '" alt="' + escapeHtml(product.name) + '" loading="lazy" data-bar-order-product-image /><span class="bar-order-product-card-placeholder ' + categoryKey + ' is-fallback">' + barProductCategoryIcon(product.category) + '</span>'
+          : placeholder;
+        const stockLabel = available ? stock.toLocaleString('pt-BR') + ' ' + (product.unit || 'un') : 'Sem estoque';
+        return '<button class="bar-order-product-card' + (selected ? ' is-selected' : '') + '" type="button" data-bar-order-product="' + escapeHtml(product.id) + '" role="option" aria-selected="' + (selected ? 'true' : 'false') + '"' + (available ? '' : ' disabled') + '>' +
+          '<span class="bar-order-product-card-media">' + media + '<span class="bar-order-product-card-status' + (available ? '' : ' out') + '">' + escapeHtml(available ? stock.toLocaleString('pt-BR') + ' em estoque' : 'Sem estoque') + '</span></span>' +
+          '<span class="bar-order-product-card-copy"><strong>' + escapeHtml(product.name) + '</strong><span class="bar-order-product-card-meta"><b>' + money(product.salePrice) + '</b><small>' + stockLabel + '</small></span></span></button>';
+      }).join('') || '<div class="lesson-empty-state bar-order-product-picker-empty">Nenhum produto encontrado.</div>';
+      grid.querySelectorAll('img[data-bar-order-product-image]').forEach(function (image) {
+        image.addEventListener('error', function () {
+          image.style.display = 'none';
+          const fallback = image.nextElementSibling;
+          if (fallback) fallback.classList.add('show');
+        }, { once: true });
+      });
+    }
+
     function renderBarOrderProductPreview() {
       const preview = $('barOrderProductPreview');
       const product = barProductById($('barOrderProduct').value);
@@ -16286,7 +16538,10 @@
       document.querySelectorAll('[data-bar-command-panel]').forEach(function (panel) {
         panel.classList.toggle('active-command-panel', panel.dataset.barCommandPanel === opsState.barCommandTab);
       });
-      if (opsState.barCommandTab === 'add') renderBarOrderProductPreview();
+      if (opsState.barCommandTab === 'add') {
+        renderBarOrderProductPicker();
+        renderBarOrderProductPreview();
+      }
       if (opsState.barCommandTab === 'checkout') updateBarCheckoutPreview(order);
     }
 
@@ -16359,6 +16614,7 @@
       $('barCheckoutDiscount').value = Number(order.discount || 0).toFixed(2).replace('.', ',');
       $('barCheckoutMethod').value = order.paymentMethod || 'PIX';
       $('barOrderProduct').value = '';
+      $('barOrderProductSearch').value = '';
       $('barOrderQuantity').value = 1;
       $('barOrderItemNotes').value = '';
       renderBarCommandModal();
@@ -17073,6 +17329,7 @@
           recalculateLocalBarOrder(order);
         }
         $('barOrderProduct').value = '';
+        $('barOrderProductSearch').value = '';
         $('barOrderQuantity').value = 1;
         $('barOrderItemNotes').value = '';
         opsState.barCommandTab = 'items';
@@ -19391,6 +19648,13 @@
           setBarCommandTab(tabTargetBtn.dataset.barCommandTabTarget);
           return;
         }
+        const productBtn = event.target.closest('[data-bar-order-product]');
+        if (productBtn && !productBtn.disabled) {
+          $('barOrderProduct').value = productBtn.dataset.barOrderProduct;
+          renderBarOrderProductPicker();
+          renderBarOrderProductPreview();
+          return;
+        }
         const quantityBtn = event.target.closest('[data-bar-quantity-step]');
         if (quantityBtn) {
           const nextQuantity = Math.max(1, Number($('barOrderQuantity').value || 1) + Number(quantityBtn.dataset.barQuantityStep || 0));
@@ -19411,7 +19675,7 @@
         if (event.target.id === 'barCommandModal') closeBarCommandModal();
       });
       $('barCommandModalClose').addEventListener('click', closeBarCommandModal);
-      $('barOrderProduct').addEventListener('change', renderBarOrderProductPreview);
+      $('barOrderProductSearch').addEventListener('input', renderBarOrderProductPicker);
       $('barOrderQuantity').addEventListener('input', renderBarOrderProductPreview);
       $('barCheckoutService').addEventListener('input', function () { updateBarCheckoutPreview(); });
       $('barCheckoutDiscount').addEventListener('input', function () { updateBarCheckoutPreview(); });
