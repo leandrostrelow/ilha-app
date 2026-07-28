@@ -4874,25 +4874,11 @@
       gap: 10px;
     }
 
-    .bar-order-product-picker-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .bar-order-product-picker-head label {
-      color: #3d5360;
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: .04em;
-      text-transform: uppercase;
-    }
-
-    .bar-order-product-picker-head span {
+    .bar-order-product-count {
       color: var(--muted);
       font-size: 10px;
       font-weight: 800;
+      text-align: right;
     }
 
     .bar-order-product-search {
@@ -5524,12 +5510,6 @@
       .bar-command-product-form {
         gap: 12px;
         padding: 12px;
-      }
-
-      .bar-order-product-picker-head {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 3px;
       }
 
       .bar-order-product-grid {
@@ -10032,11 +10012,11 @@
         </div>
 
         <div class="bar-command-tabs" role="tablist" aria-label="Seções da comanda">
-          <button class="bar-command-tab active" type="button" data-bar-command-tab="items" role="tab" aria-selected="true">
-            <svg><use href="#admin-icon-receipt"></use></svg><span>Itens</span><small id="barCommandItemsCount">0</small>
-          </button>
           <button class="bar-command-tab" type="button" data-bar-command-tab="add" role="tab" aria-selected="false" id="barCommandAddTab">
             <svg><use href="#bar-icon-plus"></use></svg><span>Adicionar produto</span>
+          </button>
+          <button class="bar-command-tab active" type="button" data-bar-command-tab="items" role="tab" aria-selected="true">
+            <svg><use href="#admin-icon-receipt"></use></svg><span>Itens</span><small id="barCommandItemsCount">0</small>
           </button>
           <button class="bar-command-tab" type="button" data-bar-command-tab="checkout" role="tab" aria-selected="false">
             <svg><use href="#admin-icon-wallet"></use></svg><span>Fechamento</span>
@@ -10054,14 +10034,11 @@
           </section>
 
           <section class="bar-command-panel" data-bar-command-panel="add">
-            <div class="bar-command-panel-head">
-              <div><h3>Adicionar produto</h3><p>Escolha o item, confirme a quantidade e inclua uma observação se precisar.</p></div>
-            </div>
             <form class="bar-command-product-form" id="barOrderItemForm">
               <input id="barOrderProduct" type="hidden" />
               <div class="bar-order-product-picker">
-                <div class="bar-order-product-picker-head"><label for="barOrderProductSearch">Escolha o produto</label><span id="barOrderProductCount">0 disponíveis</span></div>
-                <input class="bar-order-product-search" id="barOrderProductSearch" type="search" placeholder="Buscar produto..." autocomplete="off" />
+                <div class="bar-order-product-count" id="barOrderProductCount">0 disponíveis</div>
+                <input class="bar-order-product-search" id="barOrderProductSearch" type="search" placeholder="Buscar produto..." autocomplete="off" aria-label="Buscar produto" />
                 <div class="bar-order-product-tabs" id="barOrderProductTabs" role="tablist" aria-label="Categorias de produtos"></div>
                 <div class="bar-order-product-grid" id="barOrderProductGrid" role="listbox" aria-label="Produtos disponíveis"></div>
               </div>
@@ -14294,7 +14271,7 @@
       barTab: storedBarViewState.tab,
       barProductView: 'catalog',
       barProductCategory: 'todos',
-      barOrderProductCategory: 'todos',
+      barOrderProductCategory: '',
       barEventMonth: localDateString(new Date()).slice(0, 7),
       barEventSelectedDate: localDateString(new Date()),
       barEventHistoryFilter: 'todos',
@@ -16719,24 +16696,24 @@
       }))).sort(function (a, b) {
         return String(a).localeCompare(String(b));
       });
-      if (opsState.barOrderProductCategory !== 'todos' && !categories.includes(opsState.barOrderProductCategory)) {
-        opsState.barOrderProductCategory = 'todos';
+      if (!categories.includes(opsState.barOrderProductCategory)) {
+        opsState.barOrderProductCategory = categories[0] || '';
       }
-      const categoryTabs = [{ value: 'todos', label: 'Todos', count: activeProducts.length, icon: '<svg aria-hidden="true"><use href="#bar-icon-grid"></use></svg>' }].concat(categories.map(function (category) {
+      const categoryTabs = categories.map(function (category) {
         return {
           value: category,
           label: category,
           count: activeProducts.filter(function (product) { return (product.category || 'Outros') === category; }).length,
           icon: barProductCategoryIcon(category)
         };
-      }));
+      });
       tabs.innerHTML = categoryTabs.map(function (category) {
         const active = opsState.barOrderProductCategory === category.value;
         return '<button class="bar-order-product-tab' + (active ? ' active' : '') + '" type="button" role="tab" aria-selected="' + (active ? 'true' : 'false') + '" data-bar-order-product-category="' + escapeHtml(category.value) + '">' +
           category.icon + '<span>' + escapeHtml(category.label) + '</span><small>' + String(category.count) + '</small></button>';
       }).join('');
       const categoryProducts = activeProducts.filter(function (product) {
-        return opsState.barOrderProductCategory === 'todos' || (product.category || 'Outros') === opsState.barOrderProductCategory;
+        return !opsState.barOrderProductCategory || (product.category || 'Outros') === opsState.barOrderProductCategory;
       });
       const products = categoryProducts.filter(function (product) {
         return !search || normalizeMatchText([product.name, product.category, product.sku, product.notes].join(' ')).includes(search);
@@ -16878,7 +16855,7 @@
       $('barCheckoutMethod').value = order.paymentMethod || 'PIX';
       $('barOrderProduct').value = '';
       $('barOrderProductSearch').value = '';
-      opsState.barOrderProductCategory = 'todos';
+      opsState.barOrderProductCategory = '';
       $('barOrderQuantity').value = 1;
       $('barOrderItemNotes').value = '';
       renderBarCommandModal();
