@@ -4828,6 +4828,66 @@
       font-size: 13px;
     }
 
+    .bar-order-product-tabs {
+      min-width: 0;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 1px 1px 4px;
+      scrollbar-width: thin;
+      scroll-snap-type: x proximity;
+    }
+
+    .bar-order-product-tab {
+      min-height: 36px;
+      flex: 0 0 auto;
+      display: inline-grid;
+      grid-template-columns: 18px auto auto;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 9px;
+      border: 1px solid #d4e2e5;
+      border-radius: 8px;
+      color: #536773;
+      background: #f8fbfc;
+      font-size: 10px;
+      font-weight: 900;
+      white-space: nowrap;
+      scroll-snap-align: start;
+    }
+
+    .bar-order-product-tab svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .bar-order-product-tab small {
+      min-width: 18px;
+      padding: 2px 5px;
+      border-radius: 999px;
+      color: #60717b;
+      background: #e7eef0;
+      font-size: 8px;
+      text-align: center;
+    }
+
+    .bar-order-product-tab:hover {
+      color: var(--teal);
+      border-color: #89bec6;
+      background: #f0f8f9;
+    }
+
+    .bar-order-product-tab.active {
+      color: #ffffff;
+      border-color: var(--teal);
+      background: var(--teal);
+    }
+
+    .bar-order-product-tab.active small {
+      color: #3c5900;
+      background: #eefaad;
+    }
+
     .bar-order-product-grid {
       max-height: 330px;
       display: grid;
@@ -5384,9 +5444,19 @@
       }
 
       .bar-order-product-grid {
-        max-height: min(42dvh, 360px);
+        max-height: min(38dvh, 330px);
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
+      }
+
+      .bar-order-product-tabs {
+        margin-right: -12px;
+        padding-right: 12px;
+      }
+
+      .bar-order-product-tab {
+        min-height: 34px;
+        padding: 6px 8px;
       }
 
       .bar-order-product-card {
@@ -9885,6 +9955,7 @@
               <div class="bar-order-product-picker">
                 <div class="bar-order-product-picker-head"><label for="barOrderProductSearch">Escolha o produto</label><span id="barOrderProductCount">0 disponíveis</span></div>
                 <input class="bar-order-product-search" id="barOrderProductSearch" type="search" placeholder="Buscar produto..." autocomplete="off" />
+                <div class="bar-order-product-tabs" id="barOrderProductTabs" role="tablist" aria-label="Categorias de produtos"></div>
                 <div class="bar-order-product-grid" id="barOrderProductGrid" role="listbox" aria-label="Produtos disponíveis"></div>
               </div>
               <div class="bar-command-product-preview" id="barOrderProductPreview"></div>
@@ -14100,6 +14171,7 @@
       barTab: 'overview',
       barProductView: 'catalog',
       barProductCategory: 'todos',
+      barOrderProductCategory: 'todos',
       barEventMonth: localDateString(new Date()).slice(0, 7),
       barEventSelectedDate: localDateString(new Date()),
       barEventHistoryFilter: 'todos',
@@ -16463,7 +16535,8 @@
     function renderBarOrderProductPicker() {
       const grid = $('barOrderProductGrid');
       const count = $('barOrderProductCount');
-      if (!grid || !count) return;
+      const tabs = $('barOrderProductTabs');
+      if (!grid || !count || !tabs) return;
       const selectedId = String($('barOrderProduct').value || '');
       const search = normalizeMatchText($('barOrderProductSearch').value);
       const activeProducts = opsData.barProducts.filter(function (product) {
@@ -16471,12 +16544,36 @@
       }).sort(function (a, b) {
         return String(a.category || '').localeCompare(String(b.category || '')) || String(a.name || '').localeCompare(String(b.name || ''));
       });
-      const products = activeProducts.filter(function (product) {
+      const categories = Array.from(new Set(activeProducts.map(function (product) {
+        return product.category || 'Outros';
+      }))).sort(function (a, b) {
+        return String(a).localeCompare(String(b));
+      });
+      if (opsState.barOrderProductCategory !== 'todos' && !categories.includes(opsState.barOrderProductCategory)) {
+        opsState.barOrderProductCategory = 'todos';
+      }
+      const categoryTabs = [{ value: 'todos', label: 'Todos', count: activeProducts.length, icon: '<svg aria-hidden="true"><use href="#bar-icon-grid"></use></svg>' }].concat(categories.map(function (category) {
+        return {
+          value: category,
+          label: category,
+          count: activeProducts.filter(function (product) { return (product.category || 'Outros') === category; }).length,
+          icon: barProductCategoryIcon(category)
+        };
+      }));
+      tabs.innerHTML = categoryTabs.map(function (category) {
+        const active = opsState.barOrderProductCategory === category.value;
+        return '<button class="bar-order-product-tab' + (active ? ' active' : '') + '" type="button" role="tab" aria-selected="' + (active ? 'true' : 'false') + '" data-bar-order-product-category="' + escapeHtml(category.value) + '">' +
+          category.icon + '<span>' + escapeHtml(category.label) + '</span><small>' + String(category.count) + '</small></button>';
+      }).join('');
+      const categoryProducts = activeProducts.filter(function (product) {
+        return opsState.barOrderProductCategory === 'todos' || (product.category || 'Outros') === opsState.barOrderProductCategory;
+      });
+      const products = categoryProducts.filter(function (product) {
         return !search || normalizeMatchText([product.name, product.category, product.sku, product.notes].join(' ')).includes(search);
       });
-      count.textContent = products.length === activeProducts.length
+      count.textContent = products.length === categoryProducts.length
         ? products.length + (products.length === 1 ? ' produto' : ' produtos')
-        : products.length + ' de ' + activeProducts.length + ' produtos';
+        : products.length + ' de ' + categoryProducts.length + ' produtos';
       grid.innerHTML = products.map(function (product) {
         const stock = Number(product.stock || 0);
         const available = stock > 0;
@@ -16615,6 +16712,7 @@
       $('barCheckoutMethod').value = order.paymentMethod || 'PIX';
       $('barOrderProduct').value = '';
       $('barOrderProductSearch').value = '';
+      opsState.barOrderProductCategory = 'todos';
       $('barOrderQuantity').value = 1;
       $('barOrderItemNotes').value = '';
       renderBarCommandModal();
@@ -19646,6 +19744,12 @@
         const tabTargetBtn = event.target.closest('[data-bar-command-tab-target]');
         if (tabTargetBtn) {
           setBarCommandTab(tabTargetBtn.dataset.barCommandTabTarget);
+          return;
+        }
+        const productCategoryBtn = event.target.closest('[data-bar-order-product-category]');
+        if (productCategoryBtn) {
+          opsState.barOrderProductCategory = productCategoryBtn.dataset.barOrderProductCategory;
+          renderBarOrderProductPicker();
           return;
         }
         const productBtn = event.target.closest('[data-bar-order-product]');
