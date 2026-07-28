@@ -14188,6 +14188,29 @@
       });
     }
 
+    const BAR_VIEW_STATE_KEY = 'ilha-bar-view-state-v1';
+
+    function readBarViewState() {
+      const fallback = { tab: 'overview', commandTab: 'items', orderId: null, scrollY: 0 };
+      try {
+        const stored = JSON.parse(localStorage.getItem(BAR_VIEW_STATE_KEY) || '{}');
+        const barTabs = ['overview', 'events', 'orders', 'tables', 'products', 'finance', 'qrcodes'];
+        const commandTabs = ['items', 'add', 'checkout'];
+        return {
+          tab: barTabs.includes(stored.tab) ? stored.tab : fallback.tab,
+          commandTab: commandTabs.includes(stored.commandTab) ? stored.commandTab : fallback.commandTab,
+          orderId: typeof stored.orderId === 'string' && stored.orderId ? stored.orderId : null,
+          scrollY: Math.max(0, Number(stored.scrollY || 0))
+        };
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    const storedBarViewState = readBarViewState();
+    let barLastScrollY = storedBarViewState.scrollY;
+    let barViewRestoreComplete = false;
+
     const opsState = {
       studentStatus: 'todos',
       agendaType: 'todos',
@@ -14200,7 +14223,7 @@
       courtDate: localDateString(new Date()),
       extraCourtDates: [],
       selectedCourtSlot: null,
-      barTab: 'overview',
+      barTab: storedBarViewState.tab,
       barProductView: 'catalog',
       barProductCategory: 'todos',
       barOrderProductCategory: 'todos',
@@ -14215,8 +14238,8 @@
       barFinancePeriod: 'daily',
       barFinanceReportDate: localDateString(new Date()),
       barFinanceReportMonth: localDateString(new Date()).slice(0, 7),
-      selectedBarOrderId: null,
-      barCommandTab: 'items',
+      selectedBarOrderId: storedBarViewState.orderId,
+      barCommandTab: storedBarViewState.commandTab,
       selectedBarQrUrl: '',
       selectedBarQrLabel: '',
       barAlertsEnabled: localStorage.getItem('ilha-bar-alerts-enabled') === 'true',
@@ -14225,6 +14248,25 @@
       barSchemaReady: true,
       loaded: false
     };
+
+    function persistBarViewState() {
+      try {
+        localStorage.setItem(BAR_VIEW_STATE_KEY, JSON.stringify({
+          tab: opsState.barTab,
+          commandTab: opsState.barCommandTab,
+          orderId: opsState.selectedBarOrderId || null,
+          scrollY: barLastScrollY
+        }));
+      } catch (error) {
+        // O sistema continua funcionando normalmente quando o navegador bloqueia o armazenamento.
+      }
+    }
+
+    function rememberBarScrollPosition() {
+      if (!IS_BAR_ADMIN_SURFACE || !document.body.classList.contains('club-bar')) return;
+      barLastScrollY = Math.max(0, Math.round(window.scrollY || 0));
+      persistBarViewState();
+    }
 
     const weekDays = [
       { key: 'segunda', label: 'Seg' },
@@ -15864,6 +15906,7 @@
       document.querySelectorAll('[data-bar-panel]').forEach(function (panel) {
         panel.classList.toggle('active-tab-panel', panel.dataset.barPanel === opsState.barTab);
       });
+      persistBarViewState();
     }
 
     function barCommandScreenIsActive() {
@@ -16698,6 +16741,7 @@
         renderBarOrderProductPreview();
       }
       if (opsState.barCommandTab === 'checkout') updateBarCheckoutPreview(order);
+      persistBarViewState();
     }
 
     function renderBarCommandModal() {
@@ -16774,6 +16818,7 @@
       renderBarCommandModal();
       $('barCommandModal').classList.add('show');
       $('barCommandModal').setAttribute('aria-hidden', 'false');
+      persistBarViewState();
     }
 
     function closeBarCommandModal() {
@@ -16781,6 +16826,7 @@
       $('barCommandModal').setAttribute('aria-hidden', 'true');
       opsState.selectedBarOrderId = null;
       setBarCommandModalScreenMount(false);
+      persistBarViewState();
     }
 
     function openBarQrModal(kind, id) {
@@ -16807,6 +16853,28 @@
       opsState.selectedBarQrLabel = '';
     }
 
+    function restoreBarViewAfterLoad() {
+      if (barViewRestoreComplete) return;
+      barViewRestoreComplete = true;
+      const savedOrderId = opsState.selectedBarOrderId;
+      const savedCommandTab = opsState.barCommandTab;
+      if (savedOrderId) {
+        const order = barOrderById(savedOrderId);
+        if (order) {
+          openBarCommandModal(order.id);
+          setBarCommandTab(savedCommandTab);
+        } else if (opsState.barSchemaReady) {
+          opsState.selectedBarOrderId = null;
+          persistBarViewState();
+        }
+      }
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          window.scrollTo({ top: barLastScrollY, left: 0, behavior: 'auto' });
+        });
+      });
+    }
+
     function openBarModule() {
       if (!IS_BAR_ADMIN_SURFACE) {
         window.location.href = '/admbar';
@@ -16824,7 +16892,10 @@
         opsData.barEvents = [];
       }
       renderBarModule();
-      loadBarData(false).then(renderBarModule).catch(reportActionError);
+      loadBarData(false).then(function () {
+        renderBarModule();
+        restoreBarViewAfterLoad();
+      }).catch(reportActionError);
       if (!barRefreshTimer) {
         barRefreshTimer = setInterval(function () {
           if (!document.body.classList.contains('club-bar') || isAdminDemoMode()) return;
@@ -20045,6 +20116,7 @@
     $('playerForm').addEventListener('submit', savePlayer);
     $('tournamentForm').addEventListener('submit', saveTournament);
 
+    window.addEventListener('pagehide', rememberBarScrollPosition);
     initAdminLogin();
   </script>
 </body>
