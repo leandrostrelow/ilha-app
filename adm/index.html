@@ -7727,7 +7727,6 @@
 
     .bar-command-board-panel.is-command-screen .bar-table-card:not(.is-open),
     .bar-command-board-panel.is-command-screen .bar-command-board-empty,
-    .bar-command-board-panel.is-command-screen #barNewLooseOrderBtn,
     .bar-command-board-panel.is-command-screen [data-bar-go="tables"] {
       display: none;
     }
@@ -9876,6 +9875,7 @@
       </div>
     </div>
 
+    <span id="barNewOrderModalHome" hidden></span>
     <div class="admin-modal-overlay" id="barNewOrderModal" aria-hidden="true">
       <div class="admin-modal bar-setup-modal bar-new-order-modal" role="dialog" aria-modal="true" aria-labelledby="barNewOrderModalTitle">
         <div class="admin-modal-head">
@@ -9907,6 +9907,7 @@
       </div>
     </div>
 
+    <span id="barCommandModalHome" hidden></span>
     <div class="admin-modal-overlay" id="barCommandModal" aria-hidden="true">
       <div class="admin-modal bar-command-modal" role="dialog" aria-modal="true" aria-labelledby="barCommandModalTitle">
         <div class="bar-command-head">
@@ -15839,12 +15840,38 @@
       return Boolean(panel && (document.fullscreenElement === panel || document.body.classList.contains('bar-command-screen-fallback')));
     }
 
+    function setBarScreenModalMount(modalId, homeId, useScreen) {
+      const panel = $('barCommandBoardPanel');
+      const modal = $(modalId);
+      const home = $(homeId);
+      if (!panel || !modal || !home || !home.parentElement) return;
+      if (useScreen) {
+        if (modal.parentElement !== panel) panel.appendChild(modal);
+        return;
+      }
+      if (modal.parentElement !== home.parentElement || modal.previousElementSibling !== home) {
+        home.parentElement.insertBefore(modal, home.nextSibling);
+      }
+    }
+
+    function setBarCommandModalScreenMount(useScreen) {
+      setBarScreenModalMount('barCommandModal', 'barCommandModalHome', useScreen);
+    }
+
+    function setBarNewOrderModalScreenMount(useScreen) {
+      setBarScreenModalMount('barNewOrderModal', 'barNewOrderModalHome', useScreen);
+    }
+
     function syncBarCommandScreen() {
       const panel = $('barCommandBoardPanel');
       const button = $('barCommandScreenBtn');
       if (!panel || !button) return;
       const active = barCommandScreenIsActive();
       panel.classList.toggle('is-command-screen', active);
+      if (!active) {
+        setBarCommandModalScreenMount(false);
+        setBarNewOrderModalScreenMount(false);
+      }
       button.setAttribute('aria-pressed', String(active));
       const label = button.querySelector('span');
       if (label) label.textContent = active ? 'Sair da tela' : 'Tela de comandas';
@@ -16705,6 +16732,7 @@
     function openBarCommandModal(orderId) {
       const order = barOrderById(orderId);
       if (!order) return;
+      setBarCommandModalScreenMount(barCommandScreenIsActive());
       opsState.selectedBarOrderId = order.id;
       opsState.barCommandTab = barActiveItemsForOrder(order.id).length ? 'items' : 'add';
       $('barCheckoutService').value = Number(order.serviceCharge || 0).toFixed(2).replace('.', ',');
@@ -16724,6 +16752,7 @@
       $('barCommandModal').classList.remove('show');
       $('barCommandModal').setAttribute('aria-hidden', 'true');
       opsState.selectedBarOrderId = null;
+      setBarCommandModalScreenMount(false);
     }
 
     function openBarQrModal(kind, id) {
@@ -17123,6 +17152,7 @@
     }
 
     function openBarNewOrderModal() {
+      setBarNewOrderModalScreenMount(barCommandScreenIsActive());
       resetBarNewOrderForm();
       $('barNewOrderModal').classList.add('show');
       $('barNewOrderModal').setAttribute('aria-hidden', 'false');
@@ -17133,6 +17163,7 @@
       $('barNewOrderModal').classList.remove('show');
       $('barNewOrderModal').setAttribute('aria-hidden', 'true');
       resetBarNewOrderForm();
+      setBarNewOrderModalScreenMount(false);
     }
 
     async function saveBarNewOrderAction(event) {
@@ -19690,11 +19721,7 @@
         const orderBtn = event.target.closest('[data-bar-order-open]');
         if (orderBtn) {
           const orderId = orderBtn.dataset.barOrderOpen;
-          if (barCommandScreenIsActive()) {
-            closeBarCommandScreen().then(function () { openBarCommandModal(orderId); }).catch(reportActionError);
-          } else {
-            openBarCommandModal(orderId);
-          }
+          openBarCommandModal(orderId);
           return;
         }
         const productBtn = event.target.closest('[data-bar-product-edit]');
