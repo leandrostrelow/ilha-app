@@ -5107,9 +5107,8 @@
       background: #f8fbfc;
     }
 
-    .bar-command-product-preview.is-empty {
-      grid-template-columns: 46px minmax(0, 1fr);
-      color: var(--muted);
+    .bar-command-product-preview[hidden] {
+      display: none;
     }
 
     .bar-command-product-image,
@@ -5121,11 +5120,6 @@
       place-items: center;
       border-radius: 8px;
       background: #eaf2f4;
-    }
-
-    .bar-command-product-preview.is-empty .bar-command-product-icon {
-      width: 46px;
-      height: 46px;
     }
 
     .bar-command-product-image img {
@@ -10082,7 +10076,7 @@
                 <div class="bar-order-product-tabs" id="barOrderProductTabs" role="tablist" aria-label="Categorias de produtos"></div>
                 <div class="bar-order-product-grid" id="barOrderProductGrid" role="listbox" aria-label="Produtos disponíveis"></div>
               </div>
-              <div class="bar-command-product-preview" id="barOrderProductPreview"></div>
+              <div class="bar-command-product-preview" id="barOrderProductPreview" hidden></div>
               <div class="bar-command-product-fields">
                 <div class="field">
                   <label for="barOrderQuantity">Quantidade</label>
@@ -16788,14 +16782,16 @@
       const product = barProductById($('barOrderProduct').value);
       const quantity = Math.max(1, Number($('barOrderQuantity').value || 1));
       if (!product) {
-        preview.className = 'bar-command-product-preview is-empty';
-        preview.innerHTML = '<span class="bar-command-product-icon"><svg><use href="#admin-icon-box"></use></svg></span><div class="bar-command-product-copy"><strong>Escolha um produto</strong><span>Preço e estoque aparecerão aqui antes de adicionar.</span></div>';
+        preview.hidden = true;
+        preview.className = 'bar-command-product-preview';
+        preview.innerHTML = '';
         $('barOrderSubmitLabel').textContent = 'Adicionar produto à comanda';
         return;
       }
       const media = product.imageUrl
         ? '<span class="bar-command-product-image"><img src="' + escapeHtml(product.imageUrl) + '" alt="' + escapeHtml(product.name) + '" data-bar-order-preview-image /></span>'
         : '<span class="bar-command-product-icon">' + barProductCategoryIcon(product.category) + '</span>';
+      preview.hidden = false;
       preview.className = 'bar-command-product-preview';
       preview.innerHTML = media + '<div class="bar-command-product-copy"><strong>' + escapeHtml(product.name) + '</strong><span>' + escapeHtml((product.category || 'Produto') + ' | ' + Number(product.stock || 0).toLocaleString('pt-BR') + ' ' + (product.unit || 'unidade') + ' em estoque') + '</span></div><div class="bar-command-product-price"><span>' + escapeHtml(quantity + (quantity === 1 ? ' item' : ' itens')) + '</span><strong>' + money(Number(product.salePrice || 0) * quantity) + '</strong></div>';
       const image = preview.querySelector('[data-bar-order-preview-image]');
