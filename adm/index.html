@@ -16849,7 +16849,7 @@
       if (!order) return;
       setBarCommandModalScreenMount(barCommandScreenIsActive());
       opsState.selectedBarOrderId = order.id;
-      opsState.barCommandTab = barActiveItemsForOrder(order.id).length ? 'items' : 'add';
+      opsState.barCommandTab = barOrderIsOpen(order) ? 'add' : 'items';
       $('barCheckoutService').value = Number(order.serviceCharge || 0).toFixed(2).replace('.', ',');
       $('barCheckoutDiscount').value = Number(order.discount || 0).toFixed(2).replace('.', ',');
       $('barCheckoutMethod').value = order.paymentMethod || 'PIX';
