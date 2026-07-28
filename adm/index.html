@@ -3415,13 +3415,29 @@
       align-items: flex-start;
     }
 
-    .bar-table-card-person h3 {
+    .bar-table-card-person-identity {
       min-width: 0;
       flex: 1 1 auto;
     }
 
-    .bar-table-card-person .ops-pill {
+    .bar-table-card-person h3 {
+      min-width: 0;
+    }
+
+    .bar-table-command-name {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .bar-table-card-badges {
       flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 5px;
       margin-top: 2px;
     }
 
@@ -3530,6 +3546,10 @@
 
     .bar-table-card.is-open .bar-table-command-summary {
       background: #fff4df;
+    }
+
+    .bar-table-command-total {
+      min-height: 52px;
     }
 
     .bar-table-command-summary span,
@@ -15802,9 +15822,9 @@
       const phone = order.customerPhone ? '<span><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(order.customerPhone)) + '</span>' : '';
       const locationLabel = card ? card.label : 'Balcão / sem mesa';
       return '<article class="bar-table-card is-open is-loose">' +
-        '<div class="bar-table-card-top bar-table-card-person"><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3><span class="ops-pill warn">Avulsa</span></div>' +
+        '<div class="bar-table-card-top bar-table-card-person"><div class="bar-table-card-person-identity"><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3><span class="bar-table-command-name">Comanda #' + escapeHtml(commandNumber) + '</span></div><div class="bar-table-card-badges">' + barStatusPill(order.status) + '<span class="ops-pill warn">Avulsa</span></div></div>' +
         '<div class="bar-table-card-meta bar-table-card-person-meta"><span><svg><use href="#' + (card ? 'admin-icon-qr' : 'admin-icon-bar') + '"></use></svg>' + escapeHtml(locationLabel) + '</span>' + phone + '</div>' +
-        '<div class="bar-table-command-summary"><div><span>Comanda #' + escapeHtml(commandNumber) + '</span><strong>' + escapeHtml(barStatusLabel(order.status)) + '</strong></div><strong>' + money(barOrderTotal(order)) + '</strong></div>' +
+        '<div class="bar-table-command-summary bar-table-command-total"><span>Total da comanda</span><strong>' + money(barOrderTotal(order)) + '</strong></div>' +
         '<div class="bar-table-card-actions"><button class="primary-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button></div>' +
       '</article>';
     }
