@@ -4677,7 +4677,9 @@
     }
 
     .bar-command-add-shortcut {
+      width: 100%;
       min-height: 40px;
+      margin-top: 12px;
       padding: 9px 14px;
       color: #ffffff;
       background: var(--teal);
@@ -4704,7 +4706,7 @@
 
     .bar-command-modal .bar-command-item {
       position: relative;
-      grid-template-columns: 48px minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) minmax(112px, .55fr) minmax(116px, 1fr);
       gap: 12px;
       padding: 13px;
       overflow: hidden;
@@ -4724,6 +4726,14 @@
     .bar-command-modal .bar-command-item.cancelled {
       border-left-color: #aebbc0;
       background: #f3f5f6;
+    }
+
+    .bar-command-item-product {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
     }
 
     .bar-command-item-quantity {
@@ -4773,9 +4783,14 @@
       white-space: nowrap;
     }
 
-    .bar-command-item-title .bar-item-price {
+    .bar-command-item-total {
+      align-self: center;
+      justify-self: center;
       color: var(--teal);
-      font-size: 16px;
+      font-size: 18px;
+      font-weight: 950;
+      text-align: center;
+      white-space: nowrap;
     }
 
     .bar-command-item-meta {
@@ -4804,6 +4819,7 @@
       display: flex;
       align-items: center;
       justify-content: flex-end;
+      justify-self: end;
     }
 
     .bar-command-item-actions .small-btn {
@@ -5456,8 +5472,12 @@
       }
 
       .bar-command-modal .bar-command-item {
-        grid-template-columns: 40px minmax(0, 1fr);
+        grid-template-columns: 1fr;
         padding: 11px;
+      }
+
+      .bar-command-item-product {
+        grid-template-columns: 40px minmax(0, 1fr);
       }
 
       .bar-command-item-quantity {
@@ -5465,19 +5485,21 @@
         height: 38px;
       }
 
-      .bar-command-item-title {
-        display: block;
-      }
-
-      .bar-command-item-title .bar-item-price {
-        display: block;
-        margin-top: 4px;
+      .bar-command-item-total {
+        width: 100%;
+        min-height: 34px;
+        display: grid;
+        place-items: center;
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: #f4f9fa;
       }
 
       .bar-command-item-actions {
         min-width: 0;
-        grid-column: 1 / -1;
+        width: 100%;
         justify-content: stretch;
+        justify-self: stretch;
       }
 
       .bar-command-item-actions .ops-pill {
@@ -10025,9 +10047,9 @@
           <section class="bar-command-panel active-command-panel" data-bar-command-panel="items">
             <div class="bar-command-panel-head">
               <div><h3>Itens</h3></div>
-              <button class="bar-command-add-shortcut" type="button" data-bar-command-tab-target="add"><svg><use href="#bar-icon-plus"></use></svg>Adicionar produto</button>
             </div>
             <div class="bar-modal-order-list" id="barCommandItems"></div>
+            <button class="bar-command-add-shortcut" type="button" data-bar-command-tab-target="add"><svg><use href="#bar-icon-plus"></use></svg>Adicionar produto</button>
             <div class="bar-modal-summary"><span>Total da comanda</span><strong id="barCommandTotal">R$ 0</strong></div>
           </section>
 
@@ -16825,9 +16847,10 @@
         if (item.notes) meta.push('<span><strong>Obs.:</strong> ' + escapeHtml(item.notes) + '</span>');
         const deliveryAction = cancelled ? '' : '<button class="small-btn bar-item-deliver" type="button"' + (status === 'ENTREGUE' ? ' disabled' : ' data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="ENTREGUE"') + '>Entregue</button>';
         return '<article class="bar-item-row bar-command-item' + statusClass + (cancelled ? ' cancelled' : '') + '">' +
-          '<span class="bar-command-item-quantity">' + escapeHtml(item.quantity + 'x') + '</span>' +
-          '<div class="bar-command-item-content"><div class="bar-command-item-title"><strong>' + escapeHtml(item.productName) + '</strong><span class="bar-item-price">' + money(item.quantity * item.unitPrice) + '</span></div>' +
-          '<div class="bar-command-item-meta">' + meta.join('') + '</div></div>' +
+          '<div class="bar-command-item-product"><span class="bar-command-item-quantity">' + escapeHtml(item.quantity + 'x') + '</span>' +
+          '<div class="bar-command-item-content"><div class="bar-command-item-title"><strong>' + escapeHtml(item.productName) + '</strong></div>' +
+          '<div class="bar-command-item-meta">' + meta.join('') + '</div></div></div>' +
+          '<strong class="bar-command-item-total">' + money(item.quantity * item.unitPrice) + '</strong>' +
           '<div class="bar-command-item-actions">' + deliveryAction + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum item nesta comanda. Use “Adicionar produto” para começar.</div>';
 
