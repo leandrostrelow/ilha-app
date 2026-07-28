@@ -6732,22 +6732,6 @@
       margin-bottom: 12px;
     }
 
-    .bar-module .module-head.bar-toolbar-only {
-      min-height: 0;
-      grid-template-columns: 1fr;
-      margin-bottom: 12px;
-      padding: 0;
-      border: 0;
-      border-radius: 0;
-      background: transparent;
-      box-shadow: none;
-    }
-
-    .bar-module .bar-toolbar-only .module-actions {
-      width: 100%;
-      justify-content: flex-end;
-    }
-
     .bar-module .ops-summary .bar-summary-card {
       min-height: 54px;
       grid-template-columns: 26px minmax(0, 1fr);
@@ -7796,6 +7780,20 @@
       color: #14372f;
       background: #dff3a8;
       border-color: #dff3a8;
+    }
+
+    .bar-command-board-actions .small-btn {
+      gap: 7px;
+    }
+
+    .bar-command-board-actions .small-btn svg {
+      width: 17px;
+      height: 17px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .bar-command-screen-btn {
@@ -9610,15 +9608,6 @@
 
     <section class="ops-module bar-module" id="barModule">
       <div class="module-shell">
-        <div class="module-head bar-toolbar-only">
-          <div class="module-actions">
-            <button class="ghost-btn" type="button" data-home-action>Visão geral</button>
-            <button class="ghost-btn" type="button" id="barReloadBtn">Atualizar</button>
-            <button class="ghost-btn" type="button" id="barEnableAlertsBtn"><svg><use href="#admin-icon-bell"></use></svg><span>Ativar alertas</span></button>
-            <button class="primary-btn bar-icon-button" type="button" id="barNewOrderBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Nova comanda</span></button>
-            <button class="ghost-btn" type="button" id="barSurfaceLogoutBtn" data-bar-surface-only>Sair</button>
-          </div>
-        </div>
         <div class="ops-content">
           <div class="bar-schema-note" id="barSchemaNote">O módulo está em modo de teste local. Aplique a atualização do banco para gravar tudo no Supabase.</div>
 
@@ -9726,8 +9715,10 @@
                 <div><h2>Comanda</h2></div>
                 <div class="bar-command-board-actions">
                   <button class="primary-btn bar-icon-button" type="button" id="barNewLooseOrderBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Nova comanda</span></button>
+                  <button class="small-btn" type="button" id="barEnableAlertsBtn"><svg><use href="#admin-icon-bell"></use></svg><span>Ativar alertas</span></button>
                   <button class="small-btn bar-command-screen-btn" type="button" id="barCommandScreenBtn" aria-pressed="false"><svg><use href="#bar-icon-screen"></use></svg><span>Tela de comandas</span></button>
                   <button class="small-btn" type="button" data-bar-go="tables">Ver mesas</button>
+                  <button class="small-btn" type="button" id="barSurfaceLogoutBtn" data-bar-surface-only>Sair</button>
                 </div>
               </div>
               <div class="bar-table-grid" id="barTableBoard"></div>
@@ -19792,10 +19783,6 @@
           markFinancePaidAction(paidBtn.dataset.financePaid);
         }
       });
-      $('barReloadBtn').addEventListener('click', function () {
-        opsState.barDataLoaded = false;
-        loadBarData(true).then(renderBarModule).catch(reportActionError);
-      });
       $('barEnableAlertsBtn').addEventListener('click', enableBarAlerts);
       $('barAddEventBtn').addEventListener('click', function () { openBarEventModal(null, opsState.barEventSelectedDate); });
       $('barAddEventForDayBtn').addEventListener('click', function () { openBarEventModal(null, opsState.barEventSelectedDate); });
@@ -19813,7 +19800,6 @@
       $('barEventModal').addEventListener('click', function (event) {
         if (event.target.id === 'barEventModal') closeBarEventModal();
       });
-      $('barNewOrderBtn').addEventListener('click', openBarNewOrderModal);
       $('barNewLooseOrderBtn').addEventListener('click', openBarNewOrderModal);
       $('barCommandScreenBtn').addEventListener('click', function () {
         toggleBarCommandScreen().catch(reportActionError);
