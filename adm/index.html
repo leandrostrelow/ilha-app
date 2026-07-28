@@ -3411,8 +3411,22 @@
       gap: 10px;
     }
 
-    .bar-table-card-top.is-status-only {
-      justify-content: flex-end;
+    .bar-table-card-person {
+      align-items: flex-start;
+    }
+
+    .bar-table-card-person h3 {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .bar-table-card-person .ops-pill {
+      flex: 0 0 auto;
+      margin-top: 2px;
+    }
+
+    .bar-table-card-person-meta {
+      margin-top: -4px;
     }
 
     .bar-table-number {
@@ -15743,8 +15757,8 @@
       const phone = order.customerPhone ? '<span><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(order.customerPhone)) + '</span>' : '';
       const locationLabel = card ? card.label : 'Balcão / sem mesa';
       return '<article class="bar-table-card is-open is-loose">' +
-        '<div class="bar-table-card-top is-status-only"><span class="ops-pill warn">Avulsa</span></div>' +
-        '<div><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3><div class="bar-table-card-meta"><span><svg><use href="#' + (card ? 'admin-icon-qr' : 'admin-icon-bar') + '"></use></svg>' + escapeHtml(locationLabel) + '</span>' + phone + '</div></div>' +
+        '<div class="bar-table-card-top bar-table-card-person"><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3><span class="ops-pill warn">Avulsa</span></div>' +
+        '<div class="bar-table-card-meta bar-table-card-person-meta"><span><svg><use href="#' + (card ? 'admin-icon-qr' : 'admin-icon-bar') + '"></use></svg>' + escapeHtml(locationLabel) + '</span>' + phone + '</div>' +
         '<div class="bar-table-command-summary"><div><span>Comanda #' + escapeHtml(commandNumber) + '</span><strong>' + escapeHtml(barStatusLabel(order.status)) + '</strong></div><strong>' + money(barOrderTotal(order)) + '</strong></div>' +
         '<div class="bar-table-card-actions"><button class="primary-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button></div>' +
       '</article>';
