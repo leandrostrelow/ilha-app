@@ -16694,7 +16694,9 @@
       const categories = Array.from(new Set(activeProducts.map(function (product) {
         return product.category || 'Outros';
       }))).sort(function (a, b) {
-        return String(a).localeCompare(String(b));
+        const aPriority = normalizeMatchText(a).includes('cervej') ? 0 : 1;
+        const bPriority = normalizeMatchText(b).includes('cervej') ? 0 : 1;
+        return aPriority - bPriority || String(a).localeCompare(String(b), 'pt-BR');
       });
       if (!categories.includes(opsState.barOrderProductCategory)) {
         opsState.barOrderProductCategory = categories[0] || '';
