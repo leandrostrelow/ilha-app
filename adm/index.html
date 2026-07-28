@@ -4762,27 +4762,30 @@
     }
 
     .bar-command-item-actions {
-      min-width: 172px;
+      min-width: 116px;
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      flex-wrap: wrap;
-      gap: 6px;
     }
 
     .bar-command-item-actions .small-btn {
+      width: 100%;
       min-height: 34px;
+      justify-content: center;
     }
 
-    .bar-command-item-actions .bar-item-next {
+    .bar-command-item-actions .bar-item-deliver {
       color: #ffffff;
       border-color: var(--teal);
       background: var(--teal);
     }
 
-    .bar-command-item-actions .bar-item-remove {
-      color: #9b2f3d;
-      background: #fff2f3;
+    .bar-command-item-actions .bar-item-deliver:disabled {
+      opacity: 1;
+      cursor: default;
+      color: #456600;
+      border-color: #d9ed9b;
+      background: #effbd0;
     }
 
     .bar-command-modal .bar-modal-summary {
@@ -16730,16 +16733,13 @@
         if (itemPhone) meta.push('<span><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(itemPhone)) + '</span>');
         meta.push('<span>' + escapeHtml(money(item.unitPrice) + ' cada') + '</span>');
         if (item.notes) meta.push('<span><strong>Obs.:</strong> ' + escapeHtml(item.notes) + '</span>');
-        let nextAction = '';
-        if (!cancelled && status === 'SOLICITADO') nextAction = '<button class="small-btn bar-item-next" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="EM_PREPARO">Iniciar preparo</button>';
-        if (!cancelled && status === 'EM_PREPARO') nextAction = '<button class="small-btn bar-item-next" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="PRONTO">Marcar pronto</button>';
-        if (!cancelled && status === 'PRONTO') nextAction = '<button class="small-btn bar-item-next" type="button" data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="ENTREGUE">Entregar</button>';
+        const deliveryAction = cancelled ? '' : '<button class="small-btn bar-item-deliver" type="button"' + (status === 'ENTREGUE' ? ' disabled' : ' data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="ENTREGUE"') + '>Entregue</button>';
         return '<article class="bar-item-row bar-command-item' + statusClass + (cancelled ? ' cancelled' : '') + '">' +
           '<span class="bar-command-item-quantity">' + escapeHtml(item.quantity + 'x') + '</span>' +
           '<div class="bar-command-item-content"><div class="bar-command-item-customer"><svg><use href="#admin-icon-users"></use></svg><span>Pedido de <strong>' + escapeHtml(itemCustomer) + '</strong></span></div>' +
           '<div class="bar-command-item-title"><strong>' + escapeHtml(item.productName) + '</strong><span class="bar-item-price">' + money(item.quantity * item.unitPrice) + '</span></div>' +
           '<div class="bar-command-item-meta">' + meta.join('') + '</div></div>' +
-          '<div class="bar-command-item-actions">' + barStatusPill(item.status) + nextAction + (cancelled ? '' : '<button class="small-btn bar-item-remove" type="button" data-bar-item-cancel="' + escapeHtml(item.id) + '">Remover</button>') + '</div></article>';
+          '<div class="bar-command-item-actions">' + deliveryAction + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum item nesta comanda. Use “Adicionar produto” para começar.</div>';
 
       const open = barOrderIsOpen(order);
