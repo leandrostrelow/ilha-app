@@ -3966,6 +3966,25 @@
       color: var(--teal);
     }
 
+    .bar-product-modal .modal-actions {
+      flex-wrap: wrap;
+    }
+
+    .bar-product-delete-btn {
+      margin-right: auto;
+    }
+
+    @media (max-width: 520px) {
+      .bar-product-modal .modal-actions > * {
+        flex: 1 1 100%;
+      }
+
+      .bar-product-delete-btn {
+        order: 3;
+        margin-right: 0;
+      }
+    }
+
     [data-bar-product-panel] {
       display: none;
     }
@@ -9979,6 +9998,7 @@
           <datalist id="barCategoryOptions"><option value="Bebidas"></option><option value="Cervejas"></option><option value="Lanches"></option><option value="Porções"></option><option value="Doces"></option><option value="Outros"></option></datalist>
         </div>
         <div class="modal-actions">
+          <button class="danger-btn bar-product-delete-btn" type="button" id="barProductDeleteBtn" hidden>Excluir produto</button>
           <button class="ghost-btn" type="button" id="barProductCancelBtn">Cancelar</button>
           <button class="primary-btn" type="submit" form="barProductForm" id="barProductSaveBtn">Salvar produto</button>
         </div>
@@ -17148,6 +17168,9 @@
       opsState.removeBarProductImage = false;
       $('barProductModalTitle').textContent = 'Adicionar produto';
       $('barProductSaveBtn').textContent = 'Salvar produto';
+      $('barProductDeleteBtn').hidden = true;
+      $('barProductDeleteBtn').disabled = false;
+      $('barProductDeleteBtn').textContent = 'Excluir produto';
       updateBarProductImagePreview('');
     }
 
@@ -17155,6 +17178,7 @@
       resetBarProductForm();
       if (product) {
         $('barProductModalTitle').textContent = 'Editar produto';
+        $('barProductDeleteBtn').hidden = false;
         $('barProductId').value = product.id;
         $('barProductImageCurrent').value = product.imageUrl || '';
         $('barProductName').value = product.name;
@@ -17271,6 +17295,50 @@
       } finally {
         $('barProductSaveBtn').disabled = false;
         if ($('barProductModal').classList.contains('show')) $('barProductSaveBtn').textContent = 'Salvar produto';
+      }
+    }
+
+    async function deleteBarProductAction() {
+      const product = barProductById($('barProductId').value);
+      if (!product) return;
+      const confirmed = window.confirm(
+        'Excluir "' + product.name + '" permanentemente?\n\n' +
+        'O produto sairá do cardápio e do estoque. As comandas antigas continuarão com o nome e o valor registrados.'
+      );
+      if (!confirmed) return;
+      const deleteButton = $('barProductDeleteBtn');
+      try {
+        requireAdminSession();
+        deleteButton.disabled = true;
+        deleteButton.textContent = 'Excluindo...';
+        if (barCanPersist(product.id)) {
+          const deleted = await supabaseRest('bar_products?id=eq.' + encodeURIComponent(product.id), {
+            method: 'DELETE',
+            prefer: 'return=representation'
+          });
+          if (!Array.isArray(deleted) || !deleted.length) {
+            throw new Error('O produto não foi excluído. Atualize a página e tente novamente.');
+          }
+        }
+        opsData.barProducts = opsData.barProducts.filter(function (item) {
+          return String(item.id) !== String(product.id);
+        });
+        closeBarProductModal();
+        renderBarModule();
+        if (barCanPersist(product.id) && product.imageUrl) {
+          deleteBarProductImage(product.imageUrl).catch(function () {});
+        }
+        toast('Produto excluído.');
+      } catch (error) {
+        const message = String(error && error.message || '');
+        if (/foreign key|violates foreign key|referenced/i.test(message)) {
+          reportActionError(new Error('Este produto possui registros vinculados e não pode ser excluído. Deixe-o inativo para preservar o histórico.'));
+        } else {
+          reportActionError(error);
+        }
+      } finally {
+        deleteButton.disabled = false;
+        if ($('barProductModal').classList.contains('show')) deleteButton.textContent = 'Excluir produto';
       }
     }
 
@@ -19831,6 +19899,7 @@
         openBarProductModal();
       });
       $('barProductForm').addEventListener('submit', saveBarProductAction);
+      $('barProductDeleteBtn').addEventListener('click', deleteBarProductAction);
       $('barProductModalClose').addEventListener('click', closeBarProductModal);
       $('barProductCancelBtn').addEventListener('click', closeBarProductModal);
       $('barProductModal').addEventListener('click', function (event) {
