@@ -16703,7 +16703,9 @@
       });
       const today = localDateString();
       const todaySales = opsData.barFinance.filter(function (item) {
-        return item.type === 'RECEITA' && item.status === 'RECEBIDO' && String(item.paidAt || item.created || '').slice(0, 10) === today;
+        return String(item.type || '').toUpperCase() === 'RECEITA' &&
+          barFinanceIsConfirmed(item) &&
+          barFinanceEntryDateKey(item) === today;
       }).reduce(function (sum, item) { return sum + Number(item.amount || 0); }, 0);
       $('barOpenOrdersMetric').textContent = openOrders.length;
       $('barPendingItemsMetric').textContent = pendingItems.length;
