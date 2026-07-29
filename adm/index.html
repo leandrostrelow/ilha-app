@@ -8698,6 +8698,17 @@
       box-shadow: none;
     }
 
+    .bar-finance-row.bar-closed-order-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .bar-closed-order-row .bar-finance-copy strong,
+    .bar-closed-order-row .bar-finance-copy small {
+      overflow: visible;
+      text-overflow: clip;
+      white-space: normal;
+    }
+
     .bar-finance-row.is-expense {
       background: #fffdfc;
     }
@@ -16689,7 +16700,7 @@
         ? recentClosedOrders.length + (recentClosedOrders.length === 1 ? ' comanda recente' : ' comandas recentes')
         : 'Nenhuma recente';
       $('barClosedOrders').innerHTML = recentClosedOrders.map(function (order) {
-        return '<article class="bar-finance-row"><div class="bar-finance-copy"><strong>' + escapeHtml(barTableLabel(order)) + ' | Comanda #' + escapeHtml(order.commandNumber || '') + '</strong><small>' + escapeHtml(barDateTimeLabel(order.closedAt || order.openedAt)) + ' | ' + escapeHtml(order.paymentMethod || 'Pagamento não informado') + '</small></div><div class="bar-row-actions">' + barStatusPill(order.paymentStatus) + '<span class="finance-total">' + money(barOrderTotal(order)) + '</span></div></article>';
+        return '<article class="bar-finance-row bar-closed-order-row"><div class="bar-finance-copy"><strong>' + escapeHtml(barTableLabel(order)) + ' | Comanda #' + escapeHtml(order.commandNumber || '') + '</strong><small>' + escapeHtml(barDateTimeLabel(order.closedAt || order.openedAt)) + ' | ' + escapeHtml(order.paymentMethod || 'Pagamento não informado') + '</small></div><div class="bar-row-actions">' + barStatusPill(order.paymentStatus) + '<span class="finance-total">' + money(barOrderTotal(order)) + '</span></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhuma comanda fechada ainda.</div>';
       renderBarEvents();
       renderBarTablesAndQr();
