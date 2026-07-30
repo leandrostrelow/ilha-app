@@ -4515,6 +4515,38 @@
       gap: 6px;
     }
 
+    .bar-team-discount {
+      min-height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 10px;
+      border: 1px solid #9ac900;
+      border-radius: 999px;
+      color: #416000;
+      background: #effbc9;
+      font-size: 10px;
+      font-weight: 950;
+      line-height: 1;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .bar-team-discount:hover {
+      filter: brightness(.96);
+    }
+
+    .bar-team-discount.active {
+      color: #ffffff;
+      border-color: var(--teal);
+      background: var(--teal);
+    }
+
+    .bar-team-discount:disabled {
+      opacity: .48;
+      cursor: not-allowed;
+    }
+
     .bar-command-identity h2 {
       max-width: 560px;
       margin: 0;
@@ -5338,6 +5370,100 @@
       background: #ffffff;
     }
 
+    .bar-checkout-review {
+      margin-top: 14px;
+      overflow: hidden;
+      border: 1px solid #d4e2e5;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .bar-checkout-review-head {
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 12px;
+      border-bottom: 1px solid #e1eaec;
+    }
+
+    .bar-checkout-review-head strong {
+      color: #18363d;
+      font-size: 13px;
+    }
+
+    .bar-checkout-add-item {
+      min-height: 32px;
+      padding: 6px 10px;
+      border: 1px solid #bed3d8;
+      border-radius: 7px;
+      color: var(--teal);
+      background: #f4f9fa;
+      font-size: 11px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .bar-checkout-item {
+      min-height: 48px;
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-bottom: 1px solid #edf2f3;
+    }
+
+    .bar-checkout-item:last-child {
+      border-bottom: 0;
+    }
+
+    .bar-checkout-item-quantity {
+      display: inline-grid;
+      place-items: center;
+      min-height: 30px;
+      border-radius: 7px;
+      color: var(--teal);
+      background: #edf6f7;
+      font-size: 11px;
+      font-weight: 950;
+    }
+
+    .bar-checkout-item strong {
+      min-width: 0;
+      overflow: hidden;
+      color: #18363d;
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-checkout-item-total {
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    .bar-checkout-item-remove {
+      min-height: 32px;
+      padding: 6px 10px;
+      border: 1px solid #f0c9cd;
+      border-radius: 7px;
+      color: #a23340;
+      background: #fff5f6;
+      font-size: 10px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .bar-checkout-item-remove:hover {
+      color: #ffffff;
+      border-color: #c83e4d;
+      background: #c83e4d;
+    }
+
     .bar-command-receive {
       min-height: 52px;
       width: 100%;
@@ -5436,7 +5562,7 @@
       }
 
       .bar-command-head-badges {
-        max-width: 118px;
+        max-width: 188px;
       }
 
       .bar-command-contact {
@@ -5591,6 +5717,27 @@
 
       .bar-checkout-summary > div {
         min-height: 66px;
+      }
+
+      .bar-checkout-review-head {
+        min-height: 42px;
+      }
+
+      .bar-checkout-item {
+        grid-template-columns: 36px minmax(0, 1fr) auto;
+        gap: 7px;
+        padding: 7px 9px;
+      }
+
+      .bar-checkout-item-total {
+        grid-column: 2;
+        justify-self: start;
+        margin-top: -5px;
+      }
+
+      .bar-checkout-item-remove {
+        grid-column: 3;
+        grid-row: 1 / span 2;
       }
 
       .bar-command-footer {
@@ -10245,7 +10392,7 @@
                   <h2 id="barCommandModalTitle">Cliente</h2>
                   <strong class="bar-command-number" id="barCommandNumber">Comanda</strong>
                 </div>
-                <div class="bar-command-head-badges"><span id="barCommandStatus"></span><span class="ops-pill warn" id="barCommandLocation">Avulsa</span></div>
+                <div class="bar-command-head-badges"><span id="barCommandStatus"></span><button class="bar-team-discount" type="button" id="barTeamDiscountBtn" aria-pressed="false">Equipe -35%</button><span class="ops-pill warn" id="barCommandLocation">Avulsa</span></div>
               </div>
               <div class="bar-command-contact" id="barCommandModalSubtitle"></div>
             </div>
@@ -10309,8 +10456,12 @@
               <div><span>Subtotal</span><strong id="barCheckoutSubtotal">R$ 0</strong></div>
               <div class="total"><span>Total atual</span><strong id="barCheckoutTotal">R$ 0</strong></div>
             </div>
+            <div class="bar-checkout-review">
+              <div class="bar-checkout-review-head"><strong>Itens da comanda</strong><button class="bar-checkout-add-item" type="button" data-bar-command-tab-target="add">+ Adicionar produto</button></div>
+              <div id="barCheckoutItems"></div>
+            </div>
             <div class="bar-checkout-grid">
-              <div class="field"><label for="barCheckoutService">Taxa de serviço</label><input id="barCheckoutService" inputmode="decimal" value="0,00" /></div>
+              <div class="field"><label for="barCheckoutService">Valor adicional</label><input id="barCheckoutService" inputmode="decimal" value="0,00" /></div>
               <div class="field"><label for="barCheckoutDiscount">Desconto</label><input id="barCheckoutDiscount" inputmode="decimal" value="0,00" /></div>
               <div class="field"><label for="barCheckoutMethod">Forma de pagamento</label><select id="barCheckoutMethod"><option value="PIX">Pix</option><option value="DINHEIRO">Dinheiro</option><option value="CARTAO_CREDITO">Cartão de crédito</option><option value="CARTAO_DEBITO">Cartão de débito</option><option value="CONTA_CLIENTE">Conta do cliente</option></select></div>
             </div>
@@ -16964,6 +17115,26 @@
       return Number.isFinite(number) && number >= 0 ? number : 0;
     }
 
+    function barTeamDiscountAmount(order) {
+      return Math.round(barOrderSubtotal(order) * 35) / 100;
+    }
+
+    function syncBarTeamDiscountButton(order) {
+      const button = $('barTeamDiscountBtn');
+      if (!button) return;
+      const open = Boolean(order && barOrderIsOpen(order));
+      const amount = open ? barTeamDiscountAmount(order) : 0;
+      const discountInput = $('barCheckoutDiscount');
+      const currentDiscount = discountInput ? barCommandMoneyValue(discountInput.value) : Number(order && order.discount || 0);
+      const active = amount > 0 && Math.abs(currentDiscount - amount) < 0.01;
+      button.hidden = !open;
+      button.disabled = !open || amount <= 0;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      button.textContent = active ? '✓ Equipe -35%' : 'Equipe -35%';
+      button.title = amount > 0 ? (active ? 'Remover desconto da equipe' : 'Aplicar ' + money(amount) + ' de desconto') : 'Adicione itens para aplicar o desconto';
+    }
+
     function updateBarCheckoutPreview(order) {
       order = order || barOrderById(opsState.selectedBarOrderId);
       if (!order) return;
@@ -16972,6 +17143,50 @@
       const discount = barCommandMoneyValue($('barCheckoutDiscount').value);
       $('barCheckoutSubtotal').textContent = money(subtotal);
       $('barCheckoutTotal').textContent = money(Math.max(0, subtotal + serviceCharge - discount));
+      syncBarTeamDiscountButton(order);
+    }
+
+    async function toggleBarTeamDiscountAction() {
+      const order = barOrderById(opsState.selectedBarOrderId);
+      if (!order || !barOrderIsOpen(order)) return;
+      const amount = barTeamDiscountAmount(order);
+      if (amount <= 0) {
+        toast('Adicione itens antes de aplicar o desconto da equipe.');
+        return;
+      }
+      const button = $('barTeamDiscountBtn');
+      const currentDiscount = barCommandMoneyValue($('barCheckoutDiscount').value);
+      const serviceCharge = barCommandMoneyValue($('barCheckoutService').value);
+      const active = Math.abs(currentDiscount - amount) < 0.01;
+      const nextDiscount = active ? 0 : amount;
+      try {
+        button.disabled = true;
+        if (barCanPersist(order.id)) {
+          const saved = await supabaseRest('bar_orders?id=eq.' + encodeURIComponent(order.id), {
+            method: 'PATCH',
+            body: {
+              discount: nextDiscount,
+              service_charge: serviceCharge,
+              total: Math.max(0, barOrderSubtotal(order) + serviceCharge - nextDiscount),
+              updated_at: new Date().toISOString()
+            },
+            prefer: 'return=representation'
+          });
+          Object.assign(order, mapBarOrderRow(Array.isArray(saved) ? saved[0] : saved));
+        } else {
+          order.discount = nextDiscount;
+          order.serviceCharge = serviceCharge;
+          recalculateLocalBarOrder(order);
+        }
+        $('barCheckoutDiscount').value = nextDiscount.toFixed(2).replace('.', ',');
+        renderBarModule();
+        renderBarCommandModal();
+        toast(active ? 'Desconto da equipe removido.' : 'Desconto de 35% da equipe aplicado.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        syncBarTeamDiscountButton(order);
+      }
     }
 
     function renderBarOrderProductPicker() {
@@ -17130,6 +17345,14 @@
           '<strong class="bar-command-item-total">' + money(item.quantity * item.unitPrice) + '</strong>' +
           '<div class="bar-command-item-actions">' + deliveryAction + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum item nesta comanda. Use “Adicionar produto” para começar.</div>';
+      $('barCheckoutItems').innerHTML = activeItems.map(function (item) {
+        return '<div class="bar-checkout-item">' +
+          '<span class="bar-checkout-item-quantity">' + escapeHtml(item.quantity + 'x') + '</span>' +
+          '<strong title="' + escapeHtml(item.productName) + '">' + escapeHtml(item.productName) + '</strong>' +
+          '<span class="bar-checkout-item-total">' + money(item.quantity * item.unitPrice) + '</span>' +
+          (open ? '<button class="bar-checkout-item-remove" type="button" data-bar-item-cancel="' + escapeHtml(item.id) + '">Excluir</button>' : '') +
+          '</div>';
+      }).join('') || '<div class="lesson-empty-state">Nenhum item ativo nesta comanda.</div>';
 
       $('barCommandTotal').textContent = money(barOrderTotal(order));
       $('barCheckoutSubtotal').textContent = money(barOrderSubtotal(order));
@@ -20302,6 +20525,7 @@
       $('barOrderQuantity').addEventListener('input', renderBarOrderProductPreview);
       $('barCheckoutService').addEventListener('input', function () { updateBarCheckoutPreview(); });
       $('barCheckoutDiscount').addEventListener('input', function () { updateBarCheckoutPreview(); });
+      $('barTeamDiscountBtn').addEventListener('click', toggleBarTeamDiscountAction);
       $('barOrderCloseBtn').addEventListener('click', closeBarOrderAction);
       $('barQrModalClose').addEventListener('click', closeBarQrModal);
       $('barQrModal').addEventListener('click', function (event) {
