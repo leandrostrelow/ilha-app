@@ -230,7 +230,6 @@ create table if not exists public.bar_order_items (
   source text not null default 'EQUIPE' check (source in ('EQUIPE', 'QR_MESA', 'QR_CARTAO')),
   status text not null default 'SOLICITADO' check (status in ('SOLICITADO', 'EM_PREPARO', 'PRONTO', 'ENTREGUE', 'CANCELADO')),
   notes text,
-  split_participants text[] not null default '{}'::text[],
   added_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -264,9 +263,6 @@ alter table public.bar_order_items
   add column if not exists customer_phone text;
 alter table public.bar_order_items
   add column if not exists source text not null default 'EQUIPE';
-alter table public.bar_order_items
-  add column if not exists split_participants text[] not null default '{}'::text[];
-
 do $$
 begin
   if not exists (
@@ -280,13 +276,6 @@ begin
   ) then
     alter table public.bar_order_items
       add constraint bar_order_items_source_check check (source in ('EQUIPE', 'QR_MESA', 'QR_CARTAO'));
-  end if;
-  if not exists (
-    select 1 from pg_constraint where conname = 'bar_order_items_split_participants_check'
-  ) then
-    alter table public.bar_order_items
-      add constraint bar_order_items_split_participants_check
-      check (cardinality(split_participants) = 0 or cardinality(split_participants) between 2 and 20);
   end if;
 end;
 $$;
