@@ -3395,6 +3395,7 @@
     }
 
     .bar-table-card.is-loose {
+      grid-template-rows: 48px 22px minmax(46px, 1fr) 40px;
       border-color: #2e7d8a;
       background: #f7fbfc;
     }
@@ -3422,6 +3423,13 @@
 
     .bar-table-card-person h3 {
       min-width: 0;
+      min-height: 40px;
+      display: -webkit-box;
+      overflow: hidden;
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
     }
 
     .bar-table-command-name {
@@ -3442,7 +3450,9 @@
     }
 
     .bar-table-card-person-meta {
-      margin-top: -4px;
+      min-height: 22px;
+      align-content: center;
+      margin-top: 0;
     }
 
     .bar-table-number {
@@ -4833,12 +4843,53 @@
       height: 13px;
     }
 
+    .bar-command-item-split-summary {
+      display: grid;
+      gap: 6px;
+      margin-top: 9px;
+    }
+
+    .bar-command-item-split-summary > strong {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: #087d83;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .bar-command-item-split-summary > strong svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .bar-command-item-split-shares {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .bar-command-item-split-shares span {
+      min-height: 24px;
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      color: #38545c;
+      border: 1px solid #d9e6e8;
+      border-radius: 999px;
+      background: #f3f8f8;
+      font-size: 9px;
+      font-weight: 850;
+    }
+
     .bar-command-item-actions {
       min-width: 116px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: flex-end;
       justify-self: end;
+      gap: 6px;
     }
 
     .bar-command-item-actions .small-btn {
@@ -4859,6 +4910,97 @@
       color: #456600;
       border-color: #d9ed9b;
       background: #effbd0;
+    }
+
+    .bar-command-item-actions .bar-item-split {
+      color: #087d83;
+      border-color: #c9e2e4;
+      background: #edf7f7;
+    }
+
+    .bar-command-item-actions .bar-item-split:hover,
+    .bar-command-item-actions .bar-item-split.active {
+      color: #ffffff;
+      border-color: #087d83;
+      background: #087d83;
+    }
+
+    .bar-item-split-editor {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px 12px;
+      padding: 12px;
+      border: 1px solid #cbe2e4;
+      border-radius: 10px;
+      background: #f5fbfb;
+    }
+
+    .bar-item-split-editor-head {
+      grid-column: 1 / -1;
+    }
+
+    .bar-item-split-editor-head strong,
+    .bar-item-split-editor-head small {
+      display: block;
+    }
+
+    .bar-item-split-editor-head strong {
+      color: #12363d;
+      font-size: 13px;
+    }
+
+    .bar-item-split-editor-head small {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .bar-item-split-input {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 11px;
+      border: 1px solid #c9dadd;
+      border-radius: 8px;
+      color: #17363d;
+      background: #ffffff;
+      font: inherit;
+    }
+
+    .bar-item-split-editor-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bar-item-split-editor-actions .small-btn {
+      min-height: 40px;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    .bar-item-split-save {
+      color: #ffffff;
+      border-color: #087d83;
+      background: #087d83;
+    }
+
+    .bar-item-split-clear {
+      color: #a33d49;
+      border-color: #f0d2d6;
+      background: #fff5f6;
+    }
+
+    .bar-item-split-preview {
+      grid-column: 1 / -1;
+      color: #526b73;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .bar-item-split-preview.valid {
+      color: #4e7200;
     }
 
     .bar-command-modal .bar-modal-summary {
@@ -5497,6 +5639,7 @@
       .bar-command-item-actions {
         min-width: 0;
         width: 100%;
+        flex-direction: row;
         justify-content: stretch;
         justify-self: stretch;
       }
@@ -5508,6 +5651,23 @@
       .bar-command-item-actions .small-btn {
         flex: 1 1 auto;
         justify-content: center;
+      }
+
+      .bar-item-split-editor {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 10px;
+      }
+
+      .bar-item-split-editor-actions {
+        flex-wrap: wrap;
+      }
+
+      .bar-item-split-editor-actions .small-btn {
+        flex: 1 1 auto;
+      }
+
+      .bar-item-split-preview {
+        grid-column: 1;
       }
 
       .bar-command-product-preview {
@@ -7885,7 +8045,7 @@
     }
 
     .bar-command-board-panel.is-command-screen .bar-table-card.is-loose {
-      grid-template-rows: auto auto auto auto;
+      grid-template-rows: 62px 22px minmax(46px, 1fr) 40px;
       gap: 9px;
       padding: 12px;
     }
@@ -14429,6 +14589,7 @@
       barFinanceReportMonth: localDateString(new Date()).slice(0, 7),
       selectedBarOrderId: storedBarViewState.orderId,
       barCommandTab: storedBarViewState.commandTab,
+      barSplitItemId: null,
       selectedBarQrUrl: '',
       selectedBarQrLabel: '',
       barAlertsEnabled: localStorage.getItem('ilha-bar-alerts-enabled') === 'true',
@@ -14976,6 +15137,7 @@
         source: row.source || 'EQUIPE',
         status: row.status || 'SOLICITADO',
         notes: row.notes || '',
+        splitParticipants: Array.isArray(row.split_participants) ? row.split_participants : [],
         created: row.created_at || ''
       };
     }
@@ -15991,7 +16153,7 @@
       const commandStatus = String(order.status || '').toUpperCase() === 'ABERTA' ? '<span class="ops-pill good">Aberta</span>' : barStatusPill(order.status);
       return '<article class="bar-table-card is-open is-loose">' +
         '<div class="bar-table-card-top bar-table-card-person"><div class="bar-table-card-person-identity"><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3></div><div class="bar-table-card-badges">' + commandStatus + '<span class="ops-pill warn">Avulsa</span></div></div>' +
-        (phone ? '<div class="bar-table-card-meta bar-table-card-person-meta">' + phone + '</div>' : '') +
+        '<div class="bar-table-card-meta bar-table-card-person-meta">' + phone + '</div>' +
         '<div class="bar-table-command-summary bar-table-command-total"><span>Total</span><strong>' + money(barOrderTotal(order)) + '</strong></div>' +
         '<div class="bar-table-card-actions"><button class="primary-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button></div>' +
       '</article>';
@@ -16825,6 +16987,125 @@
       return Number.isFinite(number) && number >= 0 ? number : 0;
     }
 
+    function barNormalizeSplitParticipants(value) {
+      const source = Array.isArray(value) ? value : String(value || '').split(/[,;\n]+/);
+      const seen = new Set();
+      return source.map(function (name) {
+        return String(name || '').trim().replace(/\s+/g, ' ').slice(0, 60);
+      }).filter(function (name) {
+        const key = normalizeMatchText(name);
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).slice(0, 20);
+    }
+
+    function barSplitDistribution(total, participants) {
+      const names = barNormalizeSplitParticipants(participants);
+      if (names.length < 2) return [];
+      const cents = Math.max(0, Math.round(Number(total || 0) * 100));
+      const base = Math.floor(cents / names.length);
+      const remainder = cents - (base * names.length);
+      return names.map(function (name, index) {
+        return { name: name, amount: (base + (index < remainder ? 1 : 0)) / 100 };
+      });
+    }
+
+    function barSplitPreviewText(item, participants) {
+      const distribution = barSplitDistribution(Number(item.quantity || 0) * Number(item.unitPrice || 0), participants);
+      if (distribution.length < 2) return 'Informe pelo menos 2 pessoas para dividir.';
+      const amounts = distribution.map(function (share) { return share.amount; });
+      const minimum = Math.min.apply(null, amounts);
+      const maximum = Math.max.apply(null, amounts);
+      const valueLabel = minimum === maximum ? money(minimum) : money(minimum) + ' a ' + money(maximum);
+      return distribution.length + ' pessoas · ' + valueLabel + ' por pessoa · total conferido';
+    }
+
+    function barSplitSummaryHtml(item, participants) {
+      const distribution = barSplitDistribution(Number(item.quantity || 0) * Number(item.unitPrice || 0), participants);
+      if (distribution.length < 2) return '';
+      return '<div class="bar-command-item-split-summary"><strong><svg><use href="#admin-icon-users"></use></svg>Dividido entre ' + distribution.length + ' pessoas</strong><div class="bar-command-item-split-shares">' +
+        distribution.map(function (share) {
+          return '<span>' + escapeHtml(share.name) + ' · ' + money(share.amount) + '</span>';
+        }).join('') + '</div></div>';
+    }
+
+    function updateBarItemSplitPreview(input) {
+      if (!input) return;
+      const item = opsData.barOrderItems.find(function (row) { return String(row.id) === String(input.dataset.barSplitInput); });
+      const editor = input.closest('.bar-item-split-editor');
+      const preview = editor && editor.querySelector('[data-bar-split-preview]');
+      if (!item || !preview) return;
+      const participants = barNormalizeSplitParticipants(input.value);
+      preview.textContent = barSplitPreviewText(item, participants);
+      preview.classList.toggle('valid', participants.length >= 2);
+    }
+
+    function toggleBarItemSplitAction(itemId) {
+      opsState.barSplitItemId = String(opsState.barSplitItemId || '') === String(itemId) ? null : String(itemId);
+      renderBarCommandModal();
+      if (opsState.barSplitItemId) {
+        window.requestAnimationFrame(function () {
+          const input = $('barCommandItems').querySelector('[data-bar-split-input]');
+          if (input) {
+            input.focus();
+            input.select();
+          }
+        });
+      }
+    }
+
+    async function saveBarItemSplitAction(itemId) {
+      const item = opsData.barOrderItems.find(function (row) { return String(row.id) === String(itemId); });
+      const input = $('barCommandItems').querySelector('[data-bar-split-input]');
+      if (!item || !input || String(input.dataset.barSplitInput) !== String(itemId)) return;
+      const participants = barNormalizeSplitParticipants(input.value);
+      if (participants.length < 2) {
+        toast('Informe pelo menos 2 pessoas para dividir.');
+        input.focus();
+        return;
+      }
+      try {
+        if (barCanPersist(item.id)) {
+          const saved = await supabaseRest('bar_order_items?id=eq.' + encodeURIComponent(item.id), {
+            method: 'PATCH',
+            body: { split_participants: participants, updated_at: new Date().toISOString() },
+            prefer: 'return=representation'
+          });
+          Object.assign(item, mapBarOrderItemRow(Array.isArray(saved) ? saved[0] : saved));
+        } else {
+          item.splitParticipants = participants;
+        }
+        opsState.barSplitItemId = null;
+        renderBarCommandModal();
+        toast('Produto dividido entre ' + participants.length + ' pessoas.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function clearBarItemSplitAction(itemId) {
+      const item = opsData.barOrderItems.find(function (row) { return String(row.id) === String(itemId); });
+      if (!item) return;
+      try {
+        if (barCanPersist(item.id)) {
+          const saved = await supabaseRest('bar_order_items?id=eq.' + encodeURIComponent(item.id), {
+            method: 'PATCH',
+            body: { split_participants: [], updated_at: new Date().toISOString() },
+            prefer: 'return=representation'
+          });
+          Object.assign(item, mapBarOrderItemRow(Array.isArray(saved) ? saved[0] : saved));
+        } else {
+          item.splitParticipants = [];
+        }
+        opsState.barSplitItemId = null;
+        renderBarCommandModal();
+        toast('Divisão removida.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
     function updateBarCheckoutPreview(order) {
       order = order || barOrderById(opsState.selectedBarOrderId);
       if (!order) return;
@@ -16973,25 +17254,36 @@
       $('barCommandItemsCount').textContent = itemQuantity;
       $('barCheckoutItemCount').textContent = itemQuantity;
 
+      const open = barOrderIsOpen(order);
       $('barCommandItems').innerHTML = items.map(function (item) {
         const status = String(item.status || '').toUpperCase();
         const cancelled = status === 'CANCELADO';
         const statusClass = status === 'EM_PREPARO' ? ' is-preparing' : (status === 'PRONTO' ? ' is-ready' : (status === 'ENTREGUE' ? ' is-delivered' : ''));
         const itemPhone = barPhoneDigits(item.customerPhone || customer.phone);
+        const splitParticipants = barNormalizeSplitParticipants(item.splitParticipants);
+        const splitEditing = String(opsState.barSplitItemId || '') === String(item.id);
         const meta = [];
         if (itemPhone) meta.push('<span><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(itemPhone)) + '</span>');
         meta.push('<span>' + escapeHtml(money(item.unitPrice) + ' cada') + '</span>');
         if (item.notes) meta.push('<span><strong>Obs.:</strong> ' + escapeHtml(item.notes) + '</span>');
+        const splitSummary = barSplitSummaryHtml(item, splitParticipants);
+        const splitAction = cancelled || !open ? '' : '<button class="small-btn bar-item-split' + (splitEditing ? ' active' : '') + '" type="button" data-bar-item-split="' + escapeHtml(item.id) + '"><svg><use href="#admin-icon-users"></use></svg>' + (splitParticipants.length >= 2 ? 'Editar divisão' : 'Dividir') + '</button>';
         const deliveryAction = cancelled ? '' : '<button class="small-btn bar-item-deliver" type="button"' + (status === 'ENTREGUE' ? ' disabled' : ' data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="ENTREGUE"') + '>Entregue</button>';
+        const splitEditor = !splitEditing || cancelled || !open ? '' :
+          '<div class="bar-item-split-editor"><div class="bar-item-split-editor-head"><strong>Dividir ' + escapeHtml(item.productName) + '</strong><small>Digite os nomes separados por vírgula. O total será distribuído com os centavos fechando corretamente.</small></div>' +
+          '<input class="bar-item-split-input" id="barSplitInput-' + escapeHtml(item.id) + '" data-bar-split-input="' + escapeHtml(item.id) + '" value="' + escapeHtml(splitParticipants.join(', ')) + '" placeholder="Ex.: Felipe, João, Maria" maxlength="1219" autocomplete="off" />' +
+          '<div class="bar-item-split-editor-actions"><button class="small-btn" type="button" data-bar-split-cancel="' + escapeHtml(item.id) + '">Cancelar</button>' +
+          (splitParticipants.length >= 2 ? '<button class="small-btn bar-item-split-clear" type="button" data-bar-split-clear="' + escapeHtml(item.id) + '">Remover divisão</button>' : '') +
+          '<button class="small-btn bar-item-split-save" type="button" data-bar-split-save="' + escapeHtml(item.id) + '">Salvar divisão</button></div>' +
+          '<div class="bar-item-split-preview' + (splitParticipants.length >= 2 ? ' valid' : '') + '" data-bar-split-preview>' + escapeHtml(barSplitPreviewText(item, splitParticipants)) + '</div></div>';
         return '<article class="bar-item-row bar-command-item' + statusClass + (cancelled ? ' cancelled' : '') + '">' +
           '<div class="bar-command-item-product"><span class="bar-command-item-quantity">' + escapeHtml(item.quantity + 'x') + '</span>' +
           '<div class="bar-command-item-content"><div class="bar-command-item-title"><strong>' + escapeHtml(item.productName) + '</strong></div>' +
-          '<div class="bar-command-item-meta">' + meta.join('') + '</div></div></div>' +
+          '<div class="bar-command-item-meta">' + meta.join('') + '</div>' + splitSummary + '</div></div>' +
           '<strong class="bar-command-item-total">' + money(item.quantity * item.unitPrice) + '</strong>' +
-          '<div class="bar-command-item-actions">' + deliveryAction + '</div></article>';
+          '<div class="bar-command-item-actions">' + splitAction + deliveryAction + '</div>' + splitEditor + '</article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum item nesta comanda. Use “Adicionar produto” para começar.</div>';
 
-      const open = barOrderIsOpen(order);
       $('barCommandTotal').textContent = money(barOrderTotal(order));
       $('barCheckoutSubtotal').textContent = money(barOrderSubtotal(order));
       $('barOrderItemForm').style.display = open ? 'grid' : 'none';
@@ -17010,6 +17302,7 @@
       setBarCommandModalScreenMount(barCommandScreenIsActive());
       opsState.selectedBarOrderId = order.id;
       opsState.barCommandTab = barOrderIsOpen(order) ? 'add' : 'items';
+      opsState.barSplitItemId = null;
       $('barCheckoutService').value = Number(order.serviceCharge || 0).toFixed(2).replace('.', ',');
       $('barCheckoutDiscount').value = Number(order.discount || 0).toFixed(2).replace('.', ',');
       $('barCheckoutMethod').value = order.paymentMethod || 'PIX';
@@ -17028,6 +17321,7 @@
       $('barCommandModal').classList.remove('show');
       $('barCommandModal').setAttribute('aria-hidden', 'true');
       opsState.selectedBarOrderId = null;
+      opsState.barSplitItemId = null;
       setBarCommandModalScreenMount(false);
       persistBarViewState();
     }
@@ -17792,7 +18086,7 @@
         let item = {
           id: localId('bar_item'), orderId: order.id, productId: product.id, productName: product.name,
           quantity: quantity, unitPrice: product.salePrice, costPrice: product.costPrice,
-          status: 'SOLICITADO', notes: notes, created: new Date().toISOString()
+          status: 'SOLICITADO', notes: notes, splitParticipants: [], created: new Date().toISOString()
         };
         if (barCanPersist(order.id) && isUuid(product.id)) {
           const saved = await supabaseRest('rpc/bar_add_order_item', {
@@ -20139,6 +20433,27 @@
           renderBarOrderProductPreview();
           return;
         }
+        const splitBtn = event.target.closest('[data-bar-item-split]');
+        if (splitBtn) {
+          toggleBarItemSplitAction(splitBtn.dataset.barItemSplit);
+          return;
+        }
+        const splitSaveBtn = event.target.closest('[data-bar-split-save]');
+        if (splitSaveBtn) {
+          saveBarItemSplitAction(splitSaveBtn.dataset.barSplitSave);
+          return;
+        }
+        const splitClearBtn = event.target.closest('[data-bar-split-clear]');
+        if (splitClearBtn) {
+          clearBarItemSplitAction(splitClearBtn.dataset.barSplitClear);
+          return;
+        }
+        const splitCancelBtn = event.target.closest('[data-bar-split-cancel]');
+        if (splitCancelBtn) {
+          opsState.barSplitItemId = null;
+          renderBarCommandModal();
+          return;
+        }
         const statusBtn = event.target.closest('[data-bar-item-status]');
         if (statusBtn) {
           updateBarItemStatusAction(statusBtn.dataset.barItemStatus, statusBtn.dataset.nextStatus);
@@ -20152,6 +20467,10 @@
         if (event.target.id === 'barCommandModal') closeBarCommandModal();
       });
       $('barCommandModalClose').addEventListener('click', closeBarCommandModal);
+      $('barCommandModal').addEventListener('input', function (event) {
+        const splitInput = event.target.closest('[data-bar-split-input]');
+        if (splitInput) updateBarItemSplitPreview(splitInput);
+      });
       $('barOrderProductSearch').addEventListener('input', renderBarOrderProductPicker);
       $('barOrderQuantity').addEventListener('input', renderBarOrderProductPreview);
       $('barCheckoutService').addEventListener('input', function () { updateBarCheckoutPreview(); });
