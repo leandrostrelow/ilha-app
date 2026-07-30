@@ -10223,7 +10223,7 @@
             </div>
             <div class="field full">
               <label for="barNewOrderPhone">Telefone <small>opcional</small></label>
-              <input id="barNewOrderPhone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="(27) 99999-9999" />
+              <input id="barNewOrderPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="15" placeholder="(27) 99999-9999" />
             </div>
           </form>
         </div>
@@ -16032,6 +16032,20 @@
       return value || '';
     }
 
+    function barPhoneInputLabel(value) {
+      let local = barPhoneDigits(value);
+      if (local.startsWith('55') && local.length > 11) local = local.slice(2);
+      local = local.slice(0, 11);
+      if (!local) return '';
+      if (local.length <= 2) return '(' + local;
+      const areaCode = local.slice(0, 2);
+      const number = local.slice(2);
+      const prefixLength = number.startsWith('9') ? 5 : 4;
+      const prefix = number.slice(0, prefixLength);
+      const suffix = number.slice(prefixLength);
+      return '(' + areaCode + ') ' + prefix + (suffix ? '-' + suffix : '');
+    }
+
     function barPhoneWhatsApp(value) {
       const digits = barPhoneDigits(value);
       return digits && !digits.startsWith('55') && digits.length <= 11 ? '55' + digits : digits;
@@ -16839,17 +16853,21 @@
     }
 
     function barCommandMatchesSearch(order, table) {
-      const query = normalizeMatchText(opsState.barCommandSearch);
+      const rawQuery = String(opsState.barCommandSearch || '').trim();
+      const query = normalizeMatchText(rawQuery);
       if (!query) return true;
+      const queryDigits = barPhoneDigits(rawQuery);
+      const orderPhoneDigits = barPhoneDigits(order && order.customerPhone);
       const fields = [
         order && order.customerName,
-        order && order.customerPhone,
-        order && barPhoneDigits(order.customerPhone),
+        order && barPhoneLabel(order.customerPhone),
         order && order.commandNumber,
         table && table.name,
         table && table.number
       ].filter(Boolean);
-      return normalizeMatchText(fields.join(' ')).includes(query);
+      const textMatch = normalizeMatchText(fields.join(' ')).includes(query);
+      const phoneMatch = queryDigits.length >= 3 && orderPhoneDigits.includes(queryDigits);
+      return textMatch || phoneMatch;
     }
 
     function renderBarTablesAndQr() {
@@ -20055,6 +20073,9 @@
       $('barCommandSearch').addEventListener('input', function () {
         opsState.barCommandSearch = this.value;
         renderBarTablesAndQr();
+      });
+      $('barNewOrderPhone').addEventListener('input', function () {
+        this.value = barPhoneInputLabel(this.value);
       });
       $('barAddEventBtn').addEventListener('click', function () { openBarEventModal(null, opsState.barEventSelectedDate); });
       $('barAddEventForDayBtn').addEventListener('click', function () { openBarEventModal(null, opsState.barEventSelectedDate); });
