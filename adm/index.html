@@ -15987,13 +15987,11 @@
 
     function barLooseOrderCard(order) {
       const card = barAccessCardById(order.publicAccessId);
-      const commandNumber = order.commandNumber || String(order.id).slice(-4);
       const phone = order.customerPhone ? '<span><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(order.customerPhone)) + '</span>' : '';
-      const locationLabel = card ? card.label : 'Balcão / sem mesa';
       const commandStatus = String(order.status || '').toUpperCase() === 'ABERTA' ? '<span class="ops-pill good">Aberta</span>' : barStatusPill(order.status);
       return '<article class="bar-table-card is-open is-loose">' +
-        '<div class="bar-table-card-top bar-table-card-person"><div class="bar-table-card-person-identity"><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3><span class="bar-table-command-name">Comanda #' + escapeHtml(commandNumber) + '</span></div><div class="bar-table-card-badges">' + commandStatus + '<span class="ops-pill warn">Avulsa</span></div></div>' +
-        '<div class="bar-table-card-meta bar-table-card-person-meta"><span><svg><use href="#' + (card ? 'admin-icon-qr' : 'admin-icon-bar') + '"></use></svg>' + escapeHtml(locationLabel) + '</span>' + phone + '</div>' +
+        '<div class="bar-table-card-top bar-table-card-person"><div class="bar-table-card-person-identity"><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3></div><div class="bar-table-card-badges">' + commandStatus + '<span class="ops-pill warn">Avulsa</span></div></div>' +
+        (phone ? '<div class="bar-table-card-meta bar-table-card-person-meta">' + phone + '</div>' : '') +
         '<div class="bar-table-command-summary bar-table-command-total"><span>Total</span><strong>' + money(barOrderTotal(order)) + '</strong></div>' +
         '<div class="bar-table-card-actions"><button class="primary-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button></div>' +
       '</article>';
