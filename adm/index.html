@@ -7818,6 +7818,53 @@
       gap: 8px;
     }
 
+    .bar-command-board-search {
+      position: relative;
+      min-width: 190px;
+      max-width: 320px;
+      flex: 1 1 240px;
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+    }
+
+    .bar-command-board-search svg {
+      position: absolute;
+      left: 12px;
+      width: 17px;
+      height: 17px;
+      pointer-events: none;
+      fill: none;
+      stroke: #c7d2df;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .bar-command-board-search input {
+      width: 100%;
+      min-height: 38px;
+      padding: 8px 34px 8px 38px;
+      border: 1px solid rgba(255, 255, 255, .18);
+      border-radius: 11px;
+      outline: none;
+      color: #ffffff;
+      background: rgba(255, 255, 255, .1);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .bar-command-board-search input::placeholder {
+      color: #c7d2df;
+    }
+
+    .bar-command-board-search input:focus {
+      border-color: #dff3a8;
+      background: rgba(255, 255, 255, .16);
+      box-shadow: 0 0 0 3px rgba(223, 243, 168, .15);
+    }
+
     .bar-command-board-actions .primary-btn {
       min-height: 38px;
       color: #14372f;
@@ -8133,6 +8180,13 @@
     }
 
     @media (max-width: 620px) {
+      .bar-command-board-search {
+        width: 100%;
+        max-width: none;
+        flex-basis: 100%;
+        margin-left: 0;
+      }
+
       .bar-command-board-actions,
       .bar-command-board-actions > * {
         width: 100%;
@@ -9836,6 +9890,10 @@
             <section class="ops-panel bar-command-board-panel" id="barCommandBoardPanel">
               <div class="ops-panel-head">
                 <div><h2>Comanda</h2></div>
+                <label class="bar-command-board-search" for="barCommandSearch">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                  <input id="barCommandSearch" type="search" placeholder="Buscar por nome ou telefone" autocomplete="off" aria-label="Buscar comanda por nome ou telefone" />
+                </label>
                 <div class="bar-command-board-actions">
                   <button class="primary-btn bar-icon-button" type="button" id="barNewLooseOrderBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Nova comanda</span></button>
                   <button class="small-btn" type="button" id="barEnableAlertsBtn"><svg><use href="#admin-icon-bell"></use></svg><span>Ativar alertas</span></button>
@@ -14469,6 +14527,7 @@
       barFinanceReportMonth: localDateString(new Date()).slice(0, 7),
       selectedBarOrderId: storedBarViewState.orderId,
       barCommandTab: storedBarViewState.commandTab,
+      barCommandSearch: '',
       selectedBarQrUrl: '',
       selectedBarQrLabel: '',
       barAlertsEnabled: localStorage.getItem('ilha-bar-alerts-enabled') === 'true',
@@ -16779,21 +16838,43 @@
       return '<article class="bar-qr-card' + (card.active ? '' : ' is-inactive') + '"><div class="bar-qr-card-visual"><img src="' + escapeHtml(barQrImageFromUrl(url, 240)) + '" alt="QR Code do ' + escapeHtml(card.label) + '" loading="lazy" /></div><div class="bar-qr-card-content"><div class="bar-qr-card-head"><div><span class="bar-qr-card-kicker">Cartão individual</span><h3>' + escapeHtml(card.label) + '</h3><p>' + escapeHtml(card.notes || 'Mesa ou retirada no balcão') + '</p></div>' + statusPill(card.active ? 'ATIVO' : 'INATIVO') + '</div></div><div class="bar-qr-card-actions has-edit"><button class="small-btn bar-qr-action-primary" type="button" data-bar-qr-kind="card" data-bar-qr="' + escapeHtml(card.id) + '"><svg><use href="#admin-icon-qr"></use></svg>Ampliar</button><button class="small-btn bar-qr-action-copy" type="button" data-bar-copy-qr-kind="card" data-bar-copy-qr="' + escapeHtml(card.id) + '"><svg><use href="#bar-icon-link"></use></svg>Copiar link</button><button class="small-btn bar-qr-action-edit" type="button" data-bar-card-edit="' + escapeHtml(card.id) + '"><svg><use href="#bar-icon-edit"></use></svg>Editar</button></div></article>';
     }
 
+    function barCommandMatchesSearch(order, table) {
+      const query = normalizeMatchText(opsState.barCommandSearch);
+      if (!query) return true;
+      const fields = [
+        order && order.customerName,
+        order && order.customerPhone,
+        order && barPhoneDigits(order.customerPhone),
+        order && order.commandNumber,
+        table && table.name,
+        table && table.number
+      ].filter(Boolean);
+      return normalizeMatchText(fields.join(' ')).includes(query);
+    }
+
     function renderBarTablesAndQr() {
       const allTables = opsData.barTables.slice().sort(function (a, b) { return a.number - b.number; });
       const activeTables = allTables.filter(function (table) { return table.active; });
       const busyTables = activeTables.filter(function (table) { return Boolean(barOrderForTable(table.id)); });
-      const looseOrders = opsData.barOrders.filter(function (order) { return !order.tableId && barOrderIsOpen(order); });
+      const looseOrders = opsData.barOrders.filter(function (order) {
+        return !order.tableId && barOrderIsOpen(order) && barCommandMatchesSearch(order, null);
+      });
+      const visibleTables = activeTables.filter(function (table) {
+        return barCommandMatchesSearch(barOrderForTable(table.id), table);
+      });
       const seats = activeTables.reduce(function (sum, table) { return sum + Number(table.seats || 0); }, 0);
       $('barTablesTotalMetric').textContent = activeTables.length;
       $('barTablesFreeMetric').textContent = activeTables.length - busyTables.length;
       $('barTablesBusyMetric').textContent = busyTables.length;
       $('barTablesSeatsMetric').textContent = seats;
-      const boardCards = looseOrders.map(barLooseOrderCard).concat(activeTables.map(barTableCard)).join('');
-      const screenEmpty = looseOrders.length || busyTables.length
+      const boardCards = looseOrders.map(barLooseOrderCard).concat(visibleTables.map(barTableCard)).join('');
+      const visibleBusyTables = visibleTables.filter(function (table) { return Boolean(barOrderForTable(table.id)); });
+      const hasSearch = Boolean(String(opsState.barCommandSearch || '').trim());
+      const emptyLabel = hasSearch ? 'Nenhuma comanda encontrada.' : 'Nenhuma mesa ou comanda aberta.';
+      const screenEmpty = looseOrders.length || visibleBusyTables.length
         ? ''
-        : '<div class="lesson-empty-state bar-command-screen-empty">Nenhuma comanda aberta.</div>';
-      $('barTableBoard').innerHTML = (boardCards || '<div class="lesson-empty-state bar-command-board-empty">Nenhuma mesa ou comanda aberta.</div>') + screenEmpty;
+        : '<div class="lesson-empty-state bar-command-screen-empty">' + escapeHtml(hasSearch ? 'Nenhuma comanda encontrada.' : 'Nenhuma comanda aberta.') + '</div>';
+      $('barTableBoard').innerHTML = (boardCards || '<div class="lesson-empty-state bar-command-board-empty">' + escapeHtml(emptyLabel) + '</div>') + screenEmpty;
       $('barTableManagementGrid').innerHTML = allTables.map(barTableManagementCard).join('') || '<div class="lesson-empty-state">Nenhuma mesa cadastrada.</div>';
       $('barQrGrid').innerHTML = activeTables.map(barQrCard).join('') || '<div class="lesson-empty-state">Cadastre uma mesa ativa para gerar o QR Code.</div>';
       $('barAccessCardGrid').innerHTML = (opsData.barAccessCards || []).map(barAccessCardQrCard).join('') || '<div class="lesson-empty-state">Crie o primeiro cartão individual.</div>';
@@ -19971,6 +20052,10 @@
         }
       });
       $('barEnableAlertsBtn').addEventListener('click', enableBarAlerts);
+      $('barCommandSearch').addEventListener('input', function () {
+        opsState.barCommandSearch = this.value;
+        renderBarTablesAndQr();
+      });
       $('barAddEventBtn').addEventListener('click', function () { openBarEventModal(null, opsState.barEventSelectedDate); });
       $('barAddEventForDayBtn').addEventListener('click', function () { openBarEventModal(null, opsState.barEventSelectedDate); });
       $('barEventPrevMonthBtn').addEventListener('click', function () { moveBarEventMonth(-1); });
