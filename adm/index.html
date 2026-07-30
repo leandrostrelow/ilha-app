@@ -8721,6 +8721,45 @@
       grid-template-columns: minmax(0, 1fr) auto;
     }
 
+    .bar-payment-method-badge {
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 9px;
+      color: #34505a;
+      border: 1px solid #dce7e9;
+      border-radius: 999px;
+      background: #f2f7f8;
+      font-size: 10px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .bar-payment-method-badge svg {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+    }
+
+    .bar-payment-method-badge.is-pix {
+      color: #087d83;
+      border-color: #c8e8e6;
+      background: #e9f7f6;
+    }
+
+    .bar-payment-method-badge.is-cash {
+      color: #4d6f0a;
+      border-color: #dcecae;
+      background: #f2fad8;
+    }
+
+    .bar-payment-method-badge.is-card {
+      color: #4a5e82;
+      border-color: #dce3ef;
+      background: #f1f4f9;
+    }
+
     .bar-closed-order-row .bar-finance-copy strong,
     .bar-closed-order-row .bar-finance-copy small {
       overflow: visible;
@@ -8937,6 +8976,20 @@
       <path d="M4 7h16v12H4z" />
       <path d="M4 7l3-3h10l3 3" />
       <path d="M15 13h5" />
+    </symbol>
+    <symbol id="bar-icon-pix" viewBox="0 0 24 24">
+      <path d="m8.5 4.5 3.5 3.5 3.5-3.5M8.5 19.5 12 16l3.5 3.5" />
+      <path d="m4.5 8.5 3.5 3.5-3.5 3.5M19.5 8.5 16 12l3.5 3.5" />
+      <path d="m8 12 4-4 4 4-4 4-4-4Z" />
+    </symbol>
+    <symbol id="bar-icon-cash" viewBox="0 0 24 24">
+      <path d="M3 6h18v12H3z" />
+      <path d="M6 9a3 3 0 0 0 3-3M18 9a3 3 0 0 1-3-3M6 15a3 3 0 0 1 3 3M18 15a3 3 0 0 0-3 3" />
+      <circle cx="12" cy="12" r="2.5" />
+    </symbol>
+    <symbol id="bar-icon-card" viewBox="0 0 24 24">
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 10h18M7 15h4" />
     </symbol>
     <symbol id="admin-icon-team" viewBox="0 0 24 24">
       <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
@@ -16013,6 +16066,21 @@
       return labels[value] || (value ? String(method).replace(/_/g, ' ') : 'A definir');
     }
 
+    function barPaymentMethodBadge(method) {
+      const value = String(method || '').toUpperCase();
+      const group = barFinancePaymentGroup(value);
+      const icon = group === 'PIX'
+        ? 'bar-icon-pix'
+        : group === 'CASH'
+          ? 'bar-icon-cash'
+          : group === 'CARD'
+            ? 'bar-icon-card'
+            : (value === 'BOLETO' ? 'admin-icon-receipt' : 'admin-icon-wallet');
+      const variant = group === 'PIX' ? ' is-pix' : group === 'CASH' ? ' is-cash' : group === 'CARD' ? ' is-card' : '';
+      const label = barFinancePaymentLabel(method);
+      return '<span class="bar-payment-method-badge' + variant + '" title="Forma de pagamento: ' + escapeHtml(label) + '"><svg aria-hidden="true"><use href="#' + icon + '"></use></svg><span>' + escapeHtml(label) + '</span></span>';
+    }
+
     function barFinanceEntryDateLabel(item) {
       if (!barFinanceIsSettled(item) && item.dueDate) return 'Vence em ' + financeDateLabel(item.dueDate);
       const value = item.paidAt || item.created || item.dueDate;
@@ -16722,7 +16790,7 @@
         ? recentClosedOrders.length + (recentClosedOrders.length === 1 ? ' comanda recente' : ' comandas recentes')
         : 'Nenhuma recente';
       $('barClosedOrders').innerHTML = recentClosedOrders.map(function (order) {
-        return '<article class="bar-finance-row bar-closed-order-row"><div class="bar-finance-copy"><strong>' + escapeHtml(barTableLabel(order)) + ' | Comanda #' + escapeHtml(order.commandNumber || '') + '</strong><small>' + escapeHtml(barDateTimeLabel(order.closedAt || order.openedAt)) + ' | ' + escapeHtml(order.paymentMethod || 'Pagamento não informado') + '</small></div><div class="bar-row-actions">' + barStatusPill(order.paymentStatus) + '<span class="finance-total">' + money(barOrderTotal(order)) + '</span></div></article>';
+        return '<article class="bar-finance-row bar-closed-order-row"><div class="bar-finance-copy"><strong>' + escapeHtml(barTableLabel(order)) + ' | Comanda #' + escapeHtml(order.commandNumber || '') + '</strong><small>' + escapeHtml(barDateTimeLabel(order.closedAt || order.openedAt)) + '</small></div><div class="bar-row-actions">' + barPaymentMethodBadge(order.paymentMethod) + barStatusPill(order.paymentStatus) + '<span class="finance-total">' + money(barOrderTotal(order)) + '</span></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhuma comanda fechada ainda.</div>';
       renderBarEvents();
       renderBarTablesAndQr();
