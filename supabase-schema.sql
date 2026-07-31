@@ -651,6 +651,138 @@ begin
 end;
 $$;
 
+create or replace function public.bar_close_order_split(
+  p_order_id uuid,
+  p_payments jsonb,
+  p_discount numeric default 0,
+  p_service_charge numeric default 0
+)
+returns public.bar_orders
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  order_row public.bar_orders%rowtype;
+  table_label text;
+  payment_item jsonb;
+  payment_index bigint;
+  payment_count integer;
+  payment_method_value text;
+  payment_amount numeric(10, 2);
+  payment_total numeric(10, 2) := 0;
+  order_total numeric(10, 2);
+begin
+  if not public.is_bar_staff() then
+    raise exception 'Acesso negado ao Bar.';
+  end if;
+
+  select *
+    into order_row
+    from public.bar_orders
+   where id = p_order_id
+     and status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+   for update;
+
+  if not found then
+    raise exception 'Comanda nao encontrada ou ja fechada.';
+  end if;
+
+  if coalesce(jsonb_typeof(p_payments), '') <> 'array' then
+    raise exception 'Informe as divisoes de pagamento.';
+  end if;
+
+  payment_count := jsonb_array_length(p_payments);
+  if payment_count < 2 or payment_count > 12 then
+    raise exception 'A conta deve ser dividida entre 2 e 12 pessoas.';
+  end if;
+
+  order_total := round(greatest(
+    0,
+    order_row.subtotal
+      + greatest(0, coalesce(p_service_charge, 0))
+      - greatest(0, coalesce(p_discount, 0))
+  ), 2);
+
+  for payment_item, payment_index in
+    select value, ordinality
+      from jsonb_array_elements(p_payments) with ordinality
+  loop
+    payment_method_value := upper(trim(coalesce(payment_item ->> 'payment_method', '')));
+    if payment_method_value not in ('PIX', 'DINHEIRO', 'CARTAO_CREDITO', 'CARTAO_DEBITO', 'CONTA_CLIENTE') then
+      raise exception 'Forma de pagamento invalida na divisao %.', payment_index;
+    end if;
+
+    begin
+      payment_amount := round(coalesce(nullif(payment_item ->> 'amount', '')::numeric, 0), 2);
+    exception
+      when invalid_text_representation or numeric_value_out_of_range then
+        raise exception 'Valor invalido na divisao %.', payment_index;
+    end;
+
+    if payment_amount <= 0 then
+      raise exception 'O valor da divisao % deve ser maior que zero.', payment_index;
+    end if;
+
+    payment_total := payment_total + payment_amount;
+  end loop;
+
+  if round(payment_total, 2) <> order_total then
+    raise exception 'A soma das divisoes (%) deve ser igual ao total da comanda (%).', round(payment_total, 2), order_total;
+  end if;
+
+  update public.bar_orders
+     set discount = greatest(0, coalesce(p_discount, 0)),
+         service_charge = greatest(0, coalesce(p_service_charge, 0)),
+         total = order_total,
+         status = 'FECHADA',
+         payment_status = 'PAGO',
+         payment_method = 'DIVIDIDO',
+         closed_at = now(),
+         updated_at = now()
+   where id = order_row.id
+   returning * into order_row;
+
+  select name into table_label from public.bar_tables where id = order_row.table_id;
+
+  for payment_item, payment_index in
+    select value, ordinality
+      from jsonb_array_elements(p_payments) with ordinality
+  loop
+    payment_method_value := upper(trim(payment_item ->> 'payment_method'));
+    payment_amount := round((payment_item ->> 'amount')::numeric, 2);
+
+    insert into public.bar_financial_entries (
+      order_id, type, description, counterparty, category, amount, due_date,
+      status, payment_method, paid_at, notes, created_by
+    ) values (
+      order_row.id,
+      'RECEITA',
+      'Venda da comanda #' || order_row.command_number || ' · Divisao ' || payment_index || '/' || payment_count,
+      coalesce(order_row.customer_name, table_label, 'Balcao'),
+      'Vendas',
+      payment_amount,
+      current_date,
+      'RECEBIDO',
+      payment_method_value,
+      now(),
+      'Conta dividida entre ' || payment_count || ' pessoas.',
+      auth.uid()
+    );
+  end loop;
+
+  update public.bar_service_requests
+     set status = 'CONCLUIDO',
+         handled_by = auth.uid(),
+         handled_at = now(),
+         updated_at = now()
+   where order_id = order_row.id
+     and status in ('PENDENTE', 'EM_ATENDIMENTO');
+
+  return order_row;
+end;
+$$;
+
 insert into public.app_plans (code, name, type, amount, weekly_lessons, default_due_day, active, description)
 values
   ('aulas_anual_1x', 'Aulas 1x por semana - Anual', 'aluno', 230, 1, 10, true, 'Ciclo de 12 meses. Pix 5% OFF no pagamento do ciclo.'),
@@ -1640,11 +1772,13 @@ revoke all on function public.bar_add_order_item(uuid, uuid, numeric, text) from
 revoke all on function public.bar_cancel_order_item(uuid) from public;
 revoke all on function public.bar_adjust_stock(uuid, text, numeric, text, numeric) from public;
 revoke all on function public.bar_close_order(uuid, text, numeric, numeric) from public;
+revoke all on function public.bar_close_order_split(uuid, jsonb, numeric, numeric) from public;
 revoke all on function public.refresh_bar_order_totals() from public;
 grant execute on function public.bar_add_order_item(uuid, uuid, numeric, text) to authenticated;
 grant execute on function public.bar_cancel_order_item(uuid) to authenticated;
 grant execute on function public.bar_adjust_stock(uuid, text, numeric, text, numeric) to authenticated;
 grant execute on function public.bar_close_order(uuid, text, numeric, numeric) to authenticated;
+grant execute on function public.bar_close_order_split(uuid, jsonb, numeric, numeric) to authenticated;
 revoke all on function public.bar_public_menu(text) from public;
 revoke all on function public.bar_public_submit_order(text, text, uuid, jsonb, text, text) from public;
 revoke all on function public.bar_public_order_status(text, text) from public;
