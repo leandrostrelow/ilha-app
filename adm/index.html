@@ -10793,20 +10793,20 @@
       }
 
       body.bar-admin-surface .bar-order-product-grid {
-        max-height: min(36dvh, 330px);
+        max-height: min(42dvh, 360px);
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 5px;
+        gap: 4px;
         padding: 1px;
       }
 
       body.bar-admin-surface .bar-order-product-card {
-        min-height: 108px;
-        grid-template-rows: 54px 54px;
-        border-radius: 8px;
+        min-height: 96px;
+        grid-template-rows: 59px 37px;
+        border-radius: 7px;
       }
 
       body.bar-admin-surface .bar-order-product-card-media {
-        min-height: 54px;
+        min-height: 59px;
         background: #ffffff;
       }
 
@@ -10818,25 +10818,28 @@
         visibility: visible !important;
         opacity: 1 !important;
         object-fit: contain;
-        transform: scale(1.14);
+        transform: scale(1.6);
         background: #ffffff;
       }
 
+      body.bar-admin-surface .bar-order-product-card.is-portion .bar-order-product-card-media img,
+      body.bar-admin-surface .bar-order-product-card.is-snack .bar-order-product-card-media img {
+        object-fit: cover;
+        transform: scale(1.08);
+      }
+
       body.bar-admin-surface .bar-order-product-card-status {
-        top: 3px;
-        right: 3px;
-        padding: 2px 4px;
-        font-size: 6px;
+        display: none;
       }
 
       body.bar-admin-surface .bar-order-product-card-copy {
-        gap: 3px;
-        padding: 5px 6px 6px;
+        gap: 1px;
+        padding: 3px 5px 4px;
       }
 
       body.bar-admin-surface .bar-order-product-card-copy strong {
-        font-size: 8.5px;
-        line-height: 1.15;
+        font-size: 7.8px;
+        line-height: 1.08;
       }
 
       body.bar-admin-surface .bar-order-product-card-meta {
@@ -10844,7 +10847,7 @@
       }
 
       body.bar-admin-surface .bar-order-product-card-meta b {
-        font-size: 10px;
+        font-size: 9px;
       }
 
       body.bar-admin-surface .bar-order-product-card-meta small {
@@ -17491,11 +17494,13 @@
     }
 
     function mapBarOrderItemRow(row) {
+      const product = row.bar_products || {};
       return {
         id: row.id || '',
         orderId: row.order_id || '',
         productId: row.product_id || '',
         productName: row.product_name || 'Produto',
+        productCategory: product.category || row.product_category || '',
         quantity: Number(row.quantity || 0),
         unitPrice: Number(row.unit_price || 0),
         costPrice: Number(row.cost_price || 0),
@@ -17571,7 +17576,7 @@
           supabaseRest('bar_products?select=*&order=category.asc,name.asc'),
           supabaseRest('bar_tables?select=*&order=number.asc'),
           supabaseRest('bar_orders?select=*,bar_tables(number,name)&order=opened_at.desc'),
-          supabaseRest('bar_order_items?select=*&order=created_at.asc'),
+          supabaseRest('bar_order_items?select=*,bar_products(category)&order=created_at.asc'),
           supabaseRest('bar_inventory_movements?select=*&order=occurred_at.desc&limit=200'),
           supabaseRest('bar_financial_entries?select=*&order=created_at.desc'),
           supabaseRest('bar_public_cards?select=*&order=code.asc'),
@@ -17708,7 +17713,11 @@
     }
 
     function normalizeMatchText(value) {
-      return String(value || '').trim().toLowerCase();
+      return String(value || '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
     }
 
     function findClientPlan(client) {
@@ -18339,9 +18348,10 @@
         const status = String(item.status || '').toUpperCase();
         const product = barProductById(item.productId);
         const order = barOrderById(item.orderId);
+        const category = item.productCategory || product && product.category || '';
         return ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(status) &&
-          product && barProductCategoryKey(product.category) === 'portion' &&
-          order && barOrderIsOpen(order);
+          barProductCategoryKey(category) === 'portion' &&
+          (!order || !['CANCELADA', 'CANCELADO'].includes(String(order.status || '').toUpperCase()));
       }).sort(function (a, b) {
         return String(a.created || '').localeCompare(String(b.created || ''));
       });
@@ -19844,10 +19854,10 @@
         const placeholder = '<span class="bar-order-product-card-placeholder ' + categoryKey + '">' + barProductCategoryIcon(product.category) + '</span>';
         const imageSource = barProductImageSource(product.imageUrl);
         const media = imageSource
-          ? '<img src="' + escapeHtml(imageSource) + '" alt="' + escapeHtml(product.name) + '" loading="eager" decoding="async" fetchpriority="high" sizes="(max-width: 700px) 50vw, 160px" data-bar-order-product-image /><span class="bar-order-product-card-placeholder ' + categoryKey + ' is-fallback">' + barProductCategoryIcon(product.category) + '</span>'
+          ? '<img src="' + escapeHtml(imageSource) + '" alt="' + escapeHtml(product.name) + '" loading="eager" decoding="async" fetchpriority="high" sizes="(max-width: 700px) 33vw, 160px" data-bar-order-product-image /><span class="bar-order-product-card-placeholder ' + categoryKey + ' is-fallback">' + barProductCategoryIcon(product.category) + '</span>'
           : placeholder;
         const stockLabel = available ? stock.toLocaleString('pt-BR') + ' ' + (product.unit || 'un') : 'Sem estoque';
-        return '<button class="bar-order-product-card' + (selected ? ' is-selected' : '') + '" type="button" data-bar-order-product="' + escapeHtml(product.id) + '" role="option" aria-selected="' + (selected ? 'true' : 'false') + '"' + (available ? '' : ' disabled') + '>' +
+        return '<button class="bar-order-product-card is-' + escapeHtml(categoryKey) + (selected ? ' is-selected' : '') + '" type="button" data-bar-order-product="' + escapeHtml(product.id) + '" role="option" aria-selected="' + (selected ? 'true' : 'false') + '"' + (available ? '' : ' disabled') + '>' +
           '<span class="bar-order-product-card-media">' + media + '<span class="bar-order-product-card-status' + (available ? '' : ' out') + '">' + escapeHtml(available ? stock.toLocaleString('pt-BR') + ' em estoque' : 'Sem estoque') + '</span></span>' +
           '<span class="bar-order-product-card-copy"><strong>' + escapeHtml(product.name) + '</strong><span class="bar-order-product-card-meta"><b>' + money(product.salePrice) + '</b><small>' + stockLabel + '</small></span></span></button>';
       }).join('') || '<div class="lesson-empty-state bar-order-product-picker-empty">Nenhum produto encontrado.</div>';
@@ -20756,6 +20766,7 @@
         if (Number(product.stock) < quantity) throw new Error('Estoque insuficiente para ' + product.name + '.');
         let item = {
           id: localId('bar_item'), orderId: order.id, productId: product.id, productName: product.name,
+          productCategory: product.category,
           quantity: quantity, unitPrice: product.salePrice, costPrice: product.costPrice,
           status: 'SOLICITADO', notes: notes, created: new Date().toISOString()
         };
