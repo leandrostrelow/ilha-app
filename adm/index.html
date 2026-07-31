@@ -8244,15 +8244,56 @@
 
     .bar-command-day-closing {
       min-height: 38px;
-      display: inline-flex;
+      display: inline-grid;
       align-items: center;
       justify-content: center;
+      gap: 2px;
       padding: 8px 14px;
       border: 1px solid rgba(255, 255, 255, .18);
       border-radius: 11px;
       color: #dff3a8;
       background: rgba(255, 255, 255, .1);
       font-size: 14px;
+      font-weight: 950;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .bar-command-day-closing small {
+      color: #c5cfdd;
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: .06em;
+      line-height: 1;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .bar-closed-orders-total {
+      display: grid;
+      flex: 0 0 auto;
+      justify-items: end;
+      gap: 2px;
+      min-width: 118px;
+      margin-left: auto;
+      padding: 7px 12px;
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .1);
+    }
+
+    .bar-closed-orders-total small {
+      color: #c5cfdd;
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: .06em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .bar-closed-orders-total strong {
+      color: #dff3a8;
+      font-size: 17px;
       font-weight: 950;
       line-height: 1;
       white-space: nowrap;
@@ -9296,6 +9337,39 @@
       white-space: nowrap;
     }
 
+    .bar-closed-order-row .bar-row-actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bar-closed-order-total {
+      display: grid;
+      justify-items: end;
+      gap: 2px;
+      min-width: 112px;
+      padding-left: 12px;
+      border-left: 1px solid #e2e9ec;
+    }
+
+    .bar-closed-order-total small {
+      color: #6b7889;
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: .06em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .bar-closed-order-total strong {
+      color: var(--teal);
+      font-size: 20px;
+      font-weight: 950;
+      line-height: 1.05;
+      white-space: nowrap;
+    }
+
     .bar-finance-row.is-expense {
       background: #fffdfc;
     }
@@ -9484,6 +9558,19 @@
 
       .bar-finance-row .finance-amount {
         text-align: left;
+      }
+
+      .bar-closed-order-row .bar-row-actions {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .bar-closed-order-payment-list {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+      }
+
+      .bar-closed-order-total {
+        min-width: 102px;
       }
     }
 
@@ -9690,6 +9777,25 @@
 
       body.bar-admin-surface .bar-command-day-closing strong {
         font-size: 14px;
+      }
+
+      body.bar-admin-surface #barClosedOrdersPanel > .bar-collapsible-summary {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+      }
+
+      body.bar-admin-surface .bar-closed-orders-total {
+        grid-column: 1;
+        justify-self: start;
+        justify-items: start;
+        min-width: 112px;
+        margin-left: 0;
+      }
+
+      body.bar-admin-surface #barClosedOrdersPanel > .bar-collapsible-summary .bar-collapse-control {
+        grid-column: 2;
+        grid-row: 1 / span 2;
       }
 
       body.bar-admin-surface #barSurfaceLogoutBtn {
@@ -11486,7 +11592,7 @@
                   <button class="primary-btn bar-icon-button" type="button" id="barNewLooseOrderBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Nova comanda</span></button>
                   <button class="small-btn" type="button" id="barEnableAlertsBtn"><svg><use href="#admin-icon-bell"></use></svg><span>Ativar alertas</span></button>
                   <button class="small-btn bar-command-screen-btn" type="button" id="barCommandScreenBtn" aria-pressed="false"><svg><use href="#bar-icon-screen"></use></svg><span>Tela de comandas</span></button>
-                  <div class="bar-command-day-closing" title="Fechamento do dia"><strong id="barDayClosingMetric">R$ 0,00</strong></div>
+                  <div class="bar-command-day-closing" title="Valor previsto das comandas abertas"><small>Previsto</small><strong id="barOpenOrdersMetric">R$ 0,00</strong></div>
                   <button class="small-btn" type="button" id="barSurfaceLogoutBtn" data-bar-surface-only>Sair</button>
                 </div>
               </div>
@@ -11495,6 +11601,7 @@
             <details class="ops-panel bar-collapsible-panel" id="barClosedOrdersPanel">
               <summary class="ops-panel-head bar-collapsible-summary">
                 <div><h2>Fechamento do dia</h2><div class="muted" id="barClosedOrdersCount">Nenhuma comanda fechada hoje</div></div>
+                <span class="bar-closed-orders-total" id="barClosedOrdersTotalBox" title="Fechamento do dia"><small id="barClosedOrdersTotalLabel">Total do dia</small><strong id="barClosedOrdersTotal">R$ 0,00</strong></span>
                 <span class="bar-collapse-control" aria-hidden="true"><span class="bar-collapse-label"></span><span class="bar-collapse-chevron"></span></span>
               </summary>
               <div class="bar-day-closing-filter">
@@ -18760,8 +18867,16 @@
       const dayClosingTotal = filteredDayClosedOrders.reduce(function (sum, order) {
         return sum + barDayClosingAmountForOrder(order, paymentFilter);
       }, 0);
-      $('barDayClosingMetric').textContent = money(dayClosingTotal);
-      $('barDayClosingMetric').parentElement.title = paymentFilter === 'TODOS'
+      const openOrdersExpectedTotal = openOrders.reduce(function (sum, order) {
+        return sum + barOrderTotal(order);
+      }, 0);
+      $('barOpenOrdersMetric').textContent = money(openOrdersExpectedTotal);
+      $('barOpenOrdersMetric').parentElement.title = 'Valor previsto das ' + openOrders.length + (openOrders.length === 1 ? ' comanda aberta' : ' comandas abertas');
+      $('barClosedOrdersTotal').textContent = money(dayClosingTotal);
+      $('barClosedOrdersTotalLabel').textContent = paymentFilter === 'TODOS'
+        ? 'Total do dia'
+        : barFinancePaymentLabel(paymentFilter);
+      $('barClosedOrdersTotalBox').title = paymentFilter === 'TODOS'
         ? 'Fechamento do dia'
         : 'Fechamento do dia · ' + barFinancePaymentLabel(paymentFilter);
       updateBarOrderBadges();
@@ -18779,7 +18894,7 @@
         const paymentBadges = payments.map(function (payment) {
           return '<span class="bar-closed-order-payment-part">' + barPaymentMethodBadge(payment.paymentMethod) + (showParts ? '<strong>' + money(payment.amount) + '</strong>' : '') + '</span>';
         }).join('');
-        return '<article class="bar-finance-row bar-closed-order-row"><div class="bar-finance-copy"><strong>' + escapeHtml(barTableLabel(order)) + ' | Comanda #' + escapeHtml(order.commandNumber || '') + '</strong><small>' + escapeHtml(barDateTimeLabel(order.closedAt || order.openedAt)) + '</small></div><div class="bar-row-actions"><span class="bar-closed-order-payment-list">' + paymentBadges + '</span>' + barStatusPill(order.paymentStatus) + '<span class="finance-total">' + money(barDayClosingAmountForOrder(order, paymentFilter)) + '</span></div></article>';
+        return '<article class="bar-finance-row bar-closed-order-row"><div class="bar-finance-copy"><strong>' + escapeHtml(barTableLabel(order)) + ' | Comanda #' + escapeHtml(order.commandNumber || '') + '</strong><small>' + escapeHtml(barDateTimeLabel(order.closedAt || order.openedAt)) + '</small></div><div class="bar-row-actions"><span class="bar-closed-order-payment-list">' + paymentBadges + '</span>' + barStatusPill(order.paymentStatus) + '<span class="bar-closed-order-total"><small>Total</small><strong>' + money(barOrderTotal(order)) + '</strong></span></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhuma comanda fechada hoje para esta forma de pagamento.</div>';
       renderBarEvents();
       renderBarTablesAndQr();
