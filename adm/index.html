@@ -4520,11 +4520,12 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 4px 10px;
-      border: 1px solid #9ac900;
-      border-radius: 999px;
-      color: #416000;
-      background: #effbc9;
+      gap: 5px;
+      padding: 4px 8px;
+      border: 0;
+      border-radius: 7px;
+      color: #496069;
+      background: #f1f6f7;
       font-size: 10px;
       font-weight: 950;
       line-height: 1;
@@ -4537,9 +4538,39 @@
     }
 
     .bar-team-discount.active {
+      color: #315000;
+      background: #f2fbd3;
+    }
+
+    .bar-team-discount-mark {
+      width: 15px;
+      height: 15px;
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 15px;
+      border: 1.5px solid #94a8af;
+      border-radius: 4px;
+      color: transparent;
+      background: #ffffff;
+    }
+
+    .bar-team-discount.active .bar-team-discount-mark {
       color: #ffffff;
       border-color: var(--teal);
       background: var(--teal);
+    }
+
+    .bar-team-discount-mark::after {
+      content: "✓";
+      font-size: 10px;
+      font-weight: 950;
+      line-height: 1;
+    }
+
+    .bar-team-discount small {
+      color: #6f8100;
+      font-size: 9px;
+      font-weight: 950;
     }
 
     .bar-team-discount:disabled {
@@ -10392,7 +10423,7 @@
                   <h2 id="barCommandModalTitle">Cliente</h2>
                   <strong class="bar-command-number" id="barCommandNumber">Comanda</strong>
                 </div>
-                <div class="bar-command-head-badges"><span id="barCommandStatus"></span><button class="bar-team-discount" type="button" id="barTeamDiscountBtn" aria-pressed="false">Equipe -35%</button><span class="ops-pill warn" id="barCommandLocation">Avulsa</span></div>
+                <div class="bar-command-head-badges"><span id="barCommandStatus"></span><button class="bar-team-discount" type="button" id="barTeamDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Equipe</span><small>-35%</small></button><span class="ops-pill warn" id="barCommandLocation">Avulsa</span></div>
               </div>
               <div class="bar-command-contact" id="barCommandModalSubtitle"></div>
             </div>
@@ -17131,7 +17162,6 @@
       button.disabled = !open || amount <= 0;
       button.classList.toggle('active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
-      button.textContent = active ? '✓ Equipe -35%' : 'Equipe -35%';
       button.title = amount > 0 ? (active ? 'Remover desconto da equipe' : 'Aplicar ' + money(amount) + ' de desconto') : 'Adicione itens para aplicar o desconto';
     }
 
