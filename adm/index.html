@@ -8055,6 +8055,22 @@
       stroke-linejoin: round;
     }
 
+    .bar-command-today-sales {
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 14px;
+      border: 1px solid rgba(255, 255, 255, .18);
+      border-radius: 11px;
+      color: #dff3a8;
+      background: rgba(255, 255, 255, .1);
+      font-size: 14px;
+      font-weight: 950;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
     .bar-command-screen-btn {
       display: inline-flex;
       align-items: center;
@@ -9957,25 +9973,6 @@
         <div class="ops-content">
           <div class="bar-schema-note" id="barSchemaNote">O módulo está em modo de teste local. Aplique a atualização do banco para gravar tudo no Supabase.</div>
 
-          <div class="ops-summary">
-            <div class="ops-card bar-summary-card">
-              <span class="bar-summary-icon"><svg><use href="#bar-icon-order"></use></svg></span>
-              <div><strong id="barOpenOrdersMetric">0</strong><span>comandas abertas</span></div>
-            </div>
-            <div class="ops-card bar-summary-card warn">
-              <span class="bar-summary-icon"><svg><use href="#bar-icon-preparing"></use></svg></span>
-              <div><strong id="barPendingItemsMetric">0</strong><span>itens em preparo</span></div>
-            </div>
-            <div class="ops-card bar-summary-card warn">
-              <span class="bar-summary-icon"><svg><use href="#bar-icon-stock-alert"></use></svg></span>
-              <div><strong id="barLowStockMetric">0</strong><span>estoque baixo</span></div>
-            </div>
-            <div class="ops-card bar-summary-card good">
-              <span class="bar-summary-icon"><svg><use href="#bar-icon-sales"></use></svg></span>
-              <div><strong id="barTodaySalesMetric">R$ 0</strong><span>vendas de hoje</span></div>
-            </div>
-          </div>
-
           <div class="ops-tabs" role="tablist" aria-label="Gestão do bar">
             <button class="ops-tab-btn active" type="button" data-bar-tab="overview">Visão geral</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="events">Agenda</button>
@@ -10067,7 +10064,7 @@
                   <button class="primary-btn bar-icon-button" type="button" id="barNewLooseOrderBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Nova comanda</span></button>
                   <button class="small-btn" type="button" id="barEnableAlertsBtn"><svg><use href="#admin-icon-bell"></use></svg><span>Ativar alertas</span></button>
                   <button class="small-btn bar-command-screen-btn" type="button" id="barCommandScreenBtn" aria-pressed="false"><svg><use href="#bar-icon-screen"></use></svg><span>Tela de comandas</span></button>
-                  <button class="small-btn" type="button" data-bar-go="tables">Ver mesas</button>
+                  <div class="bar-command-today-sales" title="Vendas de hoje"><strong id="barTodaySalesMetric">R$ 0,00</strong></div>
                   <button class="small-btn" type="button" id="barSurfaceLogoutBtn" data-bar-surface-only>Sair</button>
                 </div>
               </div>
@@ -17071,7 +17068,6 @@
       setBarTab(opsState.barTab);
       $('barSchemaNote').classList.toggle('show', !opsState.barSchemaReady);
       const openOrders = opsData.barOrders.filter(barOrderIsOpen);
-      const pendingItems = opsData.barOrderItems.filter(function (item) { return ['SOLICITADO', 'EM_PREPARO'].includes(item.status); });
       const lowStock = opsData.barProducts.filter(function (product) {
         return product.active && Number(product.stock) <= Number(product.minimumStock || 0);
       });
@@ -17081,9 +17077,6 @@
           barFinanceIsConfirmed(item) &&
           barFinanceEntryDateKey(item) === today;
       }).reduce(function (sum, item) { return sum + Number(item.amount || 0); }, 0);
-      $('barOpenOrdersMetric').textContent = openOrders.length;
-      $('barPendingItemsMetric').textContent = pendingItems.length;
-      $('barLowStockMetric').textContent = lowStock.length;
       $('barTodaySalesMetric').textContent = money(todaySales);
       updateBarOrderBadges();
       updateBarAlertsButton();
