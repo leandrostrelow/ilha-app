@@ -8499,6 +8499,21 @@
       border-radius: 14px 14px 0 0;
     }
 
+    .bar-kitchen-order-rule {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 6px;
+      padding: 4px 8px;
+      border: 1px solid rgba(223, 243, 168, .28);
+      border-radius: 999px;
+      background: rgba(223, 243, 168, .1);
+      color: #dff3a8;
+      font-size: 8px;
+      font-weight: 950;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
     .bar-kitchen-head-metrics {
       display: inline-flex;
       align-items: center;
@@ -12208,7 +12223,7 @@
           <div data-bar-panel="kitchen">
             <section class="ops-panel bar-kitchen-panel">
               <div class="ops-panel-head">
-                <div><h2>Pedidos de porções</h2><div class="muted">Fila da cozinha por ordem de chegada.</div></div>
+                <div><h2>Pedidos de porções</h2><div class="muted">Fila da cozinha por ordem de chegada.</div><div class="bar-kitchen-order-rule">Ordem fixa · mais antigo primeiro</div></div>
                 <div class="bar-kitchen-head-metrics">
                   <div class="bar-kitchen-metric"><span>Na fila</span><strong id="barKitchenPendingMetric">0</strong></div>
                   <div class="bar-kitchen-metric is-ready"><span>Prontos</span><strong id="barKitchenReadyMetric">0</strong></div>
@@ -17610,7 +17625,7 @@
           supabaseRest('bar_products?select=*&order=category.asc,name.asc'),
           supabaseRest('bar_tables?select=*&order=number.asc'),
           supabaseRest('bar_orders?select=*,bar_tables(number,name)&order=opened_at.desc'),
-          supabaseRest('bar_order_items?select=*,bar_products(category)&order=created_at.asc'),
+          supabaseRest('bar_order_items?select=*,bar_products(category)&order=created_at.asc,id.asc'),
           supabaseRest('bar_inventory_movements?select=*&order=occurred_at.desc&limit=200'),
           supabaseRest('bar_financial_entries?select=*&order=created_at.desc'),
           supabaseRest('bar_public_cards?select=*&order=code.asc'),
@@ -18377,6 +18392,17 @@
       }).map(function (item) { return String(item.orderId); })).size;
     }
 
+    function barKitchenQueueTimestamp(item) {
+      const timestamp = Date.parse(item && item.created || '');
+      return Number.isFinite(timestamp) ? timestamp : Number.MAX_SAFE_INTEGER;
+    }
+
+    function barKitchenQueueCompare(a, b) {
+      const createdDifference = barKitchenQueueTimestamp(a) - barKitchenQueueTimestamp(b);
+      if (createdDifference) return createdDifference;
+      return String(a && a.id || '').localeCompare(String(b && b.id || ''));
+    }
+
     function barPortionQueueItems() {
       return opsData.barOrderItems.filter(function (item) {
         const status = String(item.status || '').toUpperCase();
@@ -18386,9 +18412,7 @@
         return ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(status) &&
           barProductCategoryKey(category) === 'portion' &&
           (!order || !['CANCELADA', 'CANCELADO'].includes(String(order.status || '').toUpperCase()));
-      }).sort(function (a, b) {
-        return String(a.created || '').localeCompare(String(b.created || ''));
-      });
+      }).sort(barKitchenQueueCompare);
     }
 
     function updateBarOrderBadges() {
@@ -19571,7 +19595,7 @@
       if (!value) return 'Agora';
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return 'Agora';
-      return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
 
     function renderBarKitchenQueue() {
