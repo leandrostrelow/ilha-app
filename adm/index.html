@@ -9791,6 +9791,18 @@
 
       body.bar-admin-surface .bar-product-media {
         aspect-ratio: 1.35;
+        background: #ffffff;
+      }
+
+      body.bar-admin-surface .bar-product-media img {
+        display: block !important;
+        width: 100%;
+        height: 100%;
+        padding: 5px;
+        visibility: visible !important;
+        opacity: 1 !important;
+        object-fit: contain;
+        background: #ffffff;
       }
 
       body.bar-admin-surface .bar-product-category-icon {
@@ -10080,8 +10092,24 @@
       }
 
       body.bar-admin-surface .bar-order-product-card {
-        min-height: 126px;
-        grid-template-rows: 66px minmax(0, 1fr);
+        min-height: 145px;
+        grid-template-rows: 82px minmax(0, 1fr);
+      }
+
+      body.bar-admin-surface .bar-order-product-card-media {
+        min-height: 82px;
+        background: #ffffff;
+      }
+
+      body.bar-admin-surface .bar-order-product-card-media img {
+        display: block !important;
+        width: 100%;
+        height: 100%;
+        padding: 4px;
+        visibility: visible !important;
+        opacity: 1 !important;
+        object-fit: contain;
+        background: #ffffff;
       }
 
       body.bar-admin-surface .bar-order-product-card-copy strong {
@@ -15601,7 +15629,7 @@
     const BAR_VIEW_STATE_KEY = 'ilha-bar-view-state-v1';
 
     function readBarViewState() {
-      const fallback = { tab: 'overview', commandTab: 'items', orderId: null, scrollY: 0 };
+      const fallback = { tab: 'orders', commandTab: 'items', orderId: null, scrollY: 0 };
       try {
         const stored = JSON.parse(localStorage.getItem(BAR_VIEW_STATE_KEY) || '{}');
         const barTabs = ['overview', 'events', 'orders', 'tables', 'products', 'finance', 'qrcodes'];
@@ -15633,7 +15661,7 @@
       courtDate: localDateString(new Date()),
       extraCourtDates: [],
       selectedCourtSlot: null,
-      barTab: storedBarViewState.tab,
+      barTab: IS_BAR_ADMIN_SURFACE ? 'orders' : storedBarViewState.tab,
       barProductView: 'catalog',
       barProductCategory: 'todos',
       barOrderProductCategory: '',
@@ -16136,6 +16164,20 @@
         notes: row.notes || '',
         created: row.created_at || ''
       };
+    }
+
+    function barProductImageSource(value) {
+      const source = String(value || '').trim();
+      if (!source) return '';
+      try {
+        const url = new URL(source, window.location.origin);
+        if (url.hostname === 'app.ilhatenis.com' && url.pathname.startsWith('/assets/bar-products/')) {
+          return url.pathname + url.search;
+        }
+        return url.href;
+      } catch (error) {
+        return source;
+      }
     }
 
     function mapBarTableRow(row) {
@@ -17535,8 +17577,9 @@
         const low = product.active && Number(product.stock) <= Number(product.minimumStock || 0);
         const categoryKey = barProductCategoryKey(product.category);
         const placeholder = '<div class="bar-product-placeholder ' + categoryKey + '">' + barProductCategoryIcon(product.category) + '</div>';
-        const media = product.imageUrl
-          ? '<img src="' + escapeHtml(product.imageUrl) + '" alt="' + escapeHtml(product.name) + '" loading="lazy" data-bar-product-image />' + '<div class="bar-product-placeholder ' + categoryKey + ' is-fallback">' + barProductCategoryIcon(product.category) + '</div>'
+        const imageSource = barProductImageSource(product.imageUrl);
+        const media = imageSource
+          ? '<img src="' + escapeHtml(imageSource) + '" alt="' + escapeHtml(product.name) + '" loading="eager" decoding="async" fetchpriority="auto" sizes="(max-width: 700px) 50vw, 260px" data-bar-product-image />' + '<div class="bar-product-placeholder ' + categoryKey + ' is-fallback">' + barProductCategoryIcon(product.category) + '</div>'
           : placeholder;
         const meta = [product.category, product.sku, product.notes].filter(Boolean).join(' | ');
         return '<article class="bar-product-card' + (product.active ? '' : ' is-inactive') + '">' +
@@ -18331,8 +18374,9 @@
         const selected = String(product.id) === selectedId;
         const categoryKey = barProductCategoryKey(product.category);
         const placeholder = '<span class="bar-order-product-card-placeholder ' + categoryKey + '">' + barProductCategoryIcon(product.category) + '</span>';
-        const media = product.imageUrl
-          ? '<img src="' + escapeHtml(product.imageUrl) + '" alt="' + escapeHtml(product.name) + '" loading="lazy" data-bar-order-product-image /><span class="bar-order-product-card-placeholder ' + categoryKey + ' is-fallback">' + barProductCategoryIcon(product.category) + '</span>'
+        const imageSource = barProductImageSource(product.imageUrl);
+        const media = imageSource
+          ? '<img src="' + escapeHtml(imageSource) + '" alt="' + escapeHtml(product.name) + '" loading="eager" decoding="async" fetchpriority="high" sizes="(max-width: 700px) 50vw, 160px" data-bar-order-product-image /><span class="bar-order-product-card-placeholder ' + categoryKey + ' is-fallback">' + barProductCategoryIcon(product.category) + '</span>'
           : placeholder;
         const stockLabel = available ? stock.toLocaleString('pt-BR') + ' ' + (product.unit || 'un') : 'Sem estoque';
         return '<button class="bar-order-product-card' + (selected ? ' is-selected' : '') + '" type="button" data-bar-order-product="' + escapeHtml(product.id) + '" role="option" aria-selected="' + (selected ? 'true' : 'false') + '"' + (available ? '' : ' disabled') + '>' +
@@ -18359,8 +18403,9 @@
         $('barOrderSubmitLabel').textContent = 'Adicionar produto à comanda';
         return;
       }
-      const media = product.imageUrl
-        ? '<span class="bar-command-product-image"><img src="' + escapeHtml(product.imageUrl) + '" alt="' + escapeHtml(product.name) + '" data-bar-order-preview-image /></span>'
+      const imageSource = barProductImageSource(product.imageUrl);
+      const media = imageSource
+        ? '<span class="bar-command-product-image"><img src="' + escapeHtml(imageSource) + '" alt="' + escapeHtml(product.name) + '" loading="eager" decoding="async" fetchpriority="high" data-bar-order-preview-image /></span>'
         : '<span class="bar-command-product-icon">' + barProductCategoryIcon(product.category) + '</span>';
       preview.hidden = false;
       preview.className = 'bar-command-product-preview';
@@ -18542,6 +18587,7 @@
         window.location.href = '/admbar';
         return;
       }
+      opsState.barTab = 'orders';
       setClubMode('club-bar');
       if (!isAdminDemoMode() && !opsState.barDataLoaded) {
         opsData.barProducts = [];

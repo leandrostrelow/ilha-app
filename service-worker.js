@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v53';
+const CACHE_NAME = 'ilha-play-v54';
 const ASSETS = [
   './',
   './index.html',
@@ -54,6 +54,22 @@ self.addEventListener('message', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
+  const isBarProductImage = url.origin === self.location.origin && url.pathname.startsWith('/assets/bar-products/');
+  if (isBarProductImage) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(cache => cache.match(event.request).then(cached => {
+        const network = fetch(event.request).then(response => {
+          if (response.ok) cache.put(event.request, response.clone());
+          return response;
+        }).catch(error => {
+          if (cached) return cached;
+          throw error;
+        });
+        return cached || network;
+      }))
+    );
+    return;
+  }
   const isAppShell = url.origin === self.location.origin && (
     event.request.mode === 'navigate' ||
     url.pathname === '/' ||
