@@ -4589,15 +4589,6 @@
       white-space: nowrap;
     }
 
-    .bar-command-number {
-      display: block;
-      margin-top: 4px;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-
     .bar-command-contact {
       min-width: 0;
       flex-wrap: wrap;
@@ -10421,7 +10412,6 @@
               <div class="bar-command-identity-top">
                 <div class="bar-command-identity-copy">
                   <h2 id="barCommandModalTitle">Cliente</h2>
-                  <strong class="bar-command-number" id="barCommandNumber">Comanda</strong>
                 </div>
                 <div class="bar-command-head-badges"><span id="barCommandStatus"></span><button class="bar-team-discount" type="button" id="barTeamDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Equipe</span><small>-35%</small></button><span class="ops-pill warn" id="barCommandLocation">Avulsa</span></div>
               </div>
@@ -10479,9 +10469,6 @@
           </section>
 
           <section class="bar-command-panel" data-bar-command-panel="checkout">
-            <div class="bar-command-panel-head">
-              <div><h3>Fechamento da comanda</h3><p>Confira os valores e selecione como o cliente vai pagar.</p></div>
-            </div>
             <div class="bar-checkout-summary">
               <div><span>Itens ativos</span><strong id="barCheckoutItemCount">0</strong></div>
               <div><span>Subtotal</span><strong id="barCheckoutSubtotal">R$ 0</strong></div>
@@ -17344,7 +17331,6 @@
       const phoneDigits = barPhoneDigits(customer.phone);
       const table = barTableById(order.tableId);
       const contactBits = [];
-      contactBits.push('<span><svg><use href="#' + (table ? 'admin-icon-table' : 'admin-icon-bar') + '"></use></svg>' + escapeHtml(table ? customer.location : 'Balcão / sem mesa') + '</span>');
       if (phoneDigits) contactBits.push('<a href="https://wa.me/' + escapeHtml(barPhoneWhatsApp(phoneDigits)) + '" target="_blank" rel="noopener"><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(phoneDigits)) + '</a>');
       if (customer.names.length > 1) contactBits.push('<span><svg><use href="#admin-icon-users"></use></svg>' + escapeHtml(customer.names.length + ' pessoas nesta comanda') + '</span>');
 
@@ -17352,7 +17338,7 @@
       $('barCommandLocation').className = 'ops-pill ' + (table ? '' : 'warn');
       $('barCommandModalTitle').textContent = customer.name;
       $('barCommandModalSubtitle').innerHTML = contactBits.join('');
-      $('barCommandNumber').textContent = 'Comanda #' + (order.commandNumber || String(order.id).slice(-4));
+      $('barCommandModalSubtitle').hidden = !contactBits.length;
       $('barCommandStatus').innerHTML = String(order.status || '').toUpperCase() === 'ABERTA' ? '<span class="ops-pill good">Aberta</span>' : barStatusPill(order.status);
       $('barCommandItemsCount').textContent = itemQuantity;
       $('barCheckoutItemCount').textContent = itemQuantity;
