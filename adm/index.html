@@ -8536,28 +8536,29 @@
 
     .bar-kitchen-list {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 11px;
-      padding: 14px;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 6px;
+      padding: 10px;
       background: #f3f7f8;
     }
 
     .bar-kitchen-card {
       min-width: 0;
       display: grid;
-      align-content: start;
-      gap: 12px;
-      padding: 14px;
+      grid-template-columns: 118px minmax(220px, 1.4fr) minmax(180px, .85fr) 150px;
+      align-items: center;
+      gap: 14px;
+      padding: 9px 11px;
       border: 1px solid #dbe6e9;
-      border-top: 4px solid #e7a82e;
-      border-radius: 13px;
+      border-left: 4px solid #e7a82e;
+      border-radius: 10px;
       background: #ffffff;
-      box-shadow: 0 8px 22px rgba(16, 39, 44, .06);
+      box-shadow: 0 4px 12px rgba(16, 39, 44, .05);
     }
 
     .bar-kitchen-card.is-ready {
       border-color: #cfe1ac;
-      border-top-color: #96c11f;
+      border-left-color: #96c11f;
       background: #fbfff2;
     }
 
@@ -8566,13 +8567,13 @@
     .bar-kitchen-person {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       gap: 10px;
     }
 
     .bar-kitchen-position {
-      width: 34px;
-      height: 34px;
+      width: 32px;
+      height: 32px;
       flex: 0 0 auto;
       display: grid;
       place-items: center;
@@ -8585,9 +8586,9 @@
 
     .bar-kitchen-time {
       color: var(--muted);
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 850;
-      white-space: nowrap;
+      line-height: 1.2;
     }
 
     .bar-kitchen-product {
@@ -8599,15 +8600,15 @@
     }
 
     .bar-kitchen-quantity {
-      min-width: 44px;
-      min-height: 44px;
+      min-width: 38px;
+      min-height: 38px;
       display: grid;
       place-items: center;
       padding: 6px;
       border-radius: 11px;
       background: #e8f3f5;
       color: #087d83;
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 950;
     }
 
@@ -8621,7 +8622,7 @@
 
     .bar-kitchen-product strong {
       color: #17243b;
-      font-size: 16px;
+      font-size: 14px;
       line-height: 1.15;
     }
 
@@ -8634,9 +8635,9 @@
     }
 
     .bar-kitchen-person {
-      align-items: flex-end;
-      padding-top: 10px;
-      border-top: 1px solid #e9eef0;
+      justify-content: space-between;
+      padding-left: 14px;
+      border-left: 1px solid #e9eef0;
     }
 
     .bar-kitchen-person strong {
@@ -8645,13 +8646,13 @@
     }
 
     .bar-kitchen-note {
-      padding: 9px 10px;
-      border-radius: 9px;
-      background: #fff5df;
+      color: #765114 !important;
+      font-weight: 900 !important;
+    }
+
+    .bar-kitchen-note strong {
       color: #765114;
-      font-size: 11px;
-      font-weight: 800;
-      line-height: 1.35;
+      font-size: inherit;
     }
 
     .bar-kitchen-card-footer {
@@ -8660,9 +8661,11 @@
     }
 
     .bar-kitchen-card-footer .primary-btn {
-      min-height: 44px;
+      min-height: 40px;
+      width: 100%;
       flex: 1 1 auto;
       justify-content: center;
+      padding-inline: 10px;
     }
 
     .bar-kitchen-card.is-ready .bar-kitchen-card-footer .primary-btn {
@@ -10333,8 +10336,39 @@
       }
 
       body.bar-admin-surface .bar-kitchen-card {
-        gap: 10px;
-        padding: 11px;
+        grid-template-columns: 74px minmax(0, 1fr);
+        grid-template-areas:
+          "head product"
+          "person person"
+          "footer footer";
+        gap: 7px 9px;
+        padding: 8px;
+      }
+
+      body.bar-admin-surface .bar-kitchen-card-head {
+        grid-area: head;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      body.bar-admin-surface .bar-kitchen-product {
+        grid-area: product;
+      }
+
+      body.bar-admin-surface .bar-kitchen-person {
+        grid-area: person;
+        padding: 6px 0 0;
+        border-top: 1px solid #e9eef0;
+        border-left: 0;
+      }
+
+      body.bar-admin-surface .bar-kitchen-card-footer {
+        grid-area: footer;
+      }
+
+      body.bar-admin-surface .bar-kitchen-card-footer .primary-btn {
+        min-height: 36px;
       }
 
       body.bar-admin-surface .bar-kitchen-product strong {
@@ -19555,11 +19589,12 @@
         const commandLabel = order && order.commandNumber ? 'Comanda #' + order.commandNumber : 'Comanda aberta';
         const nextStatus = ready ? 'ENTREGUE' : 'PRONTO';
         const actionLabel = ready ? 'Entregue' : 'Ficou pronto';
-        const note = item.notes ? '<div class="bar-kitchen-note"><strong>Observação:</strong> ' + escapeHtml(item.notes) + '</div>' : '';
+        const productMeta = item.notes
+          ? '<small class="bar-kitchen-note"><strong>Obs.:</strong> ' + escapeHtml(item.notes) + '</small>'
+          : '<small>' + escapeHtml(barStatusLabel(status)) + '</small>';
         return '<article class="bar-kitchen-card' + (ready ? ' is-ready' : '') + '">' +
           '<div class="bar-kitchen-card-head"><span class="bar-kitchen-position">#' + (index + 1) + '</span><span class="bar-kitchen-time">Pedido às ' + escapeHtml(barKitchenTimeLabel(item.created)) + '</span></div>' +
-          '<div class="bar-kitchen-product"><span class="bar-kitchen-quantity">' + escapeHtml(item.quantity + 'x') + '</span><div><strong>' + escapeHtml(item.productName) + '</strong><small>' + escapeHtml(barStatusLabel(status)) + '</small></div></div>' +
-          note +
+          '<div class="bar-kitchen-product"><span class="bar-kitchen-quantity">' + escapeHtml(item.quantity + 'x') + '</span><div><strong>' + escapeHtml(item.productName) + '</strong>' + productMeta + '</div></div>' +
           '<div class="bar-kitchen-person"><div><strong>' + escapeHtml(customerName) + '</strong><small>' + escapeHtml(commandLabel) + '</small></div>' + barStatusPill(status) + '</div>' +
           '<div class="bar-kitchen-card-footer"><button class="primary-btn" type="button" data-bar-kitchen-status="' + escapeHtml(item.id) + '" data-next-status="' + nextStatus + '">' + actionLabel + '</button></div>' +
         '</article>';
