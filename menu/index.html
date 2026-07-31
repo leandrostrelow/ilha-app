@@ -19,6 +19,12 @@
       --muted: #667289;
       --line: #dbe5e8;
       --surface: #ffffff;
+      --menu-columns: 2;
+      --menu-product-height: 91px;
+      --menu-image-size: 76px;
+      --menu-name-size: 16px;
+      --menu-price-size: 22px;
+      --menu-category-height: 48px;
     }
 
     * { box-sizing: border-box; }
@@ -49,6 +55,11 @@
       margin: 0 auto;
       display: grid;
       grid-template-rows: auto 1fr auto;
+    }
+
+    body[data-menu-layout="horizontal"] .menu-stage {
+      width: 100%;
+      max-width: none;
     }
 
     .menu-header {
@@ -125,12 +136,10 @@
     }
 
     .menu-clock {
-      position: relative;
-      z-index: 1;
-      min-width: 142px;
-      padding: 12px 14px;
+      min-width: 130px;
+      padding: 7px 10px;
       border: 1px solid rgba(255, 255, 255, .17);
-      border-radius: 14px;
+      border-radius: 10px;
       background: rgba(255, 255, 255, .08);
       text-align: right;
       backdrop-filter: blur(8px);
@@ -141,7 +150,7 @@
 
     .menu-clock strong {
       color: #ffffff;
-      font-size: 28px;
+      font-size: 20px;
       letter-spacing: -.03em;
     }
 
@@ -153,10 +162,63 @@
       text-transform: capitalize;
     }
 
+    .menu-header-tools {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      justify-items: end;
+      gap: 8px;
+    }
+
+    .menu-view-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px;
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .08);
+      backdrop-filter: blur(8px);
+    }
+
+    .menu-view-btn {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #d7e1ec;
+      font-size: 10px;
+      font-weight: 900;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .menu-view-btn:hover,
+    .menu-view-btn.active {
+      background: var(--lime);
+      color: #29420b;
+    }
+
+    .menu-view-btn:focus-visible {
+      outline: 3px solid rgba(202, 239, 112, .42);
+      outline-offset: 2px;
+    }
+
+    .menu-view-icon {
+      font-size: 17px;
+      line-height: 1;
+    }
+
     .menu-board {
       min-width: 0;
+      min-height: 0;
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(var(--menu-columns), minmax(0, 1fr));
       align-items: start;
       gap: 16px;
       padding: 20px 24px 16px;
@@ -179,7 +241,7 @@
     }
 
     .menu-category-head {
-      min-height: 48px;
+      min-height: var(--menu-category-height);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -200,7 +262,20 @@
       white-space: nowrap;
     }
 
-    .menu-category-head span {
+    .menu-category-title {
+      min-width: 0;
+      display: grid;
+      gap: 2px;
+    }
+
+    .menu-category-title small {
+      color: #7c875f;
+      font-size: 8px;
+      font-weight: 850;
+      letter-spacing: .02em;
+    }
+
+    .menu-category-head > span {
       flex: 0 0 auto;
       color: #668021;
       font-size: 10px;
@@ -218,9 +293,10 @@
     .menu-product {
       position: relative;
       min-width: 0;
-      min-height: 91px;
+      min-height: var(--menu-product-height);
+      height: var(--menu-product-height);
       display: grid;
-      grid-template-columns: 76px minmax(0, 1fr) auto;
+      grid-template-columns: var(--menu-image-size) minmax(0, 1fr) auto;
       align-items: center;
       gap: 12px;
       padding: 8px 13px 8px 9px;
@@ -240,8 +316,8 @@
     }
 
     .menu-product-image {
-      width: 76px;
-      height: 76px;
+      width: var(--menu-image-size);
+      height: var(--menu-image-size);
       overflow: hidden;
       display: grid;
       place-items: center;
@@ -269,36 +345,16 @@
       margin: 0;
       overflow: hidden;
       color: var(--ink);
-      font-size: 16px;
+      font-size: var(--menu-name-size);
       line-height: 1.18;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    .menu-product-copy small {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      margin-top: 6px;
-      color: #6b778b;
-      font-size: 9px;
-      font-weight: 900;
-      letter-spacing: .05em;
-      text-transform: uppercase;
-    }
-
-    .menu-product-copy small::before {
-      content: "";
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--green);
-    }
-
     .menu-product-price {
       flex: 0 0 auto;
       color: var(--teal);
-      font-size: 22px;
+      font-size: var(--menu-price-size);
       font-weight: 1000;
       letter-spacing: -.04em;
       white-space: nowrap;
@@ -357,7 +413,7 @@
       font-weight: 700;
     }
 
-    @media (min-width: 720px) and (min-height: 980px) and (orientation: portrait) {
+    @media (min-width: 720px) {
       html,
       body { overflow: hidden; }
 
@@ -374,22 +430,51 @@
         min-height: 54px;
         padding-block: 13px;
       }
+    }
 
-      .menu-product {
-        min-height: 124px;
-        grid-template-columns: 98px minmax(0, 1fr) auto;
-        gap: 15px;
-        padding: 10px 16px 10px 11px;
+    @media (min-width: 720px) and (orientation: landscape) {
+      body[data-menu-layout="horizontal"] .menu-header {
+        min-height: 112px;
+        gap: 18px;
+        padding: 15px 24px;
       }
 
-      .menu-product-image {
-        width: 98px;
-        height: 98px;
+      body[data-menu-layout="horizontal"] .menu-brand {
+        width: 136px;
+        height: 72px;
+        border-radius: 14px;
       }
 
-      .menu-product-copy h3 { font-size: 18px; }
-      .menu-product-copy small { font-size: 10px; }
-      .menu-product-price { font-size: 25px; }
+      body[data-menu-layout="horizontal"] .menu-heading h1 {
+        font-size: 44px;
+      }
+
+      body[data-menu-layout="horizontal"] .menu-heading p {
+        margin-top: 5px;
+        font-size: 13px;
+      }
+
+      body[data-menu-layout="horizontal"] .menu-board {
+        gap: 12px;
+        padding: 12px 18px 10px;
+      }
+
+      body[data-menu-layout="horizontal"] .menu-column {
+        gap: 10px;
+      }
+
+      body[data-menu-layout="horizontal"] .menu-category {
+        border-radius: 14px;
+      }
+
+      body[data-menu-layout="horizontal"] .menu-category-head h2 {
+        font-size: 18px;
+      }
+
+      body[data-menu-layout="horizontal"] .menu-footer {
+        min-height: 36px;
+        padding-block: 7px 9px;
+      }
     }
 
     @media (max-width: 719px) {
@@ -414,6 +499,20 @@
       .menu-kicker { font-size: 9px; }
       .menu-clock { display: none; }
 
+      .menu-header-tools {
+        grid-column: 1 / -1;
+        width: 100%;
+        justify-items: stretch;
+      }
+
+      .menu-view-controls {
+        width: 100%;
+      }
+
+      .menu-view-btn {
+        flex: 1 1 0;
+      }
+
       .menu-board {
         grid-template-columns: minmax(0, 1fr);
         gap: 10px;
@@ -426,6 +525,7 @@
 
       .menu-product {
         min-height: 78px;
+        height: auto;
         grid-template-columns: 62px minmax(0, 1fr) auto;
         gap: 9px;
         padding: 7px 10px 7px 7px;
@@ -458,7 +558,14 @@
         <h1>Cardápio</h1>
         <p>Escolha seu pedido e aproveite.</p>
       </div>
-      <div class="menu-clock" aria-label="Data e hora"><strong id="menuClock">--:--</strong><span id="menuDate">Carregando...</span></div>
+      <div class="menu-header-tools">
+        <div class="menu-view-controls" aria-label="Formato de visualização">
+          <button class="menu-view-btn" type="button" data-menu-layout="vertical" aria-pressed="false"><span class="menu-view-icon" aria-hidden="true">▯</span><span>Vertical</span></button>
+          <button class="menu-view-btn" type="button" data-menu-layout="horizontal" aria-pressed="false"><span class="menu-view-icon" aria-hidden="true">▭</span><span>Horizontal</span></button>
+          <button class="menu-view-btn" type="button" id="menuFullscreenBtn" aria-pressed="false"><span class="menu-view-icon" aria-hidden="true">⛶</span><span id="menuFullscreenLabel">Tela cheia</span></button>
+        </div>
+        <div class="menu-clock" aria-label="Data e hora"><strong id="menuClock">--:--</strong><span id="menuDate">Carregando...</span></div>
+      </div>
     </header>
 
     <main class="menu-board" id="menuBoard" aria-live="polite">
@@ -479,8 +586,11 @@
       const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrcXRncHRlYmtnZndndXlreGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzEyNjAsImV4cCI6MjA5NzcwNzI2MH0.S-dopp-fbBgq8_YclyiAheOdK-QhXt92RYLu8JKmKCg';
       const MENU_QUERY = 'bar_products?select=id,name,category,sale_price,image_url,menu_featured,menu_sort_order,updated_at&active=eq.true&menu_visible=eq.true&order=category.asc,menu_sort_order.asc,name.asc';
       const CATEGORY_PRIORITY = ['cervejas', 'porcoes', 'lanches', 'refrigerantes', 'aguas', 'bebidas'];
+      const LAYOUT_KEY = 'ilha-menu-layout-v1';
       let lastPayload = '';
       let refreshInFlight = false;
+      let currentProducts = [];
+      let resizeTimer = 0;
 
       function escapeHtml(value) {
         return String(value == null ? '' : value).replace(/[&<>'"]/g, function (char) {
@@ -526,13 +636,13 @@
         });
       }
 
-      function distributeGroups(groups) {
-        const columns = [[], []];
-        const heights = [0, 0];
+      function distributeGroups(groups, columnCount) {
+        const columns = Array.from({ length: columnCount }, function () { return []; });
+        const heights = Array.from({ length: columnCount }, function () { return 0; });
         groups.slice().sort(function (a, b) {
           return b.products.length - a.products.length || categoryRank(a.category) - categoryRank(b.category);
         }).forEach(function (group) {
-          const columnIndex = heights[0] <= heights[1] ? 0 : 1;
+          const columnIndex = heights.indexOf(Math.min.apply(Math, heights));
           columns[columnIndex].push(group);
           heights[columnIndex] += group.products.length * 92 + 54;
         });
@@ -544,6 +654,69 @@
         return columns;
       }
 
+      function initialMenuLayout() {
+        try {
+          const saved = localStorage.getItem(LAYOUT_KEY);
+          if (saved === 'vertical' || saved === 'horizontal') return saved;
+        } catch (error) {}
+        return window.matchMedia('(orientation: landscape)').matches ? 'horizontal' : 'vertical';
+      }
+
+      function setMenuLayout(layout, persist) {
+        const nextLayout = layout === 'horizontal' ? 'horizontal' : 'vertical';
+        document.body.dataset.menuLayout = nextLayout;
+        document.querySelectorAll('[data-menu-layout]').forEach(function (button) {
+          const active = button.dataset.menuLayout === nextLayout;
+          button.classList.toggle('active', active);
+          button.setAttribute('aria-pressed', String(active));
+        });
+        if (persist !== false) {
+          try { localStorage.setItem(LAYOUT_KEY, nextLayout); } catch (error) {}
+        }
+        if (currentProducts.length) render(currentProducts);
+      }
+
+      function applyMenuDensity(rowHeight, layout) {
+        const root = document.documentElement;
+        const imageMax = layout === 'horizontal' ? 72 : 98;
+        const imageSize = Math.max(34, Math.min(imageMax, rowHeight - 20));
+        const nameSize = rowHeight < 62 ? 11 : rowHeight < 76 ? 13 : layout === 'horizontal' ? 15 : 18;
+        const priceSize = rowHeight < 62 ? 14 : rowHeight < 76 ? 17 : layout === 'horizontal' ? 20 : 25;
+        root.style.setProperty('--menu-product-height', Math.floor(rowHeight) + 'px');
+        root.style.setProperty('--menu-image-size', Math.floor(imageSize) + 'px');
+        root.style.setProperty('--menu-name-size', nameSize + 'px');
+        root.style.setProperty('--menu-price-size', priceSize + 'px');
+      }
+
+      function fitMenuToViewport() {
+        const root = document.documentElement;
+        if (window.innerWidth < 720) {
+          ['--menu-product-height', '--menu-image-size', '--menu-name-size', '--menu-price-size', '--menu-category-height'].forEach(function (property) {
+            root.style.removeProperty(property);
+          });
+          return;
+        }
+        const board = document.getElementById('menuBoard');
+        const columns = Array.from(board.querySelectorAll('.menu-column'));
+        if (!columns.length) return;
+        const layout = document.body.dataset.menuLayout === 'horizontal' ? 'horizontal' : 'vertical';
+        const maxRowHeight = layout === 'horizontal' ? 92 : (window.innerHeight >= 1500 ? 124 : 96);
+        const categoryHeight = layout === 'horizontal' ? 44 : (window.innerHeight >= 1500 ? 54 : 48);
+        root.style.setProperty('--menu-category-height', categoryHeight + 'px');
+        let rowHeight = maxRowHeight;
+        applyMenuDensity(rowHeight, layout);
+
+        for (let attempt = 0; attempt < 8; attempt += 1) {
+          const boardBottom = board.getBoundingClientRect().bottom - 2;
+          const columnBottom = Math.max.apply(Math, columns.map(function (column) { return column.getBoundingClientRect().bottom; }));
+          const overflow = Math.ceil(columnBottom - boardBottom);
+          if (overflow <= 0) break;
+          const busiestColumn = Math.max.apply(Math, columns.map(function (column) { return column.querySelectorAll('.menu-product').length || 1; }));
+          rowHeight = Math.max(48, rowHeight - Math.max(2, Math.ceil(overflow / busiestColumn) + 1));
+          applyMenuDensity(rowHeight, layout);
+        }
+      }
+
       function productHtml(product) {
         const source = imageSource(product.image_url);
         const initial = escapeHtml(String(product.name || 'P').trim().charAt(0).toUpperCase() || 'P');
@@ -552,13 +725,17 @@
           : '<span>' + initial + '</span>';
         return '<article class="menu-product' + (product.menu_featured ? ' is-featured' : '') + '">' +
           '<div class="menu-product-image" data-menu-fallback="' + initial + '">' + image + '</div>' +
-          '<div class="menu-product-copy"><h3>' + escapeHtml(product.name) + '</h3><small>' + (product.menu_featured ? 'Destaque da casa' : escapeHtml(product.category || 'Bar')) + '</small></div>' +
+          '<div class="menu-product-copy"><h3>' + escapeHtml(product.name) + '</h3></div>' +
           '<strong class="menu-product-price">' + money(product.sale_price) + '</strong>' +
         '</article>';
       }
 
       function categoryHtml(group) {
-        return '<section class="menu-category"><header class="menu-category-head"><h2>' + escapeHtml(group.category) + '</h2><span>' + group.products.length + ' opções</span></header><div class="menu-products">' + group.products.map(productHtml).join('') + '</div></section>';
+        const illustrativeNote = normalize(group.category).includes('porc')
+          ? '<small>Imagens meramente ilustrativas</small>'
+          : '';
+        const countLabel = group.products.length + (group.products.length === 1 ? ' opção' : ' opções');
+        return '<section class="menu-category"><header class="menu-category-head"><div class="menu-category-title"><h2>' + escapeHtml(group.category) + '</h2>' + illustrativeNote + '</div><span>' + countLabel + '</span></header><div class="menu-products">' + group.products.map(productHtml).join('') + '</div></section>';
       }
 
       function render(products) {
@@ -567,7 +744,11 @@
           board.innerHTML = '<div class="menu-state"><div><strong>Cardápio em atualização</strong><span>Nenhum produto está publicado neste momento.</span></div></div>';
           return;
         }
-        const columns = distributeGroups(groupProducts(products));
+        currentProducts = products.slice();
+        const isDesktop = window.innerWidth >= 720;
+        const columnCount = isDesktop ? (document.body.dataset.menuLayout === 'horizontal' ? 3 : 2) : 1;
+        document.documentElement.style.setProperty('--menu-columns', columnCount);
+        const columns = distributeGroups(groupProducts(products), columnCount);
         board.innerHTML = columns.map(function (groups) {
           return '<div class="menu-column">' + groups.map(categoryHtml).join('') + '</div>';
         }).join('');
@@ -577,6 +758,7 @@
             container.innerHTML = '<span>' + escapeHtml(container.dataset.menuFallback || 'P') + '</span>';
           }, { once: true });
         });
+        requestAnimationFrame(fitMenuToViewport);
       }
 
       async function loadMenu() {
@@ -614,6 +796,35 @@
         document.getElementById('menuDate').textContent = now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
       }
 
+      function syncFullscreenButton() {
+        const active = Boolean(document.fullscreenElement);
+        document.getElementById('menuFullscreenBtn').setAttribute('aria-pressed', String(active));
+        document.getElementById('menuFullscreenLabel').textContent = active ? 'Sair da tela' : 'Tela cheia';
+      }
+
+      async function toggleFullscreen() {
+        try {
+          if (document.fullscreenElement) await document.exitFullscreen();
+          else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+        } catch (error) {}
+        syncFullscreenButton();
+      }
+
+      setMenuLayout(initialMenuLayout(), false);
+      document.querySelectorAll('[data-menu-layout]').forEach(function (button) {
+        button.addEventListener('click', function () { setMenuLayout(button.dataset.menuLayout); });
+      });
+      document.getElementById('menuFullscreenBtn').addEventListener('click', toggleFullscreen);
+      document.addEventListener('fullscreenchange', function () {
+        syncFullscreenButton();
+        requestAnimationFrame(fitMenuToViewport);
+      });
+      window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+          if (currentProducts.length) render(currentProducts);
+        }, 120);
+      });
       updateClock();
       loadMenu();
       setInterval(updateClock, 1000);
