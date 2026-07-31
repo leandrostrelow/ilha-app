@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v52';
+const CACHE_NAME = 'ilha-play-v53';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,11 @@ const ASSETS = [
   './clientes/manifest.json',
   './adm/',
   './adm/index.html',
+  './admbar-manifest.json',
+  './icons/ilha-bar-180.png',
+  './icons/ilha-bar-192.png',
+  './icons/ilha-bar-512.png',
+  './icons/ilha-bar-maskable-512.png',
   './bar/',
   './bar/index.html',
   './bar/manifest.json',
@@ -63,7 +68,13 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
           return response;
         })
-        .catch(() => caches.match(event.request).then(cached => cached || caches.match('./index.html')))
+        .catch(() => caches.match(event.request).then(cached => {
+          if (cached) return cached;
+          if (url.pathname === '/admbar' || url.pathname.startsWith('/admbar/') || url.pathname === '/adm' || url.pathname.startsWith('/adm/')) {
+            return caches.match('./adm/index.html');
+          }
+          return caches.match('./index.html');
+        }))
     );
     return;
   }

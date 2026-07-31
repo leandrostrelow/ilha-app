@@ -2,7 +2,15 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b3138" />
+  <meta name="application-name" content="Ilha Bar" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Ilha Bar" />
+  <link rel="manifest" href="/admbar-manifest.json" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/ilha-bar-180.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/ilha-bar-192.png" />
   <title>Gestão Clube Ilha</title>
   <style>
     :root {
@@ -9446,6 +9454,718 @@
         text-align: left;
       }
     }
+
+    /* AdmBar mobile: compact, touch friendly and safe-area aware. */
+    @media (max-width: 700px) {
+      html {
+        background: #eef3f5;
+      }
+
+      body.bar-admin-surface {
+        min-width: 0;
+        overflow-x: hidden;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      body.bar-admin-surface .app {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        border-top: 0;
+      }
+
+      body.bar-admin-surface .admin-sidebar {
+        position: sticky;
+        top: 0;
+        z-index: 80;
+        min-height: 0;
+        width: 100%;
+        max-width: 100vw;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 7px;
+        padding: max(8px, env(safe-area-inset-top)) 9px 7px;
+        overflow: hidden;
+        border: 0;
+        border-bottom: 1px solid #21474d;
+        background: #0b3138;
+        box-shadow: 0 8px 24px rgba(11, 49, 56, .16);
+      }
+
+      body.bar-admin-surface .admin-sidebar-brand {
+        min-height: 32px;
+        display: flex;
+        align-items: center;
+        padding: 0 3px;
+        border: 0;
+      }
+
+      body.bar-admin-surface .admin-sidebar-brand img {
+        width: 112px;
+        max-height: 34px;
+        margin: 0;
+        object-position: left center;
+        filter: brightness(0) invert(1);
+      }
+
+      body.bar-admin-surface .bar-admin-context,
+      body.bar-admin-surface .admin-sidebar-footer,
+      body.bar-admin-surface .admin-sidebar-nav::before {
+        display: none;
+      }
+
+      body.bar-admin-surface .admin-sidebar-nav,
+      body.bar-admin-surface.club-bar .admin-sidebar-nav {
+        width: 100%;
+        min-width: 0;
+        display: flex;
+        gap: 6px;
+        padding: 0 0 2px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+        scroll-snap-type: x proximity;
+      }
+
+      body.bar-admin-surface .admin-sidebar-nav::-webkit-scrollbar {
+        display: none;
+      }
+
+      body.bar-admin-surface .admin-nav-btn,
+      body.bar-admin-surface.club-bar .admin-nav-btn {
+        width: auto;
+        min-width: max-content;
+        min-height: 40px;
+        flex: 0 0 auto;
+        grid-template-columns: 24px auto;
+        gap: 6px;
+        padding: 5px 9px;
+        border-color: rgba(255, 255, 255, .08);
+        border-radius: 10px;
+        color: #dce8e9;
+        background: rgba(255, 255, 255, .06);
+        font-size: 11px;
+        box-shadow: none;
+        scroll-snap-align: start;
+      }
+
+      body.bar-admin-surface .admin-nav-btn[data-bar-side-tab="orders"] {
+        grid-template-columns: 24px auto auto;
+      }
+
+      body.bar-admin-surface .admin-nav-btn:hover,
+      body.bar-admin-surface .admin-nav-btn.active {
+        border-color: rgba(181, 229, 0, .42);
+        color: #ffffff;
+        background: rgba(181, 229, 0, .16);
+        transform: none;
+        box-shadow: inset 0 -2px 0 var(--lime);
+      }
+
+      body.bar-admin-surface .admin-nav-icon,
+      body.bar-admin-surface .admin-nav-btn:hover .admin-nav-icon,
+      body.bar-admin-surface .admin-nav-btn.active .admin-nav-icon {
+        width: 24px;
+        height: 24px;
+        border: 0;
+        border-radius: 7px;
+        color: var(--lime);
+        background: rgba(255, 255, 255, .08);
+      }
+
+      body.bar-admin-surface .admin-nav-icon svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      body.bar-admin-surface .app > :not(.admin-sidebar),
+      body.bar-admin-surface.club-bar .app > :not(.admin-sidebar) {
+        min-width: 0;
+        padding: 8px;
+      }
+
+      body.bar-admin-surface .bar-module .ops-content {
+        min-width: 0;
+        gap: 9px;
+        padding: 0;
+      }
+
+      body.bar-admin-surface .bar-module .ops-tabs {
+        display: none;
+      }
+
+      body.bar-admin-surface .ops-panel {
+        min-width: 0;
+        padding: 10px;
+        border-radius: 12px;
+      }
+
+      body.bar-admin-surface .ops-panel > .ops-panel-head:first-child {
+        min-height: 0;
+        gap: 9px;
+        margin: -10px -10px 10px;
+        padding: 12px;
+        border-radius: 12px 12px 0 0;
+      }
+
+      body.bar-admin-surface .ops-panel-head h2 {
+        font-size: 16px;
+      }
+
+      body.bar-admin-surface .ops-panel-head .muted {
+        margin-top: 2px;
+        font-size: 10px;
+      }
+
+      body.bar-admin-surface .bar-command-board-panel > .ops-panel-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+      }
+
+      body.bar-admin-surface .bar-command-board-panel > .ops-panel-head > div:first-child {
+        grid-column: 1;
+      }
+
+      body.bar-admin-surface .bar-command-board-search {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        width: 100%;
+        min-height: 42px;
+      }
+
+      body.bar-admin-surface .bar-command-board-actions {
+        grid-column: 1 / -1;
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px;
+      }
+
+      body.bar-admin-surface .bar-command-board-actions > button,
+      body.bar-admin-surface .bar-command-day-closing {
+        width: 100%;
+        min-height: 40px;
+        justify-content: center;
+        padding: 7px 8px;
+        font-size: 10px;
+      }
+
+      body.bar-admin-surface .bar-command-day-closing {
+        display: grid;
+        place-items: center;
+      }
+
+      body.bar-admin-surface .bar-command-day-closing strong {
+        font-size: 14px;
+      }
+
+      body.bar-admin-surface #barSurfaceLogoutBtn {
+        display: inline-grid;
+      }
+
+      body.bar-admin-surface .bar-table-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px;
+      }
+
+      body.bar-admin-surface .bar-table-card,
+      body.bar-admin-surface .bar-table-card.is-loose {
+        min-height: 188px;
+        grid-template-rows: auto minmax(34px, auto) auto;
+        gap: 8px;
+        padding: 10px;
+        border-radius: 12px;
+      }
+
+      body.bar-admin-surface .bar-table-card-person {
+        align-items: flex-start;
+        gap: 5px;
+      }
+
+      body.bar-admin-surface .bar-table-card-person h3 {
+        font-size: 16px;
+        line-height: 1.05;
+      }
+
+      body.bar-admin-surface .bar-table-card-badges {
+        gap: 3px;
+      }
+
+      body.bar-admin-surface .bar-table-card-badges .ops-pill {
+        padding: 4px 6px;
+        font-size: 8px;
+      }
+
+      body.bar-admin-surface .bar-table-card-person-meta {
+        min-height: 20px;
+        margin: 0;
+        font-size: 9px;
+      }
+
+      body.bar-admin-surface .bar-table-order-summary {
+        min-height: 52px;
+        padding: 8px;
+      }
+
+      body.bar-admin-surface .bar-table-order-summary span {
+        font-size: 8px;
+      }
+
+      body.bar-admin-surface .bar-table-order-summary strong {
+        font-size: 16px;
+      }
+
+      body.bar-admin-surface .bar-table-card-actions button {
+        min-height: 38px;
+        padding: 7px;
+        font-size: 10px;
+      }
+
+      body.bar-admin-surface .bar-product-metrics,
+      body.bar-admin-surface .bar-table-metrics,
+      body.bar-admin-surface .ops-summary {
+        grid-template-columns: repeat(4, minmax(135px, 1fr));
+        gap: 7px;
+        overflow-x: auto;
+        padding-bottom: 3px;
+        scrollbar-width: none;
+      }
+
+      body.bar-admin-surface .bar-product-metrics::-webkit-scrollbar,
+      body.bar-admin-surface .bar-table-metrics::-webkit-scrollbar,
+      body.bar-admin-surface .ops-summary::-webkit-scrollbar {
+        display: none;
+      }
+
+      body.bar-admin-surface .bar-product-metric,
+      body.bar-admin-surface .bar-table-metric,
+      body.bar-admin-surface .ops-card {
+        min-height: 68px;
+        grid-template-columns: 30px minmax(0, 1fr);
+        gap: 7px;
+        padding: 9px;
+      }
+
+      body.bar-admin-surface .bar-product-metric-icon {
+        width: 30px;
+        height: 30px;
+      }
+
+      body.bar-admin-surface .bar-product-metric-icon svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      body.bar-admin-surface .bar-product-metric strong {
+        font-size: 16px;
+      }
+
+      body.bar-admin-surface .bar-product-metric span {
+        font-size: 9px;
+      }
+
+      body.bar-admin-surface .bar-section-header,
+      body.bar-admin-surface .bar-products-header {
+        gap: 9px;
+      }
+
+      body.bar-admin-surface .bar-section-header h2,
+      body.bar-admin-surface .bar-products-header h2 {
+        font-size: 18px;
+      }
+
+      body.bar-admin-surface .bar-section-header .primary-btn,
+      body.bar-admin-surface .bar-products-header .primary-btn {
+        min-height: 42px;
+      }
+
+      body.bar-admin-surface .bar-product-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px;
+      }
+
+      body.bar-admin-surface .bar-product-card {
+        border-radius: 11px;
+      }
+
+      body.bar-admin-surface .bar-product-media {
+        aspect-ratio: 1.35;
+      }
+
+      body.bar-admin-surface .bar-product-category-icon {
+        top: 6px;
+        left: 6px;
+        width: 27px;
+        height: 27px;
+      }
+
+      body.bar-admin-surface .bar-product-card-body {
+        gap: 7px;
+        padding: 9px;
+      }
+
+      body.bar-admin-surface .bar-product-card-title h3 {
+        min-height: 34px;
+        display: -webkit-box;
+        overflow: hidden;
+        font-size: 13px;
+        line-height: 1.25;
+        white-space: normal;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+      }
+
+      body.bar-admin-surface .bar-product-card-title small,
+      body.bar-admin-surface .bar-product-card-price span,
+      body.bar-admin-surface .bar-product-card-stock span {
+        font-size: 8px;
+      }
+
+      body.bar-admin-surface .bar-product-card-price strong {
+        font-size: 16px;
+      }
+
+      body.bar-admin-surface .bar-product-card-stock strong {
+        font-size: 10px;
+      }
+
+      body.bar-admin-surface .bar-product-card-footer {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 0 9px 9px;
+      }
+
+      body.bar-admin-surface .bar-product-card-footer .small-btn {
+        width: 100%;
+        min-height: 35px;
+        justify-content: center;
+        padding: 6px;
+        font-size: 9px;
+      }
+
+      body.bar-admin-surface .bar-events-layout {
+        gap: 9px;
+      }
+
+      body.bar-admin-surface .bar-calendar-day {
+        min-height: 54px;
+        padding: 5px;
+      }
+
+      body.bar-admin-surface .bar-calendar-day strong {
+        font-size: 11px;
+      }
+
+      body.bar-admin-surface .bar-calendar-day span {
+        font-size: 8px;
+      }
+
+      body.bar-admin-surface .bar-event-history-panel .ops-panel-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      body.bar-admin-surface .bar-event-history-panel .ops-panel-head select {
+        width: 100%;
+      }
+
+      body.bar-admin-surface .bar-qr-card {
+        grid-template-columns: 84px minmax(0, 1fr);
+        gap: 9px;
+        padding: 9px;
+      }
+
+      body.bar-admin-surface .bar-qr-card-visual {
+        width: 84px;
+      }
+
+      body.bar-admin-surface .bar-qr-card-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      body.bar-admin-surface .bar-finance-report-head {
+        gap: 12px;
+        padding: 14px;
+      }
+
+      body.bar-admin-surface .bar-finance-report-title h2 {
+        font-size: 18px;
+      }
+
+      body.bar-admin-surface .bar-finance-report-title p {
+        font-size: 10px;
+      }
+
+      body.bar-admin-surface .bar-finance-kpis,
+      body.bar-admin-surface .bar-finance-method-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      body.bar-admin-surface .bar-finance-kpi {
+        min-height: 116px;
+        padding: 12px;
+      }
+
+      body.bar-admin-surface .bar-finance-kpi strong {
+        font-size: 18px;
+      }
+
+      body.bar-admin-surface .bar-finance-open-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      body.bar-admin-surface .bar-finance-open-strip > div + div {
+        border-top: 0;
+        border-left: 1px solid #e7edef;
+      }
+
+      body.bar-admin-surface .bar-finance-row {
+        padding: 10px;
+      }
+
+      body.bar-admin-surface .bar-finance-row .bar-row-actions {
+        gap: 6px;
+      }
+
+      body.bar-admin-surface .bar-day-closing-filter label,
+      body.bar-admin-surface .bar-day-closing-filter select {
+        width: 100%;
+      }
+
+      body.bar-admin-surface .admin-modal-overlay {
+        padding: 0;
+        align-items: flex-end;
+      }
+
+      body.bar-admin-surface .admin-modal:not(.bar-command-modal) {
+        width: 100%;
+        max-height: 94dvh;
+        border-radius: 18px 18px 0 0;
+      }
+
+      body.bar-admin-surface .admin-modal-head {
+        min-height: 58px;
+        padding: 11px 13px;
+      }
+
+      body.bar-admin-surface .admin-modal-head h2 {
+        font-size: 18px;
+      }
+
+      body.bar-admin-surface .admin-modal-head .muted {
+        display: none;
+      }
+
+      body.bar-admin-surface .admin-modal-body {
+        padding: 12px;
+      }
+
+      body.bar-admin-surface .modal-actions {
+        gap: 7px;
+        padding: 10px 12px max(10px, env(safe-area-inset-bottom));
+      }
+
+      body.bar-admin-surface .modal-actions > button {
+        min-height: 44px;
+      }
+
+      body.bar-admin-surface .bar-new-order-modal {
+        max-width: 520px;
+      }
+
+      body.bar-admin-surface .bar-new-order-modal .modal-actions {
+        display: grid;
+        grid-template-columns: minmax(0, .8fr) minmax(0, 1.4fr);
+      }
+
+      body.bar-admin-surface .bar-new-order-modal .modal-actions > button {
+        width: 100%;
+        min-width: 0;
+        padding-inline: 8px;
+        font-size: 10px;
+      }
+
+      body.bar-admin-surface .bar-setup-modal-body {
+        padding-top: 14px;
+      }
+
+      body.bar-admin-surface .bar-setup-form {
+        gap: 11px;
+      }
+
+      body.bar-admin-surface .bar-product-photo-layout {
+        grid-template-columns: 100px minmax(0, 1fr);
+        gap: 10px;
+      }
+
+      body.bar-admin-surface .bar-product-photo-copy > div:first-child span {
+        font-size: 9px;
+      }
+
+      body.bar-admin-surface #barCommandModal {
+        padding: 0;
+      }
+
+      body.bar-admin-surface .bar-command-modal {
+        width: 100%;
+        height: 100dvh;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+      }
+
+      body.bar-admin-surface .bar-command-head {
+        min-height: 0;
+        grid-template-columns: minmax(0, 1fr) 40px;
+        gap: 8px;
+        padding: max(11px, env(safe-area-inset-top)) 11px 10px;
+      }
+
+      body.bar-admin-surface .bar-command-identity-top {
+        display: grid;
+        gap: 7px;
+      }
+
+      body.bar-admin-surface .bar-command-identity h2 {
+        font-size: 23px;
+        white-space: normal;
+      }
+
+      body.bar-admin-surface .bar-command-head-badges {
+        max-width: none;
+        justify-content: flex-start;
+        gap: 5px;
+      }
+
+      body.bar-admin-surface .bar-team-discount {
+        min-height: 30px;
+      }
+
+      body.bar-admin-surface .bar-command-contact {
+        margin-top: 7px;
+        font-size: 10px;
+      }
+
+      body.bar-admin-surface .bar-command-tabs {
+        padding: 0;
+      }
+
+      body.bar-admin-surface .bar-command-tab {
+        min-height: 51px;
+        gap: 5px;
+        padding: 6px 3px;
+        font-size: 10px;
+      }
+
+      body.bar-admin-surface .bar-command-body {
+        padding: 9px;
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+      }
+
+      body.bar-admin-surface .bar-command-product-form {
+        gap: 10px;
+        padding: 10px;
+      }
+
+      body.bar-admin-surface .bar-order-product-search {
+        min-height: 40px;
+      }
+
+      body.bar-admin-surface .bar-order-product-grid {
+        max-height: min(43dvh, 390px);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      body.bar-admin-surface .bar-order-product-card {
+        min-height: 126px;
+        grid-template-rows: 66px minmax(0, 1fr);
+      }
+
+      body.bar-admin-surface .bar-order-product-card-copy strong {
+        font-size: 10px;
+      }
+
+      body.bar-admin-surface .bar-command-product-fields,
+      body.bar-admin-surface .bar-command-modal .bar-checkout-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      body.bar-admin-surface .bar-checkout-summary {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 5px;
+      }
+
+      body.bar-admin-surface .bar-checkout-summary > div {
+        min-height: 62px;
+        padding: 8px;
+      }
+
+      body.bar-admin-surface .bar-checkout-summary span {
+        font-size: 8px;
+      }
+
+      body.bar-admin-surface .bar-checkout-summary strong,
+      body.bar-admin-surface .bar-checkout-summary .total strong {
+        margin-top: 4px;
+        font-size: 15px;
+      }
+
+      body.bar-admin-surface .bar-checkout-review-head {
+        gap: 8px;
+      }
+
+      body.bar-admin-surface .bar-checkout-review-head strong {
+        font-size: 11px;
+      }
+
+      body.bar-admin-surface .bar-checkout-add-item {
+        min-height: 34px;
+        font-size: 9px;
+      }
+
+      body.bar-admin-surface .bar-checkout-split {
+        padding: 11px;
+      }
+
+      body.bar-admin-surface .bar-checkout-split-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      body.bar-admin-surface .bar-command-receive {
+        position: sticky;
+        bottom: max(0px, env(safe-area-inset-bottom));
+        z-index: 5;
+        min-height: 48px;
+        box-shadow: 0 -5px 16px rgba(8, 63, 75, .12);
+      }
+    }
+
+    @media (max-width: 380px) {
+      body.bar-admin-surface .bar-table-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      body.bar-admin-surface .bar-table-card,
+      body.bar-admin-surface .bar-table-card.is-loose {
+        min-height: 170px;
+      }
+
+      body.bar-admin-surface .bar-product-list {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      body.bar-admin-surface .bar-finance-kpis,
+      body.bar-admin-surface .bar-finance-method-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      body.bar-admin-surface .bar-command-tab {
+        font-size: 9px;
+      }
+    }
   </style>
 </head>
 <body class="adm-locked">
@@ -10593,20 +11313,14 @@
     <div class="admin-modal-overlay" id="barNewOrderModal" aria-hidden="true">
       <div class="admin-modal bar-setup-modal bar-new-order-modal" role="dialog" aria-modal="true" aria-labelledby="barNewOrderModalTitle">
         <div class="admin-modal-head">
-          <div><h2 id="barNewOrderModalTitle">Abrir nova comanda</h2><div class="muted">A comanda avulsa sem mesa é o atendimento padrão.</div></div>
+          <div><h2 id="barNewOrderModalTitle">Nova comanda</h2></div>
           <button class="ghost-btn bar-modal-close" type="button" id="barNewOrderModalClose"><svg><use href="#bar-icon-close"></use></svg><span>Fechar</span></button>
         </div>
         <div class="admin-modal-body bar-setup-modal-body">
-          <div class="bar-modal-intro bar-new-order-intro"><span><svg><use href="#admin-icon-receipt"></use></svg></span><div><strong>Atendimento rápido no balcão</strong><small>Informe uma identificação e comece a adicionar os produtos. A mesa é opcional.</small></div></div>
           <form class="form-grid bar-setup-form" id="barNewOrderForm">
             <div class="field full">
               <label for="barNewOrderCustomer">Nome ou identificação</label>
               <input id="barNewOrderCustomer" maxlength="80" placeholder="Ex.: João, Deck ou Balcão 1" required />
-            </div>
-            <div class="field full">
-              <label for="barNewOrderTable">Local da comanda</label>
-              <select id="barNewOrderTable"></select>
-              <div class="bar-new-order-hint"><span>Mais usado</span> Sem mesa, para atendimento direto no balcão ou deck.</div>
             </div>
             <div class="field full">
               <label for="barNewOrderPhone">Telefone <small>opcional</small></label>
@@ -18235,15 +18949,6 @@
 
     function resetBarNewOrderForm() {
       $('barNewOrderForm').reset();
-      const freeTables = opsData.barTables.filter(function (table) {
-        return table.active && !barOrderForTable(table.id);
-      }).sort(function (a, b) {
-        return Number(a.number || 0) - Number(b.number || 0);
-      });
-      $('barNewOrderTable').innerHTML = '<option value="">Sem mesa — Balcão / Deck (mais usado)</option>' + freeTables.map(function (table) {
-        return '<option value="' + escapeHtml(table.id) + '">' + escapeHtml(table.name) + ' · ' + escapeHtml(table.seats) + ' lugares</option>';
-      }).join('');
-      $('barNewOrderTable').value = '';
     }
 
     function openBarNewOrderModal() {
@@ -18269,13 +18974,9 @@
       saveButton.textContent = 'Abrindo comanda...';
       try {
         requireAdminSession();
-        const tableId = $('barNewOrderTable').value;
-        const table = tableId ? barTableById(tableId) : null;
         const customerName = $('barNewOrderCustomer').value.trim();
         const customerPhone = barPhoneDigits($('barNewOrderPhone').value);
         if (customerName.length < 2) throw new Error('Informe o nome ou uma identificação para a comanda.');
-        if (tableId && !table) throw new Error('A mesa selecionada não está disponível.');
-        if (table && barOrderForTable(table.id)) throw new Error('Essa mesa já possui uma comanda aberta.');
         if (customerPhone && (customerPhone.length < 10 || customerPhone.length > 13)) throw new Error('Confira o telefone informado.');
 
         const nextNumber = opsData.barOrders.reduce(function (max, order) {
@@ -18283,8 +18984,8 @@
         }, 0) + 1;
         let order = {
           id: localId('bar_order'),
-          tableId: table && table.id || '',
-          tableName: table && table.name || '',
+          tableId: '',
+          tableName: '',
           commandNumber: nextNumber,
           customerName: customerName,
           customerPhone: customerPhone,
@@ -18301,7 +19002,7 @@
         };
         if (barCanPersist()) {
           order = mapBarOrderRow(await supabaseInsert('bar_orders', {
-            table_id: table && table.id || null,
+            table_id: null,
             customer_name: customerName,
             customer_phone: customerPhone || null,
             source: 'EQUIPE',
@@ -18315,7 +19016,7 @@
         opsState.barCommandTab = 'add';
         renderBarModule();
         openBarCommandModal(order.id);
-        toast('Comanda #' + (order.commandNumber || '') + ' aberta' + (table ? ' na ' + table.name + '.' : ' sem mesa.'));
+        toast('Nova comanda aberta.');
       } catch (error) {
         reportActionError(error);
       } finally {
@@ -19118,9 +19819,12 @@
 
     const ADMIN_SESSION_KEY = 'ilha-admin-supabase-session';
     const ADMIN_DEMO_SESSION_KEY = 'ilha-admin-demo-session';
+    const ADMIN_SESSION_REFRESH_MARGIN_MS = 5 * 60 * 1000;
     let adminSession = null;
     let adminProfile = null;
     let adminDemoMode = false;
+    let adminSessionRefreshTimer = null;
+    let adminSessionRestoreTimer = null;
 
     function isPreviewEnvironment() {
       const host = window.location.hostname;
@@ -19198,14 +19902,24 @@
 
     function storeAdminSession(session) {
       if (!session || !session.access_token) return;
-      if (!session.expires_at && session.expires_in) {
-        session.expires_at = Math.floor(Date.now() / 1000) + Number(session.expires_in || 0);
+      const current = adminSession || readStoredAdminSession() || {};
+      const nextSession = Object.assign({}, current, session, {
+        refresh_token: session.refresh_token || current.refresh_token,
+        user: session.user || current.user
+      });
+      if (!nextSession.expires_at && nextSession.expires_in) {
+        nextSession.expires_at = Math.floor(Date.now() / 1000) + Number(nextSession.expires_in || 0);
       }
-      adminSession = session;
-      localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
+      adminSession = nextSession;
+      localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(nextSession));
+      scheduleAdminSessionRefresh();
     }
 
     function clearAdminSession() {
+      clearTimeout(adminSessionRefreshTimer);
+      clearTimeout(adminSessionRestoreTimer);
+      adminSessionRefreshTimer = null;
+      adminSessionRestoreTimer = null;
       adminSession = null;
       adminProfile = null;
       adminDemoMode = false;
@@ -19221,6 +19935,53 @@
       return session.expires_at && Number(session.expires_at) * 1000 < Date.now() + 60000;
     }
 
+    function isRecoverableAdminSessionError(error) {
+      const message = String(error && error.message || error || '').toLowerCase();
+      return !navigator.onLine ||
+        message.includes('failed to fetch') ||
+        message.includes('network') ||
+        message.includes('load failed') ||
+        message.includes('offline') ||
+        message.includes('timeout') ||
+        message.includes('connection');
+    }
+
+    function shouldClearAdminSession(error) {
+      const message = String(error && error.message || error || '').toLowerCase();
+      return message.includes('refresh token not found') ||
+        message.includes('invalid refresh token') ||
+        message.includes('invalid jwt') ||
+        message.includes('user not found') ||
+        message.includes('perfil ainda não está liberado') ||
+        message.includes('perfil ainda nao esta liberado');
+    }
+
+    function scheduleAdminSessionRefresh(delayOverride) {
+      clearTimeout(adminSessionRefreshTimer);
+      adminSessionRefreshTimer = null;
+      if (!adminSession || adminSession.demo || !adminSession.refresh_token) return;
+      const expiresAt = Number(adminSession.expires_at || 0) * 1000;
+      const calculatedDelay = expiresAt
+        ? Math.max(15000, expiresAt - Date.now() - ADMIN_SESSION_REFRESH_MARGIN_MS)
+        : 30 * 60 * 1000;
+      const delay = Math.min(2147483647, Number(delayOverride || calculatedDelay));
+      adminSessionRefreshTimer = setTimeout(async function () {
+        try {
+          await refreshAdminSession(adminSession);
+        } catch (error) {
+          console.warn('A sessão será renovada quando a conexão voltar.', error);
+          scheduleAdminSessionRefresh(30000);
+        }
+      }, delay);
+    }
+
+    function scheduleAdminSessionRestore() {
+      clearTimeout(adminSessionRestoreTimer);
+      adminSessionRestoreTimer = setTimeout(function () {
+        restoreAdminSession();
+      }, 15000);
+    }
+
     async function supabaseAuthRequest(path, body, requireAuth) {
       const headers = supabaseHeaders(Boolean(requireAuth));
       headers['Content-Type'] = 'application/json';
@@ -19230,7 +19991,12 @@
         body: JSON.stringify(body || {})
       });
       const text = await response.text();
-      const data = text ? JSON.parse(text) : {};
+      let data = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (error) {
+        if (!response.ok) throw new Error('Falha temporária de conexão. Tentaremos novamente.');
+      }
       if (!response.ok) {
         throw new Error(data.error_description || data.msg || data.message || 'Falha na autenticação.');
       }
@@ -19241,7 +20007,7 @@
       if (!session || !session.refresh_token) throw new Error('Sessao expirada. Entre novamente.');
       const freshSession = await supabaseAuthRequest('token?grant_type=refresh_token', { refresh_token: session.refresh_token }, false);
       storeAdminSession(freshSession);
-      return freshSession;
+      return adminSession;
     }
 
     async function supabaseRest(path, options) {
@@ -19255,8 +20021,17 @@
         body: options.body === undefined ? undefined : JSON.stringify(options.body)
       });
       const text = await response.text();
-      const data = text ? JSON.parse(text) : null;
+      let data = null;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch (error) {
+        if (!response.ok) throw new Error('Falha temporária de conexão. Tentaremos novamente.');
+      }
       if (!response.ok) {
+        if (response.status === 401 && !options.authRetried && adminSession && adminSession.refresh_token) {
+          await refreshAdminSession(adminSession);
+          return supabaseRest(path, Object.assign({}, options, { authRetried: true }));
+        }
         const message = data && (data.message || data.msg || data.error_description || data.details);
         throw new Error(message || 'Falha ao conversar com o Supabase.');
       }
@@ -19375,6 +20150,12 @@
         await ensureAdminProfile();
         unlockAdmin();
       } catch (error) {
+        if (isRecoverableAdminSessionError(error) || !shouldClearAdminSession(error)) {
+          adminSession = stored;
+          setLoginMessage('Sem conexão para validar sua sessão. Tentando novamente…', false);
+          scheduleAdminSessionRestore();
+          return;
+        }
         clearAdminSession();
         setLoginMessage('Sessao expirada. Entre novamente.', true);
         $('adminUser').focus();
@@ -19401,6 +20182,9 @@
 
     function unlockAdmin() {
       if (!routeProfileToAdminSurface()) return;
+      clearTimeout(adminSessionRestoreTimer);
+      adminSessionRestoreTimer = null;
+      scheduleAdminSessionRefresh();
       document.body.classList.remove('adm-locked');
       document.body.classList.add('adm-unlocked');
       updateAdminIdentity();
@@ -20438,6 +21222,24 @@
     function initAdminLogin() {
       configurePreviewEnvironment();
       configureAdminSurface();
+      if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+        navigator.serviceWorker.register('/service-worker.js').catch(function (error) {
+          console.warn('Não foi possível ativar o modo aplicativo.', error);
+        });
+      }
+      window.addEventListener('online', function () {
+        if (document.body.classList.contains('adm-locked') && readStoredAdminSession()) restoreAdminSession();
+        else scheduleAdminSessionRefresh(1000);
+      });
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState !== 'visible') return;
+        if (document.body.classList.contains('adm-locked') && readStoredAdminSession()) restoreAdminSession();
+        else if (adminSession && isSessionExpired(adminSession)) {
+          refreshAdminSession(adminSession).catch(function () {
+            scheduleAdminSessionRefresh(30000);
+          });
+        }
+      });
       $('adminLoginForm').addEventListener('submit', async function (event) {
         event.preventDefault();
         const email = $('adminUser').value.trim();
