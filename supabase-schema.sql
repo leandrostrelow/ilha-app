@@ -552,6 +552,66 @@ begin
 end;
 $$;
 
+create or replace function public.bar_delete_open_order(p_order_id uuid)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  order_row public.bar_orders%rowtype;
+  item_row public.bar_order_items%rowtype;
+begin
+  if not public.is_bar_staff() then
+    raise exception 'Acesso negado ao Bar.';
+  end if;
+
+  select * into order_row
+    from public.bar_orders
+   where id = p_order_id
+     and status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+   for update;
+
+  if not found then
+    raise exception 'Comanda nao encontrada ou ja encerrada.';
+  end if;
+
+  if exists (
+    select 1
+      from public.bar_financial_entries
+     where order_id = order_row.id
+       and status = 'RECEBIDO'
+  ) then
+    raise exception 'A comanda possui recebimentos e nao pode ser excluida.';
+  end if;
+
+  for item_row in
+    select *
+      from public.bar_order_items
+     where order_id = order_row.id
+       and status <> 'CANCELADO'
+     for update
+  loop
+    if item_row.product_id is not null then
+      update public.bar_products
+         set stock_quantity = stock_quantity + item_row.quantity,
+             updated_at = now()
+       where id = item_row.product_id;
+
+      insert into public.bar_inventory_movements (
+        product_id, order_item_id, type, quantity, unit_cost, reason, created_by
+      ) values (
+        item_row.product_id, item_row.id, 'ESTORNO', item_row.quantity, item_row.cost_price,
+        'Exclusao da comanda #' || order_row.command_number, auth.uid()
+      );
+    end if;
+  end loop;
+
+  delete from public.bar_orders where id = order_row.id;
+  return order_row.id;
+end;
+$$;
+
 create or replace function public.bar_adjust_stock(
   p_product_id uuid,
   p_type text,
@@ -1798,6 +1858,8 @@ revoke all on function public.bar_close_order_split(uuid, jsonb, numeric, numeri
 revoke all on function public.refresh_bar_order_totals() from public;
 grant execute on function public.bar_add_order_item(uuid, uuid, numeric, text) to authenticated;
 grant execute on function public.bar_cancel_order_item(uuid) to authenticated;
+revoke all on function public.bar_delete_open_order(uuid) from public;
+grant execute on function public.bar_delete_open_order(uuid) to authenticated;
 grant execute on function public.bar_adjust_stock(uuid, text, numeric, text, numeric) to authenticated;
 grant execute on function public.bar_close_order(uuid, text, numeric, numeric) to authenticated;
 grant execute on function public.bar_close_order_split(uuid, jsonb, numeric, numeric) to authenticated;

@@ -4586,6 +4586,38 @@
       cursor: not-allowed;
     }
 
+    .bar-command-delete {
+      min-height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 9px;
+      border: 1px solid #f2c5ca;
+      border-radius: 7px;
+      color: #a62f3d;
+      background: #fff4f5;
+      font-size: 10px;
+      font-weight: 950;
+      line-height: 1;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .bar-command-delete:hover {
+      color: #ffffff;
+      border-color: #bd3544;
+      background: #bd3544;
+    }
+
+    .bar-command-delete:disabled {
+      opacity: .52;
+      cursor: wait;
+    }
+
+    .bar-command-delete[hidden] {
+      display: none;
+    }
+
     .bar-command-identity h2 {
       max-width: 560px;
       margin: 0;
@@ -11835,7 +11867,7 @@
                 <div class="bar-command-identity-copy">
                   <h2 id="barCommandModalTitle">Cliente</h2>
                 </div>
-                <div class="bar-command-head-badges"><span id="barCommandStatus"></span><button class="bar-team-discount" type="button" id="barTeamDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Equipe</span><small>-35%</small></button><button class="bar-team-discount" type="button" id="barProfessorDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Professor</span><small>-10%</small></button><span class="ops-pill warn" id="barCommandLocation">Avulsa</span></div>
+                <div class="bar-command-head-badges"><span id="barCommandStatus"></span><button class="bar-command-delete" type="button" id="barOrderDeleteBtn">Excluir</button><button class="bar-team-discount" type="button" id="barTeamDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Equipe</span><small>-35%</small></button><button class="bar-team-discount" type="button" id="barProfessorDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Professor</span><small>-10%</small></button><span class="ops-pill warn" id="barCommandLocation">Avulsa</span></div>
               </div>
               <div class="bar-command-contact" id="barCommandModalSubtitle"></div>
             </div>
@@ -19095,6 +19127,7 @@
       $('barOrderItemForm').style.display = open ? 'grid' : 'none';
       $('barCommandAddTab').hidden = !open;
       document.querySelectorAll('[data-bar-command-tab-target="add"]').forEach(function (button) { button.hidden = !open; });
+      $('barOrderDeleteBtn').hidden = !open;
       $('barOrderCloseBtn').style.display = open ? 'inline-flex' : 'none';
       renderBarProducts();
       renderBarOrderProductPreview();
@@ -19969,6 +20002,57 @@
         toast('Comanda atualizada.');
       } catch (error) {
         reportActionError(error);
+      }
+    }
+
+    async function deleteBarOrderAction() {
+      const order = barOrderById(opsState.selectedBarOrderId);
+      if (!order || !barOrderIsOpen(order)) return;
+      const activeItems = barActiveItemsForOrder(order.id);
+      const itemQuantity = activeItems.reduce(function (sum, item) {
+        return sum + Number(item.quantity || 0);
+      }, 0);
+      const customerName = barOrderCustomerDetails(order, activeItems).name || 'esta comanda';
+      const itemMessage = itemQuantity
+        ? '\n\n' + itemQuantity + (itemQuantity === 1 ? ' item será removido e devolvido' : ' itens serão removidos e devolvidos') + ' ao estoque.'
+        : '\n\nEsta comanda está vazia.';
+      const confirmed = window.confirm(
+        'Excluir a comanda de "' + customerName + '"?' + itemMessage + '\n\nEsta ação não pode ser desfeita.'
+      );
+      if (!confirmed) return;
+
+      const deleteButton = $('barOrderDeleteBtn');
+      try {
+        requireAdminSession();
+        deleteButton.disabled = true;
+        deleteButton.textContent = 'Excluindo...';
+        if (barCanPersist(order.id)) {
+          await supabaseRest('rpc/bar_delete_open_order', {
+            method: 'POST',
+            body: { p_order_id: order.id },
+            prefer: 'return=representation'
+          });
+          await loadBarData(true);
+        } else {
+          activeItems.forEach(function (item) {
+            const product = barProductById(item.productId);
+            if (product) product.stock = Number(product.stock) + Number(item.quantity || 0);
+          });
+          opsData.barOrderItems = opsData.barOrderItems.filter(function (item) {
+            return String(item.orderId) !== String(order.id);
+          });
+          opsData.barOrders = opsData.barOrders.filter(function (item) {
+            return String(item.id) !== String(order.id);
+          });
+        }
+        closeBarCommandModal();
+        renderBarModule();
+        toast('Comanda excluída e itens devolvidos ao estoque.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        deleteButton.disabled = false;
+        deleteButton.textContent = 'Excluir';
       }
     }
 
@@ -22422,6 +22506,7 @@
       $('barProfessorDiscountBtn').addEventListener('click', function () {
         toggleBarPresetDiscountAction(10, 'professor', 'barProfessorDiscountBtn');
       });
+      $('barOrderDeleteBtn').addEventListener('click', deleteBarOrderAction);
       $('barOrderCloseBtn').addEventListener('click', closeBarOrderAction);
       $('barQrModalClose').addEventListener('click', closeBarQrModal);
       $('barQrModal').addEventListener('click', function (event) {
