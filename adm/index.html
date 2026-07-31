@@ -8414,6 +8414,81 @@
       font-weight: 850;
     }
 
+    .bar-day-payment-summary {
+      display: grid;
+      gap: 12px;
+      margin: 14px 18px 18px;
+      padding: 14px;
+      border: 1px solid #dce7e9;
+      border-radius: 14px;
+      background: #f7fafb;
+    }
+
+    .bar-day-payment-summary-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .bar-day-payment-summary-head strong {
+      color: #172632;
+      font-size: 14px;
+      font-weight: 950;
+    }
+
+    .bar-day-payment-summary-head small {
+      color: #6b7889;
+      font-size: 9px;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .bar-day-payment-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .bar-day-payment-summary-item {
+      min-width: 0;
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 9px 10px;
+      border: 1px solid #e1e9eb;
+      border-radius: 11px;
+      background: #ffffff;
+    }
+
+    .bar-day-payment-summary-item > strong {
+      color: var(--teal);
+      font-size: 16px;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    .bar-day-payment-summary-item.is-total {
+      color: #ffffff;
+      border-color: #172942;
+      background: #172942;
+    }
+
+    .bar-day-payment-summary-item.is-total span {
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .bar-day-payment-summary-item.is-total > strong {
+      color: #dff3a8;
+      font-size: 18px;
+    }
+
     .bar-kitchen-panel {
       padding: 0;
       overflow: hidden;
@@ -9858,6 +9933,41 @@
       .bar-closed-order-total {
         min-width: 102px;
       }
+
+      .bar-day-payment-summary {
+        gap: 9px;
+        margin: 10px 0 0;
+        padding: 10px;
+      }
+
+      .bar-day-payment-summary-head {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .bar-day-payment-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .bar-day-payment-summary-item {
+        min-height: 66px;
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 8px;
+      }
+
+      .bar-day-payment-summary-item > strong {
+        font-size: 14px;
+      }
+
+      .bar-day-payment-summary-item.is-total {
+        grid-column: 1 / -1;
+        min-height: 50px;
+        align-items: center;
+        flex-direction: row;
+      }
     }
 
     .bar-pull-refresh {
@@ -10640,26 +10750,63 @@
       }
 
       body.bar-admin-surface .bar-command-product-form {
-        gap: 10px;
-        padding: 10px;
+        gap: 8px;
+        padding: 8px;
       }
 
       body.bar-admin-surface .bar-order-product-search {
-        min-height: 40px;
+        min-height: 36px;
+        padding: 7px 9px;
+        font-size: 11px;
+      }
+
+      body.bar-admin-surface .bar-order-product-picker {
+        gap: 7px;
+      }
+
+      body.bar-admin-surface .bar-order-product-count {
+        font-size: 8px;
+      }
+
+      body.bar-admin-surface .bar-order-product-tabs {
+        gap: 4px;
+        margin-right: -8px;
+        padding-right: 8px;
+      }
+
+      body.bar-admin-surface .bar-order-product-tab {
+        min-height: 31px;
+        gap: 4px;
+        padding: 5px 7px;
+        font-size: 8px;
+      }
+
+      body.bar-admin-surface .bar-order-product-tab svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      body.bar-admin-surface .bar-order-product-tab small {
+        min-width: 16px;
+        padding: 1px 4px;
+        font-size: 7px;
       }
 
       body.bar-admin-surface .bar-order-product-grid {
-        max-height: min(43dvh, 390px);
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-height: min(36dvh, 330px);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 5px;
+        padding: 1px;
       }
 
       body.bar-admin-surface .bar-order-product-card {
-        min-height: 145px;
-        grid-template-rows: 82px minmax(0, 1fr);
+        min-height: 108px;
+        grid-template-rows: 54px 54px;
+        border-radius: 8px;
       }
 
       body.bar-admin-surface .bar-order-product-card-media {
-        min-height: 82px;
+        min-height: 54px;
         background: #ffffff;
       }
 
@@ -10667,15 +10814,77 @@
         display: block !important;
         width: 100%;
         height: 100%;
-        padding: 4px;
+        padding: 0;
         visibility: visible !important;
         opacity: 1 !important;
         object-fit: contain;
+        transform: scale(1.14);
         background: #ffffff;
       }
 
+      body.bar-admin-surface .bar-order-product-card-status {
+        top: 3px;
+        right: 3px;
+        padding: 2px 4px;
+        font-size: 6px;
+      }
+
+      body.bar-admin-surface .bar-order-product-card-copy {
+        gap: 3px;
+        padding: 5px 6px 6px;
+      }
+
       body.bar-admin-surface .bar-order-product-card-copy strong {
+        font-size: 8.5px;
+        line-height: 1.15;
+      }
+
+      body.bar-admin-surface .bar-order-product-card-meta {
+        gap: 3px;
+      }
+
+      body.bar-admin-surface .bar-order-product-card-meta b {
         font-size: 10px;
+      }
+
+      body.bar-admin-surface .bar-order-product-card-meta small {
+        display: none;
+      }
+
+      body.bar-admin-surface .bar-command-product-preview {
+        min-height: 58px;
+        grid-template-columns: 42px minmax(0, 1fr) auto;
+        gap: 8px;
+        padding: 7px;
+      }
+
+      body.bar-admin-surface .bar-command-product-image,
+      body.bar-admin-surface .bar-command-product-icon {
+        width: 42px;
+        height: 42px;
+      }
+
+      body.bar-admin-surface .bar-command-product-copy strong {
+        font-size: 11px;
+      }
+
+      body.bar-admin-surface .bar-command-product-copy span {
+        margin-top: 2px;
+        font-size: 8px;
+      }
+
+      body.bar-admin-surface .bar-command-product-price {
+        grid-column: auto;
+        text-align: right;
+      }
+
+      body.bar-admin-surface .bar-command-product-price span {
+        font-size: 7px;
+      }
+
+      body.bar-admin-surface .bar-command-product-price strong {
+        margin-top: 2px;
+        font-size: 14px;
       }
 
       body.bar-admin-surface .bar-command-product-fields,
@@ -12058,6 +12267,10 @@
                 </select></label>
               </div>
               <div class="bar-finance-list" id="barClosedOrders"></div>
+              <section class="bar-day-payment-summary" aria-labelledby="barDayPaymentSummaryTitle">
+                <div class="bar-day-payment-summary-head"><strong id="barDayPaymentSummaryTitle">Totais por forma de pagamento</strong><small>Valores recebidos hoje</small></div>
+                <div class="bar-day-payment-summary-grid" id="barDayPaymentSummary"></div>
+              </section>
             </details>
           </div>
 
@@ -18409,7 +18622,8 @@
         BOLETO: 'Boleto',
         TRANSFERENCIA: 'Transferência',
         CONTA_CLIENTE: 'Conta do cliente',
-        DIVIDIDO: 'Pagamento dividido'
+        DIVIDIDO: 'Pagamento dividido',
+        OUTROS: 'Outras'
       };
       return labels[value] || (value ? String(method).replace(/_/g, ' ') : 'A definir');
     }
@@ -19393,6 +19607,16 @@
         }).join('');
         return '<article class="bar-finance-row bar-closed-order-row"><div class="bar-finance-copy"><strong>' + escapeHtml(barTableLabel(order)) + ' | Comanda #' + escapeHtml(order.commandNumber || '') + '</strong><small>' + escapeHtml(barDateTimeLabel(order.closedAt || order.openedAt)) + '</small></div><div class="bar-row-actions"><span class="bar-closed-order-payment-list">' + paymentBadges + '</span>' + barStatusPill(order.paymentStatus) + '<span class="bar-closed-order-total"><small>Total</small><strong>' + money(barOrderTotal(order)) + '</strong></span></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhuma comanda fechada hoje para esta forma de pagamento.</div>';
+      const dayPaymentMethods = ['PIX', 'DINHEIRO', 'CARTAO_CREDITO', 'CARTAO_DEBITO', 'CONTA_CLIENTE', 'OUTROS'];
+      const dayPaymentTotal = dayClosedOrders.reduce(function (sum, order) {
+        return sum + barDayClosingAmountForOrder(order, 'TODOS');
+      }, 0);
+      $('barDayPaymentSummary').innerHTML = dayPaymentMethods.map(function (method) {
+        const methodTotal = dayClosedOrders.reduce(function (sum, order) {
+          return sum + barDayClosingAmountForOrder(order, method);
+        }, 0);
+        return '<div class="bar-day-payment-summary-item">' + barPaymentMethodBadge(method) + '<strong>' + money(methodTotal) + '</strong></div>';
+      }).join('') + '<div class="bar-day-payment-summary-item is-total"><span>Total geral</span><strong>' + money(dayPaymentTotal) + '</strong></div>';
       renderBarEvents();
       renderBarTablesAndQr();
       renderBarProducts();
