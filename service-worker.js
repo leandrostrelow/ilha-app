@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v58';
+const CACHE_NAME = 'ilha-play-v59';
 const ASSETS = [
   './',
   './index.html',

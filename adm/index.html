@@ -8251,6 +8251,21 @@
       border-top: 4px solid var(--teal);
     }
 
+    .bar-command-board-title {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bar-command-board-title .bar-command-day-closing {
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+    }
+
     .bar-command-board-actions {
       display: flex;
       align-items: center;
@@ -9845,6 +9860,69 @@
       }
     }
 
+    .bar-pull-refresh {
+      display: none;
+      position: fixed;
+      top: max(9px, env(safe-area-inset-top));
+      left: 50%;
+      z-index: 320;
+      min-height: 38px;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border: 1px solid rgba(255, 255, 255, .2);
+      border-radius: 999px;
+      color: #ffffff;
+      background: #0b3138;
+      box-shadow: 0 8px 22px rgba(7, 38, 44, .24);
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, calc(-100% - 20px));
+      transition: opacity .18s ease, transform .18s ease;
+    }
+
+    .bar-pull-refresh.is-visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .bar-pull-refresh-mark {
+      width: 20px;
+      height: 20px;
+      display: grid;
+      place-items: center;
+      border: 2px solid rgba(255, 255, 255, .42);
+      border-top-color: #dff79b;
+      border-radius: 50%;
+      color: #dff79b;
+      font-size: 12px;
+      font-weight: 950;
+      line-height: 1;
+    }
+
+    .bar-pull-refresh:not(.is-refreshing) .bar-pull-refresh-mark {
+      border: 0;
+    }
+
+    .bar-pull-refresh.is-ready .bar-pull-refresh-mark {
+      transform: rotate(180deg);
+    }
+
+    .bar-pull-refresh.is-refreshing .bar-pull-refresh-mark {
+      color: transparent;
+      animation: bar-pull-spin .72s linear infinite;
+    }
+
+    .bar-pull-refresh strong {
+      font-size: 10px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    @keyframes bar-pull-spin {
+      to { transform: rotate(360deg); }
+    }
+
     /* AdmBar mobile: compact, touch friendly and safe-area aware. */
     @media (max-width: 700px) {
       html {
@@ -9856,6 +9934,10 @@
         overflow-x: hidden;
         padding-bottom: env(safe-area-inset-bottom);
         overscroll-behavior-y: contain;
+      }
+
+      body.bar-admin-surface .bar-pull-refresh {
+        display: flex;
       }
 
       body.bar-admin-surface button,
@@ -9894,7 +9976,7 @@
         min-height: 32px;
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
         gap: 10px;
         padding: 0 3px;
         border: 0;
@@ -9904,7 +9986,7 @@
         width: min(112px, 38vw);
         max-height: 34px;
         margin: 0;
-        object-position: left center;
+        object-position: center;
         filter: brightness(0) invert(1);
       }
 
@@ -10037,6 +10119,31 @@
         grid-column: 1;
       }
 
+      body.bar-admin-surface .bar-command-board-title {
+        grid-column: 1 / -1;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      body.bar-admin-surface .bar-command-board-title .bar-command-day-closing {
+        width: auto;
+        min-height: 0;
+        display: inline-flex;
+        flex: 0 0 auto;
+        padding: 0;
+        border: 0;
+        background: transparent;
+      }
+
+      body.bar-admin-surface .bar-command-board-title .bar-command-day-closing small {
+        display: none;
+      }
+
+      body.bar-admin-surface .bar-command-board-title .bar-command-day-closing strong {
+        color: #dff3a8;
+        font-size: 15px;
+      }
+
       body.bar-admin-surface .bar-command-board-search {
         grid-column: 1 / -1;
         grid-row: 2;
@@ -10052,22 +10159,12 @@
         gap: 7px;
       }
 
-      body.bar-admin-surface .bar-command-board-actions > button,
-      body.bar-admin-surface .bar-command-day-closing {
+      body.bar-admin-surface .bar-command-board-actions > button {
         width: 100%;
         min-height: 40px;
         justify-content: center;
         padding: 7px 8px;
         font-size: 10px;
-      }
-
-      body.bar-admin-surface .bar-command-day-closing {
-        display: grid;
-        place-items: center;
-      }
-
-      body.bar-admin-surface .bar-command-day-closing strong {
-        font-size: 14px;
       }
 
       body.bar-admin-surface #barClosedOrdersPanel > .bar-collapsible-summary {
@@ -10087,10 +10184,6 @@
       body.bar-admin-surface #barClosedOrdersPanel > .bar-collapsible-summary .bar-collapse-control {
         grid-column: 2;
         grid-row: 1 / span 2;
-      }
-
-      body.bar-admin-surface #barSurfaceLogoutBtn {
-        display: inline-grid;
       }
 
       body.bar-admin-surface .bar-table-grid {
@@ -11279,6 +11372,11 @@
     </symbol>
   </svg>
 
+  <div class="bar-pull-refresh" id="barPullRefresh" role="status" aria-live="polite">
+    <span class="bar-pull-refresh-mark" aria-hidden="true">↓</span>
+    <strong id="barPullRefreshLabel">Puxe para atualizar</strong>
+  </div>
+
   <main class="adm-login" id="adminLogin">
     <form class="adm-login-card" id="adminLoginForm">
       <img src="../logo.png" alt="Ilha Tênis" />
@@ -11303,7 +11401,6 @@
     <aside class="admin-sidebar" aria-label="Menu administrativo">
       <div class="admin-sidebar-brand">
         <img src="../logo.png" alt="Ilha Tênis" />
-        <button class="bar-install-app" type="button" id="barInstallAppBtn" hidden><svg><use href="#bar-icon-screen"></use></svg><span>Instalar app</span></button>
       </div>
       <div class="bar-admin-context" data-bar-surface-only>
         <strong>Ilha Bar</strong>
@@ -11931,7 +12028,7 @@
           <div data-bar-panel="orders">
             <section class="ops-panel bar-command-board-panel" id="barCommandBoardPanel">
               <div class="ops-panel-head">
-                <div><h2>Comanda</h2></div>
+                <div class="bar-command-board-title"><h2>Comanda</h2><div class="bar-command-day-closing" title="Valor previsto das comandas abertas"><small>Previsto</small><strong id="barOpenOrdersMetric">R$ 0,00</strong></div></div>
                 <label class="bar-command-board-search" for="barCommandSearch">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
                   <input id="barCommandSearch" type="search" placeholder="Buscar por nome ou telefone" autocomplete="off" aria-label="Buscar comanda por nome ou telefone" />
@@ -11939,8 +12036,6 @@
                 <div class="bar-command-board-actions">
                   <button class="primary-btn bar-icon-button" type="button" id="barNewLooseOrderBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Nova comanda</span></button>
                   <button class="small-btn bar-command-screen-btn" type="button" id="barCommandScreenBtn" aria-pressed="false"><svg><use href="#bar-icon-screen"></use></svg><span>Tela de comandas</span></button>
-                  <div class="bar-command-day-closing" title="Valor previsto das comandas abertas"><small>Previsto</small><strong id="barOpenOrdersMetric">R$ 0,00</strong></div>
-                  <button class="small-btn" type="button" id="barSurfaceLogoutBtn" data-bar-surface-only>Sair</button>
                 </div>
               </div>
               <div class="bar-table-grid" id="barTableBoard"></div>
@@ -22529,6 +22624,98 @@
       }
     }
 
+    let barPullStartY = 0;
+    let barPullStartX = 0;
+    let barPullDistance = 0;
+    let barPullActive = false;
+    let barPullRefreshing = false;
+    const BAR_PULL_REFRESH_THRESHOLD = 68;
+
+    function resetBarPullRefreshIndicator(delay) {
+      const indicator = $('barPullRefresh');
+      const reset = function () {
+        if (barPullRefreshing) return;
+        indicator.classList.remove('is-visible', 'is-ready', 'is-refreshing');
+        $('barPullRefreshLabel').textContent = 'Puxe para atualizar';
+        barPullDistance = 0;
+      };
+      if (delay) setTimeout(reset, delay);
+      else reset();
+    }
+
+    async function refreshBarFromPull() {
+      if (barPullRefreshing) return;
+      const indicator = $('barPullRefresh');
+      const label = $('barPullRefreshLabel');
+      barPullRefreshing = true;
+      indicator.classList.add('is-visible', 'is-refreshing');
+      indicator.classList.remove('is-ready');
+      label.textContent = 'Atualizando...';
+      try {
+        await loadBarData(true);
+        renderBarModule();
+        if (opsState.selectedBarOrderId) renderBarCommandModal();
+        label.textContent = 'Atualizado';
+        if (navigator.vibrate) navigator.vibrate(30);
+      } catch (error) {
+        label.textContent = 'Não foi possível atualizar';
+        reportActionError(error);
+      } finally {
+        barPullRefreshing = false;
+        resetBarPullRefreshIndicator(520);
+      }
+    }
+
+    function initBarPullToRefresh() {
+      const indicator = $('barPullRefresh');
+      if (!indicator || !IS_BAR_ADMIN_SURFACE) return;
+
+      document.addEventListener('touchstart', function (event) {
+        if (barPullRefreshing || window.innerWidth > 700 || document.body.classList.contains('adm-locked')) return;
+        if (window.scrollY > 1 || document.documentElement.scrollTop > 1) return;
+        if (document.querySelector('.admin-modal-overlay.show')) return;
+        if (!event.touches || event.touches.length !== 1) return;
+        const target = event.target;
+        if (target && target.closest('input, select, textarea, button, a, [contenteditable="true"], .admin-sidebar-nav, .bar-order-product-tabs')) return;
+        barPullStartY = event.touches[0].clientY;
+        barPullStartX = event.touches[0].clientX;
+        barPullDistance = 0;
+        barPullActive = true;
+      }, { passive: true });
+
+      document.addEventListener('touchmove', function (event) {
+        if (!barPullActive || barPullRefreshing || !event.touches || event.touches.length !== 1) return;
+        const deltaY = event.touches[0].clientY - barPullStartY;
+        const deltaX = Math.abs(event.touches[0].clientX - barPullStartX);
+        if (deltaX > Math.abs(deltaY) && deltaX > 12) {
+          barPullActive = false;
+          resetBarPullRefreshIndicator();
+          return;
+        }
+        if (deltaY <= 0) return;
+        barPullDistance = Math.min(96, deltaY * .55);
+        if (barPullDistance < 7) return;
+        event.preventDefault();
+        const ready = barPullDistance >= BAR_PULL_REFRESH_THRESHOLD;
+        indicator.classList.add('is-visible');
+        indicator.classList.toggle('is-ready', ready);
+        $('barPullRefreshLabel').textContent = ready ? 'Solte para atualizar' : 'Puxe para atualizar';
+      }, { passive: false });
+
+      document.addEventListener('touchend', function () {
+        if (!barPullActive) return;
+        const shouldRefresh = barPullDistance >= BAR_PULL_REFRESH_THRESHOLD;
+        barPullActive = false;
+        if (shouldRefresh) refreshBarFromPull();
+        else resetBarPullRefreshIndicator();
+      }, { passive: true });
+
+      document.addEventListener('touchcancel', function () {
+        barPullActive = false;
+        resetBarPullRefreshIndicator();
+      }, { passive: true });
+    }
+
     let deferredBarInstallPrompt = null;
 
     function barAppIsInstalled() {
@@ -22583,6 +22770,7 @@
     function initAdminLogin() {
       configurePreviewEnvironment();
       configureAdminSurface();
+      initBarPullToRefresh();
       initBarPwaInstall();
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
         navigator.serviceWorker.register('/service-worker.js', { scope: '/' }).then(function (registration) {
@@ -22644,7 +22832,6 @@
       $('adminLogoutBtn').addEventListener('click', lockAdmin);
       $('homeLogoutBtn').addEventListener('click', lockAdmin);
       $('sidebarLogoutBtn').addEventListener('click', lockAdmin);
-      $('barSurfaceLogoutBtn').addEventListener('click', lockAdmin);
       $('backToClubHomeBtn').addEventListener('click', showClubHome);
       [
         ['openTournamentModule', openTournamentModule],
