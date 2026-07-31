@@ -433,6 +433,16 @@
     }
 
     @media (min-width: 720px) and (orientation: landscape) {
+      body[data-menu-layout="vertical"] .menu-stage {
+        position: fixed;
+        inset: 0 auto auto 0;
+        width: 100vh;
+        height: 100vw;
+        min-height: 0;
+        transform: translateY(100vh) rotate(-90deg);
+        transform-origin: top left;
+      }
+
       body[data-menu-layout="horizontal"] .menu-header {
         min-height: 112px;
         gap: 18px;
@@ -655,11 +665,13 @@
       }
 
       function initialMenuLayout() {
+        const requestedLayout = new URLSearchParams(window.location.search).get('layout');
+        if (requestedLayout === 'vertical' || requestedLayout === 'horizontal') return requestedLayout;
         try {
           const saved = localStorage.getItem(LAYOUT_KEY);
           if (saved === 'vertical' || saved === 'horizontal') return saved;
         } catch (error) {}
-        return window.matchMedia('(orientation: landscape)').matches ? 'horizontal' : 'vertical';
+        return 'vertical';
       }
 
       function setMenuLayout(layout, persist) {
@@ -700,16 +712,18 @@
         const columns = Array.from(board.querySelectorAll('.menu-column'));
         if (!columns.length) return;
         const layout = document.body.dataset.menuLayout === 'horizontal' ? 'horizontal' : 'vertical';
-        const maxRowHeight = layout === 'horizontal' ? 92 : (window.innerHeight >= 1500 ? 124 : 96);
-        const categoryHeight = layout === 'horizontal' ? 44 : (window.innerHeight >= 1500 ? 54 : 48);
+        const stageHeight = document.querySelector('.menu-stage').clientHeight;
+        const maxRowHeight = layout === 'horizontal' ? 92 : (stageHeight >= 1500 ? 124 : 96);
+        const categoryHeight = layout === 'horizontal' ? 44 : (stageHeight >= 1500 ? 54 : 48);
         root.style.setProperty('--menu-category-height', categoryHeight + 'px');
         let rowHeight = maxRowHeight;
         applyMenuDensity(rowHeight, layout);
 
         for (let attempt = 0; attempt < 8; attempt += 1) {
-          const boardBottom = board.getBoundingClientRect().bottom - 2;
-          const columnBottom = Math.max.apply(Math, columns.map(function (column) { return column.getBoundingClientRect().bottom; }));
-          const overflow = Math.ceil(columnBottom - boardBottom);
+          const boardStyle = window.getComputedStyle(board);
+          const availableHeight = board.clientHeight - parseFloat(boardStyle.paddingTop) - parseFloat(boardStyle.paddingBottom);
+          const contentHeight = Math.max.apply(Math, columns.map(function (column) { return column.scrollHeight; }));
+          const overflow = Math.ceil(contentHeight - availableHeight);
           if (overflow <= 0) break;
           const busiestColumn = Math.max.apply(Math, columns.map(function (column) { return column.querySelectorAll('.menu-product').length || 1; }));
           rowHeight = Math.max(48, rowHeight - Math.max(2, Math.ceil(overflow / busiestColumn) + 1));
