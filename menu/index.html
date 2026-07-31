@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#13233d" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Cardápio do Bar | Ilha Tênis</title>
+  <link rel="icon" href="../icons/ilha-bar-192.png" sizes="192x192" />
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #13233d;
+      --navy-soft: #1d3151;
+      --teal: #087f8d;
+      --green: #08ad56;
+      --lime: #caef70;
+      --ink: #14233a;
+      --muted: #667289;
+      --line: #dbe5e8;
+      --surface: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      background: #eef4f5;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 8% 0%, rgba(202, 239, 112, .2), transparent 28%),
+        radial-gradient(circle at 96% 26%, rgba(8, 127, 141, .13), transparent 27%),
+        #eef4f5;
+    }
+
+    button,
+    input { font: inherit; }
+
+    .menu-stage {
+      width: min(100%, 1280px);
+      min-height: 100svh;
+      margin: 0 auto;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .menu-header {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 24px;
+      min-height: 142px;
+      padding: 24px 30px;
+      background: linear-gradient(125deg, #111f36 0%, #172d4b 65%, #087f8d 155%);
+      color: #ffffff;
+      box-shadow: 0 14px 34px rgba(14, 31, 54, .18);
+    }
+
+    .menu-header::after {
+      content: "";
+      position: absolute;
+      right: -70px;
+      bottom: -110px;
+      width: 300px;
+      height: 300px;
+      border: 48px solid rgba(202, 239, 112, .08);
+      border-radius: 50%;
+    }
+
+    .menu-brand {
+      position: relative;
+      z-index: 1;
+      width: 160px;
+      height: 88px;
+      display: grid;
+      place-items: center;
+      padding: 10px 15px;
+      border-radius: 18px;
+      background: #ffffff;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, .16);
+    }
+
+    .menu-brand img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .menu-heading {
+      position: relative;
+      z-index: 1;
+      min-width: 0;
+    }
+
+    .menu-kicker {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--lime);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .14em;
+    }
+
+    .menu-heading h1 {
+      margin: 0;
+      font-size: clamp(34px, 5vw, 58px);
+      line-height: .98;
+      letter-spacing: -.045em;
+    }
+
+    .menu-heading p {
+      margin: 8px 0 0;
+      color: #c9d4e1;
+      font-size: 16px;
+      font-weight: 750;
+    }
+
+    .menu-clock {
+      position: relative;
+      z-index: 1;
+      min-width: 142px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255, 255, 255, .17);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .08);
+      text-align: right;
+      backdrop-filter: blur(8px);
+    }
+
+    .menu-clock strong,
+    .menu-clock span { display: block; }
+
+    .menu-clock strong {
+      color: #ffffff;
+      font-size: 28px;
+      letter-spacing: -.03em;
+    }
+
+    .menu-clock span {
+      margin-top: 2px;
+      color: #c9d4e1;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: capitalize;
+    }
+
+    .menu-board {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+      gap: 16px;
+      padding: 20px 24px 16px;
+    }
+
+    .menu-column {
+      min-width: 0;
+      display: grid;
+      align-content: start;
+      gap: 14px;
+    }
+
+    .menu-category {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid rgba(18, 64, 77, .12);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, .91);
+      box-shadow: 0 12px 28px rgba(22, 49, 62, .07);
+    }
+
+    .menu-category-head {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 15px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(90deg, #eef9d2, #f8fcef 62%, #ffffff);
+    }
+
+    .menu-category-head h2 {
+      min-width: 0;
+      margin: 0;
+      overflow: hidden;
+      color: #1d3d25;
+      font-size: 21px;
+      line-height: 1.08;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .menu-category-head span {
+      flex: 0 0 auto;
+      color: #668021;
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .menu-products {
+      display: grid;
+      gap: 1px;
+      background: var(--line);
+    }
+
+    .menu-product {
+      position: relative;
+      min-width: 0;
+      min-height: 91px;
+      display: grid;
+      grid-template-columns: 76px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 13px 8px 9px;
+      background: #ffffff;
+    }
+
+    .menu-product.is-featured {
+      background: linear-gradient(90deg, #f2fbdb 0%, #ffffff 56%);
+    }
+
+    .menu-product.is-featured::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 5px;
+      background: linear-gradient(180deg, var(--green), var(--teal));
+    }
+
+    .menu-product-image {
+      width: 76px;
+      height: 76px;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: #f2f7f8;
+      color: var(--teal);
+      font-size: 24px;
+      font-weight: 950;
+    }
+
+    .menu-product-image img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      padding: 3px;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .menu-product-copy {
+      min-width: 0;
+    }
+
+    .menu-product-copy h3 {
+      margin: 0;
+      overflow: hidden;
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1.18;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .menu-product-copy small {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 6px;
+      color: #6b778b;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .menu-product-copy small::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .menu-product-price {
+      flex: 0 0 auto;
+      color: var(--teal);
+      font-size: 22px;
+      font-weight: 1000;
+      letter-spacing: -.04em;
+      white-space: nowrap;
+    }
+
+    .menu-footer {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 10px 25px 13px;
+      color: #6b778b;
+      font-size: 10px;
+      font-weight: 850;
+    }
+
+    .menu-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .menu-live::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 4px rgba(8, 173, 86, .12);
+    }
+
+    .menu-state {
+      grid-column: 1 / -1;
+      min-height: 430px;
+      display: grid;
+      place-items: center;
+      padding: 30px;
+      border: 1px dashed #bdcdd2;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, .72);
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .menu-state strong,
+    .menu-state span { display: block; }
+
+    .menu-state strong {
+      color: var(--ink);
+      font-size: 24px;
+    }
+
+    .menu-state span {
+      margin-top: 7px;
+      font-weight: 700;
+    }
+
+    @media (min-width: 720px) and (min-height: 980px) and (orientation: portrait) {
+      html,
+      body { overflow: hidden; }
+
+      .menu-stage { height: 100svh; }
+
+      .menu-board {
+        min-height: 0;
+        overflow: hidden;
+      }
+    }
+
+    @media (min-width: 720px) and (min-height: 1500px) and (orientation: portrait) {
+      .menu-category-head {
+        min-height: 54px;
+        padding-block: 13px;
+      }
+
+      .menu-product {
+        min-height: 124px;
+        grid-template-columns: 98px minmax(0, 1fr) auto;
+        gap: 15px;
+        padding: 10px 16px 10px 11px;
+      }
+
+      .menu-product-image {
+        width: 98px;
+        height: 98px;
+      }
+
+      .menu-product-copy h3 { font-size: 18px; }
+      .menu-product-copy small { font-size: 10px; }
+      .menu-product-price { font-size: 25px; }
+    }
+
+    @media (max-width: 719px) {
+      .menu-stage { min-height: 100svh; }
+
+      .menu-header {
+        grid-template-columns: 88px minmax(0, 1fr);
+        gap: 13px;
+        min-height: 108px;
+        padding: 15px;
+      }
+
+      .menu-brand {
+        width: 88px;
+        height: 62px;
+        padding: 8px;
+        border-radius: 12px;
+      }
+
+      .menu-heading h1 { font-size: 30px; }
+      .menu-heading p { font-size: 11px; }
+      .menu-kicker { font-size: 9px; }
+      .menu-clock { display: none; }
+
+      .menu-board {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+        padding: 12px 10px;
+      }
+
+      .menu-column { gap: 10px; }
+      .menu-category { border-radius: 14px; }
+      .menu-category-head h2 { font-size: 18px; }
+
+      .menu-product {
+        min-height: 78px;
+        grid-template-columns: 62px minmax(0, 1fr) auto;
+        gap: 9px;
+        padding: 7px 10px 7px 7px;
+      }
+
+      .menu-product-image {
+        width: 62px;
+        height: 62px;
+        border-radius: 10px;
+      }
+
+      .menu-product-copy h3 {
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+
+      .menu-product-price { font-size: 19px; }
+      .menu-footer { padding-inline: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="menu-stage">
+    <header class="menu-header">
+      <div class="menu-brand"><img src="../logo.png" alt="Ilha Tênis" /></div>
+      <div class="menu-heading">
+        <span class="menu-kicker">ILHA TÊNIS · BAR</span>
+        <h1>Cardápio</h1>
+        <p>Escolha seu pedido e aproveite.</p>
+      </div>
+      <div class="menu-clock" aria-label="Data e hora"><strong id="menuClock">--:--</strong><span id="menuDate">Carregando...</span></div>
+    </header>
+
+    <main class="menu-board" id="menuBoard" aria-live="polite">
+      <div class="menu-state"><div><strong>Carregando o cardápio</strong><span>Os produtos aparecerão em instantes.</span></div></div>
+    </main>
+
+    <footer class="menu-footer">
+      <span class="menu-live">Cardápio atualizado automaticamente</span>
+      <span id="menuUpdatedAt">Conectando...</span>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrcXRncHRlYmtnZndndXlreGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzEyNjAsImV4cCI6MjA5NzcwNzI2MH0.S-dopp-fbBgq8_YclyiAheOdK-QhXt92RYLu8JKmKCg';
+      const MENU_QUERY = 'bar_products?select=id,name,category,sale_price,image_url,menu_featured,menu_sort_order,updated_at&active=eq.true&menu_visible=eq.true&order=category.asc,menu_sort_order.asc,name.asc';
+      const CATEGORY_PRIORITY = ['cervejas', 'porcoes', 'lanches', 'refrigerantes', 'aguas', 'bebidas'];
+      let lastPayload = '';
+      let refreshInFlight = false;
+
+      function escapeHtml(value) {
+        return String(value == null ? '' : value).replace(/[&<>'"]/g, function (char) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char];
+        });
+      }
+
+      function normalize(value) {
+        return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+      }
+
+      function money(value) {
+        return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      }
+
+      function imageSource(value) {
+        const source = String(value || '').trim();
+        if (!source) return '';
+        try {
+          const url = new URL(source, window.location.origin);
+          if (url.hostname === 'app.ilhatenis.com' && url.pathname.startsWith('/assets/bar-products/')) return url.pathname + url.search;
+          return url.href;
+        } catch (error) {
+          return source;
+        }
+      }
+
+      function categoryRank(category) {
+        const normalized = normalize(category);
+        const index = CATEGORY_PRIORITY.findIndex(function (entry) { return normalized.includes(entry); });
+        return index < 0 ? 99 : index;
+      }
+
+      function groupProducts(products) {
+        const groups = new Map();
+        products.forEach(function (product) {
+          const category = product.category || 'Outros';
+          if (!groups.has(category)) groups.set(category, []);
+          groups.get(category).push(product);
+        });
+        return Array.from(groups.entries()).map(function (entry) {
+          return { category: entry[0], products: entry[1] };
+        });
+      }
+
+      function distributeGroups(groups) {
+        const columns = [[], []];
+        const heights = [0, 0];
+        groups.slice().sort(function (a, b) {
+          return b.products.length - a.products.length || categoryRank(a.category) - categoryRank(b.category);
+        }).forEach(function (group) {
+          const columnIndex = heights[0] <= heights[1] ? 0 : 1;
+          columns[columnIndex].push(group);
+          heights[columnIndex] += group.products.length * 92 + 54;
+        });
+        columns.forEach(function (column) {
+          column.sort(function (a, b) {
+            return categoryRank(a.category) - categoryRank(b.category) || a.category.localeCompare(b.category, 'pt-BR');
+          });
+        });
+        return columns;
+      }
+
+      function productHtml(product) {
+        const source = imageSource(product.image_url);
+        const initial = escapeHtml(String(product.name || 'P').trim().charAt(0).toUpperCase() || 'P');
+        const image = source
+          ? '<img src="' + escapeHtml(source) + '" alt="' + escapeHtml(product.name) + '" decoding="async" loading="eager" />'
+          : '<span>' + initial + '</span>';
+        return '<article class="menu-product' + (product.menu_featured ? ' is-featured' : '') + '">' +
+          '<div class="menu-product-image" data-menu-fallback="' + initial + '">' + image + '</div>' +
+          '<div class="menu-product-copy"><h3>' + escapeHtml(product.name) + '</h3><small>' + (product.menu_featured ? 'Destaque da casa' : escapeHtml(product.category || 'Bar')) + '</small></div>' +
+          '<strong class="menu-product-price">' + money(product.sale_price) + '</strong>' +
+        '</article>';
+      }
+
+      function categoryHtml(group) {
+        return '<section class="menu-category"><header class="menu-category-head"><h2>' + escapeHtml(group.category) + '</h2><span>' + group.products.length + ' opções</span></header><div class="menu-products">' + group.products.map(productHtml).join('') + '</div></section>';
+      }
+
+      function render(products) {
+        const board = document.getElementById('menuBoard');
+        if (!products.length) {
+          board.innerHTML = '<div class="menu-state"><div><strong>Cardápio em atualização</strong><span>Nenhum produto está publicado neste momento.</span></div></div>';
+          return;
+        }
+        const columns = distributeGroups(groupProducts(products));
+        board.innerHTML = columns.map(function (groups) {
+          return '<div class="menu-column">' + groups.map(categoryHtml).join('') + '</div>';
+        }).join('');
+        board.querySelectorAll('.menu-product-image img').forEach(function (image) {
+          image.addEventListener('error', function () {
+            const container = image.parentElement;
+            container.innerHTML = '<span>' + escapeHtml(container.dataset.menuFallback || 'P') + '</span>';
+          }, { once: true });
+        });
+      }
+
+      async function loadMenu() {
+        if (refreshInFlight) return;
+        refreshInFlight = true;
+        try {
+          const response = await fetch(SUPABASE_URL + '/rest/v1/' + MENU_QUERY, {
+            headers: {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: 'Bearer ' + SUPABASE_ANON_KEY
+            },
+            cache: 'no-store'
+          });
+          if (!response.ok) throw new Error('Não foi possível carregar o cardápio.');
+          const products = await response.json();
+          const payload = JSON.stringify(products);
+          if (payload !== lastPayload) {
+            lastPayload = payload;
+            render(products);
+          }
+          document.getElementById('menuUpdatedAt').textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        } catch (error) {
+          if (!lastPayload) {
+            document.getElementById('menuBoard').innerHTML = '<div class="menu-state"><div><strong>Conexão temporariamente indisponível</strong><span>O cardápio tentará carregar novamente sozinho.</span></div></div>';
+          }
+          document.getElementById('menuUpdatedAt').textContent = 'Tentando reconectar...';
+        } finally {
+          refreshInFlight = false;
+        }
+      }
+
+      function updateClock() {
+        const now = new Date();
+        document.getElementById('menuClock').textContent = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('menuDate').textContent = now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+      }
+
+      updateClock();
+      loadMenu();
+      setInterval(updateClock, 1000);
+      setInterval(loadMenu, 45000);
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) loadMenu();
+      });
+    })();
+  </script>
+</body>
+</html>

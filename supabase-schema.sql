@@ -165,10 +165,18 @@ create table if not exists public.bar_products (
   unit text not null default 'un',
   image_url text,
   active boolean not null default true,
+  menu_visible boolean not null default true,
+  menu_featured boolean not null default false,
+  menu_sort_order integer not null default 1000,
   notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.bar_products
+  add column if not exists menu_visible boolean not null default true,
+  add column if not exists menu_featured boolean not null default false,
+  add column if not exists menu_sort_order integer not null default 1000;
 
 create table if not exists public.bar_tables (
   id uuid primary key default gen_random_uuid(),
@@ -348,6 +356,7 @@ create unique index if not exists app_court_bookings_client_day_unique_idx
   where client_id is not null and status <> 'CANCELADO';
 create index if not exists bar_products_active_idx on public.bar_products(active, category, name);
 create index if not exists bar_products_stock_idx on public.bar_products(stock_quantity, minimum_stock) where active = true;
+create index if not exists bar_products_public_menu_idx on public.bar_products(menu_visible, active, category, menu_sort_order, name);
 create index if not exists bar_public_cards_active_idx on public.bar_public_cards(active, code);
 create index if not exists bar_orders_status_idx on public.bar_orders(status, opened_at desc);
 create unique index if not exists bar_orders_public_tracking_idx on public.bar_orders(public_tracking_token);
@@ -1761,6 +1770,19 @@ grant select, insert, update, delete on
 to authenticated;
 revoke all on table public.bar_service_requests from anon;
 revoke all on table public.bar_events from anon;
+revoke all on table public.bar_products from anon;
+grant select (
+  id,
+  name,
+  category,
+  sale_price,
+  image_url,
+  active,
+  menu_visible,
+  menu_featured,
+  menu_sort_order,
+  updated_at
+) on table public.bar_products to anon;
 grant execute on function public.current_user_role() to authenticated;
 grant execute on function public.is_club_staff() to authenticated;
 grant execute on function public.is_club_office() to authenticated;
@@ -1824,6 +1846,7 @@ drop policy if exists "court bookings staff manage" on public.app_court_bookings
 drop policy if exists "payment invoices read own or staff" on public.app_payment_invoices;
 drop policy if exists "payment invoices staff manage" on public.app_payment_invoices;
 drop policy if exists "bar staff manage products" on public.bar_products;
+drop policy if exists "public read visible menu products" on public.bar_products;
 drop policy if exists "bar staff manage tables" on public.bar_tables;
 drop policy if exists "bar staff manage public cards" on public.bar_public_cards;
 drop policy if exists "bar staff manage orders" on public.bar_orders;
@@ -1982,6 +2005,11 @@ on public.bar_products for all
 to authenticated
 using (public.is_bar_staff())
 with check (public.is_bar_staff());
+
+create policy "public read visible menu products"
+on public.bar_products for select
+to anon
+using (active = true and menu_visible = true);
 
 create policy "bar staff manage tables"
 on public.bar_tables for all
