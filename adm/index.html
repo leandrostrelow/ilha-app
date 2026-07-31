@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0b3138" />
   <meta name="application-name" content="Ilha Bar" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Ilha Bar" />
@@ -307,6 +308,13 @@
       border: 1px solid #dbe8a6;
     }
 
+    .adm-login-card .bar-install-app-login {
+      margin-top: 8px;
+      border: 1px solid #c9e7e7;
+      background: #e9f7f6;
+      color: #087d83;
+    }
+
     body.preview-env .adm-login-card .adm-login-demo {
       display: block !important;
     }
@@ -373,6 +381,31 @@
       display: block;
     }
 
+    .bar-install-app {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      margin-left: auto;
+      padding: 7px 10px;
+      border: 1px solid #d9e9ac;
+      border-radius: 10px;
+      background: #f3f9df;
+      color: #527b13;
+      font-size: 10px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .bar-install-app svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
     .admin-sidebar-brand strong {
       display: block;
       font-size: 18px;
@@ -407,7 +440,8 @@
       font-weight: 900;
     }
 
-    .admin-nav-btn[data-bar-side-tab="orders"] {
+    .admin-nav-btn[data-bar-side-tab="orders"],
+    .admin-nav-btn[data-bar-side-tab="kitchen"] {
       position: relative;
       grid-template-columns: 28px minmax(0, 1fr) auto;
     }
@@ -4514,6 +4548,55 @@
       min-width: 0;
     }
 
+    .bar-command-name-row {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .bar-command-edit-name {
+      min-height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      flex: 0 0 auto;
+      padding: 4px 8px;
+      border: 1px solid #cbdde1;
+      border-radius: 7px;
+      color: #496069;
+      background: #f5f9fa;
+      font-size: 9px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .bar-command-edit-name svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .bar-command-edit-name:hover {
+      color: var(--teal);
+      border-color: #8fc3ca;
+      background: #edf8f9;
+    }
+
+    .bar-command-edit-name:disabled {
+      opacity: .52;
+      cursor: wait;
+    }
+
+    .bar-command-edit-name[hidden] {
+      display: none;
+    }
+
     .bar-command-head-badges {
       flex: 0 0 auto;
       display: flex;
@@ -6923,7 +7006,9 @@
     }
 
     .admin-nav-btn[data-bar-side-tab="orders"],
-    body.bar-admin-surface .admin-nav-btn[data-bar-side-tab="orders"] {
+    .admin-nav-btn[data-bar-side-tab="kitchen"],
+    body.bar-admin-surface .admin-nav-btn[data-bar-side-tab="orders"],
+    body.bar-admin-surface .admin-nav-btn[data-bar-side-tab="kitchen"] {
       grid-template-columns: 34px minmax(0, 1fr) auto;
     }
 
@@ -8314,6 +8399,192 @@
       font-weight: 850;
     }
 
+    .bar-kitchen-panel {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .bar-kitchen-panel > .ops-panel-head:first-child {
+      margin: 0;
+      border-radius: 14px 14px 0 0;
+    }
+
+    .bar-kitchen-head-metrics {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bar-kitchen-metric {
+      min-width: 90px;
+      display: grid;
+      justify-items: end;
+      gap: 2px;
+      padding: 7px 11px;
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .1);
+    }
+
+    .bar-kitchen-metric span {
+      color: #c5cfdd;
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .bar-kitchen-metric strong {
+      color: #ffffff;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .bar-kitchen-metric.is-ready strong {
+      color: #dff3a8;
+    }
+
+    .bar-kitchen-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 11px;
+      padding: 14px;
+      background: #f3f7f8;
+    }
+
+    .bar-kitchen-card {
+      min-width: 0;
+      display: grid;
+      align-content: start;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid #dbe6e9;
+      border-top: 4px solid #e7a82e;
+      border-radius: 13px;
+      background: #ffffff;
+      box-shadow: 0 8px 22px rgba(16, 39, 44, .06);
+    }
+
+    .bar-kitchen-card.is-ready {
+      border-color: #cfe1ac;
+      border-top-color: #96c11f;
+      background: #fbfff2;
+    }
+
+    .bar-kitchen-card-head,
+    .bar-kitchen-card-footer,
+    .bar-kitchen-person {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .bar-kitchen-position {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: #e9f4f5;
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .bar-kitchen-time {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .bar-kitchen-product {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bar-kitchen-quantity {
+      min-width: 44px;
+      min-height: 44px;
+      display: grid;
+      place-items: center;
+      padding: 6px;
+      border-radius: 11px;
+      background: #e8f3f5;
+      color: #087d83;
+      font-size: 16px;
+      font-weight: 950;
+    }
+
+    .bar-kitchen-product strong,
+    .bar-kitchen-product small,
+    .bar-kitchen-person strong,
+    .bar-kitchen-person small {
+      display: block;
+      min-width: 0;
+    }
+
+    .bar-kitchen-product strong {
+      color: #17243b;
+      font-size: 16px;
+      line-height: 1.15;
+    }
+
+    .bar-kitchen-product small,
+    .bar-kitchen-person small {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .bar-kitchen-person {
+      align-items: flex-end;
+      padding-top: 10px;
+      border-top: 1px solid #e9eef0;
+    }
+
+    .bar-kitchen-person strong {
+      color: var(--teal);
+      font-size: 14px;
+    }
+
+    .bar-kitchen-note {
+      padding: 9px 10px;
+      border-radius: 9px;
+      background: #fff5df;
+      color: #765114;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .bar-kitchen-card-footer {
+      margin-top: auto;
+      align-items: stretch;
+    }
+
+    .bar-kitchen-card-footer .primary-btn {
+      min-height: 44px;
+      flex: 1 1 auto;
+      justify-content: center;
+    }
+
+    .bar-kitchen-card.is-ready .bar-kitchen-card-footer .primary-btn {
+      color: #173e44;
+      border-color: #dff3a8;
+      background: #dff3a8;
+    }
+
+    .bar-kitchen-empty {
+      grid-column: 1 / -1;
+    }
+
     .bar-day-closing-filter select {
       min-width: 190px;
       min-height: 38px;
@@ -9584,6 +9855,14 @@
         min-width: 0;
         overflow-x: hidden;
         padding-bottom: env(safe-area-inset-bottom);
+        overscroll-behavior-y: contain;
+      }
+
+      body.bar-admin-surface button,
+      body.bar-admin-surface a,
+      body.bar-admin-surface input,
+      body.bar-admin-surface select {
+        touch-action: manipulation;
       }
 
       body.bar-admin-surface .app {
@@ -9615,16 +9894,27 @@
         min-height: 32px;
         display: flex;
         align-items: center;
+        justify-content: space-between;
+        gap: 10px;
         padding: 0 3px;
         border: 0;
       }
 
       body.bar-admin-surface .admin-sidebar-brand img {
-        width: 112px;
+        width: min(112px, 38vw);
         max-height: 34px;
         margin: 0;
         object-position: left center;
         filter: brightness(0) invert(1);
+      }
+
+      body.bar-admin-surface .bar-install-app {
+        min-height: 34px;
+        margin-left: auto;
+        padding: 6px 9px;
+        border-color: rgba(223, 243, 168, .5);
+        background: rgba(223, 243, 168, .14);
+        color: #e8f9b8;
       }
 
       body.bar-admin-surface .bar-admin-context,
@@ -9668,7 +9958,8 @@
         scroll-snap-align: start;
       }
 
-      body.bar-admin-surface .admin-nav-btn[data-bar-side-tab="orders"] {
+      body.bar-admin-surface .admin-nav-btn[data-bar-side-tab="orders"],
+      body.bar-admin-surface .admin-nav-btn[data-bar-side-tab="kitchen"] {
         grid-template-columns: 24px auto auto;
       }
 
@@ -9804,60 +10095,91 @@
 
       body.bar-admin-surface .bar-table-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 7px;
+        gap: 6px;
       }
 
       body.bar-admin-surface .bar-table-card,
       body.bar-admin-surface .bar-table-card.is-loose {
-        min-height: 188px;
-        grid-template-rows: auto minmax(34px, auto) auto;
+        min-height: 126px;
+        grid-template-rows: auto auto auto;
+        gap: 5px;
+        padding: 7px;
+        border-top-width: 3px;
+        border-radius: 10px;
+      }
+
+      body.bar-admin-surface .bar-kitchen-panel > .ops-panel-head:first-child {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+      }
+
+      body.bar-admin-surface .bar-kitchen-head-metrics {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      body.bar-admin-surface .bar-kitchen-metric {
+        min-width: 0;
+        justify-items: start;
+      }
+
+      body.bar-admin-surface .bar-kitchen-list {
+        grid-template-columns: minmax(0, 1fr);
         gap: 8px;
-        padding: 10px;
-        border-radius: 12px;
+        padding: 8px;
+      }
+
+      body.bar-admin-surface .bar-kitchen-card {
+        gap: 10px;
+        padding: 11px;
+      }
+
+      body.bar-admin-surface .bar-kitchen-product strong {
+        font-size: 15px;
       }
 
       body.bar-admin-surface .bar-table-card-person {
         align-items: flex-start;
-        gap: 5px;
-      }
-
-      body.bar-admin-surface .bar-table-card-person h3 {
-        font-size: 16px;
-        line-height: 1.05;
-      }
-
-      body.bar-admin-surface .bar-table-card-badges {
         gap: 3px;
       }
 
+      body.bar-admin-surface .bar-table-card-person h3 {
+        min-height: 29px;
+        font-size: 13px;
+        line-height: 1.02;
+      }
+
+      body.bar-admin-surface .bar-table-card-badges {
+        gap: 2px;
+      }
+
       body.bar-admin-surface .bar-table-card-badges .ops-pill {
-        padding: 4px 6px;
-        font-size: 8px;
+        padding: 3px 4px;
+        font-size: 7px;
       }
 
       body.bar-admin-surface .bar-table-card-person-meta {
-        min-height: 20px;
-        margin: 0;
-        font-size: 9px;
+        display: none;
       }
 
-      body.bar-admin-surface .bar-table-order-summary {
-        min-height: 52px;
-        padding: 8px;
+      body.bar-admin-surface .bar-table-command-summary,
+      body.bar-admin-surface .bar-table-command-total {
+        min-height: 34px;
+        padding: 5px 7px;
       }
 
-      body.bar-admin-surface .bar-table-order-summary span {
-        font-size: 8px;
+      body.bar-admin-surface .bar-table-command-summary span {
+        font-size: 7px;
       }
 
-      body.bar-admin-surface .bar-table-order-summary strong {
-        font-size: 16px;
+      body.bar-admin-surface .bar-table-command-summary > strong {
+        font-size: 13px;
       }
 
       body.bar-admin-surface .bar-table-card-actions button {
-        min-height: 38px;
-        padding: 7px;
-        font-size: 10px;
+        min-height: 31px;
+        padding: 5px;
+        font-size: 9px;
       }
 
       body.bar-admin-surface .bar-product-metrics,
@@ -10184,6 +10506,15 @@
         white-space: normal;
       }
 
+      body.bar-admin-surface .bar-command-name-row {
+        align-items: flex-start;
+      }
+
+      body.bar-admin-surface .bar-command-edit-name {
+        min-height: 27px;
+        padding-inline: 6px;
+      }
+
       body.bar-admin-surface .bar-command-head-badges {
         max-width: none;
         justify-content: flex-start;
@@ -10311,12 +10642,12 @@
 
     @media (max-width: 380px) {
       body.bar-admin-surface .bar-table-grid {
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       body.bar-admin-surface .bar-table-card,
       body.bar-admin-surface .bar-table-card.is-loose {
-        min-height: 170px;
+        min-height: 122px;
       }
 
       body.bar-admin-surface .bar-product-list {
@@ -10962,6 +11293,7 @@
         <button class="adm-login-secondary" type="button" id="adminSignupBtn">Criar primeiro acesso</button>
       </div>
       <button class="adm-login-demo preview-only" type="button" id="adminDemoBtn">Entrar em modo demonstração</button>
+      <button class="bar-install-app-login" type="button" id="adminInstallBtn" hidden>Instalar Ilha Bar</button>
       <div class="adm-login-note" id="adminSessionInfo">O primeiro e-mail cadastrado vira admin. Depois ele libera professores e secretaria.</div>
       <div class="adm-login-error" id="adminLoginError" aria-live="polite"></div>
     </form>
@@ -10971,6 +11303,7 @@
     <aside class="admin-sidebar" aria-label="Menu administrativo">
       <div class="admin-sidebar-brand">
         <img src="../logo.png" alt="Ilha Tênis" />
+        <button class="bar-install-app" type="button" id="barInstallAppBtn" hidden><svg><use href="#bar-icon-screen"></use></svg><span>Instalar app</span></button>
       </div>
       <div class="bar-admin-context" data-bar-surface-only>
         <strong>Ilha Bar</strong>
@@ -10984,6 +11317,7 @@
         <button class="admin-nav-btn active" type="button" data-bar-entry data-bar-side-tab="overview"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Visão geral</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="events"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Agenda</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="orders"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Comandas</span><span class="bar-nav-badge" id="barOrdersNavBadge" hidden>0</span></button>
+        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="kitchen"><span class="admin-nav-icon"><svg><use href="#bar-icon-portion"></use></svg></span><span>Pedidos</span><span class="bar-nav-badge" id="barKitchenNavBadge" hidden>0</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="tables"><span class="admin-nav-icon"><svg><use href="#admin-icon-table"></use></svg></span><span>Mesas</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="products"><span class="admin-nav-icon"><svg><use href="#admin-icon-box"></use></svg></span><span>Produtos e estoque</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="menu"><span class="admin-nav-icon"><svg><use href="#bar-icon-screen"></use></svg></span><span>Cardápio TV</span></button>
@@ -11504,6 +11838,7 @@
             <button class="ops-tab-btn active" type="button" data-bar-tab="overview">Visão geral</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="events">Agenda</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="orders">Comandas <span class="bar-tab-badge" id="barOrdersTabBadge" hidden>0</span></button>
+            <button class="ops-tab-btn" type="button" data-bar-tab="kitchen">Pedidos <span class="bar-tab-badge" id="barKitchenTabBadge" hidden>0</span></button>
             <button class="ops-tab-btn" type="button" data-bar-tab="tables">Mesas</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="products">Produtos e estoque</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="menu">Cardápio TV</button>
@@ -11525,6 +11860,19 @@
                 <div id="barLowStockList"></div>
               </section>
             </div>
+          </div>
+
+          <div data-bar-panel="kitchen">
+            <section class="ops-panel bar-kitchen-panel">
+              <div class="ops-panel-head">
+                <div><h2>Pedidos de porções</h2><div class="muted">Fila da cozinha por ordem de chegada.</div></div>
+                <div class="bar-kitchen-head-metrics">
+                  <div class="bar-kitchen-metric"><span>Na fila</span><strong id="barKitchenPendingMetric">0</strong></div>
+                  <div class="bar-kitchen-metric is-ready"><span>Prontos</span><strong id="barKitchenReadyMetric">0</strong></div>
+                </div>
+              </div>
+              <div class="bar-kitchen-list" id="barKitchenQueue"></div>
+            </section>
           </div>
 
           <div data-bar-panel="events">
@@ -11590,7 +11938,6 @@
                 </label>
                 <div class="bar-command-board-actions">
                   <button class="primary-btn bar-icon-button" type="button" id="barNewLooseOrderBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Nova comanda</span></button>
-                  <button class="small-btn" type="button" id="barEnableAlertsBtn"><svg><use href="#admin-icon-bell"></use></svg><span>Ativar alertas</span></button>
                   <button class="small-btn bar-command-screen-btn" type="button" id="barCommandScreenBtn" aria-pressed="false"><svg><use href="#bar-icon-screen"></use></svg><span>Tela de comandas</span></button>
                   <div class="bar-command-day-closing" title="Valor previsto das comandas abertas"><small>Previsto</small><strong id="barOpenOrdersMetric">R$ 0,00</strong></div>
                   <button class="small-btn" type="button" id="barSurfaceLogoutBtn" data-bar-surface-only>Sair</button>
@@ -11972,7 +12319,7 @@
             <div class="bar-command-identity">
               <div class="bar-command-identity-top">
                 <div class="bar-command-identity-copy">
-                  <h2 id="barCommandModalTitle">Cliente</h2>
+                  <div class="bar-command-name-row"><h2 id="barCommandModalTitle">Cliente</h2><button class="bar-command-edit-name" type="button" id="barOrderEditNameBtn"><svg><use href="#bar-icon-edit"></use></svg><span>Editar nome</span></button></div>
                 </div>
                 <div class="bar-command-head-badges"><span id="barCommandStatus"></span><button class="bar-command-delete" type="button" id="barOrderDeleteBtn">Excluir</button><button class="bar-team-discount" type="button" id="barTeamDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Equipe</span><small>-35%</small></button><button class="bar-team-discount" type="button" id="barProfessorDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Professor</span><small>-10%</small></button><span class="ops-pill warn" id="barCommandLocation">Avulsa</span></div>
               </div>
@@ -16009,6 +16356,7 @@
     const LESSONS_SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
     const LESSONS_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrcXRncHRlYmtnZndndXlreGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzEyNjAsImV4cCI6MjA5NzcwNzI2MH0.S-dopp-fbBgq8_YclyiAheOdK-QhXt92RYLu8JKmKCg';
     const IS_BAR_ADMIN_SURFACE = /^\/admbar(?:\/|$)/.test(window.location.pathname) || new URLSearchParams(window.location.search).get('surface') === 'bar';
+    const BAR_LAUNCH_TAB = new URLSearchParams(window.location.search).get('tab') === 'kitchen' ? 'kitchen' : 'orders';
     const lessonDays = [
       { key: 'segunda', label: 'SEG' },
       { key: 'terca', label: 'TER' },
@@ -16233,7 +16581,7 @@
       const fallback = { tab: 'orders', commandTab: 'items', orderId: null, scrollY: 0 };
       try {
         const stored = JSON.parse(localStorage.getItem(BAR_VIEW_STATE_KEY) || '{}');
-        const barTabs = ['overview', 'events', 'orders', 'tables', 'products', 'menu', 'finance', 'qrcodes'];
+        const barTabs = ['overview', 'events', 'orders', 'kitchen', 'tables', 'products', 'menu', 'finance', 'qrcodes'];
         const commandTabs = ['items', 'add', 'checkout'];
         return {
           tab: barTabs.includes(stored.tab) ? stored.tab : fallback.tab,
@@ -16262,7 +16610,7 @@
       courtDate: localDateString(new Date()),
       extraCourtDates: [],
       selectedCourtSlot: null,
-      barTab: IS_BAR_ADMIN_SURFACE ? 'orders' : storedBarViewState.tab,
+      barTab: IS_BAR_ADMIN_SURFACE ? BAR_LAUNCH_TAB : storedBarViewState.tab,
       barProductView: 'catalog',
       barProductCategory: 'todos',
       barOrderProductCategory: '',
@@ -17678,6 +18026,19 @@
       }).map(function (item) { return String(item.orderId); })).size;
     }
 
+    function barPortionQueueItems() {
+      return opsData.barOrderItems.filter(function (item) {
+        const status = String(item.status || '').toUpperCase();
+        const product = barProductById(item.productId);
+        const order = barOrderById(item.orderId);
+        return ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(status) &&
+          product && barProductCategoryKey(product.category) === 'portion' &&
+          order && barOrderIsOpen(order);
+      }).sort(function (a, b) {
+        return String(a.created || '').localeCompare(String(b.created || ''));
+      });
+    }
+
     function updateBarOrderBadges() {
       const count = newIncomingBarOrderCount();
       ['barOrdersNavBadge', 'barOrdersTabBadge'].forEach(function (id) {
@@ -17685,6 +18046,13 @@
         if (!badge) return;
         badge.textContent = count;
         badge.hidden = count === 0;
+      });
+      const kitchenCount = barPortionQueueItems().length;
+      ['barKitchenNavBadge', 'barKitchenTabBadge'].forEach(function (id) {
+        const badge = $(id);
+        if (!badge) return;
+        badge.textContent = kitchenCount;
+        badge.hidden = kitchenCount === 0;
       });
     }
 
@@ -18846,6 +19214,39 @@
       $('barAccessCardGrid').innerHTML = (opsData.barAccessCards || []).map(barAccessCardQrCard).join('') || '<div class="lesson-empty-state">Crie o primeiro cartão individual.</div>';
     }
 
+    function barKitchenTimeLabel(value) {
+      if (!value) return 'Agora';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return 'Agora';
+      return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function renderBarKitchenQueue() {
+      const items = barPortionQueueItems();
+      const readyCount = items.filter(function (item) {
+        return String(item.status || '').toUpperCase() === 'PRONTO';
+      }).length;
+      $('barKitchenPendingMetric').textContent = items.length - readyCount;
+      $('barKitchenReadyMetric').textContent = readyCount;
+      $('barKitchenQueue').innerHTML = items.map(function (item, index) {
+        const order = barOrderById(item.orderId);
+        const status = String(item.status || '').toUpperCase();
+        const ready = status === 'PRONTO';
+        const customerName = String(item.customerName || order && order.customerName || barTableLabel(order) || 'Cliente').trim();
+        const commandLabel = order && order.commandNumber ? 'Comanda #' + order.commandNumber : 'Comanda aberta';
+        const nextStatus = ready ? 'ENTREGUE' : 'PRONTO';
+        const actionLabel = ready ? 'Entregue' : 'Ficou pronto';
+        const note = item.notes ? '<div class="bar-kitchen-note"><strong>Observação:</strong> ' + escapeHtml(item.notes) + '</div>' : '';
+        return '<article class="bar-kitchen-card' + (ready ? ' is-ready' : '') + '">' +
+          '<div class="bar-kitchen-card-head"><span class="bar-kitchen-position">#' + (index + 1) + '</span><span class="bar-kitchen-time">Pedido às ' + escapeHtml(barKitchenTimeLabel(item.created)) + '</span></div>' +
+          '<div class="bar-kitchen-product"><span class="bar-kitchen-quantity">' + escapeHtml(item.quantity + 'x') + '</span><div><strong>' + escapeHtml(item.productName) + '</strong><small>' + escapeHtml(barStatusLabel(status)) + '</small></div></div>' +
+          note +
+          '<div class="bar-kitchen-person"><div><strong>' + escapeHtml(customerName) + '</strong><small>' + escapeHtml(commandLabel) + '</small></div>' + barStatusPill(status) + '</div>' +
+          '<div class="bar-kitchen-card-footer"><button class="primary-btn" type="button" data-bar-kitchen-status="' + escapeHtml(item.id) + '" data-next-status="' + nextStatus + '">' + actionLabel + '</button></div>' +
+        '</article>';
+      }).join('') || '<div class="lesson-empty-state bar-kitchen-empty"><strong>Fila em dia.</strong><br />Nenhuma porção aguardando preparo ou entrega.</div>';
+    }
+
     function renderBarModule() {
       setBarTab(opsState.barTab);
       $('barSchemaNote').classList.toggle('show', !opsState.barSchemaReady);
@@ -18881,6 +19282,7 @@
         : 'Fechamento do dia · ' + barFinancePaymentLabel(paymentFilter);
       updateBarOrderBadges();
       updateBarAlertsButton();
+      renderBarKitchenQueue();
       $('barOverviewOrders').innerHTML = openOrders.map(barOrderCard).join('') || '<div class="lesson-empty-state">Nenhuma comanda aberta.</div>';
       $('barLowStockList').innerHTML = lowStock.map(function (product) {
         return '<div class="bar-stock-alert"><div><strong>' + escapeHtml(product.name) + '</strong><div class="muted">Mínimo: ' + escapeHtml(Number(product.minimumStock || 0).toLocaleString('pt-BR')) + ' ' + escapeHtml(product.unit) + '</div></div><span class="ops-pill bad">' + escapeHtml(Number(product.stock || 0).toLocaleString('pt-BR')) + ' ' + escapeHtml(product.unit) + '</span></div>';
@@ -19242,6 +19644,7 @@
       $('barOrderItemForm').style.display = open ? 'grid' : 'none';
       $('barCommandAddTab').hidden = !open;
       document.querySelectorAll('[data-bar-command-tab-target="add"]').forEach(function (button) { button.hidden = !open; });
+      $('barOrderEditNameBtn').hidden = !open;
       $('barOrderDeleteBtn').hidden = !open;
       $('barOrderCloseBtn').style.display = open ? 'inline-flex' : 'none';
       renderBarProducts();
@@ -19335,7 +19738,7 @@
         window.location.href = '/admbar';
         return;
       }
-      opsState.barTab = 'orders';
+      opsState.barTab = BAR_LAUNCH_TAB;
       setClubMode('club-bar');
       if (!isAdminDemoMode() && !opsState.barDataLoaded) {
         opsData.barProducts = [];
@@ -20075,6 +20478,8 @@
         }
         renderBarModule();
         renderBarCommandModal();
+        if (String(status).toUpperCase() === 'PRONTO') toast('Porção marcada como pronta.');
+        if (String(status).toUpperCase() === 'ENTREGUE') toast('Pedido entregue e retirado da fila.');
       } catch (error) {
         reportActionError(error);
       }
@@ -20117,6 +20522,63 @@
         toast('Comanda atualizada.');
       } catch (error) {
         reportActionError(error);
+      }
+    }
+
+    async function editBarOrderCustomerNameAction() {
+      const order = barOrderById(opsState.selectedBarOrderId);
+      if (!order || !barOrderIsOpen(order)) return;
+      const orderItems = barItemsForOrder(order.id);
+      const customer = barOrderCustomerDetails(order, orderItems);
+      const currentName = String(order.customerName || customer.name || '').trim();
+      const enteredName = window.prompt('Corrigir o nome desta comanda:', currentName);
+      if (enteredName === null) return;
+      const nextName = enteredName.trim().replace(/\s+/g, ' ');
+      if (nextName.length < 2) {
+        toast('Informe um nome com pelo menos 2 caracteres.');
+        return;
+      }
+      if (nextName.length > 80) {
+        toast('O nome pode ter no máximo 80 caracteres.');
+        return;
+      }
+      if (normalizeMatchText(nextName) === normalizeMatchText(currentName)) return;
+
+      const button = $('barOrderEditNameBtn');
+      const originalLabel = button.innerHTML;
+      try {
+        requireAdminSession();
+        button.disabled = true;
+        button.textContent = 'Salvando...';
+        if (barCanPersist(order.id)) {
+          await supabaseRest('bar_orders?id=eq.' + encodeURIComponent(order.id), {
+            method: 'PATCH',
+            body: { customer_name: nextName, updated_at: new Date().toISOString() },
+            prefer: 'return=representation'
+          });
+          let itemFilter = 'bar_order_items?order_id=eq.' + encodeURIComponent(order.id);
+          if (order.tableId && customer.name) itemFilter += '&customer_name=eq.' + encodeURIComponent(customer.name);
+          await supabaseRest(itemFilter, {
+            method: 'PATCH',
+            body: { customer_name: nextName, updated_at: new Date().toISOString() },
+            prefer: 'return=representation'
+          });
+          await loadBarData(true);
+        } else {
+          const previousNames = [currentName, customer.name, order.customerName].map(normalizeMatchText).filter(Boolean);
+          order.customerName = nextName;
+          orderItems.forEach(function (item) {
+            if (!order.tableId || previousNames.includes(normalizeMatchText(item.customerName))) item.customerName = nextName;
+          });
+        }
+        renderBarModule();
+        renderBarCommandModal();
+        toast('Nome da comanda atualizado.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        button.disabled = false;
+        button.innerHTML = originalLabel;
       }
     }
 
@@ -22067,11 +22529,65 @@
       }
     }
 
+    let deferredBarInstallPrompt = null;
+
+    function barAppIsInstalled() {
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    function updateBarInstallButtons() {
+      const canOffer = IS_BAR_ADMIN_SURFACE && !barAppIsInstalled() && (Boolean(deferredBarInstallPrompt) || /Android/i.test(navigator.userAgent));
+      ['adminInstallBtn', 'barInstallAppBtn'].forEach(function (id) {
+        const button = $(id);
+        if (button) button.hidden = !canOffer;
+      });
+    }
+
+    async function installBarAppAction() {
+      if (barAppIsInstalled()) {
+        updateBarInstallButtons();
+        toast('O Ilha Bar já está instalado neste aparelho.');
+        return;
+      }
+      if (!deferredBarInstallPrompt) {
+        toast('No Chrome, toque em ⋮ e depois em “Instalar app”.');
+        return;
+      }
+      deferredBarInstallPrompt.prompt();
+      const choice = await deferredBarInstallPrompt.userChoice;
+      deferredBarInstallPrompt = null;
+      updateBarInstallButtons();
+      if (choice && choice.outcome === 'accepted') toast('Instalação do Ilha Bar iniciada.');
+    }
+
+    function initBarPwaInstall() {
+      window.addEventListener('beforeinstallprompt', function (event) {
+        event.preventDefault();
+        deferredBarInstallPrompt = event;
+        updateBarInstallButtons();
+      });
+      window.addEventListener('appinstalled', function () {
+        deferredBarInstallPrompt = null;
+        updateBarInstallButtons();
+        toast('Ilha Bar instalado com sucesso.');
+      });
+      const displayMode = window.matchMedia('(display-mode: standalone)');
+      if (displayMode.addEventListener) displayMode.addEventListener('change', updateBarInstallButtons);
+      ['adminInstallBtn', 'barInstallAppBtn'].forEach(function (id) {
+        const button = $(id);
+        if (button) button.addEventListener('click', installBarAppAction);
+      });
+      updateBarInstallButtons();
+    }
+
     function initAdminLogin() {
       configurePreviewEnvironment();
       configureAdminSurface();
+      initBarPwaInstall();
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
-        navigator.serviceWorker.register('/service-worker.js').catch(function (error) {
+        navigator.serviceWorker.register('/service-worker.js', { scope: '/' }).then(function (registration) {
+          return registration.update();
+        }).catch(function (error) {
           console.warn('Não foi possível ativar o modo aplicativo.', error);
         });
       }
@@ -22348,7 +22864,6 @@
           markFinancePaidAction(paidBtn.dataset.financePaid);
         }
       });
-      $('barEnableAlertsBtn').addEventListener('click', enableBarAlerts);
       $('barCommandSearch').addEventListener('input', function () {
         opsState.barCommandSearch = this.value;
         renderBarTablesAndQr();
@@ -22458,6 +22973,11 @@
         }
       });
       $('barModule').addEventListener('click', function (event) {
+        const kitchenStatusBtn = event.target.closest('[data-bar-kitchen-status]');
+        if (kitchenStatusBtn) {
+          updateBarItemStatusAction(kitchenStatusBtn.dataset.barKitchenStatus, kitchenStatusBtn.dataset.nextStatus);
+          return;
+        }
         const productViewBtn = event.target.closest('[data-bar-product-view]');
         if (productViewBtn) {
           setBarProductView(productViewBtn.dataset.barProductView);
@@ -22621,6 +23141,7 @@
       $('barProfessorDiscountBtn').addEventListener('click', function () {
         toggleBarPresetDiscountAction(10, 'professor', 'barProfessorDiscountBtn');
       });
+      $('barOrderEditNameBtn').addEventListener('click', editBarOrderCustomerNameAction);
       $('barOrderDeleteBtn').addEventListener('click', deleteBarOrderAction);
       $('barOrderCloseBtn').addEventListener('click', closeBarOrderAction);
       $('barQrModalClose').addEventListener('click', closeBarQrModal);
