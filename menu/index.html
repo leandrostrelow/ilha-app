@@ -46,6 +46,27 @@
         #eef4f5;
     }
 
+    body[data-menu-theme="dark"] {
+      color-scheme: dark;
+      --teal: #43d2d7;
+      --green: #20c86b;
+      --ink: #edf5ff;
+      --muted: #aab8ca;
+      --line: #304761;
+      --surface: #152942;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(202, 239, 112, .09), transparent 28%),
+        radial-gradient(circle at 96% 26%, rgba(40, 192, 202, .16), transparent 27%),
+        #0b1728;
+    }
+
+    body[data-menu-theme="dark"] .menu-stage {
+      background:
+        radial-gradient(circle at 8% 0%, rgba(202, 239, 112, .09), transparent 28%),
+        radial-gradient(circle at 96% 26%, rgba(40, 192, 202, .16), transparent 27%),
+        #0b1728;
+    }
+
     button,
     input { font: inherit; }
 
@@ -351,6 +372,15 @@
       white-space: nowrap;
     }
 
+    body[data-menu-layout="vertical"] .menu-product-copy h3 {
+      display: -webkit-box;
+      overflow: hidden;
+      text-overflow: clip;
+      white-space: normal;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
     .menu-product-price {
       flex: 0 0 auto;
       color: var(--teal);
@@ -413,6 +443,36 @@
       font-weight: 700;
     }
 
+    body[data-menu-theme="dark"] .menu-category {
+      border-color: rgba(115, 191, 201, .2);
+      background: rgba(21, 41, 66, .96);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, .24);
+    }
+
+    body[data-menu-theme="dark"] .menu-category-head {
+      background: linear-gradient(90deg, #293e31, #213b3e 62%, #172b44);
+    }
+
+    body[data-menu-theme="dark"] .menu-category-head h2 { color: #e1f8b9; }
+    body[data-menu-theme="dark"] .menu-category-title small { color: #adbd9b; }
+    body[data-menu-theme="dark"] .menu-category-head > span { color: #ccec78; }
+    body[data-menu-theme="dark"] .menu-product { background: var(--surface); }
+
+    body[data-menu-theme="dark"] .menu-product.is-featured {
+      background: linear-gradient(90deg, #233d36 0%, var(--surface) 60%);
+    }
+
+    body[data-menu-theme="dark"] .menu-product-image {
+      background: #203752;
+    }
+
+    body[data-menu-theme="dark"] .menu-footer { color: #aab8ca; }
+
+    body[data-menu-theme="dark"] .menu-state {
+      border-color: #415a74;
+      background: rgba(21, 41, 66, .84);
+    }
+
     @media (min-width: 720px) {
       html,
       body { overflow: hidden; }
@@ -423,6 +483,46 @@
         min-height: 0;
         overflow: hidden;
       }
+
+      body[data-menu-layout="vertical"] .menu-header {
+        min-height: 108px;
+        gap: 18px;
+        padding: 14px 22px;
+      }
+
+      body[data-menu-layout="vertical"] .menu-brand {
+        width: 132px;
+        height: 70px;
+        padding: 8px 12px;
+        border-radius: 14px;
+      }
+
+      body[data-menu-layout="vertical"] .menu-heading h1 { font-size: 42px; }
+
+      body[data-menu-layout="vertical"] .menu-heading p {
+        margin-top: 5px;
+        font-size: 13px;
+      }
+
+      body[data-menu-layout="vertical"] .menu-kicker { font-size: 10px; }
+
+      body[data-menu-layout="vertical"] .menu-header-tools { gap: 5px; }
+
+      body[data-menu-layout="vertical"] .menu-view-controls {
+        gap: 4px;
+        padding: 4px;
+      }
+
+      body[data-menu-layout="vertical"] .menu-view-btn {
+        min-height: 30px;
+        gap: 4px;
+        padding: 5px 8px;
+        font-size: 9px;
+      }
+
+      body[data-menu-layout="vertical"] .menu-view-icon { font-size: 14px; }
+
+      body[data-menu-layout="vertical"] .menu-clock { display: none; }
     }
 
     @media (min-width: 720px) and (min-height: 1500px) and (orientation: portrait) {
@@ -517,10 +617,11 @@
 
       .menu-view-controls {
         width: 100%;
+        flex-wrap: wrap;
       }
 
       .menu-view-btn {
-        flex: 1 1 0;
+        flex: 1 1 calc(33.333% - 6px);
       }
 
       .menu-board {
@@ -559,7 +660,7 @@
     }
   </style>
 </head>
-<body>
+<body data-menu-theme="light">
   <div class="menu-stage">
     <header class="menu-header">
       <div class="menu-brand"><img src="../logo.png" alt="Ilha Tênis" /></div>
@@ -572,6 +673,8 @@
         <div class="menu-view-controls" aria-label="Formato de visualização">
           <button class="menu-view-btn" type="button" data-menu-layout="vertical" aria-pressed="false"><span class="menu-view-icon" aria-hidden="true">▯</span><span>Vertical</span></button>
           <button class="menu-view-btn" type="button" data-menu-layout="horizontal" aria-pressed="false"><span class="menu-view-icon" aria-hidden="true">▭</span><span>Horizontal</span></button>
+          <button class="menu-view-btn" type="button" data-menu-theme="light" aria-pressed="false"><span class="menu-view-icon" aria-hidden="true">☀</span><span>Claro</span></button>
+          <button class="menu-view-btn" type="button" data-menu-theme="dark" aria-pressed="false"><span class="menu-view-icon" aria-hidden="true">◐</span><span>Escuro</span></button>
           <button class="menu-view-btn" type="button" id="menuFullscreenBtn" aria-pressed="false"><span class="menu-view-icon" aria-hidden="true">⛶</span><span id="menuFullscreenLabel">Tela cheia</span></button>
         </div>
         <div class="menu-clock" aria-label="Data e hora"><strong id="menuClock">--:--</strong><span id="menuDate">Carregando...</span></div>
@@ -597,6 +700,7 @@
       const MENU_QUERY = 'bar_products?select=id,name,category,sale_price,image_url,menu_featured,menu_sort_order,updated_at&active=eq.true&menu_visible=eq.true&order=category.asc,menu_sort_order.asc,name.asc';
       const CATEGORY_PRIORITY = ['cervejas', 'porcoes', 'lanches', 'refrigerantes', 'aguas', 'bebidas'];
       const LAYOUT_KEY = 'ilha-menu-layout-v1';
+      const THEME_KEY = 'ilha-menu-theme-v1';
       let lastPayload = '';
       let refreshInFlight = false;
       let currentProducts = [];
@@ -686,6 +790,30 @@
           try { localStorage.setItem(LAYOUT_KEY, nextLayout); } catch (error) {}
         }
         if (currentProducts.length) render(currentProducts);
+      }
+
+      function initialMenuTheme() {
+        const requestedTheme = new URLSearchParams(window.location.search).get('theme');
+        if (requestedTheme === 'light' || requestedTheme === 'dark') return requestedTheme;
+        try {
+          const saved = localStorage.getItem(THEME_KEY);
+          if (saved === 'light' || saved === 'dark') return saved;
+        } catch (error) {}
+        return 'light';
+      }
+
+      function setMenuTheme(theme, persist) {
+        const nextTheme = theme === 'dark' ? 'dark' : 'light';
+        document.body.dataset.menuTheme = nextTheme;
+        document.querySelectorAll('button[data-menu-theme]').forEach(function (button) {
+          const active = button.dataset.menuTheme === nextTheme;
+          button.classList.toggle('active', active);
+          button.setAttribute('aria-pressed', String(active));
+        });
+        if (persist !== false) {
+          try { localStorage.setItem(THEME_KEY, nextTheme); } catch (error) {}
+        }
+        requestAnimationFrame(fitMenuToViewport);
       }
 
       function applyMenuDensity(rowHeight, layout) {
@@ -824,9 +952,13 @@
         syncFullscreenButton();
       }
 
+      setMenuTheme(initialMenuTheme(), false);
       setMenuLayout(initialMenuLayout(), false);
       document.querySelectorAll('[data-menu-layout]').forEach(function (button) {
         button.addEventListener('click', function () { setMenuLayout(button.dataset.menuLayout); });
+      });
+      document.querySelectorAll('button[data-menu-theme]').forEach(function (button) {
+        button.addEventListener('click', function () { setMenuTheme(button.dataset.menuTheme); });
       });
       document.getElementById('menuFullscreenBtn').addEventListener('click', toggleFullscreen);
       document.addEventListener('fullscreenchange', function () {
