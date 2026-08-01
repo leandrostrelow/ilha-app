@@ -21564,6 +21564,12 @@
     async function cancelBarItemAction(itemId) {
       const item = opsData.barOrderItems.find(function (row) { return String(row.id) === String(itemId); });
       if (!item || item.status === 'CANCELADO') return;
+      const quantity = Math.max(1, Number(item.quantity || 1));
+      const confirmed = window.confirm(
+        'Excluir ' + quantity.toLocaleString('pt-BR') + 'x ' + (item.productName || 'este item') + ' da comanda?\n\n' +
+        'A quantidade será devolvida ao estoque.'
+      );
+      if (!confirmed) return;
       try {
         if (barCanPersist(item.id)) {
           const saved = await supabaseRest('rpc/bar_cancel_order_item', { method: 'POST', body: { p_item_id: item.id }, prefer: 'return=representation' });
