@@ -8947,6 +8947,35 @@
       stroke-linejoin: round;
     }
 
+    body.bar-kitchen-screen-fallback {
+      overflow: hidden;
+    }
+
+    .bar-kitchen-screen-panel.is-kitchen-screen {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      max-width: none;
+      padding: 12px;
+      overflow: auto;
+      background: #f3f6f8;
+    }
+
+    body.bar-kitchen-screen-fallback .bar-kitchen-screen-panel.is-kitchen-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+    }
+
+    .bar-kitchen-screen-panel.is-kitchen-screen > .bar-kitchen-panel:first-child {
+      margin-top: 0;
+    }
+
+    .bar-kitchen-screen-btn {
+      min-height: 42px;
+      white-space: nowrap;
+    }
+
     .bar-command-screen-empty {
       display: none;
     }
@@ -12532,12 +12561,13 @@
             </div>
           </div>
 
-          <div data-bar-panel="kitchen">
+          <div data-bar-panel="kitchen" class="bar-kitchen-screen-panel" id="barKitchenScreenPanel">
             <section class="ops-panel bar-kitchen-panel">
               <div class="ops-panel-head">
                 <div><h2>Em produção</h2><div class="muted">Porções aguardando preparo, com as mais recentes no topo.</div><div class="bar-kitchen-order-rule">Numeração fixa do dia</div></div>
                 <div class="bar-kitchen-head-metrics">
                   <div class="bar-kitchen-metric"><span>Em produção hoje</span><strong id="barKitchenPendingMetric">0</strong></div>
+                  <button class="small-btn bar-command-screen-btn bar-kitchen-screen-btn" type="button" id="barKitchenScreenBtn" aria-pressed="false"><svg><use href="#bar-icon-screen"></use></svg><span>Tela cheia</span></button>
                 </div>
               </div>
               <div class="bar-kitchen-list" id="barKitchenQueue"></div>
@@ -19397,6 +19427,50 @@
       syncBarCommandScreen();
     }
 
+    function barKitchenScreenIsActive() {
+      const panel = $('barKitchenScreenPanel');
+      return Boolean(panel && (document.fullscreenElement === panel || document.body.classList.contains('bar-kitchen-screen-fallback')));
+    }
+
+    function syncBarKitchenScreen() {
+      const panel = $('barKitchenScreenPanel');
+      const button = $('barKitchenScreenBtn');
+      if (!panel || !button) return;
+      const active = barKitchenScreenIsActive();
+      panel.classList.toggle('is-kitchen-screen', active);
+      button.setAttribute('aria-pressed', String(active));
+      const label = button.querySelector('span');
+      if (label) label.textContent = active ? 'Sair da tela' : 'Tela cheia';
+    }
+
+    async function closeBarKitchenScreen() {
+      const panel = $('barKitchenScreenPanel');
+      document.body.classList.remove('bar-kitchen-screen-fallback');
+      if (panel && document.fullscreenElement === panel && document.exitFullscreen) {
+        await document.exitFullscreen();
+      }
+      syncBarKitchenScreen();
+    }
+
+    async function toggleBarKitchenScreen() {
+      const panel = $('barKitchenScreenPanel');
+      if (!panel) return;
+      if (barKitchenScreenIsActive()) {
+        await closeBarKitchenScreen();
+        return;
+      }
+      if (panel.requestFullscreen) {
+        try {
+          await panel.requestFullscreen();
+        } catch (error) {
+          document.body.classList.add('bar-kitchen-screen-fallback');
+        }
+      } else {
+        document.body.classList.add('bar-kitchen-screen-fallback');
+      }
+      syncBarKitchenScreen();
+    }
+
     function barProductCategoryKey(category) {
       const value = normalizeMatchText(category || '');
       if (value.includes('cervej') || value.includes('chopp')) return 'beer';
@@ -24163,10 +24237,19 @@
       $('barCommandScreenBtn').addEventListener('click', function () {
         toggleBarCommandScreen().catch(reportActionError);
       });
-      document.addEventListener('fullscreenchange', syncBarCommandScreen);
+      $('barKitchenScreenBtn').addEventListener('click', function () {
+        toggleBarKitchenScreen().catch(reportActionError);
+      });
+      document.addEventListener('fullscreenchange', function () {
+        syncBarCommandScreen();
+        syncBarKitchenScreen();
+      });
       document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape' && barCommandScreenIsActive()) {
           closeBarCommandScreen().catch(reportActionError);
+        }
+        if (event.key === 'Escape' && barKitchenScreenIsActive()) {
+          closeBarKitchenScreen().catch(reportActionError);
         }
       });
       $('barNewOrderForm').addEventListener('submit', saveBarNewOrderAction);
