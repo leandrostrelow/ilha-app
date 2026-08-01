@@ -8577,6 +8577,50 @@
       background: #fbfff2;
     }
 
+    .bar-kitchen-card.is-delivered {
+      border-left-color: #7ea6a9;
+      background: #f9fbfb;
+      box-shadow: none;
+    }
+
+    .bar-kitchen-card.is-delivered .bar-kitchen-position {
+      background: #edf5df;
+      color: #4b6b00;
+    }
+
+    .bar-kitchen-delivered-panel {
+      margin-top: 10px;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .bar-kitchen-delivered-panel > .bar-collapsible-summary {
+      margin: 0;
+      border-radius: 14px 14px 0 0;
+    }
+
+    .bar-kitchen-delivered-panel:not([open]) > .bar-collapsible-summary {
+      border-radius: 14px;
+    }
+
+    .bar-kitchen-delivered-list {
+      border-top: 1px solid #e0e8eb;
+    }
+
+    .bar-kitchen-delivered-time {
+      display: grid;
+      gap: 2px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 850;
+      line-height: 1.2;
+    }
+
+    .bar-kitchen-delivered-time strong {
+      color: #4b6b00;
+      font-size: 11px;
+    }
+
     .bar-kitchen-card-head,
     .bar-kitchen-card-footer,
     .bar-kitchen-person {
@@ -10380,6 +10424,17 @@
 
       body.bar-admin-surface .bar-kitchen-card-footer {
         grid-area: footer;
+      }
+
+      body.bar-admin-surface .bar-kitchen-delivered-time {
+        grid-area: footer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 34px;
+        padding: 7px 9px;
+        border-radius: 9px;
+        background: #edf5df;
       }
 
       body.bar-admin-surface .bar-kitchen-card-footer .primary-btn {
@@ -12223,7 +12278,7 @@
           <div data-bar-panel="kitchen">
             <section class="ops-panel bar-kitchen-panel">
               <div class="ops-panel-head">
-                <div><h2>Pedidos de porções</h2><div class="muted">Fila da cozinha por ordem de chegada.</div><div class="bar-kitchen-order-rule">Ordem fixa · mais antigo primeiro</div></div>
+                <div><h2>Pedidos de porções</h2><div class="muted">Os pedidos mais recentes ficam no topo.</div><div class="bar-kitchen-order-rule">Ordem fixa · mais recente primeiro</div></div>
                 <div class="bar-kitchen-head-metrics">
                   <div class="bar-kitchen-metric"><span>Na fila</span><strong id="barKitchenPendingMetric">0</strong></div>
                   <div class="bar-kitchen-metric is-ready"><span>Prontos</span><strong id="barKitchenReadyMetric">0</strong></div>
@@ -12231,6 +12286,13 @@
               </div>
               <div class="bar-kitchen-list" id="barKitchenQueue"></div>
             </section>
+            <details class="ops-panel bar-collapsible-panel bar-kitchen-delivered-panel" id="barKitchenDeliveredPanel">
+              <summary class="ops-panel-head bar-collapsible-summary">
+                <div><h2>Pedidos entregues</h2><div class="muted" id="barKitchenDeliveredCount">Nenhum pedido entregue</div></div>
+                <span class="bar-collapse-control" aria-hidden="true"><span class="bar-collapse-label"></span><span class="bar-collapse-chevron"></span></span>
+              </summary>
+              <div class="bar-kitchen-list bar-kitchen-delivered-list" id="barKitchenDeliveredList"></div>
+            </details>
           </div>
 
           <div data-bar-panel="events">
@@ -17558,7 +17620,8 @@
         source: row.source || 'EQUIPE',
         status: row.status || 'SOLICITADO',
         notes: row.notes || '',
-        created: row.created_at || ''
+        created: row.created_at || '',
+        updated: row.updated_at || row.created_at || ''
       };
     }
 
@@ -17625,7 +17688,7 @@
           supabaseRest('bar_products?select=*&order=category.asc,name.asc'),
           supabaseRest('bar_tables?select=*&order=number.asc'),
           supabaseRest('bar_orders?select=*,bar_tables(number,name)&order=opened_at.desc'),
-          supabaseRest('bar_order_items?select=*,bar_products(category)&order=created_at.asc,id.asc'),
+          supabaseRest('bar_order_items?select=*,bar_products(category)&order=created_at.desc,id.desc'),
           supabaseRest('bar_inventory_movements?select=*&order=occurred_at.desc&limit=200'),
           supabaseRest('bar_financial_entries?select=*&order=created_at.desc'),
           supabaseRest('bar_public_cards?select=*&order=code.asc'),
@@ -18394,13 +18457,13 @@
 
     function barKitchenQueueTimestamp(item) {
       const timestamp = Date.parse(item && item.created || '');
-      return Number.isFinite(timestamp) ? timestamp : Number.MAX_SAFE_INTEGER;
+      return Number.isFinite(timestamp) ? timestamp : Number.MIN_SAFE_INTEGER;
     }
 
     function barKitchenQueueCompare(a, b) {
-      const createdDifference = barKitchenQueueTimestamp(a) - barKitchenQueueTimestamp(b);
+      const createdDifference = barKitchenQueueTimestamp(b) - barKitchenQueueTimestamp(a);
       if (createdDifference) return createdDifference;
-      return String(a && a.id || '').localeCompare(String(b && b.id || ''));
+      return String(b && b.id || '').localeCompare(String(a && a.id || ''));
     }
 
     function barPortionQueueItems() {
@@ -18413,6 +18476,19 @@
           barProductCategoryKey(category) === 'portion' &&
           (!order || !['CANCELADA', 'CANCELADO'].includes(String(order.status || '').toUpperCase()));
       }).sort(barKitchenQueueCompare);
+    }
+
+    function barDeliveredPortionItems() {
+      return opsData.barOrderItems.filter(function (item) {
+        const product = barProductById(item.productId);
+        const category = item.productCategory || product && product.category || '';
+        return String(item.status || '').toUpperCase() === 'ENTREGUE' &&
+          barProductCategoryKey(category) === 'portion';
+      }).sort(function (a, b) {
+        const updatedDifference = barKitchenQueueTimestamp({ created: b.updated || b.created }) - barKitchenQueueTimestamp({ created: a.updated || a.created });
+        if (updatedDifference) return updatedDifference;
+        return String(b && b.id || '').localeCompare(String(a && a.id || ''));
+      });
     }
 
     function updateBarOrderBadges() {
@@ -19600,6 +19676,7 @@
 
     function renderBarKitchenQueue() {
       const items = barPortionQueueItems();
+      const deliveredItems = barDeliveredPortionItems();
       const readyCount = items.filter(function (item) {
         return String(item.status || '').toUpperCase() === 'PRONTO';
       }).length;
@@ -19623,6 +19700,23 @@
           '<div class="bar-kitchen-card-footer"><button class="primary-btn" type="button" data-bar-kitchen-status="' + escapeHtml(item.id) + '" data-next-status="' + nextStatus + '">' + actionLabel + '</button></div>' +
         '</article>';
       }).join('') || '<div class="lesson-empty-state bar-kitchen-empty"><strong>Fila em dia.</strong><br />Nenhuma porção aguardando preparo ou entrega.</div>';
+      $('barKitchenDeliveredCount').textContent = deliveredItems.length
+        ? deliveredItems.length + (deliveredItems.length === 1 ? ' pedido entregue salvo' : ' pedidos entregues salvos')
+        : 'Nenhum pedido entregue';
+      $('barKitchenDeliveredList').innerHTML = deliveredItems.map(function (item, index) {
+        const order = barOrderById(item.orderId);
+        const customerName = String(item.customerName || order && order.customerName || barTableLabel(order) || 'Cliente').trim();
+        const commandLabel = order && order.commandNumber ? 'Comanda #' + order.commandNumber : 'Comanda';
+        const productMeta = item.notes
+          ? '<small class="bar-kitchen-note"><strong>Obs.:</strong> ' + escapeHtml(item.notes) + '</small>'
+          : '<small>Pedido concluído</small>';
+        return '<article class="bar-kitchen-card is-delivered">' +
+          '<div class="bar-kitchen-card-head"><span class="bar-kitchen-position">#' + (index + 1) + '</span><span class="bar-kitchen-time">Pedido às ' + escapeHtml(barKitchenTimeLabel(item.created)) + '</span></div>' +
+          '<div class="bar-kitchen-product"><span class="bar-kitchen-quantity">' + escapeHtml(item.quantity + 'x') + '</span><div><strong>' + escapeHtml(item.productName) + '</strong>' + productMeta + '</div></div>' +
+          '<div class="bar-kitchen-person"><div><strong>' + escapeHtml(customerName) + '</strong><small>' + escapeHtml(commandLabel) + '</small></div>' + barStatusPill('ENTREGUE') + '</div>' +
+          '<div class="bar-kitchen-delivered-time"><span>Entregue às</span><strong>' + escapeHtml(barKitchenTimeLabel(item.updated || item.created)) + '</strong></div>' +
+        '</article>';
+      }).join('') || '<div class="lesson-empty-state bar-kitchen-empty">Os pedidos entregues aparecerão aqui.</div>';
     }
 
     function renderBarModule() {
@@ -20868,7 +20962,7 @@
         renderBarModule();
         renderBarCommandModal();
         if (String(status).toUpperCase() === 'PRONTO') toast('Porção marcada como pronta.');
-        if (String(status).toUpperCase() === 'ENTREGUE') toast('Pedido entregue e retirado da fila.');
+        if (String(status).toUpperCase() === 'ENTREGUE') toast('Pedido entregue e movido para o histórico.');
       } catch (error) {
         reportActionError(error);
       }
