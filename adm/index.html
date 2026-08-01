@@ -3437,8 +3437,9 @@
     }
 
     .bar-table-card.is-loose {
-      min-height: 126px;
-      grid-template-rows: auto 16px 34px 30px;
+      min-height: 0;
+      grid-template-rows: none;
+      grid-auto-rows: auto;
       align-content: start;
       gap: 4px;
       padding: 6px 8px;
@@ -9085,7 +9086,8 @@
 
     .bar-command-board-panel.is-command-screen > .bar-table-grid {
       grid-template-columns: repeat(auto-fill, minmax(280px, 310px));
-      grid-auto-rows: minmax(126px, auto);
+      grid-auto-rows: auto;
+      align-items: start;
       align-content: start;
       justify-content: start;
       gap: 8px;
@@ -9094,12 +9096,13 @@
 
     .bar-command-board-panel.is-command-screen .bar-table-card.is-open {
       width: 100%;
-      height: 100%;
+      height: auto;
     }
 
     .bar-command-board-panel.is-command-screen .bar-table-card.is-loose {
-      min-height: 126px;
-      grid-template-rows: auto 15px 32px 28px;
+      min-height: 0;
+      grid-template-rows: none;
+      grid-auto-rows: auto;
       align-content: start;
       gap: 4px;
       padding: 6px 8px;
@@ -10714,8 +10717,9 @@
 
       body.bar-admin-surface .bar-table-card,
       body.bar-admin-surface .bar-table-card.is-loose {
-        min-height: 126px;
-        grid-template-rows: auto auto auto;
+        min-height: 104px;
+        grid-template-rows: none;
+        grid-auto-rows: auto;
         gap: 5px;
         padding: 7px;
         border-top-width: 3px;
@@ -10816,7 +10820,7 @@
       }
 
       body.bar-admin-surface .bar-table-card-person h3 {
-        min-height: 29px;
+        min-height: 0;
         font-size: 13px;
         line-height: 1.02;
       }
@@ -11427,7 +11431,7 @@
 
       body.bar-admin-surface .bar-table-card,
       body.bar-admin-surface .bar-table-card.is-loose {
-        min-height: 122px;
+        min-height: 104px;
       }
 
       body.bar-admin-surface .bar-product-list {
@@ -19267,13 +19271,11 @@
     function barLooseOrderCard(order) {
       const card = barAccessCardById(order.publicAccessId);
       const phone = order.customerPhone ? '<span><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(order.customerPhone)) + '</span>' : '';
-      const chargeUrl = barChargeWhatsAppUrl(order);
-      const chargeButton = chargeUrl ? '<a class="bar-whatsapp-charge" href="' + escapeHtml(chargeUrl) + '" target="_blank" rel="noopener" title="Enviar cobrança pelo WhatsApp"><svg><use href="#admin-icon-phone"></use></svg><span>Cobrar</span></a>' : '';
       return '<article class="bar-table-card is-open is-loose">' +
         '<div class="bar-table-card-top bar-table-card-person"><div class="bar-table-card-person-identity"><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3></div></div>' +
-        '<div class="bar-table-card-meta bar-table-card-person-meta">' + phone + '</div>' +
+        (phone ? '<div class="bar-table-card-meta bar-table-card-person-meta">' + phone + '</div>' : '') +
         '<div class="bar-table-command-summary bar-table-command-total"><span>Total</span><strong>' + money(barOrderTotal(order)) + '</strong></div>' +
-        '<div class="bar-table-card-actions' + (chargeButton ? ' has-charge' : '') + '"><button class="primary-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button>' + chargeButton + '</div>' +
+        '<div class="bar-table-card-actions"><button class="primary-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button></div>' +
       '</article>';
     }
 
