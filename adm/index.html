@@ -5587,7 +5587,9 @@
     }
 
     .bar-checkout-split-count select,
-    .bar-checkout-split-row select {
+    .bar-checkout-split-method-field select {
+      width: 100%;
+      min-width: 0;
       min-height: 38px;
       padding: 8px 34px 8px 11px;
       border: 1px solid #cbdde1;
@@ -5608,10 +5610,10 @@
     .bar-checkout-split-row {
       min-height: 52px;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(120px, 150px) minmax(170px, .8fr);
+      grid-template-columns: minmax(150px, 1fr) minmax(160px, .7fr) minmax(190px, .9fr);
       align-items: center;
-      gap: 10px;
-      padding: 7px 9px 7px 12px;
+      gap: 12px;
+      padding: 10px 12px;
       border: 1px solid #dbe6e8;
       border-radius: 9px;
       background: #f8fbfb;
@@ -5634,39 +5636,87 @@
       font-weight: 700;
     }
 
-    .bar-checkout-split-amount-field {
+    .bar-checkout-split-amount-field,
+    .bar-checkout-split-method-field {
+      min-width: 0;
       display: grid;
-      gap: 3px;
+      gap: 5px;
       color: var(--muted);
       font-size: 9px;
       font-weight: 900;
       text-transform: uppercase;
     }
 
-    .bar-checkout-split-amount-input {
-      width: 100%;
-      min-height: 38px;
-      padding: 8px 10px;
+    .bar-checkout-split-money {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      overflow: hidden;
       border: 1px solid #9fcdd1;
       border-radius: 9px;
-      outline: none;
       background: #ffffff;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .bar-checkout-split-money > span {
+      padding-left: 11px;
+      color: #64818a;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .bar-checkout-split-amount-input {
+      width: 100%;
+      min-width: 0;
+      min-height: 38px;
+      padding: 8px 10px 8px 6px;
+      border: 0;
+      outline: none;
+      background: transparent;
       color: var(--teal);
       font: inherit;
       font-size: 14px;
       font-weight: 950;
     }
 
-    .bar-checkout-split-amount-input:focus {
+    .bar-checkout-split-money:focus-within {
       border-color: var(--teal);
       box-shadow: 0 0 0 3px rgba(0, 132, 142, .1);
     }
 
-    .bar-checkout-split-amount-input[readonly] {
+    .bar-checkout-split-money.is-automatic {
       border-color: #cfe5a1;
       background: #f6fce7;
       color: #4b6b00;
+    }
+
+    .bar-checkout-split-amount-input[readonly] {
+      color: #4b6b00;
       cursor: default;
+    }
+
+    @media (max-width: 940px) {
+      .bar-checkout-split-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .bar-checkout-split-person {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .bar-checkout-split-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+      }
+
+      .bar-checkout-split-person,
+      .bar-checkout-split-amount-field,
+      .bar-checkout-split-method-field {
+        grid-column: 1;
+      }
     }
 
     .bar-checkout-split-balance {
@@ -6057,16 +6107,15 @@
       }
 
       .bar-checkout-split-row {
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       .bar-checkout-split-amount-field {
-        min-width: 118px;
+        min-width: 0;
       }
 
-      .bar-checkout-split-row select {
+      .bar-checkout-split-person {
         grid-column: 1 / -1;
-        width: 100%;
       }
 
       .bar-checkout-item {
@@ -11102,7 +11151,7 @@
       }
 
       body.bar-admin-surface .bar-checkout-split-row {
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       body.bar-admin-surface .bar-command-receive {
@@ -19977,7 +20026,17 @@
     }
 
     function barCommandMoneyValue(value) {
-      const clean = String(value || '').trim().replace(/\./g, '').replace(',', '.');
+      let clean = String(value || '').trim().replace(/[^\d,.]/g, '');
+      const commaIndex = clean.lastIndexOf(',');
+      const dotIndex = clean.lastIndexOf('.');
+      const decimalIndex = Math.max(commaIndex, dotIndex);
+      if (decimalIndex >= 0 && clean.length - decimalIndex - 1 <= 2) {
+        const integer = clean.slice(0, decimalIndex).replace(/[,.]/g, '');
+        const decimal = clean.slice(decimalIndex + 1).replace(/[,.]/g, '');
+        clean = (integer || '0') + '.' + decimal;
+      } else {
+        clean = clean.replace(/[,.]/g, '');
+      }
       const number = Number(clean);
       return Number.isFinite(number) && number >= 0 ? number : 0;
     }
@@ -20123,7 +20182,7 @@
           return '<option value="' + option[0] + '"' + (option[0] === selectedMethod ? ' selected' : '') + '>' + option[1] + '</option>';
         }).join('');
         const amountValue = Number(amount || 0).toFixed(2).replace('.', ',');
-        return '<div class="bar-checkout-split-row"><div class="bar-checkout-split-person"><strong>Pessoa ' + (index + 1) + '</strong><small>' + (automaticRemainder ? 'Restante calculado automaticamente' : 'Parte ' + (index + 1) + ' de ' + count) + '</small></div><label class="bar-checkout-split-amount-field"><span>' + (automaticRemainder ? 'Restante automático' : 'Valor') + '</span><input class="bar-checkout-split-amount-input" data-bar-split-amount="' + index + '" inputmode="decimal" value="' + amountValue + '" aria-label="Valor pago pela pessoa ' + (index + 1) + '"' + (automaticRemainder ? ' readonly' : '') + ' /></label><select data-bar-split-method="' + index + '" aria-label="Forma de pagamento da pessoa ' + (index + 1) + '">' + options + '</select></div>';
+        return '<div class="bar-checkout-split-row"><div class="bar-checkout-split-person"><strong>Pessoa ' + (index + 1) + '</strong><small>' + (automaticRemainder ? 'Restante calculado automaticamente' : 'Parte ' + (index + 1) + ' de ' + count) + '</small></div><label class="bar-checkout-split-amount-field"><span>' + (automaticRemainder ? 'Restante automático' : 'Valor') + '</span><span class="bar-checkout-split-money' + (automaticRemainder ? ' is-automatic' : '') + '"><span aria-hidden="true">R$</span><input class="bar-checkout-split-amount-input" data-bar-split-amount="' + index + '" inputmode="decimal" autocomplete="off" value="' + amountValue + '" aria-label="Valor pago pela pessoa ' + (index + 1) + '"' + (automaticRemainder ? ' readonly' : '') + ' /></span></label><label class="bar-checkout-split-method-field"><span>Forma de pagamento</span><select data-bar-split-method="' + index + '" aria-label="Forma de pagamento da pessoa ' + (index + 1) + '">' + options + '</select></label></div>';
       }).join('') : '';
       if (enabled) syncBarCheckoutSplitBalance(order);
       const closeLabel = $('barOrderCloseBtn').querySelector('span');
@@ -23975,6 +24034,15 @@
         );
       });
       $('barCheckoutSplitRows').addEventListener('change', function (event) {
+        const amountInput = event.target.closest('[data-bar-split-amount]');
+        if (amountInput && !amountInput.readOnly) {
+          const order = barOrderById(opsState.selectedBarOrderId);
+          const index = Number(amountInput.dataset.barSplitAmount);
+          rebalanceBarCheckoutSplitRemainder(order, index, barCommandMoneyValue(amountInput.value));
+          const values = barCheckoutSplitAmounts(order);
+          amountInput.value = Number(values[index] || 0).toFixed(2).replace('.', ',');
+          return;
+        }
         const select = event.target.closest('[data-bar-split-method]');
         if (!select) return;
         opsState.barCheckoutSplitMethods[Number(select.dataset.barSplitMethod)] = select.value;
