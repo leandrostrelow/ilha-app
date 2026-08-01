@@ -5936,9 +5936,27 @@
 
     .bar-command-payment-actions {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(170px, .7fr) repeat(2, minmax(0, 1fr));
       gap: 8px;
       margin-top: 8px;
+    }
+
+    .bar-checkout-split-action {
+      min-height: 44px;
+      justify-content: center;
+      margin: 0;
+      font-size: 12px;
+    }
+
+    .bar-checkout-split-action:has(input:checked) {
+      border-color: #9fc925;
+      color: #456600;
+      background: #f2fbd7;
+    }
+
+    .bar-checkout-split-action:has(input:disabled) {
+      cursor: not-allowed;
+      opacity: .62;
     }
 
     .bar-command-finalize {
@@ -11517,11 +11535,15 @@
         position: sticky;
         bottom: max(0px, env(safe-area-inset-bottom));
         z-index: 5;
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         padding-top: 8px;
         background: #f3f7f8;
         min-height: 48px;
         box-shadow: 0 -5px 16px rgba(8, 63, 75, .12);
+      }
+
+      body.bar-admin-surface .bar-checkout-split-action {
+        grid-column: 1 / -1;
       }
     }
 
@@ -13292,9 +13314,6 @@
 
           <section class="bar-command-panel" data-bar-command-panel="checkout">
             <div class="bar-checkout-split" id="barCheckoutSplitSection">
-              <div class="bar-checkout-split-head">
-                <label class="bar-checkout-split-toggle"><input id="barCheckoutSplitToggle" type="checkbox" /><span>Ativar divisão</span></label>
-              </div>
               <div class="bar-checkout-split-body" id="barCheckoutSplitBody" hidden>
                 <label class="bar-checkout-split-count" for="barCheckoutSplitCount"><span>Quantidade de pessoas</span><select id="barCheckoutSplitCount">
                   <option value="2">2 pessoas</option>
@@ -13329,6 +13348,7 @@
               <div class="field full"><label for="barCheckoutNotes">Observação do pagamento</label><textarea id="barCheckoutNotes" rows="2" maxlength="500"></textarea></div>
             </div>
             <div class="bar-command-payment-actions">
+              <label class="bar-checkout-split-toggle bar-checkout-split-action"><input id="barCheckoutSplitToggle" type="checkbox" /><span>Ativar divisão</span></label>
               <button class="bar-command-receive" type="button" id="barOrderPayBtn"><svg><use href="#admin-icon-wallet"></use></svg><span>Marcar como paga</span></button>
               <button class="bar-command-receive bar-command-finalize" type="button" id="barOrderCloseBtn"><svg><use href="#admin-icon-receipt"></use></svg><span>Encerrar comanda</span></button>
             </div>
@@ -20750,7 +20770,7 @@
       opsState.barCheckoutSplitCount = count;
       while (opsState.barCheckoutSplitMethods.length < count) opsState.barCheckoutSplitMethods.push(defaultMethod);
       opsState.barCheckoutSplitMethods = opsState.barCheckoutSplitMethods.slice(0, count);
-      section.hidden = !open;
+      section.hidden = !open || !enabled;
       $('barCheckoutSplitToggle').checked = enabled;
       $('barCheckoutSplitBody').hidden = !enabled;
       $('barCheckoutSingleMethodField').hidden = enabled;
