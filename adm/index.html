@@ -8494,6 +8494,10 @@
       overflow: hidden;
     }
 
+    .bar-kitchen-ready-panel {
+      margin-top: 10px;
+    }
+
     .bar-kitchen-panel > .ops-panel-head:first-child {
       margin: 0;
       border-radius: 14px 14px 0 0;
@@ -12282,13 +12286,21 @@
           <div data-bar-panel="kitchen">
             <section class="ops-panel bar-kitchen-panel">
               <div class="ops-panel-head">
-                <div><h2>Pedidos de porções</h2><div class="muted">Pedidos de hoje, com os mais recentes no topo.</div><div class="bar-kitchen-order-rule">Numeração fixa do dia</div></div>
+                <div><h2>Em produção</h2><div class="muted">Porções aguardando preparo, com as mais recentes no topo.</div><div class="bar-kitchen-order-rule">Numeração fixa do dia</div></div>
                 <div class="bar-kitchen-head-metrics">
-                  <div class="bar-kitchen-metric"><span>Aguardando hoje</span><strong id="barKitchenPendingMetric">0</strong></div>
-                  <div class="bar-kitchen-metric is-ready"><span>Prontos hoje</span><strong id="barKitchenReadyMetric">0</strong></div>
+                  <div class="bar-kitchen-metric"><span>Em produção hoje</span><strong id="barKitchenPendingMetric">0</strong></div>
                 </div>
               </div>
               <div class="bar-kitchen-list" id="barKitchenQueue"></div>
+            </section>
+            <section class="ops-panel bar-kitchen-panel bar-kitchen-ready-panel" id="barKitchenReadyPanel" hidden>
+              <div class="ops-panel-head">
+                <div><h2>Prontos para entregar</h2><div class="muted">Retire daqui somente depois de entregar ao cliente.</div></div>
+                <div class="bar-kitchen-head-metrics">
+                  <div class="bar-kitchen-metric is-ready"><span>Prontos hoje</span><strong id="barKitchenReadyMetric">0</strong></div>
+                </div>
+              </div>
+              <div class="bar-kitchen-list" id="barKitchenReadyQueue"></div>
             </section>
             <details class="ops-panel bar-collapsible-panel bar-kitchen-previous-panel" id="barKitchenPreviousPanel" hidden>
               <summary class="ops-panel-head bar-collapsible-summary">
@@ -19778,14 +19790,22 @@
       const previousItems = barPreviousPortionQueueItems();
       const deliveredItems = barDeliveredPortionItems();
       const sequenceByItem = barKitchenDailySequenceMap();
-      const readyCount = items.filter(function (item) {
+      const readyItems = items.filter(function (item) {
         return String(item.status || '').toUpperCase() === 'PRONTO';
-      }).length;
-      $('barKitchenPendingMetric').textContent = items.length - readyCount;
-      $('barKitchenReadyMetric').textContent = readyCount;
-      $('barKitchenQueue').innerHTML = items.map(function (item) {
+      });
+      const productionItems = items.filter(function (item) {
+        return String(item.status || '').toUpperCase() !== 'PRONTO';
+      });
+      $('barKitchenPendingMetric').textContent = productionItems.length;
+      $('barKitchenReadyMetric').textContent = readyItems.length;
+      $('barKitchenQueue').innerHTML = productionItems.map(function (item) {
         return barKitchenActiveCardMarkup(item, sequenceByItem.get(String(item.id)) || '?', false);
-      }).join('') || '<div class="lesson-empty-state bar-kitchen-empty"><strong>Fila em dia.</strong><br />Nenhuma porção aguardando preparo ou entrega.</div>';
+      }).join('') || '<div class="lesson-empty-state bar-kitchen-empty"><strong>Produção em dia.</strong><br />Nenhuma porção aguardando preparo.</div>';
+
+      $('barKitchenReadyPanel').hidden = readyItems.length === 0;
+      $('barKitchenReadyQueue').innerHTML = readyItems.map(function (item) {
+        return barKitchenActiveCardMarkup(item, sequenceByItem.get(String(item.id)) || '?', false);
+      }).join('') || '<div class="lesson-empty-state bar-kitchen-empty">Nenhuma porção pronta para entregar.</div>';
 
       $('barKitchenPreviousPanel').hidden = previousItems.length === 0;
       $('barKitchenPreviousCount').textContent = previousItems.length
