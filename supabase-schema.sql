@@ -943,6 +943,70 @@ begin
 end;
 $$;
 
+create or replace function public.bar_reopen_order(p_order_id uuid)
+returns public.bar_orders
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  order_row public.bar_orders%rowtype;
+  reopen_table_id uuid;
+begin
+  if not public.is_bar_staff() then
+    raise exception 'Acesso negado ao Bar.';
+  end if;
+
+  select *
+    into order_row
+    from public.bar_orders
+   where id = p_order_id
+     and status = 'FECHADA'
+   for update;
+
+  if not found then
+    raise exception 'Comanda nao encontrada ou nao esta fechada.';
+  end if;
+
+  reopen_table_id := order_row.table_id;
+  if reopen_table_id is not null and exists (
+    select 1
+      from public.bar_orders
+     where table_id = reopen_table_id
+       and id <> order_row.id
+       and status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+  ) then
+    reopen_table_id := null;
+  end if;
+
+  update public.bar_financial_entries
+     set status = 'CANCELADO',
+         paid_at = null,
+         notes = concat_ws(
+           ' · ',
+           nullif(trim(coalesce(notes, '')), ''),
+           'Estornado ao reabrir a comanda em ' || to_char(now() at time zone 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI')
+         ),
+         updated_at = now()
+   where order_id = order_row.id
+     and type = 'RECEITA'
+     and status in ('RECEBIDO', 'PAGO');
+
+  update public.bar_orders
+     set table_id = reopen_table_id,
+         status = 'ABERTA',
+         payment_status = 'ABERTO',
+         payment_method = null,
+         opened_at = now(),
+         closed_at = null,
+         updated_at = now()
+   where id = order_row.id
+   returning * into order_row;
+
+  return order_row;
+end;
+$$;
+
 insert into public.app_plans (code, name, type, amount, weekly_lessons, default_due_day, active, description)
 values
   ('aulas_anual_1x', 'Aulas 1x por semana - Anual', 'aluno', 230, 1, 10, true, 'Ciclo de 12 meses. Pix 5% OFF no pagamento do ciclo.'),
@@ -1951,6 +2015,7 @@ revoke all on function public.bar_cancel_order_item(uuid) from public;
 revoke all on function public.bar_adjust_stock(uuid, text, numeric, text, numeric) from public;
 revoke all on function public.bar_close_order(uuid, text, numeric, numeric) from public;
 revoke all on function public.bar_close_order_split(uuid, jsonb, numeric, numeric) from public;
+revoke all on function public.bar_reopen_order(uuid) from public;
 revoke all on function public.refresh_bar_order_totals() from public;
 grant execute on function public.bar_add_order_item(uuid, uuid, numeric, text) to authenticated;
 grant execute on function public.bar_cancel_order_item(uuid) to authenticated;
@@ -1959,6 +2024,7 @@ grant execute on function public.bar_delete_open_order(uuid) to authenticated;
 grant execute on function public.bar_adjust_stock(uuid, text, numeric, text, numeric) to authenticated;
 grant execute on function public.bar_close_order(uuid, text, numeric, numeric) to authenticated;
 grant execute on function public.bar_close_order_split(uuid, jsonb, numeric, numeric) to authenticated;
+grant execute on function public.bar_reopen_order(uuid) to authenticated;
 revoke all on function public.bar_public_menu(text) from public;
 revoke all on function public.bar_public_submit_order(text, text, uuid, jsonb, text, text) from public;
 revoke all on function public.bar_public_order_status(text, text) from public;

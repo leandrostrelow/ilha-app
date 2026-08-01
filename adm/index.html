@@ -10008,7 +10008,7 @@
 
     .bar-closed-order-row .bar-row-actions {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto auto;
+      grid-template-columns: minmax(0, 1fr) auto auto auto;
       align-items: center;
       gap: 8px;
     }
@@ -10240,6 +10240,11 @@
 
       .bar-closed-order-total {
         min-width: 102px;
+      }
+
+      .bar-closed-order-reopen {
+        width: 100%;
+        grid-column: 1 / -1;
       }
 
       .bar-day-payment-summary {
@@ -13010,7 +13015,7 @@
             <div class="bar-command-identity">
               <div class="bar-command-identity-top">
                 <div class="bar-command-identity-copy">
-                  <div class="bar-command-name-row"><h2 id="barCommandModalTitle">Cliente</h2><button class="bar-command-edit-name" type="button" id="barOrderEditNameBtn"><svg><use href="#bar-icon-edit"></use></svg><span>Editar nome</span></button></div>
+                  <div class="bar-command-name-row"><h2 id="barCommandModalTitle">Cliente</h2><button class="bar-command-edit-name" type="button" id="barOrderEditNameBtn"><svg><use href="#bar-icon-edit"></use></svg><span>Editar dados</span></button></div>
                 </div>
                 <div class="bar-command-head-badges"><span id="barCommandStatus"></span><button class="bar-command-delete" type="button" id="barOrderDeleteBtn">Excluir</button><button class="bar-team-discount" type="button" id="barTeamDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Equipe</span><small>-35%</small></button><button class="bar-team-discount" type="button" id="barProfessorDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Professor</span><small>-10%</small></button><span class="ops-pill warn" id="barCommandLocation">Avulsa</span></div>
               </div>
@@ -20266,7 +20271,7 @@
         const paymentBadges = payments.map(function (payment) {
           return '<span class="bar-closed-order-payment-part">' + barPaymentMethodBadge(payment.paymentMethod) + (showParts ? '<strong>' + money(payment.amount) + '</strong>' : '') + '</span>';
         }).join('');
-        return '<article class="bar-finance-row bar-closed-order-row"><div class="bar-finance-copy"><strong>' + escapeHtml(barTableLabel(order)) + ' | Comanda #' + escapeHtml(order.commandNumber || '') + '</strong><small>' + escapeHtml(barDateTimeLabel(order.closedAt || order.openedAt)) + '</small></div><div class="bar-row-actions"><span class="bar-closed-order-payment-list">' + paymentBadges + '</span>' + barStatusPill(order.paymentStatus) + '<span class="bar-closed-order-total"><small>Total</small><strong>' + money(barOrderTotal(order)) + '</strong></span></div></article>';
+        return '<article class="bar-finance-row bar-closed-order-row"><div class="bar-finance-copy"><strong>' + escapeHtml(barTableLabel(order)) + ' | Comanda #' + escapeHtml(order.commandNumber || '') + '</strong><small>' + escapeHtml(barDateTimeLabel(order.closedAt || order.openedAt)) + '</small></div><div class="bar-row-actions"><span class="bar-closed-order-payment-list">' + paymentBadges + '</span>' + barStatusPill(order.paymentStatus) + '<span class="bar-closed-order-total"><small>Total</small><strong>' + money(barOrderTotal(order)) + '</strong></span><button class="small-btn bar-closed-order-reopen" type="button" data-bar-order-reopen="' + escapeHtml(order.id) + '">Reabrir comanda</button></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhuma comanda fechada hoje para esta forma de pagamento.</div>';
       const dayPaymentMethods = ['PIX', 'DINHEIRO', 'CARTAO_CREDITO', 'CARTAO_DEBITO', 'CONTA_CLIENTE', 'OUTROS'];
       const dayPaymentTotal = dayClosedOrders.reduce(function (sum, order) {
@@ -21602,6 +21607,7 @@
       const orderItems = barItemsForOrder(order.id);
       const customer = barOrderCustomerDetails(order, orderItems);
       const currentName = String(order.customerName || customer.name || '').trim();
+      const currentPhone = barPhoneDigits(order.customerPhone || customer.phone || '');
       const enteredName = window.prompt('Corrigir o nome desta comanda:', currentName);
       if (enteredName === null) return;
       const nextName = enteredName.trim().replace(/\s+/g, ' ');
@@ -21613,7 +21619,16 @@
         toast('O nome pode ter no máximo 80 caracteres.');
         return;
       }
-      if (normalizeMatchText(nextName) === normalizeMatchText(currentName)) return;
+      const enteredPhone = window.prompt('Telefone com DDD (opcional):', currentPhone ? barPhoneLabel(currentPhone) : '');
+      if (enteredPhone === null) return;
+      const nextPhone = barPhoneDigits(enteredPhone);
+      if (nextPhone && (nextPhone.length < 10 || nextPhone.length > 13)) {
+        toast('Informe um telefone com DDD válido.');
+        return;
+      }
+      const sameName = normalizeMatchText(nextName) === normalizeMatchText(currentName);
+      const samePhone = nextPhone === currentPhone;
+      if (sameName && samePhone) return;
 
       const button = $('barOrderEditNameBtn');
       const originalLabel = button.innerHTML;
@@ -21624,32 +21639,75 @@
         if (barCanPersist(order.id)) {
           await supabaseRest('bar_orders?id=eq.' + encodeURIComponent(order.id), {
             method: 'PATCH',
-            body: { customer_name: nextName, updated_at: new Date().toISOString() },
+            body: { customer_name: nextName, customer_phone: nextPhone || null, updated_at: new Date().toISOString() },
             prefer: 'return=representation'
           });
           let itemFilter = 'bar_order_items?order_id=eq.' + encodeURIComponent(order.id);
           if (order.tableId && customer.name) itemFilter += '&customer_name=eq.' + encodeURIComponent(customer.name);
           await supabaseRest(itemFilter, {
             method: 'PATCH',
-            body: { customer_name: nextName, updated_at: new Date().toISOString() },
+            body: { customer_name: nextName, customer_phone: nextPhone || null, updated_at: new Date().toISOString() },
             prefer: 'return=representation'
           });
           await loadBarData(true);
         } else {
           const previousNames = [currentName, customer.name, order.customerName].map(normalizeMatchText).filter(Boolean);
           order.customerName = nextName;
+          order.customerPhone = nextPhone;
           orderItems.forEach(function (item) {
-            if (!order.tableId || previousNames.includes(normalizeMatchText(item.customerName))) item.customerName = nextName;
+            if (!order.tableId || previousNames.includes(normalizeMatchText(item.customerName))) {
+              item.customerName = nextName;
+              item.customerPhone = nextPhone;
+            }
           });
         }
         renderBarModule();
         renderBarCommandModal();
-        toast('Nome da comanda atualizado.');
+        toast('Nome e telefone da comanda atualizados.');
       } catch (error) {
         reportActionError(error);
       } finally {
         button.disabled = false;
         button.innerHTML = originalLabel;
+      }
+    }
+
+    async function reopenBarOrderAction(orderId) {
+      const order = barOrderById(orderId);
+      if (!order || String(order.status || '').toUpperCase() !== 'FECHADA') return;
+      const customerName = barOrderCustomerDetails(order, barItemsForOrder(order.id)).name || 'esta comanda';
+      const confirmed = window.confirm(
+        'Reabrir a comanda de "' + customerName + '"?\n\nO recebimento anterior será estornado e a comanda voltará para a lista de abertas.'
+      );
+      if (!confirmed) return;
+
+      try {
+        requireAdminSession();
+        if (barCanPersist(order.id)) {
+          await supabaseRest('rpc/bar_reopen_order', {
+            method: 'POST',
+            body: { p_order_id: order.id },
+            prefer: 'return=representation'
+          });
+          await loadBarData(true);
+        } else {
+          order.status = 'ABERTA';
+          order.paymentStatus = 'ABERTO';
+          order.paymentMethod = '';
+          order.closedAt = '';
+          order.openedAt = new Date().toISOString();
+          opsData.barFinance.forEach(function (entry) {
+            if (String(entry.orderId) === String(order.id) && barFinanceIsConfirmed(entry)) {
+              entry.status = 'CANCELADO';
+              entry.paidAt = '';
+            }
+          });
+        }
+        renderBarModule();
+        openBarCommandModal(order.id);
+        toast('Comanda reaberta. Agora você pode editar e fechar novamente.');
+      } catch (error) {
+        reportActionError(error);
       }
     }
 
@@ -24233,6 +24291,11 @@
         if (orderBtn) {
           const orderId = orderBtn.dataset.barOrderOpen;
           openBarCommandModal(orderId);
+          return;
+        }
+        const reopenOrderBtn = event.target.closest('[data-bar-order-reopen]');
+        if (reopenOrderBtn) {
+          reopenBarOrderAction(reopenOrderBtn.dataset.barOrderReopen);
           return;
         }
         const menuMoveBtn = event.target.closest('[data-bar-menu-move]');
