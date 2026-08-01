@@ -3447,6 +3447,11 @@
       background: #f7fbfc;
     }
 
+    .bar-table-card.is-loose.is-paid-open {
+      border-color: #8ebd10;
+      background: #fbfff1;
+    }
+
     .bar-table-card.is-loose h3 {
       min-height: 0;
       font-size: 18px;
@@ -3472,6 +3477,23 @@
     .bar-table-card-person-identity {
       min-width: 0;
       flex: 1 1 auto;
+    }
+
+    .bar-paid-open-pill {
+      min-height: 18px;
+      display: inline-flex;
+      align-items: center;
+      margin-top: 4px;
+      padding: 3px 7px;
+      border: 1px solid #b9dc58;
+      border-radius: 999px;
+      color: #486900;
+      background: #effbd0;
+      font-size: 8px;
+      font-weight: 950;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
 
     .bar-table-card-person h3 {
@@ -13249,7 +13271,6 @@
             <form class="bar-command-product-form" id="barOrderItemForm">
               <input id="barOrderProduct" type="hidden" />
               <div class="bar-order-product-picker">
-                <input class="bar-order-product-search" id="barOrderProductSearch" type="search" placeholder="Buscar produto..." autocomplete="off" aria-label="Buscar produto" />
                 <div class="bar-order-product-tabs" id="barOrderProductTabs" role="tablist" aria-label="Categorias de produtos"></div>
                 <div class="bar-order-product-grid" id="barOrderProductGrid" role="listbox" aria-label="Produtos disponíveis"></div>
               </div>
@@ -13305,7 +13326,7 @@
               <div class="field"><label for="barCheckoutService">Valor adicional</label><input id="barCheckoutService" inputmode="decimal" value="0,00" /></div>
               <div class="field"><label for="barCheckoutDiscount">Desconto</label><input id="barCheckoutDiscount" inputmode="decimal" value="0,00" /></div>
               <div class="field" id="barCheckoutSingleMethodField"><label for="barCheckoutMethod">Forma de pagamento</label><select id="barCheckoutMethod"><option value="PIX">Pix</option><option value="DINHEIRO">Dinheiro</option><option value="CARTAO_CREDITO">Cartão de crédito</option><option value="CARTAO_DEBITO">Cartão de débito</option><option value="CONTA_CLIENTE">Conta do cliente</option></select></div>
-              <div class="field full"><label for="barCheckoutNotes">Observação do pagamento</label><textarea id="barCheckoutNotes" rows="2" maxlength="500" placeholder="Ex.: pagamento confirmado pelo responsável, ajuste combinado com o cliente"></textarea></div>
+              <div class="field full"><label for="barCheckoutNotes">Observação do pagamento</label><textarea id="barCheckoutNotes" rows="2" maxlength="500"></textarea></div>
             </div>
             <div class="bar-command-payment-actions">
               <button class="bar-command-receive" type="button" id="barOrderPayBtn"><svg><use href="#admin-icon-wallet"></use></svg><span>Marcar como paga</span></button>
@@ -19355,8 +19376,9 @@
     function barTableCard(table) {
       const order = barOrderForTable(table.id);
       const commandNumber = order && (order.commandNumber || String(order.id).slice(-4));
+      const paidOpen = order && barOrderIsPaid(order);
       return '<article class="bar-table-card' + (order ? ' is-open' : '') + '">' +
-        '<div class="bar-table-card-top"><span class="bar-table-number">' + escapeHtml(String(table.number).padStart(2, '0')) + '</span>' + (order ? '<span class="ops-pill warn">Ocupada</span>' : '<span class="ops-pill good">Livre</span>') + '</div>' +
+        '<div class="bar-table-card-top"><span class="bar-table-number">' + escapeHtml(String(table.number).padStart(2, '0')) + '</span>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago · falta encerrar</span>' : order ? '<span class="ops-pill warn">Ocupada</span>' : '<span class="ops-pill good">Livre</span>') + '</div>' +
         '<div><h3>' + escapeHtml(table.name) + '</h3><div class="bar-table-card-meta"><span><svg><use href="#bar-icon-seat"></use></svg>' + escapeHtml(table.seats) + ' lugares</span>' + (table.notes ? '<span>' + escapeHtml(table.notes) + '</span>' : '') + '</div></div>' +
         '<div class="bar-table-command-summary">' + (order ? '<div><span>Comanda #' + escapeHtml(commandNumber) + '</span><strong>' + escapeHtml(barStatusLabel(order.status)) + '</strong></div><strong>' + money(barOrderTotal(order)) + '</strong>' : '<div><span>Disponível</span><strong>Pronta para novo pedido</strong></div>') + '</div>' +
         '<div class="bar-table-card-actions"><button class="' + (order ? 'primary-btn' : 'ghost-btn') + '" type="button" data-bar-table-open="' + escapeHtml(table.id) + '">' + (order ? 'Abrir comanda' : 'Abrir mesa') + '</button></div>' +
@@ -19365,8 +19387,9 @@
 
     function barLooseOrderCard(order) {
       const card = barAccessCardById(order.publicAccessId);
-      return '<article class="bar-table-card is-open is-loose">' +
-        '<div class="bar-table-card-top bar-table-card-person"><div class="bar-table-card-person-identity"><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3></div></div>' +
+      const paidOpen = barOrderIsPaid(order);
+      return '<article class="bar-table-card is-open is-loose' + (paidOpen ? ' is-paid-open' : '') + '">' +
+        '<div class="bar-table-card-top bar-table-card-person"><div class="bar-table-card-person-identity"><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago · falta encerrar</span>' : '') + '</div></div>' +
         '<div class="bar-table-card-actions"><button class="primary-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button></div>' +
       '</article>';
     }
@@ -20812,7 +20835,6 @@
       const tabs = $('barOrderProductTabs');
       if (!grid || !tabs) return;
       const selectedId = String($('barOrderProduct').value || '');
-      const search = normalizeMatchText($('barOrderProductSearch').value);
       const activeProducts = opsData.barProducts.filter(function (product) {
         return product.active;
       }).sort(function (a, b) {
@@ -20844,9 +20866,7 @@
       const categoryProducts = activeProducts.filter(function (product) {
         return !opsState.barOrderProductCategory || (product.category || 'Outros') === opsState.barOrderProductCategory;
       });
-      const products = categoryProducts.filter(function (product) {
-        return !search || normalizeMatchText([product.name, product.category, product.sku, product.notes].join(' ')).includes(search);
-      });
+      const products = categoryProducts;
       grid.innerHTML = products.map(function (product) {
         const stock = Number(product.stock || 0);
         const available = stock > 0;
@@ -21021,7 +21041,6 @@
       opsState.barCheckoutSplitValues = [];
       opsState.barCheckoutSplitTotalCents = null;
       $('barOrderProduct').value = '';
-      $('barOrderProductSearch').value = '';
       opsState.barOrderProductCategory = '';
       $('barOrderQuantity').value = 1;
       $('barOrderItemNotes').value = '';
@@ -21813,7 +21832,6 @@
           recalculateLocalBarOrder(order);
         }
         $('barOrderProduct').value = '';
-        $('barOrderProductSearch').value = '';
         $('barOrderQuantity').value = 1;
         $('barOrderItemNotes').value = '';
         opsState.barCommandTab = 'items';
@@ -24732,7 +24750,6 @@
         if (event.target.id === 'barCommandModal') closeBarCommandModal();
       });
       $('barCommandModalClose').addEventListener('click', closeBarCommandModal);
-      $('barOrderProductSearch').addEventListener('input', renderBarOrderProductPicker);
       $('barOrderQuantity').addEventListener('input', renderBarOrderProductPreview);
       $('barCheckoutService').addEventListener('input', function () { updateBarCheckoutPreview(); });
       $('barCheckoutDiscount').addEventListener('input', function () { updateBarCheckoutPreview(); });
