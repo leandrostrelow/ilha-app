@@ -661,6 +661,29 @@ begin
 end;
 $$;
 
+create or replace function public.bar_mark_closed_order_items_delivered()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.status = 'FECHADA' and old.status is distinct from new.status then
+    update public.bar_order_items
+       set status = 'ENTREGUE',
+           updated_at = coalesce(new.closed_at, now())
+     where order_id = new.id
+       and status in ('SOLICITADO', 'EM_PREPARO', 'PRONTO');
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists bar_orders_deliver_items_on_close on public.bar_orders;
+create trigger bar_orders_deliver_items_on_close
+after update of status on public.bar_orders
+for each row
+execute function public.bar_mark_closed_order_items_delivered();
+
 create or replace function public.bar_close_order(
   p_order_id uuid,
   p_payment_method text,

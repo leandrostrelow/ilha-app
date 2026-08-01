@@ -18504,7 +18504,7 @@
         const order = barOrderById(item.orderId);
         return ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(status) &&
           barKitchenIsPortionItem(item) &&
-          (!order || !['CANCELADA', 'CANCELADO'].includes(String(order.status || '').toUpperCase()));
+          (!order || barOrderIsOpen(order));
       }).sort(barKitchenQueueCompare);
     }
 
@@ -18536,8 +18536,11 @@
 
     function barDeliveredPortionItems() {
       return opsData.barOrderItems.filter(function (item) {
-        return String(item.status || '').toUpperCase() === 'ENTREGUE' &&
-          barKitchenIsPortionItem(item);
+        const status = String(item.status || '').toUpperCase();
+        const order = barOrderById(item.orderId);
+        const orderClosed = order && String(order.status || '').toUpperCase() === 'FECHADA';
+        return barKitchenIsPortionItem(item) &&
+          (status === 'ENTREGUE' || (orderClosed && ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(status)));
       }).sort(function (a, b) {
         const updatedDifference = barKitchenQueueTimestamp({ created: b.updated || b.created }) - barKitchenQueueTimestamp({ created: a.updated || a.created });
         if (updatedDifference) return updatedDifference;
@@ -21235,6 +21238,9 @@
           order.paymentMethod = paymentMethod;
           order.paymentStatus = 'PAGO';
           order.status = 'FECHADA';
+          barItemsForOrder(order.id).forEach(function (item) {
+            if (['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(String(item.status || '').toUpperCase())) item.status = 'ENTREGUE';
+          });
           order.closedAt = new Date().toISOString();
           recalculateLocalBarOrder(order);
           const payments = splitEnabled ? splitPayments : [{ payment_method: paymentMethod, amount: order.total }];
