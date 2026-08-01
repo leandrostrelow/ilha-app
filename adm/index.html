@@ -5915,11 +5915,38 @@
     .bar-command-receive {
       min-height: 52px;
       width: 100%;
-      margin-top: 14px;
       padding: 12px 18px;
       color: #ffffff;
       background: var(--teal);
       font-size: 14px;
+    }
+
+    .bar-command-payment-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .bar-command-finalize {
+      color: #173747;
+      border: 1px solid #c9d9df;
+      background: #ffffff;
+    }
+
+    .bar-command-finalize:hover {
+      color: #ffffff;
+      border-color: #173747;
+      background: #173747;
+    }
+
+    .bar-command-receive:disabled,
+    .bar-command-finalize:disabled {
+      color: #71808a;
+      border-color: #dce4e7;
+      background: #edf2f4;
+      box-shadow: none;
+      cursor: not-allowed;
     }
 
     .bar-command-footer {
@@ -11434,10 +11461,13 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      body.bar-admin-surface .bar-command-receive {
+      body.bar-admin-surface .bar-command-payment-actions {
         position: sticky;
         bottom: max(0px, env(safe-area-inset-bottom));
         z-index: 5;
+        grid-template-columns: 1fr;
+        padding-top: 8px;
+        background: #f3f7f8;
         min-height: 48px;
         box-shadow: 0 -5px 16px rgba(8, 63, 75, .12);
       }
@@ -13249,7 +13279,10 @@
                 <div class="bar-checkout-split-balance" id="barCheckoutSplitBalance" role="status"></div>
               </div>
             </div>
-            <button class="bar-command-receive" type="button" id="barOrderCloseBtn"><svg><use href="#admin-icon-wallet"></use></svg><span>Receber e encerrar comanda</span></button>
+            <div class="bar-command-payment-actions">
+              <button class="bar-command-receive" type="button" id="barOrderPayBtn"><svg><use href="#admin-icon-wallet"></use></svg><span>Marcar como paga</span></button>
+              <button class="bar-command-receive bar-command-finalize" type="button" id="barOrderCloseBtn"><svg><use href="#admin-icon-receipt"></use></svg><span>Encerrar comanda</span></button>
+            </div>
           </section>
         </div>
 
@@ -18795,6 +18828,21 @@
       return ['ABERTA', 'EM_PREPARO', 'PRONTA'].includes(String(order && order.status || '').toUpperCase());
     }
 
+    function barOrderIsPaid(order) {
+      return String(order && order.paymentStatus || '').toUpperCase() === 'PAGO';
+    }
+
+    function barOrderCanEdit(order) {
+      return barOrderIsOpen(order) && !barOrderIsPaid(order);
+    }
+
+    function barPendingPortionItemsForOrder(orderId) {
+      return barItemsForOrder(orderId).filter(function (item) {
+        return barKitchenIsPortionItem(item) &&
+          ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(String(item.status || '').toUpperCase());
+      });
+    }
+
     function barTableById(id) {
       return opsData.barTables.find(function (table) { return String(table.id) === String(id); });
     }
@@ -20436,11 +20484,12 @@
       const dayClosingTotal = filteredDayClosedOrders.reduce(function (sum, order) {
         return sum + barDayClosingAmountForOrder(order, paymentFilter);
       }, 0);
-      const openOrdersExpectedTotal = openOrders.reduce(function (sum, order) {
+      const unpaidOpenOrders = openOrders.filter(function (order) { return !barOrderIsPaid(order); });
+      const openOrdersExpectedTotal = unpaidOpenOrders.reduce(function (sum, order) {
         return sum + barOrderTotal(order);
       }, 0);
       $('barOpenOrdersMetric').textContent = money(openOrdersExpectedTotal);
-      $('barOpenOrdersMetric').parentElement.title = 'Valor previsto das ' + openOrders.length + (openOrders.length === 1 ? ' comanda aberta' : ' comandas abertas');
+      $('barOpenOrdersMetric').parentElement.title = 'Valor ainda a receber de ' + unpaidOpenOrders.length + (unpaidOpenOrders.length === 1 ? ' comanda' : ' comandas');
       $('barClosedOrdersTotal').textContent = money(dayClosingTotal);
       $('barClosedOrdersTotalLabel').textContent = paymentFilter === 'TODOS'
         ? 'Total do dia'
@@ -20541,7 +20590,7 @@
     }
 
     function syncBarPresetDiscountButtons(order) {
-      const open = Boolean(order && barOrderIsOpen(order));
+      const open = Boolean(order && barOrderCanEdit(order));
       const discountInput = $('barCheckoutDiscount');
       const currentDiscount = discountInput ? barCommandMoneyValue(discountInput.value) : Number(order && order.discount || 0);
       [
@@ -20643,7 +20692,7 @@
 
     function renderBarCheckoutSplit(order) {
       const section = $('barCheckoutSplitSection');
-      const open = Boolean(order && barOrderIsOpen(order));
+      const open = Boolean(order && barOrderCanEdit(order));
       const enabled = open && Boolean(opsState.barCheckoutSplitEnabled);
       const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
       const defaultMethod = $('barCheckoutMethod').value || 'PIX';
@@ -20673,8 +20722,8 @@
         return '<div class="bar-checkout-split-row"><div class="bar-checkout-split-person"><strong>Pessoa ' + (index + 1) + '</strong><small>' + (automaticRemainder ? 'Restante calculado automaticamente' : 'Parte ' + (index + 1) + ' de ' + count) + '</small></div><label class="bar-checkout-split-amount-field"><span>' + (automaticRemainder ? 'Restante automático' : 'Valor') + '</span><span class="bar-checkout-split-money' + (automaticRemainder ? ' is-automatic' : '') + '"><span aria-hidden="true">R$</span><input class="bar-checkout-split-amount-input" data-bar-split-amount="' + index + '" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" spellcheck="false" value="' + amountValue + '" aria-label="Valor pago pela pessoa ' + (index + 1) + '"' + (automaticRemainder ? ' readonly' : '') + ' /></span></label><label class="bar-checkout-split-method-field"><span>Forma de pagamento</span><select data-bar-split-method="' + index + '" aria-label="Forma de pagamento da pessoa ' + (index + 1) + '">' + options + '</select></label></div>';
       }).join('') : '';
       if (enabled) syncBarCheckoutSplitBalance(order);
-      const closeLabel = $('barOrderCloseBtn').querySelector('span');
-      if (closeLabel) closeLabel.textContent = enabled ? 'Receber divisões e encerrar comanda' : 'Receber e encerrar comanda';
+      const payLabel = $('barOrderPayBtn').querySelector('span');
+      if (payLabel && !barOrderIsPaid(order)) payLabel.textContent = enabled ? 'Receber pagamentos' : 'Marcar como paga';
     }
 
     function updateBarCheckoutPreview(order) {
@@ -20689,7 +20738,7 @@
 
     async function toggleBarPresetDiscountAction(percentage, label, buttonId) {
       const order = barOrderById(opsState.selectedBarOrderId);
-      if (!order || !barOrderIsOpen(order)) return;
+      if (!order || !barOrderCanEdit(order)) return;
       const amount = barPresetDiscountAmount(order, percentage);
       if (amount <= 0) {
         toast('Adicione itens antes de aplicar o desconto de ' + label + '.');
@@ -20830,7 +20879,7 @@
     function setBarCommandTab(tab) {
       const order = barOrderById(opsState.selectedBarOrderId);
       const normalized = ['items', 'add', 'checkout'].includes(tab) ? tab : 'items';
-      opsState.barCommandTab = normalized === 'add' && order && !barOrderIsOpen(order) ? 'items' : normalized;
+      opsState.barCommandTab = normalized === 'add' && order && !barOrderCanEdit(order) ? 'items' : normalized;
       document.querySelectorAll('[data-bar-command-tab]').forEach(function (button) {
         const active = button.dataset.barCommandTab === opsState.barCommandTab;
         button.classList.toggle('active', active);
@@ -20863,14 +20912,17 @@
       $('barCommandModalTitle').textContent = customer.name;
       $('barCommandModalSubtitle').innerHTML = contactBits.join('');
       $('barCommandModalSubtitle').hidden = !contactBits.length;
-      const chargeUrl = barOrderIsOpen(order) ? barChargeWhatsAppUrl(order) : '';
+      const chargeUrl = barOrderCanEdit(order) ? barChargeWhatsAppUrl(order) : '';
       $('barOrderChargeBtn').hidden = !chargeUrl;
       $('barOrderChargeBtn').href = chargeUrl || '#';
-      $('barCommandStatus').innerHTML = String(order.status || '').toUpperCase() === 'ABERTA' ? '<span class="ops-pill good">Aberta</span>' : barStatusPill(order.status);
       $('barCommandItemsCount').textContent = itemQuantity;
       $('barCheckoutItemCount').textContent = itemQuantity;
 
       const open = barOrderIsOpen(order);
+      const paid = barOrderIsPaid(order);
+      const editable = barOrderCanEdit(order);
+      const pendingPortions = barPendingPortionItemsForOrder(order.id);
+      $('barCommandStatus').innerHTML = paid ? '<span class="ops-pill good">Pago</span>' : (String(order.status || '').toUpperCase() === 'ABERTA' ? '<span class="ops-pill good">Aberta</span>' : barStatusPill(order.status));
       $('barCommandItems').innerHTML = items.map(function (item) {
         const status = String(item.status || '').toUpperCase();
         const cancelled = status === 'CANCELADO';
@@ -20893,18 +20945,29 @@
           '<span class="bar-checkout-item-quantity">' + escapeHtml(item.quantity + 'x') + '</span>' +
           '<strong title="' + escapeHtml(item.productName) + '">' + escapeHtml(item.productName) + '</strong>' +
           '<span class="bar-checkout-item-total">' + money(item.quantity * item.unitPrice) + '</span>' +
-          (open ? '<button class="bar-checkout-item-remove" type="button" data-bar-item-cancel="' + escapeHtml(item.id) + '">Excluir</button>' : '') +
+          (editable ? '<button class="bar-checkout-item-remove" type="button" data-bar-item-cancel="' + escapeHtml(item.id) + '">Excluir</button>' : '') +
           '</div>';
       }).join('') || '<div class="lesson-empty-state">Nenhum item ativo nesta comanda.</div>';
 
       $('barCommandTotal').textContent = money(barOrderTotal(order));
       $('barCheckoutSubtotal').textContent = money(barOrderSubtotal(order));
-      $('barOrderItemForm').style.display = open ? 'grid' : 'none';
-      $('barCommandAddTab').hidden = !open;
-      document.querySelectorAll('[data-bar-command-tab-target="add"]').forEach(function (button) { button.hidden = !open; });
+      $('barOrderItemForm').style.display = editable ? 'grid' : 'none';
+      $('barCommandAddTab').hidden = !editable;
+      document.querySelectorAll('[data-bar-command-tab-target="add"]').forEach(function (button) { button.hidden = !editable; });
       $('barOrderEditNameBtn').hidden = !open;
-      $('barOrderDeleteBtn').hidden = !open;
+      $('barOrderDeleteBtn').hidden = !editable;
+      $('barOrderPayBtn').style.display = open ? 'inline-flex' : 'none';
       $('barOrderCloseBtn').style.display = open ? 'inline-flex' : 'none';
+      $('barOrderPayBtn').disabled = paid;
+      $('barOrderPayBtn').querySelector('span').textContent = paid ? 'Pagamento recebido' : 'Marcar como paga';
+      $('barOrderCloseBtn').disabled = !paid || pendingPortions.length > 0;
+      $('barOrderCloseBtn').title = !paid
+        ? 'Marque a comanda como paga antes de encerrar.'
+        : (pendingPortions.length ? 'Entregue as porções antes de encerrar a comanda.' : 'Encerrar esta comanda.');
+      ['barCheckoutService', 'barCheckoutDiscount', 'barCheckoutMethod', 'barCheckoutSplitToggle', 'barCheckoutSplitCount'].forEach(function (id) {
+        const field = $(id);
+        if (field) field.disabled = paid;
+      });
       renderBarProducts();
       renderBarOrderProductPreview();
       updateBarCheckoutPreview(order);
@@ -20916,7 +20979,7 @@
       if (!order) return;
       setBarCommandModalScreenMount(barCommandScreenIsActive());
       opsState.selectedBarOrderId = order.id;
-      opsState.barCommandTab = barOrderIsOpen(order) ? 'add' : 'items';
+      opsState.barCommandTab = barOrderCanEdit(order) ? 'add' : 'items';
       $('barCheckoutService').value = Number(order.serviceCharge || 0).toFixed(2).replace('.', ',');
       $('barCheckoutDiscount').value = Number(order.discount || 0).toFixed(2).replace('.', ',');
       $('barCheckoutMethod').value = order.paymentMethod || 'PIX';
@@ -21698,7 +21761,7 @@
         const product = barProductById($('barOrderProduct').value);
         const quantity = Number($('barOrderQuantity').value || 0);
         const notes = $('barOrderItemNotes').value.trim();
-        if (!order || !barOrderIsOpen(order)) throw new Error('Abra uma comanda válida.');
+        if (!order || !barOrderCanEdit(order)) throw new Error('Esta comanda já foi paga ou não está aberta para novos itens.');
         if (!product) throw new Error('Escolha o produto.');
         if (quantity <= 0) throw new Error('Informe a quantidade.');
         if (Number(product.stock) < quantity) throw new Error('Estoque insuficiente para ' + product.name + '.');
@@ -21756,6 +21819,11 @@
     async function cancelBarItemAction(itemId) {
       const item = opsData.barOrderItems.find(function (row) { return String(row.id) === String(itemId); });
       if (!item || item.status === 'CANCELADO') return;
+      const order = barOrderById(item.orderId);
+      if (barOrderIsPaid(order)) {
+        toast('O pagamento já foi registrado. Não é possível excluir itens desta comanda.');
+        return;
+      }
       const quantity = Math.max(1, Number(item.quantity || 1));
       const confirmed = window.confirm(
         'Excluir ' + quantity.toLocaleString('pt-BR') + 'x ' + (item.productName || 'este item') + ' da comanda?\n\n' +
@@ -21911,7 +21979,7 @@
 
     async function deleteBarOrderAction() {
       const order = barOrderById(opsState.selectedBarOrderId);
-      if (!order || !barOrderIsOpen(order)) return;
+      if (!order || !barOrderCanEdit(order)) return;
       const activeItems = barActiveItemsForOrder(order.id);
       const itemQuantity = activeItems.reduce(function (sum, item) {
         return sum + Number(item.quantity || 0);
@@ -21960,17 +22028,17 @@
       }
     }
 
-    async function closeBarOrderAction() {
+    async function payBarOrderAction() {
       const order = barOrderById(opsState.selectedBarOrderId);
-      if (!order) return;
-      const closeButton = $('barOrderCloseBtn');
+      if (!order || !barOrderCanEdit(order)) return;
+      const payButton = $('barOrderPayBtn');
       try {
         requireAdminSession();
-        if (!barActiveItemsForOrder(order.id).length) throw new Error('Adicione ao menos um item antes de fechar.');
-        closeButton.disabled = true;
+        if (!barActiveItemsForOrder(order.id).length) throw new Error('Adicione ao menos um item antes de registrar o pagamento.');
+        payButton.disabled = true;
         const serviceCharge = parseOptionalMoney($('barCheckoutService').value);
         const discount = parseOptionalMoney($('barCheckoutDiscount').value);
-        const closingNotes = String($('barCheckoutNotes').value || '').trim();
+        const paymentNotes = String($('barCheckoutNotes').value || '').trim();
         const splitEnabled = Boolean(opsState.barCheckoutSplitEnabled);
         const splitPayments = splitEnabled ? barCheckoutSplitPayments(order) : [];
         const paymentMethod = splitEnabled ? 'DIVIDIDO' : $('barCheckoutMethod').value;
@@ -21988,17 +22056,17 @@
         if (barCanPersist(order.id)) {
           await supabaseRest('bar_orders?id=eq.' + encodeURIComponent(order.id), {
             method: 'PATCH',
-            body: { notes: closingNotes || null, updated_at: new Date().toISOString() },
+            body: { notes: paymentNotes || null, updated_at: new Date().toISOString() },
             prefer: 'return=minimal'
           });
           if (splitEnabled) {
-            await supabaseRest('rpc/bar_close_order_split', {
+            await supabaseRest('rpc/bar_pay_order_split', {
               method: 'POST',
               body: { p_order_id: order.id, p_payments: splitPayments, p_discount: discount, p_service_charge: serviceCharge },
               prefer: 'return=representation'
             });
           } else {
-            await supabaseRest('rpc/bar_close_order', {
+            await supabaseRest('rpc/bar_pay_order', {
               method: 'POST',
               body: { p_order_id: order.id, p_payment_method: paymentMethod, p_discount: discount, p_service_charge: serviceCharge },
               prefer: 'return=representation'
@@ -22006,21 +22074,16 @@
           }
           await supabaseRest('bar_financial_entries?order_id=eq.' + encodeURIComponent(order.id), {
             method: 'PATCH',
-            body: { notes: closingNotes || null, updated_at: new Date().toISOString() },
+            body: { notes: paymentNotes || null, updated_at: new Date().toISOString() },
             prefer: 'return=minimal'
           });
           await loadBarData(true);
         } else {
           order.serviceCharge = serviceCharge;
           order.discount = discount;
-          order.notes = closingNotes;
+          order.notes = paymentNotes;
           order.paymentMethod = paymentMethod;
           order.paymentStatus = 'PAGO';
-          order.status = 'FECHADA';
-          barItemsForOrder(order.id).forEach(function (item) {
-            if (['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(String(item.status || '').toUpperCase())) item.status = 'ENTREGUE';
-          });
-          order.closedAt = new Date().toISOString();
           recalculateLocalBarOrder(order);
           const payments = splitEnabled ? splitPayments : [{ payment_method: paymentMethod, amount: order.total }];
           payments.forEach(function (payment, index) {
@@ -22029,17 +22092,67 @@
               description: 'Venda da comanda #' + order.commandNumber + (splitEnabled ? ' · Divisão ' + (index + 1) + '/' + payments.length : ''),
               counterparty: barTableLabel(order), category: 'Vendas', amount: payment.amount, dueDate: localDateString(), status: 'RECEBIDO',
               paymentMethod: payment.payment_method, paidAt: new Date().toISOString(), created: new Date().toISOString(),
-              notes: [splitEnabled ? 'Conta dividida entre ' + payments.length + ' pessoas.' : '', closingNotes].filter(Boolean).join(' · ')
+              notes: [splitEnabled ? 'Conta dividida entre ' + payments.length + ' pessoas.' : '', paymentNotes].filter(Boolean).join(' · ')
             });
+          });
+        }
+        opsState.barCommandTab = 'items';
+        renderBarModule();
+        renderBarCommandModal();
+        toast(splitEnabled ? 'Pagamentos recebidos. A comanda continua aberta até a entrega.' : 'Pagamento recebido. A comanda continua aberta até a entrega.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        payButton.disabled = barOrderIsPaid(barOrderById(opsState.selectedBarOrderId));
+      }
+    }
+
+    async function closeBarOrderAction() {
+      const order = barOrderById(opsState.selectedBarOrderId);
+      if (!order || !barOrderIsOpen(order)) return;
+      const closeButton = $('barOrderCloseBtn');
+      try {
+        requireAdminSession();
+        if (!barOrderIsPaid(order)) throw new Error('Marque a comanda como paga antes de encerrar.');
+        const pendingPortions = barPendingPortionItemsForOrder(order.id);
+        if (pendingPortions.length) {
+          throw new Error('Ainda ' + (pendingPortions.length === 1 ? 'há 1 porção aguardando entrega.' : 'há ' + pendingPortions.length + ' porções aguardando entrega.'));
+        }
+        closeButton.disabled = true;
+        const paymentNotes = String($('barCheckoutNotes').value || '').trim();
+        if (barCanPersist(order.id)) {
+          await supabaseRest('bar_orders?id=eq.' + encodeURIComponent(order.id), {
+            method: 'PATCH',
+            body: { notes: paymentNotes || null, updated_at: new Date().toISOString() },
+            prefer: 'return=minimal'
+          });
+          await supabaseRest('bar_financial_entries?order_id=eq.' + encodeURIComponent(order.id), {
+            method: 'PATCH',
+            body: { notes: paymentNotes || null, updated_at: new Date().toISOString() },
+            prefer: 'return=minimal'
+          });
+          await supabaseRest('rpc/bar_finalize_paid_order', {
+            method: 'POST',
+            body: { p_order_id: order.id },
+            prefer: 'return=representation'
+          });
+          await loadBarData(true);
+        } else {
+          order.notes = paymentNotes;
+          order.status = 'FECHADA';
+          order.closedAt = new Date().toISOString();
+          barItemsForOrder(order.id).forEach(function (item) {
+            if (['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(String(item.status || '').toUpperCase())) item.status = 'ENTREGUE';
           });
         }
         closeBarCommandModal();
         renderBarModule();
-        toast(splitEnabled ? 'Comanda dividida, recebida e encerrada.' : 'Comanda fechada e venda registrada.');
+        toast('Comanda encerrada. O pagamento não foi lançado novamente.');
       } catch (error) {
         reportActionError(error);
       } finally {
-        closeButton.disabled = false;
+        const currentOrder = barOrderById(opsState.selectedBarOrderId);
+        closeButton.disabled = !barOrderIsPaid(currentOrder) || barPendingPortionItemsForOrder(currentOrder && currentOrder.id).length > 0;
       }
     }
 
@@ -24660,6 +24773,7 @@
       });
       $('barOrderEditNameBtn').addEventListener('click', editBarOrderCustomerNameAction);
       $('barOrderDeleteBtn').addEventListener('click', deleteBarOrderAction);
+      $('barOrderPayBtn').addEventListener('click', payBarOrderAction);
       $('barOrderCloseBtn').addEventListener('click', closeBarOrderAction);
       $('barQrModalClose').addEventListener('click', closeBarQrModal);
       $('barQrModal').addEventListener('click', function (event) {
