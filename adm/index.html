@@ -5502,6 +5502,14 @@
       gap: 12px;
     }
 
+    .bar-command-product-fields.has-location {
+      grid-template-columns: 190px minmax(190px, 0.7fr) minmax(280px, 1.3fr);
+    }
+
+    .bar-command-location-field[hidden] {
+      display: none !important;
+    }
+
     .bar-quantity-control {
       min-height: 46px;
       display: grid;
@@ -8994,6 +9002,20 @@
       font-size: 22px;
       font-weight: 900;
       line-height: 1.1;
+    }
+
+    .bar-kitchen-person .bar-kitchen-location {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      margin-top: 5px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      color: #365d00;
+      background: #eaf8c4;
+      font-size: 11px;
+      font-weight: 950;
+      line-height: 1;
     }
 
     .bar-kitchen-note {
@@ -13297,7 +13319,7 @@
                 <div class="bar-order-product-grid" id="barOrderProductGrid" role="listbox" aria-label="Produtos disponíveis"></div>
               </div>
               <div class="bar-command-product-preview" id="barOrderProductPreview" hidden></div>
-              <div class="bar-command-product-fields">
+              <div class="bar-command-product-fields" id="barCommandProductFields">
                 <div class="field">
                   <label for="barOrderQuantity">Quantidade</label>
                   <div class="bar-quantity-control">
@@ -13305,6 +13327,19 @@
                     <input id="barOrderQuantity" type="number" min="1" step="1" value="1" required />
                     <button type="button" data-bar-quantity-step="1" aria-label="Aumentar quantidade"><svg><use href="#bar-icon-plus"></use></svg></button>
                   </div>
+                </div>
+                <div class="field bar-command-location-field" id="barOrderDeliveryLocationField" hidden>
+                  <label for="barOrderDeliveryLocation">Onde a pessoa está?</label>
+                  <select id="barOrderDeliveryLocation">
+                    <option value="">Escolha o local</option>
+                    <option value="Quadra 1">Quadra 1</option>
+                    <option value="Quadra 2">Quadra 2</option>
+                    <option value="Quadra 3">Quadra 3</option>
+                    <option value="Quadra 4">Quadra 4</option>
+                    <option value="Quadra 5">Quadra 5</option>
+                    <option value="Salão">Salão</option>
+                    <option value="Deck externo">Deck externo</option>
+                  </select>
                 </div>
                 <div class="field"><label for="barOrderItemNotes">Observação do pedido</label><input id="barOrderItemNotes" placeholder="Ex.: sem gelo, sem cebola, carne bem passada" /></div>
               </div>
@@ -18158,6 +18193,7 @@
         source: row.source || 'EQUIPE',
         status: row.status || 'SOLICITADO',
         notes: row.notes || '',
+        deliveryLocation: row.delivery_location || '',
         created: row.created_at || '',
         updated: row.updated_at || row.created_at || ''
       };
@@ -20456,6 +20492,11 @@
       return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message);
     }
 
+    function barKitchenLocationMarkup(item) {
+      const location = String(item && item.deliveryLocation || '').trim();
+      return location ? '<small class="bar-kitchen-location">' + escapeHtml(location) + '</small>' : '';
+    }
+
     function barKitchenActiveCardMarkup(item, ticketNumber, showDate) {
       const order = barOrderById(item.orderId);
       const status = String(item.status || '').toUpperCase();
@@ -20476,7 +20517,7 @@
       return '<article class="bar-kitchen-card' + (ready ? ' is-ready' : '') + '">' +
         '<div class="bar-kitchen-card-head"><span class="bar-kitchen-position">#' + escapeHtml(ticketNumber) + '</span><span class="bar-kitchen-time">Pedido ' + (showDate ? 'em ' : 'às ') + escapeHtml(requestedLabel) + '</span></div>' +
         '<div class="bar-kitchen-product"><span class="bar-kitchen-quantity">' + escapeHtml(item.quantity + 'x') + '</span><div><strong>' + escapeHtml(item.productName) + '</strong>' + productMeta + '</div></div>' +
-        '<div class="bar-kitchen-person"><strong>' + escapeHtml(customerName) + '</strong></div>' +
+        '<div class="bar-kitchen-person"><div><strong>' + escapeHtml(customerName) + '</strong>' + barKitchenLocationMarkup(item) + '</div></div>' +
         '<div class="bar-kitchen-card-footer' + (ready ? ' is-ready-actions' : '') + '">' + whatsappButton + '<button class="primary-btn" type="button" data-bar-kitchen-status="' + escapeHtml(item.id) + '" data-next-status="' + nextStatus + '">' + actionLabel + '</button></div>' +
       '</article>';
     }
@@ -20491,7 +20532,7 @@
       return '<article class="bar-kitchen-card is-delivered">' +
         '<div class="bar-kitchen-card-head"><span class="bar-kitchen-position">#' + escapeHtml(ticketNumber) + '</span><span class="bar-kitchen-time">Pedido em ' + escapeHtml(barKitchenDateTimeLabel(item.created)) + '</span></div>' +
         '<div class="bar-kitchen-product"><span class="bar-kitchen-quantity">' + escapeHtml(item.quantity + 'x') + '</span><div><strong>' + escapeHtml(item.productName) + '</strong>' + productMeta + '</div></div>' +
-        '<div class="bar-kitchen-person"><div><strong>' + escapeHtml(customerName) + '</strong><small>' + escapeHtml(commandLabel) + '</small></div>' + barStatusPill('ENTREGUE') + '</div>' +
+        '<div class="bar-kitchen-person"><div><strong>' + escapeHtml(customerName) + '</strong>' + barKitchenLocationMarkup(item) + '<small>' + escapeHtml(commandLabel) + '</small></div>' + barStatusPill('ENTREGUE') + '</div>' +
         '<div class="bar-kitchen-delivered-time"><span>Entregue em</span><strong>' + escapeHtml(barKitchenDateTimeLabel(item.updated || item.created)) + '</strong></div>' +
       '</article>';
     }
@@ -20911,10 +20952,27 @@
       });
     }
 
+    function barProductNeedsDeliveryLocation(product) {
+      return Boolean(product && barProductCategoryKey(product.category) === 'portion');
+    }
+
+    function syncBarOrderDeliveryLocationField(product) {
+      const fields = $('barCommandProductFields');
+      const field = $('barOrderDeliveryLocationField');
+      const select = $('barOrderDeliveryLocation');
+      if (!fields || !field || !select) return;
+      const visible = barProductNeedsDeliveryLocation(product);
+      fields.classList.toggle('has-location', visible);
+      field.hidden = !visible;
+      select.required = visible;
+      if (!visible) select.value = '';
+    }
+
     function renderBarOrderProductPreview() {
       const preview = $('barOrderProductPreview');
       const product = barProductById($('barOrderProduct').value);
       const quantity = Math.max(1, Number($('barOrderQuantity').value || 1));
+      syncBarOrderDeliveryLocationField(product);
       if (!product) {
         preview.hidden = true;
         preview.className = 'bar-command-product-preview';
@@ -20996,6 +21054,7 @@
         const meta = [];
         if (itemPhone) meta.push('<span><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(itemPhone)) + '</span>');
         meta.push('<span>' + escapeHtml(money(item.unitPrice) + ' cada') + '</span>');
+        if (item.deliveryLocation) meta.push('<span><strong>Local:</strong> ' + escapeHtml(item.deliveryLocation) + '</span>');
         if (item.notes) meta.push('<span><strong>Obs.:</strong> ' + escapeHtml(item.notes) + '</span>');
         const deliveryAction = cancelled ? '' : '<button class="small-btn bar-item-deliver" type="button"' + (status === 'ENTREGUE' ? ' disabled' : ' data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="ENTREGUE"') + '>Entregue</button>';
         return '<article class="bar-item-row bar-command-item' + statusClass + (cancelled ? ' cancelled' : '') + '">' +
@@ -21063,6 +21122,7 @@
       $('barOrderProduct').value = '';
       opsState.barOrderProductCategory = '';
       $('barOrderQuantity').value = 1;
+      $('barOrderDeliveryLocation').value = '';
       $('barOrderItemNotes').value = '';
       renderBarCommandModal();
       $('barCommandModal').classList.add('show');
@@ -21828,20 +21888,29 @@
         const product = barProductById($('barOrderProduct').value);
         const quantity = Number($('barOrderQuantity').value || 0);
         const notes = $('barOrderItemNotes').value.trim();
+        const needsDeliveryLocation = barProductNeedsDeliveryLocation(product);
+        const deliveryLocation = needsDeliveryLocation ? $('barOrderDeliveryLocation').value.trim() : '';
         if (!order || !barOrderCanEdit(order)) throw new Error('Esta comanda já foi paga ou não está aberta para novos itens.');
         if (!product) throw new Error('Escolha o produto.');
         if (quantity <= 0) throw new Error('Informe a quantidade.');
+        if (needsDeliveryLocation && !deliveryLocation) throw new Error('Escolha onde a pessoa está.');
         if (Number(product.stock) < quantity) throw new Error('Estoque insuficiente para ' + product.name + '.');
         let item = {
           id: localId('bar_item'), orderId: order.id, productId: product.id, productName: product.name,
           productCategory: product.category,
           quantity: quantity, unitPrice: product.salePrice, costPrice: product.costPrice,
-          status: 'SOLICITADO', notes: notes, created: new Date().toISOString()
+          status: 'SOLICITADO', notes: notes, deliveryLocation: deliveryLocation, created: new Date().toISOString()
         };
         if (barCanPersist(order.id) && isUuid(product.id)) {
           const saved = await supabaseRest('rpc/bar_add_order_item', {
             method: 'POST',
-            body: { p_order_id: order.id, p_product_id: product.id, p_quantity: quantity, p_notes: notes || null },
+            body: {
+              p_order_id: order.id,
+              p_product_id: product.id,
+              p_quantity: quantity,
+              p_notes: notes || null,
+              p_delivery_location: deliveryLocation || null
+            },
             prefer: 'return=representation'
           });
           item = mapBarOrderItemRow(Array.isArray(saved) ? saved[0] : saved);
@@ -21853,6 +21922,7 @@
         }
         $('barOrderProduct').value = '';
         $('barOrderQuantity').value = 1;
+        $('barOrderDeliveryLocation').value = '';
         $('barOrderItemNotes').value = '';
         opsState.barCommandTab = 'items';
         renderBarModule();
@@ -22162,7 +22232,7 @@
             });
           });
         }
-        opsState.barCommandTab = 'items';
+        opsState.barCommandTab = 'checkout';
         renderBarModule();
         renderBarCommandModal();
         toast(splitEnabled ? 'Pagamentos recebidos. A comanda continua aberta até ser encerrada.' : 'Pagamento recebido. A comanda continua aberta até ser encerrada.');
