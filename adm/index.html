@@ -4628,17 +4628,18 @@
       min-width: 0;
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 7px;
     }
 
     .bar-command-edit-name {
-      min-height: 28px;
+      width: 30px;
+      height: 30px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 5px;
       flex: 0 0 auto;
-      padding: 4px 8px;
+      padding: 0;
       border: 1px solid #cbdde1;
       border-radius: 7px;
       color: #496069;
@@ -4671,6 +4672,11 @@
 
     .bar-command-edit-name[hidden] {
       display: none;
+    }
+
+    .bar-command-name-row .bar-whatsapp-charge {
+      min-height: 30px;
+      padding: 5px 9px;
     }
 
     .bar-command-head-badges {
@@ -5169,13 +5175,6 @@
       gap: 10px;
     }
 
-    .bar-order-product-count {
-      color: var(--muted);
-      font-size: 10px;
-      font-weight: 800;
-      text-align: right;
-    }
-
     .bar-order-product-search {
       min-height: 42px;
       padding: 9px 12px;
@@ -5602,25 +5601,8 @@
     .bar-checkout-split-head {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-end;
       gap: 14px;
-    }
-
-    .bar-checkout-split-copy strong,
-    .bar-checkout-split-copy span {
-      display: block;
-    }
-
-    .bar-checkout-split-copy strong {
-      color: #18363d;
-      font-size: 13px;
-    }
-
-    .bar-checkout-split-copy span {
-      margin-top: 3px;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 700;
     }
 
     .bar-checkout-split-toggle {
@@ -5923,25 +5905,11 @@
 
     .bar-command-payment-actions {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
+      grid-template-columns: 1fr;
       margin-top: 14px;
     }
 
-    .bar-command-finalize {
-      color: #173747;
-      border: 1px solid #c9d9df;
-      background: #ffffff;
-    }
-
-    .bar-command-finalize:hover {
-      color: #ffffff;
-      border-color: #173747;
-      background: #173747;
-    }
-
-    .bar-command-receive:disabled,
-    .bar-command-finalize:disabled {
+    .bar-command-receive:disabled {
       color: #71808a;
       border-color: #dce4e7;
       background: #edf2f4;
@@ -11235,12 +11203,18 @@
       }
 
       body.bar-admin-surface .bar-command-name-row {
-        align-items: flex-start;
+        align-items: center;
       }
 
       body.bar-admin-surface .bar-command-edit-name {
-        min-height: 27px;
-        padding-inline: 6px;
+        width: 28px;
+        height: 28px;
+      }
+
+      body.bar-admin-surface .bar-command-name-row .bar-whatsapp-charge {
+        min-height: 28px;
+        padding: 5px 7px;
+        font-size: 9px;
       }
 
       body.bar-admin-surface .bar-command-head-badges {
@@ -11287,10 +11261,6 @@
 
       body.bar-admin-surface .bar-order-product-picker {
         gap: 7px;
-      }
-
-      body.bar-admin-surface .bar-order-product-count {
-        font-size: 8px;
       }
 
       body.bar-admin-surface .bar-order-product-tabs {
@@ -13183,11 +13153,11 @@
             <div class="bar-command-identity">
               <div class="bar-command-identity-top">
                 <div class="bar-command-identity-copy">
-                  <div class="bar-command-name-row"><h2 id="barCommandModalTitle">Cliente</h2><button class="bar-command-edit-name" type="button" id="barOrderEditNameBtn"><svg><use href="#bar-icon-edit"></use></svg><span>Editar dados</span></button></div>
+                  <div class="bar-command-name-row"><h2 id="barCommandModalTitle">Cliente</h2><button class="bar-command-edit-name" type="button" id="barOrderEditNameBtn" aria-label="Editar contato" title="Editar contato"><svg><use href="#bar-icon-edit"></use></svg></button><a class="bar-whatsapp-charge" id="barOrderChargeBtn" href="#" target="_blank" rel="noopener" hidden><svg><use href="#admin-icon-phone"></use></svg>Cobrar no WhatsApp</a></div>
                 </div>
                 <div class="bar-command-head-badges"><span id="barCommandStatus"></span><button class="bar-command-delete" type="button" id="barOrderDeleteBtn">Excluir</button><button class="bar-team-discount" type="button" id="barTeamDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Equipe</span><small>-35%</small></button><button class="bar-team-discount" type="button" id="barProfessorDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Professor</span><small>-10%</small></button></div>
               </div>
-              <div class="bar-command-contact"><span id="barCommandModalSubtitle"></span><a class="bar-whatsapp-charge" id="barOrderChargeBtn" href="#" target="_blank" rel="noopener" hidden><svg><use href="#admin-icon-phone"></use></svg>Cobrar no WhatsApp</a></div>
+              <div class="bar-command-contact"><span id="barCommandModalSubtitle"></span></div>
             </div>
           </div>
           <button class="bar-command-close" type="button" id="barCommandModalClose" aria-label="Fechar comanda"><svg><use href="#bar-icon-close"></use></svg></button>
@@ -13219,7 +13189,6 @@
             <form class="bar-command-product-form" id="barOrderItemForm">
               <input id="barOrderProduct" type="hidden" />
               <div class="bar-order-product-picker">
-                <div class="bar-order-product-count" id="barOrderProductCount">0 disponíveis</div>
                 <input class="bar-order-product-search" id="barOrderProductSearch" type="search" placeholder="Buscar produto..." autocomplete="off" aria-label="Buscar produto" />
                 <div class="bar-order-product-tabs" id="barOrderProductTabs" role="tablist" aria-label="Categorias de produtos"></div>
                 <div class="bar-order-product-grid" id="barOrderProductGrid" role="listbox" aria-label="Produtos disponíveis"></div>
@@ -13258,7 +13227,6 @@
             </div>
             <div class="bar-checkout-split" id="barCheckoutSplitSection">
               <div class="bar-checkout-split-head">
-                <div class="bar-checkout-split-copy"><strong>Dividir conta</strong><span>Edite os valores; a última pessoa recebe automaticamente o restante.</span></div>
                 <label class="bar-checkout-split-toggle"><input id="barCheckoutSplitToggle" type="checkbox" /><span>Ativar divisão</span></label>
               </div>
               <div class="bar-checkout-split-body" id="barCheckoutSplitBody" hidden>
@@ -13280,8 +13248,7 @@
               </div>
             </div>
             <div class="bar-command-payment-actions">
-              <button class="bar-command-receive" type="button" id="barOrderPayBtn"><svg><use href="#admin-icon-wallet"></use></svg><span>Marcar como paga</span></button>
-              <button class="bar-command-receive bar-command-finalize" type="button" id="barOrderCloseBtn"><svg><use href="#admin-icon-receipt"></use></svg><span>Encerrar comanda</span></button>
+              <button class="bar-command-receive" type="button" id="barOrderFinalizeBtn"><svg><use href="#admin-icon-wallet"></use></svg><span>Finalizar comanda</span></button>
             </div>
           </section>
         </div>
@@ -20722,8 +20689,8 @@
         return '<div class="bar-checkout-split-row"><div class="bar-checkout-split-person"><strong>Pessoa ' + (index + 1) + '</strong><small>' + (automaticRemainder ? 'Restante calculado automaticamente' : 'Parte ' + (index + 1) + ' de ' + count) + '</small></div><label class="bar-checkout-split-amount-field"><span>' + (automaticRemainder ? 'Restante automático' : 'Valor') + '</span><span class="bar-checkout-split-money' + (automaticRemainder ? ' is-automatic' : '') + '"><span aria-hidden="true">R$</span><input class="bar-checkout-split-amount-input" data-bar-split-amount="' + index + '" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" spellcheck="false" value="' + amountValue + '" aria-label="Valor pago pela pessoa ' + (index + 1) + '"' + (automaticRemainder ? ' readonly' : '') + ' /></span></label><label class="bar-checkout-split-method-field"><span>Forma de pagamento</span><select data-bar-split-method="' + index + '" aria-label="Forma de pagamento da pessoa ' + (index + 1) + '">' + options + '</select></label></div>';
       }).join('') : '';
       if (enabled) syncBarCheckoutSplitBalance(order);
-      const payLabel = $('barOrderPayBtn').querySelector('span');
-      if (payLabel && !barOrderIsPaid(order)) payLabel.textContent = enabled ? 'Receber pagamentos' : 'Marcar como paga';
+      const finalizeLabel = $('barOrderFinalizeBtn').querySelector('span');
+      if (finalizeLabel && !barOrderIsPaid(order)) finalizeLabel.textContent = 'Finalizar comanda';
     }
 
     function updateBarCheckoutPreview(order) {
@@ -20781,9 +20748,8 @@
 
     function renderBarOrderProductPicker() {
       const grid = $('barOrderProductGrid');
-      const count = $('barOrderProductCount');
       const tabs = $('barOrderProductTabs');
-      if (!grid || !count || !tabs) return;
+      if (!grid || !tabs) return;
       const selectedId = String($('barOrderProduct').value || '');
       const search = normalizeMatchText($('barOrderProductSearch').value);
       const activeProducts = opsData.barProducts.filter(function (product) {
@@ -20820,9 +20786,6 @@
       const products = categoryProducts.filter(function (product) {
         return !search || normalizeMatchText([product.name, product.category, product.sku, product.notes].join(' ')).includes(search);
       });
-      count.textContent = products.length === categoryProducts.length
-        ? products.length + (products.length === 1 ? ' produto' : ' produtos')
-        : products.length + ' de ' + categoryProducts.length + ' produtos';
       grid.innerHTML = products.map(function (product) {
         const stock = Number(product.stock || 0);
         const available = stock > 0;
@@ -20922,7 +20885,8 @@
       const paid = barOrderIsPaid(order);
       const editable = barOrderCanEdit(order);
       const pendingPortions = barPendingPortionItemsForOrder(order.id);
-      $('barCommandStatus').innerHTML = paid ? '<span class="ops-pill good">Pago</span>' : (String(order.status || '').toUpperCase() === 'ABERTA' ? '<span class="ops-pill good">Aberta</span>' : barStatusPill(order.status));
+      $('barCommandStatus').hidden = !paid;
+      $('barCommandStatus').innerHTML = paid ? '<span class="ops-pill good">Pago</span>' : '';
       $('barCommandItems').innerHTML = items.map(function (item) {
         const status = String(item.status || '').toUpperCase();
         const cancelled = status === 'CANCELADO';
@@ -20956,14 +20920,14 @@
       document.querySelectorAll('[data-bar-command-tab-target="add"]').forEach(function (button) { button.hidden = !editable; });
       $('barOrderEditNameBtn').hidden = !open;
       $('barOrderDeleteBtn').hidden = !editable;
-      $('barOrderPayBtn').style.display = open ? 'inline-flex' : 'none';
-      $('barOrderCloseBtn').style.display = open ? 'inline-flex' : 'none';
-      $('barOrderPayBtn').disabled = paid;
-      $('barOrderPayBtn').querySelector('span').textContent = paid ? 'Pagamento recebido' : 'Marcar como paga';
-      $('barOrderCloseBtn').disabled = !paid || pendingPortions.length > 0;
-      $('barOrderCloseBtn').title = !paid
-        ? 'Marque a comanda como paga antes de encerrar.'
-        : (pendingPortions.length ? 'Entregue as porções antes de encerrar a comanda.' : 'Encerrar esta comanda.');
+      const finalizeButton = $('barOrderFinalizeBtn');
+      const waitingDelivery = paid && pendingPortions.length > 0;
+      finalizeButton.style.display = open ? 'inline-flex' : 'none';
+      finalizeButton.disabled = waitingDelivery;
+      finalizeButton.querySelector('span').textContent = 'Finalizar comanda';
+      finalizeButton.title = waitingDelivery
+        ? 'O pagamento já foi registrado. Entregue as porções para liberar o encerramento.'
+        : 'Registrar o pagamento e finalizar a comanda.';
       ['barCheckoutService', 'barCheckoutDiscount', 'barCheckoutMethod', 'barCheckoutSplitToggle', 'barCheckoutSplitCount'].forEach(function (id) {
         const field = $(id);
         if (field) field.disabled = paid;
@@ -22028,10 +21992,11 @@
       }
     }
 
-    async function payBarOrderAction() {
+    async function payBarOrderAction(options) {
       const order = barOrderById(opsState.selectedBarOrderId);
-      if (!order || !barOrderCanEdit(order)) return;
-      const payButton = $('barOrderPayBtn');
+      if (!order || !barOrderCanEdit(order)) return false;
+      const payButton = $('barOrderFinalizeBtn');
+      let succeeded = false;
       try {
         requireAdminSession();
         if (!barActiveItemsForOrder(order.id).length) throw new Error('Adicione ao menos um item antes de registrar o pagamento.');
@@ -22099,18 +22064,23 @@
         opsState.barCommandTab = 'items';
         renderBarModule();
         renderBarCommandModal();
-        toast(splitEnabled ? 'Pagamentos recebidos. A comanda continua aberta até a entrega.' : 'Pagamento recebido. A comanda continua aberta até a entrega.');
+        succeeded = true;
+        if (!options || !options.silent) {
+          toast(splitEnabled ? 'Pagamentos recebidos. A comanda continua aberta até a entrega.' : 'Pagamento recebido. A comanda continua aberta até a entrega.');
+        }
       } catch (error) {
         reportActionError(error);
       } finally {
-        payButton.disabled = barOrderIsPaid(barOrderById(opsState.selectedBarOrderId));
+        const currentOrder = barOrderById(opsState.selectedBarOrderId);
+        payButton.disabled = barOrderIsPaid(currentOrder) && barPendingPortionItemsForOrder(currentOrder && currentOrder.id).length > 0;
       }
+      return succeeded;
     }
 
     async function closeBarOrderAction() {
       const order = barOrderById(opsState.selectedBarOrderId);
       if (!order || !barOrderIsOpen(order)) return;
-      const closeButton = $('barOrderCloseBtn');
+      const closeButton = $('barOrderFinalizeBtn');
       try {
         requireAdminSession();
         if (!barOrderIsPaid(order)) throw new Error('Marque a comanda como paga antes de encerrar.');
@@ -22154,6 +22124,31 @@
         const currentOrder = barOrderById(opsState.selectedBarOrderId);
         closeButton.disabled = !barOrderIsPaid(currentOrder) || barPendingPortionItemsForOrder(currentOrder && currentOrder.id).length > 0;
       }
+    }
+
+    async function finalizeBarOrderAction() {
+      let order = barOrderById(opsState.selectedBarOrderId);
+      if (!order || !barOrderIsOpen(order)) return;
+      const finalizeButton = $('barOrderFinalizeBtn');
+      finalizeButton.disabled = true;
+
+      if (!barOrderIsPaid(order)) {
+        const paymentSaved = await payBarOrderAction({ silent: true });
+        if (!paymentSaved) {
+          finalizeButton.disabled = false;
+          return;
+        }
+        order = barOrderById(opsState.selectedBarOrderId);
+      }
+
+      const pendingPortions = barPendingPortionItemsForOrder(order && order.id);
+      if (pendingPortions.length) {
+        renderBarCommandModal();
+        toast('Pagamento recebido. A comanda ficará aberta até a entrega das porções.');
+        return;
+      }
+
+      await closeBarOrderAction();
     }
 
     async function saveBarFinanceAction(event) {
@@ -24773,8 +24768,7 @@
       });
       $('barOrderEditNameBtn').addEventListener('click', editBarOrderCustomerNameAction);
       $('barOrderDeleteBtn').addEventListener('click', deleteBarOrderAction);
-      $('barOrderPayBtn').addEventListener('click', payBarOrderAction);
-      $('barOrderCloseBtn').addEventListener('click', closeBarOrderAction);
+      $('barOrderFinalizeBtn').addEventListener('click', finalizeBarOrderAction);
       $('barQrModalClose').addEventListener('click', closeBarQrModal);
       $('barQrModal').addEventListener('click', function (event) {
         if (event.target.id === 'barQrModal') closeBarQrModal();
