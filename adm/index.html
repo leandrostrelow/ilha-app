@@ -5544,11 +5544,11 @@
     }
 
     .bar-checkout-summary > div {
-      min-height: 82px;
+      min-height: 64px;
       display: flex;
       justify-content: center;
       flex-direction: column;
-      padding: 13px 15px;
+      padding: 9px 12px;
       border: 1px solid #d4e2e5;
       border-radius: 8px;
       background: #ffffff;
@@ -5567,7 +5567,7 @@
     }
 
     .bar-checkout-summary strong {
-      margin-top: 7px;
+      margin-top: 4px;
       color: #18363d;
       font-size: 20px;
     }
@@ -5583,19 +5583,17 @@
     }
 
     .bar-command-modal .bar-checkout-grid {
-      margin-top: 14px;
-      padding: 16px;
+      grid-template-columns: .7fr .7fr 1fr 1.6fr;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 10px;
       border: 1px solid #d4e2e5;
       border-radius: 8px;
       background: #ffffff;
     }
 
     .bar-checkout-split {
-      margin-top: 12px;
-      padding: 14px 16px;
-      border: 1px solid #d4e2e5;
-      border-radius: 8px;
-      background: #ffffff;
+      margin: 0 0 8px;
     }
 
     .bar-checkout-split-head {
@@ -5629,9 +5627,11 @@
     }
 
     .bar-checkout-split-body {
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid #e1eaec;
+      margin-top: 8px;
+      padding: 10px;
+      border: 1px solid #d4e2e5;
+      border-radius: 8px;
+      background: #ffffff;
     }
 
     .bar-checkout-split-count {
@@ -5801,7 +5801,7 @@
     }
 
     .bar-checkout-review {
-      margin-top: 14px;
+      margin-top: 8px;
       overflow: hidden;
       border: 1px solid #d4e2e5;
       border-radius: 8px;
@@ -5809,12 +5809,12 @@
     }
 
     .bar-checkout-review-head {
-      min-height: 46px;
+      min-height: 38px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 8px 12px;
+      padding: 5px 10px;
       border-bottom: 1px solid #e1eaec;
     }
 
@@ -5824,8 +5824,8 @@
     }
 
     .bar-checkout-add-item {
-      min-height: 32px;
-      padding: 6px 10px;
+      min-height: 28px;
+      padding: 4px 8px;
       border: 1px solid #bed3d8;
       border-radius: 7px;
       color: var(--teal);
@@ -5835,14 +5835,23 @@
       cursor: pointer;
     }
 
+    #barCheckoutItems {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .bar-checkout-item {
-      min-height: 48px;
+      min-height: 38px;
       display: grid;
       grid-template-columns: 42px minmax(0, 1fr) auto auto;
       align-items: center;
       gap: 10px;
-      padding: 8px 12px;
+      padding: 5px 9px;
       border-bottom: 1px solid #edf2f3;
+    }
+
+    .bar-checkout-item:nth-child(odd) {
+      border-right: 1px solid #edf2f3;
     }
 
     .bar-checkout-item:last-child {
@@ -5852,7 +5861,7 @@
     .bar-checkout-item-quantity {
       display: inline-grid;
       place-items: center;
-      min-height: 30px;
+      min-height: 27px;
       border-radius: 7px;
       color: var(--teal);
       background: #edf6f7;
@@ -5877,8 +5886,8 @@
     }
 
     .bar-checkout-item-remove {
-      min-height: 32px;
-      padding: 6px 10px;
+      min-height: 28px;
+      padding: 4px 8px;
       border: 1px solid #f0c9cd;
       border-radius: 7px;
       color: #a23340;
@@ -5895,7 +5904,7 @@
     }
 
     .bar-command-receive {
-      min-height: 52px;
+      min-height: 44px;
       width: 100%;
       padding: 12px 18px;
       color: #ffffff;
@@ -5905,11 +5914,46 @@
 
     .bar-command-payment-actions {
       display: grid;
-      grid-template-columns: 1fr;
-      margin-top: 14px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 8px;
     }
 
-    .bar-command-receive:disabled {
+    .bar-command-finalize {
+      color: #173747;
+      border: 1px solid #c9d9df;
+      background: #ffffff;
+    }
+
+    .bar-command-finalize:hover {
+      color: #ffffff;
+      border-color: #173747;
+      background: #173747;
+    }
+
+    .bar-command-modal .bar-checkout-grid .field.full {
+      grid-column: auto;
+    }
+
+    .bar-command-modal .bar-checkout-grid label {
+      margin-bottom: 3px;
+      font-size: 9px;
+    }
+
+    .bar-command-modal .bar-checkout-grid input,
+    .bar-command-modal .bar-checkout-grid select,
+    .bar-command-modal .bar-checkout-grid textarea {
+      min-height: 38px;
+      padding-block: 7px;
+    }
+
+    .bar-command-modal .bar-checkout-grid textarea {
+      height: 38px;
+      resize: none;
+    }
+
+    .bar-command-receive:disabled,
+    .bar-command-finalize:disabled {
       color: #71808a;
       border-color: #dce4e7;
       background: #edf2f4;
@@ -6160,6 +6204,22 @@
 
       .bar-checkout-summary > div {
         min-height: 66px;
+      }
+
+      #barCheckoutItems {
+        grid-template-columns: 1fr;
+      }
+
+      .bar-checkout-item:nth-child(odd) {
+        border-right: 0;
+      }
+
+      .bar-command-modal .bar-checkout-grid .field.full {
+        grid-column: 1 / -1;
+      }
+
+      .bar-command-modal .bar-checkout-grid textarea {
+        height: 54px;
       }
 
       .bar-checkout-review-head {
@@ -13210,21 +13270,6 @@
           </section>
 
           <section class="bar-command-panel" data-bar-command-panel="checkout">
-            <div class="bar-checkout-summary">
-              <div><span>Itens ativos</span><strong id="barCheckoutItemCount">0</strong></div>
-              <div><span>Subtotal</span><strong id="barCheckoutSubtotal">R$ 0</strong></div>
-              <div class="total"><span>Total atual</span><strong id="barCheckoutTotal">R$ 0</strong></div>
-            </div>
-            <div class="bar-checkout-review">
-              <div class="bar-checkout-review-head"><strong>Itens da comanda</strong><button class="bar-checkout-add-item" type="button" data-bar-command-tab-target="add">+ Adicionar produto</button></div>
-              <div id="barCheckoutItems"></div>
-            </div>
-            <div class="bar-checkout-grid">
-              <div class="field"><label for="barCheckoutService">Valor adicional</label><input id="barCheckoutService" inputmode="decimal" value="0,00" /></div>
-              <div class="field"><label for="barCheckoutDiscount">Desconto</label><input id="barCheckoutDiscount" inputmode="decimal" value="0,00" /></div>
-              <div class="field" id="barCheckoutSingleMethodField"><label for="barCheckoutMethod">Forma de pagamento</label><select id="barCheckoutMethod"><option value="PIX">Pix</option><option value="DINHEIRO">Dinheiro</option><option value="CARTAO_CREDITO">Cartão de crédito</option><option value="CARTAO_DEBITO">Cartão de débito</option><option value="CONTA_CLIENTE">Conta do cliente</option></select></div>
-              <div class="field full"><label for="barCheckoutNotes">Observação do pagamento</label><textarea id="barCheckoutNotes" rows="2" maxlength="500" placeholder="Ex.: pagamento confirmado pelo responsável, ajuste combinado com o cliente"></textarea></div>
-            </div>
             <div class="bar-checkout-split" id="barCheckoutSplitSection">
               <div class="bar-checkout-split-head">
                 <label class="bar-checkout-split-toggle"><input id="barCheckoutSplitToggle" type="checkbox" /><span>Ativar divisão</span></label>
@@ -13247,8 +13292,24 @@
                 <div class="bar-checkout-split-balance" id="barCheckoutSplitBalance" role="status"></div>
               </div>
             </div>
+            <div class="bar-checkout-summary">
+              <div><span>Itens ativos</span><strong id="barCheckoutItemCount">0</strong></div>
+              <div><span>Subtotal</span><strong id="barCheckoutSubtotal">R$ 0</strong></div>
+              <div class="total"><span>Total atual</span><strong id="barCheckoutTotal">R$ 0</strong></div>
+            </div>
+            <div class="bar-checkout-review">
+              <div class="bar-checkout-review-head"><strong>Itens da comanda</strong><button class="bar-checkout-add-item" type="button" data-bar-command-tab-target="add">+ Adicionar produto</button></div>
+              <div id="barCheckoutItems"></div>
+            </div>
+            <div class="bar-checkout-grid">
+              <div class="field"><label for="barCheckoutService">Valor adicional</label><input id="barCheckoutService" inputmode="decimal" value="0,00" /></div>
+              <div class="field"><label for="barCheckoutDiscount">Desconto</label><input id="barCheckoutDiscount" inputmode="decimal" value="0,00" /></div>
+              <div class="field" id="barCheckoutSingleMethodField"><label for="barCheckoutMethod">Forma de pagamento</label><select id="barCheckoutMethod"><option value="PIX">Pix</option><option value="DINHEIRO">Dinheiro</option><option value="CARTAO_CREDITO">Cartão de crédito</option><option value="CARTAO_DEBITO">Cartão de débito</option><option value="CONTA_CLIENTE">Conta do cliente</option></select></div>
+              <div class="field full"><label for="barCheckoutNotes">Observação do pagamento</label><textarea id="barCheckoutNotes" rows="2" maxlength="500" placeholder="Ex.: pagamento confirmado pelo responsável, ajuste combinado com o cliente"></textarea></div>
+            </div>
             <div class="bar-command-payment-actions">
-              <button class="bar-command-receive" type="button" id="barOrderFinalizeBtn"><svg><use href="#admin-icon-wallet"></use></svg><span>Finalizar comanda</span></button>
+              <button class="bar-command-receive" type="button" id="barOrderPayBtn"><svg><use href="#admin-icon-wallet"></use></svg><span>Marcar como paga</span></button>
+              <button class="bar-command-receive bar-command-finalize" type="button" id="barOrderCloseBtn"><svg><use href="#admin-icon-receipt"></use></svg><span>Encerrar comanda</span></button>
             </div>
           </section>
         </div>
@@ -20689,8 +20750,8 @@
         return '<div class="bar-checkout-split-row"><div class="bar-checkout-split-person"><strong>Pessoa ' + (index + 1) + '</strong><small>' + (automaticRemainder ? 'Restante calculado automaticamente' : 'Parte ' + (index + 1) + ' de ' + count) + '</small></div><label class="bar-checkout-split-amount-field"><span>' + (automaticRemainder ? 'Restante automático' : 'Valor') + '</span><span class="bar-checkout-split-money' + (automaticRemainder ? ' is-automatic' : '') + '"><span aria-hidden="true">R$</span><input class="bar-checkout-split-amount-input" data-bar-split-amount="' + index + '" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" spellcheck="false" value="' + amountValue + '" aria-label="Valor pago pela pessoa ' + (index + 1) + '"' + (automaticRemainder ? ' readonly' : '') + ' /></span></label><label class="bar-checkout-split-method-field"><span>Forma de pagamento</span><select data-bar-split-method="' + index + '" aria-label="Forma de pagamento da pessoa ' + (index + 1) + '">' + options + '</select></label></div>';
       }).join('') : '';
       if (enabled) syncBarCheckoutSplitBalance(order);
-      const finalizeLabel = $('barOrderFinalizeBtn').querySelector('span');
-      if (finalizeLabel && !barOrderIsPaid(order)) finalizeLabel.textContent = 'Finalizar comanda';
+      const payLabel = $('barOrderPayBtn').querySelector('span');
+      if (payLabel && !barOrderIsPaid(order)) payLabel.textContent = enabled ? 'Receber pagamentos' : 'Marcar como paga';
     }
 
     function updateBarCheckoutPreview(order) {
@@ -20920,14 +20981,17 @@
       document.querySelectorAll('[data-bar-command-tab-target="add"]').forEach(function (button) { button.hidden = !editable; });
       $('barOrderEditNameBtn').hidden = !open;
       $('barOrderDeleteBtn').hidden = !editable;
-      const finalizeButton = $('barOrderFinalizeBtn');
-      const waitingDelivery = paid && pendingPortions.length > 0;
-      finalizeButton.style.display = open ? 'inline-flex' : 'none';
-      finalizeButton.disabled = waitingDelivery;
-      finalizeButton.querySelector('span').textContent = 'Finalizar comanda';
-      finalizeButton.title = waitingDelivery
-        ? 'O pagamento já foi registrado. Entregue as porções para liberar o encerramento.'
-        : 'Registrar o pagamento e finalizar a comanda.';
+      const payButton = $('barOrderPayBtn');
+      const closeButton = $('barOrderCloseBtn');
+      payButton.style.display = open ? 'inline-flex' : 'none';
+      closeButton.style.display = open ? 'inline-flex' : 'none';
+      payButton.disabled = paid;
+      payButton.querySelector('span').textContent = paid ? 'Pagamento recebido' : (opsState.barCheckoutSplitEnabled ? 'Receber pagamentos' : 'Marcar como paga');
+      payButton.title = paid ? 'O pagamento desta comanda já foi registrado.' : 'Registrar o pagamento sem encerrar a comanda.';
+      closeButton.disabled = !paid || pendingPortions.length > 0;
+      closeButton.title = !paid
+        ? 'Marque a comanda como paga antes de encerrar.'
+        : (pendingPortions.length ? 'Entregue as porções antes de encerrar a comanda.' : 'Encerrar esta comanda.');
       ['barCheckoutService', 'barCheckoutDiscount', 'barCheckoutMethod', 'barCheckoutSplitToggle', 'barCheckoutSplitCount'].forEach(function (id) {
         const field = $(id);
         if (field) field.disabled = paid;
@@ -21992,11 +22056,10 @@
       }
     }
 
-    async function payBarOrderAction(options) {
+    async function payBarOrderAction() {
       const order = barOrderById(opsState.selectedBarOrderId);
-      if (!order || !barOrderCanEdit(order)) return false;
-      const payButton = $('barOrderFinalizeBtn');
-      let succeeded = false;
+      if (!order || !barOrderCanEdit(order)) return;
+      const payButton = $('barOrderPayBtn');
       try {
         requireAdminSession();
         if (!barActiveItemsForOrder(order.id).length) throw new Error('Adicione ao menos um item antes de registrar o pagamento.');
@@ -22064,23 +22127,19 @@
         opsState.barCommandTab = 'items';
         renderBarModule();
         renderBarCommandModal();
-        succeeded = true;
-        if (!options || !options.silent) {
-          toast(splitEnabled ? 'Pagamentos recebidos. A comanda continua aberta até a entrega.' : 'Pagamento recebido. A comanda continua aberta até a entrega.');
-        }
+        toast(splitEnabled ? 'Pagamentos recebidos. A comanda continua aberta até ser encerrada.' : 'Pagamento recebido. A comanda continua aberta até ser encerrada.');
       } catch (error) {
         reportActionError(error);
       } finally {
         const currentOrder = barOrderById(opsState.selectedBarOrderId);
-        payButton.disabled = barOrderIsPaid(currentOrder) && barPendingPortionItemsForOrder(currentOrder && currentOrder.id).length > 0;
+        payButton.disabled = barOrderIsPaid(currentOrder);
       }
-      return succeeded;
     }
 
     async function closeBarOrderAction() {
       const order = barOrderById(opsState.selectedBarOrderId);
       if (!order || !barOrderIsOpen(order)) return;
-      const closeButton = $('barOrderFinalizeBtn');
+      const closeButton = $('barOrderCloseBtn');
       try {
         requireAdminSession();
         if (!barOrderIsPaid(order)) throw new Error('Marque a comanda como paga antes de encerrar.');
@@ -22124,31 +22183,6 @@
         const currentOrder = barOrderById(opsState.selectedBarOrderId);
         closeButton.disabled = !barOrderIsPaid(currentOrder) || barPendingPortionItemsForOrder(currentOrder && currentOrder.id).length > 0;
       }
-    }
-
-    async function finalizeBarOrderAction() {
-      let order = barOrderById(opsState.selectedBarOrderId);
-      if (!order || !barOrderIsOpen(order)) return;
-      const finalizeButton = $('barOrderFinalizeBtn');
-      finalizeButton.disabled = true;
-
-      if (!barOrderIsPaid(order)) {
-        const paymentSaved = await payBarOrderAction({ silent: true });
-        if (!paymentSaved) {
-          finalizeButton.disabled = false;
-          return;
-        }
-        order = barOrderById(opsState.selectedBarOrderId);
-      }
-
-      const pendingPortions = barPendingPortionItemsForOrder(order && order.id);
-      if (pendingPortions.length) {
-        renderBarCommandModal();
-        toast('Pagamento recebido. A comanda ficará aberta até a entrega das porções.');
-        return;
-      }
-
-      await closeBarOrderAction();
     }
 
     async function saveBarFinanceAction(event) {
@@ -24768,7 +24802,8 @@
       });
       $('barOrderEditNameBtn').addEventListener('click', editBarOrderCustomerNameAction);
       $('barOrderDeleteBtn').addEventListener('click', deleteBarOrderAction);
-      $('barOrderFinalizeBtn').addEventListener('click', finalizeBarOrderAction);
+      $('barOrderPayBtn').addEventListener('click', payBarOrderAction);
+      $('barOrderCloseBtn').addEventListener('click', closeBarOrderAction);
       $('barQrModalClose').addEventListener('click', closeBarQrModal);
       $('barQrModal').addEventListener('click', function (event) {
         if (event.target.id === 'barQrModal') closeBarQrModal();
