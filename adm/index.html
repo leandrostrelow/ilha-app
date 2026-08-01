@@ -5608,7 +5608,7 @@
     .bar-checkout-split-row {
       min-height: 52px;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 110px minmax(170px, .8fr);
+      grid-template-columns: minmax(0, 1fr) minmax(120px, 150px) minmax(170px, .8fr);
       align-items: center;
       gap: 10px;
       padding: 7px 9px 7px 12px;
@@ -5634,12 +5634,55 @@
       font-weight: 700;
     }
 
-    .bar-checkout-split-amount {
+    .bar-checkout-split-amount-field {
+      display: grid;
+      gap: 3px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .bar-checkout-split-amount-input {
+      width: 100%;
+      min-height: 38px;
+      padding: 8px 10px;
+      border: 1px solid #9fcdd1;
+      border-radius: 9px;
+      outline: none;
+      background: #ffffff;
       color: var(--teal);
-      font-size: 15px;
+      font: inherit;
+      font-size: 14px;
       font-weight: 950;
-      text-align: right;
-      white-space: nowrap;
+    }
+
+    .bar-checkout-split-amount-input:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(0, 132, 142, .1);
+    }
+
+    .bar-checkout-split-balance {
+      margin-top: 10px;
+      padding: 9px 11px;
+      border: 1px solid #dce7e9;
+      border-radius: 9px;
+      background: #f8fbfb;
+      color: #61707e;
+      font-size: 10px;
+      font-weight: 850;
+    }
+
+    .bar-checkout-split-balance.is-valid {
+      border-color: #cfe5a1;
+      background: #f6fce7;
+      color: #4b6b00;
+    }
+
+    .bar-checkout-split-balance.is-invalid {
+      border-color: #f1c6c6;
+      background: #fff5f5;
+      color: #a6333d;
     }
 
     .bar-checkout-review {
@@ -6008,6 +6051,10 @@
 
       .bar-checkout-split-row {
         grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .bar-checkout-split-amount-field {
+        min-width: 118px;
       }
 
       .bar-checkout-split-row select {
@@ -12839,6 +12886,7 @@
               <div class="field"><label for="barCheckoutService">Valor adicional</label><input id="barCheckoutService" inputmode="decimal" value="0,00" /></div>
               <div class="field"><label for="barCheckoutDiscount">Desconto</label><input id="barCheckoutDiscount" inputmode="decimal" value="0,00" /></div>
               <div class="field" id="barCheckoutSingleMethodField"><label for="barCheckoutMethod">Forma de pagamento</label><select id="barCheckoutMethod"><option value="PIX">Pix</option><option value="DINHEIRO">Dinheiro</option><option value="CARTAO_CREDITO">Cartão de crédito</option><option value="CARTAO_DEBITO">Cartão de débito</option><option value="CONTA_CLIENTE">Conta do cliente</option></select></div>
+              <div class="field full"><label for="barCheckoutNotes">Observação do fechamento</label><textarea id="barCheckoutNotes" rows="2" placeholder="Ex.: uma parte no Pix e outra no cartão, ajuste combinado com o cliente"></textarea></div>
             </div>
             <div class="bar-checkout-split" id="barCheckoutSplitSection">
               <div class="bar-checkout-split-head">
@@ -12860,6 +12908,7 @@
                   <option value="12">12 pessoas</option>
                 </select></label>
                 <div class="bar-checkout-split-rows" id="barCheckoutSplitRows"></div>
+                <div class="bar-checkout-split-balance" id="barCheckoutSplitBalance" role="status"></div>
               </div>
             </div>
             <button class="bar-command-receive" type="button" id="barOrderCloseBtn"><svg><use href="#admin-icon-wallet"></use></svg><span>Receber e encerrar comanda</span></button>
@@ -17081,6 +17130,8 @@
       barCheckoutSplitEnabled: false,
       barCheckoutSplitCount: 2,
       barCheckoutSplitMethods: ['PIX', 'PIX'],
+      barCheckoutSplitValues: [],
+      barCheckoutSplitTotalCents: null,
       selectedBarQrUrl: '',
       selectedBarQrLabel: '',
       barAlertsEnabled: localStorage.getItem('ilha-bar-alerts-enabled') === 'true',
@@ -19957,7 +20008,7 @@
       return Math.max(0, subtotal + serviceCharge - discount);
     }
 
-    function barCheckoutSplitAmounts(order) {
+    function barCheckoutEqualSplitAmounts(order) {
       const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
       const totalCents = Math.round(barCheckoutFinalTotal(order) * 100);
       const baseCents = Math.floor(totalCents / count);
@@ -19965,6 +20016,39 @@
       return Array.from({ length: count }, function (_, index) {
         return (baseCents + (index < remainder ? 1 : 0)) / 100;
       });
+    }
+
+    function barCheckoutSplitAmounts(order) {
+      const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
+      const totalCents = Math.round(barCheckoutFinalTotal(order) * 100);
+      if (
+        opsState.barCheckoutSplitValues.length !== count ||
+        Number(opsState.barCheckoutSplitTotalCents) !== totalCents
+      ) {
+        opsState.barCheckoutSplitValues = barCheckoutEqualSplitAmounts(order);
+        opsState.barCheckoutSplitTotalCents = totalCents;
+      }
+      return opsState.barCheckoutSplitValues.slice(0, count).map(function (amount) {
+        return Math.max(0, Math.round(Number(amount || 0) * 100) / 100);
+      });
+    }
+
+    function syncBarCheckoutSplitBalance(order) {
+      const balance = $('barCheckoutSplitBalance');
+      if (!balance) return;
+      const total = Math.round(barCheckoutFinalTotal(order) * 100) / 100;
+      const divided = Math.round(barCheckoutSplitAmounts(order).reduce(function (sum, amount) {
+        return sum + Number(amount || 0);
+      }, 0) * 100) / 100;
+      const difference = Math.round((total - divided) * 100) / 100;
+      const valid = Math.abs(difference) < 0.01;
+      balance.classList.toggle('is-valid', valid);
+      balance.classList.toggle('is-invalid', !valid);
+      balance.textContent = valid
+        ? 'Soma correta: ' + money(divided) + '.'
+        : (difference > 0
+          ? 'Ainda falta distribuir ' + money(difference) + '. Total da comanda: ' + money(total) + '.'
+          : 'A divisão passou ' + money(Math.abs(difference)) + ' do total. Total da comanda: ' + money(total) + '.');
     }
 
     function barCheckoutSplitPayments(order) {
@@ -20004,8 +20088,10 @@
         const options = paymentOptions.map(function (option) {
           return '<option value="' + option[0] + '"' + (option[0] === selectedMethod ? ' selected' : '') + '>' + option[1] + '</option>';
         }).join('');
-        return '<div class="bar-checkout-split-row"><div class="bar-checkout-split-person"><strong>Pessoa ' + (index + 1) + '</strong><small>Parte ' + (index + 1) + ' de ' + count + '</small></div><strong class="bar-checkout-split-amount">' + money(amount) + '</strong><select data-bar-split-method="' + index + '" aria-label="Forma de pagamento da pessoa ' + (index + 1) + '">' + options + '</select></div>';
+        const amountValue = Number(amount || 0).toFixed(2).replace('.', ',');
+        return '<div class="bar-checkout-split-row"><div class="bar-checkout-split-person"><strong>Pessoa ' + (index + 1) + '</strong><small>Parte ' + (index + 1) + ' de ' + count + '</small></div><label class="bar-checkout-split-amount-field"><span>Valor</span><input class="bar-checkout-split-amount-input" data-bar-split-amount="' + index + '" inputmode="decimal" value="' + amountValue + '" aria-label="Valor pago pela pessoa ' + (index + 1) + '" /></label><select data-bar-split-method="' + index + '" aria-label="Forma de pagamento da pessoa ' + (index + 1) + '">' + options + '</select></div>';
       }).join('') : '';
+      if (enabled) syncBarCheckoutSplitBalance(order);
       const closeLabel = $('barOrderCloseBtn').querySelector('span');
       if (closeLabel) closeLabel.textContent = enabled ? 'Receber divisões e encerrar comanda' : 'Receber e encerrar comanda';
     }
@@ -20252,12 +20338,15 @@
       $('barCheckoutService').value = Number(order.serviceCharge || 0).toFixed(2).replace('.', ',');
       $('barCheckoutDiscount').value = Number(order.discount || 0).toFixed(2).replace('.', ',');
       $('barCheckoutMethod').value = order.paymentMethod || 'PIX';
+      $('barCheckoutNotes').value = order.notes || '';
       opsState.barCheckoutSplitEnabled = false;
       opsState.barCheckoutSplitCount = 2;
       opsState.barCheckoutSplitMethods = [
         $('barCheckoutMethod').value || 'PIX',
         $('barCheckoutMethod').value || 'PIX'
       ];
+      opsState.barCheckoutSplitValues = [];
+      opsState.barCheckoutSplitTotalCents = null;
       $('barOrderProduct').value = '';
       $('barOrderProductSearch').value = '';
       opsState.barOrderProductCategory = '';
@@ -21234,6 +21323,7 @@
         closeButton.disabled = true;
         const serviceCharge = parseOptionalMoney($('barCheckoutService').value);
         const discount = parseOptionalMoney($('barCheckoutDiscount').value);
+        const closingNotes = String($('barCheckoutNotes').value || '').trim();
         const splitEnabled = Boolean(opsState.barCheckoutSplitEnabled);
         const splitPayments = splitEnabled ? barCheckoutSplitPayments(order) : [];
         const paymentMethod = splitEnabled ? 'DIVIDIDO' : $('barCheckoutMethod').value;
@@ -21241,7 +21331,19 @@
         if (splitEnabled && splitPayments.some(function (payment) { return !payment.payment_method || payment.amount <= 0; })) {
           throw new Error('Confira a forma de pagamento de cada pessoa.');
         }
+        if (splitEnabled) {
+          const splitTotal = Math.round(splitPayments.reduce(function (sum, payment) { return sum + payment.amount; }, 0) * 100) / 100;
+          const orderTotal = Math.round(barCheckoutFinalTotal(order) * 100) / 100;
+          if (Math.abs(splitTotal - orderTotal) >= 0.01) {
+            throw new Error('A soma das pessoas deve fechar exatamente em ' + money(orderTotal) + '.');
+          }
+        }
         if (barCanPersist(order.id)) {
+          await supabaseRest('bar_orders?id=eq.' + encodeURIComponent(order.id), {
+            method: 'PATCH',
+            body: { notes: closingNotes || null, updated_at: new Date().toISOString() },
+            prefer: 'return=minimal'
+          });
           if (splitEnabled) {
             await supabaseRest('rpc/bar_close_order_split', {
               method: 'POST',
@@ -21255,10 +21357,18 @@
               prefer: 'return=representation'
             });
           }
+          if (closingNotes) {
+            await supabaseRest('bar_financial_entries?order_id=eq.' + encodeURIComponent(order.id), {
+              method: 'PATCH',
+              body: { notes: closingNotes, updated_at: new Date().toISOString() },
+              prefer: 'return=minimal'
+            });
+          }
           await loadBarData(true);
         } else {
           order.serviceCharge = serviceCharge;
           order.discount = discount;
+          order.notes = closingNotes;
           order.paymentMethod = paymentMethod;
           order.paymentStatus = 'PAGO';
           order.status = 'FECHADA';
@@ -21274,7 +21384,7 @@
               description: 'Venda da comanda #' + order.commandNumber + (splitEnabled ? ' · Divisão ' + (index + 1) + '/' + payments.length : ''),
               counterparty: barTableLabel(order), category: 'Vendas', amount: payment.amount, dueDate: localDateString(), status: 'RECEBIDO',
               paymentMethod: payment.payment_method, paidAt: new Date().toISOString(), created: new Date().toISOString(),
-              notes: splitEnabled ? 'Conta dividida entre ' + payments.length + ' pessoas.' : ''
+              notes: [splitEnabled ? 'Conta dividida entre ' + payments.length + ' pessoas.' : '', closingNotes].filter(Boolean).join(' · ')
             });
           });
         }
@@ -23810,11 +23920,22 @@
       $('barCheckoutDiscount').addEventListener('input', function () { updateBarCheckoutPreview(); });
       $('barCheckoutSplitToggle').addEventListener('change', function () {
         opsState.barCheckoutSplitEnabled = this.checked;
+        opsState.barCheckoutSplitValues = [];
+        opsState.barCheckoutSplitTotalCents = null;
         updateBarCheckoutPreview();
       });
       $('barCheckoutSplitCount').addEventListener('change', function () {
         opsState.barCheckoutSplitCount = Number(this.value || 2);
+        opsState.barCheckoutSplitValues = [];
+        opsState.barCheckoutSplitTotalCents = null;
         updateBarCheckoutPreview();
+      });
+      $('barCheckoutSplitRows').addEventListener('input', function (event) {
+        const input = event.target.closest('[data-bar-split-amount]');
+        if (!input) return;
+        const index = Number(input.dataset.barSplitAmount);
+        opsState.barCheckoutSplitValues[index] = barCommandMoneyValue(input.value);
+        syncBarCheckoutSplitBalance(barOrderById(opsState.selectedBarOrderId));
       });
       $('barCheckoutSplitRows').addEventListener('change', function (event) {
         const select = event.target.closest('[data-bar-split-method]');
