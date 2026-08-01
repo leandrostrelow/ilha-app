@@ -5662,6 +5662,13 @@
       box-shadow: 0 0 0 3px rgba(0, 132, 142, .1);
     }
 
+    .bar-checkout-split-amount-input[readonly] {
+      border-color: #cfe5a1;
+      background: #f6fce7;
+      color: #4b6b00;
+      cursor: default;
+    }
+
     .bar-checkout-split-balance {
       margin-top: 10px;
       padding: 9px 11px;
@@ -12890,7 +12897,7 @@
             </div>
             <div class="bar-checkout-split" id="barCheckoutSplitSection">
               <div class="bar-checkout-split-head">
-                <div class="bar-checkout-split-copy"><strong>Dividir conta</strong><span>Divida igualmente e informe como cada pessoa pagou.</span></div>
+                <div class="bar-checkout-split-copy"><strong>Dividir conta</strong><span>Edite os valores; a última pessoa recebe automaticamente o restante.</span></div>
                 <label class="bar-checkout-split-toggle"><input id="barCheckoutSplitToggle" type="checkbox" /><span>Ativar divisão</span></label>
               </div>
               <div class="bar-checkout-split-body" id="barCheckoutSplitBody" hidden>
@@ -20051,6 +20058,32 @@
           : 'A divisão passou ' + money(Math.abs(difference)) + ' do total. Total da comanda: ' + money(total) + '.');
     }
 
+    function rebalanceBarCheckoutSplitRemainder(order, editedIndex, editedValue) {
+      if (!order) return;
+      const values = barCheckoutSplitAmounts(order);
+      const lastIndex = values.length - 1;
+      if (editedIndex < 0 || editedIndex >= lastIndex) return;
+      const totalCents = Math.round(barCheckoutFinalTotal(order) * 100);
+      const otherEditableCents = values.reduce(function (sum, amount, index) {
+        if (index === editedIndex || index === lastIndex) return sum;
+        return sum + Math.round(Number(amount || 0) * 100);
+      }, 0);
+      const maxEditedCents = Math.max(0, totalCents - otherEditableCents);
+      const requestedEditedCents = Math.max(0, Math.round(Number(editedValue || 0) * 100));
+      const editedCents = Math.min(maxEditedCents, requestedEditedCents);
+      values[editedIndex] = editedCents / 100;
+      const editableTotalCents = values.reduce(function (sum, amount, index) {
+        return index === lastIndex ? sum : sum + Math.round(Number(amount || 0) * 100);
+      }, 0);
+      values[lastIndex] = Math.max(0, totalCents - editableTotalCents) / 100;
+      opsState.barCheckoutSplitValues = values;
+      const editedInput = document.querySelector('[data-bar-split-amount="' + editedIndex + '"]');
+      const remainderInput = document.querySelector('[data-bar-split-amount="' + lastIndex + '"]');
+      if (editedInput && editedCents !== requestedEditedCents) editedInput.value = values[editedIndex].toFixed(2).replace('.', ',');
+      if (remainderInput) remainderInput.value = values[lastIndex].toFixed(2).replace('.', ',');
+      syncBarCheckoutSplitBalance(order);
+    }
+
     function barCheckoutSplitPayments(order) {
       const amounts = barCheckoutSplitAmounts(order);
       return amounts.map(function (amount, index) {
@@ -20084,12 +20117,13 @@
       ];
       const amounts = barCheckoutSplitAmounts(order);
       $('barCheckoutSplitRows').innerHTML = enabled ? amounts.map(function (amount, index) {
+        const automaticRemainder = index === amounts.length - 1;
         const selectedMethod = opsState.barCheckoutSplitMethods[index] || defaultMethod;
         const options = paymentOptions.map(function (option) {
           return '<option value="' + option[0] + '"' + (option[0] === selectedMethod ? ' selected' : '') + '>' + option[1] + '</option>';
         }).join('');
         const amountValue = Number(amount || 0).toFixed(2).replace('.', ',');
-        return '<div class="bar-checkout-split-row"><div class="bar-checkout-split-person"><strong>Pessoa ' + (index + 1) + '</strong><small>Parte ' + (index + 1) + ' de ' + count + '</small></div><label class="bar-checkout-split-amount-field"><span>Valor</span><input class="bar-checkout-split-amount-input" data-bar-split-amount="' + index + '" inputmode="decimal" value="' + amountValue + '" aria-label="Valor pago pela pessoa ' + (index + 1) + '" /></label><select data-bar-split-method="' + index + '" aria-label="Forma de pagamento da pessoa ' + (index + 1) + '">' + options + '</select></div>';
+        return '<div class="bar-checkout-split-row"><div class="bar-checkout-split-person"><strong>Pessoa ' + (index + 1) + '</strong><small>' + (automaticRemainder ? 'Restante calculado automaticamente' : 'Parte ' + (index + 1) + ' de ' + count) + '</small></div><label class="bar-checkout-split-amount-field"><span>' + (automaticRemainder ? 'Restante automático' : 'Valor') + '</span><input class="bar-checkout-split-amount-input" data-bar-split-amount="' + index + '" inputmode="decimal" value="' + amountValue + '" aria-label="Valor pago pela pessoa ' + (index + 1) + '"' + (automaticRemainder ? ' readonly' : '') + ' /></label><select data-bar-split-method="' + index + '" aria-label="Forma de pagamento da pessoa ' + (index + 1) + '">' + options + '</select></div>';
       }).join('') : '';
       if (enabled) syncBarCheckoutSplitBalance(order);
       const closeLabel = $('barOrderCloseBtn').querySelector('span');
@@ -23932,10 +23966,13 @@
       });
       $('barCheckoutSplitRows').addEventListener('input', function (event) {
         const input = event.target.closest('[data-bar-split-amount]');
-        if (!input) return;
+        if (!input || input.readOnly) return;
         const index = Number(input.dataset.barSplitAmount);
-        opsState.barCheckoutSplitValues[index] = barCommandMoneyValue(input.value);
-        syncBarCheckoutSplitBalance(barOrderById(opsState.selectedBarOrderId));
+        rebalanceBarCheckoutSplitRemainder(
+          barOrderById(opsState.selectedBarOrderId),
+          index,
+          barCommandMoneyValue(input.value)
+        );
       });
       $('barCheckoutSplitRows').addEventListener('change', function (event) {
         const select = event.target.closest('[data-bar-split-method]');
