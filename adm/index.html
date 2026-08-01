@@ -10093,6 +10093,18 @@
       white-space: normal;
     }
 
+    .bar-closed-order-note {
+      margin-top: 5px !important;
+      color: #765114 !important;
+      font-size: 11px !important;
+      font-weight: 800 !important;
+      line-height: 1.25;
+    }
+
+    .bar-closed-order-note span {
+      font-weight: 950;
+    }
+
     .bar-closed-order-payment-list {
       display: inline-flex;
       align-items: center;
@@ -13212,7 +13224,7 @@
               <div class="field"><label for="barCheckoutService">Valor adicional</label><input id="barCheckoutService" inputmode="decimal" value="0,00" /></div>
               <div class="field"><label for="barCheckoutDiscount">Desconto</label><input id="barCheckoutDiscount" inputmode="decimal" value="0,00" /></div>
               <div class="field" id="barCheckoutSingleMethodField"><label for="barCheckoutMethod">Forma de pagamento</label><select id="barCheckoutMethod"><option value="PIX">Pix</option><option value="DINHEIRO">Dinheiro</option><option value="CARTAO_CREDITO">Cartão de crédito</option><option value="CARTAO_DEBITO">Cartão de débito</option><option value="CONTA_CLIENTE">Conta do cliente</option></select></div>
-              <div class="field full"><label for="barCheckoutNotes">Observação do fechamento</label><textarea id="barCheckoutNotes" rows="2" placeholder="Ex.: uma parte no Pix e outra no cartão, ajuste combinado com o cliente"></textarea></div>
+              <div class="field full"><label for="barCheckoutNotes">Observação do pagamento</label><textarea id="barCheckoutNotes" rows="2" maxlength="500" placeholder="Ex.: pagamento confirmado pelo responsável, ajuste combinado com o cliente"></textarea></div>
             </div>
             <div class="bar-checkout-split" id="barCheckoutSplitSection">
               <div class="bar-checkout-split-head">
@@ -20449,10 +20461,11 @@
       $('barClosedOrders').innerHTML = filteredDayClosedOrders.map(function (order) {
         const payments = barDayClosingPaymentsForOrder(order, paymentFilter);
         const showParts = barReceivedPaymentsForOrder(order).length > 1;
+        const paymentNote = String(order.notes || '').trim();
         const paymentBadges = payments.map(function (payment) {
           return '<span class="bar-closed-order-payment-part">' + barPaymentMethodBadge(payment.paymentMethod) + (showParts ? '<strong>' + money(payment.amount) + '</strong>' : '') + '</span>';
         }).join('');
-        return '<article class="bar-finance-row bar-closed-order-row"><div class="bar-finance-copy"><strong>' + escapeHtml(barTableLabel(order)) + ' | Comanda #' + escapeHtml(order.commandNumber || '') + '</strong><small>' + escapeHtml(barDateTimeLabel(order.closedAt || order.openedAt)) + '</small></div><div class="bar-row-actions"><span class="bar-closed-order-payment-list">' + paymentBadges + '</span>' + barStatusPill(order.paymentStatus) + '<span class="bar-closed-order-total"><small>Total</small><strong>' + money(barOrderTotal(order)) + '</strong></span><button class="small-btn bar-closed-order-reopen" type="button" data-bar-order-reopen="' + escapeHtml(order.id) + '">Reabrir comanda</button></div></article>';
+        return '<article class="bar-finance-row bar-closed-order-row"><div class="bar-finance-copy"><strong>' + escapeHtml(barTableLabel(order)) + ' | Comanda #' + escapeHtml(order.commandNumber || '') + '</strong><small>' + escapeHtml(barDateTimeLabel(order.closedAt || order.openedAt)) + '</small>' + (paymentNote ? '<small class="bar-closed-order-note"><span>Obs.:</span> ' + escapeHtml(paymentNote) + '</small>' : '') + '</div><div class="bar-row-actions"><span class="bar-closed-order-payment-list">' + paymentBadges + '</span>' + barStatusPill(order.paymentStatus) + '<span class="bar-closed-order-total"><small>Total</small><strong>' + money(barOrderTotal(order)) + '</strong></span><button class="small-btn bar-closed-order-reopen" type="button" data-bar-order-reopen="' + escapeHtml(order.id) + '">Reabrir comanda</button></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhuma comanda fechada hoje para esta forma de pagamento.</div>';
       const dayPaymentMethods = ['PIX', 'DINHEIRO', 'CARTAO_CREDITO', 'CARTAO_DEBITO', 'CONTA_CLIENTE', 'OUTROS'];
       const dayPaymentTotal = dayClosedOrders.reduce(function (sum, order) {
@@ -21991,13 +22004,11 @@
               prefer: 'return=representation'
             });
           }
-          if (closingNotes) {
-            await supabaseRest('bar_financial_entries?order_id=eq.' + encodeURIComponent(order.id), {
-              method: 'PATCH',
-              body: { notes: closingNotes, updated_at: new Date().toISOString() },
-              prefer: 'return=minimal'
-            });
-          }
+          await supabaseRest('bar_financial_entries?order_id=eq.' + encodeURIComponent(order.id), {
+            method: 'PATCH',
+            body: { notes: closingNotes || null, updated_at: new Date().toISOString() },
+            prefer: 'return=minimal'
+          });
           await loadBarData(true);
         } else {
           order.serviceCharge = serviceCharge;
