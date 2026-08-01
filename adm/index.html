@@ -19075,8 +19075,10 @@
 
     function barKitchenIsPortionItem(item) {
       const product = barProductById(item && item.productId);
-      const category = item && (item.productCategory || product && product.category) || '';
-      return barProductCategoryKey(category) === 'portion';
+      return barProductRequiresProduction({
+        name: item && item.productName || product && product.name || '',
+        category: item && (item.productCategory || product && product.category) || ''
+      });
     }
 
     function barKitchenActivePortionItems() {
@@ -19736,6 +19738,12 @@
       if (value.includes('almoc') || value.includes('porc') || value.includes('frita') || value.includes('petisco')) return 'portion';
       if (value.includes('doce') || value.includes('chocolate') || value.includes('sorvete') || value.includes('bala')) return 'candy';
       return 'default';
+    }
+
+    function barProductRequiresProduction(product) {
+      if (!product) return false;
+      const name = normalizeMatchText(product.name || product.productName || '');
+      return barProductCategoryKey(product.category) === 'portion' || name.includes('mini pizza');
     }
 
     function barProductCategoryIcon(category) {
@@ -20953,7 +20961,7 @@
     }
 
     function barProductNeedsDeliveryLocation(product) {
-      return Boolean(product && barProductCategoryKey(product.category) === 'portion');
+      return barProductRequiresProduction(product);
     }
 
     function syncBarOrderDeliveryLocationField(product) {
