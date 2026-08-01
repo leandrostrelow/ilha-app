@@ -201,6 +201,15 @@ create table if not exists public.bar_public_cards (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.bar_customers (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (length(trim(name)) between 2 and 80),
+  phone text not null unique check (phone ~ '^[0-9]{10,13}$'),
+  last_order_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.bar_orders (
   id uuid primary key default gen_random_uuid(),
   table_id uuid references public.bar_tables(id) on delete set null,
@@ -358,6 +367,8 @@ create index if not exists bar_products_active_idx on public.bar_products(active
 create index if not exists bar_products_stock_idx on public.bar_products(stock_quantity, minimum_stock) where active = true;
 create index if not exists bar_products_public_menu_idx on public.bar_products(menu_visible, active, category, menu_sort_order, name);
 create index if not exists bar_public_cards_active_idx on public.bar_public_cards(active, code);
+create index if not exists bar_customers_name_idx on public.bar_customers(lower(name));
+create index if not exists bar_customers_last_order_idx on public.bar_customers(last_order_at desc);
 create index if not exists bar_orders_status_idx on public.bar_orders(status, opened_at desc);
 create unique index if not exists bar_orders_public_tracking_idx on public.bar_orders(public_tracking_token);
 create unique index if not exists bar_orders_one_open_per_table_idx
@@ -375,6 +386,63 @@ create unique index if not exists bar_service_requests_active_unique_idx
   where status in ('PENDENTE', 'EM_ATENDIMENTO');
 create index if not exists bar_inventory_product_idx on public.bar_inventory_movements(product_id, occurred_at desc);
 create index if not exists bar_financial_due_idx on public.bar_financial_entries(status, due_date);
+
+create or replace function public.sync_bar_customer_from_order()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  customer_value text;
+  phone_value text;
+begin
+  customer_value := left(trim(coalesce(new.customer_name, '')), 80);
+  phone_value := regexp_replace(coalesce(new.customer_phone, ''), '[^0-9]', '', 'g');
+
+  if length(customer_value) < 2 or length(phone_value) not between 10 and 13 then
+    return new;
+  end if;
+
+  insert into public.bar_customers (name, phone, last_order_at)
+  values (customer_value, phone_value, coalesce(new.opened_at, now()))
+  on conflict (phone) do update
+    set name = excluded.name,
+        last_order_at = greatest(public.bar_customers.last_order_at, excluded.last_order_at),
+        updated_at = now();
+
+  return new;
+end;
+$$;
+
+revoke all on function public.sync_bar_customer_from_order() from public, anon, authenticated;
+
+drop trigger if exists bar_orders_sync_customer on public.bar_orders;
+create trigger bar_orders_sync_customer
+after insert or update of customer_name, customer_phone on public.bar_orders
+for each row execute function public.sync_bar_customer_from_order();
+
+with ranked_customers as (
+  select
+    left(trim(customer_name), 80) as name,
+    regexp_replace(coalesce(customer_phone, ''), '[^0-9]', '', 'g') as phone,
+    opened_at,
+    row_number() over (
+      partition by regexp_replace(coalesce(customer_phone, ''), '[^0-9]', '', 'g')
+      order by opened_at desc, id desc
+    ) as position
+  from public.bar_orders
+  where length(trim(coalesce(customer_name, ''))) between 2 and 80
+    and length(regexp_replace(coalesce(customer_phone, ''), '[^0-9]', '', 'g')) between 10 and 13
+)
+insert into public.bar_customers (name, phone, last_order_at)
+select name, phone, opened_at
+from ranked_customers
+where position = 1
+on conflict (phone) do update
+  set name = excluded.name,
+      last_order_at = greatest(public.bar_customers.last_order_at, excluded.last_order_at),
+      updated_at = now();
 
 create or replace function public.refresh_bar_order_totals()
 returns trigger
@@ -1801,6 +1869,7 @@ alter table public.app_payment_invoices enable row level security;
 alter table public.bar_products enable row level security;
 alter table public.bar_tables enable row level security;
 alter table public.bar_public_cards enable row level security;
+alter table public.bar_customers enable row level security;
 alter table public.bar_orders enable row level security;
 alter table public.bar_order_items enable row level security;
 alter table public.bar_service_requests enable row level security;
@@ -1833,6 +1902,7 @@ grant select, insert, update, delete on
   public.bar_products,
   public.bar_tables,
   public.bar_public_cards,
+  public.bar_customers,
   public.bar_orders,
   public.bar_order_items,
   public.bar_service_requests,
@@ -1851,6 +1921,9 @@ grant select, insert, update, delete on
   public.communication_templates,
   public.communication_campaigns
 to authenticated;
+
+grant select, insert, update, delete on table public.bar_customers to service_role;
+revoke all on table public.bar_customers from anon;
 revoke all on table public.bar_service_requests from anon;
 revoke all on table public.bar_events from anon;
 revoke all on table public.bar_products from anon;
@@ -1934,6 +2007,7 @@ drop policy if exists "bar staff manage products" on public.bar_products;
 drop policy if exists "public read visible menu products" on public.bar_products;
 drop policy if exists "bar staff manage tables" on public.bar_tables;
 drop policy if exists "bar staff manage public cards" on public.bar_public_cards;
+drop policy if exists "bar staff manage customers" on public.bar_customers;
 drop policy if exists "bar staff manage orders" on public.bar_orders;
 drop policy if exists "bar staff manage order items" on public.bar_order_items;
 drop policy if exists "bar staff manage service requests" on public.bar_service_requests;
@@ -2104,6 +2178,12 @@ with check (public.is_bar_staff());
 
 create policy "bar staff manage public cards"
 on public.bar_public_cards for all
+to authenticated
+using (public.is_bar_staff())
+with check (public.is_bar_staff());
+
+create policy "bar staff manage customers"
+on public.bar_customers for all
 to authenticated
 using (public.is_bar_staff())
 with check (public.is_bar_staff());

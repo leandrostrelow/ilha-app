@@ -9063,6 +9063,65 @@
       background: #fbfcfd;
     }
 
+    .bar-customer-suggestions {
+      max-height: 190px;
+      display: grid;
+      gap: 5px;
+      overflow: auto;
+      margin-top: 8px;
+      padding: 6px;
+      border: 1px solid #cfe0e3;
+      border-radius: 10px;
+      background: #f4f9fa;
+    }
+
+    .bar-customer-suggestions[hidden] {
+      display: none;
+    }
+
+    .bar-customer-suggestion {
+      width: 100%;
+      min-width: 0;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 10px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: #18363d;
+      background: #ffffff;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .bar-customer-suggestion:hover,
+    .bar-customer-suggestion:focus-visible {
+      border-color: #9fcdd1;
+      outline: none;
+      background: #eef8f9;
+    }
+
+    .bar-customer-suggestion strong,
+    .bar-customer-suggestion span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-customer-suggestion strong {
+      font-size: 11px;
+    }
+
+    .bar-customer-suggestion span {
+      flex: 0 0 auto;
+      color: var(--teal);
+      font-size: 10px;
+      font-weight: 850;
+    }
+
     .bar-setup-modal .modal-actions,
     .bar-qr-modal .modal-actions {
       gap: 10px;
@@ -12848,7 +12907,8 @@
           <form class="form-grid bar-setup-form" id="barNewOrderForm">
             <div class="field full">
               <label for="barNewOrderCustomer">Nome ou identificação</label>
-              <input id="barNewOrderCustomer" maxlength="80" placeholder="Ex.: João, Deck ou Balcão 1" required />
+              <input id="barNewOrderCustomer" maxlength="80" placeholder="Digite o nome para buscar um cadastro" autocomplete="off" aria-autocomplete="list" aria-controls="barCustomerSuggestions" required />
+              <div class="bar-customer-suggestions" id="barCustomerSuggestions" role="listbox" aria-label="Clientes já cadastrados" hidden></div>
             </div>
             <div class="field full">
               <label for="barNewOrderPhone">Telefone <small>opcional</small></label>
@@ -17330,6 +17390,7 @@
         { id: 'bar_card_2', code: 2, label: 'Cartão avulso 02', token: 'ilha-cartao-avulso-02', active: true, notes: 'Mesa ou retirada no balcão' },
         { id: 'bar_card_3', code: 3, label: 'Cartão avulso 03', token: 'ilha-cartao-avulso-03', active: true, notes: 'Mesa ou retirada no balcão' }
       ],
+      barCustomers: [],
       barOrders: [
         { id: 'bar_order_1', tableId: 'bar_table_2', commandNumber: 101, customerName: 'Leandro', customerPhone: '5527999999999', source: 'QR_MESA', status: 'EM_PREPARO', subtotal: 33, serviceCharge: 0, discount: 0, total: 33, paymentStatus: 'ABERTO', paymentMethod: '', openedAt: new Date().toISOString(), closedAt: '' },
         { id: 'bar_order_2', tableId: '', publicAccessId: 'bar_card_1', commandNumber: 102, customerName: 'Cliente avulso', customerPhone: '5527988887777', source: 'QR_CARTAO', status: 'ABERTA', subtotal: 12, serviceCharge: 0, discount: 0, total: 12, paymentStatus: 'ABERTO', paymentMethod: '', openedAt: new Date().toISOString(), closedAt: '' }
@@ -17409,6 +17470,15 @@
     function localDateString(date) {
       const d = date || new Date();
       return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    }
+
+    const BAR_OPERATION_DAY_START_HOUR = 6;
+
+    function barOperationalDateString(value) {
+      const date = value instanceof Date ? new Date(value.getTime()) : new Date(value || Date.now());
+      if (Number.isNaN(date.getTime())) return '';
+      if (date.getHours() < BAR_OPERATION_DAY_START_HOUR) date.setDate(date.getDate() - 1);
+      return localDateString(date);
     }
 
     function localTimeString(date) {
@@ -17713,6 +17783,15 @@
       };
     }
 
+    function mapBarCustomerRow(row) {
+      return {
+        id: row.id || '',
+        name: row.name || '',
+        phone: row.phone || '',
+        lastOrderAt: row.last_order_at || row.updated_at || row.created_at || ''
+      };
+    }
+
     function mapBarOrderRow(row) {
       const table = row.bar_tables || {};
       return {
@@ -17826,7 +17905,8 @@
           supabaseRest('bar_inventory_movements?select=*&order=occurred_at.desc&limit=200'),
           supabaseRest('bar_financial_entries?select=*&order=created_at.desc'),
           supabaseRest('bar_public_cards?select=*&order=code.asc'),
-          supabaseRest('bar_events?select=*&order=event_date.asc,starts_at.asc')
+          supabaseRest('bar_events?select=*&order=event_date.asc,starts_at.asc'),
+          supabaseRest('bar_customers?select=*&order=last_order_at.desc&limit=500')
         ]);
         opsData.barProducts = results[0].map(mapBarProductRow);
         opsData.barTables = results[1].map(mapBarTableRow);
@@ -17836,6 +17916,7 @@
         opsData.barFinance = results[5].map(mapBarFinanceRow);
         opsData.barAccessCards = results[6].map(mapBarAccessCardRow);
         opsData.barEvents = results[7].map(mapBarEventRow);
+        opsData.barCustomers = results[8].map(mapBarCustomerRow);
         handleBarIncomingChanges(opsData.barOrderItems);
         opsState.barDataLoaded = true;
         opsState.barSchemaReady = true;
@@ -17848,6 +17929,7 @@
         opsData.barFinance = [];
         opsData.barAccessCards = [];
         opsData.barEvents = [];
+        opsData.barCustomers = [];
         opsState.barSchemaReady = false;
         opsState.barDataLoaded = true;
         console.info('Tabelas do Bar ainda nao disponiveis no Supabase.', error && error.message);
@@ -18612,7 +18694,7 @@
 
     function barKitchenDayKey(value) {
       const date = new Date(value || '');
-      return Number.isNaN(date.getTime()) ? '' : localDateString(date);
+      return Number.isNaN(date.getTime()) ? '' : barOperationalDateString(date);
     }
 
     function barKitchenIsPortionItem(item) {
@@ -18632,14 +18714,14 @@
     }
 
     function barPortionQueueItems() {
-      const today = localDateString();
+      const today = barOperationalDateString();
       return barKitchenActivePortionItems().filter(function (item) {
         return barKitchenDayKey(item.created) === today;
       });
     }
 
     function barPreviousPortionQueueItems() {
-      const today = localDateString();
+      const today = barOperationalDateString();
       return barKitchenActivePortionItems().filter(function (item) {
         return barKitchenDayKey(item.created) !== today;
       });
@@ -18824,6 +18906,70 @@
       return digits && !digits.startsWith('55') && digits.length <= 11 ? '55' + digits : digits;
     }
 
+    function rememberBarCustomerLocally(name, phone, lastOrderAt) {
+      const cleanName = String(name || '').trim().replace(/\s+/g, ' ');
+      const cleanPhone = barPhoneDigits(phone);
+      if (cleanName.length < 2 || cleanPhone.length < 10 || cleanPhone.length > 13) return;
+      const customers = opsData.barCustomers || (opsData.barCustomers = []);
+      const existing = customers.find(function (customer) {
+        return barPhoneDigits(customer.phone) === cleanPhone;
+      });
+      if (existing) {
+        existing.name = cleanName;
+        existing.phone = cleanPhone;
+        existing.lastOrderAt = lastOrderAt || new Date().toISOString();
+      } else {
+        customers.unshift({
+          id: 'local_customer_' + cleanPhone,
+          name: cleanName,
+          phone: cleanPhone,
+          lastOrderAt: lastOrderAt || new Date().toISOString()
+        });
+      }
+      customers.sort(function (a, b) {
+        return String(b.lastOrderAt || '').localeCompare(String(a.lastOrderAt || ''));
+      });
+    }
+
+    function hideBarCustomerSuggestions() {
+      const list = $('barCustomerSuggestions');
+      if (!list) return;
+      list.hidden = true;
+      list.innerHTML = '';
+    }
+
+    function renderBarCustomerSuggestions(query) {
+      const list = $('barCustomerSuggestions');
+      if (!list) return;
+      const search = normalizeMatchText(query);
+      const searchDigits = barPhoneDigits(query);
+      const matches = (opsData.barCustomers || []).filter(function (customer) {
+        if (!search && !searchDigits) return true;
+        return normalizeMatchText(customer.name).includes(search) ||
+          (searchDigits && barPhoneDigits(customer.phone).includes(searchDigits));
+      }).slice(0, 6);
+      if (!matches.length) {
+        hideBarCustomerSuggestions();
+        return;
+      }
+      list.innerHTML = matches.map(function (customer) {
+        return '<button class="bar-customer-suggestion" type="button" role="option" data-bar-customer-select="' +
+          escapeHtml(customer.id || customer.phone) + '"><strong>' + escapeHtml(customer.name) +
+          '</strong><span>' + escapeHtml(barPhoneLabel(customer.phone)) + '</span></button>';
+      }).join('');
+      list.hidden = false;
+    }
+
+    function selectBarCustomer(customerId) {
+      const customer = (opsData.barCustomers || []).find(function (item) {
+        return String(item.id || item.phone) === String(customerId);
+      });
+      if (!customer) return;
+      $('barNewOrderCustomer').value = customer.name;
+      $('barNewOrderPhone').value = barPhoneInputLabel(customer.phone);
+      hideBarCustomerSuggestions();
+    }
+
     function renderBarIncomingOrders() {
       const items = incomingBarItems();
       const grouped = new Map();
@@ -18909,6 +19055,14 @@
       if (dateOnly && raw.length <= 10) return dateOnly[1];
       const date = new Date(raw);
       return Number.isNaN(date.getTime()) ? (dateOnly ? dateOnly[1] : '') : localDateString(date);
+    }
+
+    function barOperationalDateKey(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return '';
+      const dateOnly = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (dateOnly && raw.length <= 10) return dateOnly[1];
+      return barOperationalDateString(raw);
     }
 
     function barFinanceEntryDateKey(item) {
@@ -19941,11 +20095,11 @@
       const lowStock = opsData.barProducts.filter(function (product) {
         return product.active && Number(product.stock) <= Number(product.minimumStock || 0);
       });
-      const today = localDateString();
+      const today = barOperationalDateString();
       const paymentFilter = String(opsState.barDayClosingPaymentFilter || 'TODOS').toUpperCase();
       const dayClosedOrders = opsData.barOrders.filter(function (order) {
         return String(order.status || '').toUpperCase() === 'FECHADA' &&
-          barFinanceDateKey(order.closedAt || order.openedAt) === today;
+          barOperationalDateKey(order.closedAt || order.openedAt) === today;
       }).sort(function (a, b) {
         return String(b.closedAt || b.openedAt || '').localeCompare(String(a.closedAt || a.openedAt || ''));
       });
@@ -20521,6 +20675,7 @@
         opsData.barFinance = [];
         opsData.barAccessCards = [];
         opsData.barEvents = [];
+        opsData.barCustomers = [];
       }
       renderBarModule();
       loadBarData(false).then(function () {
@@ -20921,6 +21076,7 @@
 
     function resetBarNewOrderForm() {
       $('barNewOrderForm').reset();
+      hideBarCustomerSuggestions();
     }
 
     function openBarNewOrderModal() {
@@ -20928,7 +21084,10 @@
       resetBarNewOrderForm();
       $('barNewOrderModal').classList.add('show');
       $('barNewOrderModal').setAttribute('aria-hidden', 'false');
-      setTimeout(function () { $('barNewOrderCustomer').focus(); }, 80);
+      setTimeout(function () {
+        $('barNewOrderCustomer').focus();
+        renderBarCustomerSuggestions('');
+      }, 80);
     }
 
     function closeBarNewOrderModal() {
@@ -20983,6 +21142,7 @@
         }
 
         opsData.barOrders.unshift(order);
+        rememberBarCustomerLocally(customerName, customerPhone, order.openedAt);
         closeBarNewOrderModal();
         opsState.barTab = 'orders';
         opsState.barCommandTab = 'add';
@@ -23763,6 +23923,23 @@
       });
       $('barNewOrderPhone').addEventListener('input', function () {
         this.value = barPhoneInputLabel(this.value);
+        const digits = barPhoneDigits(this.value);
+        const customer = (opsData.barCustomers || []).find(function (item) {
+          return barPhoneDigits(item.phone) === digits;
+        });
+        if (customer && !$('barNewOrderCustomer').value.trim()) {
+          $('barNewOrderCustomer').value = customer.name;
+        }
+      });
+      $('barNewOrderCustomer').addEventListener('focus', function () {
+        renderBarCustomerSuggestions(this.value);
+      });
+      $('barNewOrderCustomer').addEventListener('input', function () {
+        renderBarCustomerSuggestions(this.value);
+      });
+      $('barCustomerSuggestions').addEventListener('click', function (event) {
+        const button = event.target.closest('[data-bar-customer-select]');
+        if (button) selectBarCustomer(button.dataset.barCustomerSelect);
       });
       $('barAddEventBtn').addEventListener('click', function () { openBarEventModal(null, opsState.barEventSelectedDate); });
       $('barAddEventForDayBtn').addEventListener('click', function () { openBarEventModal(null, opsState.barEventSelectedDate); });
