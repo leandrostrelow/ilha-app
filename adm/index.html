@@ -8588,22 +8588,26 @@
       color: #4b6b00;
     }
 
-    .bar-kitchen-delivered-panel {
+    .bar-kitchen-delivered-panel,
+    .bar-kitchen-previous-panel {
       margin-top: 10px;
       padding: 0;
       overflow: hidden;
     }
 
-    .bar-kitchen-delivered-panel > .bar-collapsible-summary {
+    .bar-kitchen-delivered-panel > .bar-collapsible-summary,
+    .bar-kitchen-previous-panel > .bar-collapsible-summary {
       margin: 0;
       border-radius: 14px 14px 0 0;
     }
 
-    .bar-kitchen-delivered-panel:not([open]) > .bar-collapsible-summary {
+    .bar-kitchen-delivered-panel:not([open]) > .bar-collapsible-summary,
+    .bar-kitchen-previous-panel:not([open]) > .bar-collapsible-summary {
       border-radius: 14px;
     }
 
-    .bar-kitchen-delivered-list {
+    .bar-kitchen-delivered-list,
+    .bar-kitchen-previous-list {
       border-top: 1px solid #e0e8eb;
     }
 
@@ -12278,14 +12282,21 @@
           <div data-bar-panel="kitchen">
             <section class="ops-panel bar-kitchen-panel">
               <div class="ops-panel-head">
-                <div><h2>Pedidos de porções</h2><div class="muted">Os pedidos mais recentes ficam no topo.</div><div class="bar-kitchen-order-rule">Ordem fixa · mais recente primeiro</div></div>
+                <div><h2>Pedidos de porções</h2><div class="muted">Pedidos de hoje, com os mais recentes no topo.</div><div class="bar-kitchen-order-rule">Numeração fixa do dia</div></div>
                 <div class="bar-kitchen-head-metrics">
-                  <div class="bar-kitchen-metric"><span>Na fila</span><strong id="barKitchenPendingMetric">0</strong></div>
-                  <div class="bar-kitchen-metric is-ready"><span>Prontos</span><strong id="barKitchenReadyMetric">0</strong></div>
+                  <div class="bar-kitchen-metric"><span>Aguardando hoje</span><strong id="barKitchenPendingMetric">0</strong></div>
+                  <div class="bar-kitchen-metric is-ready"><span>Prontos hoje</span><strong id="barKitchenReadyMetric">0</strong></div>
                 </div>
               </div>
               <div class="bar-kitchen-list" id="barKitchenQueue"></div>
             </section>
+            <details class="ops-panel bar-collapsible-panel bar-kitchen-previous-panel" id="barKitchenPreviousPanel" hidden>
+              <summary class="ops-panel-head bar-collapsible-summary">
+                <div><h2>Pendências anteriores</h2><div class="muted" id="barKitchenPreviousCount">Nenhuma pendência anterior</div></div>
+                <span class="bar-collapse-control" aria-hidden="true"><span class="bar-collapse-label"></span><span class="bar-collapse-chevron"></span></span>
+              </summary>
+              <div class="bar-kitchen-list bar-kitchen-previous-list" id="barKitchenPreviousList"></div>
+            </details>
             <details class="ops-panel bar-collapsible-panel bar-kitchen-delivered-panel" id="barKitchenDeliveredPanel">
               <summary class="ops-panel-head bar-collapsible-summary">
                 <div><h2>Pedidos entregues</h2><div class="muted" id="barKitchenDeliveredCount">Nenhum pedido entregue</div></div>
@@ -18466,24 +18477,67 @@
       return String(b && b.id || '').localeCompare(String(a && a.id || ''));
     }
 
-    function barPortionQueueItems() {
+    function barKitchenChronologicalCompare(a, b) {
+      const aTimestamp = barKitchenQueueTimestamp(a);
+      const bTimestamp = barKitchenQueueTimestamp(b);
+      if (aTimestamp === Number.MIN_SAFE_INTEGER && bTimestamp !== Number.MIN_SAFE_INTEGER) return 1;
+      if (bTimestamp === Number.MIN_SAFE_INTEGER && aTimestamp !== Number.MIN_SAFE_INTEGER) return -1;
+      const createdDifference = aTimestamp - bTimestamp;
+      if (createdDifference) return createdDifference;
+      return String(a && a.id || '').localeCompare(String(b && b.id || ''));
+    }
+
+    function barKitchenDayKey(value) {
+      const date = new Date(value || '');
+      return Number.isNaN(date.getTime()) ? '' : localDateString(date);
+    }
+
+    function barKitchenIsPortionItem(item) {
+      const product = barProductById(item && item.productId);
+      const category = item && (item.productCategory || product && product.category) || '';
+      return barProductCategoryKey(category) === 'portion';
+    }
+
+    function barKitchenActivePortionItems() {
       return opsData.barOrderItems.filter(function (item) {
         const status = String(item.status || '').toUpperCase();
-        const product = barProductById(item.productId);
         const order = barOrderById(item.orderId);
-        const category = item.productCategory || product && product.category || '';
         return ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(status) &&
-          barProductCategoryKey(category) === 'portion' &&
+          barKitchenIsPortionItem(item) &&
           (!order || !['CANCELADA', 'CANCELADO'].includes(String(order.status || '').toUpperCase()));
       }).sort(barKitchenQueueCompare);
     }
 
+    function barPortionQueueItems() {
+      const today = localDateString();
+      return barKitchenActivePortionItems().filter(function (item) {
+        return barKitchenDayKey(item.created) === today;
+      });
+    }
+
+    function barPreviousPortionQueueItems() {
+      const today = localDateString();
+      return barKitchenActivePortionItems().filter(function (item) {
+        return barKitchenDayKey(item.created) !== today;
+      });
+    }
+
+    function barKitchenDailySequenceMap() {
+      const sequenceByDay = {};
+      const sequenceByItem = new Map();
+      opsData.barOrderItems.filter(barKitchenIsPortionItem).slice().sort(barKitchenChronologicalCompare).forEach(function (item) {
+        const day = barKitchenDayKey(item.created);
+        if (!day) return;
+        sequenceByDay[day] = Number(sequenceByDay[day] || 0) + 1;
+        sequenceByItem.set(String(item.id), sequenceByDay[day]);
+      });
+      return sequenceByItem;
+    }
+
     function barDeliveredPortionItems() {
       return opsData.barOrderItems.filter(function (item) {
-        const product = barProductById(item.productId);
-        const category = item.productCategory || product && product.category || '';
         return String(item.status || '').toUpperCase() === 'ENTREGUE' &&
-          barProductCategoryKey(category) === 'portion';
+          barKitchenIsPortionItem(item);
       }).sort(function (a, b) {
         const updatedDifference = barKitchenQueueTimestamp({ created: b.updated || b.created }) - barKitchenQueueTimestamp({ created: a.updated || a.created });
         if (updatedDifference) return updatedDifference;
@@ -19674,48 +19728,75 @@
       return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
 
+    function barKitchenDateTimeLabel(value) {
+      if (!value) return 'Horário não informado';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return 'Horário não informado';
+      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' às ' + barKitchenTimeLabel(value);
+    }
+
+    function barKitchenActiveCardMarkup(item, ticketNumber, showDate) {
+      const order = barOrderById(item.orderId);
+      const status = String(item.status || '').toUpperCase();
+      const ready = status === 'PRONTO';
+      const customerName = String(item.customerName || order && order.customerName || barTableLabel(order) || 'Cliente').trim();
+      const commandLabel = order && order.commandNumber ? 'Comanda #' + order.commandNumber : 'Comanda aberta';
+      const nextStatus = ready ? 'ENTREGUE' : 'PRONTO';
+      const actionLabel = ready ? 'Entregue' : 'Ficou pronto';
+      const requestedLabel = showDate ? barKitchenDateTimeLabel(item.created) : barKitchenTimeLabel(item.created);
+      const productMeta = item.notes
+        ? '<small class="bar-kitchen-note"><strong>Obs.:</strong> ' + escapeHtml(item.notes) + '</small>'
+        : '<small>' + escapeHtml(barStatusLabel(status)) + '</small>';
+      return '<article class="bar-kitchen-card' + (ready ? ' is-ready' : '') + '">' +
+        '<div class="bar-kitchen-card-head"><span class="bar-kitchen-position">#' + escapeHtml(ticketNumber) + '</span><span class="bar-kitchen-time">Pedido ' + (showDate ? 'em ' : 'às ') + escapeHtml(requestedLabel) + '</span></div>' +
+        '<div class="bar-kitchen-product"><span class="bar-kitchen-quantity">' + escapeHtml(item.quantity + 'x') + '</span><div><strong>' + escapeHtml(item.productName) + '</strong>' + productMeta + '</div></div>' +
+        '<div class="bar-kitchen-person"><div><strong>' + escapeHtml(customerName) + '</strong><small>' + escapeHtml(commandLabel) + '</small></div>' + barStatusPill(status) + '</div>' +
+        '<div class="bar-kitchen-card-footer"><button class="primary-btn" type="button" data-bar-kitchen-status="' + escapeHtml(item.id) + '" data-next-status="' + nextStatus + '">' + actionLabel + '</button></div>' +
+      '</article>';
+    }
+
+    function barKitchenDeliveredCardMarkup(item, ticketNumber) {
+      const order = barOrderById(item.orderId);
+      const customerName = String(item.customerName || order && order.customerName || barTableLabel(order) || 'Cliente').trim();
+      const commandLabel = order && order.commandNumber ? 'Comanda #' + order.commandNumber : 'Comanda';
+      const productMeta = item.notes
+        ? '<small class="bar-kitchen-note"><strong>Obs.:</strong> ' + escapeHtml(item.notes) + '</small>'
+        : '<small>Pedido concluído</small>';
+      return '<article class="bar-kitchen-card is-delivered">' +
+        '<div class="bar-kitchen-card-head"><span class="bar-kitchen-position">#' + escapeHtml(ticketNumber) + '</span><span class="bar-kitchen-time">Pedido em ' + escapeHtml(barKitchenDateTimeLabel(item.created)) + '</span></div>' +
+        '<div class="bar-kitchen-product"><span class="bar-kitchen-quantity">' + escapeHtml(item.quantity + 'x') + '</span><div><strong>' + escapeHtml(item.productName) + '</strong>' + productMeta + '</div></div>' +
+        '<div class="bar-kitchen-person"><div><strong>' + escapeHtml(customerName) + '</strong><small>' + escapeHtml(commandLabel) + '</small></div>' + barStatusPill('ENTREGUE') + '</div>' +
+        '<div class="bar-kitchen-delivered-time"><span>Entregue em</span><strong>' + escapeHtml(barKitchenDateTimeLabel(item.updated || item.created)) + '</strong></div>' +
+      '</article>';
+    }
+
     function renderBarKitchenQueue() {
       const items = barPortionQueueItems();
+      const previousItems = barPreviousPortionQueueItems();
       const deliveredItems = barDeliveredPortionItems();
+      const sequenceByItem = barKitchenDailySequenceMap();
       const readyCount = items.filter(function (item) {
         return String(item.status || '').toUpperCase() === 'PRONTO';
       }).length;
       $('barKitchenPendingMetric').textContent = items.length - readyCount;
       $('barKitchenReadyMetric').textContent = readyCount;
-      $('barKitchenQueue').innerHTML = items.map(function (item, index) {
-        const order = barOrderById(item.orderId);
-        const status = String(item.status || '').toUpperCase();
-        const ready = status === 'PRONTO';
-        const customerName = String(item.customerName || order && order.customerName || barTableLabel(order) || 'Cliente').trim();
-        const commandLabel = order && order.commandNumber ? 'Comanda #' + order.commandNumber : 'Comanda aberta';
-        const nextStatus = ready ? 'ENTREGUE' : 'PRONTO';
-        const actionLabel = ready ? 'Entregue' : 'Ficou pronto';
-        const productMeta = item.notes
-          ? '<small class="bar-kitchen-note"><strong>Obs.:</strong> ' + escapeHtml(item.notes) + '</small>'
-          : '<small>' + escapeHtml(barStatusLabel(status)) + '</small>';
-        return '<article class="bar-kitchen-card' + (ready ? ' is-ready' : '') + '">' +
-          '<div class="bar-kitchen-card-head"><span class="bar-kitchen-position">#' + (index + 1) + '</span><span class="bar-kitchen-time">Pedido às ' + escapeHtml(barKitchenTimeLabel(item.created)) + '</span></div>' +
-          '<div class="bar-kitchen-product"><span class="bar-kitchen-quantity">' + escapeHtml(item.quantity + 'x') + '</span><div><strong>' + escapeHtml(item.productName) + '</strong>' + productMeta + '</div></div>' +
-          '<div class="bar-kitchen-person"><div><strong>' + escapeHtml(customerName) + '</strong><small>' + escapeHtml(commandLabel) + '</small></div>' + barStatusPill(status) + '</div>' +
-          '<div class="bar-kitchen-card-footer"><button class="primary-btn" type="button" data-bar-kitchen-status="' + escapeHtml(item.id) + '" data-next-status="' + nextStatus + '">' + actionLabel + '</button></div>' +
-        '</article>';
+      $('barKitchenQueue').innerHTML = items.map(function (item) {
+        return barKitchenActiveCardMarkup(item, sequenceByItem.get(String(item.id)) || '?', false);
       }).join('') || '<div class="lesson-empty-state bar-kitchen-empty"><strong>Fila em dia.</strong><br />Nenhuma porção aguardando preparo ou entrega.</div>';
+
+      $('barKitchenPreviousPanel').hidden = previousItems.length === 0;
+      $('barKitchenPreviousCount').textContent = previousItems.length
+        ? previousItems.length + (previousItems.length === 1 ? ' pendência de outro dia' : ' pendências de outros dias')
+        : 'Nenhuma pendência anterior';
+      $('barKitchenPreviousList').innerHTML = previousItems.map(function (item) {
+        return barKitchenActiveCardMarkup(item, sequenceByItem.get(String(item.id)) || '?', true);
+      }).join('') || '<div class="lesson-empty-state bar-kitchen-empty">Nenhuma pendência anterior.</div>';
+
       $('barKitchenDeliveredCount').textContent = deliveredItems.length
         ? deliveredItems.length + (deliveredItems.length === 1 ? ' pedido entregue salvo' : ' pedidos entregues salvos')
         : 'Nenhum pedido entregue';
-      $('barKitchenDeliveredList').innerHTML = deliveredItems.map(function (item, index) {
-        const order = barOrderById(item.orderId);
-        const customerName = String(item.customerName || order && order.customerName || barTableLabel(order) || 'Cliente').trim();
-        const commandLabel = order && order.commandNumber ? 'Comanda #' + order.commandNumber : 'Comanda';
-        const productMeta = item.notes
-          ? '<small class="bar-kitchen-note"><strong>Obs.:</strong> ' + escapeHtml(item.notes) + '</small>'
-          : '<small>Pedido concluído</small>';
-        return '<article class="bar-kitchen-card is-delivered">' +
-          '<div class="bar-kitchen-card-head"><span class="bar-kitchen-position">#' + (index + 1) + '</span><span class="bar-kitchen-time">Pedido às ' + escapeHtml(barKitchenTimeLabel(item.created)) + '</span></div>' +
-          '<div class="bar-kitchen-product"><span class="bar-kitchen-quantity">' + escapeHtml(item.quantity + 'x') + '</span><div><strong>' + escapeHtml(item.productName) + '</strong>' + productMeta + '</div></div>' +
-          '<div class="bar-kitchen-person"><div><strong>' + escapeHtml(customerName) + '</strong><small>' + escapeHtml(commandLabel) + '</small></div>' + barStatusPill('ENTREGUE') + '</div>' +
-          '<div class="bar-kitchen-delivered-time"><span>Entregue às</span><strong>' + escapeHtml(barKitchenTimeLabel(item.updated || item.created)) + '</strong></div>' +
-        '</article>';
+      $('barKitchenDeliveredList').innerHTML = deliveredItems.map(function (item) {
+        return barKitchenDeliveredCardMarkup(item, sequenceByItem.get(String(item.id)) || '?');
       }).join('') || '<div class="lesson-empty-state bar-kitchen-empty">Os pedidos entregues aparecerão aqui.</div>';
     }
 
