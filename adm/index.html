@@ -20195,6 +20195,19 @@
       return Number.isFinite(number) && number >= 0 ? number : 0;
     }
 
+    function barCheckoutSplitDraftValue(value) {
+      const clean = String(value || '').trim().replace(/\s/g, '').replace(/^R\$/i, '');
+      if (!clean || !/^(?:\d+|\d+[,.]\d{0,2})$/.test(clean)) return null;
+      const parsed = barCommandMoneyValue(clean);
+      return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+    }
+
+    function barCommandModalHasActiveEditor() {
+      const active = document.activeElement;
+      return Boolean(active && active.closest && active.closest('#barCommandModal') &&
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName));
+    }
+
     function barPresetDiscountAmount(order, percentage) {
       return Math.round(barOrderSubtotal(order) * Number(percentage || 0)) / 100;
     }
@@ -20277,22 +20290,15 @@
       const lastIndex = values.length - 1;
       if (editedIndex < 0 || editedIndex >= lastIndex) return;
       const totalCents = Math.round(barCheckoutFinalTotal(order) * 100);
-      const otherEditableCents = values.reduce(function (sum, amount, index) {
-        if (index === editedIndex || index === lastIndex) return sum;
-        return sum + Math.round(Number(amount || 0) * 100);
-      }, 0);
-      const maxEditedCents = Math.max(0, totalCents - otherEditableCents);
       const requestedEditedCents = Math.max(0, Math.round(Number(editedValue || 0) * 100));
-      const editedCents = Math.min(maxEditedCents, requestedEditedCents);
+      const editedCents = requestedEditedCents;
       values[editedIndex] = editedCents / 100;
       const editableTotalCents = values.reduce(function (sum, amount, index) {
         return index === lastIndex ? sum : sum + Math.round(Number(amount || 0) * 100);
       }, 0);
       values[lastIndex] = Math.max(0, totalCents - editableTotalCents) / 100;
       opsState.barCheckoutSplitValues = values;
-      const editedInput = document.querySelector('[data-bar-split-amount="' + editedIndex + '"]');
       const remainderInput = document.querySelector('[data-bar-split-amount="' + lastIndex + '"]');
-      if (editedInput && editedCents !== requestedEditedCents) editedInput.value = values[editedIndex].toFixed(2).replace('.', ',');
       if (remainderInput) remainderInput.value = values[lastIndex].toFixed(2).replace('.', ',');
       syncBarCheckoutSplitBalance(order);
     }
@@ -20336,7 +20342,7 @@
           return '<option value="' + option[0] + '"' + (option[0] === selectedMethod ? ' selected' : '') + '>' + option[1] + '</option>';
         }).join('');
         const amountValue = Number(amount || 0).toFixed(2).replace('.', ',');
-        return '<div class="bar-checkout-split-row"><div class="bar-checkout-split-person"><strong>Pessoa ' + (index + 1) + '</strong><small>' + (automaticRemainder ? 'Restante calculado automaticamente' : 'Parte ' + (index + 1) + ' de ' + count) + '</small></div><label class="bar-checkout-split-amount-field"><span>' + (automaticRemainder ? 'Restante automático' : 'Valor') + '</span><span class="bar-checkout-split-money' + (automaticRemainder ? ' is-automatic' : '') + '"><span aria-hidden="true">R$</span><input class="bar-checkout-split-amount-input" data-bar-split-amount="' + index + '" inputmode="decimal" autocomplete="off" value="' + amountValue + '" aria-label="Valor pago pela pessoa ' + (index + 1) + '"' + (automaticRemainder ? ' readonly' : '') + ' /></span></label><label class="bar-checkout-split-method-field"><span>Forma de pagamento</span><select data-bar-split-method="' + index + '" aria-label="Forma de pagamento da pessoa ' + (index + 1) + '">' + options + '</select></label></div>';
+        return '<div class="bar-checkout-split-row"><div class="bar-checkout-split-person"><strong>Pessoa ' + (index + 1) + '</strong><small>' + (automaticRemainder ? 'Restante calculado automaticamente' : 'Parte ' + (index + 1) + ' de ' + count) + '</small></div><label class="bar-checkout-split-amount-field"><span>' + (automaticRemainder ? 'Restante automático' : 'Valor') + '</span><span class="bar-checkout-split-money' + (automaticRemainder ? ' is-automatic' : '') + '"><span aria-hidden="true">R$</span><input class="bar-checkout-split-amount-input" data-bar-split-amount="' + index + '" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" spellcheck="false" value="' + amountValue + '" aria-label="Valor pago pela pessoa ' + (index + 1) + '"' + (automaticRemainder ? ' readonly' : '') + ' /></span></label><label class="bar-checkout-split-method-field"><span>Forma de pagamento</span><select data-bar-split-method="' + index + '" aria-label="Forma de pagamento da pessoa ' + (index + 1) + '">' + options + '</select></label></div>';
       }).join('') : '';
       if (enabled) syncBarCheckoutSplitBalance(order);
       const closeLabel = $('barOrderCloseBtn').querySelector('span');
@@ -20687,7 +20693,7 @@
           if (!document.body.classList.contains('club-bar') || isAdminDemoMode()) return;
           loadBarData(true).then(function () {
             renderBarModule();
-            if (opsState.selectedBarOrderId) renderBarCommandModal();
+            if (opsState.selectedBarOrderId && !barCommandModalHasActiveEditor()) renderBarCommandModal();
           }).catch(reportActionError);
         }, 4000);
       }
@@ -23516,7 +23522,7 @@
       try {
         await loadBarData(true);
         renderBarModule();
-        if (opsState.selectedBarOrderId) renderBarCommandModal();
+        if (opsState.selectedBarOrderId && !barCommandModalHasActiveEditor()) renderBarCommandModal();
         label.textContent = 'Atualizado';
         if (navigator.vibrate) navigator.vibrate(30);
       } catch (error) {
@@ -24203,19 +24209,41 @@
       $('barCheckoutSplitRows').addEventListener('input', function (event) {
         const input = event.target.closest('[data-bar-split-amount]');
         if (!input || input.readOnly) return;
+        input.removeAttribute('data-bar-split-select-all');
+        const draftValue = barCheckoutSplitDraftValue(input.value);
+        if (draftValue === null) {
+          const balance = $('barCheckoutSplitBalance');
+          balance.classList.remove('is-valid', 'is-invalid');
+          balance.textContent = 'Digite um valor válido, como 55 ou 55,50.';
+          return;
+        }
         const index = Number(input.dataset.barSplitAmount);
         rebalanceBarCheckoutSplitRemainder(
           barOrderById(opsState.selectedBarOrderId),
           index,
-          barCommandMoneyValue(input.value)
+          draftValue
         );
+      });
+      $('barCheckoutSplitRows').addEventListener('focusin', function (event) {
+        const input = event.target.closest('[data-bar-split-amount]');
+        if (!input || input.readOnly) return;
+        input.setAttribute('data-bar-split-select-all', 'true');
+        requestAnimationFrame(function () { input.select(); });
+      });
+      $('barCheckoutSplitRows').addEventListener('pointerup', function (event) {
+        const input = event.target.closest('[data-bar-split-amount]');
+        if (!input || input.readOnly || input.getAttribute('data-bar-split-select-all') !== 'true') return;
+        event.preventDefault();
+        input.select();
+        input.removeAttribute('data-bar-split-select-all');
       });
       $('barCheckoutSplitRows').addEventListener('change', function (event) {
         const amountInput = event.target.closest('[data-bar-split-amount]');
         if (amountInput && !amountInput.readOnly) {
           const order = barOrderById(opsState.selectedBarOrderId);
           const index = Number(amountInput.dataset.barSplitAmount);
-          rebalanceBarCheckoutSplitRemainder(order, index, barCommandMoneyValue(amountInput.value));
+          const draftValue = barCheckoutSplitDraftValue(amountInput.value);
+          if (draftValue !== null) rebalanceBarCheckoutSplitRemainder(order, index, draftValue);
           const values = barCheckoutSplitAmounts(order);
           amountInput.value = Number(values[index] || 0).toFixed(2).replace('.', ',');
           return;
