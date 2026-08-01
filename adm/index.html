@@ -3613,6 +3613,11 @@
       padding-block: 6px;
     }
 
+    .bar-table-card.is-loose .bar-table-card-actions .bar-whatsapp-charge {
+      min-height: 36px;
+      padding-block: 6px;
+    }
+
     .bar-table-command-summary span,
     .bar-table-command-summary strong {
       display: block;
@@ -3642,6 +3647,69 @@
       width: 100%;
       min-height: 40px;
       justify-content: center;
+    }
+
+    .bar-table-card-actions.has-charge .primary-btn {
+      width: auto;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .bar-whatsapp-charge {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex: 0 0 auto;
+      padding: 7px 11px;
+      border: 1px solid #91d7a8;
+      border-radius: 10px;
+      color: #166534;
+      background: #ecfdf3;
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .bar-whatsapp-charge:hover {
+      border-color: #22a652;
+      color: #ffffff;
+      background: #22a652;
+    }
+
+    .bar-whatsapp-charge[hidden],
+    .bar-command-contact > [hidden] {
+      display: none;
+    }
+
+    .bar-whatsapp-charge svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .bar-command-contact .bar-whatsapp-charge {
+      min-height: 30px;
+      padding: 5px 9px;
+      color: #166534;
+      border-color: #91d7a8;
+      background: #ecfdf3;
+      text-decoration: none;
+    }
+
+    .bar-command-contact .bar-whatsapp-charge:hover {
+      color: #ffffff;
+      border-color: #22a652;
+      background: #22a652;
+      text-decoration: none;
     }
 
     .bar-table-page,
@@ -8964,6 +9032,11 @@
       padding-block: 5px;
     }
 
+    .bar-command-board-panel.is-command-screen .bar-table-card-actions .bar-whatsapp-charge {
+      min-height: 34px;
+      padding-block: 5px;
+    }
+
     .bar-command-board-panel.is-command-screen .bar-table-card:not(.is-open),
     .bar-command-board-panel.is-command-screen .bar-command-board-empty,
     .bar-command-board-panel.is-command-screen [data-bar-go="tables"] {
@@ -10659,6 +10732,12 @@
       body.bar-admin-surface .bar-table-card-actions button {
         min-height: 31px;
         padding: 5px;
+        font-size: 9px;
+      }
+
+      body.bar-admin-surface .bar-table-card-actions .bar-whatsapp-charge {
+        min-height: 31px;
+        padding: 5px 7px;
         font-size: 9px;
       }
 
@@ -12935,7 +13014,7 @@
                 </div>
                 <div class="bar-command-head-badges"><span id="barCommandStatus"></span><button class="bar-command-delete" type="button" id="barOrderDeleteBtn">Excluir</button><button class="bar-team-discount" type="button" id="barTeamDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Equipe</span><small>-35%</small></button><button class="bar-team-discount" type="button" id="barProfessorDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Professor</span><small>-10%</small></button><span class="ops-pill warn" id="barCommandLocation">Avulsa</span></div>
               </div>
-              <div class="bar-command-contact" id="barCommandModalSubtitle"></div>
+              <div class="bar-command-contact"><span id="barCommandModalSubtitle"></span><a class="bar-whatsapp-charge" id="barOrderChargeBtn" href="#" target="_blank" rel="noopener" hidden><svg><use href="#admin-icon-phone"></use></svg>Cobrar no WhatsApp</a></div>
             </div>
           </div>
           <button class="bar-command-close" type="button" id="barCommandModalClose" aria-label="Fechar comanda"><svg><use href="#bar-icon-close"></use></svg></button>
@@ -16971,6 +17050,7 @@
     const LESSONS_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrcXRncHRlYmtnZndndXlreGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzEyNjAsImV4cCI6MjA5NzcwNzI2MH0.S-dopp-fbBgq8_YclyiAheOdK-QhXt92RYLu8JKmKCg';
     const IS_BAR_ADMIN_SURFACE = /^\/admbar(?:\/|$)/.test(window.location.pathname) || new URLSearchParams(window.location.search).get('surface') === 'bar';
     const BAR_LAUNCH_TAB = new URLSearchParams(window.location.search).get('tab') === 'kitchen' ? 'kitchen' : 'orders';
+    const BAR_PIX_KEY = 'ilhateniscolatina@gmail.com';
     const lessonDays = [
       { key: 'segunda', label: 'SEG' },
       { key: 'terca', label: 'TER' },
@@ -18906,6 +18986,53 @@
       return digits && !digits.startsWith('55') && digits.length <= 11 ? '55' + digits : digits;
     }
 
+    function barChargeMessage(order) {
+      const items = barActiveItemsForOrder(order.id);
+      const customer = barOrderCustomerDetails(order, items);
+      const groupedItems = [];
+      const groupedByProduct = new Map();
+      items.forEach(function (item) {
+        const key = String(item.productName || 'Produto') + '|' + Number(item.unitPrice || 0).toFixed(2);
+        let group = groupedByProduct.get(key);
+        if (!group) {
+          group = { name: item.productName || 'Produto', quantity: 0, total: 0 };
+          groupedByProduct.set(key, group);
+          groupedItems.push(group);
+        }
+        group.quantity += Number(item.quantity || 0);
+        group.total += Number(item.quantity || 0) * Number(item.unitPrice || 0);
+      });
+      const itemLines = groupedItems.map(function (item) {
+        return '• ' + item.quantity.toLocaleString('pt-BR') + 'x ' + item.name + ' — ' + money(item.total);
+      });
+      const message = [
+        'Olá, ' + customer.name + '! Tudo bem?',
+        '',
+        'Ficou um valor pendente da sua comanda no Ilha Bar:',
+        ''
+      ];
+      if (itemLines.length) message.push.apply(message, itemLines);
+      else message.push('• Consumo registrado na comanda');
+      message.push(
+        '',
+        'Total pendente: ' + money(barOrderTotal(order)),
+        '',
+        'Você pode realizar o pagamento via Pix:',
+        BAR_PIX_KEY,
+        '',
+        'Após o pagamento, por favor envie o comprovante por aqui. Obrigado!'
+      );
+      return message.join('\n');
+    }
+
+    function barChargeWhatsAppUrl(order) {
+      const items = barActiveItemsForOrder(order.id);
+      const customer = barOrderCustomerDetails(order, items);
+      const phone = barPhoneWhatsApp(customer.phone);
+      if (!phone || phone.length < 12 || barOrderTotal(order) <= 0) return '';
+      return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(barChargeMessage(order));
+    }
+
     function rememberBarCustomerLocally(name, phone, lastOrderAt) {
       const cleanName = String(name || '').trim().replace(/\s+/g, ' ');
       const cleanPhone = barPhoneDigits(phone);
@@ -19020,12 +19147,14 @@
     function barLooseOrderCard(order) {
       const card = barAccessCardById(order.publicAccessId);
       const phone = order.customerPhone ? '<span><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(order.customerPhone)) + '</span>' : '';
+      const chargeUrl = barChargeWhatsAppUrl(order);
+      const chargeButton = chargeUrl ? '<a class="bar-whatsapp-charge" href="' + escapeHtml(chargeUrl) + '" target="_blank" rel="noopener" title="Enviar cobrança pelo WhatsApp"><svg><use href="#admin-icon-phone"></use></svg><span>Cobrar</span></a>' : '';
       const commandStatus = String(order.status || '').toUpperCase() === 'ABERTA' ? '<span class="ops-pill good">Aberta</span>' : barStatusPill(order.status);
       return '<article class="bar-table-card is-open is-loose">' +
         '<div class="bar-table-card-top bar-table-card-person"><div class="bar-table-card-person-identity"><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3></div><div class="bar-table-card-badges">' + commandStatus + '<span class="ops-pill warn">Avulsa</span></div></div>' +
         '<div class="bar-table-card-meta bar-table-card-person-meta">' + phone + '</div>' +
         '<div class="bar-table-command-summary bar-table-command-total"><span>Total</span><strong>' + money(barOrderTotal(order)) + '</strong></div>' +
-        '<div class="bar-table-card-actions"><button class="primary-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button></div>' +
+        '<div class="bar-table-card-actions' + (chargeButton ? ' has-charge' : '') + '"><button class="primary-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button>' + chargeButton + '</div>' +
       '</article>';
     }
 
@@ -20537,6 +20666,9 @@
       $('barCommandModalTitle').textContent = customer.name;
       $('barCommandModalSubtitle').innerHTML = contactBits.join('');
       $('barCommandModalSubtitle').hidden = !contactBits.length;
+      const chargeUrl = barOrderIsOpen(order) ? barChargeWhatsAppUrl(order) : '';
+      $('barOrderChargeBtn').hidden = !chargeUrl;
+      $('barOrderChargeBtn').href = chargeUrl || '#';
       $('barCommandStatus').innerHTML = String(order.status || '').toUpperCase() === 'ABERTA' ? '<span class="ops-pill good">Aberta</span>' : barStatusPill(order.status);
       $('barCommandItemsCount').textContent = itemQuantity;
       $('barCheckoutItemCount').textContent = itemQuantity;
