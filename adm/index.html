@@ -8592,6 +8592,7 @@
       color: #4b6b00;
     }
 
+    .bar-kitchen-ready-panel,
     .bar-kitchen-delivered-panel,
     .bar-kitchen-previous-panel {
       margin-top: 10px;
@@ -8599,12 +8600,14 @@
       overflow: hidden;
     }
 
+    .bar-kitchen-ready-panel > .bar-collapsible-summary,
     .bar-kitchen-delivered-panel > .bar-collapsible-summary,
     .bar-kitchen-previous-panel > .bar-collapsible-summary {
       margin: 0;
       border-radius: 14px 14px 0 0;
     }
 
+    .bar-kitchen-ready-panel:not([open]) > .bar-collapsible-summary,
     .bar-kitchen-delivered-panel:not([open]) > .bar-collapsible-summary,
     .bar-kitchen-previous-panel:not([open]) > .bar-collapsible-summary {
       border-radius: 14px;
@@ -12293,15 +12296,16 @@
               </div>
               <div class="bar-kitchen-list" id="barKitchenQueue"></div>
             </section>
-            <section class="ops-panel bar-kitchen-panel bar-kitchen-ready-panel" id="barKitchenReadyPanel" hidden>
-              <div class="ops-panel-head">
+            <details class="ops-panel bar-kitchen-panel bar-collapsible-panel bar-kitchen-ready-panel" id="barKitchenReadyPanel" open hidden>
+              <summary class="ops-panel-head bar-collapsible-summary">
                 <div><h2>Prontos para entregar</h2><div class="muted">Retire daqui somente depois de entregar ao cliente.</div></div>
                 <div class="bar-kitchen-head-metrics">
                   <div class="bar-kitchen-metric is-ready"><span>Prontos hoje</span><strong id="barKitchenReadyMetric">0</strong></div>
+                  <span class="bar-collapse-control" aria-hidden="true"><span class="bar-collapse-label"></span><span class="bar-collapse-chevron"></span></span>
                 </div>
-              </div>
+              </summary>
               <div class="bar-kitchen-list" id="barKitchenReadyQueue"></div>
-            </section>
+            </details>
             <details class="ops-panel bar-collapsible-panel bar-kitchen-previous-panel" id="barKitchenPreviousPanel" hidden>
               <summary class="ops-panel-head bar-collapsible-summary">
                 <div><h2>Pendências anteriores</h2><div class="muted" id="barKitchenPreviousCount">Nenhuma pendência anterior</div></div>
