@@ -235,7 +235,7 @@
       line-height: 1;
     }
 
-    .menu-contact-phone {
+    .menu-control-clock {
       min-height: 36px;
       display: none;
       align-items: center;
@@ -248,16 +248,22 @@
       font-size: 10px;
       font-weight: 900;
       white-space: nowrap;
+      font-variant-numeric: tabular-nums;
     }
 
-    body[data-menu-layout="vertical"] .menu-contact-phone {
+    body[data-menu-layout="vertical"] .menu-control-clock {
       display: inline-flex;
     }
 
-    .menu-contact-phone-icon {
+    .menu-control-clock-icon {
       color: var(--lime);
       font-size: 15px;
       line-height: 1;
+    }
+
+    .menu-control-clock strong {
+      font-size: 12px;
+      letter-spacing: .02em;
     }
 
     .menu-board {
@@ -674,7 +680,7 @@
 
       body[data-menu-layout="vertical"] .menu-view-icon { font-size: 15px; }
 
-      body[data-menu-layout="vertical"] .menu-contact-phone {
+      body[data-menu-layout="vertical"] .menu-control-clock {
         min-height: 29px;
         padding: 0 9px;
         font-size: 10px;
@@ -770,7 +776,7 @@
           <button class="menu-view-btn" type="button" data-menu-theme="light" aria-label="Tema claro" title="Tema claro" aria-pressed="false"><span class="menu-view-icon" aria-hidden="true">☀</span><span class="menu-view-label">Claro</span></button>
           <button class="menu-view-btn" type="button" data-menu-theme="dark" aria-label="Tema escuro" title="Tema escuro" aria-pressed="false"><span class="menu-view-icon" aria-hidden="true">◐</span><span class="menu-view-label">Escuro</span></button>
           <button class="menu-view-btn" type="button" id="menuFullscreenBtn" aria-label="Ativar tela cheia" title="Tela cheia" aria-pressed="false"><span class="menu-view-icon" aria-hidden="true">⛶</span><span class="menu-view-label" id="menuFullscreenLabel">Tela cheia</span></button>
-          <span class="menu-contact-phone" aria-label="Telefone do Ilha Tênis: (27) 99531-2150"><span class="menu-contact-phone-icon" aria-hidden="true">☎</span>(27) 99531-2150</span>
+          <span class="menu-control-clock" aria-label="Hora atual"><span class="menu-control-clock-icon" aria-hidden="true">◷</span><strong id="menuControlClock">--:--</strong></span>
         </div>
         <div class="menu-clock" aria-label="Data e hora"><strong id="menuClock">--:--</strong><span id="menuDate">Carregando...</span></div>
       </div>
@@ -1030,7 +1036,9 @@
 
       function updateClock() {
         const now = new Date();
-        document.getElementById('menuClock').textContent = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const timeLabel = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('menuClock').textContent = timeLabel;
+        document.getElementById('menuControlClock').textContent = timeLabel;
         document.getElementById('menuDate').textContent = now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
       }
 
