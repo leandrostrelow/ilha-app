@@ -13124,7 +13124,7 @@
                 <div class="bar-command-identity-copy">
                   <div class="bar-command-name-row"><h2 id="barCommandModalTitle">Cliente</h2><button class="bar-command-edit-name" type="button" id="barOrderEditNameBtn"><svg><use href="#bar-icon-edit"></use></svg><span>Editar dados</span></button></div>
                 </div>
-                <div class="bar-command-head-badges"><span id="barCommandStatus"></span><button class="bar-command-delete" type="button" id="barOrderDeleteBtn">Excluir</button><button class="bar-team-discount" type="button" id="barTeamDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Equipe</span><small>-35%</small></button><button class="bar-team-discount" type="button" id="barProfessorDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Professor</span><small>-10%</small></button><span class="ops-pill warn" id="barCommandLocation">Avulsa</span></div>
+                <div class="bar-command-head-badges"><span id="barCommandStatus"></span><button class="bar-command-delete" type="button" id="barOrderDeleteBtn">Excluir</button><button class="bar-team-discount" type="button" id="barTeamDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Equipe</span><small>-35%</small></button><button class="bar-team-discount" type="button" id="barProfessorDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Professor</span><small>-10%</small></button></div>
               </div>
               <div class="bar-command-contact"><span id="barCommandModalSubtitle"></span><a class="bar-whatsapp-charge" id="barOrderChargeBtn" href="#" target="_blank" rel="noopener" hidden><svg><use href="#admin-icon-phone"></use></svg>Cobrar no WhatsApp</a></div>
             </div>
@@ -19261,9 +19261,8 @@
       const phone = order.customerPhone ? '<span><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(order.customerPhone)) + '</span>' : '';
       const chargeUrl = barChargeWhatsAppUrl(order);
       const chargeButton = chargeUrl ? '<a class="bar-whatsapp-charge" href="' + escapeHtml(chargeUrl) + '" target="_blank" rel="noopener" title="Enviar cobrança pelo WhatsApp"><svg><use href="#admin-icon-phone"></use></svg><span>Cobrar</span></a>' : '';
-      const commandStatus = String(order.status || '').toUpperCase() === 'ABERTA' ? '<span class="ops-pill good">Aberta</span>' : barStatusPill(order.status);
       return '<article class="bar-table-card is-open is-loose">' +
-        '<div class="bar-table-card-top bar-table-card-person"><div class="bar-table-card-person-identity"><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3></div><div class="bar-table-card-badges">' + commandStatus + '<span class="ops-pill warn">Avulsa</span></div></div>' +
+        '<div class="bar-table-card-top bar-table-card-person"><div class="bar-table-card-person-identity"><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3></div></div>' +
         '<div class="bar-table-card-meta bar-table-card-person-meta">' + phone + '</div>' +
         '<div class="bar-table-command-summary bar-table-command-total"><span>Total</span><strong>' + money(barOrderTotal(order)) + '</strong></div>' +
         '<div class="bar-table-card-actions' + (chargeButton ? ' has-charge' : '') + '"><button class="primary-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button>' + chargeButton + '</div>' +
@@ -20834,8 +20833,6 @@
       if (phoneDigits) contactBits.push('<a href="https://wa.me/' + escapeHtml(barPhoneWhatsApp(phoneDigits)) + '" target="_blank" rel="noopener"><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(phoneDigits)) + '</a>');
       if (customer.names.length > 1) contactBits.push('<span><svg><use href="#admin-icon-users"></use></svg>' + escapeHtml(customer.names.length + ' pessoas nesta comanda') + '</span>');
 
-      $('barCommandLocation').textContent = table ? customer.location : 'Avulsa';
-      $('barCommandLocation').className = 'ops-pill ' + (table ? '' : 'warn');
       $('barCommandModalTitle').textContent = customer.name;
       $('barCommandModalSubtitle').innerHTML = contactBits.join('');
       $('barCommandModalSubtitle').hidden = !contactBits.length;
