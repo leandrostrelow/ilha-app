@@ -10885,12 +10885,19 @@
     /* AdmBar mobile: compact, touch friendly and safe-area aware. */
     @media (max-width: 700px) {
       html {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+        overflow-x: clip;
         background: #eef3f5;
       }
 
       body.bar-admin-surface {
+        width: 100%;
+        max-width: 100%;
         min-width: 0;
         overflow-x: hidden;
+        overflow-x: clip;
         padding-bottom: env(safe-area-inset-bottom);
         overscroll-behavior-y: contain;
       }
@@ -10907,9 +10914,13 @@
       }
 
       body.bar-admin-surface .app {
+        width: 100%;
+        max-width: 100dvw;
         min-width: 0;
         display: grid;
         grid-template-columns: minmax(0, 1fr);
+        overflow-x: hidden;
+        overflow-x: clip;
         border-top: 0;
       }
 
@@ -10919,11 +10930,15 @@
         z-index: 80;
         min-height: 0;
         width: 100%;
-        max-width: 100vw;
+        max-width: 100dvw;
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         gap: 7px;
-        padding: max(8px, env(safe-area-inset-top)) 9px 7px;
+        padding:
+          max(8px, env(safe-area-inset-top))
+          max(9px, env(safe-area-inset-right))
+          7px
+          max(9px, env(safe-area-inset-left));
         overflow: hidden;
         border: 0;
         border-bottom: 1px solid #21474d;
@@ -10966,14 +10981,16 @@
       body.bar-admin-surface .admin-sidebar-nav,
       body.bar-admin-surface.club-bar .admin-sidebar-nav {
         width: 100%;
+        max-width: calc(100dvw - 18px);
         min-width: 0;
         display: flex;
         gap: 6px;
-        padding: 0 0 2px;
+        padding: 0 12px 2px 0;
         overflow-x: auto;
         overscroll-behavior-x: contain;
         scrollbar-width: none;
         scroll-snap-type: x proximity;
+        scroll-padding-inline: 0 12px;
       }
 
       body.bar-admin-surface .admin-sidebar-nav::-webkit-scrollbar {
@@ -10984,23 +11001,23 @@
       body.bar-admin-surface.club-bar .admin-nav-btn {
         width: auto;
         min-width: max-content;
-        min-height: 40px;
+        min-height: 38px;
         flex: 0 0 auto;
-        grid-template-columns: 24px auto;
-        gap: 6px;
-        padding: 5px 9px;
+        grid-template-columns: 22px auto;
+        gap: 4px;
+        padding: 4px 7px;
         border-color: rgba(255, 255, 255, .08);
         border-radius: 10px;
         color: #dce8e9;
         background: rgba(255, 255, 255, .06);
-        font-size: 11px;
+        font-size: 10px;
         box-shadow: none;
         scroll-snap-align: start;
       }
 
       body.bar-admin-surface .admin-nav-btn[data-bar-side-tab="orders"],
       body.bar-admin-surface .admin-nav-btn[data-bar-side-tab="kitchen"] {
-        grid-template-columns: 24px auto auto;
+        grid-template-columns: 22px auto auto;
       }
 
       body.bar-admin-surface .admin-nav-btn:hover,
@@ -11015,8 +11032,8 @@
       body.bar-admin-surface .admin-nav-icon,
       body.bar-admin-surface .admin-nav-btn:hover .admin-nav-icon,
       body.bar-admin-surface .admin-nav-btn.active .admin-nav-icon {
-        width: 24px;
-        height: 24px;
+        width: 22px;
+        height: 22px;
         border: 0;
         border-radius: 7px;
         color: var(--lime);
@@ -11024,14 +11041,29 @@
       }
 
       body.bar-admin-surface .admin-nav-icon svg {
-        width: 15px;
-        height: 15px;
+        width: 14px;
+        height: 14px;
+      }
+
+      body.bar-admin-surface .admin-nav-badge {
+        min-width: 19px;
+        height: 19px;
+        padding: 0 5px;
+        font-size: 8px;
       }
 
       body.bar-admin-surface .app > :not(.admin-sidebar),
       body.bar-admin-surface.club-bar .app > :not(.admin-sidebar) {
+        width: 100%;
+        max-width: 100dvw;
         min-width: 0;
-        padding: 8px;
+        padding:
+          8px
+          max(8px, env(safe-area-inset-right))
+          8px
+          max(8px, env(safe-area-inset-left));
+        overflow-x: hidden;
+        overflow-x: clip;
       }
 
       body.bar-admin-surface .bar-module .ops-content {
@@ -11083,7 +11115,7 @@
         grid-column: 1 / -1;
         width: 100%;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto auto;
+        grid-template-columns: minmax(0, 1fr) minmax(88px, auto) 40px;
         gap: 7px;
       }
 
@@ -11154,21 +11186,56 @@
       }
 
       body.bar-admin-surface .bar-table-card.is-loose.bar-loose-order-link {
-        min-height: 48px;
+        min-height: 58px;
         padding: 0;
       }
 
       body.bar-admin-surface .bar-loose-order-action {
-        min-height: 48px;
-        padding: 9px 10px;
+        min-height: 58px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto;
+        align-content: center;
+        align-items: center;
+        gap: 3px;
+        padding: 8px 10px;
       }
 
       body.bar-admin-surface .bar-loose-order-name {
-        font-size: 14px;
+        width: 100%;
+        display: block;
+        overflow: hidden;
+        font-size: 13px;
+        line-height: 1.08;
+        white-space: nowrap;
+        overflow-wrap: normal;
+        text-overflow: ellipsis;
+        -webkit-line-clamp: initial;
+      }
+
+      body.bar-admin-surface .bar-loose-order-meta {
+        width: 100%;
+        min-width: 0;
+        justify-content: flex-end;
+        gap: 4px;
       }
 
       body.bar-admin-surface .bar-loose-order-link .bar-table-card-inline-total {
-        font-size: 12px;
+        font-size: 11px;
+      }
+
+      html.bar-standalone body.bar-admin-surface .admin-sidebar {
+        gap: 5px;
+        padding-top: max(6px, env(safe-area-inset-top));
+      }
+
+      html.bar-standalone body.bar-admin-surface .admin-sidebar-brand {
+        min-height: 28px;
+      }
+
+      html.bar-standalone body.bar-admin-surface .admin-sidebar-brand img {
+        width: min(104px, 34vw);
+        max-height: 30px;
       }
 
       body.bar-admin-surface .bar-kitchen-panel > .ops-panel-head:first-child {
@@ -25277,6 +25344,10 @@
       return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     }
 
+    function syncBarStandaloneMode() {
+      document.documentElement.classList.toggle('bar-standalone', barAppIsInstalled());
+    }
+
     function updateBarInstallButtons() {
       const canOffer = IS_BAR_ADMIN_SURFACE && !barAppIsInstalled() && (Boolean(deferredBarInstallPrompt) || /Android/i.test(navigator.userAgent));
       ['adminInstallBtn', 'barInstallAppBtn'].forEach(function (id) {
@@ -25303,6 +25374,7 @@
     }
 
     function initBarPwaInstall() {
+      syncBarStandaloneMode();
       window.addEventListener('beforeinstallprompt', function (event) {
         event.preventDefault();
         deferredBarInstallPrompt = event;
@@ -25310,11 +25382,15 @@
       });
       window.addEventListener('appinstalled', function () {
         deferredBarInstallPrompt = null;
+        syncBarStandaloneMode();
         updateBarInstallButtons();
         toast('Ilha Bar instalado com sucesso.');
       });
       const displayMode = window.matchMedia('(display-mode: standalone)');
-      if (displayMode.addEventListener) displayMode.addEventListener('change', updateBarInstallButtons);
+      if (displayMode.addEventListener) displayMode.addEventListener('change', function () {
+        syncBarStandaloneMode();
+        updateBarInstallButtons();
+      });
       ['adminInstallBtn', 'barInstallAppBtn'].forEach(function (id) {
         const button = $(id);
         if (button) button.addEventListener('click', installBarAppAction);
