@@ -18581,6 +18581,7 @@
       selectedBarQrLabel: '',
       barAlertsEnabled: localStorage.getItem('ilha-bar-alerts-enabled') === 'true',
       barKnownIncomingIds: null,
+      barBootstrapPrepared: false,
       barDataLoaded: false,
       barSchemaReady: true,
       barDataLoading: false,
@@ -19225,6 +19226,21 @@
       };
     }
 
+    function prepareBarProductionBootstrap() {
+      if (isAdminDemoMode() || opsState.barBootstrapPrepared) return;
+      opsState.barBootstrapPrepared = true;
+      opsData.barProducts = [];
+      opsData.barTables = [];
+      opsData.barOrders = [];
+      opsData.barOrderItems = [];
+      opsData.barInventory = [];
+      opsData.barFinance = [];
+      opsData.barAccessCards = [];
+      opsData.barEvents = [];
+      opsData.barCustomers = [];
+      opsState.barKnownIncomingIds = null;
+    }
+
     async function loadBarData(force) {
       if (!adminSession || !adminSession.access_token) return;
       if (isAdminDemoMode()) {
@@ -19232,6 +19248,7 @@
         opsState.barSchemaReady = false;
         return;
       }
+      prepareBarProductionBootstrap();
       if (opsState.barDataLoaded && !force) return;
       if (opsState.barDataLoading) return;
       opsState.barDataLoading = true;
@@ -21432,8 +21449,11 @@
       const boardCards = looseOrders.map(barLooseOrderCard).concat(visibleTables.map(barTableCard)).join('');
       const visibleBusyTables = visibleTables.filter(function (table) { return Boolean(barOrderForTable(table.id)); });
       const hasSearch = Boolean(String(opsState.barCommandSearch || '').trim());
-      const emptyLabel = hasSearch ? 'Nenhuma comanda encontrada.' : 'Nenhuma mesa ou comanda aberta.';
-      const screenEmpty = looseOrders.length || visibleBusyTables.length
+      const isInitialBarLoad = !isAdminDemoMode() && !opsState.barDataLoaded;
+      const emptyLabel = isInitialBarLoad
+        ? (opsState.barLoadError ? 'Reconectando ao sistema...' : 'Carregando comandas...')
+        : (hasSearch ? 'Nenhuma comanda encontrada.' : 'Nenhuma mesa ou comanda aberta.');
+      const screenEmpty = isInitialBarLoad || looseOrders.length || visibleBusyTables.length
         ? ''
         : '<div class="lesson-empty-state bar-command-screen-empty">' + escapeHtml(hasSearch ? 'Nenhuma comanda encontrada.' : 'Nenhuma comanda aberta.') + '</div>';
       $('barTableBoard').innerHTML = (boardCards || '<div class="lesson-empty-state bar-command-board-empty">' + escapeHtml(emptyLabel) + '</div>') + screenEmpty;
@@ -22282,6 +22302,7 @@
       }
       opsState.barTab = BAR_LAUNCH_TAB;
       setClubMode('club-bar');
+      prepareBarProductionBootstrap();
       renderBarModule();
       loadBarData(false).then(function () {
         renderBarModule();
@@ -23943,6 +23964,7 @@
       sessionStorage.removeItem('ilha-admin-authenticated');
       sessionStorage.removeItem(ADMIN_DEMO_SESSION_KEY);
       opsState.barKnownIncomingIds = null;
+      opsState.barBootstrapPrepared = false;
       opsState.barDataLoaded = false;
     }
 
