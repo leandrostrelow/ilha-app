@@ -929,10 +929,11 @@
       white-space: nowrap;
     }
 
-    .menu-mobile-category-link:first-child {
+    .menu-mobile-category-link.is-active {
       border-color: #a8d84f;
       background: #eaf8c8;
       color: #355509;
+      box-shadow: inset 0 0 0 1px rgba(121, 171, 32, .14);
     }
 
     html[data-menu-display="mobile"] .menu-board {
@@ -940,6 +941,7 @@
       display: block;
       padding: 10px;
       overflow: visible;
+      scroll-margin-top: 126px;
     }
 
     html[data-menu-display="mobile"] .menu-column {
@@ -1062,6 +1064,7 @@
       let lastPayload = '';
       let refreshInFlight = false;
       let currentProducts = [];
+      let activeCategoryFilter = 'all';
       let resizeTimer = 0;
 
       function escapeHtml(value) {
@@ -1125,8 +1128,16 @@
           navigation.innerHTML = '';
           return;
         }
-        navigation.innerHTML = groups.map(function (group) {
-          return '<a class="menu-mobile-category-link" href="#' + categoryId(group.category) + '">' + escapeHtml(group.category) + '</a>';
+        const availableFilters = groups.map(function (group) { return categoryId(group.category); });
+        if (activeCategoryFilter !== 'all' && !availableFilters.includes(activeCategoryFilter)) {
+          activeCategoryFilter = 'all';
+        }
+        const filters = [{ id: 'all', label: 'Todos' }].concat(groups.map(function (group) {
+          return { id: categoryId(group.category), label: group.category };
+        }));
+        navigation.innerHTML = filters.map(function (filter) {
+          const active = filter.id === activeCategoryFilter;
+          return '<button class="menu-mobile-category-link' + (active ? ' is-active' : '') + '" type="button" data-menu-category-filter="' + escapeHtml(filter.id) + '" aria-pressed="' + String(active) + '">' + escapeHtml(filter.label) + '</button>';
         }).join('');
       }
 
@@ -1271,10 +1282,13 @@
         currentProducts = products.slice();
         const groups = sortedGroups(products);
         renderMobileCategories(groups);
+        const visibleGroups = MOBILE_MENU_VIEW && activeCategoryFilter !== 'all'
+          ? groups.filter(function (group) { return categoryId(group.category) === activeCategoryFilter; })
+          : groups;
         const isDesktop = !MOBILE_MENU_VIEW && window.innerWidth >= 720;
         const columnCount = isDesktop ? (document.body.dataset.menuLayout === 'horizontal' ? 3 : 2) : 1;
         document.documentElement.style.setProperty('--menu-columns', columnCount);
-        const columns = columnCount === 1 ? [groups] : distributeGroups(groups, columnCount);
+        const columns = columnCount === 1 ? [visibleGroups] : distributeGroups(visibleGroups, columnCount);
         board.innerHTML = columns.map(function (groups) {
           return '<div class="menu-column">' + groups.map(categoryHtml).join('') + '</div>';
         }).join('');
@@ -1351,6 +1365,13 @@
         button.addEventListener('click', function () { setMenuTheme(button.dataset.menuTheme); });
       });
       document.getElementById('menuFullscreenBtn').addEventListener('click', toggleFullscreen);
+      document.getElementById('menuMobileCategories').addEventListener('click', function (event) {
+        const button = event.target.closest('[data-menu-category-filter]');
+        if (!button) return;
+        activeCategoryFilter = button.dataset.menuCategoryFilter || 'all';
+        render(currentProducts);
+        document.getElementById('menuBoard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
       document.addEventListener('fullscreenchange', function () {
         syncFullscreenButton();
         requestAnimationFrame(fitMenuToViewport);
