@@ -3367,10 +3367,27 @@
     }
 
     .bar-order-card {
-      display: grid;
-      gap: 12px;
-      padding: 14px;
+      width: 100%;
+      min-width: 0;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
       border-top: 3px solid var(--teal);
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      appearance: none;
+      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+
+    .bar-order-card:hover,
+    .bar-order-card:focus-visible {
+      border-color: var(--teal);
+      box-shadow: 0 8px 20px rgba(8, 84, 93, .14);
+      outline: 0;
+      transform: translateY(-1px);
     }
 
     .bar-order-card.is-ready {
@@ -3397,6 +3414,44 @@
     .bar-item-row strong {
       display: block;
       font-size: 14px;
+    }
+
+    .bar-order-card .bar-order-top {
+      width: 100%;
+      min-width: 0;
+      justify-content: flex-start;
+      gap: 7px;
+    }
+
+    .bar-order-card .bar-order-top strong {
+      min-width: 0;
+      overflow: hidden;
+      color: #17243b;
+      font-size: clamp(15px, 1.15vw, 18px);
+      font-weight: 900;
+      line-height: 1.1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-order-card-value {
+      flex: 0 0 auto;
+      color: var(--teal);
+      font-size: 11px;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    .bar-order-card-paid {
+      flex: 0 0 auto;
+      margin-left: auto;
+      padding: 3px 6px;
+      border-radius: 999px;
+      color: #4f6808;
+      background: #eff9c9;
+      font-size: 9px;
+      font-weight: 950;
+      text-transform: uppercase;
     }
 
     .bar-order-number {
@@ -3450,6 +3505,71 @@
     .bar-table-card.is-loose.is-paid-open {
       border-color: #8ebd10;
       background: #fbfff1;
+    }
+
+    .bar-loose-order-link {
+      width: 100%;
+      min-height: 0;
+      align-self: start;
+      padding: 5px;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      appearance: none;
+      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+
+    .bar-loose-order-link:hover,
+    .bar-loose-order-link:focus-visible {
+      border-color: var(--teal);
+      outline: 0;
+      box-shadow: 0 8px 20px rgba(8, 84, 93, .16);
+      transform: translateY(-1px);
+    }
+
+    .bar-loose-order-action {
+      width: 100%;
+      min-width: 0;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 11px;
+      border-radius: 9px;
+      background: linear-gradient(105deg, #0eb649, #11aaa9);
+      color: #ffffff;
+      box-shadow: 0 7px 15px rgba(12, 164, 110, .14);
+    }
+
+    .bar-loose-order-name {
+      min-width: 0;
+      overflow: hidden;
+      font-size: 17px;
+      font-weight: 950;
+      line-height: 1.05;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-loose-order-meta {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .bar-loose-order-link .bar-table-card-inline-total {
+      color: rgba(255, 255, 255, .9);
+      font-size: 10px;
+    }
+
+    .bar-loose-order-link .bar-paid-open-pill {
+      margin: 0;
+      border-color: rgba(255, 255, 255, .45);
+      color: #385300;
+      background: #e8faa9;
     }
 
     .bar-table-card.is-loose h3 {
@@ -10901,6 +11021,24 @@
         border-radius: 10px;
       }
 
+      body.bar-admin-surface .bar-table-card.is-loose.bar-loose-order-link {
+        min-height: 0;
+        padding: 4px;
+      }
+
+      body.bar-admin-surface .bar-loose-order-action {
+        min-height: 38px;
+        padding: 7px 8px;
+      }
+
+      body.bar-admin-surface .bar-loose-order-name {
+        font-size: 13px;
+      }
+
+      body.bar-admin-surface .bar-loose-order-link .bar-table-card-inline-total {
+        font-size: 9px;
+      }
+
       body.bar-admin-surface .bar-kitchen-panel > .ops-panel-head:first-child {
         grid-template-columns: minmax(0, 1fr);
         align-items: stretch;
@@ -11622,6 +11760,10 @@
       body.bar-admin-surface .bar-table-card,
       body.bar-admin-surface .bar-table-card.is-loose {
         min-height: 104px;
+      }
+
+      body.bar-admin-surface .bar-table-card.is-loose.bar-loose-order-link {
+        min-height: 0;
       }
 
       body.bar-admin-surface .bar-product-list {
@@ -12498,6 +12640,8 @@
 
       .bar-order-cart-quantity {
         grid-column: 2;
+        width: 96px;
+        justify-self: center;
       }
 
       .bar-order-cart-remove {
@@ -12512,13 +12656,61 @@
       }
 
       .bar-order-cart-details.has-location {
-        grid-template-columns: minmax(106px, .7fr) minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr);
       }
 
       .bar-order-cart-total {
         position: absolute;
         pointer-events: none;
         opacity: 0;
+      }
+
+      .bar-order-cart-list {
+        max-height: min(42vh, 310px);
+      }
+
+      .bar-order-cart-row {
+        grid-template-columns: minmax(0, 1fr) 34px;
+        gap: 7px;
+        padding: 8px;
+      }
+
+      .bar-order-cart-product {
+        grid-column: 1;
+        grid-row: 1;
+        min-height: 30px;
+        justify-content: center;
+        text-align: center;
+      }
+
+      .bar-order-cart-product strong {
+        max-width: 100%;
+        font-size: 12px;
+      }
+
+      .bar-order-cart-remove {
+        grid-column: 2;
+        grid-row: 1;
+      }
+
+      .bar-order-cart-quantity {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        width: 122px;
+        height: 34px;
+        justify-self: center;
+      }
+
+      .bar-order-cart-details,
+      .bar-order-cart-details.has-location {
+        grid-column: 1 / -1;
+        grid-row: 3;
+      }
+
+      .bar-order-cart-details input,
+      .bar-order-cart-details select {
+        height: 36px;
+        font-size: 12px;
       }
 
       .bar-menu-admin-page {
@@ -18833,8 +19025,8 @@
         const results = await Promise.all([
           supabaseRest('bar_products?select=*&order=category.asc,name.asc'),
           supabaseRest('bar_tables?select=*&order=number.asc'),
-          supabaseRest('bar_orders?select=*,bar_tables(number,name)&order=opened_at.desc'),
-          supabaseRest('bar_order_items?select=*,bar_products(category)&order=created_at.desc,id.desc'),
+          supabaseRestAll('bar_orders?select=*,bar_tables(number,name)&order=opened_at.desc,id.desc'),
+          supabaseRestAll('bar_order_items?select=*,bar_products(category)&order=created_at.desc,id.desc'),
           supabaseRest('bar_inventory_movements?select=*&order=occurred_at.desc&limit=200'),
           supabaseRest('bar_financial_entries?select=*&order=created_at.desc'),
           supabaseRest('bar_public_cards?select=*&order=code.asc'),
@@ -19814,15 +20006,10 @@
     }
 
     function barOrderCard(order) {
-      const items = barActiveItemsForOrder(order.id);
-      const pending = items.filter(function (item) { return ['SOLICITADO', 'EM_PREPARO'].includes(item.status); }).length;
-      const sourceMeta = order.source && order.source !== 'EQUIPE' ? ' | ' + barOrderSourceLabel(order.source) : '';
-      const customerMeta = order.customerName && order.customerName !== barTableLabel(order) ? ' | ' + order.customerName : '';
-      return '<article class="bar-order-card' + (order.status === 'PRONTA' ? ' is-ready' : '') + '">' +
-        '<div class="bar-order-top"><div><strong>' + escapeHtml(barTableLabel(order)) + '</strong><span class="bar-order-number">Comanda #' + escapeHtml(order.commandNumber || String(order.id).slice(-4)) + '</span></div>' + barStatusPill(order.status) + '</div>' +
-        '<div class="muted">' + items.length + ' item(ns)' + (pending ? ' | ' + pending + ' aguardando' : '') + escapeHtml(customerMeta + sourceMeta) + (order.openedAt ? ' | ' + escapeHtml(barDateTimeLabel(order.openedAt)) : '') + '</div>' +
-        '<div class="bar-order-total"><strong>' + money(barOrderTotal(order)) + '</strong><button class="small-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button></div>' +
-      '</article>';
+      const paid = barOrderIsPaid(order);
+      return '<button class="bar-order-card' + (order.status === 'PRONTA' ? ' is-ready' : '') + '" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(barTableLabel(order)) + '">' +
+        '<span class="bar-order-top"><strong>' + escapeHtml(barTableLabel(order)) + '</strong><span class="bar-order-card-value">' + money(barOrderTotal(order)) + '</span>' + (paid ? '<span class="bar-order-card-paid">Pago</span>' : '') + '</span>' +
+      '</button>';
     }
 
     function barPhoneDigits(value) {
@@ -20018,10 +20205,10 @@
     function barLooseOrderCard(order) {
       const card = barAccessCardById(order.publicAccessId);
       const paidOpen = barOrderIsPaid(order);
-      return '<article class="bar-table-card is-open is-loose' + (paidOpen ? ' is-paid-open' : '') + '">' +
-        '<div class="bar-table-card-top bar-table-card-person"><div class="bar-table-card-person-identity"><div class="bar-table-card-person-heading"><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3><span class="bar-table-card-inline-total">' + money(barOrderTotal(order)) + '</span></div>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago · falta encerrar</span>' : '') + '</div></div>' +
-        '<div class="bar-table-card-actions"><button class="primary-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button></div>' +
-      '</article>';
+      const customerName = order.customerName || card && card.label || 'Cliente';
+      return '<button class="bar-table-card is-open is-loose bar-loose-order-link' + (paidOpen ? ' is-paid-open' : '') + '" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '">' +
+        '<span class="bar-loose-order-action"><strong class="bar-loose-order-name">' + escapeHtml(customerName) + '</strong><span class="bar-loose-order-meta"><span class="bar-table-card-inline-total">' + money(barOrderTotal(order)) + '</span>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + '</span></span>' +
+      '</button>';
     }
 
     function barTableManagementCard(table) {
@@ -23635,6 +23822,10 @@
       const headers = supabaseHeaders(options.auth !== false);
       if (options.body !== undefined) headers['Content-Type'] = 'application/json';
       if (options.prefer) headers.Prefer = options.prefer;
+      if (options.range) {
+        headers.Range = options.range;
+        headers['Range-Unit'] = 'items';
+      }
       const response = await fetch(supabaseBaseUrl() + '/rest/v1/' + path, {
         method: options.method || 'GET',
         headers: headers,
@@ -23648,6 +23839,7 @@
         if (!response.ok) throw new Error('Falha temporária de conexão. Tentaremos novamente.');
       }
       if (!response.ok) {
+        if (response.status === 416 && options.range) return [];
         if (response.status === 401 && !options.authRetried && adminSession && adminSession.refresh_token) {
           await refreshAdminSession(adminSession);
           return supabaseRest(path, Object.assign({}, options, { authRetried: true }));
@@ -23656,6 +23848,20 @@
         throw new Error(message || 'Falha ao conversar com o Supabase.');
       }
       return data;
+    }
+
+    async function supabaseRestAll(path, pageSize) {
+      const size = Math.max(100, Math.min(1000, Number(pageSize || 500)));
+      const rows = [];
+      let from = 0;
+      while (true) {
+        const page = await supabaseRest(path, { range: from + '-' + (from + size - 1) });
+        const batch = Array.isArray(page) ? page : [];
+        rows.push.apply(rows, batch);
+        if (batch.length < size) break;
+        from += size;
+      }
+      return rows;
     }
 
     async function supabaseInsert(table, row) {
