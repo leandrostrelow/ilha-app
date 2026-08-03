@@ -3479,6 +3479,26 @@
       flex: 1 1 auto;
     }
 
+    .bar-table-card-person-heading {
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+    }
+
+    .bar-table-card-person-heading h3 {
+      flex: 0 1 auto;
+    }
+
+    .bar-table-card-inline-total {
+      flex: 0 0 auto;
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 950;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
     .bar-paid-open-pill {
       min-height: 18px;
       display: inline-flex;
@@ -10959,6 +10979,14 @@
         min-height: 0;
         font-size: 14px;
         line-height: 1.02;
+      }
+
+      body.bar-admin-surface .bar-table-card-person-heading {
+        gap: 5px;
+      }
+
+      body.bar-admin-surface .bar-table-card-inline-total {
+        font-size: 10px;
       }
 
       body.bar-admin-surface .bar-table-card-badges {
@@ -19447,7 +19475,7 @@
       const card = barAccessCardById(order.publicAccessId);
       const paidOpen = barOrderIsPaid(order);
       return '<article class="bar-table-card is-open is-loose' + (paidOpen ? ' is-paid-open' : '') + '">' +
-        '<div class="bar-table-card-top bar-table-card-person"><div class="bar-table-card-person-identity"><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago · falta encerrar</span>' : '') + '</div></div>' +
+        '<div class="bar-table-card-top bar-table-card-person"><div class="bar-table-card-person-identity"><div class="bar-table-card-person-heading"><h3>' + escapeHtml(order.customerName || card && card.label || 'Cliente') + '</h3><span class="bar-table-card-inline-total">' + money(barOrderTotal(order)) + '</span></div>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago · falta encerrar</span>' : '') + '</div></div>' +
         '<div class="bar-table-card-actions"><button class="primary-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir comanda</button></div>' +
       '</article>';
     }
