@@ -4721,6 +4721,23 @@
       padding: 5px 9px;
     }
 
+    .bar-command-header-total {
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      padding: 5px 9px;
+      border: 1px solid #b8dce1;
+      border-radius: 8px;
+      color: var(--teal);
+      background: #eef8f9;
+      font-size: 12px;
+      font-weight: 950;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
     .bar-command-head-badges {
       flex: 0 0 auto;
       display: flex;
@@ -5288,7 +5305,7 @@
     .bar-order-product-grid {
       max-height: 330px;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(122px, 1fr));
       gap: 9px;
       overflow: auto;
       padding: 2px;
@@ -5298,10 +5315,10 @@
     .bar-order-product-card {
       position: relative;
       min-width: 0;
-      min-height: 148px;
+      min-height: 126px;
       overflow: hidden;
       display: grid;
-      grid-template-rows: 82px minmax(0, 1fr);
+      grid-template-rows: 70px minmax(0, 1fr);
       padding: 0;
       border: 1px solid #d7e3e6;
       border-radius: 10px;
@@ -5369,29 +5386,13 @@
       height: 31px;
     }
 
-    .bar-order-product-card-status {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      padding: 3px 6px;
-      border-radius: 999px;
-      color: #416000;
-      background: #effbcf;
-      font-size: 8px;
-      font-weight: 950;
-    }
-
-    .bar-order-product-card-status.out {
-      color: #9b2f3d;
-      background: #fff0f1;
-    }
-
     .bar-order-product-card-copy {
       min-width: 0;
       display: grid;
       align-content: space-between;
-      gap: 7px;
-      padding: 8px 9px 9px;
+      gap: 5px;
+      padding: 7px 8px 8px;
+      text-align: center;
     }
 
     .bar-order-product-card-copy strong {
@@ -5407,23 +5408,14 @@
 
     .bar-order-product-card-meta {
       display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 6px;
+      align-items: center;
+      justify-content: center;
     }
 
     .bar-order-product-card-meta b {
       color: var(--teal);
       font-size: 13px;
-    }
-
-    .bar-order-product-card-meta small {
-      overflow: hidden;
-      color: var(--muted);
-      font-size: 9px;
-      font-weight: 800;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      text-align: center;
     }
 
     .bar-order-product-picker-empty {
@@ -11399,6 +11391,12 @@
         font-size: 9px;
       }
 
+      body.bar-admin-surface .bar-command-header-total {
+        min-height: 28px;
+        padding: 5px 7px;
+        font-size: 10px;
+      }
+
       body.bar-admin-surface .bar-command-head-badges {
         max-width: none;
         justify-content: flex-start;
@@ -11477,13 +11475,13 @@
       }
 
       body.bar-admin-surface .bar-order-product-card {
-        min-height: 96px;
-        grid-template-rows: 59px 37px;
+        min-height: 88px;
+        grid-template-rows: 52px 36px;
         border-radius: 7px;
       }
 
       body.bar-admin-surface .bar-order-product-card-media {
-        min-height: 59px;
+        min-height: 52px;
         background: #ffffff;
       }
 
@@ -11505,10 +11503,6 @@
         transform: scale(1.08);
       }
 
-      body.bar-admin-surface .bar-order-product-card-status {
-        display: none;
-      }
-
       body.bar-admin-surface .bar-order-product-card-copy {
         gap: 1px;
         padding: 3px 5px 4px;
@@ -11525,10 +11519,6 @@
 
       body.bar-admin-surface .bar-order-product-card-meta b {
         font-size: 9px;
-      }
-
-      body.bar-admin-surface .bar-order-product-card-meta small {
-        display: none;
       }
 
       body.bar-admin-surface .bar-command-product-preview {
@@ -13339,7 +13329,7 @@
             <div class="bar-command-identity">
               <div class="bar-command-identity-top">
                 <div class="bar-command-identity-copy">
-                  <div class="bar-command-name-row"><h2 id="barCommandModalTitle">Cliente</h2><button class="bar-command-edit-name" type="button" id="barOrderEditNameBtn" aria-label="Editar contato" title="Editar contato"><svg><use href="#bar-icon-edit"></use></svg></button><a class="bar-whatsapp-charge" id="barOrderChargeBtn" href="#" target="_blank" rel="noopener" hidden><svg><use href="#admin-icon-phone"></use></svg>Cobrar no WhatsApp</a></div>
+                  <div class="bar-command-name-row"><h2 id="barCommandModalTitle">Cliente</h2><button class="bar-command-edit-name" type="button" id="barOrderEditNameBtn" aria-label="Editar contato" title="Editar contato"><svg><use href="#bar-icon-edit"></use></svg></button><span class="bar-command-header-total" id="barCommandHeaderTotal" aria-label="Total da comanda" aria-live="polite">R$ 0,00</span><a class="bar-whatsapp-charge" id="barOrderChargeBtn" href="#" target="_blank" rel="noopener" hidden><svg><use href="#admin-icon-phone"></use></svg>Cobrar no WhatsApp</a></div>
                 </div>
                 <div class="bar-command-head-badges"><span id="barCommandStatus"></span><button class="bar-command-delete" type="button" id="barOrderDeleteBtn">Excluir</button><button class="bar-team-discount" type="button" id="barTeamDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Equipe</span><small>-35%</small></button><button class="bar-team-discount" type="button" id="barProfessorDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Professor</span><small>-10%</small></button></div>
               </div>
@@ -20910,8 +20900,10 @@
       order = order || barOrderById(opsState.selectedBarOrderId);
       if (!order) return;
       const subtotal = barOrderSubtotal(order);
+      const finalTotal = barCheckoutFinalTotal(order);
       $('barCheckoutSubtotal').textContent = money(subtotal);
-      $('barCheckoutTotal').textContent = money(barCheckoutFinalTotal(order));
+      $('barCheckoutTotal').textContent = money(finalTotal);
+      $('barCommandHeaderTotal').textContent = money(finalTotal);
       renderBarCheckoutSplit(order);
       syncBarPresetDiscountButtons(order);
     }
@@ -21006,10 +20998,9 @@
         const media = imageSource
           ? '<img src="' + escapeHtml(imageSource) + '" alt="' + escapeHtml(product.name) + '" loading="eager" decoding="async" fetchpriority="high" sizes="(max-width: 700px) 33vw, 160px" data-bar-order-product-image /><span class="bar-order-product-card-placeholder ' + categoryKey + ' is-fallback">' + barProductCategoryIcon(product.category) + '</span>'
           : placeholder;
-        const stockLabel = available ? stock.toLocaleString('pt-BR') + ' ' + (product.unit || 'un') : 'Sem estoque';
         return '<button class="bar-order-product-card is-' + escapeHtml(categoryKey) + (selected ? ' is-selected' : '') + '" type="button" data-bar-order-product="' + escapeHtml(product.id) + '" role="option" aria-selected="' + (selected ? 'true' : 'false') + '"' + (available ? '' : ' disabled') + '>' +
-          '<span class="bar-order-product-card-media">' + media + '<span class="bar-order-product-card-status' + (available ? '' : ' out') + '">' + escapeHtml(available ? stock.toLocaleString('pt-BR') + ' em estoque' : 'Sem estoque') + '</span></span>' +
-          '<span class="bar-order-product-card-copy"><strong>' + escapeHtml(product.name) + '</strong><span class="bar-order-product-card-meta"><b>' + money(product.salePrice) + '</b><small>' + stockLabel + '</small></span></span></button>';
+          '<span class="bar-order-product-card-media">' + media + '</span>' +
+          '<span class="bar-order-product-card-copy"><strong>' + escapeHtml(product.name) + '</strong><span class="bar-order-product-card-meta"><b>' + money(product.salePrice) + '</b></span></span></button>';
       }).join('') || '<div class="lesson-empty-state bar-order-product-picker-empty">Nenhum produto encontrado.</div>';
       grid.querySelectorAll('img[data-bar-order-product-image]').forEach(function (image) {
         image.addEventListener('error', function () {
@@ -21054,7 +21045,7 @@
         : '<span class="bar-command-product-icon">' + barProductCategoryIcon(product.category) + '</span>';
       preview.hidden = false;
       preview.className = 'bar-command-product-preview';
-      preview.innerHTML = media + '<div class="bar-command-product-copy"><strong>' + escapeHtml(product.name) + '</strong><span>' + escapeHtml((product.category || 'Produto') + ' | ' + Number(product.stock || 0).toLocaleString('pt-BR') + ' ' + (product.unit || 'unidade') + ' em estoque') + '</span></div><div class="bar-command-product-price"><span>' + escapeHtml(quantity + (quantity === 1 ? ' item' : ' itens')) + '</span><strong>' + money(Number(product.salePrice || 0) * quantity) + '</strong></div>';
+      preview.innerHTML = media + '<div class="bar-command-product-copy"><strong>' + escapeHtml(product.name) + '</strong><span>' + escapeHtml(product.category || 'Produto') + '</span></div><div class="bar-command-product-price"><span>' + escapeHtml(quantity + (quantity === 1 ? ' item' : ' itens')) + '</span><strong>' + money(Number(product.salePrice || 0) * quantity) + '</strong></div>';
       const image = preview.querySelector('[data-bar-order-preview-image]');
       if (image) image.addEventListener('error', function () {
         const holder = image.parentElement;
@@ -21142,6 +21133,7 @@
       }).join('') || '<div class="lesson-empty-state">Nenhum item ativo nesta comanda.</div>';
 
       $('barCommandTotal').textContent = money(barOrderTotal(order));
+      $('barCommandHeaderTotal').textContent = money(barOrderTotal(order));
       $('barCheckoutSubtotal').textContent = money(barOrderSubtotal(order));
       $('barOrderItemForm').style.display = editable ? 'grid' : 'none';
       $('barCommandAddTab').hidden = !editable;
