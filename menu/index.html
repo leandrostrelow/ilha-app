@@ -7,6 +7,13 @@
   <meta name="robots" content="noindex, nofollow" />
   <title>Cardápio do Bar | Ilha Tênis</title>
   <link rel="icon" href="../icons/ilha-bar-192.png" sizes="192x192" />
+  <script>
+    (function () {
+      if (new URLSearchParams(window.location.search).get('view') === 'mobile') {
+        document.documentElement.dataset.menuDisplay = 'mobile';
+      }
+    })();
+  </script>
   <style>
     :root {
       color-scheme: light;
@@ -433,6 +440,10 @@
       font-weight: 850;
     }
 
+    .menu-mobile-categories {
+      display: none;
+    }
+
     .menu-live {
       display: inline-flex;
       align-items: center;
@@ -758,6 +769,228 @@
       .menu-product-price { font-size: 19px; }
       .menu-footer { padding-inline: 12px; }
     }
+
+    html[data-menu-display="mobile"] {
+      scroll-behavior: smooth;
+      scroll-padding-top: 126px;
+    }
+
+    html[data-menu-display="mobile"],
+    html[data-menu-display="mobile"] body {
+      min-height: 100%;
+      overflow: visible;
+    }
+
+    html[data-menu-display="mobile"] .menu-stage {
+      width: 100%;
+      max-width: 620px;
+      min-height: 100svh;
+      grid-template-rows: auto auto 1fr auto;
+      background: rgba(246, 250, 250, .96);
+      box-shadow: 0 0 44px rgba(20, 44, 58, .12);
+    }
+
+    html[data-menu-display="mobile"] body[data-menu-theme="dark"] .menu-stage {
+      background: #0b1728;
+    }
+
+    html[data-menu-display="mobile"] .menu-header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      grid-template-columns: 62px minmax(0, 1fr) auto;
+      min-height: 82px;
+      gap: 11px;
+      padding: max(9px, env(safe-area-inset-top)) 12px 9px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(14, 31, 54, .16);
+    }
+
+    html[data-menu-display="mobile"] .menu-header::after {
+      right: -90px;
+      bottom: -145px;
+      width: 250px;
+      height: 250px;
+    }
+
+    html[data-menu-display="mobile"] .menu-brand {
+      width: 62px;
+      height: 54px;
+      padding: 6px;
+      border-radius: 11px;
+    }
+
+    html[data-menu-display="mobile"] .menu-kicker {
+      margin-bottom: 1px;
+      font-size: 8px;
+    }
+
+    html[data-menu-display="mobile"] .menu-heading h1 {
+      font-size: 25px;
+      line-height: 1;
+    }
+
+    html[data-menu-display="mobile"] .menu-heading p,
+    html[data-menu-display="mobile"] .menu-clock,
+    html[data-menu-display="mobile"] .menu-view-btn[data-menu-layout],
+    html[data-menu-display="mobile"] #menuFullscreenBtn,
+    html[data-menu-display="mobile"] .menu-control-clock {
+      display: none;
+    }
+
+    html[data-menu-display="mobile"] .menu-header-tools {
+      grid-column: auto;
+      width: auto;
+      justify-items: end;
+    }
+
+    html[data-menu-display="mobile"] .menu-view-controls {
+      width: auto;
+      flex-wrap: nowrap;
+      gap: 3px;
+      padding: 3px;
+      border-radius: 10px;
+    }
+
+    html[data-menu-display="mobile"] .menu-view-btn[data-menu-theme] {
+      position: relative;
+      min-width: 33px;
+      min-height: 33px;
+      flex: 0 0 33px;
+      padding: 0;
+    }
+
+    html[data-menu-display="mobile"] .menu-view-btn[data-menu-theme] .menu-view-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    html[data-menu-display="mobile"] .menu-mobile-categories {
+      position: sticky;
+      top: 82px;
+      z-index: 20;
+      display: flex;
+      gap: 7px;
+      padding: 8px 10px;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--line);
+      background: rgba(247, 250, 250, .96);
+      box-shadow: 0 5px 14px rgba(20, 44, 58, .07);
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    html[data-menu-display="mobile"] .menu-mobile-categories::-webkit-scrollbar {
+      display: none;
+    }
+
+    html[data-menu-display="mobile"] body[data-menu-theme="dark"] .menu-mobile-categories {
+      background: rgba(11, 23, 40, .96);
+    }
+
+    .menu-mobile-category-link {
+      flex: 0 0 auto;
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 900;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .menu-mobile-category-link:first-child {
+      border-color: #a8d84f;
+      background: #eaf8c8;
+      color: #355509;
+    }
+
+    html[data-menu-display="mobile"] .menu-board {
+      min-height: 0;
+      display: block;
+      padding: 10px;
+      overflow: visible;
+    }
+
+    html[data-menu-display="mobile"] .menu-column {
+      display: grid;
+      gap: 10px;
+    }
+
+    html[data-menu-display="mobile"] .menu-category {
+      scroll-margin-top: 132px;
+      border-radius: 15px;
+      box-shadow: 0 7px 18px rgba(22, 49, 62, .07);
+    }
+
+    html[data-menu-display="mobile"] .menu-category-head {
+      min-height: 45px;
+      padding: 9px 12px;
+    }
+
+    html[data-menu-display="mobile"] .menu-category-head h2 {
+      font-size: 18px;
+    }
+
+    html[data-menu-display="mobile"] .menu-category-head > span {
+      font-size: 9px;
+    }
+
+    html[data-menu-display="mobile"] .menu-product {
+      min-height: 76px;
+      height: 76px;
+      grid-template-columns: 60px minmax(0, 1fr) auto;
+      gap: 9px;
+      padding: 7px 10px 7px 7px;
+    }
+
+    html[data-menu-display="mobile"] .menu-product-image {
+      width: 60px;
+      height: 60px;
+      border-radius: 10px;
+    }
+
+    html[data-menu-display="mobile"] .menu-product-copy h3 {
+      display: -webkit-box;
+      overflow: hidden;
+      font-size: 15px;
+      line-height: 1.16;
+      text-overflow: clip;
+      white-space: normal;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    html[data-menu-display="mobile"] .menu-product-price {
+      font-size: 18px;
+    }
+
+    html[data-menu-display="mobile"] .menu-footer {
+      min-height: 42px;
+      padding: 9px 12px max(11px, env(safe-area-inset-bottom));
+      font-size: 9px;
+    }
+
+    @media (max-width: 374px) {
+      html[data-menu-display="mobile"] .menu-heading h1 { font-size: 22px; }
+      html[data-menu-display="mobile"] .menu-product { grid-template-columns: 54px minmax(0, 1fr) auto; }
+      html[data-menu-display="mobile"] .menu-product-image { width: 54px; height: 54px; }
+      html[data-menu-display="mobile"] .menu-product-copy h3 { font-size: 14px; }
+      html[data-menu-display="mobile"] .menu-product-price { font-size: 16px; }
+    }
   </style>
 </head>
 <body data-menu-theme="light">
@@ -782,6 +1015,8 @@
       </div>
     </header>
 
+    <nav class="menu-mobile-categories" id="menuMobileCategories" aria-label="Categorias do cardápio"></nav>
+
     <main class="menu-board" id="menuBoard" aria-live="polite">
       <div class="menu-state"><div><strong>Carregando o cardápio</strong><span>Os produtos aparecerão em instantes.</span></div></div>
     </main>
@@ -803,6 +1038,7 @@
       const CATEGORY_PRIORITY = ['almocos', 'cervejas', 'porcoes', 'lanches', 'refrigerantes', 'aguas', 'bebidas'];
       const LAYOUT_KEY = 'ilha-menu-layout-v1';
       const THEME_KEY = 'ilha-menu-theme-v1';
+      const MOBILE_MENU_VIEW = new URLSearchParams(window.location.search).get('view') === 'mobile';
       let lastPayload = '';
       let refreshInFlight = false;
       let currentProducts = [];
@@ -852,6 +1088,28 @@
         });
       }
 
+      function categoryId(category) {
+        const id = normalize(category).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        return 'categoria-' + (id || 'outros');
+      }
+
+      function sortedGroups(products) {
+        return groupProducts(products).sort(function (a, b) {
+          return categoryRank(a.category) - categoryRank(b.category) || a.category.localeCompare(b.category, 'pt-BR');
+        });
+      }
+
+      function renderMobileCategories(groups) {
+        const navigation = document.getElementById('menuMobileCategories');
+        if (!MOBILE_MENU_VIEW) {
+          navigation.innerHTML = '';
+          return;
+        }
+        navigation.innerHTML = groups.map(function (group) {
+          return '<a class="menu-mobile-category-link" href="#' + categoryId(group.category) + '">' + escapeHtml(group.category) + '</a>';
+        }).join('');
+      }
+
       function distributeGroups(groups, columnCount) {
         const columns = Array.from({ length: columnCount }, function () { return []; });
         const heights = Array.from({ length: columnCount }, function () { return 0; });
@@ -871,6 +1129,7 @@
       }
 
       function initialMenuLayout() {
+        if (MOBILE_MENU_VIEW) return 'vertical';
         const requestedLayout = new URLSearchParams(window.location.search).get('layout');
         if (requestedLayout === 'vertical' || requestedLayout === 'horizontal') return requestedLayout;
         try {
@@ -932,7 +1191,7 @@
 
       function fitMenuToViewport() {
         const root = document.documentElement;
-        if (window.innerWidth < 720) {
+        if (MOBILE_MENU_VIEW || window.innerWidth < 720) {
           ['--menu-product-height', '--menu-image-size', '--menu-name-size', '--menu-price-size', '--menu-category-height'].forEach(function (property) {
             root.style.removeProperty(property);
           });
@@ -979,20 +1238,23 @@
           ? '<small>Imagens meramente ilustrativas</small>'
           : '';
         const countLabel = group.products.length + (group.products.length === 1 ? ' opção' : ' opções');
-        return '<section class="menu-category"><header class="menu-category-head"><div class="menu-category-title"><h2>' + escapeHtml(group.category) + '</h2>' + illustrativeNote + '</div><span>' + countLabel + '</span></header><div class="menu-products">' + group.products.map(productHtml).join('') + '</div></section>';
+        return '<section class="menu-category" id="' + categoryId(group.category) + '"><header class="menu-category-head"><div class="menu-category-title"><h2>' + escapeHtml(group.category) + '</h2>' + illustrativeNote + '</div><span>' + countLabel + '</span></header><div class="menu-products">' + group.products.map(productHtml).join('') + '</div></section>';
       }
 
       function render(products) {
         const board = document.getElementById('menuBoard');
         if (!products.length) {
+          renderMobileCategories([]);
           board.innerHTML = '<div class="menu-state"><div><strong>Cardápio em atualização</strong><span>Nenhum produto está publicado neste momento.</span></div></div>';
           return;
         }
         currentProducts = products.slice();
-        const isDesktop = window.innerWidth >= 720;
+        const groups = sortedGroups(products);
+        renderMobileCategories(groups);
+        const isDesktop = !MOBILE_MENU_VIEW && window.innerWidth >= 720;
         const columnCount = isDesktop ? (document.body.dataset.menuLayout === 'horizontal' ? 3 : 2) : 1;
         document.documentElement.style.setProperty('--menu-columns', columnCount);
-        const columns = distributeGroups(groupProducts(products), columnCount);
+        const columns = columnCount === 1 ? [groups] : distributeGroups(groups, columnCount);
         board.innerHTML = columns.map(function (groups) {
           return '<div class="menu-column">' + groups.map(categoryHtml).join('') + '</div>';
         }).join('');
@@ -1056,6 +1318,10 @@
         syncFullscreenButton();
       }
 
+      if (MOBILE_MENU_VIEW) {
+        document.body.dataset.menuDisplay = 'mobile';
+        document.title = 'Cardápio Online | Ilha Bar';
+      }
       setMenuTheme(initialMenuTheme(), false);
       setMenuLayout(initialMenuLayout(), false);
       document.querySelectorAll('[data-menu-layout]').forEach(function (button) {

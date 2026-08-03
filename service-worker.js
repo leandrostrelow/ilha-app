@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v122';
+const CACHE_NAME = 'ilha-play-v123';
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,7 @@ const ASSETS = [
   './adm/index.html',
   './menu/',
   './menu/index.html',
+  './assets/ilha-bar-cardapio-qr.png',
   './admbar-manifest.json',
   './icons/ilha-bar-180.png',
   './icons/ilha-bar-192.png',

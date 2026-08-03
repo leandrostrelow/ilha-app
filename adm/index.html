@@ -12051,6 +12051,103 @@
       stroke-width: 2;
     }
 
+    .bar-menu-admin-actions {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .bar-menu-mobile-btn {
+      background: rgba(255, 255, 255, .12);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, .22);
+      box-shadow: none;
+    }
+
+    .bar-menu-mobile-btn:hover {
+      background: rgba(255, 255, 255, .2);
+    }
+
+    .bar-menu-qr-card {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 132px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 18px;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: #ffffff;
+      box-shadow: 0 12px 28px rgba(22, 49, 62, .06);
+    }
+
+    .bar-menu-qr-image {
+      width: 132px;
+      height: 132px;
+      display: block;
+      padding: 7px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #ffffff;
+    }
+
+    .bar-menu-qr-copy {
+      min-width: 0;
+    }
+
+    .bar-menu-qr-copy h3 {
+      margin: 0 0 5px;
+      color: var(--ink);
+      font-size: 20px;
+    }
+
+    .bar-menu-qr-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .bar-menu-qr-url {
+      display: block;
+      margin-top: 9px;
+      overflow: hidden;
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 900;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-menu-qr-actions {
+      display: grid;
+      gap: 8px;
+    }
+
+    .bar-menu-qr-actions a {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 15px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f7fafb;
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 900;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .bar-menu-qr-actions a:first-child {
+      border-color: #9ecf44;
+      background: #eaf8c8;
+      color: #355509;
+    }
+
     .bar-menu-admin-metrics {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -12933,6 +13030,32 @@
       .bar-menu-preview-btn {
         width: 100%;
         justify-content: center;
+      }
+
+      .bar-menu-admin-actions {
+        width: 100%;
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .bar-menu-qr-card {
+        grid-template-columns: 104px minmax(0, 1fr);
+        gap: 12px;
+        padding: 12px;
+      }
+
+      .bar-menu-qr-image {
+        width: 104px;
+        height: 104px;
+      }
+
+      .bar-menu-qr-copy h3 {
+        font-size: 17px;
+      }
+
+      .bar-menu-qr-actions {
+        grid-column: 1 / -1;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       .bar-menu-admin-metrics {
@@ -13963,14 +14086,30 @@
                   <h2>Cardápio da TV</h2>
                   <p>Escolha o que aparece, destaque itens e organize a ordem dentro de cada categoria.</p>
                 </div>
-                <a class="primary-btn bar-menu-preview-btn" href="/menu" target="_blank" rel="noopener"><svg><use href="#bar-icon-screen"></use></svg><span>Abrir cardápio</span></a>
+                <div class="bar-menu-admin-actions">
+                  <a class="primary-btn bar-menu-preview-btn" href="/menu" target="_blank" rel="noopener"><svg><use href="#bar-icon-screen"></use></svg><span>Abrir na TV</span></a>
+                  <a class="primary-btn bar-menu-preview-btn bar-menu-mobile-btn" href="/menu/?view=mobile" target="_blank" rel="noopener"><svg><use href="#admin-icon-phone"></use></svg><span>Cardápio celular</span></a>
+                </div>
               </div>
 
               <div class="bar-menu-admin-metrics">
-                <article><span>Na TV</span><strong id="barMenuVisibleMetric">0</strong></article>
+                <article><span>No cardápio</span><strong id="barMenuVisibleMetric">0</strong></article>
                 <article><span>Destaques</span><strong id="barMenuFeaturedMetric">0</strong></article>
                 <article><span>Ocultos</span><strong id="barMenuHiddenMetric">0</strong></article>
               </div>
+
+              <section class="bar-menu-qr-card" aria-labelledby="barMenuQrTitle">
+                <img class="bar-menu-qr-image" src="/assets/ilha-bar-cardapio-qr.png" alt="QR Code para abrir o cardápio online do Ilha Bar" />
+                <div class="bar-menu-qr-copy">
+                  <h3 id="barMenuQrTitle">QR Code das mesas</h3>
+                  <p>Imprima este código e coloque nas mesas. O cliente abre o cardápio no celular e vê os mesmos produtos e preços publicados na TV.</p>
+                  <span class="bar-menu-qr-url">app.ilhatenis.com/menu/?view=mobile</span>
+                </div>
+                <div class="bar-menu-qr-actions">
+                  <a href="/menu/?view=mobile" target="_blank" rel="noopener">Abrir no celular</a>
+                  <a href="/assets/ilha-bar-cardapio-qr.png" download="qr-code-cardapio-ilha-bar.png">Baixar QR Code</a>
+                </div>
+              </section>
 
               <section class="ops-panel bar-menu-editor-panel">
                 <div class="bar-menu-editor-toolbar">
