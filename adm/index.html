@@ -8716,6 +8716,10 @@
       border-top: 4px solid var(--teal);
     }
 
+    .bar-command-board-panel > .ops-panel-head:first-child {
+      background: linear-gradient(100deg, #159e54, #0f9fa4);
+    }
+
     .bar-command-board-title {
       min-width: 0;
       display: flex;
@@ -8732,10 +8736,11 @@
     }
 
     .bar-command-board-actions {
+      width: 100%;
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 8px;
     }
 
@@ -8746,7 +8751,7 @@
       flex: 1 1 240px;
       display: flex;
       align-items: center;
-      margin-left: auto;
+      margin-left: 0;
     }
 
     .bar-command-board-search svg {
@@ -8794,7 +8799,7 @@
     }
 
     .bar-command-board-actions .small-btn {
-      gap: 7px;
+      gap: 0;
     }
 
     .bar-command-board-actions .small-btn svg {
@@ -9297,9 +9302,18 @@
     }
 
     .bar-command-screen-btn {
+      width: 38px;
+      min-width: 38px;
+      min-height: 38px;
       display: inline-flex;
       align-items: center;
-      gap: 7px;
+      justify-content: center;
+      gap: 0;
+      padding: 0;
+    }
+
+    .bar-command-screen-btn span {
+      display: none;
     }
 
     .bar-command-screen-btn svg {
@@ -9700,13 +9714,23 @@
       .bar-command-board-search {
         width: 100%;
         max-width: none;
-        flex-basis: 100%;
         margin-left: 0;
       }
 
-      .bar-command-board-actions,
-      .bar-command-board-actions > * {
+      .bar-command-board-actions {
         width: 100%;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        gap: 7px;
+      }
+
+      .bar-command-board-actions > * {
+        width: auto;
+      }
+
+      .bar-command-board-actions .bar-command-board-search {
+        grid-column: 1 / -1;
+        grid-row: 2;
       }
 
       .bar-day-closing-filter {
@@ -10952,38 +10976,8 @@
       }
 
       body.bar-admin-surface .bar-command-board-panel > .ops-panel-head {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
+        display: block;
         align-items: center;
-      }
-
-      body.bar-admin-surface .bar-command-board-panel > .ops-panel-head > div:first-child {
-        grid-column: 1;
-      }
-
-      body.bar-admin-surface .bar-command-board-title {
-        grid-column: 1 / -1;
-        justify-content: space-between;
-        gap: 8px;
-      }
-
-      body.bar-admin-surface .bar-command-board-title .bar-command-day-closing {
-        width: auto;
-        min-height: 0;
-        display: inline-flex;
-        flex: 0 0 auto;
-        padding: 0;
-        border: 0;
-        background: transparent;
-      }
-
-      body.bar-admin-surface .bar-command-board-title .bar-command-day-closing small {
-        display: none;
-      }
-
-      body.bar-admin-surface .bar-command-board-title .bar-command-day-closing strong {
-        color: #dff3a8;
-        font-size: 15px;
       }
 
       body.bar-admin-surface .bar-command-board-search {
@@ -10997,16 +10991,39 @@
         grid-column: 1 / -1;
         width: 100%;
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr) auto auto;
         gap: 7px;
       }
 
       body.bar-admin-surface .bar-command-board-actions > button {
-        width: 100%;
+        width: auto;
         min-height: 40px;
         justify-content: center;
         padding: 7px 8px;
         font-size: 10px;
+      }
+
+      body.bar-admin-surface .bar-command-board-actions #barNewLooseOrderBtn {
+        width: 100%;
+      }
+
+      body.bar-admin-surface .bar-command-board-actions .bar-command-day-closing {
+        min-height: 40px;
+        padding: 6px 9px;
+      }
+
+      body.bar-admin-surface .bar-command-board-actions .bar-command-day-closing small {
+        font-size: 7px;
+      }
+
+      body.bar-admin-surface .bar-command-board-actions .bar-command-day-closing strong {
+        font-size: 13px;
+      }
+
+      body.bar-admin-surface .bar-command-board-actions .bar-command-screen-btn {
+        width: 40px;
+        min-width: 40px;
+        padding: 0;
       }
 
       body.bar-admin-surface #barClosedOrdersPanel > .bar-collapsible-summary {
@@ -13693,14 +13710,14 @@
           <div data-bar-panel="orders">
             <section class="ops-panel bar-command-board-panel" id="barCommandBoardPanel">
               <div class="ops-panel-head">
-                <div class="bar-command-board-title"><h2>Comanda</h2><div class="bar-command-day-closing" title="Valor previsto das comandas abertas"><small>Previsto</small><strong id="barOpenOrdersMetric">R$ 0,00</strong></div></div>
-                <label class="bar-command-board-search" for="barCommandSearch">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
-                  <input id="barCommandSearch" type="search" placeholder="Buscar por nome ou telefone" autocomplete="off" aria-label="Buscar comanda por nome ou telefone" />
-                </label>
                 <div class="bar-command-board-actions">
                   <button class="primary-btn bar-icon-button" type="button" id="barNewLooseOrderBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Nova comanda</span></button>
-                  <button class="small-btn bar-command-screen-btn" type="button" id="barCommandScreenBtn" aria-pressed="false"><svg><use href="#bar-icon-screen"></use></svg><span>Tela de comandas</span></button>
+                  <label class="bar-command-board-search" for="barCommandSearch">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                    <input id="barCommandSearch" type="search" placeholder="Buscar por nome ou telefone" autocomplete="off" aria-label="Buscar comanda por nome ou telefone" />
+                  </label>
+                  <div class="bar-command-day-closing" title="Valor previsto das comandas abertas"><small>Previsto</small><strong id="barOpenOrdersMetric">R$ 0,00</strong></div>
+                  <button class="small-btn bar-command-screen-btn" type="button" id="barCommandScreenBtn" aria-pressed="false" aria-label="Abrir tela cheia de comandas" title="Tela cheia"><svg><use href="#bar-icon-screen"></use></svg><span>Tela de comandas</span></button>
                 </div>
               </div>
               <div class="bar-table-grid" id="barTableBoard"></div>
@@ -20436,6 +20453,8 @@
         setBarNewOrderModalScreenMount(false);
       }
       button.setAttribute('aria-pressed', String(active));
+      button.setAttribute('aria-label', active ? 'Sair da tela cheia de comandas' : 'Abrir tela cheia de comandas');
+      button.setAttribute('title', active ? 'Sair da tela cheia' : 'Tela cheia');
       const label = button.querySelector('span');
       if (label) label.textContent = active ? 'Sair da tela' : 'Tela de comandas';
     }
