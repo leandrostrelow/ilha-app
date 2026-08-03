@@ -10917,17 +10917,18 @@
         width: 100%;
         max-width: 100dvw;
         min-width: 0;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
+        display: block;
         overflow-x: hidden;
         overflow-x: clip;
         border-top: 0;
       }
 
       body.bar-admin-surface .admin-sidebar {
-        position: sticky;
-        top: 0;
+        position: relative;
+        top: auto;
         z-index: 80;
+        grid-column: auto;
+        grid-row: auto;
         min-height: 0;
         width: 100%;
         max-width: 100dvw;
@@ -11054,6 +11055,8 @@
 
       body.bar-admin-surface .app > :not(.admin-sidebar),
       body.bar-admin-surface.club-bar .app > :not(.admin-sidebar) {
+        grid-column: auto;
+        grid-row: auto;
         width: 100%;
         max-width: 100dvw;
         min-width: 0;
@@ -18289,6 +18292,9 @@
     const LESSONS_SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
     const LESSONS_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrcXRncHRlYmtnZndndXlreGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzEyNjAsImV4cCI6MjA5NzcwNzI2MH0.S-dopp-fbBgq8_YclyiAheOdK-QhXt92RYLu8JKmKCg';
     const IS_BAR_ADMIN_SURFACE = /^\/admbar(?:\/|$)/.test(window.location.pathname) || new URLSearchParams(window.location.search).get('surface') === 'bar';
+    if (IS_BAR_ADMIN_SURFACE && 'scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
     const BAR_LAUNCH_TAB = new URLSearchParams(window.location.search).get('tab') === 'kitchen' ? 'kitchen' : 'orders';
     const BAR_PIX_KEY = 'ilhateniscolatina@gmail.com';
     const lessonDays = [
@@ -18529,7 +18535,7 @@
     }
 
     const storedBarViewState = readBarViewState();
-    let barLastScrollY = storedBarViewState.scrollY;
+    let barLastScrollY = barAppIsInstalled() ? 0 : storedBarViewState.scrollY;
     let barViewRestoreComplete = false;
 
     const opsState = {
@@ -18577,6 +18583,8 @@
       barKnownIncomingIds: null,
       barDataLoaded: false,
       barSchemaReady: true,
+      barDataLoading: false,
+      barLoadError: '',
       loaded: false
     };
 
@@ -18595,6 +18603,11 @@
 
     function rememberBarScrollPosition() {
       if (!IS_BAR_ADMIN_SURFACE || !document.body.classList.contains('club-bar')) return;
+      if (barAppIsInstalled()) {
+        barLastScrollY = 0;
+        persistBarViewState();
+        return;
+      }
       barLastScrollY = Math.max(0, Math.round(window.scrollY || 0));
       persistBarViewState();
     }
@@ -19220,18 +19233,29 @@
         return;
       }
       if (opsState.barDataLoaded && !force) return;
+      if (opsState.barDataLoading) return;
+      opsState.barDataLoading = true;
       try {
-        const results = await Promise.all([
-          supabaseRest('bar_products?select=*&order=category.asc,name.asc'),
-          supabaseRest('bar_tables?select=*&order=number.asc'),
-          supabaseRestAll('bar_orders?select=*,bar_tables(number,name)&order=opened_at.desc,id.desc'),
-          supabaseRestAll('bar_order_items?select=*,bar_products(category)&order=created_at.desc,id.desc'),
-          supabaseRest('bar_inventory_movements?select=*&order=occurred_at.desc&limit=200'),
-          supabaseRest('bar_financial_entries?select=*&order=created_at.desc'),
-          supabaseRest('bar_public_cards?select=*&order=code.asc'),
-          supabaseRest('bar_events?select=*&order=event_date.asc,starts_at.asc'),
-          supabaseRest('bar_customers?select=*&order=last_order_at.desc&limit=500')
-        ]);
+        const fetchSnapshot = function () {
+          return Promise.all([
+            supabaseRest('bar_products?select=*&order=category.asc,name.asc'),
+            supabaseRest('bar_tables?select=*&order=number.asc'),
+            supabaseRestAll('bar_orders?select=*,bar_tables(number,name)&order=opened_at.desc,id.desc'),
+            supabaseRestAll('bar_order_items?select=*,bar_products(category)&order=created_at.desc,id.desc'),
+            supabaseRest('bar_inventory_movements?select=*&order=occurred_at.desc&limit=200'),
+            supabaseRest('bar_financial_entries?select=*&order=created_at.desc'),
+            supabaseRest('bar_public_cards?select=*&order=code.asc'),
+            supabaseRest('bar_events?select=*&order=event_date.asc,starts_at.asc'),
+            supabaseRest('bar_customers?select=*&order=last_order_at.desc&limit=500')
+          ]);
+        };
+        let results;
+        try {
+          results = await fetchSnapshot();
+        } catch (firstError) {
+          await new Promise(function (resolve) { window.setTimeout(resolve, 650); });
+          results = await fetchSnapshot();
+        }
         opsData.barProducts = results[0].map(mapBarProductRow);
         opsData.barTables = results[1].map(mapBarTableRow);
         opsData.barOrders = results[2].map(mapBarOrderRow);
@@ -19244,19 +19268,12 @@
         handleBarIncomingChanges(opsData.barOrderItems);
         opsState.barDataLoaded = true;
         opsState.barSchemaReady = true;
+        opsState.barLoadError = '';
       } catch (error) {
-        opsData.barProducts = [];
-        opsData.barTables = [];
-        opsData.barOrders = [];
-        opsData.barOrderItems = [];
-        opsData.barInventory = [];
-        opsData.barFinance = [];
-        opsData.barAccessCards = [];
-        opsData.barEvents = [];
-        opsData.barCustomers = [];
-        opsState.barSchemaReady = false;
-        opsState.barDataLoaded = true;
-        console.info('Tabelas do Bar ainda nao disponiveis no Supabase.', error && error.message);
+        opsState.barLoadError = error && error.message ? error.message : 'Falha temporária de conexão.';
+        console.warn('Não foi possível atualizar o Bar agora; mantendo os dados já carregados.', opsState.barLoadError);
+      } finally {
+        opsState.barDataLoading = false;
       }
     }
 
@@ -21630,7 +21647,7 @@
 
     function renderBarModule() {
       setBarTab(opsState.barTab);
-      $('barSchemaNote').classList.toggle('show', !opsState.barSchemaReady);
+      $('barSchemaNote').classList.remove('show');
       const openOrders = opsData.barOrders.filter(barOrderIsOpen);
       const lowStock = opsData.barProducts.filter(function (product) {
         return product.active && Number(product.stock) <= Number(product.minimumStock || 0);
@@ -22251,7 +22268,9 @@
       }
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
-          window.scrollTo({ top: barLastScrollY, left: 0, behavior: 'auto' });
+          const targetScrollY = barAppIsInstalled() ? 0 : barLastScrollY;
+          if (barAppIsInstalled()) barLastScrollY = 0;
+          window.scrollTo({ top: targetScrollY, left: 0, behavior: 'auto' });
         });
       });
     }
@@ -22263,17 +22282,6 @@
       }
       opsState.barTab = BAR_LAUNCH_TAB;
       setClubMode('club-bar');
-      if (!isAdminDemoMode() && !opsState.barDataLoaded) {
-        opsData.barProducts = [];
-        opsData.barTables = [];
-        opsData.barOrders = [];
-        opsData.barOrderItems = [];
-        opsData.barInventory = [];
-        opsData.barFinance = [];
-        opsData.barAccessCards = [];
-        opsData.barEvents = [];
-        opsData.barCustomers = [];
-      }
       renderBarModule();
       loadBarData(false).then(function () {
         renderBarModule();
@@ -25404,6 +25412,12 @@
       initBarPullToRefresh();
       initBarPwaInstall();
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+        let reloadingForNewServiceWorker = false;
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (reloadingForNewServiceWorker) return;
+          reloadingForNewServiceWorker = true;
+          window.location.reload();
+        });
         navigator.serviceWorker.register('/service-worker.js', { scope: '/' }).then(function (registration) {
           return registration.update();
         }).catch(function (error) {
