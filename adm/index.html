@@ -7271,18 +7271,7 @@
     .admin-sidebar-nav {
       position: relative;
       gap: 7px;
-      padding-top: 26px;
-    }
-
-    .admin-sidebar-nav::before {
-      content: "MENU";
-      position: absolute;
-      top: 0;
-      left: 10px;
-      color: #8b95a5;
-      font-size: 10px;
-      font-weight: 850;
-      letter-spacing: .14em;
+      padding-top: 0;
     }
 
     .admin-nav-btn,
@@ -10704,8 +10693,7 @@
       }
 
       body.bar-admin-surface .bar-admin-context,
-      body.bar-admin-surface .admin-sidebar-footer,
-      body.bar-admin-surface .admin-sidebar-nav::before {
+      body.bar-admin-surface .admin-sidebar-footer {
         display: none;
       }
 
@@ -12288,16 +12276,11 @@
       <div class="admin-sidebar-brand">
         <img src="../logo.png" alt="Ilha Tênis" />
       </div>
-      <div class="bar-admin-context" data-bar-surface-only>
-        <strong>Ilha Bar</strong>
-        <span>Operação e gestão</span>
-      </div>
       <nav class="admin-sidebar-nav">
         <button class="admin-nav-btn active" type="button" data-admin-nav="club-home"><span class="admin-nav-icon"><svg><use href="#admin-icon-home"></use></svg></span><span>Início</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon"><svg><use href="#admin-icon-users"></use></svg></span><span>Alunos</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-courts"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Quadras</span></button>
-        <button class="admin-nav-btn active" type="button" data-bar-entry data-bar-side-tab="overview"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Visão geral</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="events"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Agenda</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="orders"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Comandas</span><span class="bar-nav-badge" id="barOrdersNavBadge" hidden>0</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="kitchen"><span class="admin-nav-icon"><svg><use href="#bar-icon-portion"></use></svg></span><span>Pedidos</span><span class="bar-nav-badge" id="barKitchenNavBadge" hidden>0</span></button>
@@ -12884,22 +12867,10 @@
 
           <div data-bar-panel="events">
             <div class="bar-events-page">
-              <div class="bar-section-header">
-                <div><h2>Agenda de eventos</h2><div class="muted">Planeje a programação do Bar e preserve o histórico de cada dia.</div></div>
-                <button class="primary-btn bar-icon-button" type="button" id="barAddEventBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Novo evento</span></button>
-              </div>
-
-              <div class="bar-product-metrics bar-event-metrics">
-                <div class="bar-product-metric"><span class="bar-product-metric-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><div><strong id="barEventsUpcomingMetric">0</strong><span>próximos eventos</span></div></div>
-                <div class="bar-product-metric good"><span class="bar-product-metric-icon"><svg><use href="#bar-icon-check"></use></svg></span><div><strong id="barEventsMonthMetric">0</strong><span>eventos no mês</span></div></div>
-                <div class="bar-product-metric warn"><span class="bar-product-metric-icon"><svg><use href="#admin-icon-users"></use></svg></span><div><strong id="barEventsGuestsMetric">0</strong><span>público previsto</span></div></div>
-                <div class="bar-product-metric"><span class="bar-product-metric-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><div><strong id="barEventsHistoryMetric">0</strong><span>eventos no histórico</span></div></div>
-              </div>
-
               <div class="bar-events-layout">
                 <section class="ops-panel bar-calendar-panel">
                   <div class="ops-panel-head bar-calendar-head">
-                    <div><h2 id="barEventMonthLabel">Mês</h2><div class="muted">Selecione um dia para ver a programação.</div></div>
+                    <div><h2 id="barEventMonthLabel">Mês</h2></div>
                     <div class="bar-calendar-actions">
                       <button class="small-btn" type="button" id="barEventPrevMonthBtn" aria-label="Mês anterior">‹</button>
                       <button class="small-btn" type="button" id="barEventTodayBtn">Hoje</button>
@@ -20289,15 +20260,6 @@
     function renderBarEvents() {
       const events = (opsData.barEvents || []).slice();
       const today = localDateString();
-      const month = String(opsState.barEventMonth || today.slice(0, 7));
-      const upcoming = events.filter(barEventIsUpcoming);
-      const monthEvents = events.filter(function (item) { return String(item.eventDate || '').slice(0, 7) === month && item.status !== 'CANCELADO'; });
-      const history = events.filter(function (item) { return barEventIsPast(item) || ['CONCLUIDO', 'CANCELADO'].includes(String(item.status || '').toUpperCase()); });
-      const expectedGuests = upcoming.filter(function (item) { return String(item.eventDate || '').slice(0, 7) === month; }).reduce(function (sum, item) { return sum + Number(item.expectedGuests || 0); }, 0);
-      $('barEventsUpcomingMetric').textContent = upcoming.length;
-      $('barEventsMonthMetric').textContent = monthEvents.length;
-      $('barEventsGuestsMetric').textContent = expectedGuests.toLocaleString('pt-BR');
-      $('barEventsHistoryMetric').textContent = history.length;
       renderBarEventCalendar();
 
       const selectedDate = opsState.barEventSelectedDate || today;
@@ -24643,7 +24605,6 @@
         const button = event.target.closest('[data-bar-customer-select]');
         if (button) selectBarCustomer(button.dataset.barCustomerSelect);
       });
-      $('barAddEventBtn').addEventListener('click', function () { openBarEventModal(null, opsState.barEventSelectedDate); });
       $('barAddEventForDayBtn').addEventListener('click', function () { openBarEventModal(null, opsState.barEventSelectedDate); });
       $('barEventPrevMonthBtn').addEventListener('click', function () { moveBarEventMonth(-1); });
       $('barEventNextMonthBtn').addEventListener('click', function () { moveBarEventMonth(1); });
