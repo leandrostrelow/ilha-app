@@ -12285,7 +12285,7 @@
     }
 
     .bar-order-cart-list {
-      max-height: 228px;
+      max-height: 184px;
       overflow: auto;
       display: grid;
       scrollbar-width: thin;
@@ -12294,10 +12294,10 @@
     .bar-order-cart-row {
       min-width: 0;
       display: grid;
-      grid-template-columns: minmax(145px, 1.15fr) 118px minmax(180px, 1fr) auto 32px;
+      grid-template-columns: minmax(150px, 1fr) 104px minmax(220px, 1.35fr) auto 30px;
       align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
+      gap: 7px;
+      padding: 6px 9px;
       border-bottom: 1px solid #e4ecef;
     }
 
@@ -12307,32 +12307,23 @@
 
     .bar-order-cart-product {
       min-width: 0;
+      display: flex;
+      align-items: center;
     }
 
-    .bar-order-cart-product strong,
-    .bar-order-cart-product span {
+    .bar-order-cart-product strong {
       display: block;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-    }
-
-    .bar-order-cart-product strong {
       color: #17323a;
-      font-size: 12px;
-    }
-
-    .bar-order-cart-product span {
-      margin-top: 2px;
-      color: var(--teal);
-      font-size: 10px;
-      font-weight: 900;
+      font-size: 11px;
     }
 
     .bar-order-cart-quantity {
-      height: 35px;
+      height: 31px;
       display: grid;
-      grid-template-columns: 34px 1fr 34px;
+      grid-template-columns: 30px 1fr 30px;
       overflow: hidden;
       border: 1px solid #cfdee2;
       border-radius: 8px;
@@ -12381,7 +12372,7 @@
     .bar-order-cart-details select {
       width: 100%;
       min-width: 0;
-      height: 35px;
+      height: 31px;
       padding: 0 9px;
       border: 1px solid #cfdee2;
       border-radius: 8px;
@@ -12399,14 +12390,15 @@
 
     .bar-order-cart-total {
       color: var(--teal);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 950;
       white-space: nowrap;
+      text-align: center;
     }
 
     .bar-order-cart-remove {
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       display: grid;
       place-items: center;
       padding: 0;
@@ -12491,13 +12483,13 @@
       }
 
       .bar-order-cart-list {
-        max-height: 310px;
+        max-height: 252px;
       }
 
       .bar-order-cart-row {
-        grid-template-columns: minmax(0, 1fr) 104px 32px;
-        gap: 7px;
-        padding: 9px;
+        grid-template-columns: minmax(0, 1fr) 96px 30px;
+        gap: 6px;
+        padding: 7px;
       }
 
       .bar-order-cart-product {
@@ -12520,7 +12512,7 @@
       }
 
       .bar-order-cart-details.has-location {
-        grid-template-columns: minmax(112px, .75fr) minmax(0, 1fr);
+        grid-template-columns: minmax(106px, .7fr) minmax(0, 1fr);
       }
 
       .bar-order-cart-total {
@@ -18181,6 +18173,7 @@
       barCommandSearch: '',
       barCustomerSearch: '',
       barOrderCart: [],
+      barOrderCartSaving: false,
       barDayClosingPaymentFilter: 'TODOS',
       barCheckoutSplitEnabled: false,
       barCheckoutSplitCount: 2,
@@ -21673,20 +21666,22 @@
         return sum + Number(item.quantity || 0) * Number(product && product.salePrice || 0);
       }, 0);
       holder.hidden = cart.length === 0;
-      $('barOrderCartCount').textContent = totalUnits + (totalUnits === 1 ? ' item' : ' itens') + ' · ' + cart.length + (cart.length === 1 ? ' produto' : ' produtos');
+      $('barOrderCartCount').textContent = totalUnits + (totalUnits === 1 ? ' item' : ' itens');
       list.innerHTML = cart.map(function (item) {
         const product = barProductById(item.productId);
         const needsLocation = barProductNeedsDeliveryLocation(product);
         return '<div class="bar-order-cart-row" data-bar-cart-row="' + escapeHtml(product.id) + '">' +
-          '<div class="bar-order-cart-product"><strong>' + escapeHtml(product.name) + '</strong><span>' + money(product.salePrice) + ' cada</span></div>' +
+          '<div class="bar-order-cart-product"><strong>' + escapeHtml(product.name) + '</strong></div>' +
           '<div class="bar-order-cart-quantity"><button type="button" data-bar-cart-step="-1" data-bar-cart-product="' + escapeHtml(product.id) + '" aria-label="Diminuir ' + escapeHtml(product.name) + '">−</button><input type="number" min="1" max="' + escapeHtml(Number(product.stock || 0)) + '" value="' + escapeHtml(item.quantity) + '" data-bar-cart-quantity="' + escapeHtml(product.id) + '" aria-label="Quantidade de ' + escapeHtml(product.name) + '" /><button type="button" data-bar-cart-step="1" data-bar-cart-product="' + escapeHtml(product.id) + '" aria-label="Aumentar ' + escapeHtml(product.name) + '">+</button></div>' +
           '<div class="bar-order-cart-details' + (needsLocation ? ' has-location' : '') + '">' + (needsLocation ? '<select class="' + (item.deliveryLocation ? '' : 'is-required-empty') + '" data-bar-cart-location="' + escapeHtml(product.id) + '" aria-label="Local de entrega de ' + escapeHtml(product.name) + '">' + barOrderCartLocationOptions(item.deliveryLocation || '') + '</select>' : '') + '<input value="' + escapeHtml(item.notes || '') + '" data-bar-cart-notes="' + escapeHtml(product.id) + '" placeholder="Observação (opcional)" aria-label="Observação de ' + escapeHtml(product.name) + '" /></div>' +
           '<strong class="bar-order-cart-total">' + money(Number(product.salePrice || 0) * Number(item.quantity || 0)) + '</strong>' +
           '<button class="bar-order-cart-remove" type="button" data-bar-cart-remove="' + escapeHtml(product.id) + '" aria-label="Remover ' + escapeHtml(product.name) + '">×</button>' +
         '</div>';
       }).join('');
-      submit.disabled = cart.length === 0;
-      $('barOrderSubmitLabel').textContent = cart.length ? 'Confirmar ' + totalUnits + (totalUnits === 1 ? ' item' : ' itens') + ' · ' + money(total) : 'Escolha os produtos';
+      submit.disabled = cart.length === 0 || opsState.barOrderCartSaving;
+      $('barOrderSubmitLabel').textContent = opsState.barOrderCartSaving
+        ? 'Adicionando pedido...'
+        : (cart.length ? 'Confirmar ' + totalUnits + (totalUnits === 1 ? ' item' : ' itens') + ' · ' + money(total) : 'Escolha os produtos');
     }
 
     function setBarCommandTab(tab) {
@@ -21744,14 +21739,13 @@
         const itemPhone = barPhoneDigits(item.customerPhone || customer.phone);
         const meta = [];
         if (itemPhone) meta.push('<span><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(itemPhone)) + '</span>');
-        meta.push('<span>' + escapeHtml(money(item.unitPrice) + ' cada') + '</span>');
         if (item.deliveryLocation) meta.push('<span><strong>Local:</strong> ' + escapeHtml(item.deliveryLocation) + '</span>');
         if (item.notes) meta.push('<span><strong>Obs.:</strong> ' + escapeHtml(item.notes) + '</span>');
         const deliveryAction = cancelled ? '' : '<button class="small-btn bar-item-deliver" type="button"' + (status === 'ENTREGUE' ? ' disabled' : ' data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="ENTREGUE"') + '>Entregue</button>';
         return '<article class="bar-item-row bar-command-item' + statusClass + (cancelled ? ' cancelled' : '') + '">' +
           '<div class="bar-command-item-product"><span class="bar-command-item-quantity">' + escapeHtml(item.quantity + 'x') + '</span>' +
           '<div class="bar-command-item-content"><div class="bar-command-item-title"><strong>' + escapeHtml(item.productName) + '</strong></div>' +
-          '<div class="bar-command-item-meta">' + meta.join('') + '</div></div></div>' +
+          (meta.length ? '<div class="bar-command-item-meta">' + meta.join('') + '</div>' : '') + '</div></div>' +
           '<strong class="bar-command-item-total">' + money(item.quantity * item.unitPrice) + '</strong>' +
           '<div class="bar-command-item-actions">' + deliveryAction + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum item nesta comanda. Use “Adicionar produto” para começar.</div>';
@@ -22572,6 +22566,7 @@
 
     async function addBarOrderItemAction(event) {
       event.preventDefault();
+      if (opsState.barOrderCartSaving) return;
       let persistedChanges = false;
       try {
         requireAdminSession();
@@ -22592,6 +22587,8 @@
           if (Number(entry.product.stock || 0) < entry.quantity) throw new Error('Estoque insuficiente para ' + entry.product.name + '.');
           if (barProductNeedsDeliveryLocation(entry.product) && !entry.deliveryLocation) throw new Error('Escolha onde entregar ' + entry.product.name + '.');
         });
+        opsState.barOrderCartSaving = true;
+        renderBarOrderProductPreview();
         if (barCanPersist(order.id) && cart.every(function (entry) { return isUuid(entry.product.id); })) {
           await supabaseRest('rpc/bar_add_order_items', {
             method: 'POST',
@@ -22641,6 +22638,9 @@
           renderBarCommandModal();
         }
         reportActionError(error);
+      } finally {
+        opsState.barOrderCartSaving = false;
+        renderBarOrderProductPreview();
       }
     }
 

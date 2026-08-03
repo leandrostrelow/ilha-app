@@ -507,7 +507,8 @@ create or replace function public.bar_add_order_item(
   p_order_id uuid,
   p_product_id uuid,
   p_quantity numeric,
-  p_notes text default null
+  p_notes text default null,
+  p_delivery_location text default null
 )
 returns public.bar_order_items
 language plpgsql
@@ -517,6 +518,7 @@ as $$
 declare
   product_row public.bar_products%rowtype;
   item_row public.bar_order_items%rowtype;
+  normalized_delivery_location text;
 begin
   if not public.is_bar_staff() then
     raise exception 'Acesso negado ao Bar.';
@@ -524,6 +526,16 @@ begin
 
   if coalesce(p_quantity, 0) <= 0 then
     raise exception 'Quantidade invalida.';
+  end if;
+
+  normalized_delivery_location := nullif(trim(coalesce(p_delivery_location, '')), '');
+
+  if normalized_delivery_location is not null
+     and normalized_delivery_location not in (
+       'Quadra 1', 'Quadra 2', 'Quadra 3', 'Quadra 4', 'Quadra 5',
+       'Salão', 'Deck externo'
+     ) then
+    raise exception 'Local de entrega invalido.';
   end if;
 
   if not exists (
@@ -550,10 +562,12 @@ begin
   end if;
 
   insert into public.bar_order_items (
-    order_id, product_id, product_name, quantity, unit_price, cost_price, notes, added_by
+    order_id, product_id, product_name, quantity, unit_price, cost_price, notes,
+    delivery_location, added_by
   ) values (
     p_order_id, product_row.id, product_row.name, p_quantity, product_row.sale_price,
-    product_row.cost_price, nullif(trim(coalesce(p_notes, '')), ''), auth.uid()
+    product_row.cost_price, nullif(trim(coalesce(p_notes, '')), ''),
+    normalized_delivery_location, auth.uid()
   ) returning * into item_row;
 
   update public.bar_products
@@ -2317,7 +2331,7 @@ revoke all on function public.is_bar_staff() from public;
 grant execute on function public.is_bar_staff() to authenticated;
 grant execute on function public.ensure_current_user_profile() to authenticated;
 grant execute on function public.ensure_current_app_client(text, text) to authenticated;
-revoke all on function public.bar_add_order_item(uuid, uuid, numeric, text) from public;
+revoke all on function public.bar_add_order_item(uuid, uuid, numeric, text, text) from public;
 revoke all on function public.bar_cancel_order_item(uuid) from public;
 revoke all on function public.bar_adjust_stock(uuid, text, numeric, text, numeric) from public;
 revoke all on function public.bar_close_order(uuid, text, numeric, numeric) from public;
@@ -2327,7 +2341,7 @@ revoke all on function public.bar_pay_order_split(uuid, jsonb, numeric, numeric)
 revoke all on function public.bar_finalize_paid_order(uuid) from public;
 revoke all on function public.bar_reopen_order(uuid) from public;
 revoke all on function public.refresh_bar_order_totals() from public;
-grant execute on function public.bar_add_order_item(uuid, uuid, numeric, text) to authenticated;
+grant execute on function public.bar_add_order_item(uuid, uuid, numeric, text, text) to authenticated;
 grant execute on function public.bar_cancel_order_item(uuid) to authenticated;
 revoke all on function public.bar_delete_open_order(uuid) from public;
 grant execute on function public.bar_delete_open_order(uuid) to authenticated;
@@ -2806,6 +2820,7 @@ declare
   item jsonb;
   product_id uuid;
   quantity numeric;
+  inserted_item public.bar_order_items%rowtype;
 begin
   if not public.is_bar_staff() then
     raise exception 'Acesso negado ao Bar.';
@@ -2831,14 +2846,14 @@ begin
       raise exception 'Produto invalido no carrinho.';
     end if;
 
-    return query
-      select (public.bar_add_order_item(
-        p_order_id,
-        product_id,
-        quantity,
-        nullif(item ->> 'notes', ''),
-        nullif(item ->> 'delivery_location', '')
-      )).*;
+    inserted_item := public.bar_add_order_item(
+      p_order_id,
+      product_id,
+      quantity,
+      nullif(item ->> 'notes', ''),
+      nullif(item ->> 'delivery_location', '')
+    );
+    return next inserted_item;
   end loop;
 end;
 $$;
