@@ -2790,3 +2790,58 @@ with check (public.is_club_office());
 
 -- Public traffic stays outside the operational data. The /adm app now reads and writes
 -- through Supabase Auth with admin, secretaria and professor profiles.
+
+-- Adds an editable cart to the Bar while keeping product insertion and stock movements
+-- atomic: every item is persisted or the whole cart is rolled back.
+create or replace function public.bar_add_order_items(
+  p_order_id uuid,
+  p_items jsonb
+)
+returns setof public.bar_order_items
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  item jsonb;
+  product_id uuid;
+  quantity numeric;
+begin
+  if not public.is_bar_staff() then
+    raise exception 'Acesso negado ao Bar.';
+  end if;
+
+  if p_items is null
+     or jsonb_typeof(p_items) <> 'array'
+     or jsonb_array_length(p_items) = 0 then
+    raise exception 'Adicione pelo menos um produto ao carrinho.';
+  end if;
+
+  if jsonb_array_length(p_items) > 100 then
+    raise exception 'O carrinho aceita no maximo 100 produtos diferentes.';
+  end if;
+
+  for item in
+    select value from jsonb_array_elements(p_items)
+  loop
+    product_id := nullif(item ->> 'product_id', '')::uuid;
+    quantity := nullif(item ->> 'quantity', '')::numeric;
+
+    if product_id is null then
+      raise exception 'Produto invalido no carrinho.';
+    end if;
+
+    return query
+      select (public.bar_add_order_item(
+        p_order_id,
+        product_id,
+        quantity,
+        nullif(item ->> 'notes', ''),
+        nullif(item ->> 'delivery_location', '')
+      )).*;
+  end loop;
+end;
+$$;
+
+revoke all on function public.bar_add_order_items(uuid, jsonb) from public;
+grant execute on function public.bar_add_order_items(uuid, jsonb) to authenticated;
