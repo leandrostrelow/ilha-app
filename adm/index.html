@@ -7977,13 +7977,17 @@
     .bar-event-card {
       min-width: 0;
       display: grid;
-      grid-template-columns: 58px minmax(0, 1fr) auto;
-      gap: 12px;
-      align-items: center;
+      grid-template-columns: 58px minmax(0, 1fr);
+      grid-template-areas:
+        "date copy"
+        "date actions";
+      gap: 8px 12px;
+      align-items: start;
       padding: 13px;
       border: 1px solid #e5e9ef;
       border-radius: 13px;
       background: #ffffff;
+      overflow: hidden;
       transition: border-color .18s ease, box-shadow .18s ease;
     }
 
@@ -7998,6 +8002,7 @@
     }
 
     .bar-event-date-badge {
+      grid-area: date;
       width: 58px;
       min-height: 58px;
       display: grid;
@@ -8023,26 +8028,30 @@
     }
 
     .bar-event-card-copy {
+      grid-area: copy;
       min-width: 0;
       display: grid;
       gap: 5px;
     }
 
     .bar-event-card-copy h3 {
-      overflow: hidden;
       margin: 0;
       color: var(--text);
       font-size: 14px;
       font-weight: 850;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
     }
 
     .bar-event-card-copy p {
+      display: -webkit-box;
+      overflow: hidden;
       margin: 0;
       color: #667085;
       font-size: 11px;
       line-height: 1.45;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
     }
 
     .bar-event-meta {
@@ -8055,11 +8064,31 @@
     }
 
     .bar-event-card-actions {
+      grid-area: actions;
       display: flex;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: flex-start;
       gap: 7px;
       flex-wrap: wrap;
+    }
+
+    .bar-event-card-actions .small-btn {
+      min-height: 30px;
+      gap: 5px;
+      padding: 5px 8px;
+      font-size: 10px;
+    }
+
+    .bar-event-card-actions .small-btn svg {
+      width: 14px;
+      height: 14px;
+      flex: 0 0 14px;
+      display: block;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .bar-event-type-badge {
@@ -8262,6 +8291,9 @@
 
       .bar-event-card {
         grid-template-columns: 50px minmax(0, 1fr);
+        grid-template-areas:
+          "date copy"
+          "actions actions";
         gap: 10px;
         padding: 11px;
       }
@@ -8272,7 +8304,7 @@
       }
 
       .bar-event-card-actions {
-        grid-column: 1 / -1;
+        grid-area: actions;
         justify-content: flex-start;
       }
 
