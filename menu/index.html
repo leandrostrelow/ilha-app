@@ -134,6 +134,23 @@
       object-fit: contain;
     }
 
+    .menu-brand-logo-light {
+      display: none;
+    }
+
+    body[data-menu-theme="dark"] .menu-brand {
+      border: 1px solid rgba(255, 255, 255, .12);
+      background: #13233d;
+    }
+
+    body[data-menu-theme="dark"] .menu-brand-logo-dark {
+      display: none;
+    }
+
+    body[data-menu-theme="dark"] .menu-brand-logo-light {
+      display: block;
+    }
+
     .menu-heading {
       position: relative;
       z-index: 1;
@@ -798,7 +815,7 @@
       position: sticky;
       top: 0;
       z-index: 30;
-      grid-template-columns: 62px minmax(0, 1fr) auto;
+      grid-template-columns: 82px minmax(0, 1fr) auto;
       min-height: 82px;
       gap: 11px;
       padding: max(9px, env(safe-area-inset-top)) 12px 9px;
@@ -814,7 +831,7 @@
     }
 
     html[data-menu-display="mobile"] .menu-brand {
-      width: 62px;
+      width: 82px;
       height: 54px;
       padding: 6px;
       border-radius: 11px;
@@ -996,7 +1013,10 @@
 <body data-menu-theme="light">
   <div class="menu-stage">
     <header class="menu-header">
-      <div class="menu-brand"><img src="../logo.png" alt="Ilha Tênis" /></div>
+      <div class="menu-brand">
+        <img class="menu-brand-logo-dark" src="../assets/branding/ilha-bar-logo-dark.png" alt="Ilha Bar" />
+        <img class="menu-brand-logo-light" src="../assets/branding/ilha-bar-logo-light.png" alt="" aria-hidden="true" />
+      </div>
       <div class="menu-heading">
         <span class="menu-kicker">ILHA BAR</span>
         <h1>Cardápio</h1>
