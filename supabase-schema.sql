@@ -655,6 +655,87 @@ begin
 end;
 $$;
 
+create or replace function public.bar_set_order_item_quantity(p_item_id uuid, p_quantity numeric)
+returns public.bar_order_items
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  item_row public.bar_order_items%rowtype;
+  previous_quantity numeric;
+  restored_quantity numeric;
+begin
+  if not public.is_bar_staff() then
+    raise exception 'Acesso negado ao Bar.';
+  end if;
+
+  if p_quantity is null or p_quantity < 0 then
+    raise exception 'Informe uma quantidade valida.';
+  end if;
+
+  select * into item_row
+    from public.bar_order_items
+   where id = p_item_id
+   for update;
+
+  if not found then
+    raise exception 'Item nao encontrado.';
+  end if;
+
+  if item_row.status = 'CANCELADO' then
+    raise exception 'Este item ja foi cancelado.';
+  end if;
+
+  if exists (
+    select 1
+      from public.bar_orders
+     where id = item_row.order_id
+       and payment_status = 'PAGO'
+  ) then
+    raise exception 'O pagamento desta comanda ja foi registrado. Reabra o pagamento antes de editar itens.';
+  end if;
+
+  previous_quantity := item_row.quantity;
+  if p_quantity > previous_quantity then
+    raise exception 'Esta edicao permite somente reduzir a quantidade atual.';
+  end if;
+
+  restored_quantity := previous_quantity - p_quantity;
+  if restored_quantity = 0 then
+    return item_row;
+  end if;
+
+  if p_quantity = 0 then
+    update public.bar_order_items
+       set status = 'CANCELADO', updated_at = now()
+     where id = item_row.id
+     returning * into item_row;
+  else
+    update public.bar_order_items
+       set quantity = p_quantity, updated_at = now()
+     where id = item_row.id
+     returning * into item_row;
+  end if;
+
+  if item_row.product_id is not null then
+    update public.bar_products
+       set stock_quantity = stock_quantity + restored_quantity,
+           updated_at = now()
+     where id = item_row.product_id;
+
+    insert into public.bar_inventory_movements (
+      product_id, order_item_id, type, quantity, unit_cost, reason, created_by
+    ) values (
+      item_row.product_id, item_row.id, 'ESTORNO', restored_quantity, item_row.cost_price,
+      'Reducao de quantidade do item', auth.uid()
+    );
+  end if;
+
+  return item_row;
+end;
+$$;
+
 create or replace function public.bar_delete_open_order(p_order_id uuid)
 returns uuid
 language plpgsql
@@ -2345,6 +2426,7 @@ grant execute on function public.ensure_current_user_profile() to authenticated;
 grant execute on function public.ensure_current_app_client(text, text) to authenticated;
 revoke all on function public.bar_add_order_item(uuid, uuid, numeric, text, text) from public;
 revoke all on function public.bar_cancel_order_item(uuid) from public;
+revoke all on function public.bar_set_order_item_quantity(uuid, numeric) from public;
 revoke all on function public.bar_adjust_stock(uuid, text, numeric, text, numeric) from public;
 revoke all on function public.bar_close_order(uuid, text, numeric, numeric) from public;
 revoke all on function public.bar_close_order_split(uuid, jsonb, numeric, numeric) from public;
@@ -2355,6 +2437,7 @@ revoke all on function public.bar_reopen_order(uuid) from public;
 revoke all on function public.refresh_bar_order_totals() from public;
 grant execute on function public.bar_add_order_item(uuid, uuid, numeric, text, text) to authenticated;
 grant execute on function public.bar_cancel_order_item(uuid) to authenticated;
+grant execute on function public.bar_set_order_item_quantity(uuid, numeric) to authenticated;
 revoke all on function public.bar_delete_open_order(uuid) from public;
 grant execute on function public.bar_delete_open_order(uuid) to authenticated;
 grant execute on function public.bar_adjust_stock(uuid, text, numeric, text, numeric) to authenticated;

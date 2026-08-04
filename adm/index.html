@@ -13520,6 +13520,296 @@
         object-position: center;
       }
     }
+
+    /* Comanda compacta: ações no topo e editores focados. */
+    .bar-command-head {
+      min-height: 72px;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 16px;
+    }
+
+    .bar-command-identity h2 {
+      max-width: min(42vw, 430px);
+      font-size: 22px;
+    }
+
+    .bar-command-name-row {
+      flex-wrap: nowrap;
+    }
+
+    .bar-command-quick-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bar-command-quick-action {
+      width: 36px;
+      height: 36px;
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 36px;
+      border: 1px solid #bdd4d9;
+      border-radius: 9px;
+      color: var(--teal);
+      background: #f3f9fa;
+      text-decoration: none;
+      transition: transform .16s ease, color .16s ease, border-color .16s ease, background .16s ease;
+    }
+
+    .bar-command-quick-action:hover {
+      color: #ffffff;
+      border-color: var(--teal);
+      background: var(--teal);
+      transform: translateY(-1px);
+    }
+
+    .bar-command-quick-action.is-charge {
+      color: #18743b;
+      border-color: #a8ddb8;
+      background: #f1fbf4;
+    }
+
+    .bar-command-quick-action[aria-disabled="true"] {
+      opacity: .38;
+      pointer-events: none;
+    }
+
+    .bar-command-quick-action svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .bar-command-close {
+      width: 38px;
+      height: 38px;
+    }
+
+    .bar-checkout-item-edit {
+      min-height: 28px;
+      padding: 4px 9px;
+      border: 1px solid #b9d4da;
+      border-radius: 7px;
+      color: var(--teal);
+      background: #f2f9fa;
+      font-size: 10px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .bar-checkout-item-edit:hover {
+      color: #ffffff;
+      border-color: var(--teal);
+      background: var(--teal);
+    }
+
+    .bar-checkout-item-copy {
+      min-width: 0;
+      display: grid;
+      align-content: center;
+      gap: 1px;
+    }
+
+    .bar-checkout-item-copy strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-checkout-item-copy small {
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 800;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-checkout-item-edit {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .bar-checkout-item-edit svg {
+      width: 13px;
+      height: 13px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+    }
+
+    .bar-compact-editor-overlay.show {
+      place-items: center;
+      z-index: 1300;
+    }
+
+    .bar-compact-editor,
+    .bar-item-group-editor {
+      width: min(610px, 100%);
+      overflow: hidden;
+      border-color: #cbdde1;
+      box-shadow: 0 28px 90px rgba(8, 63, 75, .3);
+    }
+
+    .bar-compact-editor-body,
+    .bar-item-group-editor-body {
+      display: grid;
+      gap: 16px;
+    }
+
+    .bar-compact-editor-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .bar-compact-editor-grid .full {
+      grid-column: 1 / -1;
+    }
+
+    .bar-customer-edit-discounts {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .bar-customer-edit-discounts > span {
+      margin-right: auto;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .bar-compact-editor-actions {
+      display: grid;
+      grid-template-columns: auto 1fr auto auto;
+      align-items: center;
+    }
+
+    .bar-item-group-editor-body > label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .bar-item-group-stepper {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) 44px;
+      overflow: hidden;
+      border: 1px solid #bfd5da;
+      border-radius: 9px;
+    }
+
+    .bar-item-group-stepper button,
+    .bar-item-group-stepper input {
+      min-height: 46px;
+      border: 0;
+      border-radius: 0;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .bar-item-group-stepper button {
+      color: var(--teal);
+      background: #edf6f7;
+      cursor: pointer;
+    }
+
+    .bar-item-group-total {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 14px;
+      border-radius: 9px;
+      background: #f1f7f8;
+    }
+
+    .bar-item-group-total span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .bar-item-group-total strong {
+      color: var(--teal);
+      font-size: 22px;
+    }
+
+    @media (max-width: 700px) {
+      .bar-command-head {
+        min-height: 62px;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        gap: 6px;
+        padding: 9px 10px;
+      }
+
+      .bar-command-identity h2 {
+        max-width: 24vw;
+        font-size: 15px;
+      }
+
+      .bar-command-edit-name,
+      .bar-command-quick-action,
+      .bar-command-close {
+        width: 30px;
+        height: 30px;
+        flex-basis: 30px;
+      }
+
+      .bar-command-header-total {
+        min-height: 26px;
+        padding: 4px 5px;
+        font-size: 9px;
+      }
+
+      .bar-command-quick-actions {
+        gap: 4px;
+      }
+
+      .bar-command-quick-action svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .bar-compact-editor,
+      .bar-item-group-editor {
+        width: 100%;
+        max-height: calc(100dvh - 20px);
+      }
+
+      .bar-compact-editor-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .bar-compact-editor-grid .full {
+        grid-column: auto;
+      }
+
+      .bar-compact-editor-actions {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .bar-compact-editor-actions > span {
+        display: none;
+      }
+
+      .bar-checkout-item-edit {
+        grid-column: 3;
+        grid-row: 1 / span 2;
+      }
+    }
   </style>
 </head>
 <body class="adm-locked">
@@ -14828,12 +15118,16 @@
             <div class="bar-command-identity">
               <div class="bar-command-identity-top">
                 <div class="bar-command-identity-copy">
-                  <div class="bar-command-name-row"><h2 id="barCommandModalTitle">Cliente</h2><button class="bar-command-edit-name" type="button" id="barOrderEditNameBtn" aria-label="Editar contato" title="Editar contato"><svg><use href="#bar-icon-edit"></use></svg></button><span class="bar-command-header-total" id="barCommandHeaderTotal" aria-label="Total da comanda" aria-live="polite">R$ 0,00</span><a class="bar-whatsapp-charge" id="barOrderChargeBtn" href="#" target="_blank" rel="noopener" hidden><svg><use href="#admin-icon-phone"></use></svg>Cobrar no WhatsApp</a></div>
+                  <div class="bar-command-name-row"><h2 id="barCommandModalTitle">Cliente</h2><button class="bar-command-edit-name" type="button" id="barOrderEditNameBtn" aria-label="Editar comanda" title="Editar comanda"><svg><use href="#bar-icon-edit"></use></svg></button><span class="bar-command-header-total" id="barCommandHeaderTotal" aria-label="Total da comanda" aria-live="polite">R$ 0,00</span><span id="barCommandStatus"></span></div>
                 </div>
-                <div class="bar-command-head-badges"><span id="barCommandStatus"></span><button class="bar-command-delete" type="button" id="barOrderDeleteBtn">Excluir</button><button class="bar-team-discount" type="button" id="barTeamDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Equipe</span><small>-35%</small></button><button class="bar-team-discount" type="button" id="barProfessorDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Professor</span><small>-10%</small></button></div>
               </div>
-              <div class="bar-command-contact"><span id="barCommandModalSubtitle"></span></div>
+              <span id="barCommandModalSubtitle" hidden></span>
             </div>
+          </div>
+          <div class="bar-command-quick-actions" aria-label="Ações da comanda">
+            <a class="bar-command-quick-action" id="barOrderMessageBtn" href="#" target="_blank" rel="noopener" aria-label="Enviar mensagem" title="Enviar mensagem"><svg><use href="#admin-icon-megaphone"></use></svg></a>
+            <a class="bar-command-quick-action is-charge" id="barOrderChargeBtn" href="#" target="_blank" rel="noopener" aria-label="Cobrar no WhatsApp" title="Cobrar no WhatsApp"><svg><use href="#admin-icon-phone"></use></svg></a>
+            <a class="bar-command-quick-action" id="barOrderAccountBtn" href="#" target="_blank" rel="noopener" aria-label="Enviar conta" title="Enviar conta"><svg><use href="#admin-icon-receipt"></use></svg></a>
           </div>
           <button class="bar-command-close" type="button" id="barCommandModalClose" aria-label="Fechar comanda"><svg><use href="#bar-icon-close"></use></svg></button>
         </div>
@@ -14918,6 +15212,59 @@
           </section>
         </div>
 
+      </div>
+    </div>
+
+    <div class="admin-modal-overlay bar-compact-editor-overlay" id="barCustomerEditModal" aria-hidden="true">
+      <div class="admin-modal bar-compact-editor" role="dialog" aria-modal="true" aria-labelledby="barCustomerEditTitle">
+        <div class="admin-modal-head">
+          <div><h2 id="barCustomerEditTitle">Editar comanda</h2><div class="muted">Dados, observação e condições do cliente.</div></div>
+          <button class="ghost-btn bar-modal-close" type="button" id="barCustomerEditCloseBtn" aria-label="Fechar"><svg><use href="#bar-icon-close"></use></svg></button>
+        </div>
+        <form id="barCustomerEditForm">
+          <div class="admin-modal-body bar-compact-editor-body">
+            <div class="bar-compact-editor-grid">
+              <div class="field"><label for="barCustomerEditName">Nome</label><input id="barCustomerEditName" maxlength="80" required /></div>
+              <div class="field"><label for="barCustomerEditPhone">Telefone</label><input id="barCustomerEditPhone" type="tel" inputmode="tel" maxlength="15" /></div>
+              <div class="field full"><label for="barCustomerEditNotes">Observação da comanda</label><textarea id="barCustomerEditNotes" rows="3" maxlength="500"></textarea></div>
+            </div>
+            <div class="bar-customer-edit-discounts">
+              <span>Descontos</span>
+              <button class="bar-team-discount" type="button" id="barTeamDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Equipe</span><small>-35%</small></button>
+              <button class="bar-team-discount" type="button" id="barProfessorDiscountBtn" aria-pressed="false"><span class="bar-team-discount-mark" aria-hidden="true"></span><span>Professor</span><small>-10%</small></button>
+            </div>
+          </div>
+          <div class="modal-actions bar-compact-editor-actions">
+            <button class="bar-command-delete" type="button" id="barOrderDeleteBtn">Excluir comanda</button>
+            <span></span>
+            <button class="ghost-btn" type="button" id="barCustomerEditCancelBtn">Cancelar</button>
+            <button class="primary-btn" type="submit" id="barCustomerEditSaveBtn">Salvar alterações</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="admin-modal-overlay bar-compact-editor-overlay" id="barItemGroupEditModal" aria-hidden="true">
+      <div class="admin-modal bar-item-group-editor" role="dialog" aria-modal="true" aria-labelledby="barItemGroupEditTitle">
+        <div class="admin-modal-head">
+          <div><h2 id="barItemGroupEditTitle">Editar produto</h2><div class="muted" id="barItemGroupEditSubtitle"></div></div>
+          <button class="ghost-btn bar-modal-close" type="button" id="barItemGroupEditCloseBtn" aria-label="Fechar"><svg><use href="#bar-icon-close"></use></svg></button>
+        </div>
+        <div class="admin-modal-body bar-item-group-editor-body">
+          <label for="barItemGroupQuantity">Quantidade</label>
+          <div class="bar-item-group-stepper">
+            <button type="button" id="barItemGroupMinusBtn" aria-label="Diminuir quantidade">−</button>
+            <input id="barItemGroupQuantity" type="number" min="0" step="1" inputmode="numeric" />
+            <button type="button" id="barItemGroupPlusBtn" aria-label="Aumentar quantidade">+</button>
+          </div>
+          <div class="bar-item-group-total"><span>Novo total</span><strong id="barItemGroupTotal">R$ 0,00</strong></div>
+        </div>
+        <div class="modal-actions bar-compact-editor-actions">
+          <button class="bar-command-delete" type="button" id="barItemGroupDeleteBtn">Excluir produto</button>
+          <span></span>
+          <button class="ghost-btn" type="button" id="barItemGroupEditCancelBtn">Cancelar</button>
+          <button class="primary-btn" type="button" id="barItemGroupSaveBtn">Salvar</button>
+        </div>
       </div>
     </div>
 
@@ -19139,6 +19486,8 @@
       selectedBarCustomerKey: '',
       barOrderCart: [],
       barOrderCartSaving: false,
+      barCheckoutGroups: [],
+      selectedBarCheckoutGroupIndex: -1,
       barDayClosingPaymentFilter: 'TODOS',
       barCheckoutSplitEnabled: false,
       barCheckoutSplitCount: 2,
@@ -20892,6 +21241,39 @@
       return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(barChargeMessage(order));
     }
 
+    function barWhatsAppUrl(order, message) {
+      const items = barActiveItemsForOrder(order.id);
+      const customer = barOrderCustomerDetails(order, items);
+      const phone = barPhoneWhatsApp(customer.phone);
+      if (!phone || phone.length < 12) return '';
+      return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message);
+    }
+
+    function barGreetingWhatsAppUrl(order) {
+      const customer = barOrderCustomerDetails(order, barActiveItemsForOrder(order.id));
+      return barWhatsAppUrl(order, 'Olá, ' + customer.name + '! Tudo bem?');
+    }
+
+    function barAccountWhatsAppUrl(order) {
+      const items = barActiveItemsForOrder(order.id);
+      const customer = barOrderCustomerDetails(order, items);
+      const grouped = new Map();
+      items.forEach(function (item) {
+        const key = String(item.productName || 'Produto') + '|' + Number(item.unitPrice || 0).toFixed(2);
+        const current = grouped.get(key) || { name: item.productName || 'Produto', quantity: 0, total: 0 };
+        current.quantity += Number(item.quantity || 0);
+        current.total += Number(item.quantity || 0) * Number(item.unitPrice || 0);
+        grouped.set(key, current);
+      });
+      const lines = Array.from(grouped.values()).map(function (item) {
+        return '• ' + item.quantity.toLocaleString('pt-BR') + 'x ' + item.name + ' — ' + money(item.total);
+      });
+      const message = ['Olá, ' + customer.name + '! Segue o resumo da sua conta no Ilha Bar:', ''];
+      message.push.apply(message, lines.length ? lines : ['• Nenhum item ativo']);
+      message.push('', 'Total: ' + money(barOrderTotal(order)));
+      return barWhatsAppUrl(order, message.join('\n'));
+    }
+
     function rememberBarCustomerLocally(name, phone, lastOrderAt) {
       const cleanName = String(name || '').trim().replace(/\s+/g, ' ');
       const cleanPhone = barPhoneDigits(phone);
@@ -22410,8 +22792,110 @@
 
     function barCommandModalHasActiveEditor() {
       const active = document.activeElement;
+      if ($('barCustomerEditModal').classList.contains('show') || $('barItemGroupEditModal').classList.contains('show')) return true;
       return Boolean(active && active.closest && active.closest('#barCommandModal') &&
         ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName));
+    }
+
+    function setBarQuickAction(id, url) {
+      const action = $(id);
+      const enabled = Boolean(url);
+      action.href = enabled ? url : '#';
+      action.classList.toggle('is-disabled', !enabled);
+      action.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+      action.tabIndex = enabled ? 0 : -1;
+    }
+
+    function barCheckoutGroupKey(item) {
+      return [
+        item.productId || item.productName,
+        Number(item.unitPrice || 0).toFixed(2),
+        String(item.notes || '').trim(),
+        String(item.deliveryLocation || '').trim()
+      ].join('|');
+    }
+
+    function barGroupCheckoutItems(items) {
+      const groups = [];
+      const byKey = new Map();
+      items.forEach(function (item) {
+        const key = barCheckoutGroupKey(item);
+        let group = byKey.get(key);
+        if (!group) {
+          group = {
+            key: key,
+            productId: item.productId,
+            productName: item.productName,
+            unitPrice: Number(item.unitPrice || 0),
+            notes: item.notes || '',
+            deliveryLocation: item.deliveryLocation || '',
+            quantity: 0,
+            items: []
+          };
+          byKey.set(key, group);
+          groups.push(group);
+        }
+        group.quantity += Number(item.quantity || 0);
+        group.items.push(item);
+      });
+      return groups;
+    }
+
+    function closeBarCustomerEditModal() {
+      $('barCustomerEditModal').classList.remove('show');
+      $('barCustomerEditModal').setAttribute('aria-hidden', 'true');
+    }
+
+    function openBarCustomerEditModal() {
+      const order = barOrderById(opsState.selectedBarOrderId);
+      if (!order || !barOrderIsOpen(order)) return;
+      const customer = barOrderCustomerDetails(order, barItemsForOrder(order.id));
+      $('barCustomerEditName').value = String(order.customerName || customer.name || '').trim();
+      $('barCustomerEditPhone').value = barPhoneLabel(barPhoneDigits(order.customerPhone || customer.phone || ''));
+      $('barCustomerEditNotes').value = order.notes || '';
+      $('barCustomerEditModal').classList.add('show');
+      $('barCustomerEditModal').setAttribute('aria-hidden', 'false');
+      syncBarPresetDiscountButtons(order);
+      requestAnimationFrame(function () { $('barCustomerEditName').focus(); });
+    }
+
+    function closeBarItemGroupEditModal() {
+      $('barItemGroupEditModal').classList.remove('show');
+      $('barItemGroupEditModal').setAttribute('aria-hidden', 'true');
+      opsState.selectedBarCheckoutGroupIndex = -1;
+    }
+
+    function selectedBarCheckoutGroup() {
+      return opsState.barCheckoutGroups[Number(opsState.selectedBarCheckoutGroupIndex)] || null;
+    }
+
+    function updateBarItemGroupEditor() {
+      const group = selectedBarCheckoutGroup();
+      if (!group) return;
+      const input = $('barItemGroupQuantity');
+      const quantity = Math.max(0, Math.min(Number(group.quantity || 0), Math.floor(Number(input.value || 0))));
+      input.value = String(quantity);
+      $('barItemGroupTotal').textContent = money(quantity * Number(group.unitPrice || 0));
+      $('barItemGroupMinusBtn').disabled = quantity <= 0;
+      $('barItemGroupPlusBtn').disabled = quantity >= Number(group.quantity || 0);
+    }
+
+    function openBarItemGroupEditModal(index) {
+      const order = barOrderById(opsState.selectedBarOrderId);
+      const group = opsState.barCheckoutGroups[Number(index)];
+      if (!order || !barOrderCanEdit(order) || !group) return;
+      opsState.selectedBarCheckoutGroupIndex = Number(index);
+      $('barItemGroupEditTitle').textContent = group.productName;
+      const details = [];
+      if (group.deliveryLocation) details.push(group.deliveryLocation);
+      if (group.notes) details.push('Obs.: ' + group.notes);
+      $('barItemGroupEditSubtitle').textContent = details.join(' · ') || money(group.unitPrice) + ' por unidade';
+      $('barItemGroupQuantity').max = String(group.quantity);
+      $('barItemGroupQuantity').value = String(group.quantity);
+      $('barItemGroupEditModal').classList.add('show');
+      $('barItemGroupEditModal').setAttribute('aria-hidden', 'false');
+      updateBarItemGroupEditor();
+      requestAnimationFrame(function () { $('barItemGroupQuantity').focus(); $('barItemGroupQuantity').select(); });
     }
 
     function barPresetDiscountAmount(order, percentage) {
@@ -22762,18 +23246,14 @@
       const activeItems = items.filter(function (item) { return item.status !== 'CANCELADO'; });
       const customer = barOrderCustomerDetails(order, activeItems.length ? activeItems : items);
       const itemQuantity = activeItems.reduce(function (sum, item) { return sum + Number(item.quantity || 0); }, 0);
-      const phoneDigits = barPhoneDigits(customer.phone);
-      const table = barTableById(order.tableId);
-      const contactBits = [];
-      if (phoneDigits) contactBits.push('<a href="https://wa.me/' + escapeHtml(barPhoneWhatsApp(phoneDigits)) + '" target="_blank" rel="noopener"><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(phoneDigits)) + '</a>');
-      if (customer.names.length > 1) contactBits.push('<span><svg><use href="#admin-icon-users"></use></svg>' + escapeHtml(customer.names.length + ' pessoas nesta comanda') + '</span>');
 
       $('barCommandModalTitle').textContent = customer.name;
-      $('barCommandModalSubtitle').innerHTML = contactBits.join('');
-      $('barCommandModalSubtitle').hidden = !contactBits.length;
-      const chargeUrl = barOrderCanEdit(order) ? barChargeWhatsAppUrl(order) : '';
-      $('barOrderChargeBtn').hidden = !chargeUrl;
-      $('barOrderChargeBtn').href = chargeUrl || '#';
+      $('barCommandModalSubtitle').innerHTML = '';
+      $('barCommandModalSubtitle').hidden = true;
+      const canMessage = barPhoneDigits(customer.phone);
+      setBarQuickAction('barOrderMessageBtn', canMessage ? barGreetingWhatsAppUrl(order) : '');
+      setBarQuickAction('barOrderChargeBtn', canMessage && barOrderCanEdit(order) ? barChargeWhatsAppUrl(order) : '');
+      setBarQuickAction('barOrderAccountBtn', canMessage ? barAccountWhatsAppUrl(order) : '');
       $('barCommandItemsCount').textContent = itemQuantity;
       $('barCheckoutItemCount').textContent = itemQuantity;
 
@@ -22800,12 +23280,16 @@
           '<strong class="bar-command-item-total">' + money(item.quantity * item.unitPrice) + '</strong>' +
           '<div class="bar-command-item-actions">' + deliveryAction + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum item nesta comanda. Use “Adicionar produto” para começar.</div>';
-      $('barCheckoutItems').innerHTML = activeItems.map(function (item) {
+      opsState.barCheckoutGroups = barGroupCheckoutItems(activeItems);
+      $('barCheckoutItems').innerHTML = opsState.barCheckoutGroups.map(function (group, index) {
+        const details = [];
+        if (group.deliveryLocation) details.push(group.deliveryLocation);
+        if (group.notes) details.push('Obs.: ' + group.notes);
         return '<div class="bar-checkout-item">' +
-          '<span class="bar-checkout-item-quantity">' + escapeHtml(item.quantity + 'x') + '</span>' +
-          '<strong title="' + escapeHtml(item.productName) + '">' + escapeHtml(item.productName) + '</strong>' +
-          '<span class="bar-checkout-item-total">' + money(item.quantity * item.unitPrice) + '</span>' +
-          (editable ? '<button class="bar-checkout-item-remove" type="button" data-bar-item-cancel="' + escapeHtml(item.id) + '">Excluir</button>' : '') +
+          '<span class="bar-checkout-item-quantity">' + escapeHtml(group.quantity + 'x') + '</span>' +
+          '<span class="bar-checkout-item-copy"><strong title="' + escapeHtml(group.productName) + '">' + escapeHtml(group.productName) + '</strong>' + (details.length ? '<small>' + escapeHtml(details.join(' · ')) + '</small>' : '') + '</span>' +
+          '<span class="bar-checkout-item-total">' + money(group.quantity * group.unitPrice) + '</span>' +
+          (editable ? '<button class="bar-checkout-item-edit" type="button" data-bar-item-group-edit="' + index + '"><svg><use href="#bar-icon-edit"></use></svg><span>Editar</span></button>' : '') +
           '</div>';
       }).join('') || '<div class="lesson-empty-state">Nenhum item ativo nesta comanda.</div>';
 
@@ -22866,6 +23350,8 @@
     }
 
     function closeBarCommandModal() {
+      closeBarCustomerEditModal();
+      closeBarItemGroupEditModal();
       $('barCommandModal').classList.remove('show');
       $('barCommandModal').setAttribute('aria-hidden', 'true');
       opsState.selectedBarOrderId = null;
@@ -23776,6 +24262,67 @@
       }
     }
 
+    async function saveBarItemGroupQuantityAction(forceQuantity) {
+      const group = selectedBarCheckoutGroup();
+      const order = barOrderById(opsState.selectedBarOrderId);
+      if (!group || !order || !barOrderCanEdit(order)) return;
+      const requested = forceQuantity === undefined ? Number($('barItemGroupQuantity').value || 0) : Number(forceQuantity || 0);
+      const nextQuantity = Math.max(0, Math.min(Number(group.quantity || 0), Math.floor(requested)));
+      if (nextQuantity === Number(group.quantity || 0)) {
+        closeBarItemGroupEditModal();
+        return;
+      }
+      if (nextQuantity === 0 && !window.confirm('Excluir ' + group.productName + ' desta comanda?\n\nA quantidade será devolvida ao estoque.')) return;
+
+      const changes = [];
+      let remaining = nextQuantity;
+      group.items.forEach(function (item) {
+        const current = Number(item.quantity || 0);
+        const keep = Math.min(current, remaining);
+        remaining -= keep;
+        if (keep < current) changes.push({ item: item, quantity: keep });
+      });
+      if (!changes.length) return;
+
+      const saveButton = $('barItemGroupSaveBtn');
+      const deleteButton = $('barItemGroupDeleteBtn');
+      try {
+        requireAdminSession();
+        saveButton.disabled = true;
+        deleteButton.disabled = true;
+        saveButton.textContent = 'Salvando...';
+        for (const change of changes) {
+          const item = change.item;
+          const current = Number(item.quantity || 0);
+          if (barCanPersist(item.id)) {
+            const saved = await supabaseRest('rpc/bar_set_order_item_quantity', {
+              method: 'POST',
+              body: { p_item_id: item.id, p_quantity: change.quantity },
+              prefer: 'return=representation'
+            });
+            Object.assign(item, mapBarOrderItemRow(Array.isArray(saved) ? saved[0] : saved));
+          } else {
+            const product = barProductById(item.productId);
+            if (product) product.stock = Number(product.stock || 0) + (current - change.quantity);
+            item.quantity = change.quantity;
+            if (change.quantity <= 0) item.status = 'CANCELADO';
+          }
+        }
+        if (changes.some(function (change) { return barCanPersist(change.item.id); })) await loadBarData(true);
+        else recalculateLocalBarOrder(order);
+        closeBarItemGroupEditModal();
+        renderBarModule();
+        renderBarCommandModal();
+        toast(nextQuantity ? 'Quantidade atualizada e estoque corrigido.' : 'Produto excluído e devolvido ao estoque.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        saveButton.disabled = false;
+        deleteButton.disabled = false;
+        saveButton.textContent = 'Salvar';
+      }
+    }
+
     async function updateBarOrderStatusAction(status) {
       const order = barOrderById(opsState.selectedBarOrderId);
       if (!order) return;
@@ -23794,16 +24341,16 @@
       }
     }
 
-    async function editBarOrderCustomerNameAction() {
+    async function saveBarOrderCustomerAction(event) {
+      if (event) event.preventDefault();
       const order = barOrderById(opsState.selectedBarOrderId);
       if (!order || !barOrderIsOpen(order)) return;
       const orderItems = barItemsForOrder(order.id);
       const customer = barOrderCustomerDetails(order, orderItems);
       const currentName = String(order.customerName || customer.name || '').trim();
       const currentPhone = barPhoneDigits(order.customerPhone || customer.phone || '');
-      const enteredName = window.prompt('Corrigir o nome desta comanda:', currentName);
-      if (enteredName === null) return;
-      const nextName = enteredName.trim().replace(/\s+/g, ' ');
+      const currentNotes = String(order.notes || '').trim();
+      const nextName = String($('barCustomerEditName').value || '').trim().replace(/\s+/g, ' ');
       if (nextName.length < 2) {
         toast('Informe um nome com pelo menos 2 caracteres.');
         return;
@@ -23812,18 +24359,21 @@
         toast('O nome pode ter no máximo 80 caracteres.');
         return;
       }
-      const enteredPhone = window.prompt('Telefone com DDD (opcional):', currentPhone ? barPhoneLabel(currentPhone) : '');
-      if (enteredPhone === null) return;
-      const nextPhone = barPhoneDigits(enteredPhone);
+      const nextPhone = barPhoneDigits($('barCustomerEditPhone').value);
+      const nextNotes = String($('barCustomerEditNotes').value || '').trim();
       if (nextPhone && (nextPhone.length < 10 || nextPhone.length > 13)) {
         toast('Informe um telefone com DDD válido.');
         return;
       }
       const sameName = normalizeMatchText(nextName) === normalizeMatchText(currentName);
       const samePhone = nextPhone === currentPhone;
-      if (sameName && samePhone) return;
+      const sameNotes = nextNotes === currentNotes;
+      if (sameName && samePhone && sameNotes) {
+        closeBarCustomerEditModal();
+        return;
+      }
 
-      const button = $('barOrderEditNameBtn');
+      const button = $('barCustomerEditSaveBtn');
       const originalLabel = button.innerHTML;
       try {
         requireAdminSession();
@@ -23832,7 +24382,7 @@
         if (barCanPersist(order.id)) {
           await supabaseRest('bar_orders?id=eq.' + encodeURIComponent(order.id), {
             method: 'PATCH',
-            body: { customer_name: nextName, customer_phone: nextPhone || null, updated_at: new Date().toISOString() },
+            body: { customer_name: nextName, customer_phone: nextPhone || null, notes: nextNotes || null, updated_at: new Date().toISOString() },
             prefer: 'return=representation'
           });
           let itemFilter = 'bar_order_items?order_id=eq.' + encodeURIComponent(order.id);
@@ -23847,6 +24397,7 @@
           const previousNames = [currentName, customer.name, order.customerName].map(normalizeMatchText).filter(Boolean);
           order.customerName = nextName;
           order.customerPhone = nextPhone;
+          order.notes = nextNotes;
           orderItems.forEach(function (item) {
             if (!order.tableId || previousNames.includes(normalizeMatchText(item.customerName))) {
               item.customerName = nextName;
@@ -23854,9 +24405,10 @@
             }
           });
         }
+        closeBarCustomerEditModal();
         renderBarModule();
         renderBarCommandModal();
-        toast('Nome e telefone da comanda atualizados.');
+        toast('Dados da comanda atualizados.');
       } catch (error) {
         reportActionError(error);
       } finally {
@@ -23944,6 +24496,7 @@
             return String(item.id) !== String(order.id);
           });
         }
+        closeBarCustomerEditModal();
         closeBarCommandModal();
         renderBarModule();
         toast('Comanda excluída e itens devolvidos ao estoque.');
@@ -26708,6 +27261,11 @@
           updateBarItemStatusAction(statusBtn.dataset.barItemStatus, statusBtn.dataset.nextStatus);
           return;
         }
+        const groupEditBtn = event.target.closest('[data-bar-item-group-edit]');
+        if (groupEditBtn) {
+          openBarItemGroupEditModal(groupEditBtn.dataset.barItemGroupEdit);
+          return;
+        }
         const cancelBtn = event.target.closest('[data-bar-item-cancel]');
         if (cancelBtn) {
           cancelBarItemAction(cancelBtn.dataset.barItemCancel);
@@ -26807,7 +27365,40 @@
       $('barProfessorDiscountBtn').addEventListener('click', function () {
         toggleBarPresetDiscountAction(10, 'professor', 'barProfessorDiscountBtn');
       });
-      $('barOrderEditNameBtn').addEventListener('click', editBarOrderCustomerNameAction);
+      $('barOrderEditNameBtn').addEventListener('click', openBarCustomerEditModal);
+      $('barCustomerEditForm').addEventListener('submit', saveBarOrderCustomerAction);
+      $('barCustomerEditCloseBtn').addEventListener('click', closeBarCustomerEditModal);
+      $('barCustomerEditCancelBtn').addEventListener('click', closeBarCustomerEditModal);
+      $('barCustomerEditModal').addEventListener('click', function (event) {
+        if (event.target.id === 'barCustomerEditModal') closeBarCustomerEditModal();
+      });
+      $('barCustomerEditPhone').addEventListener('input', function () {
+        this.value = barPhoneLabel(this.value).slice(0, 15);
+      });
+      $('barItemGroupEditCloseBtn').addEventListener('click', closeBarItemGroupEditModal);
+      $('barItemGroupEditCancelBtn').addEventListener('click', closeBarItemGroupEditModal);
+      $('barItemGroupEditModal').addEventListener('click', function (event) {
+        if (event.target.id === 'barItemGroupEditModal') closeBarItemGroupEditModal();
+      });
+      $('barItemGroupQuantity').addEventListener('input', updateBarItemGroupEditor);
+      $('barItemGroupMinusBtn').addEventListener('click', function () {
+        const input = $('barItemGroupQuantity');
+        input.value = Math.max(0, Number(input.value || 0) - 1);
+        updateBarItemGroupEditor();
+      });
+      $('barItemGroupPlusBtn').addEventListener('click', function () {
+        const group = selectedBarCheckoutGroup();
+        const input = $('barItemGroupQuantity');
+        input.value = Math.min(Number(group && group.quantity || 0), Number(input.value || 0) + 1);
+        updateBarItemGroupEditor();
+      });
+      $('barItemGroupSaveBtn').addEventListener('click', function () { saveBarItemGroupQuantityAction(); });
+      $('barItemGroupDeleteBtn').addEventListener('click', function () { saveBarItemGroupQuantityAction(0); });
+      ['barOrderMessageBtn', 'barOrderChargeBtn', 'barOrderAccountBtn'].forEach(function (id) {
+        $(id).addEventListener('click', function (event) {
+          if (this.getAttribute('aria-disabled') === 'true') event.preventDefault();
+        });
+      });
       $('barOrderDeleteBtn').addEventListener('click', deleteBarOrderAction);
       $('barOrderPayBtn').addEventListener('click', payBarOrderAction);
       $('barOrderCloseBtn').addEventListener('click', closeBarOrderAction);
