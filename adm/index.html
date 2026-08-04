@@ -5772,7 +5772,8 @@
     }
 
     .bar-command-modal .bar-checkout-grid {
-      grid-template-columns: .7fr .7fr 1fr 1.6fr;
+      grid-template-columns: 128px .72fr .72fr 1fr 1.55fr;
+      align-items: end;
       gap: 8px;
       margin-top: 8px;
       padding: 10px;
@@ -5785,10 +5786,14 @@
       margin: 8px 0 0;
     }
 
-    .bar-checkout-split > .bar-checkout-split-toggle {
-      width: max-content;
-      max-width: 100%;
-      justify-content: flex-start;
+    .bar-checkout-grid .bar-checkout-split-toggle {
+      width: 128px;
+      min-height: 38px;
+      height: 38px;
+      align-self: end;
+      justify-content: center;
+      padding: 7px 8px;
+      font-size: 9px;
     }
 
     .bar-checkout-split-head {
@@ -5822,8 +5827,8 @@
     }
 
     .bar-checkout-split-body {
-      margin-top: 6px;
-      padding: 7px;
+      margin-top: 8px;
+      padding: 6px;
       border: 1px solid #d4e2e5;
       border-radius: 8px;
       background: #ffffff;
@@ -5899,48 +5904,51 @@
 
     .bar-checkout-split-allocation {
       display: grid;
-      gap: 4px;
+      gap: 3px;
       margin-top: 6px;
     }
 
     .bar-split-allocation-row {
       display: grid;
-      grid-template-columns: minmax(150px, .85fr) minmax(0, 2fr);
-      align-items: stretch;
+      grid-template-columns: minmax(245px, .9fr) minmax(0, 2.15fr);
+      align-items: center;
       gap: 5px;
-      padding: 4px;
+      padding: 3px 4px;
       border: 1px solid #dce7e9;
-      border-radius: 9px;
-      background: #f8fbfb;
+      border-radius: 7px;
+      background: #ffffff;
     }
 
     .bar-split-allocation-product {
       min-width: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 1px;
-      padding: 3px 6px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto auto;
+      align-items: center;
+      column-gap: 5px;
+      padding: 1px 4px;
       border-left: 3px solid var(--lime);
       cursor: grab;
     }
 
     .bar-split-allocation-actions {
+      grid-column: 2;
+      grid-row: 1 / 3;
       display: flex;
-      flex-wrap: wrap;
-      gap: 3px;
-      margin-top: 4px;
+      flex-wrap: nowrap;
+      gap: 2px;
+      margin: 0;
     }
 
     .bar-split-allocation-actions button {
-      min-height: 24px;
-      padding: 3px 7px;
+      min-height: 21px;
+      padding: 2px 5px;
       border: 1px solid #cbdde1;
       border-radius: 6px;
       color: #48616a;
       background: #ffffff;
       font: inherit;
-      font-size: 8px;
+      font-size: 6.5px;
       font-weight: 900;
       cursor: pointer;
       white-space: nowrap;
@@ -5959,35 +5967,36 @@
 
     .bar-split-allocation-product strong,
     .bar-split-allocation-product small {
+      grid-column: 1;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    .bar-split-allocation-product strong { color: #18363d; font-size: 10px; }
-    .bar-split-allocation-product small { color: var(--muted); font-size: 8px; font-weight: 800; }
+    .bar-split-allocation-product strong { color: #18363d; font-size: 9px; }
+    .bar-split-allocation-product small { color: var(--muted); font-size: 7px; font-weight: 800; }
 
     .bar-split-allocation-people {
       min-width: 0;
       display: grid;
-      grid-template-columns: repeat(var(--split-count), minmax(86px, 1fr));
-      gap: 4px;
+      grid-template-columns: repeat(var(--split-count), minmax(78px, 1fr));
+      gap: 3px;
       overflow-x: auto;
     }
 
     .bar-split-allocation-cell {
-      min-width: 86px;
+      min-width: 78px;
       display: grid;
-      gap: 2px;
-      padding: 3px 5px;
+      gap: 1px;
+      padding: 2px 3px;
       border: 1px solid #d4e1e4;
-      border-radius: 8px;
-      background: #ffffff;
+      border-radius: 6px;
+      background: #f7fafb;
       transition: border-color .15s ease, background .15s ease;
     }
 
     .bar-split-allocation-cell.is-drop-target { border-color: var(--lime); background: #f4fbdc; }
-    .bar-split-allocation-cell > span { color: #60717d; font-size: 8px; font-weight: 950; text-transform: uppercase; }
+    .bar-split-allocation-cell > span { color: #60717d; font-size: 7px; font-weight: 950; text-transform: uppercase; }
 
     .bar-split-allocation-money {
       min-width: 0;
@@ -5999,13 +6008,13 @@
     }
 
     .bar-split-allocation-money > span { padding-left: 6px; color: #63808a; font-size: 9px; font-weight: 900; }
-    .bar-split-allocation-money input { width: 100%; min-width: 0; height: 28px; padding: 4px 5px; border: 0; outline: 0; color: var(--teal); background: transparent; font-size: 11px; font-weight: 950; }
+    .bar-split-allocation-money input { width: 100%; min-width: 0; height: 22px; padding: 2px 4px; border: 0; outline: 0; color: var(--teal); background: transparent; font-size: 10px; font-weight: 950; }
     .bar-split-allocation-money input[readonly] { color: #527000; background: #f5fbdc; }
     .bar-split-allocation-equivalent { min-height: 10px; color: #73818d; font-size: 8px; font-weight: 800; }
 
     .bar-split-allocation-quantity {
       min-width: 0;
-      height: 28px;
+      height: 22px;
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
@@ -6017,13 +6026,13 @@
     .bar-split-allocation-quantity input {
       width: 100%;
       min-width: 0;
-      height: 28px;
-      padding: 3px 5px;
+      height: 22px;
+      padding: 2px 5px;
       border: 0;
       outline: 0;
       color: var(--teal);
       background: transparent;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 950;
       text-align: center;
       appearance: textfield;
@@ -6185,10 +6194,19 @@
         gap: 2px;
       }
 
-      .bar-split-allocation-row { padding: 6px; }
-      .bar-split-allocation-product { cursor: default; }
-      .bar-split-allocation-actions { margin-top: 6px; }
-      .bar-split-allocation-actions button { min-height: 30px; padding-inline: 9px; }
+      .bar-split-allocation-row { padding: 5px; }
+      .bar-split-allocation-product {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto auto;
+        cursor: default;
+      }
+      .bar-split-allocation-actions {
+        grid-column: 1;
+        grid-row: 3;
+        flex-wrap: wrap;
+        margin-top: 4px;
+      }
+      .bar-split-allocation-actions button { min-height: 26px; padding-inline: 8px; font-size: 8px; }
 
       .bar-checkout-split-row {
         grid-template-columns: minmax(0, 1fr);
@@ -6349,6 +6367,13 @@
       justify-content: center;
       margin: 0;
       font-size: 12px;
+    }
+
+    .bar-command-modal .bar-checkout-grid .bar-checkout-split-action {
+      width: 128px;
+      min-height: 38px;
+      height: 38px;
+      font-size: 9px;
     }
 
     .bar-checkout-split-action:has(input:checked) {
@@ -15379,7 +15404,13 @@
               <div id="barCheckoutItems"></div>
             </div>
             <div class="bar-checkout-split" id="barCheckoutSplitSection">
-              <label class="bar-checkout-split-toggle bar-checkout-split-action"><input id="barCheckoutSplitToggle" type="checkbox" /><span>Ativar divisão</span></label>
+              <div class="bar-checkout-grid">
+                <label class="bar-checkout-split-toggle bar-checkout-split-action"><input id="barCheckoutSplitToggle" type="checkbox" /><span>Ativar divisão</span></label>
+                <div class="field"><label for="barCheckoutService">Valor adicional</label><input id="barCheckoutService" inputmode="decimal" value="0,00" /></div>
+                <div class="field"><label for="barCheckoutDiscount">Desconto</label><input id="barCheckoutDiscount" inputmode="decimal" value="0,00" /></div>
+                <div class="field" id="barCheckoutSingleMethodField"><label for="barCheckoutMethod">Forma de pagamento</label><select id="barCheckoutMethod"><option value="PIX">Pix</option><option value="DINHEIRO">Dinheiro</option><option value="CARTAO_CREDITO">Cartão de crédito</option><option value="CARTAO_DEBITO">Cartão de débito</option><option value="CONTA_CLIENTE">Conta do cliente</option></select></div>
+                <div class="field full"><label for="barCheckoutNotes">Observação do pagamento</label><textarea id="barCheckoutNotes" rows="2" maxlength="500"></textarea></div>
+              </div>
               <div class="bar-checkout-split-body" id="barCheckoutSplitBody" hidden>
                 <div class="bar-checkout-split-mode" role="group" aria-label="Tipo de divisão">
                   <button type="button" data-bar-split-mode="equal"><span>Dividir igualmente</span><small>Mesmo valor para todos</small></button>
@@ -15405,12 +15436,6 @@
                 <div class="bar-checkout-split-rows" id="barCheckoutSplitRows"></div>
                 <div class="bar-checkout-split-balance" id="barCheckoutSplitBalance" role="status"></div>
               </div>
-            </div>
-            <div class="bar-checkout-grid">
-              <div class="field"><label for="barCheckoutService">Valor adicional</label><input id="barCheckoutService" inputmode="decimal" value="0,00" /></div>
-              <div class="field"><label for="barCheckoutDiscount">Desconto</label><input id="barCheckoutDiscount" inputmode="decimal" value="0,00" /></div>
-              <div class="field" id="barCheckoutSingleMethodField"><label for="barCheckoutMethod">Forma de pagamento</label><select id="barCheckoutMethod"><option value="PIX">Pix</option><option value="DINHEIRO">Dinheiro</option><option value="CARTAO_CREDITO">Cartão de crédito</option><option value="CARTAO_DEBITO">Cartão de débito</option><option value="CONTA_CLIENTE">Conta do cliente</option></select></div>
-              <div class="field full"><label for="barCheckoutNotes">Observação do pagamento</label><textarea id="barCheckoutNotes" rows="2" maxlength="500"></textarea></div>
             </div>
             <div class="bar-command-payment-actions">
               <button class="bar-command-receive" type="button" id="barOrderPayBtn"><svg><use href="#admin-icon-wallet"></use></svg><span>Marcar como paga</span></button>
