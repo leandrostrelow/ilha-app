@@ -5772,7 +5772,7 @@
     }
 
     .bar-command-modal .bar-checkout-grid {
-      grid-template-columns: 140px minmax(120px, .72fr) minmax(120px, .72fr) minmax(180px, 1fr) minmax(230px, 1.5fr);
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       align-items: end;
       gap: 8px;
       margin-top: 8px;
@@ -5793,6 +5793,7 @@
       height: 40px;
       align-self: end;
       justify-content: center;
+      margin: 0;
       padding: 7px 10px;
       font-size: 10px;
       box-sizing: border-box;
@@ -5972,7 +5973,7 @@
     .bar-split-allocation-cell {
       min-width: 0;
       display: grid;
-      grid-template-columns: minmax(50px, auto) minmax(82px, 1fr);
+      grid-template-columns: 58px minmax(82px, 1fr);
       align-items: center;
       gap: 6px;
       min-height: 42px;
@@ -5989,26 +5990,25 @@
     .bar-split-allocation-money {
       width: 100%;
       min-width: 82px;
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      align-items: center;
+      position: relative;
+      display: block;
       height: 32px;
       overflow: hidden;
       border-radius: 6px;
       background: #eef6f7;
     }
 
-    .bar-split-allocation-money > span { padding-left: 6px; color: #63808a; font-size: 9px; font-weight: 900; }
-    .bar-split-allocation-money input { width: 100%; min-width: 0; height: 32px; box-sizing: border-box; display: block; padding: 0 6px; border: 0; outline: 0; color: var(--teal); -webkit-text-fill-color: var(--teal); opacity: 1; line-height: 32px; background: transparent; font-size: 13px; font-weight: 950; }
-    .bar-split-allocation-money input[readonly] { color: #527000; background: #f5fbdc; }
+    .bar-split-allocation-money > span { position: absolute; z-index: 1; top: 50%; left: 7px; padding: 0; color: #63808a; font-size: 9px; font-weight: 900; transform: translateY(-50%); }
+    .bar-split-allocation-money input { width: 100%; min-width: 0; height: 32px; box-sizing: border-box; display: block; padding: 0 25px; border: 0; outline: 0; color: var(--teal); -webkit-text-fill-color: var(--teal); opacity: 1; line-height: 32px; text-align: center; background: transparent; font-size: 13px; font-weight: 950; }
+    .bar-split-allocation-money:has(input[readonly]) { background: #f5fbdc; }
+    .bar-split-allocation-money input[readonly] { color: #527000; background: transparent; }
     .bar-split-allocation-money input[readonly] { -webkit-text-fill-color: #527000; }
     .bar-split-allocation-quantity {
       width: 100%;
       min-width: 76px;
+      position: relative;
       height: 32px;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
+      display: block;
       overflow: hidden;
       border-radius: 6px;
       background: #eef6f7;
@@ -6020,7 +6020,7 @@
       height: 32px;
       box-sizing: border-box;
       display: block;
-      padding: 0 4px;
+      padding: 0 25px;
       border: 0;
       outline: 0;
       color: var(--teal);
@@ -6035,8 +6035,9 @@
 
     .bar-split-allocation-quantity input::-webkit-outer-spin-button,
     .bar-split-allocation-quantity input::-webkit-inner-spin-button { margin: 0; appearance: none; }
-    .bar-split-allocation-quantity input[readonly] { color: #527000; -webkit-text-fill-color: #527000; background: #f5fbdc; }
-    .bar-split-allocation-quantity > span { padding-right: 5px; color: #63808a; font-size: 8px; font-weight: 950; text-transform: uppercase; }
+    .bar-split-allocation-quantity:has(input[readonly]) { background: #f5fbdc; }
+    .bar-split-allocation-quantity input[readonly] { color: #527000; -webkit-text-fill-color: #527000; background: transparent; }
+    .bar-split-allocation-quantity > span { position: absolute; top: 50%; right: 7px; padding: 0; color: #63808a; font-size: 8px; font-weight: 950; text-transform: uppercase; transform: translateY(-50%); }
 
     .bar-checkout-split-count {
       max-width: 190px;
@@ -6396,6 +6397,10 @@
 
     .bar-command-modal .bar-checkout-grid .field.full {
       grid-column: auto;
+    }
+
+    .bar-command-modal .bar-checkout-grid:has(#barCheckoutSingleMethodField[hidden]) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
     .bar-command-modal .bar-checkout-grid .field {
