@@ -14502,16 +14502,16 @@
               </div>
 
               <div class="bar-menu-admin-metrics">
-                <article><span>No cardápio</span><strong id="barMenuVisibleMetric">0</strong></article>
+                <article><span>Online</span><strong id="barMenuOnlineMetric">0</strong></article>
+                <article><span>Na TV</span><strong id="barMenuVisibleMetric">0</strong></article>
                 <article><span>Destaques</span><strong id="barMenuFeaturedMetric">0</strong></article>
-                <article><span>Ocultos</span><strong id="barMenuHiddenMetric">0</strong></article>
               </div>
 
               <section class="bar-menu-qr-card" aria-labelledby="barMenuQrTitle">
                 <img class="bar-menu-qr-image" src="/assets/ilha-bar-cardapio-qr.png" alt="QR Code para abrir o cardápio online do Ilha Bar" />
                 <div class="bar-menu-qr-copy">
                   <h3 id="barMenuQrTitle">QR Code das mesas</h3>
-                  <p>Imprima este código e coloque nas mesas. O cliente abre o cardápio no celular e vê os mesmos produtos e preços publicados na TV.</p>
+                  <p>Imprima este código e coloque nas mesas. O cliente vê todos os produtos marcados como Online; a TV mantém uma seleção própria e mais enxuta.</p>
                   <span class="bar-menu-qr-url">app.ilhatenis.com/menu/?view=mobile</span>
                 </div>
                 <div class="bar-menu-qr-actions">
@@ -19636,7 +19636,8 @@
         unit: row.unit || 'un',
         imageUrl: row.image_url || '',
         active: row.active !== false,
-        menuVisible: row.menu_visible !== false,
+        menuOnlineVisible: row.menu_visible !== false,
+        menuVisible: row.menu_tv_visible !== false,
         menuFeatured: row.menu_featured === true,
         menuSortOrder: Number.isFinite(Number(row.menu_sort_order)) ? Number(row.menu_sort_order) : 1000,
         notes: row.notes || '',
@@ -21410,8 +21411,9 @@
       const list = $('barMenuEditorList');
       if (!list) return;
       const allProducts = barMenuSortedProducts();
-      const visibleProducts = allProducts.filter(function (product) { return product.active && product.menuVisible !== false; });
-      const featuredProducts = visibleProducts.filter(function (product) { return product.menuFeatured; });
+      const onlineProducts = allProducts.filter(function (product) { return product.active && product.menuOnlineVisible !== false; });
+      const tvProducts = allProducts.filter(function (product) { return product.active && product.menuVisible !== false; });
+      const featuredProducts = tvProducts.filter(function (product) { return product.menuFeatured; });
       const search = normalizeMatchText($('barMenuEditorSearch').value);
       const filtered = allProducts.filter(function (product) {
         return !search || normalizeMatchText([product.name, product.category, product.sku].join(' ')).includes(search);
@@ -21423,9 +21425,9 @@
         groups.get(category).push(product);
       });
 
-      $('barMenuVisibleMetric').textContent = visibleProducts.length;
+      $('barMenuOnlineMetric').textContent = onlineProducts.length;
+      $('barMenuVisibleMetric').textContent = tvProducts.length;
       $('barMenuFeaturedMetric').textContent = featuredProducts.length;
-      $('barMenuHiddenMetric').textContent = Math.max(0, allProducts.length - visibleProducts.length);
       $('barMenuEditorCount').textContent = filtered.length === allProducts.length
         ? allProducts.length + ' produto(s)'
         : filtered.length + ' de ' + allProducts.length + ' produto(s)';
@@ -21439,13 +21441,15 @@
             ? '<img src="' + escapeHtml(imageSource) + '" alt="" loading="lazy" decoding="async" data-bar-menu-image />'
             : barProductCategoryIcon(product.category);
           const unavailable = !product.active;
-          const published = product.active && product.menuVisible !== false;
+          const tvUnavailable = unavailable || product.menuOnlineVisible === false;
+          const published = product.active && (product.menuOnlineVisible !== false || product.menuVisible !== false);
           const inactiveText = unavailable ? ' · produto inativo' : '';
           return '<article class="bar-menu-editor-item' + (published ? '' : ' is-hidden') + '">' +
             '<div class="bar-menu-editor-thumb">' + thumb + '</div>' +
             '<div class="bar-menu-editor-copy"><strong>' + escapeHtml(product.name) + '</strong><small>' + money(product.salePrice) + escapeHtml(inactiveText) + '</small></div>' +
             '<div class="bar-menu-editor-controls">' +
-              '<label class="bar-menu-toggle" title="' + (unavailable ? 'Ative o produto no catálogo para exibir na TV' : 'Exibir ou ocultar no cardápio') + '"><input type="checkbox" data-bar-menu-visible="' + escapeHtml(product.id) + '"' + (product.menuVisible !== false ? ' checked' : '') + (unavailable ? ' disabled' : '') + ' /><span>' + (unavailable ? 'Inativo' : 'TV') + '</span></label>' +
+              '<label class="bar-menu-toggle" title="' + (unavailable ? 'Ative o produto no catálogo para publicar' : 'Exibir no cardápio oficial do celular') + '"><input type="checkbox" data-bar-menu-online="' + escapeHtml(product.id) + '"' + (product.menuOnlineVisible !== false ? ' checked' : '') + (unavailable ? ' disabled' : '') + ' /><span>' + (unavailable ? 'Inativo' : 'Online') + '</span></label>' +
+              '<label class="bar-menu-toggle" title="' + (unavailable ? 'Ative o produto no catálogo para exibir na TV' : (tvUnavailable ? 'Marque Online antes de publicar na TV' : 'Exibir na seleção reduzida da televisão')) + '"><input type="checkbox" data-bar-menu-visible="' + escapeHtml(product.id) + '"' + (product.menuVisible !== false ? ' checked' : '') + (tvUnavailable ? ' disabled' : '') + ' /><span>TV</span></label>' +
               '<label class="bar-menu-toggle" title="Dar destaque visual no cardápio"><input type="checkbox" data-bar-menu-featured="' + escapeHtml(product.id) + '"' + (product.menuFeatured ? ' checked' : '') + (unavailable ? ' disabled' : '') + ' /><span>Destaque</span></label>' +
               '<div class="bar-menu-order-actions"><button type="button" data-bar-menu-move="up" data-bar-menu-product="' + escapeHtml(product.id) + '" aria-label="Mover para cima"' + (index === 0 ? ' disabled' : '') + '>↑</button><button type="button" data-bar-menu-move="down" data-bar-menu-product="' + escapeHtml(product.id) + '" aria-label="Mover para baixo"' + (index === products.length - 1 ? ' disabled' : '') + '>↓</button><button class="bar-menu-edit-product" type="button" data-bar-product-edit="' + escapeHtml(product.id) + '">Editar</button></div>' +
             '</div></article>';
@@ -21467,6 +21471,7 @@
       const product = barProductById(id);
       if (!product) return;
       const previous = {
+        menuOnlineVisible: product.menuOnlineVisible,
         menuVisible: product.menuVisible,
         menuFeatured: product.menuFeatured,
         menuSortOrder: product.menuSortOrder
@@ -21477,7 +21482,8 @@
         renderBarMenuEditor();
         if (barCanPersist(product.id)) {
           const payload = { updated_at: new Date().toISOString() };
-          if (Object.prototype.hasOwnProperty.call(changes, 'menuVisible')) payload.menu_visible = Boolean(changes.menuVisible);
+          if (Object.prototype.hasOwnProperty.call(changes, 'menuOnlineVisible')) payload.menu_visible = Boolean(changes.menuOnlineVisible);
+          if (Object.prototype.hasOwnProperty.call(changes, 'menuVisible')) payload.menu_tv_visible = Boolean(changes.menuVisible);
           if (Object.prototype.hasOwnProperty.call(changes, 'menuFeatured')) payload.menu_featured = Boolean(changes.menuFeatured);
           if (Object.prototype.hasOwnProperty.call(changes, 'menuSortOrder')) payload.menu_sort_order = Number(changes.menuSortOrder || 1000);
           const saved = await supabaseRest('bar_products?id=eq.' + encodeURIComponent(product.id), {
@@ -23178,7 +23184,8 @@
           unit: $('barProductUnit').value || 'un',
           imageUrl: imageUrl,
           active: $('barProductActive').value === 'true',
-          menuVisible: templateProduct ? templateProduct.menuVisible !== false : true,
+          menuOnlineVisible: templateProduct ? templateProduct.menuOnlineVisible !== false : true,
+          menuVisible: templateProduct ? templateProduct.menuVisible !== false : false,
           menuFeatured: templateProduct ? templateProduct.menuFeatured === true : false,
           menuSortOrder: templateProduct ? Number(templateProduct.menuSortOrder || 1000) : 1000,
           notes: $('barProductNotes').value.trim()
@@ -23196,7 +23203,8 @@
           unit: localProduct.unit,
           image_url: localProduct.imageUrl || null,
           active: localProduct.active,
-          menu_visible: localProduct.menuVisible,
+          menu_visible: localProduct.menuOnlineVisible,
+          menu_tv_visible: localProduct.menuVisible,
           menu_featured: localProduct.menuFeatured,
           menu_sort_order: localProduct.menuSortOrder,
           notes: localProduct.notes || null,
@@ -26517,6 +26525,13 @@
       $('barProductSearch').addEventListener('input', renderBarProducts);
       $('barMenuEditorSearch').addEventListener('input', renderBarMenuEditor);
       $('barMenuEditorList').addEventListener('change', function (event) {
+        const onlineInput = event.target.closest('[data-bar-menu-online]');
+        if (onlineInput) {
+          updateBarMenuProductAction(onlineInput.dataset.barMenuOnline, onlineInput.checked
+            ? { menuOnlineVisible: true }
+            : { menuOnlineVisible: false, menuVisible: false });
+          return;
+        }
         const visibleInput = event.target.closest('[data-bar-menu-visible]');
         if (visibleInput) {
           updateBarMenuProductAction(visibleInput.dataset.barMenuVisible, { menuVisible: visibleInput.checked });

@@ -166,6 +166,7 @@ create table if not exists public.bar_products (
   image_url text,
   active boolean not null default true,
   menu_visible boolean not null default true,
+  menu_tv_visible boolean not null default false,
   menu_featured boolean not null default false,
   menu_sort_order integer not null default 1000,
   notes text,
@@ -175,6 +176,15 @@ create table if not exists public.bar_products (
 
 alter table public.bar_products
   add column if not exists menu_visible boolean not null default true,
+  add column if not exists menu_tv_visible boolean;
+
+update public.bar_products
+set menu_tv_visible = menu_visible
+where menu_tv_visible is null;
+
+alter table public.bar_products
+  alter column menu_tv_visible set default false,
+  alter column menu_tv_visible set not null,
   add column if not exists menu_featured boolean not null default false,
   add column if not exists menu_sort_order integer not null default 1000;
 
@@ -366,6 +376,7 @@ create unique index if not exists app_court_bookings_client_day_unique_idx
 create index if not exists bar_products_active_idx on public.bar_products(active, category, name);
 create index if not exists bar_products_stock_idx on public.bar_products(stock_quantity, minimum_stock) where active = true;
 create index if not exists bar_products_public_menu_idx on public.bar_products(menu_visible, active, category, menu_sort_order, name);
+create index if not exists bar_products_public_tv_menu_idx on public.bar_products(menu_tv_visible, active, category, menu_sort_order, name);
 create index if not exists bar_public_cards_active_idx on public.bar_public_cards(active, code);
 create index if not exists bar_customers_name_idx on public.bar_customers(lower(name));
 create index if not exists bar_customers_last_order_idx on public.bar_customers(last_order_at desc);
@@ -2320,6 +2331,7 @@ grant select (
   image_url,
   active,
   menu_visible,
+  menu_tv_visible,
   menu_featured,
   menu_sort_order,
   updated_at
