@@ -23277,12 +23277,9 @@
         const status = String(item.status || '').toUpperCase();
         const cancelled = status === 'CANCELADO';
         const statusClass = status === 'EM_PREPARO' ? ' is-preparing' : (status === 'PRONTO' ? ' is-ready' : (status === 'ENTREGUE' ? ' is-delivered' : ''));
-        const itemPhone = barPhoneDigits(item.customerPhone || customer.phone);
         const meta = [];
         const orderedAt = barOrderItemDateTimeLabel(item.created);
-        if (orderedAt) meta.push('<span class="bar-command-item-ordered-at"><svg><use href="#admin-icon-calendar"></use></svg><strong>Pedido:</strong> ' + escapeHtml(orderedAt) + '</span>');
-        if (itemPhone) meta.push('<span><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(itemPhone)) + '</span>');
-        if (item.deliveryLocation) meta.push('<span><strong>Local:</strong> ' + escapeHtml(item.deliveryLocation) + '</span>');
+        if (orderedAt) meta.push('<span class="bar-command-item-ordered-at"><svg><use href="#admin-icon-calendar"></use></svg>' + escapeHtml(orderedAt) + '</span>');
         if (item.notes) meta.push('<span><strong>Obs.:</strong> ' + escapeHtml(item.notes) + '</span>');
         const deliveryAction = cancelled ? '' : '<button class="small-btn bar-item-deliver" type="button"' + (status === 'ENTREGUE' ? ' disabled' : ' data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="ENTREGUE"') + '>Entregue</button>';
         return '<article class="bar-item-row bar-command-item' + statusClass + (cancelled ? ' cancelled' : '') + '">' +
