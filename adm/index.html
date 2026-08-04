@@ -5836,6 +5836,48 @@
       gap: 7px;
     }
 
+    .bar-checkout-split-mode {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 5px;
+      margin-bottom: 7px;
+      padding: 4px;
+      border: 1px solid #d4e2e5;
+      border-radius: 10px;
+      background: #f2f7f8;
+    }
+
+    .bar-checkout-split-mode button {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 7px 12px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: #5f6f7c;
+      background: transparent;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .bar-checkout-split-mode button.active {
+      border-color: #b7db4a;
+      color: #365500;
+      background: #effbd0;
+      box-shadow: 0 2px 7px rgba(74, 105, 0, .08);
+    }
+
+    .bar-checkout-split-mode button small {
+      color: inherit;
+      font-size: 9px;
+      font-weight: 750;
+      opacity: .82;
+    }
+
     .bar-checkout-split-help {
       min-height: 32px;
       display: flex;
@@ -5882,6 +5924,35 @@
       border-left: 3px solid var(--lime);
       cursor: grab;
     }
+
+    .bar-split-allocation-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      margin-top: 4px;
+    }
+
+    .bar-split-allocation-actions button {
+      min-height: 24px;
+      padding: 3px 7px;
+      border: 1px solid #cbdde1;
+      border-radius: 6px;
+      color: #48616a;
+      background: #ffffff;
+      font: inherit;
+      font-size: 8px;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .bar-split-allocation-actions button:first-child {
+      border-color: #b7db4a;
+      color: #466300;
+      background: #f4fbdc;
+    }
+
+    .bar-split-allocation-actions button:hover { border-color: var(--teal); color: var(--teal); }
 
     .bar-split-allocation-product:active { cursor: grabbing; }
     .bar-split-allocation-product.is-dragging { opacity: .45; }
@@ -6105,6 +6176,9 @@
     }
 
     @media (max-width: 520px) {
+      .bar-checkout-split-mode { grid-template-columns: minmax(0, 1fr); }
+      .bar-checkout-split-mode button { justify-content: flex-start; }
+
       .bar-checkout-split-help {
         align-items: flex-start;
         flex-direction: column;
@@ -6113,6 +6187,8 @@
 
       .bar-split-allocation-row { padding: 6px; }
       .bar-split-allocation-product { cursor: default; }
+      .bar-split-allocation-actions { margin-top: 6px; }
+      .bar-split-allocation-actions button { min-height: 30px; padding-inline: 9px; }
 
       .bar-checkout-split-row {
         grid-template-columns: minmax(0, 1fr);
@@ -15305,6 +15381,10 @@
             <div class="bar-checkout-split" id="barCheckoutSplitSection">
               <label class="bar-checkout-split-toggle bar-checkout-split-action"><input id="barCheckoutSplitToggle" type="checkbox" /><span>Ativar divisão</span></label>
               <div class="bar-checkout-split-body" id="barCheckoutSplitBody" hidden>
+                <div class="bar-checkout-split-mode" role="group" aria-label="Tipo de divisão">
+                  <button type="button" data-bar-split-mode="equal"><span>Dividir igualmente</span><small>Mesmo valor para todos</small></button>
+                  <button type="button" data-bar-split-mode="separate"><span>Separar por itens</span><small>Escolha quem consumiu</small></button>
+                </div>
                 <div class="bar-checkout-split-controls">
                   <label class="bar-checkout-split-count" for="barCheckoutSplitCount"><span>Quantidade de pessoas</span><select id="barCheckoutSplitCount">
                     <option value="2">2 pessoas</option>
@@ -15319,7 +15399,7 @@
                     <option value="11">11 pessoas</option>
                     <option value="12">12 pessoas</option>
                   </select></label>
-                  <div class="bar-checkout-split-help"><strong>Distribua o consumo</strong><span>Arraste um item para uma pessoa ou ajuste os valores. A última pessoa recebe o restante.</span></div>
+                  <div class="bar-checkout-split-help" id="barCheckoutSplitHelp"></div>
                 </div>
                 <div class="bar-checkout-split-allocation" id="barCheckoutSplitAllocation"></div>
                 <div class="bar-checkout-split-rows" id="barCheckoutSplitRows"></div>
@@ -19617,6 +19697,7 @@
       selectedBarCheckoutGroupIndex: -1,
       barDayClosingPaymentFilter: 'TODOS',
       barCheckoutSplitEnabled: false,
+      barCheckoutSplitMode: 'equal',
       barCheckoutSplitCount: 2,
       barCheckoutSplitMethods: ['PIX', 'PIX'],
       barCheckoutSplitValues: [],
@@ -23198,6 +23279,30 @@
       renderBarCheckoutSplit(order);
     }
 
+    function splitBarCheckoutGroupEqually(order, groupIndex) {
+      const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
+      const group = opsState.barCheckoutGroups[groupIndex];
+      if (!order || !group) return;
+      const totalCents = Math.max(0, Math.round(Number(group.quantity || 0) * Number(group.unitPrice || 0) * 100));
+      if (barCheckoutGroupUsesQuantity(group)) {
+        const totalQuantity = Math.max(0, Math.round(Number(group.quantity || 0)));
+        const unitCents = Math.max(1, Math.round(Number(group.unitPrice || 0) * 100));
+        const baseQuantity = Math.floor(totalQuantity / count);
+        const remainder = totalQuantity - (baseQuantity * count);
+        opsState.barCheckoutSplitAllocations[groupIndex] = Array.from({ length: count }, function (_, index) {
+          return (baseQuantity + (index < remainder ? 1 : 0)) * unitCents;
+        });
+      } else {
+        const baseCents = Math.floor(totalCents / count);
+        const remainder = totalCents - (baseCents * count);
+        opsState.barCheckoutSplitAllocations[groupIndex] = Array.from({ length: count }, function (_, index) {
+          return baseCents + (index < remainder ? 1 : 0);
+        });
+      }
+      syncBarCheckoutSplitValuesFromAllocations(order);
+      renderBarCheckoutSplit(order);
+    }
+
     function barCheckoutAllocationEquivalent(group, cents) {
       const unitCents = Math.round(Number(group.unitPrice || 0) * 100);
       if (cents <= 0 || unitCents <= 0) return 'Sem valor';
@@ -23221,6 +23326,11 @@
     function barCheckoutSplitAmounts(order) {
       const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
       const totalCents = Math.round(barCheckoutFinalTotal(order) * 100);
+      if (opsState.barCheckoutSplitMode !== 'separate') {
+        opsState.barCheckoutSplitValues = barCheckoutEqualSplitAmounts(order);
+        opsState.barCheckoutSplitTotalCents = totalCents;
+        return opsState.barCheckoutSplitValues.slice(0, count);
+      }
       if (
         opsState.barCheckoutSplitValues.length !== count ||
         Number(opsState.barCheckoutSplitTotalCents) !== totalCents
@@ -23284,9 +23394,11 @@
       const section = $('barCheckoutSplitSection');
       const open = Boolean(order && barOrderCanEdit(order));
       const enabled = open && Boolean(opsState.barCheckoutSplitEnabled);
+      const mode = opsState.barCheckoutSplitMode === 'separate' ? 'separate' : 'equal';
       const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
       const defaultMethod = $('barCheckoutMethod').value || 'PIX';
       opsState.barCheckoutSplitCount = count;
+      opsState.barCheckoutSplitMode = mode;
       while (opsState.barCheckoutSplitMethods.length < count) opsState.barCheckoutSplitMethods.push(defaultMethod);
       opsState.barCheckoutSplitMethods = opsState.barCheckoutSplitMethods.slice(0, count);
       section.hidden = !open;
@@ -23294,6 +23406,17 @@
       $('barCheckoutSplitBody').hidden = !enabled;
       $('barCheckoutSingleMethodField').hidden = enabled;
       $('barCheckoutSplitCount').value = String(count);
+      document.querySelectorAll('[data-bar-split-mode]').forEach(function (button) {
+        const active = button.dataset.barSplitMode === mode;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      const splitHelp = $('barCheckoutSplitHelp');
+      if (splitHelp) {
+        splitHelp.innerHTML = mode === 'equal'
+          ? '<strong>Divisão igual</strong><span>O total será dividido automaticamente entre todas as pessoas.</span>'
+          : '<strong>Separação por itens</strong><span>Use “Igual” ou escolha quem consumiu cada item.</span>';
+      }
       const paymentOptions = [
         ['PIX', 'Pix'],
         ['DINHEIRO', 'Dinheiro'],
@@ -23301,13 +23424,13 @@
         ['CARTAO_DEBITO', 'Cartão de débito'],
         ['CONTA_CLIENTE', 'Conta do cliente']
       ];
-      const allocationReset = ensureBarCheckoutSplitAllocations(order);
+      const allocationReset = enabled && mode === 'separate' ? ensureBarCheckoutSplitAllocations(order) : false;
       const finalTotalCents = Math.max(0, Math.round(barCheckoutFinalTotal(order) * 100));
-      if (enabled && (allocationReset || Number(opsState.barCheckoutSplitAllocationTotalCents) !== finalTotalCents)) {
+      if (enabled && mode === 'separate' && (allocationReset || Number(opsState.barCheckoutSplitAllocationTotalCents) !== finalTotalCents)) {
         syncBarCheckoutSplitValuesFromAllocations(order);
       }
       const amounts = barCheckoutSplitAmounts(order);
-      $('barCheckoutSplitAllocation').innerHTML = enabled ? opsState.barCheckoutGroups.map(function (group, groupIndex) {
+      $('barCheckoutSplitAllocation').innerHTML = enabled && mode === 'separate' ? opsState.barCheckoutGroups.map(function (group, groupIndex) {
         const groupTotalCents = Math.max(0, Math.round(Number(group.quantity || 0) * Number(group.unitPrice || 0) * 100));
         const unitCents = Math.max(0, Math.round(Number(group.unitPrice || 0) * 100));
         const usesQuantity = barCheckoutGroupUsesQuantity(group);
@@ -23321,16 +23444,24 @@
             : '<span class="bar-split-allocation-money"><span>R$</span><input data-bar-split-item-amount="' + groupIndex + ':' + personIndex + '" type="text" inputmode="decimal" autocomplete="off" value="' + (cents / 100).toFixed(2).replace('.', ',') + '" aria-label="Parte de ' + escapeHtml(group.productName) + ' da pessoa ' + (personIndex + 1) + '"' + (automaticRemainder ? ' readonly' : '') + ' /></span><small class="bar-split-allocation-equivalent">' + escapeHtml(barCheckoutAllocationEquivalent(group, cents)) + (automaticRemainder ? ' · restante' : '') + '</small>';
           return '<label class="bar-split-allocation-cell" data-bar-split-drop-person="' + personIndex + '" data-bar-split-drop-group="' + groupIndex + '"><span>Pessoa ' + (personIndex + 1) + '</span>' + allocationControl + '</label>';
         }).join('');
-        return '<div class="bar-split-allocation-row"><div class="bar-split-allocation-product" draggable="true" data-bar-split-drag-group="' + groupIndex + '" title="Arraste para atribuir o item inteiro a uma pessoa"><strong>' + Number(group.quantity || 0) + 'x ' + escapeHtml(group.productName) + '</strong><small>' + money(groupTotalCents / 100) + (usesQuantity ? ' · divida por unidades' : ' · divida por valor') + '</small></div><div class="bar-split-allocation-people" style="--split-count:' + count + '">' + people + '</div></div>';
+        const directActions = '<div class="bar-split-allocation-actions"><button type="button" data-bar-split-item-equal="' + groupIndex + '">Dividir igual</button>' + Array.from({ length: count }, function (_, personIndex) {
+          return '<button type="button" data-bar-split-item-person="' + groupIndex + ':' + personIndex + '">Pessoa ' + (personIndex + 1) + '</button>';
+        }).join('') + '</div>';
+        return '<div class="bar-split-allocation-row"><div class="bar-split-allocation-product" draggable="true" data-bar-split-drag-group="' + groupIndex + '" title="Arraste para atribuir o item inteiro a uma pessoa"><strong>' + Number(group.quantity || 0) + 'x ' + escapeHtml(group.productName) + '</strong><small>' + money(groupTotalCents / 100) + (usesQuantity ? ' · por unidades' : ' · por valor') + '</small>' + directActions + '</div><div class="bar-split-allocation-people" style="--split-count:' + count + '">' + people + '</div></div>';
       }).join('') : '';
       $('barCheckoutSplitRows').innerHTML = enabled ? amounts.map(function (amount, index) {
-        const automaticRemainder = index === amounts.length - 1;
+        const automaticRemainder = mode === 'separate' && index === amounts.length - 1;
+        const automaticAmount = mode === 'equal' || automaticRemainder;
         const selectedMethod = opsState.barCheckoutSplitMethods[index] || defaultMethod;
         const options = paymentOptions.map(function (option) {
           return '<option value="' + option[0] + '"' + (option[0] === selectedMethod ? ' selected' : '') + '>' + option[1] + '</option>';
         }).join('');
         const amountValue = Number(amount || 0).toFixed(2).replace('.', ',');
-        return '<div class="bar-checkout-split-row"><div class="bar-checkout-split-person"><strong>Pessoa ' + (index + 1) + '</strong><small>' + (automaticRemainder ? 'Restante calculado automaticamente' : 'Parte ' + (index + 1) + ' de ' + count) + '</small></div><label class="bar-checkout-split-amount-field"><span>' + (automaticRemainder ? 'Restante automático' : 'Valor') + '</span><span class="bar-checkout-split-money' + (automaticRemainder ? ' is-automatic' : '') + '"><span aria-hidden="true">R$</span><input class="bar-checkout-split-amount-input" data-bar-split-amount="' + index + '" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" spellcheck="false" value="' + amountValue + '" aria-label="Valor pago pela pessoa ' + (index + 1) + '"' + (automaticRemainder ? ' readonly' : '') + ' /></span></label><label class="bar-checkout-split-method-field"><span>Forma de pagamento</span><select data-bar-split-method="' + index + '" aria-label="Forma de pagamento da pessoa ' + (index + 1) + '">' + options + '</select></label></div>';
+        const personNote = mode === 'equal'
+          ? 'Parte igual de ' + count
+          : (automaticRemainder ? 'Restante calculado automaticamente' : 'Parte ' + (index + 1) + ' de ' + count);
+        const amountLabel = mode === 'equal' ? 'Valor dividido' : (automaticRemainder ? 'Restante automático' : 'Valor');
+        return '<div class="bar-checkout-split-row"><div class="bar-checkout-split-person"><strong>Pessoa ' + (index + 1) + '</strong><small>' + personNote + '</small></div><label class="bar-checkout-split-amount-field"><span>' + amountLabel + '</span><span class="bar-checkout-split-money' + (automaticAmount ? ' is-automatic' : '') + '"><span aria-hidden="true">R$</span><input class="bar-checkout-split-amount-input" data-bar-split-amount="' + index + '" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" spellcheck="false" value="' + amountValue + '" aria-label="Valor pago pela pessoa ' + (index + 1) + '"' + (automaticAmount ? ' readonly' : '') + ' /></span></label><label class="bar-checkout-split-method-field"><span>Forma de pagamento</span><select data-bar-split-method="' + index + '" aria-label="Forma de pagamento da pessoa ' + (index + 1) + '">' + options + '</select></label></div>';
       }).join('') : '';
       if (enabled) syncBarCheckoutSplitBalance(order);
       const payLabel = $('barOrderPayBtn').querySelector('span');
@@ -23630,6 +23761,7 @@
       $('barCheckoutMethod').value = order.paymentMethod || 'PIX';
       $('barCheckoutNotes').value = order.notes || '';
       opsState.barCheckoutSplitEnabled = false;
+      opsState.barCheckoutSplitMode = 'equal';
       opsState.barCheckoutSplitCount = 2;
       opsState.barCheckoutSplitMethods = [
         $('barCheckoutMethod').value || 'PIX',
@@ -27604,12 +27736,45 @@
       $('barCheckoutDiscount').addEventListener('input', function () { updateBarCheckoutPreview(); });
       $('barCheckoutSplitToggle').addEventListener('change', function () {
         opsState.barCheckoutSplitEnabled = this.checked;
+        if (this.checked) opsState.barCheckoutSplitMode = 'equal';
         opsState.barCheckoutSplitValues = [];
         opsState.barCheckoutSplitTotalCents = null;
         opsState.barCheckoutSplitAllocations = [];
         opsState.barCheckoutSplitAllocationSignature = '';
         opsState.barCheckoutSplitAllocationTotalCents = null;
         updateBarCheckoutPreview();
+      });
+      $('barCheckoutSplitSection').addEventListener('click', function (event) {
+        const modeButton = event.target.closest('[data-bar-split-mode]');
+        if (modeButton) {
+          const nextMode = modeButton.dataset.barSplitMode === 'separate' ? 'separate' : 'equal';
+          if (opsState.barCheckoutSplitMode === nextMode) return;
+          opsState.barCheckoutSplitMode = nextMode;
+          opsState.barCheckoutSplitValues = [];
+          opsState.barCheckoutSplitTotalCents = null;
+          opsState.barCheckoutSplitAllocations = [];
+          opsState.barCheckoutSplitAllocationSignature = '';
+          opsState.barCheckoutSplitAllocationTotalCents = null;
+          updateBarCheckoutPreview();
+          return;
+        }
+        const equalButton = event.target.closest('[data-bar-split-item-equal]');
+        if (equalButton) {
+          splitBarCheckoutGroupEqually(
+            barOrderById(opsState.selectedBarOrderId),
+            Number(equalButton.dataset.barSplitItemEqual)
+          );
+          return;
+        }
+        const personButton = event.target.closest('[data-bar-split-item-person]');
+        if (personButton) {
+          const indexes = String(personButton.dataset.barSplitItemPerson || '').split(':').map(Number);
+          assignBarCheckoutGroupToPerson(
+            barOrderById(opsState.selectedBarOrderId),
+            indexes[0],
+            indexes[1]
+          );
+        }
       });
       $('barCheckoutSplitCount').addEventListener('change', function () {
         opsState.barCheckoutSplitCount = Number(this.value || 2);
