@@ -21151,6 +21151,16 @@
       return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     }
 
+    function barOrderItemDateTimeLabel(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      const options = { timeZone: 'America/Sao_Paulo' };
+      const dateLabel = date.toLocaleDateString('pt-BR', Object.assign({ day: '2-digit', month: '2-digit', year: 'numeric' }, options));
+      const timeLabel = date.toLocaleTimeString('pt-BR', Object.assign({ hour: '2-digit', minute: '2-digit' }, options));
+      return dateLabel + ' às ' + timeLabel;
+    }
+
     function barTableLabel(order) {
       const table = barTableById(order.tableId);
       return order.tableName || table && table.name || order.customerName || 'Balcão';
@@ -23269,6 +23279,8 @@
         const statusClass = status === 'EM_PREPARO' ? ' is-preparing' : (status === 'PRONTO' ? ' is-ready' : (status === 'ENTREGUE' ? ' is-delivered' : ''));
         const itemPhone = barPhoneDigits(item.customerPhone || customer.phone);
         const meta = [];
+        const orderedAt = barOrderItemDateTimeLabel(item.created);
+        if (orderedAt) meta.push('<span class="bar-command-item-ordered-at"><svg><use href="#admin-icon-calendar"></use></svg><strong>Pedido:</strong> ' + escapeHtml(orderedAt) + '</span>');
         if (itemPhone) meta.push('<span><svg><use href="#admin-icon-phone"></use></svg>' + escapeHtml(barPhoneLabel(itemPhone)) + '</span>');
         if (item.deliveryLocation) meta.push('<span><strong>Local:</strong> ' + escapeHtml(item.deliveryLocation) + '</span>');
         if (item.notes) meta.push('<span><strong>Obs.:</strong> ' + escapeHtml(item.notes) + '</span>');
