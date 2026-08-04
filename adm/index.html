@@ -15019,13 +15019,7 @@
             <div class="bar-menu-admin-page">
               <div class="bar-menu-admin-header">
                 <div>
-                  <span class="bar-menu-admin-kicker">TELA VERTICAL</span>
-                  <h2>Cardápio da TV</h2>
-                  <p>Escolha o que aparece, destaque itens e organize a ordem dentro de cada categoria.</p>
-                </div>
-                <div class="bar-menu-admin-actions">
-                  <a class="primary-btn bar-menu-preview-btn" href="/menu" target="_blank" rel="noopener"><svg><use href="#bar-icon-screen"></use></svg><span>Abrir na TV</span></a>
-                  <a class="primary-btn bar-menu-preview-btn bar-menu-mobile-btn" href="/menu/?view=mobile" target="_blank" rel="noopener"><svg><use href="#admin-icon-phone"></use></svg><span>Cardápio celular</span></a>
+                  <h2>Cardápio</h2>
                 </div>
               </div>
 
@@ -21936,9 +21930,15 @@
       if (value.includes('cervej') || value.includes('chopp')) return 'beer';
       if (value.includes('bebid') || value.includes('agua') || value.includes('suco') || value.includes('refriger') || value.includes('isoton')) return 'drink';
       if (value.includes('lanche') || value.includes('sandu') || value.includes('hamburg') || value.includes('torrada')) return 'snack';
-      if (value.includes('almoc') || value.includes('porc') || value.includes('frita') || value.includes('petisco')) return 'portion';
+      if (value.includes('almoc') || value.includes('refeic') || value.includes('porc') || value.includes('frita') || value.includes('petisco')) return 'portion';
       if (value.includes('doce') || value.includes('chocolate') || value.includes('sorvete') || value.includes('bala')) return 'candy';
       return 'default';
+    }
+
+    function barProductCategoryLabel(category) {
+      const value = normalizeMatchText(category || '');
+      if (value.includes('almoc') || value.includes('refeic')) return 'Refeição';
+      return category || 'Outros';
     }
 
     function barProductRequiresProduction(product) {
@@ -21982,7 +21982,7 @@
       }
 
       const categoryButtons = [{ value: 'todos', label: 'Todos', icon: 'bar-icon-grid' }].concat(categories.map(function (category) {
-        return { value: category, label: category };
+        return { value: category, label: barProductCategoryLabel(category) };
       }));
       $('barProductCategoryFilters').innerHTML = categoryButtons.map(function (item) {
         const icon = item.icon ? '<svg aria-hidden="true"><use href="#' + item.icon + '"></use></svg>' : barProductCategoryIcon(item.value);
@@ -22014,7 +22014,7 @@
         const media = imageSource
           ? '<img src="' + escapeHtml(imageSource) + '" alt="' + escapeHtml(product.name) + '" loading="eager" decoding="async" fetchpriority="auto" sizes="(max-width: 700px) 50vw, 260px" data-bar-product-image />' + '<div class="bar-product-placeholder ' + categoryKey + ' is-fallback">' + barProductCategoryIcon(product.category) + '</div>'
           : placeholder;
-        const meta = [product.category, product.sku, product.notes].filter(Boolean).join(' | ');
+        const meta = [barProductCategoryLabel(product.category), product.sku, product.notes].filter(Boolean).join(' | ');
         return '<article class="bar-product-card' + (product.active ? '' : ' is-inactive') + '">' +
           '<div class="bar-product-media">' + media + '<span class="bar-product-category-icon ' + categoryKey + '" title="' + escapeHtml(product.category) + '">' + barProductCategoryIcon(product.category) + '</span></div>' +
           '<div class="bar-product-card-body"><div class="bar-product-card-title"><h3>' + escapeHtml(product.name) + '</h3><small>' + escapeHtml(meta || 'Sem detalhes') + '</small></div>' +
@@ -22097,7 +22097,7 @@
               '<div class="bar-menu-order-actions"><button type="button" data-bar-menu-move="up" data-bar-menu-product="' + escapeHtml(product.id) + '" aria-label="Mover para cima"' + (index === 0 ? ' disabled' : '') + '>↑</button><button type="button" data-bar-menu-move="down" data-bar-menu-product="' + escapeHtml(product.id) + '" aria-label="Mover para baixo"' + (index === products.length - 1 ? ' disabled' : '') + '>↓</button><button class="bar-menu-edit-product" type="button" data-bar-product-edit="' + escapeHtml(product.id) + '">Editar</button></div>' +
             '</div></article>';
         }).join('');
-        return '<section class="bar-menu-editor-category"><div class="bar-menu-editor-category-head"><strong>' + barProductCategoryIcon(category) + escapeHtml(category) + '</strong><span>' + products.length + ' item(ns)</span></div><div class="bar-menu-editor-products">' + items + '</div></section>';
+        return '<section class="bar-menu-editor-category"><div class="bar-menu-editor-category-head"><strong>' + barProductCategoryIcon(category) + escapeHtml(barProductCategoryLabel(category)) + '</strong><span>' + products.length + ' item(ns)</span></div><div class="bar-menu-editor-products">' + items + '</div></section>';
       }).join('') || '<div class="lesson-empty-state">Nenhum produto encontrado.</div>';
 
       list.querySelectorAll('img[data-bar-menu-image]').forEach(function (image) {
@@ -23577,7 +23577,7 @@
       const categoryTabs = categories.map(function (category) {
         return {
           value: category,
-          label: category,
+          label: barProductCategoryLabel(category),
           count: activeProducts.filter(function (product) { return (product.category || 'Outros') === category; }).length,
           icon: barProductCategoryIcon(category)
         };

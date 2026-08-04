@@ -1117,6 +1117,12 @@
         return 'categoria-' + (id || 'outros');
       }
 
+      function categoryLabel(category) {
+        const value = normalize(category);
+        if (value.includes('almoc') || value.includes('refeic')) return 'Refeição';
+        return category || 'Outros';
+      }
+
       function sortedGroups(products) {
         return groupProducts(products).sort(function (a, b) {
           return categoryRank(a.category) - categoryRank(b.category) || a.category.localeCompare(b.category, 'pt-BR');
@@ -1134,7 +1140,7 @@
           activeCategoryFilter = 'all';
         }
         const filters = [{ id: 'all', label: 'Todos' }].concat(groups.map(function (group) {
-          return { id: categoryId(group.category), label: group.category };
+          return { id: categoryId(group.category), label: categoryLabel(group.category) };
         }));
         navigation.innerHTML = filters.map(function (filter) {
           const active = filter.id === activeCategoryFilter;
@@ -1270,7 +1276,7 @@
           ? '<small>Imagens meramente ilustrativas</small>'
           : '';
         const countLabel = group.products.length + (group.products.length === 1 ? ' opção' : ' opções');
-        return '<section class="menu-category" id="' + categoryId(group.category) + '"><header class="menu-category-head"><div class="menu-category-title"><h2>' + escapeHtml(group.category) + '</h2>' + illustrativeNote + '</div><span>' + countLabel + '</span></header><div class="menu-products">' + group.products.map(productHtml).join('') + '</div></section>';
+        return '<section class="menu-category" id="' + categoryId(group.category) + '"><header class="menu-category-head"><div class="menu-category-title"><h2>' + escapeHtml(categoryLabel(group.category)) + '</h2>' + illustrativeNote + '</div><span>' + countLabel + '</span></header><div class="menu-products">' + group.products.map(productHtml).join('') + '</div></section>';
       }
 
       function render(products) {
