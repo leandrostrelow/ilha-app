@@ -5782,7 +5782,12 @@
     }
 
     .bar-checkout-split {
-      margin: 0 0 8px;
+      margin: 8px 0 0;
+    }
+
+    .bar-checkout-split > .bar-checkout-split-toggle {
+      width: 100%;
+      justify-content: center;
     }
 
     .bar-checkout-split-head {
@@ -5822,6 +5827,109 @@
       border-radius: 8px;
       background: #ffffff;
     }
+
+    .bar-checkout-split-controls {
+      display: grid;
+      grid-template-columns: minmax(180px, 230px) minmax(0, 1fr);
+      align-items: end;
+      gap: 12px;
+    }
+
+    .bar-checkout-split-help {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 10px;
+      border-radius: 9px;
+      color: #5d6c78;
+      background: #f4f8f9;
+      font-size: 10px;
+      font-weight: 750;
+    }
+
+    .bar-checkout-split-help strong {
+      color: #18363d;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .bar-checkout-split-allocation {
+      display: grid;
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .bar-split-allocation-row {
+      display: grid;
+      grid-template-columns: minmax(190px, 1fr) minmax(0, 2fr);
+      align-items: stretch;
+      gap: 8px;
+      padding: 7px;
+      border: 1px solid #dce7e9;
+      border-radius: 9px;
+      background: #f8fbfb;
+    }
+
+    .bar-split-allocation-product {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+      padding: 5px 7px;
+      border-left: 3px solid var(--lime);
+      cursor: grab;
+    }
+
+    .bar-split-allocation-product:active { cursor: grabbing; }
+    .bar-split-allocation-product.is-dragging { opacity: .45; }
+
+    .bar-split-allocation-product strong,
+    .bar-split-allocation-product small {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-split-allocation-product strong { color: #18363d; font-size: 11px; }
+    .bar-split-allocation-product small { color: var(--muted); font-size: 9px; font-weight: 800; }
+
+    .bar-split-allocation-people {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: repeat(var(--split-count), minmax(92px, 1fr));
+      gap: 6px;
+      overflow-x: auto;
+    }
+
+    .bar-split-allocation-cell {
+      min-width: 92px;
+      display: grid;
+      gap: 3px;
+      padding: 5px 7px;
+      border: 1px solid #d4e1e4;
+      border-radius: 8px;
+      background: #ffffff;
+      transition: border-color .15s ease, background .15s ease;
+    }
+
+    .bar-split-allocation-cell.is-drop-target { border-color: var(--lime); background: #f4fbdc; }
+    .bar-split-allocation-cell > span { color: #60717d; font-size: 8px; font-weight: 950; text-transform: uppercase; }
+
+    .bar-split-allocation-money {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      border-radius: 6px;
+      background: #eef6f7;
+    }
+
+    .bar-split-allocation-money > span { padding-left: 6px; color: #63808a; font-size: 9px; font-weight: 900; }
+    .bar-split-allocation-money input { width: 100%; min-width: 0; height: 28px; padding: 4px 5px; border: 0; outline: 0; color: var(--teal); background: transparent; font-size: 11px; font-weight: 950; }
+    .bar-split-allocation-money input[readonly] { color: #527000; background: #f5fbdc; }
+    .bar-split-allocation-equivalent { min-height: 10px; color: #73818d; font-size: 8px; font-weight: 800; }
 
     .bar-checkout-split-count {
       max-width: 230px;
@@ -5944,6 +6052,11 @@
     }
 
     @media (max-width: 940px) {
+      .bar-checkout-split-controls,
+      .bar-split-allocation-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
       .bar-checkout-split-row {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
@@ -5954,6 +6067,15 @@
     }
 
     @media (max-width: 520px) {
+      .bar-checkout-split-help {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .bar-split-allocation-row { padding: 6px; }
+      .bar-split-allocation-product { cursor: default; }
+
       .bar-checkout-split-row {
         grid-template-columns: minmax(0, 1fr);
         gap: 8px;
@@ -6103,7 +6225,7 @@
 
     .bar-command-payment-actions {
       display: grid;
-      grid-template-columns: minmax(170px, .7fr) repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
       margin-top: 8px;
     }
@@ -11931,7 +12053,7 @@
       }
 
       body.bar-admin-surface .bar-checkout-split {
-        padding: 11px;
+        padding: 0;
       }
 
       body.bar-admin-surface .bar-checkout-split-row {
@@ -11949,9 +12071,6 @@
         box-shadow: 0 -5px 16px rgba(8, 63, 75, .12);
       }
 
-      body.bar-admin-surface .bar-checkout-split-action {
-        grid-column: 1 / -1;
-      }
     }
 
     @media (max-width: 380px) {
@@ -13025,10 +13144,10 @@
     .bar-order-cart-row {
       min-width: 0;
       display: grid;
-      grid-template-columns: minmax(150px, 1fr) 104px minmax(220px, 1.35fr) auto 30px;
+      grid-template-columns: minmax(190px, 1fr) 104px minmax(280px, 1.6fr) 30px;
       align-items: center;
-      gap: 7px;
-      padding: 6px 9px;
+      gap: 10px;
+      padding: 8px 10px;
       border-bottom: 1px solid #e4ecef;
     }
 
@@ -13040,6 +13159,8 @@
       min-width: 0;
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      gap: 10px;
     }
 
     .bar-order-cart-product strong {
@@ -13048,7 +13169,18 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       color: #17323a;
-      font-size: 11px;
+      font-size: 12px;
+    }
+
+    .bar-order-cart-product-price {
+      flex: 0 0 auto;
+      padding: 4px 7px;
+      border-radius: 999px;
+      color: var(--teal);
+      background: #edf7f7;
+      font-size: 10px;
+      font-weight: 950;
+      white-space: nowrap;
     }
 
     .bar-order-cart-quantity {
@@ -13117,14 +13249,6 @@
     .bar-order-cart-details select.is-required-empty {
       border-color: #e5a52e;
       background: #fff9ed;
-    }
-
-    .bar-order-cart-total {
-      color: var(--teal);
-      font-size: 11px;
-      font-weight: 950;
-      white-space: nowrap;
-      text-align: center;
     }
 
     .bar-order-cart-remove {
@@ -13274,62 +13398,42 @@
       }
 
       .bar-order-cart-list {
-        max-height: 252px;
+        max-height: min(48vh, 340px);
       }
 
       .bar-order-cart-row {
-        grid-template-columns: minmax(0, 1fr) 96px 30px;
-        gap: 6px;
-        padding: 7px;
+        grid-template-columns: 96px minmax(0, 1fr) 34px;
+        gap: 7px;
+        padding: 8px;
       }
 
       .bar-order-cart-product {
-        grid-column: 1;
+        grid-column: 1 / 3;
+        grid-row: 1;
+        min-height: 32px;
       }
 
       .bar-order-cart-quantity {
-        grid-column: 2;
+        grid-column: 1;
+        grid-row: 2;
         width: 96px;
         justify-self: center;
       }
 
       .bar-order-cart-remove {
         grid-column: 3;
+        grid-row: 1;
       }
 
       .bar-order-cart-details,
       .bar-order-cart-details.has-location {
-        grid-column: 1 / -1;
+        grid-column: 2 / 4;
         grid-row: 2;
         grid-template-columns: minmax(0, 1fr);
       }
 
       .bar-order-cart-details.has-location {
-        grid-template-columns: minmax(0, 1fr);
-      }
-
-      .bar-order-cart-total {
-        position: absolute;
-        pointer-events: none;
-        opacity: 0;
-      }
-
-      .bar-order-cart-list {
-        max-height: min(42vh, 310px);
-      }
-
-      .bar-order-cart-row {
-        grid-template-columns: minmax(0, 1fr) 34px;
-        gap: 7px;
-        padding: 8px;
-      }
-
-      .bar-order-cart-product {
-        grid-column: 1;
-        grid-row: 1;
-        min-height: 30px;
-        justify-content: center;
-        text-align: center;
+        grid-template-columns: minmax(105px, .85fr) minmax(125px, 1.15fr);
       }
 
       .bar-order-cart-product strong {
@@ -13337,29 +13441,10 @@
         font-size: 12px;
       }
 
-      .bar-order-cart-remove {
-        grid-column: 2;
-        grid-row: 1;
-      }
-
-      .bar-order-cart-quantity {
-        grid-column: 1 / -1;
-        grid-row: 2;
-        width: 122px;
-        height: 34px;
-        justify-self: center;
-      }
-
-      .bar-order-cart-details,
-      .bar-order-cart-details.has-location {
-        grid-column: 1 / -1;
-        grid-row: 3;
-      }
-
       .bar-order-cart-details input,
       .bar-order-cart-details select {
-        height: 36px;
-        font-size: 12px;
+        height: 34px;
+        font-size: 11px;
       }
 
       .bar-menu-admin-page {
@@ -15170,25 +15255,6 @@
           </section>
 
           <section class="bar-command-panel" data-bar-command-panel="checkout">
-            <div class="bar-checkout-split" id="barCheckoutSplitSection">
-              <div class="bar-checkout-split-body" id="barCheckoutSplitBody" hidden>
-                <label class="bar-checkout-split-count" for="barCheckoutSplitCount"><span>Quantidade de pessoas</span><select id="barCheckoutSplitCount">
-                  <option value="2">2 pessoas</option>
-                  <option value="3">3 pessoas</option>
-                  <option value="4">4 pessoas</option>
-                  <option value="5">5 pessoas</option>
-                  <option value="6">6 pessoas</option>
-                  <option value="7">7 pessoas</option>
-                  <option value="8">8 pessoas</option>
-                  <option value="9">9 pessoas</option>
-                  <option value="10">10 pessoas</option>
-                  <option value="11">11 pessoas</option>
-                  <option value="12">12 pessoas</option>
-                </select></label>
-                <div class="bar-checkout-split-rows" id="barCheckoutSplitRows"></div>
-                <div class="bar-checkout-split-balance" id="barCheckoutSplitBalance" role="status"></div>
-              </div>
-            </div>
             <div class="bar-checkout-summary">
               <div><span>Itens ativos</span><strong id="barCheckoutItemCount">0</strong></div>
               <div><span>Subtotal</span><strong id="barCheckoutSubtotal">R$ 0</strong></div>
@@ -15198,6 +15264,30 @@
               <div class="bar-checkout-review-head"><strong>Itens da comanda</strong><button class="bar-checkout-add-item" type="button" data-bar-command-tab-target="add">+ Adicionar produto</button></div>
               <div id="barCheckoutItems"></div>
             </div>
+            <div class="bar-checkout-split" id="barCheckoutSplitSection">
+              <label class="bar-checkout-split-toggle bar-checkout-split-action"><input id="barCheckoutSplitToggle" type="checkbox" /><span>Ativar divisão</span></label>
+              <div class="bar-checkout-split-body" id="barCheckoutSplitBody" hidden>
+                <div class="bar-checkout-split-controls">
+                  <label class="bar-checkout-split-count" for="barCheckoutSplitCount"><span>Quantidade de pessoas</span><select id="barCheckoutSplitCount">
+                    <option value="2">2 pessoas</option>
+                    <option value="3">3 pessoas</option>
+                    <option value="4">4 pessoas</option>
+                    <option value="5">5 pessoas</option>
+                    <option value="6">6 pessoas</option>
+                    <option value="7">7 pessoas</option>
+                    <option value="8">8 pessoas</option>
+                    <option value="9">9 pessoas</option>
+                    <option value="10">10 pessoas</option>
+                    <option value="11">11 pessoas</option>
+                    <option value="12">12 pessoas</option>
+                  </select></label>
+                  <div class="bar-checkout-split-help"><strong>Distribua o consumo</strong><span>Arraste um item para uma pessoa ou ajuste os valores. A última pessoa recebe o restante.</span></div>
+                </div>
+                <div class="bar-checkout-split-allocation" id="barCheckoutSplitAllocation"></div>
+                <div class="bar-checkout-split-rows" id="barCheckoutSplitRows"></div>
+                <div class="bar-checkout-split-balance" id="barCheckoutSplitBalance" role="status"></div>
+              </div>
+            </div>
             <div class="bar-checkout-grid">
               <div class="field"><label for="barCheckoutService">Valor adicional</label><input id="barCheckoutService" inputmode="decimal" value="0,00" /></div>
               <div class="field"><label for="barCheckoutDiscount">Desconto</label><input id="barCheckoutDiscount" inputmode="decimal" value="0,00" /></div>
@@ -15205,7 +15295,6 @@
               <div class="field full"><label for="barCheckoutNotes">Observação do pagamento</label><textarea id="barCheckoutNotes" rows="2" maxlength="500"></textarea></div>
             </div>
             <div class="bar-command-payment-actions">
-              <label class="bar-checkout-split-toggle bar-checkout-split-action"><input id="barCheckoutSplitToggle" type="checkbox" /><span>Ativar divisão</span></label>
               <button class="bar-command-receive" type="button" id="barOrderPayBtn"><svg><use href="#admin-icon-wallet"></use></svg><span>Marcar como paga</span></button>
               <button class="bar-command-receive bar-command-finalize" type="button" id="barOrderCloseBtn"><svg><use href="#admin-icon-receipt"></use></svg><span>Encerrar comanda</span></button>
             </div>
@@ -19494,6 +19583,10 @@
       barCheckoutSplitMethods: ['PIX', 'PIX'],
       barCheckoutSplitValues: [],
       barCheckoutSplitTotalCents: null,
+      barCheckoutSplitAllocations: [],
+      barCheckoutSplitAllocationSignature: '',
+      barCheckoutSplitAllocationTotalCents: null,
+      barCheckoutSplitDraggedGroup: -1,
       selectedBarQrUrl: '',
       selectedBarQrLabel: '',
       barAlertsEnabled: localStorage.getItem('ilha-bar-alerts-enabled') === 'true',
@@ -22941,6 +23034,101 @@
       return Math.max(0, subtotal + serviceCharge - discount);
     }
 
+    function barCheckoutSplitAllocationKey(order) {
+      const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
+      return count + '::' + opsState.barCheckoutGroups.map(function (group) {
+        return [group.key, Number(group.quantity || 0), Math.round(Number(group.unitPrice || 0) * 100)].join(':');
+      }).join('|');
+    }
+
+    function ensureBarCheckoutSplitAllocations(order) {
+      const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
+      const signature = barCheckoutSplitAllocationKey(order);
+      const shouldReset = opsState.barCheckoutSplitAllocationSignature !== signature ||
+        opsState.barCheckoutSplitAllocations.length !== opsState.barCheckoutGroups.length;
+      if (!shouldReset) return false;
+      opsState.barCheckoutSplitAllocations = opsState.barCheckoutGroups.map(function (group) {
+        const totalCents = Math.max(0, Math.round(Number(group.quantity || 0) * Number(group.unitPrice || 0) * 100));
+        const baseCents = Math.floor(totalCents / count);
+        const remainder = totalCents - (baseCents * count);
+        return Array.from({ length: count }, function (_, index) {
+          return baseCents + (index < remainder ? 1 : 0);
+        });
+      });
+      opsState.barCheckoutSplitAllocationSignature = signature;
+      opsState.barCheckoutSplitAllocationTotalCents = null;
+      return true;
+    }
+
+    function syncBarCheckoutSplitValuesFromAllocations(order) {
+      const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
+      ensureBarCheckoutSplitAllocations(order);
+      const rawByPerson = Array.from({ length: count }, function () { return 0; });
+      opsState.barCheckoutSplitAllocations.forEach(function (allocation) {
+        allocation.slice(0, count).forEach(function (cents, index) {
+          rawByPerson[index] += Math.max(0, Math.round(Number(cents || 0)));
+        });
+      });
+      const rawTotalCents = rawByPerson.reduce(function (sum, cents) { return sum + cents; }, 0);
+      const finalTotalCents = Math.max(0, Math.round(barCheckoutFinalTotal(order) * 100));
+      if (rawTotalCents <= 0) {
+        opsState.barCheckoutSplitValues = barCheckoutEqualSplitAmounts(order);
+      } else {
+        let distributedCents = 0;
+        opsState.barCheckoutSplitValues = rawByPerson.map(function (rawCents, index) {
+          if (index === count - 1) return Math.max(0, finalTotalCents - distributedCents) / 100;
+          const scaledCents = Math.max(0, Math.floor((rawCents * finalTotalCents) / rawTotalCents));
+          distributedCents += scaledCents;
+          return scaledCents / 100;
+        });
+      }
+      opsState.barCheckoutSplitTotalCents = finalTotalCents;
+      opsState.barCheckoutSplitAllocationTotalCents = finalTotalCents;
+    }
+
+    function rebalanceBarCheckoutItemAllocation(order, groupIndex, personIndex, editedValue) {
+      if (!order) return;
+      const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
+      const group = opsState.barCheckoutGroups[groupIndex];
+      if (!group || personIndex < 0 || personIndex >= count - 1) return;
+      ensureBarCheckoutSplitAllocations(order);
+      const totalCents = Math.max(0, Math.round(Number(group.quantity || 0) * Number(group.unitPrice || 0) * 100));
+      const allocation = opsState.barCheckoutSplitAllocations[groupIndex];
+      const otherEditableCents = allocation.reduce(function (sum, cents, index) {
+        return index === personIndex || index === count - 1 ? sum : sum + Math.max(0, Math.round(Number(cents || 0)));
+      }, 0);
+      const availableCents = Math.max(0, totalCents - otherEditableCents);
+      allocation[personIndex] = Math.min(availableCents, Math.max(0, Math.round(Number(editedValue || 0) * 100)));
+      const assignedCents = allocation.reduce(function (sum, cents, index) {
+        return index === count - 1 ? sum : sum + Math.max(0, Math.round(Number(cents || 0)));
+      }, 0);
+      allocation[count - 1] = Math.max(0, totalCents - assignedCents);
+      syncBarCheckoutSplitValuesFromAllocations(order);
+      renderBarCheckoutSplit(order);
+    }
+
+    function assignBarCheckoutGroupToPerson(order, groupIndex, personIndex) {
+      const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
+      const group = opsState.barCheckoutGroups[groupIndex];
+      if (!order || !group || personIndex < 0 || personIndex >= count) return;
+      const totalCents = Math.max(0, Math.round(Number(group.quantity || 0) * Number(group.unitPrice || 0) * 100));
+      opsState.barCheckoutSplitAllocations[groupIndex] = Array.from({ length: count }, function (_, index) {
+        return index === personIndex ? totalCents : 0;
+      });
+      syncBarCheckoutSplitValuesFromAllocations(order);
+      renderBarCheckoutSplit(order);
+    }
+
+    function barCheckoutAllocationEquivalent(group, cents) {
+      const unitCents = Math.round(Number(group.unitPrice || 0) * 100);
+      if (cents <= 0 || unitCents <= 0) return 'Sem valor';
+      const units = cents / unitCents;
+      if (Math.abs(units - Math.round(units)) < 0.001) {
+        return Math.round(units) + (Math.round(units) === 1 ? ' unidade' : ' unidades');
+      }
+      return 'Parte do item';
+    }
+
     function barCheckoutEqualSplitAmounts(order) {
       const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
       const totalCents = Math.round(barCheckoutFinalTotal(order) * 100);
@@ -23022,7 +23210,7 @@
       opsState.barCheckoutSplitCount = count;
       while (opsState.barCheckoutSplitMethods.length < count) opsState.barCheckoutSplitMethods.push(defaultMethod);
       opsState.barCheckoutSplitMethods = opsState.barCheckoutSplitMethods.slice(0, count);
-      section.hidden = !open || !enabled;
+      section.hidden = !open;
       $('barCheckoutSplitToggle').checked = enabled;
       $('barCheckoutSplitBody').hidden = !enabled;
       $('barCheckoutSingleMethodField').hidden = enabled;
@@ -23034,7 +23222,22 @@
         ['CARTAO_DEBITO', 'Cartão de débito'],
         ['CONTA_CLIENTE', 'Conta do cliente']
       ];
+      const allocationReset = ensureBarCheckoutSplitAllocations(order);
+      const finalTotalCents = Math.max(0, Math.round(barCheckoutFinalTotal(order) * 100));
+      if (enabled && (allocationReset || Number(opsState.barCheckoutSplitAllocationTotalCents) !== finalTotalCents)) {
+        syncBarCheckoutSplitValuesFromAllocations(order);
+      }
       const amounts = barCheckoutSplitAmounts(order);
+      $('barCheckoutSplitAllocation').innerHTML = enabled ? opsState.barCheckoutGroups.map(function (group, groupIndex) {
+        const groupTotalCents = Math.max(0, Math.round(Number(group.quantity || 0) * Number(group.unitPrice || 0) * 100));
+        const allocation = opsState.barCheckoutSplitAllocations[groupIndex] || [];
+        const people = Array.from({ length: count }, function (_, personIndex) {
+          const automaticRemainder = personIndex === count - 1;
+          const cents = Math.max(0, Math.round(Number(allocation[personIndex] || 0)));
+          return '<label class="bar-split-allocation-cell" data-bar-split-drop-person="' + personIndex + '" data-bar-split-drop-group="' + groupIndex + '"><span>Pessoa ' + (personIndex + 1) + '</span><span class="bar-split-allocation-money"><span>R$</span><input data-bar-split-item-amount="' + groupIndex + ':' + personIndex + '" type="text" inputmode="decimal" autocomplete="off" value="' + (cents / 100).toFixed(2).replace('.', ',') + '" aria-label="Parte de ' + escapeHtml(group.productName) + ' da pessoa ' + (personIndex + 1) + '"' + (automaticRemainder ? ' readonly' : '') + ' /></span><small class="bar-split-allocation-equivalent">' + escapeHtml(barCheckoutAllocationEquivalent(group, cents)) + (automaticRemainder ? ' · restante' : '') + '</small></label>';
+        }).join('');
+        return '<div class="bar-split-allocation-row"><div class="bar-split-allocation-product" draggable="true" data-bar-split-drag-group="' + groupIndex + '" title="Arraste para atribuir o item inteiro a uma pessoa"><strong>' + Number(group.quantity || 0) + 'x ' + escapeHtml(group.productName) + '</strong><small>Total ' + money(groupTotalCents / 100) + ' · arraste o item inteiro</small></div><div class="bar-split-allocation-people" style="--split-count:' + count + '">' + people + '</div></div>';
+      }).join('') : '';
       $('barCheckoutSplitRows').innerHTML = enabled ? amounts.map(function (amount, index) {
         const automaticRemainder = index === amounts.length - 1;
         const selectedMethod = opsState.barCheckoutSplitMethods[index] || defaultMethod;
@@ -23215,11 +23418,11 @@
       list.innerHTML = cart.map(function (item) {
         const product = barProductById(item.productId);
         const needsLocation = barProductNeedsDeliveryLocation(product);
+        const itemTotal = money(Number(product.salePrice || 0) * Number(item.quantity || 0));
         return '<div class="bar-order-cart-row" data-bar-cart-row="' + escapeHtml(product.id) + '">' +
-          '<div class="bar-order-cart-product"><strong>' + escapeHtml(product.name) + '</strong></div>' +
+          '<div class="bar-order-cart-product"><strong>' + escapeHtml(product.name) + '</strong><span class="bar-order-cart-product-price">' + itemTotal + '</span></div>' +
           '<div class="bar-order-cart-quantity"><button type="button" data-bar-cart-step="-1" data-bar-cart-product="' + escapeHtml(product.id) + '" aria-label="Diminuir ' + escapeHtml(product.name) + '">−</button><input type="number" min="1" max="' + escapeHtml(Number(product.stock || 0)) + '" value="' + escapeHtml(item.quantity) + '" data-bar-cart-quantity="' + escapeHtml(product.id) + '" aria-label="Quantidade de ' + escapeHtml(product.name) + '" /><button type="button" data-bar-cart-step="1" data-bar-cart-product="' + escapeHtml(product.id) + '" aria-label="Aumentar ' + escapeHtml(product.name) + '">+</button></div>' +
           '<div class="bar-order-cart-details' + (needsLocation ? ' has-location' : '') + '">' + (needsLocation ? '<select class="' + (item.deliveryLocation ? '' : 'is-required-empty') + '" data-bar-cart-location="' + escapeHtml(product.id) + '" aria-label="Local de entrega de ' + escapeHtml(product.name) + '">' + barOrderCartLocationOptions(item.deliveryLocation || '') + '</select>' : '') + '<input value="' + escapeHtml(item.notes || '') + '" data-bar-cart-notes="' + escapeHtml(product.id) + '" placeholder="Observação (opcional)" aria-label="Observação de ' + escapeHtml(product.name) + '" /></div>' +
-          '<strong class="bar-order-cart-total">' + money(Number(product.salePrice || 0) * Number(item.quantity || 0)) + '</strong>' +
           '<button class="bar-order-cart-remove" type="button" data-bar-cart-remove="' + escapeHtml(product.id) + '" aria-label="Remover ' + escapeHtml(product.name) + '">×</button>' +
         '</div>';
       }).join('');
@@ -23349,6 +23552,10 @@
       ];
       opsState.barCheckoutSplitValues = [];
       opsState.barCheckoutSplitTotalCents = null;
+      opsState.barCheckoutSplitAllocations = [];
+      opsState.barCheckoutSplitAllocationSignature = '';
+      opsState.barCheckoutSplitAllocationTotalCents = null;
+      opsState.barCheckoutSplitDraggedGroup = -1;
       $('barOrderProduct').value = '';
       opsState.barOrderCart = [];
       opsState.barOrderProductCategory = '';
@@ -27314,13 +27521,90 @@
         opsState.barCheckoutSplitEnabled = this.checked;
         opsState.barCheckoutSplitValues = [];
         opsState.barCheckoutSplitTotalCents = null;
+        opsState.barCheckoutSplitAllocations = [];
+        opsState.barCheckoutSplitAllocationSignature = '';
+        opsState.barCheckoutSplitAllocationTotalCents = null;
         updateBarCheckoutPreview();
       });
       $('barCheckoutSplitCount').addEventListener('change', function () {
         opsState.barCheckoutSplitCount = Number(this.value || 2);
         opsState.barCheckoutSplitValues = [];
         opsState.barCheckoutSplitTotalCents = null;
+        opsState.barCheckoutSplitAllocations = [];
+        opsState.barCheckoutSplitAllocationSignature = '';
+        opsState.barCheckoutSplitAllocationTotalCents = null;
         updateBarCheckoutPreview();
+      });
+      $('barCheckoutSplitAllocation').addEventListener('focusin', function (event) {
+        const input = event.target.closest('[data-bar-split-item-amount]');
+        if (!input || input.readOnly) return;
+        input.setAttribute('data-bar-split-select-all', 'true');
+        requestAnimationFrame(function () { input.select(); });
+      });
+      $('barCheckoutSplitAllocation').addEventListener('pointerup', function (event) {
+        const input = event.target.closest('[data-bar-split-item-amount]');
+        if (!input || input.readOnly || input.getAttribute('data-bar-split-select-all') !== 'true') return;
+        event.preventDefault();
+        input.select();
+        input.removeAttribute('data-bar-split-select-all');
+      });
+      $('barCheckoutSplitAllocation').addEventListener('change', function (event) {
+        const input = event.target.closest('[data-bar-split-item-amount]');
+        if (!input || input.readOnly) return;
+        const indexes = String(input.dataset.barSplitItemAmount || '').split(':').map(Number);
+        const draftValue = barCheckoutSplitDraftValue(input.value);
+        if (draftValue === null) {
+          toast('Digite um valor válido, como 10 ou 10,50.');
+          renderBarCheckoutSplit(barOrderById(opsState.selectedBarOrderId));
+          return;
+        }
+        rebalanceBarCheckoutItemAllocation(
+          barOrderById(opsState.selectedBarOrderId),
+          indexes[0],
+          indexes[1],
+          draftValue
+        );
+      });
+      $('barCheckoutSplitAllocation').addEventListener('dragstart', function (event) {
+        const product = event.target.closest('[data-bar-split-drag-group]');
+        if (!product) return;
+        opsState.barCheckoutSplitDraggedGroup = Number(product.dataset.barSplitDragGroup);
+        product.classList.add('is-dragging');
+        if (event.dataTransfer) {
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('text/plain', String(opsState.barCheckoutSplitDraggedGroup));
+        }
+      });
+      $('barCheckoutSplitAllocation').addEventListener('dragover', function (event) {
+        const target = event.target.closest('[data-bar-split-drop-person]');
+        if (!target) return;
+        event.preventDefault();
+        target.classList.add('is-drop-target');
+        if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+      });
+      $('barCheckoutSplitAllocation').addEventListener('dragleave', function (event) {
+        const target = event.target.closest('[data-bar-split-drop-person]');
+        if (target && !target.contains(event.relatedTarget)) target.classList.remove('is-drop-target');
+      });
+      $('barCheckoutSplitAllocation').addEventListener('drop', function (event) {
+        const target = event.target.closest('[data-bar-split-drop-person]');
+        if (!target) return;
+        event.preventDefault();
+        const groupIndex = Number.isFinite(opsState.barCheckoutSplitDraggedGroup) && opsState.barCheckoutSplitDraggedGroup >= 0
+          ? opsState.barCheckoutSplitDraggedGroup
+          : Number(event.dataTransfer && event.dataTransfer.getData('text/plain'));
+        target.classList.remove('is-drop-target');
+        assignBarCheckoutGroupToPerson(
+          barOrderById(opsState.selectedBarOrderId),
+          groupIndex,
+          Number(target.dataset.barSplitDropPerson)
+        );
+      });
+      $('barCheckoutSplitAllocation').addEventListener('dragend', function () {
+        opsState.barCheckoutSplitDraggedGroup = -1;
+        document.querySelectorAll('.bar-split-allocation-product.is-dragging, .bar-split-allocation-cell.is-drop-target').forEach(function (element) {
+          element.classList.remove('is-dragging', 'is-drop-target');
+        });
       });
       $('barCheckoutSplitRows').addEventListener('input', function (event) {
         const input = event.target.closest('[data-bar-split-amount]');
