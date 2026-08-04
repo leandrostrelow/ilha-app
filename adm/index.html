@@ -5786,8 +5786,9 @@
     }
 
     .bar-checkout-split > .bar-checkout-split-toggle {
-      width: 100%;
-      justify-content: center;
+      width: max-content;
+      max-width: 100%;
+      justify-content: flex-start;
     }
 
     .bar-checkout-split-head {
@@ -5821,8 +5822,8 @@
     }
 
     .bar-checkout-split-body {
-      margin-top: 8px;
-      padding: 10px;
+      margin-top: 6px;
+      padding: 7px;
       border: 1px solid #d4e2e5;
       border-radius: 8px;
       background: #ffffff;
@@ -5830,18 +5831,18 @@
 
     .bar-checkout-split-controls {
       display: grid;
-      grid-template-columns: minmax(180px, 230px) minmax(0, 1fr);
+      grid-template-columns: minmax(150px, 190px) minmax(0, 1fr);
       align-items: end;
-      gap: 12px;
+      gap: 7px;
     }
 
     .bar-checkout-split-help {
-      min-height: 38px;
+      min-height: 32px;
       display: flex;
       align-items: center;
-      gap: 9px;
-      padding: 7px 10px;
-      border-radius: 9px;
+      gap: 6px;
+      padding: 5px 8px;
+      border-radius: 7px;
       color: #5d6c78;
       background: #f4f8f9;
       font-size: 10px;
@@ -5856,16 +5857,16 @@
 
     .bar-checkout-split-allocation {
       display: grid;
-      gap: 7px;
-      margin-top: 10px;
+      gap: 4px;
+      margin-top: 6px;
     }
 
     .bar-split-allocation-row {
       display: grid;
-      grid-template-columns: minmax(190px, 1fr) minmax(0, 2fr);
+      grid-template-columns: minmax(150px, .85fr) minmax(0, 2fr);
       align-items: stretch;
-      gap: 8px;
-      padding: 7px;
+      gap: 5px;
+      padding: 4px;
       border: 1px solid #dce7e9;
       border-radius: 9px;
       background: #f8fbfb;
@@ -5876,8 +5877,8 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
-      gap: 2px;
-      padding: 5px 7px;
+      gap: 1px;
+      padding: 3px 6px;
       border-left: 3px solid var(--lime);
       cursor: grab;
     }
@@ -5892,22 +5893,22 @@
       white-space: nowrap;
     }
 
-    .bar-split-allocation-product strong { color: #18363d; font-size: 11px; }
-    .bar-split-allocation-product small { color: var(--muted); font-size: 9px; font-weight: 800; }
+    .bar-split-allocation-product strong { color: #18363d; font-size: 10px; }
+    .bar-split-allocation-product small { color: var(--muted); font-size: 8px; font-weight: 800; }
 
     .bar-split-allocation-people {
       min-width: 0;
       display: grid;
-      grid-template-columns: repeat(var(--split-count), minmax(92px, 1fr));
-      gap: 6px;
+      grid-template-columns: repeat(var(--split-count), minmax(86px, 1fr));
+      gap: 4px;
       overflow-x: auto;
     }
 
     .bar-split-allocation-cell {
-      min-width: 92px;
+      min-width: 86px;
       display: grid;
-      gap: 3px;
-      padding: 5px 7px;
+      gap: 2px;
+      padding: 3px 5px;
       border: 1px solid #d4e1e4;
       border-radius: 8px;
       background: #ffffff;
@@ -5931,8 +5932,40 @@
     .bar-split-allocation-money input[readonly] { color: #527000; background: #f5fbdc; }
     .bar-split-allocation-equivalent { min-height: 10px; color: #73818d; font-size: 8px; font-weight: 800; }
 
+    .bar-split-allocation-quantity {
+      min-width: 0;
+      height: 28px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      overflow: hidden;
+      border-radius: 6px;
+      background: #eef6f7;
+    }
+
+    .bar-split-allocation-quantity input {
+      width: 100%;
+      min-width: 0;
+      height: 28px;
+      padding: 3px 5px;
+      border: 0;
+      outline: 0;
+      color: var(--teal);
+      background: transparent;
+      font-size: 12px;
+      font-weight: 950;
+      text-align: center;
+      appearance: textfield;
+      -moz-appearance: textfield;
+    }
+
+    .bar-split-allocation-quantity input::-webkit-outer-spin-button,
+    .bar-split-allocation-quantity input::-webkit-inner-spin-button { margin: 0; appearance: none; }
+    .bar-split-allocation-quantity input[readonly] { color: #527000; background: #f5fbdc; }
+    .bar-split-allocation-quantity > span { padding-right: 6px; color: #63808a; font-size: 8px; font-weight: 950; text-transform: uppercase; }
+
     .bar-checkout-split-count {
-      max-width: 230px;
+      max-width: 190px;
       display: grid;
       gap: 6px;
       color: var(--muted);
@@ -5945,8 +5978,8 @@
     .bar-checkout-split-method-field select {
       width: 100%;
       min-width: 0;
-      min-height: 38px;
-      padding: 8px 34px 8px 11px;
+      min-height: 32px;
+      padding: 6px 30px 6px 9px;
       border: 1px solid #cbdde1;
       border-radius: 9px;
       color: #243447;
@@ -5958,17 +5991,18 @@
 
     .bar-checkout-split-rows {
       display: grid;
-      gap: 8px;
-      margin-top: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 5px;
+      margin-top: 6px;
     }
 
     .bar-checkout-split-row {
-      min-height: 52px;
+      min-height: 44px;
       display: grid;
-      grid-template-columns: minmax(150px, 1fr) minmax(160px, .7fr) minmax(190px, .9fr);
+      grid-template-columns: minmax(86px, .55fr) minmax(105px, .7fr) minmax(130px, 1fr);
       align-items: center;
-      gap: 12px;
-      padding: 10px 12px;
+      gap: 6px;
+      padding: 6px 8px;
       border: 1px solid #dbe6e8;
       border-radius: 9px;
       background: #f8fbfb;
@@ -6054,6 +6088,10 @@
     @media (max-width: 940px) {
       .bar-checkout-split-controls,
       .bar-split-allocation-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .bar-checkout-split-rows {
         grid-template-columns: minmax(0, 1fr);
       }
 
@@ -23036,9 +23074,15 @@
 
     function barCheckoutSplitAllocationKey(order) {
       const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
-      return count + '::' + opsState.barCheckoutGroups.map(function (group) {
+      return 'quantity-v1::' + count + '::' + opsState.barCheckoutGroups.map(function (group) {
         return [group.key, Number(group.quantity || 0), Math.round(Number(group.unitPrice || 0) * 100)].join(':');
       }).join('|');
+    }
+
+    function barCheckoutGroupUsesQuantity(group) {
+      const quantity = Number(group && group.quantity || 0);
+      const unitCents = Math.round(Number(group && group.unitPrice || 0) * 100);
+      return Number.isInteger(quantity) && quantity > 1 && unitCents > 0;
     }
 
     function ensureBarCheckoutSplitAllocations(order) {
@@ -23048,6 +23092,17 @@
         opsState.barCheckoutSplitAllocations.length !== opsState.barCheckoutGroups.length;
       if (!shouldReset) return false;
       opsState.barCheckoutSplitAllocations = opsState.barCheckoutGroups.map(function (group) {
+        const quantity = Math.max(0, Number(group.quantity || 0));
+        const unitCents = Math.max(0, Math.round(Number(group.unitPrice || 0) * 100));
+        if (barCheckoutGroupUsesQuantity(group)) {
+          const baseQuantity = Math.floor(quantity / count);
+          return Array.from({ length: count }, function (_, index) {
+            const personQuantity = index === count - 1
+              ? quantity - (baseQuantity * (count - 1))
+              : baseQuantity;
+            return personQuantity * unitCents;
+          });
+        }
         const totalCents = Math.max(0, Math.round(Number(group.quantity || 0) * Number(group.unitPrice || 0) * 100));
         const baseCents = Math.floor(totalCents / count);
         const remainder = totalCents - (baseCents * count);
@@ -23103,6 +23158,30 @@
         return index === count - 1 ? sum : sum + Math.max(0, Math.round(Number(cents || 0)));
       }, 0);
       allocation[count - 1] = Math.max(0, totalCents - assignedCents);
+      syncBarCheckoutSplitValuesFromAllocations(order);
+      renderBarCheckoutSplit(order);
+    }
+
+    function rebalanceBarCheckoutItemQuantity(order, groupIndex, personIndex, editedQuantity) {
+      if (!order) return;
+      const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
+      const group = opsState.barCheckoutGroups[groupIndex];
+      if (!group || !barCheckoutGroupUsesQuantity(group) || personIndex < 0 || personIndex >= count - 1) return;
+      ensureBarCheckoutSplitAllocations(order);
+      const totalQuantity = Math.max(0, Math.round(Number(group.quantity || 0)));
+      const unitCents = Math.max(1, Math.round(Number(group.unitPrice || 0) * 100));
+      const allocation = opsState.barCheckoutSplitAllocations[groupIndex];
+      const otherEditableQuantity = allocation.reduce(function (sum, cents, index) {
+        if (index === personIndex || index === count - 1) return sum;
+        return sum + Math.max(0, Math.round(Number(cents || 0) / unitCents));
+      }, 0);
+      const availableQuantity = Math.max(0, totalQuantity - otherEditableQuantity);
+      const nextQuantity = Math.min(availableQuantity, Math.max(0, Math.round(Number(editedQuantity || 0))));
+      allocation[personIndex] = nextQuantity * unitCents;
+      const assignedQuantity = allocation.reduce(function (sum, cents, index) {
+        return index === count - 1 ? sum : sum + Math.max(0, Math.round(Number(cents || 0) / unitCents));
+      }, 0);
+      allocation[count - 1] = Math.max(0, totalQuantity - assignedQuantity) * unitCents;
       syncBarCheckoutSplitValuesFromAllocations(order);
       renderBarCheckoutSplit(order);
     }
@@ -23230,13 +23309,19 @@
       const amounts = barCheckoutSplitAmounts(order);
       $('barCheckoutSplitAllocation').innerHTML = enabled ? opsState.barCheckoutGroups.map(function (group, groupIndex) {
         const groupTotalCents = Math.max(0, Math.round(Number(group.quantity || 0) * Number(group.unitPrice || 0) * 100));
+        const unitCents = Math.max(0, Math.round(Number(group.unitPrice || 0) * 100));
+        const usesQuantity = barCheckoutGroupUsesQuantity(group);
         const allocation = opsState.barCheckoutSplitAllocations[groupIndex] || [];
         const people = Array.from({ length: count }, function (_, personIndex) {
           const automaticRemainder = personIndex === count - 1;
           const cents = Math.max(0, Math.round(Number(allocation[personIndex] || 0)));
-          return '<label class="bar-split-allocation-cell" data-bar-split-drop-person="' + personIndex + '" data-bar-split-drop-group="' + groupIndex + '"><span>Pessoa ' + (personIndex + 1) + '</span><span class="bar-split-allocation-money"><span>R$</span><input data-bar-split-item-amount="' + groupIndex + ':' + personIndex + '" type="text" inputmode="decimal" autocomplete="off" value="' + (cents / 100).toFixed(2).replace('.', ',') + '" aria-label="Parte de ' + escapeHtml(group.productName) + ' da pessoa ' + (personIndex + 1) + '"' + (automaticRemainder ? ' readonly' : '') + ' /></span><small class="bar-split-allocation-equivalent">' + escapeHtml(barCheckoutAllocationEquivalent(group, cents)) + (automaticRemainder ? ' · restante' : '') + '</small></label>';
+          const quantity = unitCents > 0 ? Math.max(0, Math.round(cents / unitCents)) : 0;
+          const allocationControl = usesQuantity
+            ? '<span class="bar-split-allocation-quantity"><input data-bar-split-item-quantity="' + groupIndex + ':' + personIndex + '" type="number" inputmode="numeric" min="0" max="' + Number(group.quantity || 0) + '" step="1" autocomplete="off" value="' + quantity + '" aria-label="Quantidade de ' + escapeHtml(group.productName) + ' da pessoa ' + (personIndex + 1) + '"' + (automaticRemainder ? ' readonly' : '') + ' /><span>un</span></span><small class="bar-split-allocation-equivalent">' + money(cents / 100) + (automaticRemainder ? ' · restante' : '') + '</small>'
+            : '<span class="bar-split-allocation-money"><span>R$</span><input data-bar-split-item-amount="' + groupIndex + ':' + personIndex + '" type="text" inputmode="decimal" autocomplete="off" value="' + (cents / 100).toFixed(2).replace('.', ',') + '" aria-label="Parte de ' + escapeHtml(group.productName) + ' da pessoa ' + (personIndex + 1) + '"' + (automaticRemainder ? ' readonly' : '') + ' /></span><small class="bar-split-allocation-equivalent">' + escapeHtml(barCheckoutAllocationEquivalent(group, cents)) + (automaticRemainder ? ' · restante' : '') + '</small>';
+          return '<label class="bar-split-allocation-cell" data-bar-split-drop-person="' + personIndex + '" data-bar-split-drop-group="' + groupIndex + '"><span>Pessoa ' + (personIndex + 1) + '</span>' + allocationControl + '</label>';
         }).join('');
-        return '<div class="bar-split-allocation-row"><div class="bar-split-allocation-product" draggable="true" data-bar-split-drag-group="' + groupIndex + '" title="Arraste para atribuir o item inteiro a uma pessoa"><strong>' + Number(group.quantity || 0) + 'x ' + escapeHtml(group.productName) + '</strong><small>Total ' + money(groupTotalCents / 100) + ' · arraste o item inteiro</small></div><div class="bar-split-allocation-people" style="--split-count:' + count + '">' + people + '</div></div>';
+        return '<div class="bar-split-allocation-row"><div class="bar-split-allocation-product" draggable="true" data-bar-split-drag-group="' + groupIndex + '" title="Arraste para atribuir o item inteiro a uma pessoa"><strong>' + Number(group.quantity || 0) + 'x ' + escapeHtml(group.productName) + '</strong><small>' + money(groupTotalCents / 100) + (usesQuantity ? ' · divida por unidades' : ' · divida por valor') + '</small></div><div class="bar-split-allocation-people" style="--split-count:' + count + '">' + people + '</div></div>';
       }).join('') : '';
       $('barCheckoutSplitRows').innerHTML = enabled ? amounts.map(function (amount, index) {
         const automaticRemainder = index === amounts.length - 1;
@@ -27536,19 +27621,36 @@
         updateBarCheckoutPreview();
       });
       $('barCheckoutSplitAllocation').addEventListener('focusin', function (event) {
-        const input = event.target.closest('[data-bar-split-item-amount]');
+        const input = event.target.closest('[data-bar-split-item-amount], [data-bar-split-item-quantity]');
         if (!input || input.readOnly) return;
         input.setAttribute('data-bar-split-select-all', 'true');
         requestAnimationFrame(function () { input.select(); });
       });
       $('barCheckoutSplitAllocation').addEventListener('pointerup', function (event) {
-        const input = event.target.closest('[data-bar-split-item-amount]');
+        const input = event.target.closest('[data-bar-split-item-amount], [data-bar-split-item-quantity]');
         if (!input || input.readOnly || input.getAttribute('data-bar-split-select-all') !== 'true') return;
         event.preventDefault();
         input.select();
         input.removeAttribute('data-bar-split-select-all');
       });
       $('barCheckoutSplitAllocation').addEventListener('change', function (event) {
+        const quantityInput = event.target.closest('[data-bar-split-item-quantity]');
+        if (quantityInput && !quantityInput.readOnly) {
+          const quantityIndexes = String(quantityInput.dataset.barSplitItemQuantity || '').split(':').map(Number);
+          const quantityValue = Number(quantityInput.value);
+          if (!Number.isFinite(quantityValue) || quantityValue < 0 || !Number.isInteger(quantityValue)) {
+            toast('Digite uma quantidade inteira, como 4 ou 5.');
+            renderBarCheckoutSplit(barOrderById(opsState.selectedBarOrderId));
+            return;
+          }
+          rebalanceBarCheckoutItemQuantity(
+            barOrderById(opsState.selectedBarOrderId),
+            quantityIndexes[0],
+            quantityIndexes[1],
+            quantityValue
+          );
+          return;
+        }
         const input = event.target.closest('[data-bar-split-item-amount]');
         if (!input || input.readOnly) return;
         const indexes = String(input.dataset.barSplitItemAmount || '').split(':').map(Number);
