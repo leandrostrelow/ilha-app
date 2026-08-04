@@ -14337,6 +14337,7 @@
         <div class="admin-modal-body">
           <form class="bar-product-form" id="barProductForm">
             <input id="barProductId" type="hidden" />
+            <input id="barProductDuplicateSourceId" type="hidden" />
             <input id="barProductImageCurrent" type="hidden" />
 
             <section class="bar-product-form-section">
@@ -14382,6 +14383,7 @@
         </div>
         <div class="modal-actions">
           <button class="danger-btn bar-product-delete-btn" type="button" id="barProductDeleteBtn" hidden>Excluir produto</button>
+          <button class="ghost-btn" type="button" id="barProductDuplicateBtn" hidden>Duplicar produto</button>
           <button class="ghost-btn" type="button" id="barProductCancelBtn">Cancelar</button>
           <button class="primary-btn" type="submit" form="barProductForm" id="barProductSaveBtn">Salvar produto</button>
         </div>
@@ -22640,9 +22642,18 @@
       }
     }
 
+    function barProductImageInUse(imageUrl) {
+      const normalizedUrl = String(imageUrl || '').trim();
+      if (!normalizedUrl) return false;
+      return opsData.barProducts.some(function (product) {
+        return String(product.imageUrl || '').trim() === normalizedUrl;
+      });
+    }
+
     function resetBarProductForm() {
       $('barProductForm').reset();
       $('barProductId').value = '';
+      $('barProductDuplicateSourceId').value = '';
       $('barProductImageCurrent').value = '';
       $('barProductUnit').value = 'un';
       $('barProductActive').value = 'true';
@@ -22654,6 +22665,8 @@
       $('barProductDeleteBtn').hidden = true;
       $('barProductDeleteBtn').disabled = false;
       $('barProductDeleteBtn').textContent = 'Excluir produto';
+      $('barProductDuplicateBtn').hidden = true;
+      $('barProductDuplicateBtn').disabled = false;
       updateBarProductImagePreview('');
     }
 
@@ -22662,6 +22675,7 @@
       if (product) {
         $('barProductModalTitle').textContent = 'Editar produto';
         $('barProductDeleteBtn').hidden = false;
+        $('barProductDuplicateBtn').hidden = false;
         $('barProductId').value = product.id;
         $('barProductImageCurrent').value = product.imageUrl || '';
         $('barProductName').value = product.name;
@@ -22679,6 +22693,23 @@
       $('barProductModal').classList.add('show');
       $('barProductModal').setAttribute('aria-hidden', 'false');
       setTimeout(function () { $('barProductName').focus(); }, 80);
+    }
+
+    function duplicateBarProductAction() {
+      const product = barProductById($('barProductId').value);
+      if (!product) return;
+      $('barProductId').value = '';
+      $('barProductDuplicateSourceId').value = product.id;
+      $('barProductName').value = product.name + ' (cópia)';
+      $('barProductSku').value = '';
+      $('barProductModalTitle').textContent = 'Duplicar produto';
+      $('barProductDeleteBtn').hidden = true;
+      $('barProductDuplicateBtn').hidden = true;
+      $('barProductSaveBtn').textContent = 'Criar cópia';
+      setTimeout(function () {
+        $('barProductName').focus();
+        $('barProductName').select();
+      }, 40);
     }
 
     function closeBarProductModal() {
@@ -22713,6 +22744,9 @@
         if (!name) throw new Error('Informe o nome do produto.');
         const currentId = $('barProductId').value;
         const currentProduct = currentId ? barProductById(currentId) : null;
+        const duplicateSourceId = $('barProductDuplicateSourceId').value;
+        const duplicateSourceProduct = duplicateSourceId ? barProductById(duplicateSourceId) : null;
+        const templateProduct = currentProduct || duplicateSourceProduct;
         const previousImageUrl = currentProduct && currentProduct.imageUrl || $('barProductImageCurrent').value || '';
         let imageUrl = opsState.removeBarProductImage ? '' : previousImageUrl;
         $('barProductSaveBtn').disabled = true;
@@ -22737,9 +22771,9 @@
           unit: $('barProductUnit').value || 'un',
           imageUrl: imageUrl,
           active: $('barProductActive').value === 'true',
-          menuVisible: currentProduct ? currentProduct.menuVisible !== false : true,
-          menuFeatured: currentProduct ? currentProduct.menuFeatured === true : false,
-          menuSortOrder: currentProduct ? Number(currentProduct.menuSortOrder || 1000) : 1000,
+          menuVisible: templateProduct ? templateProduct.menuVisible !== false : true,
+          menuFeatured: templateProduct ? templateProduct.menuFeatured === true : false,
+          menuSortOrder: templateProduct ? Number(templateProduct.menuSortOrder || 1000) : 1000,
           notes: $('barProductNotes').value.trim()
         };
         if (localProduct.salePrice <= 0) throw new Error('Informe o preço de venda.');
@@ -22755,6 +22789,9 @@
           unit: localProduct.unit,
           image_url: localProduct.imageUrl || null,
           active: localProduct.active,
+          menu_visible: localProduct.menuVisible,
+          menu_featured: localProduct.menuFeatured,
+          menu_sort_order: localProduct.menuSortOrder,
           notes: localProduct.notes || null,
           updated_at: new Date().toISOString()
         };
@@ -22769,7 +22806,7 @@
         const index = opsData.barProducts.findIndex(function (product) { return String(product.id) === String(currentId || finalProduct.id); });
         if (index >= 0) opsData.barProducts.splice(index, 1, finalProduct);
         else opsData.barProducts.push(finalProduct);
-        if (barCanPersist(currentId) && previousImageUrl && previousImageUrl !== finalProduct.imageUrl) {
+        if (barCanPersist(currentId) && previousImageUrl && previousImageUrl !== finalProduct.imageUrl && !barProductImageInUse(previousImageUrl)) {
           deleteBarProductImage(previousImageUrl).catch(function () {});
         }
         closeBarProductModal();
@@ -22811,7 +22848,7 @@
         });
         closeBarProductModal();
         renderBarModule();
-        if (barCanPersist(product.id) && product.imageUrl) {
+        if (barCanPersist(product.id) && product.imageUrl && !barProductImageInUse(product.imageUrl)) {
           deleteBarProductImage(product.imageUrl).catch(function () {});
         }
         toast('Produto excluído.');
@@ -26001,6 +26038,7 @@
       });
       $('barProductForm').addEventListener('submit', saveBarProductAction);
       $('barProductDeleteBtn').addEventListener('click', deleteBarProductAction);
+      $('barProductDuplicateBtn').addEventListener('click', duplicateBarProductAction);
       $('barProductModalClose').addEventListener('click', closeBarProductModal);
       $('barProductCancelBtn').addEventListener('click', closeBarProductModal);
       $('barProductModal').addEventListener('click', function (event) {
