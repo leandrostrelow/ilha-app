@@ -570,6 +570,23 @@
       localStorage.setItem(state.sessionKey, JSON.stringify(state.identity || {}));
     }
 
+    function clearSessionAfterOrderEnd(status) {
+      clearInterval(state.polling);
+      state.polling = null;
+      localStorage.removeItem(state.sessionKey);
+      state.identity = null;
+      state.order = null;
+      state.cart = {};
+      $('customerName').value = '';
+      $('customerPhone').value = '';
+      closeCart();
+      renderActiveOrderStrip();
+      showView('accessView');
+      showToast(status === 'CANCELADA'
+        ? 'A comanda foi cancelada. Identifique-se novamente para pedir.'
+        : 'A comanda foi encerrada. Identifique-se novamente para pedir.');
+    }
+
     function productById(id) { return state.products.find(product => String(product.id) === String(id)); }
     function tableById(id) { return state.tables.find(table => String(table.id) === String(id)); }
     function cartEntries() { return Object.keys(state.cart).map(id => ({ product: productById(id), ...state.cart[id] })).filter(item => item.product && item.quantity > 0); }
@@ -703,10 +720,16 @@
     async function loadOrderStatus(showErrors) {
       if (!state.identity || !state.identity.trackingToken) return null;
       try {
-        state.order = await rpc('bar_public_order_status', {
+        const order = await rpc('bar_public_order_status', {
           p_tracking_token: state.identity.trackingToken,
           p_customer_phone: state.identity.phone || null
         });
+        const status = String(order && order.status || '').toUpperCase();
+        if (['FECHADA', 'CANCELADA'].includes(status)) {
+          clearSessionAfterOrderEnd(status);
+          return order;
+        }
+        state.order = order;
         renderOrder();
         renderActiveOrderStrip();
         return state.order;
