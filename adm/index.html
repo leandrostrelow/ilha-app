@@ -3288,10 +3288,10 @@
     .bar-incoming-card {
       min-width: 0;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 14px;
+      grid-template-columns: minmax(170px, .7fr) minmax(280px, 1.8fr) auto;
+      gap: 18px;
       align-items: center;
-      padding: 14px;
+      padding: 12px 14px;
       border: 1px solid #f0d8bd;
       border-left: 5px solid #e87b35;
       border-radius: 8px;
@@ -3345,7 +3345,7 @@
 
     .bar-incoming-identity strong {
       color: #172f38;
-      font-size: 18px;
+      font-size: 17px;
       line-height: 1.1;
       overflow-wrap: anywhere;
     }
@@ -3396,7 +3396,7 @@
     .bar-incoming-items {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 8px;
       margin-top: 0;
     }
 
@@ -3404,24 +3404,26 @@
       max-width: 100%;
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      padding: 7px 10px;
-      color: #334a52;
+      gap: 8px;
+      padding: 10px 12px;
+      color: #17323a;
       background: #ffffff;
       border: 1px solid #e5cda9;
       border-radius: 8px;
-      font-size: 12px;
-      font-weight: 900;
+      font-size: 13px;
+      font-weight: 950;
       white-space: normal;
     }
 
     .bar-incoming-item b {
       flex: 0 0 auto;
-      padding: 3px 6px;
+      min-width: 26px;
+      padding: 4px 6px;
       border-radius: 6px;
       color: #ffffff;
       background: #e18724;
-      font-size: 10px;
+      font-size: 11px;
+      text-align: center;
     }
 
     .bar-incoming-item span {
@@ -15404,7 +15406,7 @@
           <div data-bar-panel="kitchen" class="bar-kitchen-screen-panel" id="barKitchenScreenPanel">
             <section class="bar-order-approval-panel bar-order-approval-kitchen" id="barOrderApprovalPanel" aria-labelledby="barOrderApprovalTitle" hidden>
               <div class="bar-order-approval-head">
-                <div><h2 id="barOrderApprovalTitle">Aguardando Aprovação</h2><p>Pedidos feitos pelo cliente via QR Code.</p></div>
+                <div><h2 id="barOrderApprovalTitle">Aguardando Aprovação</h2></div>
                 <span id="barOrderApprovalCount">0</span>
               </div>
               <div class="bar-order-approval-list" id="barIncomingOrders"></div>
@@ -15534,10 +15536,7 @@
                   <button class="small-btn bar-command-screen-btn" type="button" id="barCommandScreenBtn" aria-pressed="false" aria-label="Abrir tela cheia de comandas" title="Tela cheia"><svg><use href="#bar-icon-screen"></use></svg><span>Tela de comandas</span></button>
                 </div>
               </div>
-              <section class="bar-command-board-section" aria-labelledby="barOpenCommandsTitle">
-                <div class="bar-command-board-section-head">
-                  <div><h2 id="barOpenCommandsTitle">Comandas abertas</h2><div class="muted">Avulsas e mesas no mesmo quadro.</div></div>
-                </div>
+              <section class="bar-command-board-section" aria-label="Comandas">
                 <div class="bar-command-unified-grid" id="barCommandBoard"></div>
               </section>
             </section>
@@ -22199,20 +22198,16 @@
       $('barOrderApprovalCount').textContent = rows.length;
       $('barIncomingOrders').innerHTML = rows.map(function (entry) {
         const order = entry.order;
-        const requested = entry.items.filter(function (item) { return item.status === 'SOLICITADO'; }).length;
         const names = Array.from(new Set(entry.items.map(function (item) { return item.customerName; }).filter(Boolean)));
         const table = barTableById(order.tableId);
         const card = barAccessCardById(order.publicAccessId);
         const location = table ? table.name : card ? 'Comanda avulsa' : 'Retirada no balcão';
         const customerName = names.join(', ') || order.customerName || 'Cliente';
-        const commandNumber = order.commandNumber || String(order.id).slice(-4);
-        const access = card ? card.label : barOrderSourceLabel(order.source || entry.items[0].source);
         const itemTags = entry.items.map(function (item) {
           return '<span class="bar-incoming-item"><b>' + escapeHtml(Number(item.quantity).toLocaleString('pt-BR') + 'x') + '</b><span>' + escapeHtml(item.productName) + '</span></span>';
         }).join('');
-        return '<article class="bar-incoming-card"><div class="bar-incoming-main"><div class="bar-incoming-head"><div class="bar-incoming-identity"><span><svg><use href="' + (table ? '#admin-icon-table' : '#admin-icon-receipt') + '"></use></svg></span><div><strong>' + escapeHtml(customerName) + '</strong><small>' + escapeHtml(location) + '</small></div></div>' + (requested ? '<span class="ops-pill warn">Aguardando aceite</span>' : barStatusPill(entry.items[0].status)) + '</div>' +
-          '<div class="bar-incoming-meta"><span class="bar-incoming-command">Comanda #' + escapeHtml(commandNumber) + '</span><span>' + escapeHtml(access) + '</span></div>' +
-          '<div class="bar-incoming-products"><strong>Produtos do pedido</strong><div class="bar-incoming-items">' + itemTags + '</div></div></div>' +
+        return '<article class="bar-incoming-card"><div class="bar-incoming-identity"><span><svg><use href="' + (table ? '#admin-icon-table' : '#admin-icon-receipt') + '"></use></svg></span><div><strong>' + escapeHtml(customerName) + '</strong><small>' + escapeHtml(location) + '</small></div></div>' +
+          '<div class="bar-incoming-items">' + itemTags + '</div>' +
           '<div class="bar-incoming-actions"><span class="bar-incoming-time">' + escapeHtml(barDateTimeLabel(entry.created)) + '</span><div class="bar-incoming-approval-actions"><button class="small-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Ver</button><button class="small-btn bar-incoming-approve" type="button" data-bar-approve-order="' + escapeHtml(order.id) + '">Aceitar pedido</button></div></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum pedido online aguardando.</div>';
       updateBarOrderBadges();
