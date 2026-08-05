@@ -548,6 +548,22 @@
       return data;
     }
 
+    async function notifyBarTeamAboutOrder(order) {
+      if (!order || !order.order_id || !order.tracking_token) return;
+      const response = await fetch(SUPABASE_URL + '/functions/v1/bar-order-push', {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          order_id: order.order_id,
+          tracking_token: order.tracking_token
+        })
+      });
+      if (!response.ok) throw new Error('A equipe verá o pedido na tela, mas o aviso do celular pode atrasar.');
+    }
+
     function showView(id) {
       document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === id));
       window.scrollTo({ top: 0, behavior: 'auto' });
@@ -772,6 +788,7 @@
           p_notes: $('orderNotes').value.trim() || null
         });
         state.identity.trackingToken = result.tracking_token;
+        notifyBarTeamAboutOrder(result).catch(error => console.warn(error.message));
         saveSession();
         state.cart = {};
         $('orderNotes').value = '';

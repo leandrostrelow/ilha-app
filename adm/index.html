@@ -3092,6 +3092,66 @@
       background: #f1fbd2;
     }
 
+    #barEnableAlertsBtn.alerts-blocked {
+      color: #9b2832;
+      border-color: #efb7bd;
+      background: #fff5f6;
+    }
+
+    .bar-order-loud-alert {
+      position: fixed;
+      top: max(14px, env(safe-area-inset-top));
+      left: 50%;
+      z-index: 10000;
+      width: min(680px, calc(100vw - 28px));
+      display: none;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 20px;
+      border: 3px solid #ffffff;
+      border-radius: 18px;
+      color: #ffffff;
+      background: #d9343f;
+      box-shadow: 0 18px 60px rgba(116, 15, 24, .4);
+      transform: translateX(-50%);
+      cursor: pointer;
+    }
+
+    .bar-order-loud-alert.show {
+      display: flex;
+      animation: barOrderAlertPulse .72s ease-in-out 3;
+    }
+
+    .bar-order-loud-alert svg {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
+    .bar-order-loud-alert strong,
+    .bar-order-loud-alert span {
+      display: block;
+    }
+
+    .bar-order-loud-alert strong {
+      font-size: 18px;
+      font-weight: 1000;
+      letter-spacing: .02em;
+    }
+
+    .bar-order-loud-alert span {
+      margin-top: 2px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    @keyframes barOrderAlertPulse {
+      50% { transform: translateX(-50%) scale(1.025); background: #b91422; }
+    }
+
     .bar-nav-badge,
     .bar-tab-badge {
       min-width: 22px;
@@ -15711,6 +15771,7 @@
                 <div><h2>Produção</h2></div>
                 <div class="bar-kitchen-head-metrics">
                   <div class="bar-kitchen-metric"><span>Em produção</span><strong id="barKitchenPendingMetric">0</strong></div>
+                  <button class="small-btn bar-command-screen-btn" type="button" id="barEnableAlertsBtn" aria-label="Ativar notificações de pedidos" title="Ativar notificações de pedidos" aria-pressed="false"><svg><use href="#admin-icon-bell"></use></svg><span>Ativar notificações</span></button>
                   <button class="small-btn bar-command-screen-btn bar-kitchen-screen-btn" type="button" id="barKitchenScreenBtn" aria-pressed="false"><svg><use href="#bar-icon-screen"></use></svg><span>Tela cheia</span></button>
                 </div>
               </div>
@@ -17228,6 +17289,10 @@
     </div>
   </div>
 
+  <button class="bar-order-loud-alert" id="barOrderLoudAlert" type="button" aria-live="assertive" aria-atomic="true">
+    <svg aria-hidden="true"><use href="#admin-icon-bell"></use></svg>
+    <span><strong>NOVO PEDIDO</strong><span id="barOrderLoudAlertText">Toque para abrir os pedidos.</span></span>
+  </button>
   <div class="toast" id="toast"></div>
 
   <script>
@@ -20338,6 +20403,7 @@
 
     const LESSONS_SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
     const LESSONS_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrcXRncHRlYmtnZndndXlreGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzEyNjAsImV4cCI6MjA5NzcwNzI2MH0.S-dopp-fbBgq8_YclyiAheOdK-QhXt92RYLu8JKmKCg';
+    const BAR_PUSH_PUBLIC_KEY = 'BJtga8GuviTBc3mzDwBkr0kKw-kV02hVSwu6DjgZgSgAhFuvPZNj88WfTwyV7mXgJJnxKD5ZiJCRW8nv7ndx-RU';
     const IS_BAR_ADMIN_SURFACE = /^\/admbar(?:\/|$)/.test(window.location.pathname) || new URLSearchParams(window.location.search).get('surface') === 'bar';
     if (IS_BAR_ADMIN_SURFACE && 'scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
@@ -20641,6 +20707,7 @@
       selectedBarQrUrl: '',
       selectedBarQrLabel: '',
       barAlertsEnabled: localStorage.getItem('ilha-bar-alerts-enabled') === 'true',
+      barPushSubscriptionReady: false,
       barKnownIncomingIds: null,
       barBootstrapPrepared: false,
       barDataLoaded: false,
@@ -22224,9 +22291,17 @@
     function updateBarAlertsButton() {
       const button = $('barEnableAlertsBtn');
       if (!button) return;
+      const notificationPermission = 'Notification' in window ? Notification.permission : 'unsupported';
       button.classList.toggle('alerts-active', opsState.barAlertsEnabled);
+      button.classList.toggle('alerts-blocked', notificationPermission === 'denied');
+      button.setAttribute('aria-pressed', opsState.barAlertsEnabled ? 'true' : 'false');
       const label = button.querySelector('span');
-      if (label) label.textContent = opsState.barAlertsEnabled ? 'Alertas ativos' : 'Ativar alertas';
+      const labelText = notificationPermission === 'denied'
+        ? 'Notificações bloqueadas'
+        : (opsState.barPushSubscriptionReady ? 'Notificações ativas' : (opsState.barAlertsEnabled ? 'Alertas ativos' : 'Ativar notificações'));
+      if (label) label.textContent = labelText;
+      button.setAttribute('aria-label', labelText + ' de pedidos');
+      button.title = labelText + ' de pedidos';
     }
 
     function playBarOrderSound() {
@@ -22236,21 +22311,33 @@
         if (!AudioContextClass) return;
         barAudioContext = barAudioContext || new AudioContextClass();
         const now = barAudioContext.currentTime;
-        const oscillator = barAudioContext.createOscillator();
-        const gain = barAudioContext.createGain();
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(740, now);
-        oscillator.frequency.setValueAtTime(980, now + .12);
-        gain.gain.setValueAtTime(.0001, now);
-        gain.gain.exponentialRampToValueAtTime(.2, now + .02);
-        gain.gain.exponentialRampToValueAtTime(.0001, now + .34);
-        oscillator.connect(gain);
-        gain.connect(barAudioContext.destination);
-        oscillator.start(now);
-        oscillator.stop(now + .36);
+        [0, .42, .84].forEach(function (offset) {
+          const oscillator = barAudioContext.createOscillator();
+          const gain = barAudioContext.createGain();
+          oscillator.type = 'square';
+          oscillator.frequency.setValueAtTime(760, now + offset);
+          oscillator.frequency.setValueAtTime(1040, now + offset + .16);
+          gain.gain.setValueAtTime(.0001, now + offset);
+          gain.gain.exponentialRampToValueAtTime(.42, now + offset + .025);
+          gain.gain.exponentialRampToValueAtTime(.0001, now + offset + .34);
+          oscillator.connect(gain);
+          gain.connect(barAudioContext.destination);
+          oscillator.start(now + offset);
+          oscillator.stop(now + offset + .36);
+        });
       } catch (error) {
         console.info('Alerta sonoro indisponível.', error && error.message);
       }
+    }
+
+    function showBarOrderLoudAlert(message) {
+      const alert = $('barOrderLoudAlert');
+      if (!alert) return;
+      $('barOrderLoudAlertText').textContent = message;
+      alert.classList.add('show');
+      clearTimeout(window.__barOrderAlertTimer);
+      window.__barOrderAlertTimer = setTimeout(function () { alert.classList.remove('show'); }, 9000);
+      if (navigator.vibrate) navigator.vibrate([300, 120, 300, 120, 650]);
     }
 
     function notifyNewBarOrders(items) {
@@ -22258,8 +22345,9 @@
       const orderIds = new Set(items.map(function (item) { return String(item.orderId); }));
       const message = orderIds.size === 1 ? 'Novo pedido recebido no Bar.' : orderIds.size + ' novos pedidos recebidos no Bar.';
       toast(message);
+      showBarOrderLoudAlert(message + ' Toque para abrir.');
       playBarOrderSound();
-      if (opsState.barAlertsEnabled && 'Notification' in window && Notification.permission === 'granted' && document.hidden) {
+      if (!opsState.barPushSubscriptionReady && opsState.barAlertsEnabled && 'Notification' in window && Notification.permission === 'granted' && document.hidden) {
         const notification = new Notification('Ilha Bar', { body: message, icon: '../icon.png', tag: 'ilha-bar-pedido' });
         notification.onclick = function () {
           window.focus();
@@ -22267,6 +22355,49 @@
           notification.close();
         };
       }
+    }
+
+    function barUrlBase64ToBytes(value) {
+      const padding = '='.repeat((4 - value.length % 4) % 4);
+      const raw = atob((value + padding).replace(/-/g, '+').replace(/_/g, '/'));
+      return Uint8Array.from(raw, function (char) { return char.charCodeAt(0); });
+    }
+
+    async function saveBarPushSubscription(subscription) {
+      const json = subscription.toJSON();
+      const userId = adminSession && adminSession.user && adminSession.user.id;
+      if (!userId || !json.endpoint || !json.keys) throw new Error('Entre novamente para ativar as notificações.');
+      await supabaseRest('bar_push_subscriptions?on_conflict=endpoint', {
+        method: 'POST',
+        body: {
+          user_id: userId,
+          endpoint: json.endpoint,
+          p256dh: json.keys.p256dh,
+          auth_key: json.keys.auth,
+          user_agent: navigator.userAgent.slice(0, 500),
+          enabled: true,
+          updated_at: new Date().toISOString()
+        },
+        prefer: 'resolution=merge-duplicates,return=representation'
+      });
+      opsState.barPushSubscriptionReady = true;
+    }
+
+    async function ensureBarPushSubscription(requestPermission) {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return false;
+      if (requestPermission && Notification.permission === 'default') await Notification.requestPermission();
+      if (Notification.permission !== 'granted') return false;
+      const registration = await navigator.serviceWorker.ready;
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: barUrlBase64ToBytes(BAR_PUSH_PUBLIC_KEY)
+        });
+      }
+      await saveBarPushSubscription(subscription);
+      updateBarAlertsButton();
+      return true;
     }
 
     function handleBarIncomingChanges(items) {
@@ -22286,9 +22417,8 @@
     async function enableBarAlerts() {
       opsState.barAlertsEnabled = true;
       localStorage.setItem('ilha-bar-alerts-enabled', 'true');
-      if ('Notification' in window && Notification.permission === 'default') {
-        try { await Notification.requestPermission(); } catch (error) { console.info('Notificação do navegador indisponível.'); }
-      }
+      let pushEnabled = false;
+      try { pushEnabled = await ensureBarPushSubscription(true); } catch (error) { console.info('Push indisponível.', error && error.message); }
       try {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         if (AudioContextClass) {
@@ -22300,7 +22430,7 @@
       }
       updateBarAlertsButton();
       playBarOrderSound();
-      toast('Alertas de novos pedidos ativados.');
+      toast(pushEnabled ? 'Notificações de pedidos ativadas neste aparelho.' : 'Alerta sonoro ativado. Libere as notificações nas configurações do aparelho.');
     }
 
     function barDateTimeLabel(value) {
@@ -28296,7 +28426,11 @@
           window.location.reload();
         });
         navigator.serviceWorker.register('/service-worker.js', { scope: '/' }).then(function (registration) {
-          return registration.update();
+          return registration.update().then(function () {
+            if (opsState.barAlertsEnabled) ensureBarPushSubscription(false).catch(function (error) {
+              console.info('A notificação será renovada ao tocar em ativar.', error && error.message);
+            });
+          });
         }).catch(function (error) {
           console.warn('Não foi possível ativar o modo aplicativo.', error);
         });
@@ -28645,6 +28779,13 @@
       });
       $('barKitchenScreenBtn').addEventListener('click', function () {
         toggleBarKitchenScreen().catch(reportActionError);
+      });
+      $('barEnableAlertsBtn').addEventListener('click', function () {
+        enableBarAlerts().catch(reportActionError);
+      });
+      $('barOrderLoudAlert').addEventListener('click', function () {
+        this.classList.remove('show');
+        setBarTab('kitchen');
       });
       document.addEventListener('fullscreenchange', function () {
         syncBarCommandScreen();

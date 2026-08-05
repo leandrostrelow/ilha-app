@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v124';
+const CACHE_NAME = 'ilha-play-v125';
 const ASSETS = [
   './',
   './index.html',
@@ -54,6 +54,40 @@ self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+});
+
+self.addEventListener('push', event => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (error) {
+    data = { title: 'NOVO PEDIDO NO BAR', body: event.data ? event.data.text() : 'Abra o app para conferir.' };
+  }
+  const title = data.title || 'NOVO PEDIDO NO BAR';
+  event.waitUntil(self.registration.showNotification(title, {
+    body: data.body || 'Abra o app para conferir.',
+    icon: '/icons/ilha-bar-192.png',
+    badge: '/icons/ilha-bar-180.png',
+    tag: data.tag || 'ilha-bar-novo-pedido',
+    data: { url: data.url || '/admbar/?tab=kitchen', orderId: data.orderId || '' },
+    vibrate: [300, 120, 300, 120, 650],
+    requireInteraction: true,
+    renotify: true,
+    silent: false
+  }));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const targetUrl = new URL(event.notification.data && event.notification.data.url || '/admbar/?tab=kitchen', self.location.origin).href;
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+    const existing = clients.find(client => client.url.startsWith(self.location.origin + '/admbar'));
+    if (existing) {
+      existing.navigate(targetUrl);
+      return existing.focus();
+    }
+    return self.clients.openWindow(targetUrl);
+  }));
 });
 
 self.addEventListener('fetch', event => {

@@ -276,6 +276,35 @@ create table if not exists public.bar_service_requests (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.bar_push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth_key text not null,
+  user_agent text,
+  enabled boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists bar_push_subscriptions_user_idx
+  on public.bar_push_subscriptions(user_id, enabled);
+
+create table if not exists public.bar_push_config (
+  id boolean primary key default true check (id = true),
+  vapid_public_key text not null,
+  vapid_private_key text not null,
+  subject text not null default 'mailto:contato@ilhatenis.com',
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.bar_push_dispatches (
+  dispatch_key text primary key,
+  order_id uuid not null references public.bar_orders(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
 alter table public.bar_orders
   add column if not exists public_access_id uuid references public.bar_public_cards(id) on delete set null;
 alter table public.bar_orders
@@ -2608,6 +2637,9 @@ alter table public.bar_service_requests enable row level security;
 alter table public.bar_inventory_movements enable row level security;
 alter table public.bar_financial_entries enable row level security;
 alter table public.bar_events enable row level security;
+alter table public.bar_push_subscriptions enable row level security;
+alter table public.bar_push_config enable row level security;
+alter table public.bar_push_dispatches enable row level security;
 alter table public.teachers enable row level security;
 alter table public.students enable row level security;
 alter table public.courts enable row level security;
@@ -2641,6 +2673,7 @@ grant select, insert, update, delete on
   public.bar_inventory_movements,
   public.bar_financial_entries,
   public.bar_events,
+  public.bar_push_subscriptions,
   public.teachers,
   public.students,
   public.courts,
@@ -2653,6 +2686,13 @@ grant select, insert, update, delete on
   public.communication_templates,
   public.communication_campaigns
 to authenticated;
+
+revoke all on table public.bar_push_config from anon, authenticated;
+revoke all on table public.bar_push_dispatches from anon, authenticated;
+grant select on table public.bar_push_config to service_role;
+grant select, insert, delete on table public.bar_push_dispatches to service_role;
+grant select, insert, update, delete on table public.bar_push_subscriptions to service_role;
+grant select on table public.bar_orders, public.bar_order_items, public.bar_tables to service_role;
 
 grant select, insert, update, delete on table public.bar_customers to service_role;
 revoke all on table public.bar_customers from anon;
@@ -2761,6 +2801,7 @@ drop policy if exists "bar staff manage service requests" on public.bar_service_
 drop policy if exists "bar staff manage inventory" on public.bar_inventory_movements;
 drop policy if exists "bar staff manage finance" on public.bar_financial_entries;
 drop policy if exists "bar staff manage events" on public.bar_events;
+drop policy if exists "bar staff manage own push subscriptions" on public.bar_push_subscriptions;
 drop policy if exists "staff read teachers" on public.teachers;
 drop policy if exists "office manage teachers" on public.teachers;
 drop policy if exists "staff read students" on public.students;
@@ -2970,6 +3011,12 @@ on public.bar_events for all
 to authenticated
 using (public.is_bar_staff())
 with check (public.is_bar_staff());
+
+create policy "bar staff manage own push subscriptions"
+on public.bar_push_subscriptions for all
+to authenticated
+using (user_id = (select auth.uid()) and public.is_bar_staff())
+with check (user_id = (select auth.uid()) and public.is_bar_staff());
 
 do $$
 begin
