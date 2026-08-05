@@ -14254,6 +14254,37 @@
       background: var(--teal);
     }
 
+    .bar-checkout-item-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .bar-checkout-item-split {
+      min-height: 28px;
+      padding: 4px 9px;
+      border: 1px solid #a9ca45;
+      border-radius: 7px;
+      color: #496b00;
+      background: #f3fadf;
+      font-size: 10px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .bar-checkout-item-split:hover {
+      color: #ffffff;
+      border-color: #739c00;
+      background: #739c00;
+    }
+
+    .bar-checkout-item-split-label {
+      color: #5e7180;
+      font-size: 9px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
     .bar-checkout-item-copy {
       min-width: 0;
       display: grid;
@@ -14297,7 +14328,8 @@
     }
 
     .bar-compact-editor,
-    .bar-item-group-editor {
+    .bar-item-group-editor,
+    .bar-item-split-editor {
       width: min(610px, 100%);
       overflow: hidden;
       border-color: #cbdde1;
@@ -14305,9 +14337,91 @@
     }
 
     .bar-compact-editor-body,
-    .bar-item-group-editor-body {
+    .bar-item-group-editor-body,
+    .bar-item-split-editor-body {
       display: grid;
       gap: 16px;
+    }
+
+    .bar-item-split-list {
+      display: grid;
+      gap: 8px;
+      max-height: min(42vh, 360px);
+      overflow-y: auto;
+    }
+
+    .bar-item-split-option {
+      display: grid;
+      grid-template-columns: 20px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      min-height: 54px;
+      padding: 9px 12px;
+      border: 1px solid #d3e1e4;
+      border-radius: 10px;
+      background: #ffffff;
+      cursor: pointer;
+    }
+
+    .bar-item-split-option:has(input:checked) {
+      border-color: #9fc925;
+      background: #f6fce8;
+      box-shadow: inset 3px 0 #9fc925;
+    }
+
+    .bar-item-split-option input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--teal);
+    }
+
+    .bar-item-split-option span {
+      min-width: 0;
+      display: grid;
+      gap: 2px;
+    }
+
+    .bar-item-split-option strong {
+      overflow: hidden;
+      color: #18363d;
+      font-size: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-item-split-option small {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .bar-item-split-option b {
+      color: var(--teal);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .bar-item-split-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 50px;
+      padding: 10px 12px;
+      border: 1px solid #cfe1a1;
+      border-radius: 10px;
+      color: #405d00;
+      background: #f5fbdc;
+    }
+
+    .bar-item-split-summary span {
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .bar-item-split-summary strong {
+      font-size: 15px;
+      white-space: nowrap;
     }
 
     .bar-compact-editor-grid {
@@ -14433,7 +14547,8 @@
       }
 
       .bar-compact-editor,
-      .bar-item-group-editor {
+      .bar-item-group-editor,
+      .bar-item-split-editor {
         width: 100%;
         max-height: calc(100dvh - 20px);
       }
@@ -14457,6 +14572,12 @@
       .bar-checkout-item-edit {
         grid-column: 3;
         grid-row: 1 / span 2;
+      }
+
+      .bar-checkout-item-actions {
+        grid-column: 3;
+        grid-row: 1 / span 2;
+        flex-direction: column;
       }
     }
 
@@ -16249,6 +16370,23 @@
           <span></span>
           <button class="ghost-btn" type="button" id="barItemGroupEditCancelBtn">Cancelar</button>
           <button class="primary-btn" type="button" id="barItemGroupSaveBtn">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-modal-overlay bar-compact-editor-overlay" id="barItemSplitModal" aria-hidden="true">
+      <div class="admin-modal bar-item-split-editor" role="dialog" aria-modal="true" aria-labelledby="barItemSplitTitle">
+        <div class="admin-modal-head">
+          <div><h2 id="barItemSplitTitle">Dividir porção</h2><div class="muted" id="barItemSplitSubtitle">Escolha as outras comandas.</div></div>
+          <button class="ghost-btn bar-modal-close" type="button" id="barItemSplitCloseBtn" aria-label="Fechar"><svg><use href="#bar-icon-close"></use></svg></button>
+        </div>
+        <div class="admin-modal-body bar-item-split-editor-body">
+          <div class="bar-item-split-list" id="barItemSplitOptions"></div>
+          <div class="bar-item-split-summary" id="barItemSplitSummary"><span>Selecione com quem dividir</span><strong>R$ 0,00</strong></div>
+        </div>
+        <div class="modal-actions">
+          <button class="ghost-btn" type="button" id="barItemSplitCancelBtn">Cancelar</button>
+          <button class="primary-btn" type="button" id="barItemSplitSaveBtn" disabled>Dividir porção</button>
         </div>
       </div>
     </div>
@@ -20475,6 +20613,8 @@
       barOrderCartSaving: false,
       barCheckoutGroups: [],
       selectedBarCheckoutGroupIndex: -1,
+      selectedBarSplitItemId: '',
+      barSplitTargetOrderIds: [],
       barDayClosingPaymentFilter: 'TODOS',
       barCheckoutSplitEnabled: false,
       barCheckoutSplitMode: 'equal',
@@ -21081,6 +21221,10 @@
         status: row.status || 'SOLICITADO',
         notes: row.notes || '',
         deliveryLocation: row.delivery_location || '',
+        splitGroupId: row.split_group_id || '',
+        splitSourceItemId: row.split_source_item_id || '',
+        splitWith: row.split_with || '',
+        billingOnly: row.billing_only === true,
         created: row.created_at || '',
         updated: row.updated_at || row.created_at || ''
       };
@@ -21989,6 +22133,7 @@
     }
 
     function barKitchenIsPortionItem(item) {
+      if (item && item.billingOnly) return false;
       const product = barProductById(item && item.productId);
       return barProductRequiresProduction({
         name: item && item.productName || product && product.name || '',
@@ -23828,7 +23973,7 @@
 
     function barCommandModalHasActiveEditor() {
       const active = document.activeElement;
-      if ($('barCustomerEditModal').classList.contains('show') || $('barItemGroupEditModal').classList.contains('show')) return true;
+      if ($('barCustomerEditModal').classList.contains('show') || $('barItemGroupEditModal').classList.contains('show') || $('barItemSplitModal').classList.contains('show')) return true;
       return Boolean(active && active.closest && active.closest('#barCommandModal') &&
         ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName));
     }
@@ -23862,6 +24007,7 @@
             key: key,
             productId: item.productId,
             productName: item.productName,
+            productCategory: item.productCategory || '',
             unitPrice: Number(item.unitPrice || 0),
             notes: item.notes || '',
             deliveryLocation: item.deliveryLocation || '',
@@ -23899,6 +24045,88 @@
       $('barItemGroupEditModal').classList.remove('show');
       $('barItemGroupEditModal').setAttribute('aria-hidden', 'true');
       opsState.selectedBarCheckoutGroupIndex = -1;
+    }
+
+    function closeBarItemSplitModal() {
+      $('barItemSplitModal').classList.remove('show');
+      $('barItemSplitModal').setAttribute('aria-hidden', 'true');
+      opsState.selectedBarSplitItemId = '';
+      opsState.barSplitTargetOrderIds = [];
+    }
+
+    function selectedBarSplitItem() {
+      return opsData.barOrderItems.find(function (item) {
+        return String(item.id) === String(opsState.selectedBarSplitItemId);
+      }) || null;
+    }
+
+    function barCheckoutGroupCanSplit(group) {
+      if (!group || group.items.length !== 1 || Number(group.quantity) !== 1) return false;
+      const item = group.items[0];
+      if (!item || item.billingOnly || item.splitGroupId) return false;
+      const product = barProductById(item.productId);
+      return barProductRequiresProduction({ name: group.productName, category: group.productCategory || product && product.category || '' });
+    }
+
+    function barSplitCandidateOrders() {
+      const sourceOrder = barOrderById(opsState.selectedBarOrderId);
+      return opsData.barOrders.filter(function (order) {
+        return sourceOrder && String(order.id) !== String(sourceOrder.id) && barOrderCanEdit(order);
+      }).sort(function (a, b) {
+        const aName = barOrderCustomerDetails(a, barItemsForOrder(a.id)).name;
+        const bName = barOrderCustomerDetails(b, barItemsForOrder(b.id)).name;
+        return String(aName).localeCompare(String(bName), 'pt-BR');
+      });
+    }
+
+    function barSplitOrderDisplay(order) {
+      const details = barOrderCustomerDetails(order, barItemsForOrder(order.id));
+      const table = barTableById(order.tableId);
+      return {
+        name: details.name || order.customerName || 'Cliente',
+        location: table ? table.name : 'Comanda avulsa'
+      };
+    }
+
+    function updateBarItemSplitSummary() {
+      const item = selectedBarSplitItem();
+      const selectedCount = opsState.barSplitTargetOrderIds.length;
+      const participantCount = selectedCount + 1;
+      const totalCents = Math.round(Number(item && item.quantity || 0) * Number(item && item.unitPrice || 0) * 100);
+      const baseCents = Math.floor(totalCents / participantCount);
+      const remainder = totalCents % participantCount;
+      const values = Array.from({ length: participantCount }, function (_, index) {
+        return (baseCents + (index < remainder ? 1 : 0)) / 100;
+      });
+      const summary = $('barItemSplitSummary');
+      summary.innerHTML = selectedCount
+        ? '<span>' + escapeHtml(participantCount + ' comandas · valor dividido igualmente') + '</span><strong>' + escapeHtml(values.map(money).join(' · ')) + '</strong>'
+        : '<span>Selecione com quem dividir</span><strong>' + escapeHtml(money(totalCents / 100)) + '</strong>';
+      $('barItemSplitSaveBtn').disabled = !selectedCount;
+    }
+
+    function openBarItemSplitModal(index) {
+      const order = barOrderById(opsState.selectedBarOrderId);
+      const group = opsState.barCheckoutGroups[Number(index)];
+      if (!order || !barOrderCanEdit(order) || !barCheckoutGroupCanSplit(group)) return;
+      const candidates = barSplitCandidateOrders();
+      if (!candidates.length) {
+        toast('Não há outra comanda aberta para dividir.');
+        return;
+      }
+      opsState.selectedBarSplitItemId = group.items[0].id;
+      opsState.barSplitTargetOrderIds = [];
+      $('barItemSplitTitle').textContent = 'Dividir ' + group.productName;
+      $('barItemSplitSubtitle').textContent = 'A porção continua uma só; apenas o valor será dividido.';
+      $('barItemSplitOptions').innerHTML = candidates.map(function (candidate) {
+        const display = barSplitOrderDisplay(candidate);
+        return '<label class="bar-item-split-option"><input type="checkbox" data-bar-split-target="' + escapeHtml(candidate.id) + '" />' +
+          '<span><strong>' + escapeHtml(display.name) + '</strong><small>' + escapeHtml(display.location) + '</small></span>' +
+          '<b>' + escapeHtml(money(barOrderTotal(candidate))) + '</b></label>';
+      }).join('');
+      $('barItemSplitModal').classList.add('show');
+      $('barItemSplitModal').setAttribute('aria-hidden', 'false');
+      updateBarItemSplitSummary();
     }
 
     function selectedBarCheckoutGroup() {
@@ -24533,6 +24761,7 @@
       const open = barOrderIsOpen(order);
       const paid = barOrderIsPaid(order);
       const editable = barOrderCanEdit(order);
+      const hasSplitItems = items.some(function (item) { return Boolean(item.splitGroupId); });
       const pendingPortions = barPendingPortionItemsForOrder(order.id);
       $('barCommandStatus').hidden = !paid;
       $('barCommandStatus').innerHTML = paid ? '<span class="ops-pill good">Pago</span>' : '';
@@ -24543,8 +24772,9 @@
         const meta = [];
         const orderedAt = barOrderItemDateTimeLabel(item.created);
         if (orderedAt) meta.push('<span class="bar-command-item-ordered-at"><svg><use href="#admin-icon-calendar"></use></svg>' + escapeHtml(orderedAt) + '</span>');
+        if (item.splitWith) meta.push('<span><strong>Divisão com:</strong> ' + escapeHtml(item.splitWith) + '</span>');
         if (item.notes) meta.push('<span><strong>Obs.:</strong> ' + escapeHtml(item.notes) + '</span>');
-        const deliveryAction = cancelled ? '' : '<button class="small-btn bar-item-deliver" type="button"' + (status === 'ENTREGUE' ? ' disabled' : ' data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="ENTREGUE"') + '>Entregue</button>';
+        const deliveryAction = cancelled || item.billingOnly ? '' : '<button class="small-btn bar-item-deliver" type="button"' + (status === 'ENTREGUE' ? ' disabled' : ' data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="ENTREGUE"') + '>Entregue</button>';
         return '<article class="bar-item-row bar-command-item' + statusClass + (cancelled ? ' cancelled' : '') + '">' +
           '<div class="bar-command-item-product"><span class="bar-command-item-quantity">' + escapeHtml(item.quantity + 'x') + '</span>' +
           '<div class="bar-command-item-content"><div class="bar-command-item-title"><strong>' + escapeHtml(item.productName) + '</strong></div>' +
@@ -24556,12 +24786,19 @@
       $('barCheckoutItems').innerHTML = opsState.barCheckoutGroups.map(function (group, index) {
         const details = [];
         if (group.deliveryLocation) details.push(group.deliveryLocation);
+        if (group.items[0] && group.items[0].splitWith) details.push('Divisão com ' + group.items[0].splitWith);
         if (group.notes) details.push('Obs.: ' + group.notes);
+        const canSplit = barCheckoutGroupCanSplit(group);
+        const alreadySplit = group.items.some(function (item) { return Boolean(item.splitGroupId); });
+        const canEditGroup = editable && !alreadySplit;
         return '<div class="bar-checkout-item">' +
           '<span class="bar-checkout-item-quantity">' + escapeHtml(group.quantity + 'x') + '</span>' +
           '<span class="bar-checkout-item-copy"><strong title="' + escapeHtml(group.productName) + '">' + escapeHtml(group.productName) + '</strong>' + (details.length ? '<small>' + escapeHtml(details.join(' · ')) + '</small>' : '') + '</span>' +
           '<span class="bar-checkout-item-total">' + money(group.quantity * group.unitPrice) + '</span>' +
-          (editable ? '<button class="bar-checkout-item-edit" type="button" data-bar-item-group-edit="' + index + '"><svg><use href="#bar-icon-edit"></use></svg><span>Editar</span></button>' : '') +
+          (editable ? '<span class="bar-checkout-item-actions">' +
+            (canSplit ? '<button class="bar-checkout-item-split" type="button" data-bar-item-split="' + index + '">Dividir</button>' : '') +
+            (canEditGroup ? '<button class="bar-checkout-item-edit" type="button" data-bar-item-group-edit="' + index + '"><svg><use href="#bar-icon-edit"></use></svg><span>Editar</span></button>' : '') +
+            (alreadySplit ? '<span class="bar-checkout-item-split-label">Dividido</span>' : '') + '</span>' : '') +
           '</div>';
       }).join('') || '<div class="lesson-empty-state">Nenhum item ativo nesta comanda.</div>';
 
@@ -24572,7 +24809,7 @@
       $('barCommandAddTab').hidden = !editable;
       document.querySelectorAll('[data-bar-command-tab-target="add"]').forEach(function (button) { button.hidden = !editable; });
       $('barOrderEditNameBtn').hidden = !open;
-      $('barOrderDeleteBtn').hidden = !editable;
+      $('barOrderDeleteBtn').hidden = !editable || hasSplitItems;
       const payButton = $('barOrderPayBtn');
       const closeButton = $('barOrderCloseBtn');
       payButton.style.display = open ? 'inline-flex' : 'none';
@@ -25644,6 +25881,43 @@
         saveButton.disabled = false;
         deleteButton.disabled = false;
         saveButton.textContent = 'Salvar';
+      }
+    }
+
+    async function saveBarItemSplitAction() {
+      const sourceOrder = barOrderById(opsState.selectedBarOrderId);
+      const item = selectedBarSplitItem();
+      const targetOrders = opsState.barSplitTargetOrderIds.map(barOrderById).filter(Boolean);
+      if (!sourceOrder || !item || !targetOrders.length) return;
+      const saveButton = $('barItemSplitSaveBtn');
+      try {
+        requireAdminSession();
+        if (!barCanPersist(item.id)) throw new Error('Salve a comanda antes de dividir a porção.');
+        saveButton.disabled = true;
+        saveButton.textContent = 'Dividindo...';
+        const sourceDisplay = barSplitOrderDisplay(sourceOrder);
+        await supabaseRest('rpc/bar_split_order_item', {
+          method: 'POST',
+          body: {
+            p_item_id: item.id,
+            p_source_name: sourceDisplay.name,
+            p_targets: targetOrders.map(function (order) {
+              const display = barSplitOrderDisplay(order);
+              return { order_id: order.id, name: display.name };
+            })
+          },
+          prefer: 'return=representation'
+        });
+        await loadBarData(true);
+        closeBarItemSplitModal();
+        renderBarModule();
+        renderBarCommandModal();
+        toast('Porção dividida entre ' + (targetOrders.length + 1) + ' comandas.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        saveButton.disabled = !opsState.barSplitTargetOrderIds.length;
+        saveButton.textContent = 'Dividir porção';
       }
     }
 
@@ -28598,6 +28872,11 @@
           openBarItemGroupEditModal(groupEditBtn.dataset.barItemGroupEdit);
           return;
         }
+        const itemSplitBtn = event.target.closest('[data-bar-item-split]');
+        if (itemSplitBtn) {
+          openBarItemSplitModal(itemSplitBtn.dataset.barItemSplit);
+          return;
+        }
         const cancelBtn = event.target.closest('[data-bar-item-cancel]');
         if (cancelBtn) {
           cancelBarItemAction(cancelBtn.dataset.barItemCancel);
@@ -28853,6 +29132,23 @@
       });
       $('barItemGroupSaveBtn').addEventListener('click', function () { saveBarItemGroupQuantityAction(); });
       $('barItemGroupDeleteBtn').addEventListener('click', function () { saveBarItemGroupQuantityAction(0); });
+      $('barItemSplitCloseBtn').addEventListener('click', closeBarItemSplitModal);
+      $('barItemSplitCancelBtn').addEventListener('click', closeBarItemSplitModal);
+      $('barItemSplitModal').addEventListener('click', function (event) {
+        if (event.target.id === 'barItemSplitModal') closeBarItemSplitModal();
+      });
+      $('barItemSplitOptions').addEventListener('change', function (event) {
+        const checkbox = event.target.closest('[data-bar-split-target]');
+        if (!checkbox) return;
+        const id = checkbox.dataset.barSplitTarget;
+        if (checkbox.checked) {
+          if (!opsState.barSplitTargetOrderIds.includes(id)) opsState.barSplitTargetOrderIds.push(id);
+        } else {
+          opsState.barSplitTargetOrderIds = opsState.barSplitTargetOrderIds.filter(function (orderId) { return orderId !== id; });
+        }
+        updateBarItemSplitSummary();
+      });
+      $('barItemSplitSaveBtn').addEventListener('click', saveBarItemSplitAction);
       ['barOrderMessageBtn', 'barOrderChargeBtn', 'barOrderAccountBtn'].forEach(function (id) {
         $(id).addEventListener('click', function (event) {
           if (this.getAttribute('aria-disabled') === 'true') event.preventDefault();

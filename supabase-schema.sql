@@ -290,6 +290,14 @@ alter table public.bar_order_items
   add column if not exists customer_phone text;
 alter table public.bar_order_items
   add column if not exists source text not null default 'EQUIPE';
+alter table public.bar_order_items
+  add column if not exists split_group_id uuid;
+alter table public.bar_order_items
+  add column if not exists split_source_item_id uuid references public.bar_order_items(id) on delete set null;
+alter table public.bar_order_items
+  add column if not exists split_with text;
+alter table public.bar_order_items
+  add column if not exists billing_only boolean not null default false;
 do $$
 begin
   if not exists (
@@ -597,6 +605,143 @@ begin
 end;
 $$;
 
+create or replace function public.bar_split_order_item(
+  p_item_id uuid,
+  p_targets jsonb,
+  p_source_name text
+)
+returns setof public.bar_order_items
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  source_item public.bar_order_items%rowtype;
+  split_id uuid := gen_random_uuid();
+  target_count integer;
+  participant_count integer;
+  total_cents integer;
+  base_cents integer;
+  remainder_cents integer;
+  source_share_cents integer;
+  target_share_cents integer;
+  source_name text;
+  target_names text[];
+  all_names text[];
+  target record;
+  other_names text;
+begin
+  if not public.is_bar_staff() then
+    raise exception 'Acesso negado ao Bar.';
+  end if;
+
+  if jsonb_typeof(p_targets) <> 'array' then
+    raise exception 'Selecione pelo menos uma comanda para dividir.';
+  end if;
+
+  target_count := jsonb_array_length(p_targets);
+  if target_count < 1 or target_count > 20 then
+    raise exception 'Selecione entre 1 e 20 comandas para dividir.';
+  end if;
+
+  select item.* into source_item
+    from public.bar_order_items item
+    join public.bar_orders order_row on order_row.id = item.order_id
+   where item.id = p_item_id
+     and item.status <> 'CANCELADO'
+     and order_row.status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+     and order_row.payment_status <> 'PAGO'
+   for update of item;
+
+  if not found then
+    raise exception 'Item indisponivel para divisao.';
+  end if;
+
+  if source_item.billing_only or source_item.split_group_id is not null then
+    raise exception 'Este item ja foi dividido.';
+  end if;
+
+  if source_item.quantity <> 1 then
+    raise exception 'Divida apenas uma porcao por vez.';
+  end if;
+
+  if exists (
+    select 1
+      from jsonb_array_elements(p_targets) target_row
+     where nullif(target_row ->> 'order_id', '') is null
+        or (target_row ->> 'order_id')::uuid = source_item.order_id
+  ) or (
+    select count(distinct target_row ->> 'order_id')
+      from jsonb_array_elements(p_targets) target_row
+  ) <> target_count then
+    raise exception 'A lista de comandas para divisao e invalida.';
+  end if;
+
+  if (
+    select count(*)
+      from public.bar_orders order_row
+     where order_row.id in (
+       select (target_row ->> 'order_id')::uuid
+         from jsonb_array_elements(p_targets) target_row
+     )
+       and order_row.status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+       and order_row.payment_status <> 'PAGO'
+  ) <> target_count then
+    raise exception 'Uma das comandas escolhidas nao esta mais aberta.';
+  end if;
+
+  source_name := left(coalesce(nullif(trim(p_source_name), ''), 'Comanda atual'), 80);
+  select array_agg(left(coalesce(nullif(trim(target_row ->> 'name'), ''), 'Outra comanda'), 80) order by ordinality)
+    into target_names
+    from jsonb_array_elements(p_targets) with ordinality as targets(target_row, ordinality);
+  all_names := array_prepend(source_name, target_names);
+
+  participant_count := target_count + 1;
+  total_cents := round(source_item.quantity * source_item.unit_price * 100)::integer;
+  base_cents := total_cents / participant_count;
+  remainder_cents := total_cents % participant_count;
+  source_share_cents := base_cents + case when remainder_cents > 0 then 1 else 0 end;
+
+  update public.bar_order_items
+     set unit_price = source_share_cents::numeric / 100,
+         split_group_id = split_id,
+         split_source_item_id = id,
+         split_with = array_to_string(target_names, ', '),
+         updated_at = now()
+   where id = source_item.id;
+
+  for target in
+    select (target_row ->> 'order_id')::uuid as order_id,
+           left(coalesce(nullif(trim(target_row ->> 'name'), ''), 'Outra comanda'), 80) as name,
+           ordinality::integer as position
+      from jsonb_array_elements(p_targets) with ordinality as targets(target_row, ordinality)
+     order by ordinality
+  loop
+    target_share_cents := base_cents + case when target.position < remainder_cents then 1 else 0 end;
+    select string_agg(participant_name, ', ' order by position)
+      into other_names
+      from unnest(all_names) with ordinality as participants(participant_name, position)
+     where position <> target.position + 1;
+
+    insert into public.bar_order_items (
+      order_id, product_id, product_name, quantity, unit_price, cost_price,
+      customer_name, source, status, added_by, split_group_id,
+      split_source_item_id, split_with, billing_only
+    ) values (
+      target.order_id, source_item.product_id, source_item.product_name, 1,
+      target_share_cents::numeric / 100, 0, target.name, 'EQUIPE', 'ENTREGUE',
+      auth.uid(), split_id, source_item.id, other_names, true
+    );
+  end loop;
+
+  return query
+    select item.*
+      from public.bar_order_items item
+     where item.split_group_id = split_id
+     order by item.billing_only, item.created_at, item.id;
+end;
+$$;
+
 create or replace function public.bar_cancel_order_item(p_item_id uuid)
 returns public.bar_order_items
 language plpgsql
@@ -621,6 +766,10 @@ begin
 
   if item_row.status = 'CANCELADO' then
     return item_row;
+  end if;
+
+  if item_row.split_group_id is not null then
+    raise exception 'Um item dividido nao pode ser excluido isoladamente.';
   end if;
 
   if exists (
@@ -685,6 +834,10 @@ begin
 
   if item_row.status = 'CANCELADO' then
     raise exception 'Este item ja foi cancelado.';
+  end if;
+
+  if item_row.split_group_id is not null then
+    raise exception 'Um item dividido nao pode ter a quantidade alterada.';
   end if;
 
   if exists (
@@ -769,6 +922,15 @@ begin
     raise exception 'A comanda possui recebimentos e nao pode ser excluida.';
   end if;
 
+  if exists (
+    select 1
+      from public.bar_order_items
+     where order_id = order_row.id
+       and split_group_id is not null
+  ) then
+    raise exception 'A comanda possui uma porcao dividida e nao pode ser excluida.';
+  end if;
+
   for item_row in
     select *
       from public.bar_order_items
@@ -776,7 +938,7 @@ begin
        and status <> 'CANCELADO'
      for update
   loop
-    if item_row.product_id is not null then
+    if item_row.product_id is not null and not item_row.billing_only then
       update public.bar_products
          set stock_quantity = stock_quantity + item_row.quantity,
              updated_at = now()
@@ -2425,6 +2587,7 @@ grant execute on function public.is_bar_staff() to authenticated;
 grant execute on function public.ensure_current_user_profile() to authenticated;
 grant execute on function public.ensure_current_app_client(text, text) to authenticated;
 revoke all on function public.bar_add_order_item(uuid, uuid, numeric, text, text) from public;
+revoke all on function public.bar_split_order_item(uuid, jsonb, text) from public;
 revoke all on function public.bar_cancel_order_item(uuid) from public;
 revoke all on function public.bar_set_order_item_quantity(uuid, numeric) from public;
 revoke all on function public.bar_adjust_stock(uuid, text, numeric, text, numeric) from public;
@@ -2436,6 +2599,7 @@ revoke all on function public.bar_finalize_paid_order(uuid) from public;
 revoke all on function public.bar_reopen_order(uuid) from public;
 revoke all on function public.refresh_bar_order_totals() from public;
 grant execute on function public.bar_add_order_item(uuid, uuid, numeric, text, text) to authenticated;
+grant execute on function public.bar_split_order_item(uuid, jsonb, text) to authenticated;
 grant execute on function public.bar_cancel_order_item(uuid) to authenticated;
 grant execute on function public.bar_set_order_item_quantity(uuid, numeric) to authenticated;
 revoke all on function public.bar_delete_open_order(uuid) from public;
