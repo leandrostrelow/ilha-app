@@ -14278,11 +14278,23 @@
       background: #739c00;
     }
 
-    .bar-checkout-item-split-label {
-      color: #5e7180;
+    .bar-checkout-item-unsplit {
+      min-height: 28px;
+      padding: 4px 9px;
+      border: 1px solid #efb7bd;
+      border-radius: 7px;
+      color: #a6333d;
+      background: #fff5f6;
       font-size: 9px;
       font-weight: 900;
       white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .bar-checkout-item-unsplit:hover {
+      color: #ffffff;
+      border-color: #bd3f4b;
+      background: #bd3f4b;
     }
 
     .bar-checkout-item-copy {
@@ -24798,7 +24810,7 @@
           (editable ? '<span class="bar-checkout-item-actions">' +
             (canSplit ? '<button class="bar-checkout-item-split" type="button" data-bar-item-split="' + index + '">Dividir</button>' : '') +
             (canEditGroup ? '<button class="bar-checkout-item-edit" type="button" data-bar-item-group-edit="' + index + '"><svg><use href="#bar-icon-edit"></use></svg><span>Editar</span></button>' : '') +
-            (alreadySplit ? '<span class="bar-checkout-item-split-label">Dividido</span>' : '') + '</span>' : '') +
+            (alreadySplit ? '<button class="bar-checkout-item-unsplit" type="button" data-bar-item-unsplit="' + escapeHtml(group.items[0].id) + '">Remover divisão</button>' : '') + '</span>' : '') +
           '</div>';
       }).join('') || '<div class="lesson-empty-state">Nenhum item ativo nesta comanda.</div>';
 
@@ -25918,6 +25930,35 @@
       } finally {
         saveButton.disabled = !opsState.barSplitTargetOrderIds.length;
         saveButton.textContent = 'Dividir porção';
+      }
+    }
+
+    async function removeBarItemSplitAction(itemId) {
+      const item = opsData.barOrderItems.find(function (row) { return String(row.id) === String(itemId); });
+      if (!item || !item.splitGroupId) return;
+      if (!window.confirm('Remover a divisão de "' + item.productName + '" e devolver o valor à comanda original?')) return;
+      const button = document.querySelector('[data-bar-item-unsplit="' + CSS.escape(String(itemId)) + '"]');
+      try {
+        requireAdminSession();
+        if (button) {
+          button.disabled = true;
+          button.textContent = 'Removendo...';
+        }
+        await supabaseRest('rpc/bar_remove_order_item_split', {
+          method: 'POST',
+          body: { p_item_id: item.id },
+          prefer: 'return=representation'
+        });
+        await loadBarData(true);
+        renderBarModule();
+        renderBarCommandModal();
+        toast('Divisão removida e valor restaurado.');
+      } catch (error) {
+        reportActionError(error);
+        if (button) {
+          button.disabled = false;
+          button.textContent = 'Remover divisão';
+        }
       }
     }
 
@@ -28875,6 +28916,11 @@
         const itemSplitBtn = event.target.closest('[data-bar-item-split]');
         if (itemSplitBtn) {
           openBarItemSplitModal(itemSplitBtn.dataset.barItemSplit);
+          return;
+        }
+        const itemUnsplitBtn = event.target.closest('[data-bar-item-unsplit]');
+        if (itemUnsplitBtn) {
+          removeBarItemSplitAction(itemUnsplitBtn.dataset.barItemUnsplit);
           return;
         }
         const cancelBtn = event.target.closest('[data-bar-item-cancel]');

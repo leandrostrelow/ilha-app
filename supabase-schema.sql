@@ -742,6 +742,99 @@ begin
 end;
 $$;
 
+create or replace function public.bar_remove_order_item_split(p_item_id uuid)
+returns public.bar_order_items
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  selected_item public.bar_order_items%rowtype;
+  source_item public.bar_order_items%rowtype;
+  restored_total numeric(10, 2);
+begin
+  if not public.is_bar_staff() then
+    raise exception 'Acesso negado ao Bar.';
+  end if;
+
+  select * into selected_item
+    from public.bar_order_items
+   where id = p_item_id
+   for update;
+
+  if not found or selected_item.split_group_id is null then
+    raise exception 'Divisao nao encontrada.';
+  end if;
+
+  perform 1
+    from public.bar_order_items
+   where split_group_id = selected_item.split_group_id
+   order by id
+   for update;
+
+  select * into source_item
+    from public.bar_order_items
+   where id = selected_item.split_source_item_id
+     and split_group_id = selected_item.split_group_id
+     and billing_only = false;
+
+  if not found then
+    raise exception 'Item original da divisao nao encontrado.';
+  end if;
+
+  perform 1
+    from public.bar_orders
+   where id in (
+     select distinct order_id
+       from public.bar_order_items
+      where split_group_id = selected_item.split_group_id
+   )
+   order by id
+   for update;
+
+  if exists (
+    select 1
+      from public.bar_orders
+     where id in (
+       select distinct order_id
+         from public.bar_order_items
+        where split_group_id = selected_item.split_group_id
+     )
+       and (
+         status not in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+         or payment_status = 'PAGO'
+       )
+  ) then
+    raise exception 'Reabra o pagamento das comandas antes de remover a divisao.';
+  end if;
+
+  select round(sum(quantity * unit_price), 2)
+    into restored_total
+    from public.bar_order_items
+   where split_group_id = selected_item.split_group_id
+     and status <> 'CANCELADO';
+
+  if restored_total is null then
+    raise exception 'Nao foi possivel recuperar o valor da divisao.';
+  end if;
+
+  delete from public.bar_order_items
+   where split_group_id = selected_item.split_group_id
+     and billing_only = true;
+
+  update public.bar_order_items
+     set unit_price = restored_total / quantity,
+         split_group_id = null,
+         split_source_item_id = null,
+         split_with = null,
+         updated_at = now()
+   where id = source_item.id
+   returning * into source_item;
+
+  return source_item;
+end;
+$$;
+
 create or replace function public.bar_cancel_order_item(p_item_id uuid)
 returns public.bar_order_items
 language plpgsql
@@ -2588,6 +2681,7 @@ grant execute on function public.ensure_current_user_profile() to authenticated;
 grant execute on function public.ensure_current_app_client(text, text) to authenticated;
 revoke all on function public.bar_add_order_item(uuid, uuid, numeric, text, text) from public;
 revoke all on function public.bar_split_order_item(uuid, jsonb, text) from public;
+revoke all on function public.bar_remove_order_item_split(uuid) from public;
 revoke all on function public.bar_cancel_order_item(uuid) from public;
 revoke all on function public.bar_set_order_item_quantity(uuid, numeric) from public;
 revoke all on function public.bar_adjust_stock(uuid, text, numeric, text, numeric) from public;
@@ -2600,6 +2694,7 @@ revoke all on function public.bar_reopen_order(uuid) from public;
 revoke all on function public.refresh_bar_order_totals() from public;
 grant execute on function public.bar_add_order_item(uuid, uuid, numeric, text, text) to authenticated;
 grant execute on function public.bar_split_order_item(uuid, jsonb, text) to authenticated;
+grant execute on function public.bar_remove_order_item_split(uuid) to authenticated;
 grant execute on function public.bar_cancel_order_item(uuid) to authenticated;
 grant execute on function public.bar_set_order_item_quantity(uuid, numeric) to authenticated;
 revoke all on function public.bar_delete_open_order(uuid) from public;
