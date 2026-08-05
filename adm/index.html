@@ -15062,6 +15062,13 @@
           </div>
 
           <div data-bar-panel="kitchen" class="bar-kitchen-screen-panel" id="barKitchenScreenPanel">
+            <section class="bar-order-approval-panel bar-order-approval-kitchen" id="barOrderApprovalPanel" aria-labelledby="barOrderApprovalTitle" hidden>
+              <div class="bar-order-approval-head">
+                <div><h2 id="barOrderApprovalTitle">Aguardando aprovação</h2><p>Pedidos feitos pelo cliente via QR Code.</p></div>
+                <span id="barOrderApprovalCount">0</span>
+              </div>
+              <div class="bar-order-approval-list" id="barIncomingOrders"></div>
+            </section>
             <section class="ops-panel bar-kitchen-panel">
               <div class="ops-panel-head">
                 <div><h2>Produção</h2></div>
@@ -15187,17 +15194,9 @@
                   <button class="small-btn bar-command-screen-btn" type="button" id="barCommandScreenBtn" aria-pressed="false" aria-label="Abrir tela cheia de comandas" title="Tela cheia"><svg><use href="#bar-icon-screen"></use></svg><span>Tela de comandas</span></button>
                 </div>
               </div>
-              <section class="bar-order-approval-panel" id="barOrderApprovalPanel" aria-labelledby="barOrderApprovalTitle" hidden>
-                <div class="bar-order-approval-head">
-                  <div><h2 id="barOrderApprovalTitle">Aguardando aprovação</h2><p>Pedidos feitos pelo cliente via QR Code.</p></div>
-                  <span id="barOrderApprovalCount">0</span>
-                </div>
-                <div class="bar-order-approval-list" id="barIncomingOrders"></div>
-              </section>
               <section class="bar-command-board-section" aria-labelledby="barOpenCommandsTitle">
                 <div class="bar-command-board-section-head">
                   <div><h2 id="barOpenCommandsTitle">Comandas abertas</h2><div class="muted">Avulsas e mesas no mesmo quadro.</div></div>
-                  <div class="bar-command-board-legend" aria-label="Identificação dos cards"><span class="is-loose">Avulsa</span><span class="is-table">Mesa</span><span class="is-free">Livre</span></div>
                 </div>
                 <div class="bar-command-unified-grid" id="barCommandBoard"></div>
               </section>
@@ -21539,14 +21538,14 @@
     }
 
     function updateBarOrderBadges() {
-      const count = newIncomingBarOrderCount();
+      const approvalCount = newIncomingBarOrderCount();
       ['barOrdersNavBadge', 'barOrdersTabBadge'].forEach(function (id) {
         const badge = $(id);
         if (!badge) return;
-        badge.textContent = count;
-        badge.hidden = count === 0;
+        badge.textContent = '0';
+        badge.hidden = true;
       });
-      const kitchenCount = barPortionQueueItems().length;
+      const kitchenCount = barPortionQueueItems().length + approvalCount;
       ['barKitchenNavBadge', 'barKitchenTabBadge'].forEach(function (id) {
         const badge = $(id);
         if (!badge) return;
@@ -21896,15 +21895,14 @@
       const paidOpen = barOrderIsPaid(order);
       const details = barOrderCustomerDetails(order, barItemsForOrder(order.id));
       const customerName = details.name || order.customerName || card && card.label || 'Cliente';
-      const location = table ? table.name : 'Comanda avulsa';
       return '<article class="bar-command-unified-card' + (table ? ' is-table' : ' is-loose') + (paidOpen ? ' is-paid-open' : '') + '">' +
-        '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '"><strong>' + escapeHtml(customerName) + '</strong><small>' + escapeHtml(location) + '</small></button>' +
-        '<div class="bar-command-unified-side"><span class="bar-command-unified-type">' + (table ? 'Mesa' : 'Avulsa') + '</span><b>' + money(barOrderTotal(order)) + '</b>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + (table ? '<button class="bar-command-unified-edit" type="button" data-bar-table-edit="' + escapeHtml(table.id) + '" aria-label="Editar ' + escapeHtml(table.name) + '"><svg><use href="#bar-icon-edit"></use></svg></button>' : '') + '</div>' +
+        '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '">' + (!table ? '<span class="bar-command-unified-type">Avulsa</span>' : '') + '<strong>' + escapeHtml(customerName) + '</strong>' + (table ? '<small>' + escapeHtml(table.name.toUpperCase()) + '</small>' : '') + '</button>' +
+        '<div class="bar-command-unified-side"><b>' + money(barOrderTotal(order)) + '</b>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + '</div>' +
       '</article>';
     }
 
     function barUnifiedFreeTableCard(table) {
-      return '<article class="bar-command-unified-card is-table is-free"><button class="bar-command-unified-main" type="button" data-bar-new-table-order="' + escapeHtml(table.id) + '"><strong>' + escapeHtml(table.name) + '</strong><small>Livre · ' + escapeHtml(table.seats) + ' lugares</small></button><div class="bar-command-unified-side"><span class="bar-command-unified-type">Mesa</span><b>Livre</b><button class="bar-command-unified-edit" type="button" data-bar-table-edit="' + escapeHtml(table.id) + '" aria-label="Editar ' + escapeHtml(table.name) + '"><svg><use href="#bar-icon-edit"></use></svg></button></div></article>';
+      return '<article class="bar-command-unified-card is-table is-free"><button class="bar-command-unified-main" type="button" data-bar-new-table-order="' + escapeHtml(table.id) + '"><strong>' + escapeHtml(table.name.toUpperCase()) + '</strong><small>Livre · ' + escapeHtml(table.seats) + ' lugares</small></button><div class="bar-command-unified-side"><b>Livre</b></div></article>';
     }
 
     function barTableManagementCard(table) {
