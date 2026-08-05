@@ -9193,6 +9193,30 @@
 
     .bar-command-unified-copy { min-width: 0; display: grid; gap: 3px; }
 
+    .bar-command-delivery-alert {
+      width: max-content;
+      max-width: 100%;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 7px;
+      border-radius: 999px;
+      color: #774600;
+      background: #fff1bd;
+      font-size: 9px;
+      font-weight: 950;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .bar-command-delivery-alert svg {
+      width: 11px;
+      height: 11px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
     .bar-command-unified-main strong,
     .bar-command-unified-main small {
       overflow: visible;
@@ -11742,6 +11766,7 @@
       body.bar-admin-surface .bar-command-unified-main strong { font-size: 12px; }
       body.bar-admin-surface .bar-command-unified-main small { font-size: 8px; }
       body.bar-admin-surface .bar-command-unified-side b { font-size: 10px; }
+      body.bar-admin-surface .bar-command-delivery-alert { padding: 3px 5px; font-size: 8px; }
 
       body.bar-admin-surface .bar-command-board-legend {
         gap: 3px;
@@ -21692,6 +21717,14 @@
       });
     }
 
+    function barPendingDirectDeliveryItemsForOrder(orderId) {
+      return barItemsForOrder(orderId).filter(function (item) {
+        return isPublicBarItem(item) &&
+          !barKitchenIsPortionItem(item) &&
+          ['EM_PREPARO', 'PRONTO'].includes(String(item.status || '').toUpperCase());
+      });
+    }
+
     function barTableById(id) {
       return opsData.barTables.find(function (table) { return String(table.id) === String(id); });
     }
@@ -22233,8 +22266,14 @@
       const customerName = details.name || order.customerName || card && card.label || 'Cliente';
       const icon = table ? '#admin-icon-table' : '#admin-icon-receipt';
       const location = table ? '<small>Nº ' + escapeHtml(table.number) + '</small>' : '';
+      const deliveryQuantity = barPendingDirectDeliveryItemsForOrder(order.id).reduce(function (sum, item) {
+        return sum + Number(item.quantity || 0);
+      }, 0);
+      const deliveryAlert = deliveryQuantity
+        ? '<span class="bar-command-delivery-alert"><svg aria-hidden="true"><use href="#admin-icon-bell"></use></svg>' + escapeHtml(deliveryQuantity) + ' para entregar</span>'
+        : '';
       return '<article class="bar-command-unified-card' + (table ? ' is-table' : ' is-loose') + (paidOpen ? ' is-paid-open' : '') + '">' +
-        '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="' + icon + '"></use></svg></span><span class="bar-command-unified-copy"><strong>' + escapeHtml(customerName) + '</strong>' + location + '</span></button>' +
+        '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="' + icon + '"></use></svg></span><span class="bar-command-unified-copy"><strong>' + escapeHtml(customerName) + '</strong>' + location + deliveryAlert + '</span></button>' +
         '<div class="bar-command-unified-side"><b>' + money(barOrderTotal(order)) + '</b>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + '</div>' +
       '</article>';
     }
@@ -22542,7 +22581,8 @@
     function barProductRequiresProduction(product) {
       if (!product) return false;
       const name = normalizeMatchText(product.name || product.productName || '');
-      return barProductCategoryKey(product.category) === 'portion' || name.includes('mini pizza');
+      const category = barProductCategoryKey(product.category);
+      return ['portion', 'snack'].includes(category) || name.includes('mini pizza');
     }
 
     function barProductCategoryIcon(category) {
@@ -25329,19 +25369,22 @@
         requireAdminSession();
         if (pendingItems.every(function (item) { return barCanPersist(item.id); })) {
           await Promise.all(pendingItems.map(function (item) {
+            const nextStatus = barKitchenIsPortionItem(item) ? 'EM_PREPARO' : 'PRONTO';
             return supabaseRest('bar_order_items?id=eq.' + encodeURIComponent(item.id), {
               method: 'PATCH',
-              body: { status: 'EM_PREPARO', updated_at: new Date().toISOString() },
+              body: { status: nextStatus, updated_at: new Date().toISOString() },
               prefer: 'return=minimal'
             });
           }));
           await loadBarData(true);
         } else {
-          pendingItems.forEach(function (item) { item.status = 'EM_PREPARO'; });
+          pendingItems.forEach(function (item) {
+            item.status = barKitchenIsPortionItem(item) ? 'EM_PREPARO' : 'PRONTO';
+          });
         }
         renderBarModule();
         renderBarCommandModal();
-        toast('Pedido aceito e enviado para produção.');
+        toast('Pedido aceito. Produção e entregas foram atualizadas.');
       } catch (error) {
         reportActionError(error);
       }
