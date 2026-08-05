@@ -4910,6 +4910,28 @@
       gap: 7px;
     }
 
+    .bar-command-title-line {
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+      overflow: hidden;
+    }
+
+    .bar-command-title-line h2 {
+      min-width: 0;
+      flex: 0 1 auto;
+    }
+
+    .bar-command-header-location {
+      flex: 0 0 auto;
+      color: #0c292f;
+      font-size: 22px;
+      font-weight: 950;
+      line-height: 1.08;
+      white-space: nowrap;
+    }
+
     .bar-command-edit-name {
       width: 30px;
       height: 30px;
@@ -14437,12 +14459,16 @@
 
       body.bar-admin-surface .bar-command-identity h2 {
         max-width: none;
-        overflow: visible;
+        overflow: hidden;
         font-size: 20px;
         line-height: 1.12;
-        text-overflow: clip;
-        white-space: normal;
-        overflow-wrap: anywhere;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      body.bar-admin-surface .bar-command-header-location {
+        font-size: 20px;
+        line-height: 1.12;
       }
 
       body.bar-admin-surface #barCommandModalSubtitle {
@@ -14531,11 +14557,12 @@
         min-height: 146px;
         grid-template-rows: 84px minmax(62px, auto);
         border-radius: 9px;
+        background: #ffffff;
       }
 
       body.bar-admin-surface .bar-order-product-card-media {
         min-height: 84px;
-        background: #eef4f5;
+        background: #ffffff;
       }
 
       body.bar-admin-surface .bar-order-product-card-media img,
@@ -14552,6 +14579,7 @@
         align-content: space-between;
         gap: 3px;
         padding: 6px 4px;
+        background: #ffffff;
       }
 
       body.bar-admin-surface .bar-order-product-card-copy strong {
@@ -15983,7 +16011,7 @@
             <div class="bar-command-identity">
               <div class="bar-command-identity-top">
                 <div class="bar-command-identity-copy">
-                  <div class="bar-command-name-row"><h2 id="barCommandModalTitle">Cliente</h2><button class="bar-command-edit-name" type="button" id="barOrderEditNameBtn" aria-label="Editar comanda" title="Editar comanda"><svg><use href="#bar-icon-edit"></use></svg></button><span class="bar-command-header-total" id="barCommandHeaderTotal" aria-label="Total da comanda" aria-live="polite">R$ 0,00</span><span id="barCommandStatus"></span></div>
+                  <div class="bar-command-name-row"><div class="bar-command-title-line"><h2 id="barCommandModalTitle">Cliente</h2><span class="bar-command-header-location" id="barCommandHeaderLocation"></span></div><button class="bar-command-edit-name" type="button" id="barOrderEditNameBtn" aria-label="Editar comanda" title="Editar comanda"><svg><use href="#bar-icon-edit"></use></svg></button><span class="bar-command-header-total" id="barCommandHeaderTotal" aria-label="Total da comanda" aria-live="polite">R$ 0,00</span><span id="barCommandStatus"></span></div>
                 </div>
               </div>
               <span id="barCommandModalSubtitle" hidden></span>
@@ -24244,6 +24272,14 @@
         return !opsState.barOrderProductCategory || (product.category || 'Outros') === opsState.barOrderProductCategory;
       });
       const products = categoryProducts;
+      const renderSignature = JSON.stringify(products.map(function (product) {
+        return [product.id, product.name, product.category, product.salePrice, product.stock, product.imageUrl, product.active];
+      }));
+      if (grid.dataset.renderSignature === renderSignature) {
+        updateBarOrderProductCardStates();
+        return;
+      }
+      grid.dataset.renderSignature = renderSignature;
       grid.innerHTML = products.map(function (product) {
         const stock = Number(product.stock || 0);
         const available = stock > 0;
@@ -24383,8 +24419,9 @@
       const itemQuantity = activeItems.reduce(function (sum, item) { return sum + Number(item.quantity || 0); }, 0);
 
       $('barCommandModalTitle').textContent = customer.name;
+      $('barCommandHeaderLocation').textContent = customer.location;
       $('barCommandModalSubtitle').textContent = customer.location;
-      $('barCommandModalSubtitle').hidden = false;
+      $('barCommandModalSubtitle').hidden = true;
       const canMessage = barPhoneDigits(customer.phone);
       setBarQuickAction('barOrderMessageBtn', canMessage ? barGreetingWhatsAppUrl(order) : '');
       setBarQuickAction('barOrderChargeBtn', canMessage && barOrderCanEdit(order) ? barChargeWhatsAppUrl(order) : '');
