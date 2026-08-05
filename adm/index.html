@@ -12805,9 +12805,9 @@
     }
 
     .bar-customers-toolbar {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 220px;
       align-items: center;
-      justify-content: space-between;
       gap: 10px;
       padding: 10px;
       border: 1px solid var(--line);
@@ -12818,11 +12818,15 @@
     .bar-customers-filters {
       display: flex;
       align-items: center;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 7px;
+      min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: thin;
     }
 
     .bar-customer-filter {
+      flex: 0 0 auto;
       min-height: 34px;
       padding: 7px 11px;
       border: 1px solid #d5e1e5;
@@ -12842,6 +12846,7 @@
     }
 
     .bar-customers-sort {
+      width: 220px;
       min-height: 34px;
       padding: 7px 32px 7px 10px;
       border: 1px solid #d5e1e5;
@@ -13467,19 +13472,29 @@
       }
 
       .bar-customers-toolbar {
-        align-items: stretch;
-        flex-direction: column;
+        grid-template-columns: minmax(0, 1fr) 150px;
+        align-items: center;
+        gap: 6px;
         padding: 8px;
+        overflow-x: auto;
       }
 
       .bar-customers-filters {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 5px;
       }
 
-      .bar-customer-filter,
+      .bar-customer-filter {
+        width: auto;
+        min-height: 32px;
+        padding: 6px 9px;
+      }
+
       .bar-customers-sort {
-        width: 100%;
+        width: 150px;
+        min-width: 150px;
+        min-height: 32px;
       }
 
       .bar-customer-card {
