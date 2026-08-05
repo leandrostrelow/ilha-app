@@ -9077,6 +9077,8 @@
     .bar-command-unified-main {
       min-width: 0;
       display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      align-items: center;
       gap: 3px;
       padding: 0;
       border: 0;
@@ -9087,14 +9089,30 @@
       cursor: pointer;
     }
 
-    .bar-command-unified-main strong,
-    .bar-command-unified-main small {
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
+    .bar-command-unified-icon {
+      width: 26px;
+      height: 26px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      color: #d7f35c;
+      background: rgba(255, 255, 255, .12);
     }
 
-    .bar-command-unified-main strong { font-size: 14px; line-height: 1.1; }
+    .bar-command-unified-icon svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
+    .bar-command-unified-card.is-table .bar-command-unified-icon { color: #ffffff; }
+    .bar-command-unified-card.is-free .bar-command-unified-icon { color: #58751f; background: #e8f5bd; }
+
+    .bar-command-unified-copy { min-width: 0; display: grid; gap: 3px; }
+
+    .bar-command-unified-main strong,
+    .bar-command-unified-main small {
+      overflow: visible;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .bar-command-unified-main strong { font-size: 14px; line-height: 1.12; }
     .bar-command-unified-main small { color: rgba(255, 255, 255, .78); font-size: 10px; font-weight: 800; }
     .bar-command-unified-card.is-free .bar-command-unified-main small { color: #627246; }
 
@@ -9107,23 +9125,6 @@
     .bar-command-unified-side b { color: #d7f35c; font-size: 13px; white-space: nowrap; }
     .bar-command-unified-card.is-table .bar-command-unified-side b { color: #ffffff; }
     .bar-command-unified-card.is-free .bar-command-unified-side b { color: #58751f; }
-    .bar-command-unified-type { font-size: 8px; font-weight: 950; letter-spacing: .06em; text-transform: uppercase; }
-
-    .bar-command-unified-edit {
-      width: 26px;
-      height: 26px;
-      display: grid;
-      place-items: center;
-      padding: 0;
-      border: 1px solid rgba(255, 255, 255, .35);
-      border-radius: 8px;
-      color: inherit;
-      background: rgba(255, 255, 255, .12);
-      cursor: pointer;
-    }
-
-    .bar-command-unified-edit svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; }
-
     .bar-order-approval-panel {
       margin: 14px 4px 2px;
       padding: 14px;
@@ -21895,14 +21896,16 @@
       const paidOpen = barOrderIsPaid(order);
       const details = barOrderCustomerDetails(order, barItemsForOrder(order.id));
       const customerName = details.name || order.customerName || card && card.label || 'Cliente';
+      const icon = table ? '#admin-icon-table' : '#admin-icon-receipt';
+      const location = table ? '<small>Nº ' + escapeHtml(table.number) + '</small>' : '';
       return '<article class="bar-command-unified-card' + (table ? ' is-table' : ' is-loose') + (paidOpen ? ' is-paid-open' : '') + '">' +
-        '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '">' + (!table ? '<span class="bar-command-unified-type">Avulsa</span>' : '') + '<strong>' + escapeHtml(customerName) + '</strong>' + (table ? '<small>' + escapeHtml(table.name.toUpperCase()) + '</small>' : '') + '</button>' +
+        '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="' + icon + '"></use></svg></span><span class="bar-command-unified-copy"><strong>' + escapeHtml(customerName) + '</strong>' + location + '</span></button>' +
         '<div class="bar-command-unified-side"><b>' + money(barOrderTotal(order)) + '</b>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + '</div>' +
       '</article>';
     }
 
     function barUnifiedFreeTableCard(table) {
-      return '<article class="bar-command-unified-card is-table is-free"><button class="bar-command-unified-main" type="button" data-bar-new-table-order="' + escapeHtml(table.id) + '"><strong>' + escapeHtml(table.name.toUpperCase()) + '</strong><small>Livre · ' + escapeHtml(table.seats) + ' lugares</small></button><div class="bar-command-unified-side"><b>Livre</b></div></article>';
+      return '<article class="bar-command-unified-card is-table is-free"><button class="bar-command-unified-main" type="button" data-bar-new-table-order="' + escapeHtml(table.id) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="#admin-icon-table"></use></svg></span><span class="bar-command-unified-copy"><strong>Nº ' + escapeHtml(table.number) + '</strong><small>Livre · ' + escapeHtml(table.seats) + ' lugares</small></span></button><div class="bar-command-unified-side"><b>Livre</b></div></article>';
     }
 
     function barTableManagementCard(table) {
