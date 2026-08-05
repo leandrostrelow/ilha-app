@@ -9211,12 +9211,12 @@
       place-items: center;
       border-radius: 8px;
       color: #d7f35c;
-      background: rgba(255, 255, 255, .12);
+      background: transparent;
     }
 
     .bar-command-unified-icon svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
     .bar-command-unified-card.is-table .bar-command-unified-icon { color: #ffffff; }
-    .bar-command-unified-card.is-free .bar-command-unified-icon { color: #58751f; background: #e8f5bd; }
+    .bar-command-unified-card.is-free .bar-command-unified-icon { color: #58751f; background: transparent; }
 
     .bar-command-unified-copy { min-width: 0; display: grid; gap: 3px; }
 
@@ -9265,6 +9265,25 @@
     .bar-command-unified-side b { color: #d7f35c; font-size: 13px; white-space: nowrap; }
     .bar-command-unified-card.is-table .bar-command-unified-side b { color: #ffffff; }
     .bar-command-unified-card.is-free .bar-command-unified-side b { color: #58751f; }
+
+    body.bar-admin-surface:not(.bar-values-visible) .bar-command-day-closing strong,
+    body.bar-admin-surface:not(.bar-values-visible) #barClosedOrdersTotal,
+    body.bar-admin-surface:not(.bar-values-visible) .bar-command-unified-value {
+      display: none;
+    }
+
+    body.bar-admin-surface:not(.bar-values-visible) .bar-command-day-closing,
+    body.bar-admin-surface:not(.bar-values-visible) #barClosedOrdersPanel .bar-closed-orders-total {
+      min-width: 0;
+    }
+
+    body.bar-admin-surface:not(.bar-values-visible) .bar-command-unified-card.has-money-value:not(.is-paid-open) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.bar-admin-surface:not(.bar-values-visible) .bar-command-unified-card.has-money-value:not(.is-paid-open) .bar-command-unified-side {
+      display: none;
+    }
     .bar-order-approval-panel {
       margin: 14px 4px 2px;
       padding: 14px;
@@ -14941,6 +14960,14 @@
       <rect x="3" y="4" width="18" height="13" rx="2" />
       <path d="M8 21h8M12 17v4" />
     </symbol>
+    <symbol id="bar-icon-eye" viewBox="0 0 24 24">
+      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+      <circle cx="12" cy="12" r="2.5" />
+    </symbol>
+    <symbol id="bar-icon-eye-off" viewBox="0 0 24 24">
+      <path d="M3 3l18 18" />
+      <path d="M10.6 6.2A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-2.4 3.1M6.1 6.1C3.8 7.8 2.5 12 2.5 12s3.5 6 9.5 6c1.5 0 2.8-.4 4-1" />
+    </symbol>
   </svg>
 
   <div class="bar-pull-refresh" id="barPullRefresh" role="status" aria-live="polite">
@@ -15659,7 +15686,7 @@
                     <input id="barCommandSearch" type="search" placeholder="Buscar por nome ou telefone" autocomplete="off" aria-label="Buscar comanda por nome ou telefone" />
                   </label>
                   <div class="bar-command-day-closing" title="Valor previsto das comandas abertas"><small>Previsto</small><strong id="barOpenOrdersMetric">R$ 0,00</strong></div>
-                  <button class="small-btn bar-command-screen-btn" type="button" id="barCommandScreenBtn" aria-pressed="false" aria-label="Abrir tela cheia de comandas" title="Tela cheia"><svg><use href="#bar-icon-screen"></use></svg><span>Tela de comandas</span></button>
+                  <button class="small-btn bar-command-screen-btn" type="button" id="barCommandScreenBtn" aria-pressed="false" aria-label="Mostrar valores" title="Mostrar valores"><svg><use id="barValuesVisibilityIcon" href="#bar-icon-eye"></use></svg><span>Mostrar valores</span></button>
                 </div>
               </div>
               <section class="bar-command-board-section" aria-label="Comandas">
@@ -20429,6 +20456,7 @@
       selectedBarOrderId: storedBarViewState.orderId,
       barCommandTab: storedBarViewState.commandTab,
       barCommandSearch: '',
+      barValuesVisible: false,
       barNewOrderKind: 'loose',
       barCustomerSearch: '',
       barCustomerFilter: 'todos',
@@ -22373,9 +22401,9 @@
       const deliveryAlert = deliveryQuantity
         ? '<span class="bar-command-delivery-alert"><svg aria-hidden="true"><use href="#admin-icon-bell"></use></svg>' + escapeHtml(deliveryQuantity) + 'x para entregar</span>'
         : '';
-      return '<article class="bar-command-unified-card' + (table ? ' is-table' : ' is-loose') + (paidOpen ? ' is-paid-open' : '') + '">' +
+      return '<article class="bar-command-unified-card has-money-value' + (table ? ' is-table' : ' is-loose') + (paidOpen ? ' is-paid-open' : '') + '">' +
         '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="' + icon + '"></use></svg></span><span class="bar-command-unified-copy">' + deliveryAlert + '<strong>' + escapeHtml(customerName) + '</strong>' + location + '</span></button>' +
-        '<div class="bar-command-unified-side"><b>' + money(barOrderTotal(order)) + '</b>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + '</div>' +
+        '<div class="bar-command-unified-side"><b class="bar-command-unified-value">' + money(barOrderTotal(order)) + '</b>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + '</div>' +
       '</article>';
     }
 
@@ -22576,19 +22604,32 @@
 
     function syncBarCommandScreen() {
       const panel = $('barCommandBoardPanel');
-      const button = $('barCommandScreenBtn');
-      if (!panel || !button) return;
+      if (!panel) return;
       const active = barCommandScreenIsActive();
       panel.classList.toggle('is-command-screen', active);
       if (!active) {
         setBarCommandModalScreenMount(false);
         setBarNewOrderModalScreenMount(false);
       }
-      button.setAttribute('aria-pressed', String(active));
-      button.setAttribute('aria-label', active ? 'Sair da tela cheia de comandas' : 'Abrir tela cheia de comandas');
-      button.setAttribute('title', active ? 'Sair da tela cheia' : 'Tela cheia');
+    }
+
+    function syncBarValuesVisibility() {
+      const visible = Boolean(opsState.barValuesVisible);
+      const button = $('barCommandScreenBtn');
+      document.body.classList.toggle('bar-values-visible', visible);
+      if (!button) return;
+      button.setAttribute('aria-pressed', String(visible));
+      button.setAttribute('aria-label', visible ? 'Ocultar valores' : 'Mostrar valores');
+      button.setAttribute('title', visible ? 'Ocultar valores' : 'Mostrar valores');
+      const icon = $('barValuesVisibilityIcon');
+      if (icon) icon.setAttribute('href', visible ? '#bar-icon-eye-off' : '#bar-icon-eye');
       const label = button.querySelector('span');
-      if (label) label.textContent = active ? 'Sair da tela' : 'Tela de comandas';
+      if (label) label.textContent = visible ? 'Ocultar valores' : 'Mostrar valores';
+    }
+
+    function toggleBarValuesVisibility() {
+      opsState.barValuesVisible = !opsState.barValuesVisible;
+      syncBarValuesVisibility();
     }
 
     async function closeBarCommandScreen() {
@@ -23659,6 +23700,7 @@
 
     function renderBarModule() {
       setBarTab(opsState.barTab);
+      syncBarValuesVisibility();
       $('barSchemaNote').classList.remove('show');
       const openOrders = opsData.barOrders.filter(barOrderIsOpen);
       const lowStock = opsData.barProducts.filter(function (product) {
@@ -28273,7 +28315,7 @@
       $('barNewLooseOrderBtn').addEventListener('click', function () { openBarNewOrderModal('loose'); });
       $('barNewTableOrderBtn').addEventListener('click', function () { openBarNewOrderModal('table'); });
       $('barCommandScreenBtn').addEventListener('click', function () {
-        toggleBarCommandScreen().catch(reportActionError);
+        toggleBarValuesVisibility();
       });
       $('barKitchenScreenBtn').addEventListener('click', function () {
         toggleBarKitchenScreen().catch(reportActionError);
