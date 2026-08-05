@@ -4925,11 +4925,15 @@
 
     .bar-command-header-location {
       flex: 0 0 auto;
-      color: #0c292f;
+      color: #087f88;
       font-size: 22px;
       font-weight: 950;
       line-height: 1.08;
       white-space: nowrap;
+    }
+
+    .bar-command-header-location[hidden] {
+      display: none;
     }
 
     .bar-command-edit-name {
@@ -24509,7 +24513,9 @@
       const itemQuantity = activeItems.reduce(function (sum, item) { return sum + Number(item.quantity || 0); }, 0);
 
       $('barCommandModalTitle').textContent = customer.name;
-      $('barCommandHeaderLocation').textContent = customer.location;
+      const commandTable = barTableById(order.tableId);
+      $('barCommandHeaderLocation').textContent = commandTable ? commandTable.name : '';
+      $('barCommandHeaderLocation').hidden = !commandTable;
       $('barCommandModalSubtitle').textContent = customer.location;
       $('barCommandModalSubtitle').hidden = true;
       const canMessage = barPhoneDigits(customer.phone);
