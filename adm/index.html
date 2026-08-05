@@ -4996,6 +4996,14 @@
       white-space: nowrap;
     }
 
+    #barCommandModalSubtitle {
+      display: block;
+      margin-top: 4px;
+      color: #087f88;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
     .bar-command-contact {
       min-width: 0;
       flex-wrap: wrap;
@@ -9021,8 +9029,129 @@
       margin-top: 3px;
     }
 
-    .bar-loose-order-grid {
-      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    .bar-command-board-legend {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .bar-command-board-legend span {
+      padding: 5px 8px;
+      border-radius: 999px;
+      color: #ffffff;
+      background: #344b5a;
+    }
+
+    .bar-command-board-legend .is-table { background: #078f96; }
+    .bar-command-board-legend .is-free { color: #446019; background: #e8f5bd; }
+
+    .bar-command-unified-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 9px;
+    }
+
+    .bar-command-unified-card {
+      position: relative;
+      min-width: 0;
+      min-height: 82px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 13px;
+      border: 1px solid #d8e3e7;
+      border-left: 5px solid #b7df36;
+      border-radius: 12px;
+      color: #ffffff;
+      background: #304957;
+      box-shadow: 0 5px 14px rgba(14, 42, 54, .09);
+    }
+
+    .bar-command-unified-card.is-table { border-left-color: #22c0c3; background: #087f88; }
+    .bar-command-unified-card.is-free { border-left-color: #b7df36; color: #223240; background: #f5fae8; }
+    .bar-command-unified-card.is-inactive { opacity: .62; }
+
+    .bar-command-unified-main {
+      min-width: 0;
+      display: grid;
+      gap: 3px;
+      padding: 0;
+      border: 0;
+      color: inherit;
+      background: transparent;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .bar-command-unified-main strong,
+    .bar-command-unified-main small {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .bar-command-unified-main strong { font-size: 14px; line-height: 1.1; }
+    .bar-command-unified-main small { color: rgba(255, 255, 255, .78); font-size: 10px; font-weight: 800; }
+    .bar-command-unified-card.is-free .bar-command-unified-main small { color: #627246; }
+
+    .bar-command-unified-side {
+      display: grid;
+      justify-items: end;
+      gap: 5px;
+    }
+
+    .bar-command-unified-side b { color: #d7f35c; font-size: 13px; white-space: nowrap; }
+    .bar-command-unified-card.is-table .bar-command-unified-side b { color: #ffffff; }
+    .bar-command-unified-card.is-free .bar-command-unified-side b { color: #58751f; }
+    .bar-command-unified-type { font-size: 8px; font-weight: 950; letter-spacing: .06em; text-transform: uppercase; }
+
+    .bar-command-unified-edit {
+      width: 26px;
+      height: 26px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, .35);
+      border-radius: 8px;
+      color: inherit;
+      background: rgba(255, 255, 255, .12);
+      cursor: pointer;
+    }
+
+    .bar-command-unified-edit svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+    .bar-order-approval-panel {
+      margin: 14px 4px 2px;
+      padding: 14px;
+      border: 1px solid #f1d09d;
+      border-radius: 13px;
+      background: #fff9ed;
+    }
+
+    .bar-order-approval-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .bar-order-approval-head h2 { margin: 0; color: #6d470e; font-size: 16px; }
+    .bar-order-approval-head p { margin: 2px 0 0; color: #8b6a37; font-size: 10px; font-weight: 700; }
+    .bar-order-approval-head > span { min-width: 28px; padding: 5px 8px; border-radius: 999px; color: #fff; background: #e18724; font-size: 11px; font-weight: 950; text-align: center; }
+    .bar-order-approval-list { display: grid; gap: 8px; }
+
+    .bar-incoming-approval-actions { display: flex; align-items: center; gap: 6px; }
+    .bar-incoming-approve { color: #fff; background: #078f96; border-color: #078f96; }
+
+    .bar-command-board-actions .primary-btn.bar-new-table-order-btn {
+      color: #ffffff;
+      border-color: #078f96;
+      background: #078f96;
     }
 
     .bar-command-board-title {
@@ -11510,8 +11639,41 @@
         white-space: nowrap;
       }
 
-      body.bar-admin-surface .bar-loose-order-grid {
+      body.bar-admin-surface .bar-command-unified-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      body.bar-admin-surface .bar-command-unified-card {
+        min-height: 70px;
+        gap: 6px;
+        padding: 9px 8px;
+      }
+
+      body.bar-admin-surface .bar-command-unified-main strong { font-size: 12px; }
+      body.bar-admin-surface .bar-command-unified-main small { font-size: 8px; }
+      body.bar-admin-surface .bar-command-unified-side b { font-size: 10px; }
+
+      body.bar-admin-surface .bar-command-board-legend {
+        gap: 3px;
+        font-size: 7px;
+      }
+
+      body.bar-admin-surface .bar-command-board-legend span { padding: 4px 5px; }
+
+      body.bar-admin-surface .bar-order-approval-panel {
+        margin: 10px 0 0;
+        padding: 10px;
+      }
+
+      body.bar-admin-surface .bar-order-approval-head h2 { font-size: 14px; }
+
+      body.bar-admin-surface .bar-command-board-actions {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(88px, auto) 40px;
+      }
+
+      body.bar-admin-surface .bar-command-board-search {
+        grid-column: 1 / -1;
       }
 
       body.bar-admin-surface .bar-table-card,
@@ -15016,6 +15178,7 @@
               <div class="ops-panel-head">
                 <div class="bar-command-board-actions">
                   <button class="primary-btn bar-icon-button" type="button" id="barNewLooseOrderBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Nova comanda</span></button>
+                  <button class="primary-btn bar-icon-button bar-new-table-order-btn" type="button" id="barNewTableOrderBtn"><svg><use href="#admin-icon-table"></use></svg><span>Nova mesa</span></button>
                   <label class="bar-command-board-search" for="barCommandSearch">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
                     <input id="barCommandSearch" type="search" placeholder="Buscar por nome ou telefone" autocomplete="off" aria-label="Buscar comanda por nome ou telefone" />
@@ -15024,24 +15187,19 @@
                   <button class="small-btn bar-command-screen-btn" type="button" id="barCommandScreenBtn" aria-pressed="false" aria-label="Abrir tela cheia de comandas" title="Tela cheia"><svg><use href="#bar-icon-screen"></use></svg><span>Tela de comandas</span></button>
                 </div>
               </div>
-              <section class="bar-command-board-section" aria-labelledby="barLooseOrdersTitle">
-                <div class="bar-command-board-section-head">
-                  <div><h2 id="barLooseOrdersTitle">Comandas avulsas</h2><div class="muted">Atendimentos sem mesa vinculada.</div></div>
+              <section class="bar-order-approval-panel" id="barOrderApprovalPanel" aria-labelledby="barOrderApprovalTitle" hidden>
+                <div class="bar-order-approval-head">
+                  <div><h2 id="barOrderApprovalTitle">Aguardando aprovação</h2><p>Pedidos feitos pelo cliente via QR Code.</p></div>
+                  <span id="barOrderApprovalCount">0</span>
                 </div>
-                <div class="bar-table-grid bar-loose-order-grid" id="barLooseOrderBoard"></div>
+                <div class="bar-order-approval-list" id="barIncomingOrders"></div>
               </section>
-              <section class="bar-command-board-section" aria-labelledby="barTablesBoardTitle">
+              <section class="bar-command-board-section" aria-labelledby="barOpenCommandsTitle">
                 <div class="bar-command-board-section-head">
-                  <div><h2 id="barTablesBoardTitle">Mesas</h2><div class="muted">Acompanhe a ocupação, abra comandas e edite as mesas.</div></div>
-                  <button class="primary-btn bar-icon-button" type="button" id="barAddTableBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Adicionar mesa</span></button>
+                  <div><h2 id="barOpenCommandsTitle">Comandas abertas</h2><div class="muted">Avulsas e mesas no mesmo quadro.</div></div>
+                  <div class="bar-command-board-legend" aria-label="Identificação dos cards"><span class="is-loose">Avulsa</span><span class="is-table">Mesa</span><span class="is-free">Livre</span></div>
                 </div>
-                <div class="bar-table-metrics">
-                  <div class="bar-table-metric"><span><svg><use href="#admin-icon-table"></use></svg></span><div><strong id="barTablesTotalMetric">0</strong><small>mesas ativas</small></div></div>
-                  <div class="bar-table-metric good"><span><svg><use href="#admin-icon-table"></use></svg></span><div><strong id="barTablesFreeMetric">0</strong><small>livres agora</small></div></div>
-                  <div class="bar-table-metric busy"><span><svg><use href="#admin-icon-receipt"></use></svg></span><div><strong id="barTablesBusyMetric">0</strong><small>ocupadas</small></div></div>
-                  <div class="bar-table-metric"><span><svg><use href="#bar-icon-seat"></use></svg></span><div><strong id="barTablesSeatsMetric">0</strong><small>lugares</small></div></div>
-                </div>
-                <div class="bar-table-management-grid" id="barTableManagementGrid"></div>
+                <div class="bar-command-unified-grid" id="barCommandBoard"></div>
               </section>
             </section>
             <details class="ops-panel bar-collapsible-panel" id="barClosedOrdersPanel">
@@ -15407,6 +15565,10 @@
         </div>
         <div class="admin-modal-body bar-setup-modal-body">
           <form class="form-grid bar-setup-form" id="barNewOrderForm">
+            <div class="field full" id="barNewOrderTableField" hidden>
+              <label for="barNewOrderTable">Mesa</label>
+              <select id="barNewOrderTable"></select>
+            </div>
             <div class="field full">
               <label for="barNewOrderCustomer">Nome ou identificação</label>
               <input id="barNewOrderCustomer" maxlength="80" placeholder="Digite o nome para buscar um cadastro" autocomplete="off" aria-autocomplete="list" aria-controls="barCustomerSuggestions" required />
@@ -19803,6 +19965,7 @@
       selectedBarOrderId: storedBarViewState.orderId,
       barCommandTab: storedBarViewState.commandTab,
       barCommandSearch: '',
+      barNewOrderKind: 'loose',
       barCustomerSearch: '',
       barCustomerFilter: 'todos',
       barCustomerSort: 'recentes',
@@ -21280,7 +21443,7 @@
 
     function incomingBarItems() {
       return opsData.barOrderItems.filter(function (item) {
-        return isPublicBarItem(item) && ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(String(item.status || '').toUpperCase());
+        return isPublicBarItem(item) && String(item.status || '').toUpperCase() === 'SOLICITADO';
       });
     }
 
@@ -21329,6 +21492,7 @@
         const status = String(item.status || '').toUpperCase();
         const order = barOrderById(item.orderId);
         return ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(status) &&
+          !(isPublicBarItem(item) && status === 'SOLICITADO') &&
           barKitchenIsPortionItem(item) &&
           (!order || barOrderIsOpen(order));
       }).sort(barKitchenQueueCompare);
@@ -21692,6 +21856,8 @@
         return String(a.created).localeCompare(String(b.created));
       });
 
+      $('barOrderApprovalPanel').hidden = rows.length === 0;
+      $('barOrderApprovalCount').textContent = rows.length;
       $('barIncomingOrders').innerHTML = rows.map(function (entry) {
         const order = entry.order;
         const requested = entry.items.filter(function (item) { return item.status === 'SOLICITADO'; }).length;
@@ -21704,10 +21870,10 @@
           const customer = item.customerName && names.length > 1 ? ' | ' + item.customerName : '';
           return '<span class="bar-incoming-item">' + escapeHtml(Number(item.quantity).toLocaleString('pt-BR') + 'x ' + item.productName + customer) + '</span>';
         }).join('');
-        return '<article class="bar-incoming-card"><div class="bar-incoming-main"><div class="bar-incoming-head"><strong>' + escapeHtml(location) + '</strong>' + (requested ? '<span class="ops-pill warn">Novo</span>' : barStatusPill(entry.items[0].status)) + '</div>' +
+        return '<article class="bar-incoming-card"><div class="bar-incoming-main"><div class="bar-incoming-head"><strong>' + escapeHtml(location) + '</strong>' + (requested ? '<span class="ops-pill warn">Aguardando aceite</span>' : barStatusPill(entry.items[0].status)) + '</div>' +
           '<div class="bar-incoming-meta">' + escapeHtml((names.join(', ') || order.customerName || 'Cliente') + (order.customerPhone ? ' | ' + barPhoneLabel(order.customerPhone) : '') + ' | ' + access + ' | Comanda #' + (order.commandNumber || String(order.id).slice(-4))) + '</div>' +
           '<div class="bar-incoming-items">' + itemTags + '</div></div>' +
-          '<div class="bar-incoming-actions"><span class="bar-incoming-time">' + escapeHtml(barDateTimeLabel(entry.created)) + '</span><button class="small-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Abrir pedido</button></div></article>';
+          '<div class="bar-incoming-actions"><span class="bar-incoming-time">' + escapeHtml(barDateTimeLabel(entry.created)) + '</span><div class="bar-incoming-approval-actions"><button class="small-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Ver</button><button class="small-btn bar-incoming-approve" type="button" data-bar-approve-order="' + escapeHtml(order.id) + '">Aceitar pedido</button></div></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum pedido online aguardando.</div>';
       updateBarOrderBadges();
     }
@@ -21724,13 +21890,21 @@
       '</article>';
     }
 
-    function barLooseOrderCard(order) {
+    function barUnifiedOrderCard(order) {
+      const table = barTableById(order.tableId);
       const card = barAccessCardById(order.publicAccessId);
       const paidOpen = barOrderIsPaid(order);
-      const customerName = order.customerName || card && card.label || 'Cliente';
-      return '<button class="bar-table-card is-open is-loose bar-loose-order-link' + (paidOpen ? ' is-paid-open' : '') + '" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '">' +
-        '<span class="bar-loose-order-action"><strong class="bar-loose-order-name">' + escapeHtml(customerName) + '</strong><span class="bar-loose-order-meta"><span class="bar-table-card-inline-total">' + money(barOrderTotal(order)) + '</span>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + '</span></span>' +
-      '</button>';
+      const details = barOrderCustomerDetails(order, barItemsForOrder(order.id));
+      const customerName = details.name || order.customerName || card && card.label || 'Cliente';
+      const location = table ? table.name : 'Comanda avulsa';
+      return '<article class="bar-command-unified-card' + (table ? ' is-table' : ' is-loose') + (paidOpen ? ' is-paid-open' : '') + '">' +
+        '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '"><strong>' + escapeHtml(customerName) + '</strong><small>' + escapeHtml(location) + '</small></button>' +
+        '<div class="bar-command-unified-side"><span class="bar-command-unified-type">' + (table ? 'Mesa' : 'Avulsa') + '</span><b>' + money(barOrderTotal(order)) + '</b>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + (table ? '<button class="bar-command-unified-edit" type="button" data-bar-table-edit="' + escapeHtml(table.id) + '" aria-label="Editar ' + escapeHtml(table.name) + '"><svg><use href="#bar-icon-edit"></use></svg></button>' : '') + '</div>' +
+      '</article>';
+    }
+
+    function barUnifiedFreeTableCard(table) {
+      return '<article class="bar-command-unified-card is-table is-free"><button class="bar-command-unified-main" type="button" data-bar-new-table-order="' + escapeHtml(table.id) + '"><strong>' + escapeHtml(table.name) + '</strong><small>Livre · ' + escapeHtml(table.seats) + ' lugares</small></button><div class="bar-command-unified-side"><span class="bar-command-unified-type">Mesa</span><b>Livre</b><button class="bar-command-unified-edit" type="button" data-bar-table-edit="' + escapeHtml(table.id) + '" aria-label="Editar ' + escapeHtml(table.name) + '"><svg><use href="#bar-icon-edit"></use></svg></button></div></article>';
     }
 
     function barTableManagementCard(table) {
@@ -22734,26 +22908,19 @@
     function renderBarTablesAndQr() {
       const allTables = opsData.barTables.slice().sort(function (a, b) { return a.number - b.number; });
       const activeTables = allTables.filter(function (table) { return table.active; });
-      const busyTables = activeTables.filter(function (table) { return Boolean(barOrderForTable(table.id)); });
-      const looseOrders = opsData.barOrders.filter(function (order) {
-        return !order.tableId && barOrderIsOpen(order) && barCommandMatchesSearch(order, null);
+      const visibleOrders = opsData.barOrders.filter(function (order) {
+        const table = barTableById(order.tableId);
+        return barOrderIsOpen(order) && barCommandMatchesSearch(order, table);
       });
-      const visibleManagementTables = allTables.filter(function (table) {
-        return barCommandMatchesSearch(table.active ? barOrderForTable(table.id) : null, table);
+      const freeTables = activeTables.filter(function (table) {
+        return !barOrderForTable(table.id) && barCommandMatchesSearch(null, table);
       });
-      const seats = activeTables.reduce(function (sum, table) { return sum + Number(table.seats || 0); }, 0);
-      $('barTablesTotalMetric').textContent = activeTables.length;
-      $('barTablesFreeMetric').textContent = activeTables.length - busyTables.length;
-      $('barTablesBusyMetric').textContent = busyTables.length;
-      $('barTablesSeatsMetric').textContent = seats;
-      const looseOrderCards = looseOrders.map(barLooseOrderCard).join('');
       const hasSearch = Boolean(String(opsState.barCommandSearch || '').trim());
       const isInitialBarLoad = !isAdminDemoMode() && !opsState.barDataLoaded;
       const emptyLabel = isInitialBarLoad
         ? (opsState.barLoadError ? 'Reconectando ao sistema...' : 'Carregando comandas...')
         : (hasSearch ? 'Nenhuma comanda encontrada.' : 'Nenhuma mesa ou comanda aberta.');
-      $('barLooseOrderBoard').innerHTML = looseOrderCards || '<div class="lesson-empty-state bar-command-board-empty">' + escapeHtml(isInitialBarLoad ? emptyLabel : (hasSearch ? 'Nenhuma comanda avulsa encontrada.' : 'Nenhuma comanda avulsa aberta.')) + '</div>';
-      $('barTableManagementGrid').innerHTML = visibleManagementTables.map(barTableManagementCard).join('') || '<div class="lesson-empty-state">' + escapeHtml(hasSearch ? 'Nenhuma mesa encontrada.' : 'Nenhuma mesa cadastrada.') + '</div>';
+      $('barCommandBoard').innerHTML = visibleOrders.map(barUnifiedOrderCard).concat(freeTables.map(barUnifiedFreeTableCard)).join('') || '<div class="lesson-empty-state bar-command-board-empty">' + escapeHtml(emptyLabel) + '</div>';
       $('barQrGrid').innerHTML = activeTables.map(barQrCard).join('') || '<div class="lesson-empty-state">Cadastre uma mesa ativa para gerar o QR Code.</div>';
       $('barAccessCardGrid').innerHTML = (opsData.barAccessCards || []).map(barAccessCardQrCard).join('') || '<div class="lesson-empty-state">Crie o primeiro cartão individual.</div>';
     }
@@ -23049,6 +23216,7 @@
         : 'Fechamento do dia · ' + barFinancePaymentLabel(paymentFilter);
       updateBarOrderBadges();
       updateBarAlertsButton();
+      renderBarIncomingOrders();
       renderBarKitchenQueue();
       renderBarCustomers();
       $('barOverviewOrders').innerHTML = openOrders.map(barOrderCard).join('') || '<div class="lesson-empty-state">Nenhuma comanda aberta.</div>';
@@ -23790,8 +23958,8 @@
       const itemQuantity = activeItems.reduce(function (sum, item) { return sum + Number(item.quantity || 0); }, 0);
 
       $('barCommandModalTitle').textContent = customer.name;
-      $('barCommandModalSubtitle').innerHTML = '';
-      $('barCommandModalSubtitle').hidden = true;
+      $('barCommandModalSubtitle').textContent = customer.location;
+      $('barCommandModalSubtitle').hidden = false;
       const canMessage = barPhoneDigits(customer.phone);
       setBarQuickAction('barOrderMessageBtn', canMessage ? barGreetingWhatsAppUrl(order) : '');
       setBarQuickAction('barOrderChargeBtn', canMessage && barOrderCanEdit(order) ? barChargeWhatsAppUrl(order) : '');
@@ -24400,13 +24568,26 @@
       hideBarCustomerSuggestions();
     }
 
-    function openBarNewOrderModal() {
+    function openBarNewOrderModal(kind, selectedTableId) {
       setBarNewOrderModalScreenMount(barCommandScreenIsActive());
       resetBarNewOrderForm();
+      opsState.barNewOrderKind = kind === 'table' ? 'table' : 'loose';
+      const tableMode = opsState.barNewOrderKind === 'table';
+      const availableTables = opsData.barTables.filter(function (table) {
+        return table.active && !barOrderForTable(table.id);
+      }).sort(function (a, b) { return Number(a.number || 0) - Number(b.number || 0); });
+      $('barNewOrderModalTitle').textContent = tableMode ? 'Abrir mesa' : 'Nova comanda';
+      $('barNewOrderTableField').hidden = !tableMode;
+      $('barNewOrderTable').required = tableMode;
+      $('barNewOrderTable').innerHTML = availableTables.map(function (table) {
+        return '<option value="' + escapeHtml(table.id) + '">' + escapeHtml(table.name) + '</option>';
+      }).join('');
+      if (selectedTableId) $('barNewOrderTable').value = selectedTableId;
+      $('barNewOrderSaveBtn').innerHTML = '<svg><use href="#bar-icon-plus"></use></svg>' + (tableMode ? 'Abrir mesa e adicionar produtos' : 'Abrir e adicionar produtos');
       $('barNewOrderModal').classList.add('show');
       $('barNewOrderModal').setAttribute('aria-hidden', 'false');
       setTimeout(function () {
-        $('barNewOrderCustomer').focus();
+        (tableMode && !availableTables.length ? $('barNewOrderTable') : $('barNewOrderCustomer')).focus();
         renderBarCustomerSuggestions('');
       }, 80);
     }
@@ -24426,8 +24607,12 @@
       saveButton.textContent = 'Abrindo comanda...';
       try {
         requireAdminSession();
+        const tableMode = opsState.barNewOrderKind === 'table';
+        const table = tableMode ? barTableById($('barNewOrderTable').value) : null;
         const customerName = $('barNewOrderCustomer').value.trim();
         const customerPhone = barPhoneDigits($('barNewOrderPhone').value);
+        if (tableMode && (!table || !table.active)) throw new Error('Escolha uma mesa disponível.');
+        if (tableMode && barOrderForTable(table.id)) throw new Error('Essa mesa já possui uma comanda aberta.');
         if (customerName.length < 2) throw new Error('Informe o nome ou uma identificação para a comanda.');
         if (customerPhone && (customerPhone.length < 10 || customerPhone.length > 13)) throw new Error('Confira o telefone informado.');
 
@@ -24436,8 +24621,8 @@
         }, 0) + 1;
         let order = {
           id: localId('bar_order'),
-          tableId: '',
-          tableName: '',
+          tableId: table && table.id || '',
+          tableName: table && table.name || '',
           commandNumber: nextNumber,
           customerName: customerName,
           customerPhone: customerPhone,
@@ -24454,7 +24639,7 @@
         };
         if (barCanPersist()) {
           order = mapBarOrderRow(await supabaseInsert('bar_orders', {
-            table_id: null,
+            table_id: table && table.id || null,
             customer_name: customerName,
             customer_phone: customerPhone || null,
             source: 'EQUIPE',
@@ -24469,7 +24654,7 @@
         opsState.barCommandTab = 'add';
         renderBarModule();
         openBarCommandModal(order.id);
-        toast('Nova comanda aberta.');
+        toast(table ? table.name + ' aberta para ' + customerName + '.' : 'Nova comanda aberta.');
       } catch (error) {
         reportActionError(error);
       } finally {
@@ -24770,6 +24955,33 @@
         renderBarCommandModal();
         if (String(status).toUpperCase() === 'PRONTO') toast('Porção marcada como pronta.');
         if (String(status).toUpperCase() === 'ENTREGUE') toast('Pedido entregue e movido para o histórico.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function approveBarOrderAction(orderId) {
+      const pendingItems = opsData.barOrderItems.filter(function (item) {
+        return String(item.orderId) === String(orderId) && isPublicBarItem(item) && String(item.status || '').toUpperCase() === 'SOLICITADO';
+      });
+      if (!pendingItems.length) return;
+      try {
+        requireAdminSession();
+        if (pendingItems.every(function (item) { return barCanPersist(item.id); })) {
+          await Promise.all(pendingItems.map(function (item) {
+            return supabaseRest('bar_order_items?id=eq.' + encodeURIComponent(item.id), {
+              method: 'PATCH',
+              body: { status: 'EM_PREPARO', updated_at: new Date().toISOString() },
+              prefer: 'return=minimal'
+            });
+          }));
+          await loadBarData(true);
+        } else {
+          pendingItems.forEach(function (item) { item.status = 'EM_PREPARO'; });
+        }
+        renderBarModule();
+        renderBarCommandModal();
+        toast('Pedido aceito e enviado para produção.');
       } catch (error) {
         reportActionError(error);
       }
@@ -27545,7 +27757,8 @@
       $('barEventModal').addEventListener('click', function (event) {
         if (event.target.id === 'barEventModal') closeBarEventModal();
       });
-      $('barNewLooseOrderBtn').addEventListener('click', openBarNewOrderModal);
+      $('barNewLooseOrderBtn').addEventListener('click', function () { openBarNewOrderModal('loose'); });
+      $('barNewTableOrderBtn').addEventListener('click', function () { openBarNewOrderModal('table'); });
       $('barCommandScreenBtn').addEventListener('click', function () {
         toggleBarCommandScreen().catch(reportActionError);
       });
@@ -27597,9 +27810,6 @@
       });
       $('barProductImageRemoveBtn').addEventListener('click', removeBarProductImage);
       $('barStockForm').addEventListener('submit', saveBarStockAction);
-      $('barAddTableBtn').addEventListener('click', function () {
-        openBarTableModal();
-      });
       $('barTableForm').addEventListener('submit', saveBarTableAction);
       $('barTableModalClose').addEventListener('click', closeBarTableModal);
       $('barTableCancelBtn').addEventListener('click', closeBarTableModal);
@@ -27647,6 +27857,11 @@
         }
       });
       $('barModule').addEventListener('click', function (event) {
+        const approveOrderBtn = event.target.closest('[data-bar-approve-order]');
+        if (approveOrderBtn) {
+          approveBarOrderAction(approveOrderBtn.dataset.barApproveOrder);
+          return;
+        }
         const kitchenStatusBtn = event.target.closest('[data-bar-kitchen-status]');
         if (kitchenStatusBtn) {
           updateBarItemStatusAction(kitchenStatusBtn.dataset.barKitchenStatus, kitchenStatusBtn.dataset.nextStatus);
@@ -27687,6 +27902,11 @@
         const tableEditBtn = event.target.closest('[data-bar-table-edit]');
         if (tableEditBtn) {
           editBarTableAction(tableEditBtn.dataset.barTableEdit);
+          return;
+        }
+        const newTableOrderBtn = event.target.closest('[data-bar-new-table-order]');
+        if (newTableOrderBtn) {
+          openBarNewOrderModal('table', newTableOrderBtn.dataset.barNewTableOrder);
           return;
         }
         const tableBtn = event.target.closest('[data-bar-table-open]');
