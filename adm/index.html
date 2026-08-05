@@ -8992,6 +8992,39 @@
       color: var(--text);
     }
 
+    .bar-command-board-section {
+      display: grid;
+      gap: 12px;
+      padding: 18px 4px 4px;
+    }
+
+    .bar-command-board-section + .bar-command-board-section {
+      margin-top: 16px;
+      padding-top: 22px;
+      border-top: 1px solid #dce6e9;
+    }
+
+    .bar-command-board-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .bar-command-board-section-head h2 {
+      margin: 0;
+      color: #172238;
+      font-size: 18px;
+    }
+
+    .bar-command-board-section-head .muted {
+      margin-top: 3px;
+    }
+
+    .bar-loose-order-grid {
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    }
+
     .bar-command-board-title {
       min-width: 0;
       display: flex;
@@ -11445,6 +11478,40 @@
       body.bar-admin-surface .bar-table-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 6px;
+      }
+
+      body.bar-admin-surface .bar-command-board-section {
+        gap: 8px;
+        padding: 12px 0 2px;
+      }
+
+      body.bar-admin-surface .bar-command-board-section + .bar-command-board-section {
+        margin-top: 10px;
+        padding-top: 16px;
+      }
+
+      body.bar-admin-surface .bar-command-board-section-head {
+        align-items: flex-end;
+        gap: 8px;
+      }
+
+      body.bar-admin-surface .bar-command-board-section-head h2 {
+        font-size: 15px;
+      }
+
+      body.bar-admin-surface .bar-command-board-section-head .muted {
+        font-size: 9px;
+      }
+
+      body.bar-admin-surface .bar-command-board-section-head .bar-icon-button {
+        min-height: 36px;
+        padding: 7px 9px;
+        font-size: 9px;
+        white-space: nowrap;
+      }
+
+      body.bar-admin-surface .bar-loose-order-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       body.bar-admin-surface .bar-table-card,
@@ -14288,7 +14355,6 @@
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="orders"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Comandas</span><span class="bar-nav-badge" id="barOrdersNavBadge" hidden>0</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="kitchen"><span class="admin-nav-icon"><svg><use href="#bar-icon-portion"></use></svg></span><span>Pedidos</span><span class="bar-nav-badge" id="barKitchenNavBadge" hidden>0</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="customers"><span class="admin-nav-icon"><svg><use href="#admin-icon-users"></use></svg></span><span>Clientes</span></button>
-        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="tables"><span class="admin-nav-icon"><svg><use href="#admin-icon-table"></use></svg></span><span>Mesas</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="products"><span class="admin-nav-icon"><svg><use href="#admin-icon-box"></use></svg></span><span>Produtos</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="menu"><span class="admin-nav-icon"><svg><use href="#bar-icon-screen"></use></svg></span><span>Cardápio TV</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
@@ -14811,7 +14877,6 @@
             <button class="ops-tab-btn" type="button" data-bar-tab="orders">Comandas <span class="bar-tab-badge" id="barOrdersTabBadge" hidden>0</span></button>
             <button class="ops-tab-btn" type="button" data-bar-tab="customers">Clientes</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="kitchen">Pedidos <span class="bar-tab-badge" id="barKitchenTabBadge" hidden>0</span></button>
-            <button class="ops-tab-btn" type="button" data-bar-tab="tables">Mesas</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="products">Produtos e estoque</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="menu">Cardápio TV</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="finance">Financeiro</button>
@@ -14959,7 +15024,25 @@
                   <button class="small-btn bar-command-screen-btn" type="button" id="barCommandScreenBtn" aria-pressed="false" aria-label="Abrir tela cheia de comandas" title="Tela cheia"><svg><use href="#bar-icon-screen"></use></svg><span>Tela de comandas</span></button>
                 </div>
               </div>
-              <div class="bar-table-grid" id="barTableBoard"></div>
+              <section class="bar-command-board-section" aria-labelledby="barLooseOrdersTitle">
+                <div class="bar-command-board-section-head">
+                  <div><h2 id="barLooseOrdersTitle">Comandas avulsas</h2><div class="muted">Atendimentos sem mesa vinculada.</div></div>
+                </div>
+                <div class="bar-table-grid bar-loose-order-grid" id="barLooseOrderBoard"></div>
+              </section>
+              <section class="bar-command-board-section" aria-labelledby="barTablesBoardTitle">
+                <div class="bar-command-board-section-head">
+                  <div><h2 id="barTablesBoardTitle">Mesas</h2><div class="muted">Acompanhe a ocupação, abra comandas e edite as mesas.</div></div>
+                  <button class="primary-btn bar-icon-button" type="button" id="barAddTableBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Adicionar mesa</span></button>
+                </div>
+                <div class="bar-table-metrics">
+                  <div class="bar-table-metric"><span><svg><use href="#admin-icon-table"></use></svg></span><div><strong id="barTablesTotalMetric">0</strong><small>mesas ativas</small></div></div>
+                  <div class="bar-table-metric good"><span><svg><use href="#admin-icon-table"></use></svg></span><div><strong id="barTablesFreeMetric">0</strong><small>livres agora</small></div></div>
+                  <div class="bar-table-metric busy"><span><svg><use href="#admin-icon-receipt"></use></svg></span><div><strong id="barTablesBusyMetric">0</strong><small>ocupadas</small></div></div>
+                  <div class="bar-table-metric"><span><svg><use href="#bar-icon-seat"></use></svg></span><div><strong id="barTablesSeatsMetric">0</strong><small>lugares</small></div></div>
+                </div>
+                <div class="bar-table-management-grid" id="barTableManagementGrid"></div>
+              </section>
             </section>
             <details class="ops-panel bar-collapsible-panel" id="barClosedOrdersPanel">
               <summary class="ops-panel-head bar-collapsible-summary">
@@ -15139,22 +15222,6 @@
                   </form>
                 </section>
               </div>
-            </div>
-          </div>
-
-          <div data-bar-panel="tables">
-            <div class="bar-table-page">
-              <div class="bar-section-header">
-                <div><h2>Mesas</h2><div class="muted">Organize os espaços e acompanhe a ocupação do Bar.</div></div>
-                <button class="primary-btn bar-icon-button" type="button" id="barAddTableBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Adicionar mesa</span></button>
-              </div>
-              <div class="bar-table-metrics">
-                <div class="bar-table-metric"><span><svg><use href="#admin-icon-table"></use></svg></span><div><strong id="barTablesTotalMetric">0</strong><small>mesas ativas</small></div></div>
-                <div class="bar-table-metric good"><span><svg><use href="#admin-icon-table"></use></svg></span><div><strong id="barTablesFreeMetric">0</strong><small>livres agora</small></div></div>
-                <div class="bar-table-metric busy"><span><svg><use href="#admin-icon-receipt"></use></svg></span><div><strong id="barTablesBusyMetric">0</strong><small>ocupadas</small></div></div>
-                <div class="bar-table-metric"><span><svg><use href="#bar-icon-seat"></use></svg></span><div><strong id="barTablesSeatsMetric">0</strong><small>lugares</small></div></div>
-              </div>
-              <div class="bar-table-management-grid" id="barTableManagementGrid"></div>
             </div>
           </div>
 
@@ -22671,26 +22738,22 @@
       const looseOrders = opsData.barOrders.filter(function (order) {
         return !order.tableId && barOrderIsOpen(order) && barCommandMatchesSearch(order, null);
       });
-      const visibleTables = activeTables.filter(function (table) {
-        return barCommandMatchesSearch(barOrderForTable(table.id), table);
+      const visibleManagementTables = allTables.filter(function (table) {
+        return barCommandMatchesSearch(table.active ? barOrderForTable(table.id) : null, table);
       });
       const seats = activeTables.reduce(function (sum, table) { return sum + Number(table.seats || 0); }, 0);
       $('barTablesTotalMetric').textContent = activeTables.length;
       $('barTablesFreeMetric').textContent = activeTables.length - busyTables.length;
       $('barTablesBusyMetric').textContent = busyTables.length;
       $('barTablesSeatsMetric').textContent = seats;
-      const boardCards = looseOrders.map(barLooseOrderCard).concat(visibleTables.map(barTableCard)).join('');
-      const visibleBusyTables = visibleTables.filter(function (table) { return Boolean(barOrderForTable(table.id)); });
+      const looseOrderCards = looseOrders.map(barLooseOrderCard).join('');
       const hasSearch = Boolean(String(opsState.barCommandSearch || '').trim());
       const isInitialBarLoad = !isAdminDemoMode() && !opsState.barDataLoaded;
       const emptyLabel = isInitialBarLoad
         ? (opsState.barLoadError ? 'Reconectando ao sistema...' : 'Carregando comandas...')
         : (hasSearch ? 'Nenhuma comanda encontrada.' : 'Nenhuma mesa ou comanda aberta.');
-      const screenEmpty = isInitialBarLoad || looseOrders.length || visibleBusyTables.length
-        ? ''
-        : '<div class="lesson-empty-state bar-command-screen-empty">' + escapeHtml(hasSearch ? 'Nenhuma comanda encontrada.' : 'Nenhuma comanda aberta.') + '</div>';
-      $('barTableBoard').innerHTML = (boardCards || '<div class="lesson-empty-state bar-command-board-empty">' + escapeHtml(emptyLabel) + '</div>') + screenEmpty;
-      $('barTableManagementGrid').innerHTML = allTables.map(barTableManagementCard).join('') || '<div class="lesson-empty-state">Nenhuma mesa cadastrada.</div>';
+      $('barLooseOrderBoard').innerHTML = looseOrderCards || '<div class="lesson-empty-state bar-command-board-empty">' + escapeHtml(isInitialBarLoad ? emptyLabel : (hasSearch ? 'Nenhuma comanda avulsa encontrada.' : 'Nenhuma comanda avulsa aberta.')) + '</div>';
+      $('barTableManagementGrid').innerHTML = visibleManagementTables.map(barTableManagementCard).join('') || '<div class="lesson-empty-state">' + escapeHtml(hasSearch ? 'Nenhuma mesa encontrada.' : 'Nenhuma mesa cadastrada.') + '</div>';
       $('barQrGrid').innerHTML = activeTables.map(barQrCard).join('') || '<div class="lesson-empty-state">Cadastre uma mesa ativa para gerar o QR Code.</div>';
       $('barAccessCardGrid').innerHTML = (opsData.barAccessCards || []).map(barAccessCardQrCard).join('') || '<div class="lesson-empty-state">Crie o primeiro cartão individual.</div>';
     }
