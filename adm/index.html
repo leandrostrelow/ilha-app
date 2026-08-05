@@ -14290,6 +14290,164 @@
         grid-row: 1 / span 2;
       }
     }
+
+    /* Comanda no celular: nome legível, ações organizadas e produtos maiores. */
+    @media (max-width: 700px) {
+      body.bar-admin-surface .bar-command-head {
+        min-height: 0;
+        grid-template-columns: minmax(0, 1fr) 36px;
+        grid-template-areas:
+          "customer close"
+          "actions actions";
+        align-items: start;
+        gap: 10px 8px;
+        padding: max(12px, env(safe-area-inset-top)) 12px 10px;
+      }
+
+      body.bar-admin-surface .bar-command-customer {
+        grid-area: customer;
+        min-width: 0;
+      }
+
+      body.bar-admin-surface .bar-command-name-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: 7px;
+      }
+
+      body.bar-admin-surface .bar-command-identity h2 {
+        max-width: none;
+        overflow: visible;
+        font-size: 20px;
+        line-height: 1.12;
+        text-overflow: clip;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      body.bar-admin-surface #barCommandModalSubtitle {
+        margin-top: 5px;
+        font-size: 11px;
+      }
+
+      body.bar-admin-surface .bar-command-edit-name {
+        width: 34px;
+        height: 34px;
+      }
+
+      body.bar-admin-surface .bar-command-header-total {
+        min-height: 34px;
+        padding: 6px 8px;
+        font-size: 11px;
+      }
+
+      body.bar-admin-surface .bar-command-quick-actions {
+        grid-area: actions;
+        justify-self: end;
+        gap: 6px;
+      }
+
+      body.bar-admin-surface .bar-command-quick-action {
+        width: 34px;
+        height: 34px;
+        flex-basis: 34px;
+      }
+
+      body.bar-admin-surface .bar-command-close {
+        grid-area: close;
+        width: 36px;
+        height: 36px;
+        justify-self: end;
+      }
+
+      body.bar-admin-surface .bar-command-tabs {
+        position: sticky;
+        top: 0;
+        z-index: 4;
+      }
+
+      body.bar-admin-surface .bar-command-tab {
+        min-height: 54px;
+        padding: 7px 4px;
+        font-size: 10px;
+        line-height: 1.12;
+      }
+
+      body.bar-admin-surface .bar-command-body {
+        padding: 10px;
+      }
+
+      body.bar-admin-surface .bar-command-product-form {
+        padding: 10px;
+        border-radius: 12px;
+      }
+
+      body.bar-admin-surface .bar-order-product-tabs {
+        gap: 6px;
+        margin-right: -10px;
+        padding: 1px 10px 6px 1px;
+      }
+
+      body.bar-admin-surface .bar-order-product-tab {
+        min-height: 38px;
+        gap: 5px;
+        padding: 7px 9px;
+        font-size: 10px;
+      }
+
+      body.bar-admin-surface .bar-order-product-tab svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      body.bar-admin-surface .bar-order-product-grid {
+        max-height: min(52dvh, 480px);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        padding: 2px;
+      }
+
+      body.bar-admin-surface .bar-order-product-card {
+        min-height: 178px;
+        grid-template-rows: 108px minmax(70px, auto);
+        border-radius: 10px;
+      }
+
+      body.bar-admin-surface .bar-order-product-card-media {
+        min-height: 108px;
+        background: #eef4f5;
+      }
+
+      body.bar-admin-surface .bar-order-product-card-media img,
+      body.bar-admin-surface .bar-order-product-card.is-portion .bar-order-product-card-media img,
+      body.bar-admin-surface .bar-order-product-card.is-snack .bar-order-product-card-media img {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        object-fit: cover;
+        transform: none;
+      }
+
+      body.bar-admin-surface .bar-order-product-card-copy {
+        align-content: space-between;
+        gap: 5px;
+        padding: 8px;
+      }
+
+      body.bar-admin-surface .bar-order-product-card-copy strong {
+        display: -webkit-box;
+        overflow: hidden;
+        font-size: 11px;
+        line-height: 1.18;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+      }
+
+      body.bar-admin-surface .bar-order-product-card-meta b {
+        font-size: 12px;
+      }
+    }
   </style>
 </head>
 <body class="adm-locked">
