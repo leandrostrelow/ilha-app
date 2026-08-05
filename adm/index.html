@@ -9158,7 +9158,7 @@
       box-shadow: 0 5px 14px rgba(14, 42, 54, .09);
     }
 
-    .bar-command-unified-card.is-table { border-left-color: #22c0c3; background: #087f88; }
+    .bar-command-unified-card.is-table { border-left-color: #8b9ba1; background: #414d52; }
     .bar-command-unified-card.is-free { border-left-color: #b7df36; color: #223240; background: #f5fae8; }
     .bar-command-unified-card.is-inactive { opacity: .62; }
 
@@ -9201,8 +9201,9 @@
       gap: 4px;
       padding: 4px 7px;
       border-radius: 999px;
-      color: #774600;
-      background: #fff1bd;
+      border: 1px solid #ffb7bc;
+      color: #a31923;
+      background: #ffe3e5;
       font-size: 9px;
       font-weight: 950;
       line-height: 1;
@@ -22270,10 +22271,10 @@
         return sum + Number(item.quantity || 0);
       }, 0);
       const deliveryAlert = deliveryQuantity
-        ? '<span class="bar-command-delivery-alert"><svg aria-hidden="true"><use href="#admin-icon-bell"></use></svg>' + escapeHtml(deliveryQuantity) + ' para entregar</span>'
+        ? '<span class="bar-command-delivery-alert"><svg aria-hidden="true"><use href="#admin-icon-bell"></use></svg>' + escapeHtml(deliveryQuantity) + 'x para entregar</span>'
         : '';
       return '<article class="bar-command-unified-card' + (table ? ' is-table' : ' is-loose') + (paidOpen ? ' is-paid-open' : '') + '">' +
-        '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="' + icon + '"></use></svg></span><span class="bar-command-unified-copy"><strong>' + escapeHtml(customerName) + '</strong>' + location + deliveryAlert + '</span></button>' +
+        '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="' + icon + '"></use></svg></span><span class="bar-command-unified-copy">' + deliveryAlert + '<strong>' + escapeHtml(customerName) + '</strong>' + location + '</span></button>' +
         '<div class="bar-command-unified-side"><b>' + money(barOrderTotal(order)) + '</b>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + '</div>' +
       '</article>';
     }
