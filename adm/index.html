@@ -3305,41 +3305,127 @@
 
     .bar-incoming-head {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
+      justify-content: space-between;
       flex-wrap: wrap;
       gap: 8px;
     }
 
-    .bar-incoming-head strong {
-      font-size: 16px;
+    .bar-incoming-identity {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bar-incoming-identity > span {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 38px;
+      border-radius: 10px;
+      color: #087f88;
+      background: #e8f5f5;
+    }
+
+    .bar-incoming-identity svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
+    .bar-incoming-identity > div {
+      min-width: 0;
+      display: grid;
+      gap: 2px;
+    }
+
+    .bar-incoming-identity strong {
+      color: #172f38;
+      font-size: 18px;
+      line-height: 1.1;
+      overflow-wrap: anywhere;
+    }
+
+    .bar-incoming-identity small {
+      color: #087f88;
+      font-size: 12px;
+      font-weight: 950;
     }
 
     .bar-incoming-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
       margin-top: 5px;
       color: var(--muted);
       font-size: 11px;
       font-weight: 750;
     }
 
+    .bar-incoming-meta > span {
+      padding: 4px 7px;
+      border-radius: 999px;
+      background: #f0f4f5;
+    }
+
+    .bar-incoming-meta .bar-incoming-command {
+      color: #ffffff;
+      background: #304957;
+      font-weight: 950;
+    }
+
+    .bar-incoming-products {
+      display: grid;
+      gap: 7px;
+      margin-top: 12px;
+    }
+
+    .bar-incoming-products > strong {
+      color: #7d5b28;
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
     .bar-incoming-items {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin-top: 10px;
+      margin-top: 0;
     }
 
     .bar-incoming-item {
       max-width: 100%;
-      padding: 6px 8px;
-      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 10px;
       color: #334a52;
       background: #ffffff;
-      border: 1px solid #eadfd5;
+      border: 1px solid #e5cda9;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: normal;
+    }
+
+    .bar-incoming-item b {
+      flex: 0 0 auto;
+      padding: 3px 6px;
       border-radius: 6px;
-      font-size: 11px;
-      font-weight: 800;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      color: #ffffff;
+      background: #e18724;
+      font-size: 10px;
+    }
+
+    .bar-incoming-item span {
+      overflow-wrap: anywhere;
     }
 
     .bar-incoming-actions {
@@ -14447,6 +14533,40 @@
       body.bar-admin-surface .bar-order-product-card-meta b {
         font-size: 12px;
       }
+
+      body.bar-admin-surface .bar-incoming-card {
+        gap: 12px;
+        padding: 12px;
+      }
+
+      body.bar-admin-surface .bar-incoming-identity strong {
+        font-size: 17px;
+      }
+
+      body.bar-admin-surface .bar-incoming-identity small {
+        font-size: 11px;
+      }
+
+      body.bar-admin-surface .bar-incoming-actions {
+        grid-template-columns: minmax(0, 1fr);
+        justify-items: stretch;
+        gap: 8px;
+      }
+
+      body.bar-admin-surface .bar-incoming-time {
+        justify-self: start;
+      }
+
+      body.bar-admin-surface .bar-incoming-approval-actions {
+        display: grid;
+        grid-template-columns: 74px minmax(0, 1fr);
+        gap: 7px;
+      }
+
+      body.bar-admin-surface .bar-incoming-approval-actions .small-btn {
+        width: 100%;
+        justify-content: center;
+      }
     }
   </style>
 </head>
@@ -15223,7 +15343,7 @@
           <div data-bar-panel="kitchen" class="bar-kitchen-screen-panel" id="barKitchenScreenPanel">
             <section class="bar-order-approval-panel bar-order-approval-kitchen" id="barOrderApprovalPanel" aria-labelledby="barOrderApprovalTitle" hidden>
               <div class="bar-order-approval-head">
-                <div><h2 id="barOrderApprovalTitle">Aguardando aprovação</h2><p>Pedidos feitos pelo cliente via QR Code.</p></div>
+                <div><h2 id="barOrderApprovalTitle">Aguardando Aprovação</h2><p>Pedidos feitos pelo cliente via QR Code.</p></div>
                 <span id="barOrderApprovalCount">0</span>
               </div>
               <div class="bar-order-approval-list" id="barIncomingOrders"></div>
@@ -22023,14 +22143,15 @@
         const table = barTableById(order.tableId);
         const card = barAccessCardById(order.publicAccessId);
         const location = table ? table.name : card ? 'Comanda avulsa' : 'Retirada no balcão';
+        const customerName = names.join(', ') || order.customerName || 'Cliente';
+        const commandNumber = order.commandNumber || String(order.id).slice(-4);
         const access = card ? card.label : barOrderSourceLabel(order.source || entry.items[0].source);
         const itemTags = entry.items.map(function (item) {
-          const customer = item.customerName && names.length > 1 ? ' | ' + item.customerName : '';
-          return '<span class="bar-incoming-item">' + escapeHtml(Number(item.quantity).toLocaleString('pt-BR') + 'x ' + item.productName + customer) + '</span>';
+          return '<span class="bar-incoming-item"><b>' + escapeHtml(Number(item.quantity).toLocaleString('pt-BR') + 'x') + '</b><span>' + escapeHtml(item.productName) + '</span></span>';
         }).join('');
-        return '<article class="bar-incoming-card"><div class="bar-incoming-main"><div class="bar-incoming-head"><strong>' + escapeHtml(location) + '</strong>' + (requested ? '<span class="ops-pill warn">Aguardando aceite</span>' : barStatusPill(entry.items[0].status)) + '</div>' +
-          '<div class="bar-incoming-meta">' + escapeHtml((names.join(', ') || order.customerName || 'Cliente') + (order.customerPhone ? ' | ' + barPhoneLabel(order.customerPhone) : '') + ' | ' + access + ' | Comanda #' + (order.commandNumber || String(order.id).slice(-4))) + '</div>' +
-          '<div class="bar-incoming-items">' + itemTags + '</div></div>' +
+        return '<article class="bar-incoming-card"><div class="bar-incoming-main"><div class="bar-incoming-head"><div class="bar-incoming-identity"><span><svg><use href="' + (table ? '#admin-icon-table' : '#admin-icon-receipt') + '"></use></svg></span><div><strong>' + escapeHtml(customerName) + '</strong><small>' + escapeHtml(location) + '</small></div></div>' + (requested ? '<span class="ops-pill warn">Aguardando aceite</span>' : barStatusPill(entry.items[0].status)) + '</div>' +
+          '<div class="bar-incoming-meta"><span class="bar-incoming-command">Comanda #' + escapeHtml(commandNumber) + '</span><span>' + escapeHtml(access) + '</span></div>' +
+          '<div class="bar-incoming-products"><strong>Produtos do pedido</strong><div class="bar-incoming-items">' + itemTags + '</div></div></div>' +
           '<div class="bar-incoming-actions"><span class="bar-incoming-time">' + escapeHtml(barDateTimeLabel(entry.created)) + '</span><div class="bar-incoming-approval-actions"><button class="small-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Ver</button><button class="small-btn bar-incoming-approve" type="button" data-bar-approve-order="' + escapeHtml(order.id) + '">Aceitar pedido</button></div></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum pedido online aguardando.</div>';
       updateBarOrderBadges();
