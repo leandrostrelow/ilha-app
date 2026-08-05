@@ -9191,6 +9191,7 @@
       color: #ffffff;
       background: #304957;
       box-shadow: 0 5px 14px rgba(14, 42, 54, .09);
+      cursor: pointer;
     }
 
     .bar-command-unified-card.is-table { border-left-color: #8b9ba1; background: #414d52; }
@@ -22409,14 +22410,14 @@
       const deliveryAlert = deliveryQuantity
         ? '<span class="bar-command-delivery-alert"><svg aria-hidden="true"><use href="#admin-icon-bell"></use></svg>' + escapeHtml(deliveryQuantity) + 'x para entregar</span>'
         : '';
-      return '<article class="bar-command-unified-card has-money-value' + (table ? ' is-table' : ' is-loose') + (paidOpen ? ' is-paid-open' : '') + '">' +
+      return '<article class="bar-command-unified-card has-money-value' + (table ? ' is-table' : ' is-loose') + (paidOpen ? ' is-paid-open' : '') + '" data-bar-order-open="' + escapeHtml(order.id) + '">' +
         '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="' + icon + '"></use></svg></span><span class="bar-command-unified-copy">' + deliveryAlert + '<strong>' + escapeHtml(customerName) + '</strong>' + location + '</span></button>' +
         '<div class="bar-command-unified-side"><b class="bar-command-unified-value">' + money(barOrderTotal(order)) + '</b>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + '</div>' +
       '</article>';
     }
 
     function barUnifiedFreeTableCard(table) {
-      return '<article class="bar-command-unified-card is-table is-free"><button class="bar-command-unified-main" type="button" data-bar-new-table-order="' + escapeHtml(table.id) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="#admin-icon-table"></use></svg></span><span class="bar-command-unified-copy"><strong>Nº ' + escapeHtml(table.number) + '</strong><small>Livre · ' + escapeHtml(table.seats) + ' lugares</small></span></button><div class="bar-command-unified-side"><b>Livre</b></div></article>';
+      return '<article class="bar-command-unified-card is-table is-free" data-bar-new-table-order="' + escapeHtml(table.id) + '"><button class="bar-command-unified-main" type="button" data-bar-new-table-order="' + escapeHtml(table.id) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="#admin-icon-table"></use></svg></span><span class="bar-command-unified-copy"><strong>Nº ' + escapeHtml(table.number) + '</strong><small>Livre · ' + escapeHtml(table.seats) + ' lugares</small></span></button><div class="bar-command-unified-side"><b>Livre</b></div></article>';
     }
 
     function barTableManagementCard(table) {
