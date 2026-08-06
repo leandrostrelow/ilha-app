@@ -415,6 +415,7 @@
 
     .menu-product-copy {
       min-width: 0;
+      overflow: hidden;
     }
 
     .menu-product-copy h3 {
@@ -434,6 +435,17 @@
       white-space: normal;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 2;
+    }
+
+    .menu-product-copy p {
+      margin: 4px 0 0;
+      overflow: hidden;
+      color: #6b778b;
+      font-size: max(10px, calc(var(--menu-name-size) * .72));
+      font-weight: 750;
+      line-height: 1.15;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .menu-product-price {
@@ -516,6 +528,7 @@
     body[data-menu-theme="dark"] .menu-category-title small { color: #adbd9b; }
     body[data-menu-theme="dark"] .menu-category-head > span { color: #ccec78; }
     body[data-menu-theme="dark"] .menu-product { background: var(--surface); }
+    body[data-menu-theme="dark"] .menu-product-copy p { color: #aab8ca; }
 
     body[data-menu-theme="dark"] .menu-product.is-featured {
       background: linear-gradient(90deg, #233d36 0%, var(--surface) 60%);
@@ -993,6 +1006,11 @@
       -webkit-line-clamp: 2;
     }
 
+    html[data-menu-display="mobile"] .menu-product-copy p {
+      margin-top: 3px;
+      font-size: 11px;
+    }
+
     html[data-menu-display="mobile"] .menu-product-price {
       font-size: 18px;
     }
@@ -1125,7 +1143,7 @@
       const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrcXRncHRlYmtnZndndXlreGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzEyNjAsImV4cCI6MjA5NzcwNzI2MH0.S-dopp-fbBgq8_YclyiAheOdK-QhXt92RYLu8JKmKCg';
       const MOBILE_MENU_VIEW = new URLSearchParams(window.location.search).get('view') === 'mobile';
       const MENU_VISIBILITY_FIELD = MOBILE_MENU_VIEW ? 'menu_visible' : 'menu_tv_visible';
-      const MENU_QUERY = 'bar_products?select=id,name,category,sale_price,image_url,menu_featured,menu_sort_order,updated_at&active=eq.true&' + MENU_VISIBILITY_FIELD + '=eq.true&order=category.asc,menu_sort_order.asc,name.asc';
+      const MENU_QUERY = 'bar_products?select=id,name,category,sale_price,image_url,notes,menu_featured,menu_sort_order,updated_at&active=eq.true&' + MENU_VISIBILITY_FIELD + '=eq.true&order=category.asc,menu_sort_order.asc,name.asc';
       const MENU_REFRESH_INTERVAL = 10000;
       const CATEGORY_PRIORITY = ['porcoes', 'cervejas', 'refeic', 'almoc', 'bebidas', 'refrigerantes', 'lanches', 'aguas'];
       const LAYOUT_KEY = 'ilha-menu-layout-v1';
@@ -1329,12 +1347,13 @@
       function productHtml(product) {
         const source = imageSource(product.image_url);
         const initial = escapeHtml(String(product.name || 'P').trim().charAt(0).toUpperCase() || 'P');
+        const description = String(product.notes || '').trim();
         const image = source
           ? '<img src="' + escapeHtml(source) + '" alt="' + escapeHtml(product.name) + '" decoding="async" loading="eager" />'
           : '<span>' + initial + '</span>';
         return '<article class="menu-product' + (product.menu_featured ? ' is-featured' : '') + '">' +
           '<div class="menu-product-image" data-menu-fallback="' + initial + '">' + image + '</div>' +
-          '<div class="menu-product-copy"><h3>' + escapeHtml(product.name) + '</h3></div>' +
+          '<div class="menu-product-copy"><h3>' + escapeHtml(product.name) + '</h3>' + (description ? '<p>' + escapeHtml(description) + '</p>' : '') + '</div>' +
           '<strong class="menu-product-price">' + money(product.sale_price) + '</strong>' +
         '</article>';
       }
