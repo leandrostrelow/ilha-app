@@ -9,7 +9,7 @@
   <link rel="icon" href="../icons/ilha-bar-192.png" sizes="192x192" />
   <script>
     (function () {
-      if (new URLSearchParams(window.location.search).get('view') === 'mobile') {
+      if (new URLSearchParams(window.location.search).get('view') === 'mobile' || /^\/cardapio\/?$/.test(window.location.pathname)) {
         document.documentElement.dataset.menuDisplay = 'mobile';
       }
     })();
@@ -1141,7 +1141,7 @@
 
       const SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
       const SUPABASE_ANON_KEY = 'sb_publishable_zcX8te5g99p0bA12xy_E-A_MTyNpJNx';
-      const MOBILE_MENU_VIEW = new URLSearchParams(window.location.search).get('view') === 'mobile';
+      const MOBILE_MENU_VIEW = new URLSearchParams(window.location.search).get('view') === 'mobile' || /^\/cardapio\/?$/.test(window.location.pathname);
       const MENU_VISIBILITY_FIELD = MOBILE_MENU_VIEW ? 'menu_visible' : 'menu_tv_visible';
       const MENU_QUERY = 'bar_products?select=id,name,category,sale_price,image_url,notes,menu_featured,menu_sort_order,updated_at&active=eq.true&' + MENU_VISIBILITY_FIELD + '=eq.true&order=category.asc,menu_sort_order.asc,name.asc';
       const MENU_REFRESH_INTERVAL = 3000;
