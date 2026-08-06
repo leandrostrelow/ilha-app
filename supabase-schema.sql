@@ -2347,7 +2347,11 @@ begin
             and cards.active = true
        )
      )
-   order by orders.opened_at desc
+   order by case
+              when orders.status in ('ABERTA', 'EM_PREPARO', 'PRONTA') then 0
+              else 1
+            end,
+            orders.opened_at desc
    limit 1;
 
   if not found then

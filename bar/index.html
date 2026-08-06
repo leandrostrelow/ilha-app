@@ -916,6 +916,20 @@
           state.access = data.access || {};
           state.tables = data.tables || [];
           state.products = data.products || [];
+          const linkedIdentity = linkedAccessIdentity();
+          const linkedIdentityChanged = linkedIdentity && (
+            !state.identity ||
+            !state.identity.cardLinked ||
+            state.identity.name !== linkedIdentity.name ||
+            state.identity.tableId !== linkedIdentity.tableId
+          );
+          if (linkedIdentityChanged) {
+            state.identity = linkedIdentity;
+            saveSession();
+            enterMenu();
+            startPolling();
+            return;
+          }
           if ($('menuView').classList.contains('active')) renderProducts();
           if ($('accessView').classList.contains('active')) renderAccess();
         }
