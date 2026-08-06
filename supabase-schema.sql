@@ -1844,6 +1844,87 @@ as $$
   select public.current_user_role() in ('admin', 'secretaria', 'bar')
 $$;
 
+create or replace function public.bar_update_order_customer(
+  p_order_id uuid,
+  p_customer_name text,
+  p_customer_phone text,
+  p_public_access_id uuid,
+  p_notes text
+)
+returns public.bar_orders
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  previous_name text;
+  customer_value text;
+  phone_value text;
+  updated_order public.bar_orders%rowtype;
+begin
+  if not public.is_bar_staff() then
+    raise exception 'Acesso negado.';
+  end if;
+
+  customer_value := left(regexp_replace(trim(coalesce(p_customer_name, '')), '\s+', ' ', 'g'), 80);
+  if length(customer_value) < 2 then
+    raise exception 'Informe um nome com pelo menos 2 caracteres.';
+  end if;
+
+  phone_value := nullif(regexp_replace(coalesce(p_customer_phone, ''), '[^0-9]', '', 'g'), '');
+  if phone_value is not null and length(phone_value) not between 10 and 13 then
+    raise exception 'Informe um telefone com DDD válido.';
+  end if;
+
+  select customer_name into previous_name
+    from public.bar_orders
+   where id = p_order_id
+     and status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+   for update;
+
+  if not found then
+    raise exception 'Comanda aberta não encontrada.';
+  end if;
+
+  update public.bar_orders
+     set customer_name = customer_value,
+         customer_phone = phone_value,
+         public_access_id = p_public_access_id,
+         notes = nullif(left(trim(coalesce(p_notes, '')), 500), ''),
+         updated_at = now()
+   where id = p_order_id
+   returning * into updated_order;
+
+  update public.bar_order_items
+     set customer_name = customer_value,
+         customer_phone = phone_value,
+         updated_at = now()
+   where order_id = p_order_id
+     and (
+       customer_name is null
+       or trim(customer_name) = ''
+       or lower(trim(customer_name)) = lower(trim(coalesce(previous_name, '')))
+     );
+
+  update public.bar_service_requests
+     set customer_name = customer_value,
+         customer_phone = phone_value,
+         updated_at = now()
+   where order_id = p_order_id
+     and status in ('PENDENTE', 'EM_ATENDIMENTO')
+     and (
+       customer_name is null
+       or trim(customer_name) = ''
+       or lower(trim(customer_name)) = lower(trim(coalesce(previous_name, '')))
+     );
+
+  return updated_order;
+end;
+$$;
+
+revoke all on function public.bar_update_order_customer(uuid, text, text, uuid, text) from public, anon;
+grant execute on function public.bar_update_order_customer(uuid, text, text, uuid, text) to authenticated;
+
 create or replace function public.bar_public_menu(p_token text)
 returns jsonb
 language plpgsql

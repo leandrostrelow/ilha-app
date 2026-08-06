@@ -24524,9 +24524,12 @@
         const normalized = normalizeMatchText(name);
         return locationNames.includes(normalized) || /^(mesa|deck|balcao|comanda)(\s|$)/.test(normalized);
       };
-      const customerNames = itemNames.filter(function (name) { return !isLocationName(name); });
       const orderName = String(order.customerName || '').trim();
-      if (!customerNames.length && orderName && !isLocationName(orderName)) customerNames.push(orderName);
+      const customerNames = [];
+      if (orderName && !isLocationName(orderName)) customerNames.push(orderName);
+      itemNames.filter(function (name) { return !isLocationName(name); }).forEach(function (name) {
+        if (!customerNames.some(function (current) { return normalizeMatchText(current) === normalizeMatchText(name); })) customerNames.push(name);
+      });
       const name = customerNames[0] || (table ? 'Cliente da mesa' : 'Cliente');
       const matchingItem = items.find(function (item) { return item.customerName === name && item.customerPhone; }) || items.find(function (item) { return item.customerPhone; });
       return {
@@ -26705,17 +26708,24 @@
         button.disabled = true;
         button.textContent = 'Salvando...';
         if (barCanPersist(order.id)) {
-          await supabaseRest('bar_orders?id=eq.' + encodeURIComponent(order.id), {
-            method: 'PATCH',
-            body: { customer_name: nextName, customer_phone: nextPhone || null, public_access_id: nextCardId || null, notes: nextNotes || null, updated_at: new Date().toISOString() },
+          const saved = await supabaseRest('rpc/bar_update_order_customer', {
+            method: 'POST',
+            body: {
+              p_order_id: order.id,
+              p_customer_name: nextName,
+              p_customer_phone: nextPhone || null,
+              p_public_access_id: nextCardId || null,
+              p_notes: nextNotes || null
+            },
             prefer: 'return=representation'
           });
-          let itemFilter = 'bar_order_items?order_id=eq.' + encodeURIComponent(order.id);
-          if (order.tableId && customer.name) itemFilter += '&customer_name=eq.' + encodeURIComponent(customer.name);
-          await supabaseRest(itemFilter, {
-            method: 'PATCH',
-            body: { customer_name: nextName, customer_phone: nextPhone || null, updated_at: new Date().toISOString() },
-            prefer: 'return=representation'
+          Object.assign(order, mapBarOrderRow(Array.isArray(saved) ? saved[0] : saved));
+          const previousNames = [currentName, customer.name].map(normalizeMatchText).filter(Boolean);
+          orderItems.forEach(function (item) {
+            if (!item.customerName || previousNames.includes(normalizeMatchText(item.customerName))) {
+              item.customerName = nextName;
+              item.customerPhone = nextPhone;
+            }
           });
           await loadBarData(true);
         } else {
