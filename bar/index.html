@@ -60,6 +60,7 @@
     }
     .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
     .brand img { width: 205px; max-height: 58px; height: auto; object-fit: contain; object-position: left center; }
+    .header-actions { display: flex; align-items: center; gap: 8px; }
     .header-order-btn {
       min-width: 44px;
       height: 44px;
@@ -190,6 +191,8 @@
     .menu-top h1 { margin: 0; font-size: 28px; }
     .menu-top p { margin: 5px 0 0; color: var(--muted); }
     .identity-btn { flex: 0 0 auto; min-height: 40px; padding: 8px 12px; }
+    .service-request-btn { flex: 0 0 auto; min-height: 42px; padding: 9px 14px; }
+    .service-request-btn.is-requested { color: #58751f; background: var(--lime-soft); border-color: #cce879; }
     .active-order-strip {
       display: flex;
       align-items: center;
@@ -258,7 +261,7 @@
     .product-copy h2 { margin: 0; font-size: 17px; line-height: 1.2; }
     .product-copy p { min-height: 32px; margin: 5px 0 8px; color: var(--muted); font-size: 12px; line-height: 1.35; }
     .product-bottom { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .product-price { font-size: 18px; font-weight: 900; white-space: nowrap; }
+    .product-price { color: #86b300; font-size: 18px; font-weight: 900; white-space: nowrap; }
     .add-btn {
       width: 40px;
       height: 40px;
@@ -393,7 +396,9 @@
       .app-shell { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
       .app-header { min-height: 74px; padding: 12px 16px; }
       .brand { gap: 9px; }
-      .brand img { width: 160px; }
+      .brand img { width: 150px; }
+      .header-actions { gap: 6px; }
+      .header-order-btn { min-width: 42px; height: 42px; }
       .main { padding: 18px 16px; }
       .access-wrap, .loading-view, .error-view { min-height: calc(100vh - 122px); }
       .access-panel { padding: 22px 18px; }
@@ -402,6 +407,7 @@
       .menu-top h1 { font-size: 25px; }
       .identity-btn { width: 42px; padding: 8px; }
       .identity-btn span { display: none; }
+      .service-request-btn { min-height: 40px; padding: 8px 10px; font-size: 12px; }
       .category-nav { margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
       .product-grid { grid-template-columns: 1fr; gap: 10px; }
       .product-card { grid-template-columns: 90px minmax(0, 1fr); padding: 12px; }
@@ -442,7 +448,10 @@
   <div class="app-shell">
     <header class="app-header">
       <div class="brand"><img src="../assets/branding/ilha-bar-logo-dark.png" alt="Ilha Bar" /></div>
-      <button class="header-order-btn" id="headerOrderBtn" type="button" aria-label="Acompanhar meu pedido" hidden><svg><use href="#icon-cart"></use></svg></button>
+      <div class="header-actions">
+        <button class="header-order-btn identity-btn" id="changeIdentityBtn" type="button" aria-label="Alterar perfil, nome ou mesa" title="Alterar perfil"><svg><use href="#icon-user"></use></svg></button>
+        <button class="header-order-btn" id="headerOrderBtn" type="button" aria-label="Acompanhar meu pedido" hidden><svg><use href="#icon-cart"></use></svg></button>
+      </div>
     </header>
 
     <main class="main">
@@ -470,7 +479,7 @@
       </section>
 
       <section class="view" id="menuView">
-        <div class="menu-top"><div><h1>Cardápio</h1><p id="menuIdentity">Seu pedido no Ilha Bar</p></div><button class="secondary-btn identity-btn" id="changeIdentityBtn" type="button" aria-label="Alterar nome ou mesa"><svg><use href="#icon-user"></use></svg><span>Alterar</span></button></div>
+        <div class="menu-top"><div><h1>Cardápio</h1><p id="menuIdentity">Seu pedido no Ilha Bar</p></div><button class="secondary-btn service-request-btn" id="requestServiceBtn" type="button"><svg><use href="#icon-bell"></use></svg><span>Solicitar atendimento</span></button></div>
         <div class="active-order-strip" id="activeOrderStrip" hidden><div><strong id="activeOrderTitle">Comanda em andamento</strong><small id="activeOrderStatus">Acompanhe o preparo por aqui.</small></div><button id="activeOrderBtn" type="button">Ver pedido</button></div>
         <nav class="category-nav" id="categoryNav" aria-label="Categorias do cardápio"></nav>
         <div class="product-grid" id="productGrid"></div>
@@ -505,7 +514,7 @@
       access: null,
       tables: [],
       products: [],
-      category: 'Todos',
+      category: 'Porções',
       cart: {},
       identity: null,
       order: null,
@@ -618,6 +627,10 @@
       return { className: '', icon: 'icon-food' };
     }
 
+    function normalizeCategory(value) {
+      return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    }
+
     function beverageProductRank(product) {
       const name = String(product && product.name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
       if (name.includes('gatorade')) return 0;
@@ -655,7 +668,7 @@
         if (priorityA !== priorityB) return (priorityA == null ? 99 : priorityA) - (priorityB == null ? 99 : priorityB);
         return String(a).localeCompare(String(b), 'pt-BR');
       }).concat('Todos');
-      if (!categories.includes(state.category)) state.category = 'Todos';
+      if (!categories.includes(state.category)) state.category = categories.find(category => normalizeCategory(category) === 'porcoes') || 'Todos';
       $('categoryNav').innerHTML = categories.map(category => '<button class="category-btn' + (state.category === category ? ' active' : '') + '" type="button" data-category="' + escapeHtml(category) + '">' + escapeHtml(category) + '</button>').join('');
     }
 
@@ -730,9 +743,24 @@
       $('headerOrderBtn').hidden = !hasTracking;
       $('headerOrderBtn').classList.toggle('has-order', hasTracking);
       $('activeOrderStrip').hidden = !hasTracking || !state.order;
-      if (!state.order) return;
-      $('activeOrderTitle').textContent = 'Comanda #' + state.order.command_number;
-      $('activeOrderStatus').textContent = orderStatusLabel(state.order.status) + ' | ' + money(state.order.total);
+      if (state.order) {
+        $('activeOrderTitle').textContent = 'Comanda #' + state.order.command_number;
+        $('activeOrderStatus').textContent = orderStatusLabel(state.order.status) + ' | ' + money(state.order.total);
+      }
+      renderServiceRequestButton();
+    }
+
+    function activeServiceRequest() {
+      return Boolean(state.order && (state.order.service_requests || []).some(request => ['PENDENTE', 'EM_ATENDIMENTO'].includes(String(request.status || '').toUpperCase())));
+    }
+
+    function renderServiceRequestButton() {
+      const button = $('requestServiceBtn');
+      if (!button) return;
+      const active = activeServiceRequest();
+      button.disabled = active;
+      button.classList.toggle('is-requested', active);
+      button.querySelector('span').textContent = active ? 'Atendimento solicitado' : 'Solicitar atendimento';
     }
 
     function renderOrder() {
@@ -783,10 +811,37 @@
 
     function enterMenu() {
       $('menuIdentity').textContent = identityLabel();
+      state.category = state.products.find(product => normalizeCategory(product.category) === 'porcoes')?.category || 'Todos';
       renderProducts();
       showView('menuView');
       renderActiveOrderStrip();
       if (state.identity && state.identity.trackingToken) loadOrderStatus(false);
+    }
+
+    async function requestService() {
+      if (!state.identity) return;
+      if (!state.identity.trackingToken) {
+        showToast('Faça seu primeiro pedido para abrir a comanda e chamar o garçom.', true);
+        return;
+      }
+      const button = $('requestServiceBtn');
+      button.disabled = true;
+      button.querySelector('span').textContent = 'Enviando...';
+      try {
+        const result = await rpc('bar_public_request_service', {
+          p_tracking_token: state.identity.trackingToken,
+          p_request_type: 'ATENDIMENTO',
+          p_customer_name: state.identity.name,
+          p_customer_phone: state.identity.phone,
+          p_message: null
+        });
+        await loadOrderStatus(false);
+        showToast('Atendimento solicitado. O garçom já foi avisado.');
+      } catch (error) {
+        showToast(error.message, true);
+      } finally {
+        renderServiceRequestButton();
+      }
     }
 
     async function sendOrder() {
@@ -894,6 +949,7 @@
     $('sendOrderBtn').addEventListener('click', sendOrder);
     $('retryBtn').addEventListener('click', loadMenu);
     $('changeIdentityBtn').addEventListener('click', () => { renderAccess(); showView('accessView'); });
+    $('requestServiceBtn').addEventListener('click', requestService);
     $('backToMenuBtn').addEventListener('click', enterMenu);
     $('headerOrderBtn').addEventListener('click', async () => { await loadOrderStatus(true); showView('orderView'); });
     $('activeOrderBtn').addEventListener('click', async () => { await loadOrderStatus(true); showView('orderView'); });

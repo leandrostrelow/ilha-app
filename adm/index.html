@@ -9386,6 +9386,34 @@
     .bar-order-approval-head > span { min-width: 28px; padding: 5px 8px; border-radius: 999px; color: #fff; background: #e18724; font-size: 11px; font-weight: 950; text-align: center; }
     .bar-order-approval-list { display: grid; gap: 8px; }
 
+    .bar-service-request-panel {
+      margin: 14px 4px 2px;
+      padding: 14px;
+      border: 1px solid #efb4b4;
+      border-radius: 13px;
+      background: #fff4f4;
+    }
+    .bar-service-request-panel .bar-order-approval-head h2 { color: #a52828; }
+    .bar-service-request-panel .bar-order-approval-head > span { background: #dc4545; }
+    .bar-service-request-list { display: grid; gap: 8px; }
+    .bar-service-request-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid #f0caca;
+      border-left: 5px solid #dc4545;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .bar-service-request-card strong, .bar-service-request-card span { display: block; }
+    .bar-service-request-card strong { font-size: 15px; }
+    .bar-service-request-card span { margin-top: 3px; color: #687681; font-size: 11px; font-weight: 750; }
+    .bar-service-request-actions { display: flex; align-items: center; gap: 7px; }
+    .bar-service-request-actions .primary-btn { min-height: 38px; padding: 8px 12px; background: #dc4545; border-color: #dc4545; }
+    .bar-service-request-actions .secondary-btn { min-height: 38px; padding: 8px 12px; }
+
     .bar-incoming-approval-actions { display: flex; align-items: center; gap: 6px; }
     .bar-incoming-approve { color: #fff; background: #078f96; border-color: #078f96; }
 
@@ -11913,6 +11941,11 @@
         margin: 10px 0 0;
         padding: 10px;
       }
+
+      body.bar-admin-surface .bar-service-request-panel { margin: 10px 0 0; padding: 10px; }
+      body.bar-admin-surface .bar-service-request-card { grid-template-columns: minmax(0, 1fr); }
+      body.bar-admin-surface .bar-service-request-actions { width: 100%; }
+      body.bar-admin-surface .bar-service-request-actions button { flex: 1; }
 
       body.bar-admin-surface .bar-order-approval-head h2 { font-size: 14px; }
 
@@ -15788,6 +15821,13 @@
           </div>
 
           <div data-bar-panel="kitchen" class="bar-kitchen-screen-panel" id="barKitchenScreenPanel">
+            <section class="bar-service-request-panel" id="barServiceRequestPanel" aria-labelledby="barServiceRequestTitle" hidden>
+              <div class="bar-order-approval-head">
+                <div><h2 id="barServiceRequestTitle">Atendimento solicitado</h2></div>
+                <span id="barServiceRequestCount">0</span>
+              </div>
+              <div class="bar-service-request-list" id="barServiceRequests"></div>
+            </section>
             <section class="bar-order-approval-panel bar-order-approval-kitchen" id="barOrderApprovalPanel" aria-labelledby="barOrderApprovalTitle" hidden>
               <div class="bar-order-approval-head">
                 <div><h2 id="barOrderApprovalTitle">Aguardando Aprovação</h2></div>
@@ -20753,6 +20793,7 @@
       barAlertsEnabled: localStorage.getItem('ilha-bar-alerts-enabled') === 'true',
       barPushSubscriptionReady: false,
       barKnownIncomingIds: null,
+      barKnownServiceRequestIds: null,
       barBootstrapPrepared: false,
       barDataLoaded: false,
       barSchemaReady: true,
@@ -20910,6 +20951,7 @@
         { id: 'bar_item_3', orderId: 'bar_order_1', productId: 'bar_product_water', productName: 'Água mineral', customerName: 'Leandro', customerPhone: '5527999999999', source: 'QR_MESA', quantity: 1, unitPrice: 5, costPrice: 2, status: 'SOLICITADO', notes: 'Sem gelo' },
         { id: 'bar_item_4', orderId: 'bar_order_2', productId: 'bar_product_beer', productName: 'Cerveja long neck', customerName: 'Cliente avulso', customerPhone: '5527988887777', source: 'QR_CARTAO', quantity: 1, unitPrice: 12, costPrice: 6, status: 'SOLICITADO', notes: '' }
       ],
+      barServiceRequests: [],
       barInventory: [],
       barFinance: [],
       barEvents: [
@@ -21353,6 +21395,21 @@
       };
     }
 
+    function mapBarServiceRequestRow(row) {
+      return {
+        id: row.id || '',
+        orderId: row.order_id || '',
+        requestType: row.request_type || 'ATENDIMENTO',
+        customerName: row.customer_name || '',
+        customerPhone: row.customer_phone || '',
+        message: row.message || '',
+        status: row.status || 'PENDENTE',
+        created: row.created_at || '',
+        handledAt: row.handled_at || '',
+        updated: row.updated_at || row.created_at || ''
+      };
+    }
+
     function mapBarInventoryRow(row) {
       return {
         id: row.id || '',
@@ -21410,12 +21467,14 @@
       opsData.barTables = [];
       opsData.barOrders = [];
       opsData.barOrderItems = [];
+      opsData.barServiceRequests = [];
       opsData.barInventory = [];
       opsData.barFinance = [];
       opsData.barAccessCards = [];
       opsData.barEvents = [];
       opsData.barCustomers = [];
       opsState.barKnownIncomingIds = null;
+      opsState.barKnownServiceRequestIds = null;
     }
 
     async function loadBarData(force) {
@@ -21440,7 +21499,8 @@
             supabaseRest('bar_financial_entries?select=*&order=created_at.desc'),
             supabaseRest('bar_public_cards?select=*&order=code.asc'),
             supabaseRest('bar_events?select=*&order=event_date.asc,starts_at.asc'),
-            supabaseRest('bar_customers?select=*&order=last_order_at.desc&limit=500')
+            supabaseRest('bar_customers?select=*&order=last_order_at.desc&limit=500'),
+            supabaseRest('bar_service_requests?select=*&order=created_at.desc&limit=200')
           ]);
         };
         let results;
@@ -21459,7 +21519,9 @@
         opsData.barAccessCards = results[6].map(mapBarAccessCardRow);
         opsData.barEvents = results[7].map(mapBarEventRow);
         opsData.barCustomers = results[8].map(mapBarCustomerRow);
+        opsData.barServiceRequests = results[9].map(mapBarServiceRequestRow);
         handleBarIncomingChanges(opsData.barOrderItems);
+        handleBarServiceRequestChanges(opsData.barServiceRequests);
         opsState.barDataLoaded = true;
         opsState.barSchemaReady = true;
         opsState.barLoadError = '';
@@ -22229,6 +22291,12 @@
       }).map(function (item) { return String(item.orderId); })).size;
     }
 
+    function activeBarServiceRequests() {
+      return (opsData.barServiceRequests || []).filter(function (request) {
+        return ['PENDENTE', 'EM_ATENDIMENTO'].includes(String(request.status || '').toUpperCase());
+      }).sort(function (a, b) { return String(b.created || '').localeCompare(String(a.created || '')); });
+    }
+
     function barKitchenQueueTimestamp(item) {
       const timestamp = Date.parse(item && item.created || '');
       return Number.isFinite(timestamp) ? timestamp : Number.MIN_SAFE_INTEGER;
@@ -22323,7 +22391,7 @@
         badge.textContent = '0';
         badge.hidden = true;
       });
-      const kitchenCount = barPortionQueueItems().length + approvalCount;
+      const kitchenCount = barPortionQueueItems().length + approvalCount + activeBarServiceRequests().length;
       ['barKitchenNavBadge', 'barKitchenTabBadge'].forEach(function (id) {
         const badge = $(id);
         if (!badge) return;
@@ -22456,6 +22524,28 @@
       });
       opsState.barKnownIncomingIds = currentIds;
       notifyNewBarOrders(fresh);
+    }
+
+    function handleBarServiceRequestChanges(requests) {
+      const active = (requests || []).filter(function (request) {
+        return ['PENDENTE', 'EM_ATENDIMENTO'].includes(String(request.status || '').toUpperCase());
+      });
+      const currentIds = new Set(active.map(function (request) { return String(request.id); }));
+      if (opsState.barKnownServiceRequestIds === null) {
+        opsState.barKnownServiceRequestIds = currentIds;
+        return;
+      }
+      const fresh = active.filter(function (request) { return !opsState.barKnownServiceRequestIds.has(String(request.id)); });
+      opsState.barKnownServiceRequestIds = currentIds;
+      if (!fresh.length) return;
+      const message = fresh.length === 1 ? 'Cliente solicitando atendimento.' : fresh.length + ' clientes solicitando atendimento.';
+      toast(message);
+      showBarOrderLoudAlert(message + ' Toque para abrir Pedidos.');
+      playBarOrderSound();
+      if (!opsState.barPushSubscriptionReady && opsState.barAlertsEnabled && 'Notification' in window && Notification.permission === 'granted' && document.hidden) {
+        const notification = new Notification('ATENDIMENTO NO BAR', { body: message, icon: '../icon.png', tag: 'ilha-bar-atendimento' });
+        notification.onclick = function () { window.focus(); setBarTab('kitchen'); notification.close(); };
+      }
     }
 
     async function enableBarAlerts() {
@@ -23860,6 +23950,21 @@
       '</article>';
     }
 
+    function renderBarServiceRequests() {
+      const requests = activeBarServiceRequests();
+      const panel = $('barServiceRequestPanel');
+      panel.hidden = requests.length === 0;
+      $('barServiceRequestCount').textContent = requests.length;
+      $('barServiceRequests').innerHTML = requests.map(function (request) {
+        const order = barOrderById(request.orderId);
+        const location = order ? barTableLabel(order) : 'Mesa';
+        const command = order && order.commandNumber ? 'Comanda #' + order.commandNumber : 'Comanda';
+        const inProgress = String(request.status || '').toUpperCase() === 'EM_ATENDIMENTO';
+        return '<article class="bar-service-request-card"><div><strong>' + escapeHtml(request.customerName || 'Cliente') + ' · ' + escapeHtml(location) + '</strong><span>' + escapeHtml(command + ' · Solicitado em ' + barDateTimeLabel(request.created)) + '</span></div>' +
+          '<div class="bar-service-request-actions">' + barStatusPill(request.status) + '<button class="' + (inProgress ? 'primary-btn' : 'secondary-btn') + '" type="button" data-bar-service-request="' + escapeHtml(request.id) + '" data-next-status="' + (inProgress ? 'CONCLUIDO' : 'EM_ATENDIMENTO') + '">' + (inProgress ? 'Concluir' : 'Assumir') + '</button></div></article>';
+      }).join('');
+    }
+
     function renderBarKitchenQueue() {
       const items = barPortionQueueItems();
       const previousItems = barPreviousPortionQueueItems();
@@ -24081,6 +24186,7 @@
         : 'Fechamento do dia · ' + barFinancePaymentLabel(paymentFilter);
       updateBarOrderBadges();
       updateBarAlertsButton();
+      renderBarServiceRequests();
       renderBarIncomingOrders();
       renderBarKitchenQueue();
       renderBarCustomers();
@@ -25952,6 +26058,34 @@
       }
     }
 
+    async function updateBarServiceRequestAction(requestId, status) {
+      const request = (opsData.barServiceRequests || []).find(function (row) { return String(row.id) === String(requestId); });
+      if (!request) return;
+      try {
+        const now = new Date().toISOString();
+        if (barCanPersist(request.id)) {
+          const saved = await supabaseRest('bar_service_requests?id=eq.' + encodeURIComponent(request.id), {
+            method: 'PATCH',
+            body: {
+              status: status,
+              handled_by: adminSession && adminSession.user && adminSession.user.id || null,
+              handled_at: now,
+              updated_at: now
+            },
+            prefer: 'return=representation'
+          });
+          Object.assign(request, mapBarServiceRequestRow(Array.isArray(saved) ? saved[0] : saved));
+        } else {
+          request.status = status;
+          request.handledAt = now;
+        }
+        renderBarModule();
+        toast(String(status).toUpperCase() === 'CONCLUIDO' ? 'Atendimento concluído.' : 'Atendimento assumido.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
     async function approveBarOrderAction(orderId) {
       const pendingItems = opsData.barOrderItems.filter(function (item) {
         return String(item.orderId) === String(orderId) && isPublicBarItem(item) && String(item.status || '').toUpperCase() === 'SOLICITADO';
@@ -26999,6 +27133,7 @@
       sessionStorage.removeItem('ilha-admin-authenticated');
       sessionStorage.removeItem(ADMIN_DEMO_SESSION_KEY);
       opsState.barKnownIncomingIds = null;
+      opsState.barKnownServiceRequestIds = null;
       opsState.barBootstrapPrepared = false;
       opsState.barDataLoaded = false;
     }
@@ -28939,6 +29074,11 @@
         const kitchenStatusBtn = event.target.closest('[data-bar-kitchen-status]');
         if (kitchenStatusBtn) {
           updateBarItemStatusAction(kitchenStatusBtn.dataset.barKitchenStatus, kitchenStatusBtn.dataset.nextStatus);
+          return;
+        }
+        const serviceRequestBtn = event.target.closest('[data-bar-service-request]');
+        if (serviceRequestBtn) {
+          updateBarServiceRequestAction(serviceRequestBtn.dataset.barServiceRequest, serviceRequestBtn.dataset.nextStatus);
           return;
         }
         const productViewBtn = event.target.closest('[data-bar-product-view]');
