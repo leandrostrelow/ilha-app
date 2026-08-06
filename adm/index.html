@@ -15922,8 +15922,19 @@
                   <button class="small-btn bar-command-screen-btn" type="button" id="barCommandScreenBtn" aria-pressed="false" aria-label="Mostrar valores" title="Mostrar valores"><svg><use id="barValuesVisibilityIcon" href="#bar-icon-eye"></use></svg><span>Mostrar valores</span></button>
                 </div>
               </div>
-              <section class="bar-command-board-section" aria-label="Comandas">
-                <div class="bar-command-unified-grid" id="barCommandBoard"></div>
+              <section class="bar-command-board-section" aria-label="Comandas avulsas">
+                <div class="bar-command-board-section-head">
+                  <div><h2>Comandas avulsas</h2><div class="muted">Atendimentos sem mesa vinculada.</div></div>
+                </div>
+                <div class="bar-command-unified-grid" id="barLooseCommandBoard"></div>
+              </section>
+            </section>
+            <section class="ops-panel bar-command-board-panel bar-tables-board-panel" aria-label="Mesas">
+              <section class="bar-command-board-section">
+                <div class="bar-command-board-section-head">
+                  <div><h2>Mesas</h2><div class="muted">Mesas ocupadas e livres no mesmo quadro.</div></div>
+                </div>
+                <div class="bar-command-unified-grid" id="barTableCommandBoard"></div>
               </section>
             </section>
             <details class="ops-panel bar-collapsible-panel" id="barClosedOrdersPanel">
@@ -23759,15 +23770,21 @@
         const table = barTableById(order.tableId);
         return barOrderIsOpen(order) && barCommandMatchesSearch(order, table);
       });
+      const looseOrders = visibleOrders.filter(function (order) { return !barTableById(order.tableId); });
+      const tableOrders = visibleOrders.filter(function (order) { return Boolean(barTableById(order.tableId)); });
       const freeTables = activeTables.filter(function (table) {
         return !barOrderForTable(table.id) && barCommandMatchesSearch(null, table);
       });
       const hasSearch = Boolean(String(opsState.barCommandSearch || '').trim());
       const isInitialBarLoad = !isAdminDemoMode() && !opsState.barDataLoaded;
-      const emptyLabel = isInitialBarLoad
+      const looseEmptyLabel = isInitialBarLoad
         ? (opsState.barLoadError ? 'Reconectando ao sistema...' : 'Carregando comandas...')
-        : (hasSearch ? 'Nenhuma comanda encontrada.' : 'Nenhuma mesa ou comanda aberta.');
-      $('barCommandBoard').innerHTML = visibleOrders.map(barUnifiedOrderCard).concat(freeTables.map(barUnifiedFreeTableCard)).join('') || '<div class="lesson-empty-state bar-command-board-empty">' + escapeHtml(emptyLabel) + '</div>';
+        : (hasSearch ? 'Nenhuma comanda avulsa encontrada.' : 'Nenhuma comanda avulsa aberta.');
+      const tableEmptyLabel = isInitialBarLoad
+        ? (opsState.barLoadError ? 'Reconectando ao sistema...' : 'Carregando mesas...')
+        : (hasSearch ? 'Nenhuma mesa encontrada.' : 'Nenhuma mesa cadastrada.');
+      $('barLooseCommandBoard').innerHTML = looseOrders.map(barUnifiedOrderCard).join('') || '<div class="lesson-empty-state bar-command-board-empty">' + escapeHtml(looseEmptyLabel) + '</div>';
+      $('barTableCommandBoard').innerHTML = tableOrders.map(barUnifiedOrderCard).concat(freeTables.map(barUnifiedFreeTableCard)).join('') || '<div class="lesson-empty-state bar-command-board-empty">' + escapeHtml(tableEmptyLabel) + '</div>';
       $('barQrGrid').innerHTML = activeTables.map(barQrCard).join('') || '<div class="lesson-empty-state">Cadastre uma mesa ativa para gerar o QR Code.</div>';
       $('barAccessCardGrid').innerHTML = (opsData.barAccessCards || []).map(barAccessCardQrCard).join('') || '<div class="lesson-empty-state">Crie o primeiro cartão individual.</div>';
     }
