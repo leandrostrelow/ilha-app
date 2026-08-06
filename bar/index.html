@@ -679,7 +679,8 @@
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase();
       return message.includes('comanda nao encontrada') ||
-        message.includes('cartao nao esta vinculado a uma comanda aberta');
+        message.includes('cartao nao esta vinculado a uma comanda aberta') ||
+        message.includes('qr code nao esta vinculado a uma comanda aberta');
     }
 
     function productById(id) { return state.products.find(product => String(product.id) === String(id)); }
@@ -939,11 +940,11 @@
       if (state.identity && (state.identity.trackingToken || state.identity.cardLinked)) loadOrderStatus(false);
     }
 
-    function linkedCardIdentity() {
-      if (!state.access || state.access.kind !== 'CARTAO') return null;
+    function linkedAccessIdentity() {
+      if (!state.access || !['CARTAO', 'MESA'].includes(state.access.kind)) return null;
       const name = String(state.access.linked_customer_name || '').trim();
       if (!state.access.linked || name.length < 2) return null;
-      return { name, phone: '', tableId: '', trackingToken: '', cardLinked: true };
+      return { name, phone: '', tableId: state.access.fixed_table_id || '', trackingToken: '', cardLinked: true };
     }
 
     async function requestService() {
@@ -1035,7 +1036,7 @@
         state.products = data.products || [];
         state.menuPayload = JSON.stringify({ availability: state.availability, access: state.access, tables: state.tables, products: state.products });
         renderAccess();
-        const linkedIdentity = linkedCardIdentity();
+        const linkedIdentity = linkedAccessIdentity();
         const saved = readSession();
         if (linkedIdentity) {
           state.identity = linkedIdentity;

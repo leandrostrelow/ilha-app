@@ -1972,7 +1972,14 @@ begin
    limit 1;
   has_fixed_table := found;
 
-  if not has_fixed_table then
+  if has_fixed_table then
+    select * into linked_order_row
+      from public.bar_orders
+     where table_id = table_row.id
+       and status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+     order by opened_at desc
+     limit 1;
+  else
     select * into card_row
       from public.bar_public_cards
      where token = trim(p_token)
@@ -2011,9 +2018,9 @@ begin
       'kind', case when has_fixed_table then 'MESA' else 'CARTAO' end,
       'label', case when has_fixed_table then table_row.name else card_row.label end,
       'fixed_table_id', case when has_fixed_table then table_row.id else null end,
-      'linked_customer_name', case when has_card then linked_order_row.customer_name else null end,
-      'linked', case when has_card then linked_order_row.id is not null else false end,
-      'linked_command_number', case when has_card then linked_order_row.command_number else null end
+      'linked_customer_name', linked_order_row.customer_name,
+      'linked', linked_order_row.id is not null,
+      'linked_command_number', linked_order_row.command_number
     ),
     'tables', case
       when has_fixed_table then jsonb_build_array(jsonb_build_object(
@@ -2277,16 +2284,27 @@ declare
   result_value jsonb;
 begin
   select orders.* into order_row
-    from public.bar_public_cards cards
-    join public.bar_orders orders on orders.public_access_id = cards.id
-   where cards.token = trim(coalesce(p_token, ''))
-     and cards.active = true
-     and orders.status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+    from public.bar_orders orders
+   where orders.status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+     and (
+       exists (
+         select 1 from public.bar_tables tables
+          where tables.id = orders.table_id
+            and tables.qr_token = trim(coalesce(p_token, ''))
+            and tables.active = true
+       )
+       or exists (
+         select 1 from public.bar_public_cards cards
+          where cards.id = orders.public_access_id
+            and cards.token = trim(coalesce(p_token, ''))
+            and cards.active = true
+       )
+     )
    order by orders.opened_at desc
    limit 1;
 
   if not found then
-    raise exception 'Este cartão ainda não foi vinculado a uma comanda. Solicite a abertura no balcão.';
+    raise exception 'Este QR Code ainda não foi vinculado a uma comanda. Solicite a abertura no balcão.';
   end if;
 
   result_value := public.bar_public_submit_order(
@@ -2313,16 +2331,27 @@ declare
   order_row public.bar_orders%rowtype;
 begin
   select orders.* into order_row
-    from public.bar_public_cards cards
-    join public.bar_orders orders on orders.public_access_id = cards.id
-   where cards.token = trim(coalesce(p_token, ''))
-     and cards.active = true
-     and orders.status in ('ABERTA', 'EM_PREPARO', 'PRONTA', 'FECHADA', 'CANCELADA')
+    from public.bar_orders orders
+   where orders.status in ('ABERTA', 'EM_PREPARO', 'PRONTA', 'FECHADA', 'CANCELADA')
+     and (
+       exists (
+         select 1 from public.bar_tables tables
+          where tables.id = orders.table_id
+            and tables.qr_token = trim(coalesce(p_token, ''))
+            and tables.active = true
+       )
+       or exists (
+         select 1 from public.bar_public_cards cards
+          where cards.id = orders.public_access_id
+            and cards.token = trim(coalesce(p_token, ''))
+            and cards.active = true
+       )
+     )
    order by orders.opened_at desc
    limit 1;
 
   if not found then
-    raise exception 'Este cartão não está vinculado a uma comanda aberta.';
+    raise exception 'Este QR Code não está vinculado a uma comanda aberta.';
   end if;
 
   return public.bar_public_order_status(order_row.public_tracking_token, null);
@@ -2343,16 +2372,27 @@ declare
   order_row public.bar_orders%rowtype;
 begin
   select orders.* into order_row
-    from public.bar_public_cards cards
-    join public.bar_orders orders on orders.public_access_id = cards.id
-   where cards.token = trim(coalesce(p_token, ''))
-     and cards.active = true
-     and orders.status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+    from public.bar_orders orders
+   where orders.status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+     and (
+       exists (
+         select 1 from public.bar_tables tables
+          where tables.id = orders.table_id
+            and tables.qr_token = trim(coalesce(p_token, ''))
+            and tables.active = true
+       )
+       or exists (
+         select 1 from public.bar_public_cards cards
+          where cards.id = orders.public_access_id
+            and cards.token = trim(coalesce(p_token, ''))
+            and cards.active = true
+       )
+     )
    order by orders.opened_at desc
    limit 1;
 
   if not found then
-    raise exception 'Este cartão ainda não foi vinculado a uma comanda. Solicite a abertura no balcão.';
+    raise exception 'Este QR Code ainda não foi vinculado a uma comanda. Solicite a abertura no balcão.';
   end if;
 
   return public.bar_public_request_service(

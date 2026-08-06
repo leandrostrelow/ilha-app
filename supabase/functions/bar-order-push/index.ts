@@ -51,7 +51,6 @@ Deno.serve(async (request) => {
       .from("bar_orders")
       .select("id, table_id, public_access_id, command_number, customer_name, source, public_tracking_token")
       .eq("id", orderId)
-      .in("source", ["QR_MESA", "QR_CARTAO"])
       .maybeSingle();
     if (orderError) throw orderError;
     if (!order) return json({ error: "Pedido não encontrado." }, 404);
@@ -59,14 +58,26 @@ Deno.serve(async (request) => {
     if (trackingToken) {
       if (order.public_tracking_token !== String(trackingToken)) return json({ error: "Pedido não encontrado." }, 404);
     } else {
-      const { data: card, error: cardError } = await supabase
-        .from("bar_public_cards")
-        .select("id")
-        .eq("token", String(cardToken))
-        .eq("active", true)
-        .maybeSingle();
-      if (cardError) throw cardError;
-      if (!card || card.id !== order.public_access_id) return json({ error: "Cartão inválido." }, 404);
+      const accessToken = String(cardToken);
+      if (order.table_id) {
+        const { data: table, error: tableError } = await supabase
+          .from("bar_tables")
+          .select("id")
+          .eq("qr_token", accessToken)
+          .eq("active", true)
+          .maybeSingle();
+        if (tableError) throw tableError;
+        if (!table || table.id !== order.table_id) return json({ error: "Mesa inválida." }, 404);
+      } else {
+        const { data: card, error: cardError } = await supabase
+          .from("bar_public_cards")
+          .select("id")
+          .eq("token", accessToken)
+          .eq("active", true)
+          .maybeSingle();
+        if (cardError) throw cardError;
+        if (!card || card.id !== order.public_access_id) return json({ error: "Cartão inválido." }, 404);
+      }
     }
 
     failureStage = "item_lookup";
