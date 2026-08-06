@@ -16290,14 +16290,20 @@
                   <button class="primary-btn bar-icon-button" type="button" id="barAddAccessCardBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Novo cartão</span></button>
                 </div>
               </div>
-              <section class="ops-panel bar-qr-section">
-                <div class="ops-panel-head"><div><h2>QR Codes das mesas</h2></div></div>
+              <details class="ops-panel bar-collapsible-panel bar-qr-section" open>
+                <summary class="ops-panel-head bar-collapsible-summary">
+                  <div><h2>QR Codes das mesas</h2></div>
+                  <span class="bar-collapse-control" aria-hidden="true"><span class="bar-collapse-label"></span><span class="bar-collapse-chevron"></span></span>
+                </summary>
                 <div class="bar-qr-grid" id="barQrGrid"></div>
-              </section>
-              <section class="ops-panel bar-qr-section">
-                <div class="ops-panel-head"><div><h2>Cartões individuais</h2></div><button class="ghost-btn bar-icon-button" type="button" id="barPrintAllAccessCardStickersBtn"><svg><use href="#admin-icon-qr"></use></svg><span>Imprimir cartões</span></button></div>
+              </details>
+              <details class="ops-panel bar-collapsible-panel bar-qr-section" open>
+                <summary class="ops-panel-head bar-collapsible-summary">
+                  <div><h2>Cartões individuais</h2></div>
+                  <div class="bar-section-actions"><button class="ghost-btn bar-icon-button" type="button" id="barPrintAllAccessCardStickersBtn"><svg><use href="#admin-icon-qr"></use></svg><span>Imprimir cartões</span></button><span class="bar-collapse-control" aria-hidden="true"><span class="bar-collapse-label"></span><span class="bar-collapse-chevron"></span></span></div>
+                </summary>
                 <div class="bar-qr-grid" id="barAccessCardGrid"></div>
-              </section>
+              </details>
             </div>
           </div>
         </div>
@@ -29380,7 +29386,9 @@
       $('barPrintAllTableStickersBtn').addEventListener('click', function () {
         openBarTableStickers((opsData.barTables || []).filter(function (table) { return table.active; }));
       });
-      $('barPrintAllAccessCardStickersBtn').addEventListener('click', function () {
+      $('barPrintAllAccessCardStickersBtn').addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
         openBarAccessCardStickers((opsData.barAccessCards || []).filter(function (card) { return card.active; }));
       });
       $('barCommandScreenBtn').addEventListener('click', function () {
