@@ -3495,6 +3495,29 @@
       overflow-wrap: anywhere;
     }
 
+    .bar-incoming-note {
+      width: 100%;
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      padding: 9px 11px;
+      border-radius: 8px;
+      color: #6f4618;
+      background: #fff0dc;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .bar-incoming-note strong {
+      flex: 0 0 auto;
+      font-weight: 950;
+    }
+
+    .bar-incoming-note span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
     .bar-incoming-actions {
       display: grid;
       justify-items: end;
@@ -22994,8 +23017,14 @@
         const itemTags = entry.items.map(function (item) {
           return '<span class="bar-incoming-item"><b>' + escapeHtml(Number(item.quantity).toLocaleString('pt-BR') + 'x') + '</b><span>' + escapeHtml(item.productName) + '</span></span>';
         }).join('');
+        const requestNotes = Array.from(new Set(entry.items.map(function (item) {
+          return String(item.notes || '').trim();
+        }).filter(Boolean)));
+        const requestNoteMarkup = requestNotes.length
+          ? '<div class="bar-incoming-note"><strong>Observação:</strong><span>' + escapeHtml(requestNotes.join(' · ')) + '</span></div>'
+          : '';
         return '<article class="bar-incoming-card"><div class="bar-incoming-identity"><span><svg><use href="' + (table ? '#admin-icon-table' : '#admin-icon-receipt') + '"></use></svg></span><div><strong>' + escapeHtml(customerName) + '</strong><small>' + escapeHtml(location) + '</small></div></div>' +
-          '<div class="bar-incoming-items">' + itemTags + '</div>' +
+          '<div class="bar-incoming-items">' + itemTags + requestNoteMarkup + '</div>' +
           '<div class="bar-incoming-actions"><span class="bar-incoming-time">' + escapeHtml(barDateTimeLabel(entry.created)) + '</span><div class="bar-incoming-approval-actions"><button class="small-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Ver</button><button class="small-btn bar-incoming-approve" type="button" data-bar-approve-order="' + escapeHtml(order.id) + '">Aceitar pedido</button></div></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum pedido online aguardando.</div>';
       updateBarOrderBadges();

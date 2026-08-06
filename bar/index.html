@@ -983,8 +983,12 @@
       $('sendOrderBtn').disabled = true;
       $('sendOrderBtn').textContent = 'Enviando...';
       try {
-        const itemPayload = entries.map(item => ({ product_id: item.product.id, quantity: item.quantity, notes: item.notes || '' }));
         const notesPayload = $('orderNotes').value.trim() || null;
+        const itemPayload = entries.map(item => ({
+          product_id: item.product.id,
+          quantity: item.quantity,
+          notes: item.notes || notesPayload || ''
+        }));
         const result = state.identity.cardLinked ? await rpc('bar_public_submit_card_order', {
           p_token: qrToken,
           p_items: itemPayload,
