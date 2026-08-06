@@ -1618,7 +1618,7 @@ begin
          or lower(coalesce(product.category, '')) like '%petisco%'
        )
   ) then
-    raise exception 'Ainda existe porcao ou almoco aguardando entrega.';
+    raise exception 'Ainda existe porção ou refeição aguardando entrega.';
   end if;
 
   update public.bar_orders

@@ -637,13 +637,13 @@
     }
 
     function renderCategories() {
-      const categoryPriority = ['porcoes', 'porcao', 'cervejas', 'cerveja', 'bebidas', 'bebida', 'refrigerantes', 'refrigerante', 'lanches', 'lanche'];
+      const categoryPriority = { porcoes: 0, porcao: 0, cervejas: 1, cerveja: 1, refeicoes: 2, refeicao: 2, almocos: 2, almoco: 2, bebidas: 3, bebida: 3, refrigerantes: 4, refrigerante: 4, lanches: 5, lanche: 5 };
       const categories = Array.from(new Set(state.products.map(product => product.category || 'Outros'))).sort((a, b) => {
         const normalizedA = String(a).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
         const normalizedB = String(b).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        const priorityA = categoryPriority.indexOf(normalizedA);
-        const priorityB = categoryPriority.indexOf(normalizedB);
-        if (priorityA !== priorityB) return (priorityA < 0 ? categoryPriority.length : priorityA) - (priorityB < 0 ? categoryPriority.length : priorityB);
+        const priorityA = categoryPriority[normalizedA];
+        const priorityB = categoryPriority[normalizedB];
+        if (priorityA !== priorityB) return (priorityA == null ? 99 : priorityA) - (priorityB == null ? 99 : priorityB);
         return String(a).localeCompare(String(b), 'pt-BR');
       }).concat('Todos');
       if (!categories.includes(state.category)) state.category = 'Todos';
