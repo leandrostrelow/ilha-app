@@ -15052,6 +15052,76 @@
         content: "Ver menos";
       }
     }
+
+    /* QR das mesas: cards compactos e sem informações repetidas. */
+    body.bar-admin-surface .bar-qr-section .bar-qr-grid {
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 12px;
+    }
+
+    body.bar-admin-surface .bar-qr-table-card {
+      min-height: 166px;
+      grid-template-columns: 92px minmax(0, 1fr);
+      grid-template-rows: 92px auto;
+      gap: 10px;
+      padding: 11px;
+    }
+
+    body.bar-admin-surface .bar-qr-table-card .bar-qr-card-visual {
+      width: 92px;
+      height: 92px;
+      padding: 6px;
+    }
+
+    body.bar-admin-surface .bar-qr-table-card .bar-qr-card-content {
+      display: flex;
+      align-items: center;
+    }
+
+    body.bar-admin-surface .bar-qr-table-card h3 {
+      max-width: none;
+      font-size: 16px;
+      line-height: 1.15;
+    }
+
+    body.bar-admin-surface .bar-qr-table-card .bar-qr-card-actions,
+    body.bar-admin-surface .bar-qr-table-card .bar-qr-card-actions.has-sticker {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 5px;
+      padding-top: 9px;
+    }
+
+    body.bar-admin-surface .bar-qr-table-card .bar-qr-card-actions .small-btn {
+      min-height: 32px;
+      gap: 3px;
+      padding: 5px 4px;
+      border-radius: 8px;
+      font-size: 9px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    body.bar-admin-surface .bar-qr-table-card .bar-qr-card-actions svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    @media (max-width: 620px) {
+      body.bar-admin-surface .bar-qr-section .bar-qr-grid {
+        grid-template-columns: 1fr;
+      }
+
+      body.bar-admin-surface .bar-qr-table-card {
+        min-height: 154px;
+        grid-template-columns: 82px minmax(0, 1fr);
+        grid-template-rows: 82px auto;
+      }
+
+      body.bar-admin-surface .bar-qr-table-card .bar-qr-card-visual {
+        width: 82px;
+        height: 82px;
+      }
+    }
   </style>
 </head>
 <body class="adm-locked">
@@ -16185,7 +16255,7 @@
                 <div><strong>Dois tipos de acesso</strong><small>O QR da mesa já identifica o local. O cartão individual pede a mesa ou permite retirada no balcão.</small></div>
               </div>
               <section class="ops-panel bar-qr-section">
-                <div class="ops-panel-head"><div><h2>QR Codes das mesas</h2><div class="muted">Fixos em cada mesa do Bar.</div></div></div>
+                <div class="ops-panel-head"><div><h2>QR Codes das mesas</h2></div></div>
                 <div class="bar-qr-grid" id="barQrGrid"></div>
               </section>
               <section class="ops-panel bar-qr-section">
@@ -23902,7 +23972,7 @@
     }
 
     function barQrCard(table) {
-      return '<article class="bar-qr-card"><div class="bar-qr-card-visual"><img src="' + escapeHtml(barQrImageUrl(table, 240)) + '" alt="QR Code da ' + escapeHtml(table.name) + '" loading="lazy" /></div><div class="bar-qr-card-content"><div class="bar-qr-card-head"><div><span class="bar-qr-card-kicker">QR da mesa</span><h3>' + escapeHtml(table.name) + '</h3><p>Mesa ' + escapeHtml(table.number) + ' · ' + escapeHtml(table.seats) + ' lugares</p></div><span class="ops-pill good">Ativo</span></div></div><div class="bar-qr-card-actions has-sticker"><button class="small-btn bar-qr-action-primary" type="button" data-bar-qr-kind="table" data-bar-qr="' + escapeHtml(table.id) + '"><svg><use href="#admin-icon-qr"></use></svg>Ampliar</button><button class="small-btn bar-qr-action-copy" type="button" data-bar-copy-qr-kind="table" data-bar-copy-qr="' + escapeHtml(table.id) + '"><svg><use href="#bar-icon-link"></use></svg>Copiar link</button><button class="small-btn bar-qr-action-sticker" type="button" data-bar-sticker="' + escapeHtml(table.id) + '"><svg><use href="#admin-icon-table"></use></svg>Adesivo</button></div></article>';
+      return '<article class="bar-qr-card bar-qr-table-card"><div class="bar-qr-card-visual"><img src="' + escapeHtml(barQrImageUrl(table, 240)) + '" alt="QR Code da ' + escapeHtml(table.name) + '" loading="lazy" /></div><div class="bar-qr-card-content"><h3>' + escapeHtml(table.name) + '</h3></div><div class="bar-qr-card-actions has-sticker"><button class="small-btn bar-qr-action-primary" type="button" data-bar-qr-kind="table" data-bar-qr="' + escapeHtml(table.id) + '" aria-label="Ampliar QR Code da ' + escapeHtml(table.name) + '"><svg><use href="#admin-icon-qr"></use></svg>Ver</button><button class="small-btn bar-qr-action-copy" type="button" data-bar-copy-qr-kind="table" data-bar-copy-qr="' + escapeHtml(table.id) + '" aria-label="Copiar link da ' + escapeHtml(table.name) + '"><svg><use href="#bar-icon-link"></use></svg>Copiar</button><button class="small-btn bar-qr-action-sticker" type="button" data-bar-sticker="' + escapeHtml(table.id) + '" aria-label="Abrir adesivo da ' + escapeHtml(table.name) + '"><svg><use href="#admin-icon-table"></use></svg>Adesivo</button></div></article>';
     }
 
     function barAccessCardQrCard(card) {
