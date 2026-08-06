@@ -16484,7 +16484,7 @@
             <div class="bar-command-identity">
               <div class="bar-command-identity-top">
                 <div class="bar-command-identity-copy">
-                  <div class="bar-command-name-row"><div class="bar-command-title-line"><h2 id="barCommandModalTitle">Cliente</h2><span class="bar-command-header-location" id="barCommandHeaderLocation"></span></div><button class="bar-command-edit-name" type="button" id="barOrderEditNameBtn" aria-label="Editar comanda" title="Editar comanda"><svg><use href="#bar-icon-edit"></use></svg></button><span class="bar-command-header-total" id="barCommandHeaderTotal" aria-label="Total da comanda" aria-live="polite">R$ 0,00</span><span id="barCommandStatus"></span></div>
+                  <div class="bar-command-name-row"><div class="bar-command-title-line"><h2 id="barCommandModalTitle">Cliente</h2><span class="bar-command-header-location" id="barCommandHeaderLocation"></span></div><button class="bar-command-edit-name" type="button" id="barOrderEditNameBtn" aria-label="Editar comanda" title="Editar comanda"><svg><use href="#bar-icon-edit"></use></svg></button><button class="bar-command-edit-name" type="button" id="barOrderCardBtn" aria-label="Adicionar cartão QR" title="Adicionar cartão QR"><svg><use href="#admin-icon-qr"></use></svg></button><span class="bar-command-header-total" id="barCommandHeaderTotal" aria-label="Total da comanda" aria-live="polite">R$ 0,00</span><span id="barCommandStatus"></span></div>
                 </div>
               </div>
               <span id="barCommandModalSubtitle" hidden></span>
@@ -16600,6 +16600,7 @@
             <div class="bar-compact-editor-grid">
               <div class="field"><label for="barCustomerEditName">Nome</label><input id="barCustomerEditName" maxlength="80" required /></div>
               <div class="field"><label for="barCustomerEditPhone">Telefone</label><input id="barCustomerEditPhone" type="tel" inputmode="tel" maxlength="15" /></div>
+              <div class="field full" id="barCustomerEditCardField"><label for="barCustomerEditCard">Cartão QR <small>opcional</small></label><select id="barCustomerEditCard"><option value="">Sem cartão</option></select><small class="muted">Ao salvar, o QR Code do cartão escolhido será ativado nesta comanda.</small></div>
               <div class="field full"><label for="barCustomerEditNotes">Observação da comanda</label><textarea id="barCustomerEditNotes" rows="3" maxlength="500"></textarea></div>
             </div>
             <div class="bar-customer-edit-discounts">
@@ -24616,17 +24617,27 @@
       $('barCustomerEditModal').setAttribute('aria-hidden', 'true');
     }
 
-    function openBarCustomerEditModal() {
+    function openBarCustomerEditModal(focusCard) {
       const order = barOrderById(opsState.selectedBarOrderId);
       if (!order || !barOrderIsOpen(order)) return;
       const customer = barOrderCustomerDetails(order, barItemsForOrder(order.id));
       $('barCustomerEditName').value = String(order.customerName || customer.name || '').trim();
       $('barCustomerEditPhone').value = barPhoneLabel(barPhoneDigits(order.customerPhone || customer.phone || ''));
+      const currentCardId = String(order.publicAccessId || '');
+      const availableCards = (opsData.barAccessCards || []).filter(function (card) {
+        if (String(card.id) === currentCardId) return true;
+        return card.active !== false && !barOrderForAccessCard(card.id);
+      }).sort(function (a, b) { return Number(a.code || 0) - Number(b.code || 0); });
+      $('barCustomerEditCard').innerHTML = '<option value="">Sem cartão</option>' + availableCards.map(function (card) {
+        return '<option value="' + escapeHtml(card.id) + '">' + escapeHtml(card.label) + '</option>';
+      }).join('');
+      $('barCustomerEditCard').value = currentCardId;
+      $('barCustomerEditCardField').hidden = Boolean(order.tableId);
       $('barCustomerEditNotes').value = order.notes || '';
       $('barCustomerEditModal').classList.add('show');
       $('barCustomerEditModal').setAttribute('aria-hidden', 'false');
       syncBarPresetDiscountButtons(order);
-      requestAnimationFrame(function () { $('barCustomerEditName').focus(); });
+      requestAnimationFrame(function () { $(focusCard === true && !order.tableId ? 'barCustomerEditCard' : 'barCustomerEditName').focus(); });
     }
 
     function closeBarItemGroupEditModal() {
@@ -25398,6 +25409,10 @@
       $('barCommandAddTab').hidden = !editable;
       document.querySelectorAll('[data-bar-command-tab-target="add"]').forEach(function (button) { button.hidden = !editable; });
       $('barOrderEditNameBtn').hidden = !open;
+      const cardButton = $('barOrderCardBtn');
+      cardButton.hidden = !open || Boolean(commandTable);
+      cardButton.title = commandCard ? 'Alterar ' + commandCard.label : 'Adicionar cartão QR';
+      cardButton.setAttribute('aria-label', cardButton.title);
       $('barOrderDeleteBtn').hidden = !editable || hasSplitItems;
       const payButton = $('barOrderPayBtn');
       const closeButton = $('barOrderCloseBtn');
@@ -26647,6 +26662,7 @@
       const currentName = String(order.customerName || customer.name || '').trim();
       const currentPhone = barPhoneDigits(order.customerPhone || customer.phone || '');
       const currentNotes = String(order.notes || '').trim();
+      const currentCardId = String(order.publicAccessId || '');
       const nextName = String($('barCustomerEditName').value || '').trim().replace(/\s+/g, ' ');
       if (nextName.length < 2) {
         toast('Informe um nome com pelo menos 2 caracteres.');
@@ -26658,6 +26674,17 @@
       }
       const nextPhone = barPhoneDigits($('barCustomerEditPhone').value);
       const nextNotes = String($('barCustomerEditNotes').value || '').trim();
+      const nextCardId = order.tableId ? currentCardId : String($('barCustomerEditCard').value || '');
+      const nextCard = nextCardId ? barAccessCardById(nextCardId) : null;
+      if (nextCardId && (!nextCard || nextCard.active === false)) {
+        toast('Escolha um cartão ativo.');
+        return;
+      }
+      const linkedOrder = nextCardId ? barOrderForAccessCard(nextCardId) : null;
+      if (linkedOrder && String(linkedOrder.id) !== String(order.id)) {
+        toast('Esse cartão já está vinculado a outra comanda aberta.');
+        return;
+      }
       if (nextPhone && (nextPhone.length < 10 || nextPhone.length > 13)) {
         toast('Informe um telefone com DDD válido.');
         return;
@@ -26665,7 +26692,8 @@
       const sameName = normalizeMatchText(nextName) === normalizeMatchText(currentName);
       const samePhone = nextPhone === currentPhone;
       const sameNotes = nextNotes === currentNotes;
-      if (sameName && samePhone && sameNotes) {
+      const sameCard = nextCardId === currentCardId;
+      if (sameName && samePhone && sameNotes && sameCard) {
         closeBarCustomerEditModal();
         return;
       }
@@ -26679,7 +26707,7 @@
         if (barCanPersist(order.id)) {
           await supabaseRest('bar_orders?id=eq.' + encodeURIComponent(order.id), {
             method: 'PATCH',
-            body: { customer_name: nextName, customer_phone: nextPhone || null, notes: nextNotes || null, updated_at: new Date().toISOString() },
+            body: { customer_name: nextName, customer_phone: nextPhone || null, public_access_id: nextCardId || null, notes: nextNotes || null, updated_at: new Date().toISOString() },
             prefer: 'return=representation'
           });
           let itemFilter = 'bar_order_items?order_id=eq.' + encodeURIComponent(order.id);
@@ -26694,6 +26722,7 @@
           const previousNames = [currentName, customer.name, order.customerName].map(normalizeMatchText).filter(Boolean);
           order.customerName = nextName;
           order.customerPhone = nextPhone;
+          order.publicAccessId = nextCardId;
           order.notes = nextNotes;
           orderItems.forEach(function (item) {
             if (!order.tableId || previousNames.includes(normalizeMatchText(item.customerName))) {
@@ -26705,7 +26734,7 @@
         closeBarCustomerEditModal();
         renderBarModule();
         renderBarCommandModal();
-        toast('Dados da comanda atualizados.');
+        toast(!sameCard && nextCard ? nextCard.label + ' vinculado. O QR Code já está ativo.' : !sameCard ? 'Cartão removido da comanda.' : 'Dados da comanda atualizados.');
       } catch (error) {
         reportActionError(error);
       } finally {
@@ -29850,7 +29879,8 @@
       $('barProfessorDiscountBtn').addEventListener('click', function () {
         toggleBarPresetDiscountAction(10, 'professor', 'barProfessorDiscountBtn');
       });
-      $('barOrderEditNameBtn').addEventListener('click', openBarCustomerEditModal);
+      $('barOrderEditNameBtn').addEventListener('click', function () { openBarCustomerEditModal(false); });
+      $('barOrderCardBtn').addEventListener('click', function () { openBarCustomerEditModal(true); });
       $('barCustomerEditForm').addEventListener('submit', saveBarOrderCustomerAction);
       $('barCustomerEditCloseBtn').addEventListener('click', closeBarCustomerEditModal);
       $('barCustomerEditCancelBtn').addEventListener('click', closeBarCustomerEditModal);
