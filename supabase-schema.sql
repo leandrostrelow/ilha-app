@@ -422,6 +422,9 @@ create unique index if not exists bar_orders_public_tracking_idx on public.bar_o
 create unique index if not exists bar_orders_one_open_per_table_idx
   on public.bar_orders(table_id)
   where table_id is not null and status in ('ABERTA', 'EM_PREPARO', 'PRONTA');
+create unique index if not exists bar_orders_one_open_per_card_idx
+  on public.bar_orders(public_access_id)
+  where public_access_id is not null and status in ('ABERTA', 'EM_PREPARO', 'PRONTA');
 create index if not exists bar_order_items_order_idx on public.bar_order_items(order_id, created_at);
 create index if not exists bar_order_items_status_idx on public.bar_order_items(status, created_at);
 create index if not exists bar_service_requests_order_idx on public.bar_service_requests(order_id, created_at desc);
@@ -1756,12 +1759,29 @@ set name = excluded.name,
     notes = excluded.notes,
     updated_at = now();
 
-insert into public.bar_public_cards (label, notes)
+insert into public.bar_public_cards (code, label, notes)
 values
-  ('Cartão avulso 01', 'Cartão individual para pedidos sem mesa fixa'),
-  ('Cartão avulso 02', 'Cartão individual para pedidos sem mesa fixa'),
-  ('Cartão avulso 03', 'Cartão individual para pedidos sem mesa fixa')
-on conflict (label) do nothing;
+  (1, 'Cartão 01', 'Cartão individual para pedidos sem mesa fixa'),
+  (2, 'Cartão 02', 'Cartão individual para pedidos sem mesa fixa'),
+  (3, 'Cartão 03', 'Cartão individual para pedidos sem mesa fixa'),
+  (4, 'Cartão 04', 'Cartão individual para pedidos sem mesa fixa'),
+  (5, 'Cartão 05', 'Cartão individual para pedidos sem mesa fixa'),
+  (6, 'Cartão 06', 'Cartão individual para pedidos sem mesa fixa'),
+  (7, 'Cartão 07', 'Cartão individual para pedidos sem mesa fixa'),
+  (8, 'Cartão 08', 'Cartão individual para pedidos sem mesa fixa'),
+  (9, 'Cartão 09', 'Cartão individual para pedidos sem mesa fixa'),
+  (10, 'Cartão 10', 'Cartão individual para pedidos sem mesa fixa')
+on conflict (code) do update
+set label = excluded.label,
+    notes = excluded.notes,
+    active = true,
+    updated_at = now();
+
+select setval(
+  pg_get_serial_sequence('public.bar_public_cards', 'code'),
+  greatest(1, coalesce((select max(code) from public.bar_public_cards), 1)),
+  true
+);
 
 alter table public.app_plan_requests add column if not exists membership_type text not null default 'aluno';
 alter table public.app_plan_requests add column if not exists weekly_lessons integer not null default 0;
@@ -1862,16 +1882,7 @@ begin
         'name', table_row.name,
         'seats', table_row.seats
       ))
-      else coalesce((
-        select jsonb_agg(jsonb_build_object(
-          'id', table_item.id,
-          'number', table_item.number,
-          'name', table_item.name,
-          'seats', table_item.seats
-        ) order by table_item.number)
-        from public.bar_tables table_item
-        where table_item.active = true
-      ), '[]'::jsonb)
+      else '[]'::jsonb
     end,
     'products', coalesce((
       select jsonb_agg(jsonb_build_object(
@@ -1973,14 +1984,7 @@ begin
     access_source := 'QR_CARTAO';
 
     if p_table_id is not null then
-      select id into selected_table_id
-        from public.bar_tables
-       where id = p_table_id
-         and active = true
-       limit 1;
-      if not found then
-        raise exception 'Mesa nao encontrada.';
-      end if;
+      raise exception 'Este cartão está vinculado a uma comanda avulsa.';
     end if;
   end if;
 
@@ -2012,12 +2016,17 @@ begin
       end;
     end if;
   else
-    insert into public.bar_orders (
-      public_access_id, customer_name, customer_phone, source, notes
-    ) values (
-      access_card_id, customer_value, phone_value, access_source,
-      nullif(left(trim(coalesce(p_notes, '')), 300), '')
-    ) returning * into order_row;
+    select * into order_row
+      from public.bar_orders
+     where public_access_id = access_card_id
+       and status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+     order by opened_at desc
+     limit 1
+     for update;
+
+    if not found then
+      raise exception 'Este cartão ainda não foi vinculado a uma comanda. Solicite a abertura no balcão.';
+    end if;
   end if;
 
   if order_row.id is null then
@@ -2097,7 +2106,7 @@ begin
     'total', order_row.total,
     'table_name', coalesce((
       select table_item.name from public.bar_tables table_item where table_item.id = order_row.table_id
-    ), 'Balcao')
+    ), card_row.label, 'Balcao')
   );
 end;
 $$;
@@ -2139,6 +2148,8 @@ begin
     'customer_name', order_row.customer_name,
     'table_name', coalesce((
       select table_item.name from public.bar_tables table_item where table_item.id = order_row.table_id
+    ), (
+      select card_item.label from public.bar_public_cards card_item where card_item.id = order_row.public_access_id
     ), 'Balcao'),
     'status', order_row.status,
     'payment_status', order_row.payment_status,

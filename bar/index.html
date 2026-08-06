@@ -681,9 +681,10 @@
     function renderAccess() {
       $('accessLabel').textContent = state.access.label || 'Ilha Bar';
       const fixed = state.access.kind === 'MESA';
-      $('accessHint').textContent = fixed ? 'Mesa identificada pelo QR Code.' : 'Use com mesa ou no balcão.';
-      $('tableSelect').innerHTML = (fixed ? '' : '<option value="">Sem mesa | retirar no balcão</option>') + state.tables.map(table => '<option value="' + escapeHtml(table.id) + '">' + escapeHtml(table.name) + '</option>').join('');
-      $('tableField').hidden = fixed;
+      const card = state.access.kind === 'CARTAO';
+      $('accessHint').textContent = fixed ? 'Mesa identificada pelo QR Code.' : card ? 'Cartão vinculado à comanda aberta no balcão.' : 'Pedidos sem mesa fixa.';
+      $('tableSelect').innerHTML = (fixed || card ? '' : '<option value="">Sem mesa | retirar no balcão</option>') + state.tables.map(table => '<option value="' + escapeHtml(table.id) + '">' + escapeHtml(table.name) + '</option>').join('');
+      $('tableField').hidden = fixed || card;
       if (fixed && state.tables[0]) $('tableSelect').value = state.tables[0].id;
       const saved = readSession();
       if (saved && saved.name) $('customerName').value = saved.name;
@@ -693,7 +694,8 @@
 
     function identityLabel() {
       const table = state.identity && tableById(state.identity.tableId);
-      return (state.identity && state.identity.name || 'Cliente') + ' | ' + (table ? table.name : 'Balcão');
+      const location = table ? table.name : state.access && state.access.kind === 'CARTAO' ? state.access.label : 'Balcão';
+      return (state.identity && state.identity.name || 'Cliente') + ' | ' + location;
     }
 
     function renderCategories() {

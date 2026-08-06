@@ -9107,6 +9107,10 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
+    .bar-qr-card-actions.has-card-art {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
     .bar-qr-card-actions .small-btn {
       width: 100%;
       min-width: 0;
@@ -10583,7 +10587,8 @@
       }
 
       .bar-qr-card-actions.has-edit,
-      .bar-qr-card-actions.has-sticker {
+      .bar-qr-card-actions.has-sticker,
+      .bar-qr-card-actions.has-card-art {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
@@ -10636,7 +10641,8 @@
 
       .bar-qr-card-actions,
       .bar-qr-card-actions.has-edit,
-      .bar-qr-card-actions.has-sticker {
+      .bar-qr-card-actions.has-sticker,
+      .bar-qr-card-actions.has-card-art {
         grid-template-columns: 1fr;
       }
 
@@ -15091,6 +15097,10 @@
       padding-top: 9px;
     }
 
+    body.bar-admin-surface .bar-qr-table-card .bar-qr-card-actions.has-card-art {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
     body.bar-admin-surface .bar-qr-table-card .bar-qr-card-actions .small-btn {
       min-height: 32px;
       gap: 3px;
@@ -16252,14 +16262,14 @@
               </div>
               <div class="bar-qr-info">
                 <span><svg><use href="#admin-icon-qr"></use></svg></span>
-                <div><strong>Dois tipos de acesso</strong><small>O QR da mesa já identifica o local. O cartão individual pede a mesa ou permite retirada no balcão.</small></div>
+                <div><strong>Dois tipos de acesso</strong><small>O QR da mesa identifica o local. O cartão pode ser vinculado a uma comanda avulsa aberta no balcão.</small></div>
               </div>
               <section class="ops-panel bar-qr-section">
                 <div class="ops-panel-head"><div><h2>QR Codes das mesas</h2></div></div>
                 <div class="bar-qr-grid" id="barQrGrid"></div>
               </section>
               <section class="ops-panel bar-qr-section">
-                <div class="ops-panel-head"><div><h2>Cartões individuais</h2></div></div>
+                <div class="ops-panel-head"><div><h2>Cartões individuais</h2></div><button class="ghost-btn bar-icon-button" type="button" id="barPrintAllAccessCardStickersBtn"><svg><use href="#admin-icon-qr"></use></svg><span>Imprimir cartões</span></button></div>
                 <div class="bar-qr-grid" id="barAccessCardGrid"></div>
               </section>
             </div>
@@ -16405,7 +16415,7 @@
           <div class="bar-modal-intro"><span><svg><use href="#admin-icon-qr"></use></svg></span><div><strong>Acesso sem mesa fixa</strong><small>Ideal para balcão, deck ou atendimento avulso.</small></div></div>
           <form class="form-grid bar-setup-form" id="barAccessCardForm">
             <input id="barAccessCardId" type="hidden" />
-            <div class="field full"><label for="barAccessCardLabel">Nome do cartão</label><input id="barAccessCardLabel" placeholder="Ex.: Cartão avulso 04" maxlength="80" required /></div>
+            <div class="field full"><label for="barAccessCardLabel">Nome do cartão</label><input id="barAccessCardLabel" placeholder="Ex.: Cartão 04" maxlength="80" required /></div>
             <div class="field full"><label for="barAccessCardNotes">Observação interna</label><input id="barAccessCardNotes" placeholder="Ex.: uso no deck ou retirada no balcão" maxlength="180" /></div>
             <div class="field full"><label for="barAccessCardActive">Status</label><select id="barAccessCardActive"><option value="true">Ativo</option><option value="false">Inativo</option></select></div>
           </form>
@@ -16429,6 +16439,11 @@
             <div class="field full" id="barNewOrderTableField" hidden>
               <label for="barNewOrderTable">Mesa</label>
               <select id="barNewOrderTable"></select>
+            </div>
+            <div class="field full" id="barNewOrderCardField">
+              <label for="barNewOrderCard">Cartão para pedidos <small>opcional</small></label>
+              <select id="barNewOrderCard"><option value="">Sem cartão</option></select>
+              <small class="muted">Ao vincular, o cliente poderá pedir pelo QR Code do cartão.</small>
             </div>
             <div class="field full">
               <label for="barNewOrderCustomer">Nome ou identificação</label>
@@ -21063,9 +21078,9 @@
         { id: 'bar_table_6', number: 6, name: 'Mesa 6', seats: 4, qrToken: 'ilha-mesa-6', active: true, notes: '' }
       ],
       barAccessCards: [
-        { id: 'bar_card_1', code: 1, label: 'Cartão avulso 01', token: 'ilha-cartao-avulso-01', active: true, notes: 'Mesa ou retirada no balcão' },
-        { id: 'bar_card_2', code: 2, label: 'Cartão avulso 02', token: 'ilha-cartao-avulso-02', active: true, notes: 'Mesa ou retirada no balcão' },
-        { id: 'bar_card_3', code: 3, label: 'Cartão avulso 03', token: 'ilha-cartao-avulso-03', active: true, notes: 'Mesa ou retirada no balcão' }
+        { id: 'bar_card_1', code: 1, label: 'Cartão 01', token: 'ilha-cartao-avulso-01', active: true, notes: 'Pedidos vinculados no balcão' },
+        { id: 'bar_card_2', code: 2, label: 'Cartão 02', token: 'ilha-cartao-avulso-02', active: true, notes: 'Pedidos vinculados no balcão' },
+        { id: 'bar_card_3', code: 3, label: 'Cartão 03', token: 'ilha-cartao-avulso-03', active: true, notes: 'Pedidos vinculados no balcão' }
       ],
       barCustomers: [],
       barOrders: [
@@ -21454,7 +21469,7 @@
       return {
         id: row.id || '',
         code: Number(row.code || 0),
-        label: row.label || ('Cartão avulso ' + String(row.code || '').padStart(2, '0')),
+        label: row.label || ('Cartão ' + String(row.code || '').padStart(2, '0')),
         token: row.token || '',
         active: row.active !== false,
         notes: row.notes || '',
@@ -22341,6 +22356,12 @@
       });
     }
 
+    function barOrderForAccessCard(cardId) {
+      return opsData.barOrders.find(function (order) {
+        return String(order.publicAccessId) === String(cardId) && barOrderIsOpen(order);
+      });
+    }
+
     function barItemsForOrder(orderId) {
       return opsData.barOrderItems.filter(function (item) {
         return String(item.orderId) === String(orderId);
@@ -22920,7 +22941,7 @@
         const names = Array.from(new Set(entry.items.map(function (item) { return item.customerName; }).filter(Boolean)));
         const table = barTableById(order.tableId);
         const card = barAccessCardById(order.publicAccessId);
-        const location = table ? table.name : card ? 'Comanda avulsa' : 'Retirada no balcão';
+        const location = table ? table.name : card ? card.label : 'Retirada no balcão';
         const customerName = names.join(', ') || order.customerName || 'Cliente';
         const itemTags = entry.items.map(function (item) {
           return '<span class="bar-incoming-item"><b>' + escapeHtml(Number(item.quantity).toLocaleString('pt-BR') + 'x') + '</b><span>' + escapeHtml(item.productName) + '</span></span>';
@@ -22951,7 +22972,7 @@
       const details = barOrderCustomerDetails(order, barItemsForOrder(order.id));
       const customerName = details.name || order.customerName || card && card.label || 'Cliente';
       const icon = table ? '#admin-icon-table' : '#admin-icon-receipt';
-      const location = table ? '<small>Nº ' + escapeHtml(table.number) + '</small>' : '';
+      const location = table ? '<small>Nº ' + escapeHtml(table.number) + '</small>' : card ? '<small>' + escapeHtml(card.label) + '</small>' : '';
       const deliveryQuantity = barPendingDirectDeliveryItemsForOrder(order.id).reduce(function (sum, item) {
         return sum + Number(item.quantity || 0);
       }, 0);
@@ -24011,13 +24032,55 @@
       openBarTableStickers(table ? [table] : []);
     }
 
+    function barAccessCardStickerMarkup(card) {
+      const number = String(Math.max(0, Number(card.code || 0))).padStart(2, '0');
+      const qrUrl = barQrImageFromUrl(barAccessCardUrl(card), 900);
+      const logoUrl = window.location.origin + '/assets/branding/ilha-bar-logo-light.png';
+      return '<section class="access-card-sticker" aria-label="Arte do Cartão ' + escapeHtml(number) + '">' +
+        '<div class="access-card-left">' +
+          '<img class="access-card-logo" src="' + escapeHtml(logoUrl) + '" alt="Ilha Bar" />' +
+          '<div class="access-card-number-wrap"><span class="access-card-label">CARTÃO</span><strong class="access-card-number">' + escapeHtml(number) + '</strong></div>' +
+          '<div class="access-card-wifi"><span>Wi-Fi: <b>' + escapeHtml(BAR_STICKER_WIFI_NAME) + '</b></span><span>Senha: <b>' + escapeHtml(BAR_STICKER_WIFI_PASSWORD) + '</b></span></div>' +
+        '</div>' +
+        '<div class="access-card-right">' +
+          '<div class="access-card-callout"><strong>ACESSE O CARDÁPIO</strong><span>FAÇA SEU PEDIDO PELO QR CODE</span></div>' +
+          '<div class="access-card-qr-shell"><img class="access-card-qr" src="' + escapeHtml(qrUrl) + '" alt="QR Code do Cartão ' + escapeHtml(number) + '" /></div>' +
+        '</div>' +
+      '</section>';
+    }
+
+    function openBarAccessCardStickers(cards) {
+      const printableCards = (cards || []).filter(function (card) { return card && card.active; });
+      if (!printableCards.length) {
+        toast('Nenhum cartão ativo para imprimir.');
+        return;
+      }
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        toast('Libere a abertura de pop-ups para imprimir os cartões.');
+        return;
+      }
+      const stickers = printableCards.map(barAccessCardStickerMarkup).join('');
+      printWindow.document.open();
+      printWindow.document.write('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cartões individuais | Ilha Bar</title><style>' +
+        '@page{size:10cm 5cm;margin:0}*{box-sizing:border-box}html,body{margin:0;background:#d9dde1;font-family:Arial,Helvetica,sans-serif;color:#fff}.print-toolbar{position:sticky;z-index:5;top:0;display:flex;align-items:center;justify-content:center;gap:12px;padding:10px;background:#fff;color:#172238;box-shadow:0 3px 14px rgba(0,0,0,.14)}.print-toolbar button{border:0;border-radius:9px;padding:9px 15px;background:#0b8993;color:#fff;font:800 13px Arial;cursor:pointer}.print-toolbar span{font-size:12px;font-weight:700}.print-sheet{display:grid;justify-content:center;gap:18px;padding:18px}.access-card-sticker{position:relative;display:grid;grid-template-columns:5.15cm 4.85cm;width:10cm;height:5cm;overflow:hidden;background:#000;break-after:page;page-break-after:always;-webkit-print-color-adjust:exact;print-color-adjust:exact}.access-card-sticker:last-child{break-after:auto;page-break-after:auto}.access-card-left{display:grid;grid-template-rows:1.08cm 1fr .64cm;justify-items:center;align-items:center;padding:.22cm .16cm .22cm .28cm}.access-card-logo{display:block;width:3.55cm;height:.9cm;object-fit:contain}.access-card-number-wrap{display:grid;justify-items:center;align-content:center;min-height:0;transform:translateY(.08cm)}.access-card-label{color:#fff;font-size:.25cm;font-weight:950;letter-spacing:.14cm;transform:translateY(-.07cm)}.access-card-number{color:#fff;font-size:2.72cm;line-height:.78;letter-spacing:-.13cm}.access-card-wifi{align-self:end;display:flex;justify-content:center;gap:.14cm;color:#fff;font-size:.18cm;font-weight:900;white-space:nowrap}.access-card-wifi b{color:#9bf000}.access-card-right{min-width:0;display:grid;grid-template-rows:.66cm 1fr;justify-items:center;align-items:center;padding:.27cm .24cm .22cm .05cm;text-align:center}.access-card-callout{align-self:center;line-height:1.02;letter-spacing:.012cm}.access-card-callout strong,.access-card-callout span{display:block}.access-card-callout strong{font-size:.24cm;color:#9bf000}.access-card-callout span{margin-top:.05cm;font-size:.17cm;font-weight:900;color:#fff}.access-card-qr-shell{align-self:center;display:grid;place-items:center;width:3.78cm;height:3.78cm;padding:.09cm;background:#fff}.access-card-qr{display:block;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}.access-card-sticker::after{content:"";position:absolute;right:-.7cm;top:-1cm;width:1.7cm;height:1.7cm;border:.14cm solid rgba(155,240,0,.25);border-radius:50%}@media print{html,body{width:10cm;background:#000}.print-toolbar{display:none}.print-sheet{display:block;padding:0}.access-card-sticker{margin:0}}' +
+        '</style></head><body><div class="print-toolbar"><span>Formato: 10 × 5 cm horizontal · escala 100% · sem margens</span><button type="button" onclick="window.print()">Imprimir / salvar PDF</button></div><main class="print-sheet">' + stickers + '</main></body></html>');
+      printWindow.document.close();
+    }
+
+    function openBarAccessCardSticker(card) {
+      openBarAccessCardStickers(card ? [card] : []);
+    }
+
     function barQrCard(table) {
       return '<article class="bar-qr-card bar-qr-table-card"><div class="bar-qr-card-visual"><img src="' + escapeHtml(barQrImageUrl(table, 240)) + '" alt="QR Code da ' + escapeHtml(table.name) + '" loading="lazy" /></div><div class="bar-qr-card-content"><h3>' + escapeHtml(table.name) + '</h3></div><div class="bar-qr-card-actions has-sticker"><button class="small-btn bar-qr-action-primary" type="button" data-bar-qr-kind="table" data-bar-qr="' + escapeHtml(table.id) + '" aria-label="Ampliar QR Code da ' + escapeHtml(table.name) + '"><svg><use href="#admin-icon-qr"></use></svg>Ver</button><button class="small-btn bar-qr-action-copy" type="button" data-bar-copy-qr-kind="table" data-bar-copy-qr="' + escapeHtml(table.id) + '" aria-label="Copiar link da ' + escapeHtml(table.name) + '"><svg><use href="#bar-icon-link"></use></svg>Copiar</button><button class="small-btn bar-qr-action-sticker" type="button" data-bar-sticker="' + escapeHtml(table.id) + '" aria-label="Abrir adesivo da ' + escapeHtml(table.name) + '"><svg><use href="#admin-icon-table"></use></svg>Adesivo</button></div></article>';
     }
 
     function barAccessCardQrCard(card) {
       const url = barAccessCardUrl(card);
-      return '<article class="bar-qr-card bar-qr-table-card bar-qr-access-card' + (card.active ? '' : ' is-inactive') + '"><div class="bar-qr-card-visual"><img src="' + escapeHtml(barQrImageFromUrl(url, 240)) + '" alt="QR Code do ' + escapeHtml(card.label) + '" loading="lazy" /></div><div class="bar-qr-card-content"><h3>' + escapeHtml(card.label) + '</h3></div><div class="bar-qr-card-actions has-edit"><button class="small-btn bar-qr-action-primary" type="button" data-bar-qr-kind="card" data-bar-qr="' + escapeHtml(card.id) + '" aria-label="Ampliar QR Code do ' + escapeHtml(card.label) + '"><svg><use href="#admin-icon-qr"></use></svg>Ver</button><button class="small-btn bar-qr-action-copy" type="button" data-bar-copy-qr-kind="card" data-bar-copy-qr="' + escapeHtml(card.id) + '" aria-label="Copiar link do ' + escapeHtml(card.label) + '"><svg><use href="#bar-icon-link"></use></svg>Copiar</button><button class="small-btn bar-qr-action-edit" type="button" data-bar-card-edit="' + escapeHtml(card.id) + '" aria-label="Editar ' + escapeHtml(card.label) + '"><svg><use href="#bar-icon-edit"></use></svg>Editar</button></div></article>';
+      const activeOrder = barOrderForAccessCard(card.id);
+      const status = activeOrder ? 'Em uso · ' + (activeOrder.customerName || 'Comanda #' + activeOrder.commandNumber) : card.active ? 'Livre' : 'Inativo';
+      return '<article class="bar-qr-card bar-qr-table-card bar-qr-access-card' + (card.active ? '' : ' is-inactive') + '"><div class="bar-qr-card-visual"><img src="' + escapeHtml(barQrImageFromUrl(url, 240)) + '" alt="QR Code do ' + escapeHtml(card.label) + '" loading="lazy" /></div><div class="bar-qr-card-content"><div><h3>' + escapeHtml(card.label) + '</h3><p>' + escapeHtml(status) + '</p></div></div><div class="bar-qr-card-actions has-card-art"><button class="small-btn bar-qr-action-primary" type="button" data-bar-qr-kind="card" data-bar-qr="' + escapeHtml(card.id) + '" aria-label="Ampliar QR Code do ' + escapeHtml(card.label) + '"><svg><use href="#admin-icon-qr"></use></svg>Ver</button><button class="small-btn bar-qr-action-copy" type="button" data-bar-copy-qr-kind="card" data-bar-copy-qr="' + escapeHtml(card.id) + '" aria-label="Copiar link do ' + escapeHtml(card.label) + '"><svg><use href="#bar-icon-link"></use></svg>Copiar</button><button class="small-btn bar-qr-action-sticker" type="button" data-bar-card-sticker="' + escapeHtml(card.id) + '" aria-label="Abrir arte do ' + escapeHtml(card.label) + '"><svg><use href="#admin-icon-qr"></use></svg>Arte</button><button class="small-btn bar-qr-action-edit" type="button" data-bar-card-edit="' + escapeHtml(card.id) + '" aria-label="Editar ' + escapeHtml(card.label) + '"><svg><use href="#bar-icon-edit"></use></svg>Editar</button></div></article>';
     }
 
     function barCommandMatchesSearch(order, table) {
@@ -25230,8 +25293,9 @@
 
       $('barCommandModalTitle').textContent = customer.name;
       const commandTable = barTableById(order.tableId);
-      $('barCommandHeaderLocation').textContent = commandTable ? commandTable.name : '';
-      $('barCommandHeaderLocation').hidden = !commandTable;
+      const commandCard = barAccessCardById(order.publicAccessId);
+      $('barCommandHeaderLocation').textContent = commandTable ? commandTable.name : commandCard ? commandCard.label : '';
+      $('barCommandHeaderLocation').hidden = !commandTable && !commandCard;
       $('barCommandModalSubtitle').textContent = customer.location;
       $('barCommandModalSubtitle').hidden = true;
       const canMessage = barPhoneDigits(customer.phone);
@@ -25864,6 +25928,9 @@
       const availableTables = opsData.barTables.filter(function (table) {
         return table.active && !barOrderForTable(table.id);
       }).sort(function (a, b) { return Number(a.number || 0) - Number(b.number || 0); });
+      const availableCards = (opsData.barAccessCards || []).filter(function (card) {
+        return card.active && !barOrderForAccessCard(card.id);
+      }).sort(function (a, b) { return Number(a.code || 0) - Number(b.code || 0); });
       $('barNewOrderModalTitle').textContent = tableMode ? 'Abrir mesa' : 'Nova comanda';
       $('barNewOrderTableField').hidden = !tableMode;
       $('barNewOrderTable').required = tableMode;
@@ -25871,6 +25938,10 @@
         return '<option value="' + escapeHtml(table.id) + '">' + escapeHtml(table.name) + '</option>';
       }).join('');
       if (selectedTableId) $('barNewOrderTable').value = selectedTableId;
+      $('barNewOrderCardField').hidden = tableMode;
+      $('barNewOrderCard').innerHTML = '<option value="">Sem cartão</option>' + availableCards.map(function (card) {
+        return '<option value="' + escapeHtml(card.id) + '">' + escapeHtml(card.label) + '</option>';
+      }).join('');
       $('barNewOrderSaveBtn').innerHTML = '<svg><use href="#bar-icon-plus"></use></svg>' + (tableMode ? 'Abrir mesa e adicionar produtos' : 'Abrir e adicionar produtos');
       $('barNewOrderModal').classList.add('show');
       $('barNewOrderModal').setAttribute('aria-hidden', 'false');
@@ -25897,10 +25968,13 @@
         requireAdminSession();
         const tableMode = opsState.barNewOrderKind === 'table';
         const table = tableMode ? barTableById($('barNewOrderTable').value) : null;
+        const card = !tableMode && $('barNewOrderCard').value ? barAccessCardById($('barNewOrderCard').value) : null;
         const customerName = $('barNewOrderCustomer').value.trim();
         const customerPhone = barPhoneDigits($('barNewOrderPhone').value);
         if (tableMode && (!table || !table.active)) throw new Error('Escolha uma mesa disponível.');
         if (tableMode && barOrderForTable(table.id)) throw new Error('Essa mesa já possui uma comanda aberta.');
+        if (!tableMode && $('barNewOrderCard').value && (!card || !card.active)) throw new Error('Escolha um cartão disponível.');
+        if (card && barOrderForAccessCard(card.id)) throw new Error('Esse cartão já está vinculado a outra comanda aberta.');
         if (customerName.length < 2) throw new Error('Informe o nome ou uma identificação para a comanda.');
         if (customerPhone && (customerPhone.length < 10 || customerPhone.length > 13)) throw new Error('Confira o telefone informado.');
 
@@ -25911,6 +25985,7 @@
           id: localId('bar_order'),
           tableId: table && table.id || '',
           tableName: table && table.name || '',
+          publicAccessId: card && card.id || '',
           commandNumber: nextNumber,
           customerName: customerName,
           customerPhone: customerPhone,
@@ -25928,6 +26003,7 @@
         if (barCanPersist()) {
           order = mapBarOrderRow(await supabaseInsert('bar_orders', {
             table_id: table && table.id || null,
+            public_access_id: card && card.id || null,
             customer_name: customerName,
             customer_phone: customerPhone || null,
             source: 'EQUIPE',
@@ -25942,7 +26018,7 @@
         opsState.barCommandTab = 'add';
         renderBarModule();
         openBarCommandModal(order.id);
-        toast(table ? table.name + ' aberta para ' + customerName + '.' : 'Nova comanda aberta.');
+        toast(table ? table.name + ' aberta para ' + customerName + '.' : card ? 'Comanda aberta e vinculada ao ' + card.label + '.' : 'Nova comanda aberta sem cartão.');
       } catch (error) {
         reportActionError(error);
       } finally {
@@ -25982,7 +26058,7 @@
       $('barAccessCardId').value = '';
       $('barAccessCardActive').value = 'true';
       const nextCode = (opsData.barAccessCards || []).reduce(function (max, item) { return Math.max(max, Number(item.code || 0)); }, 0) + 1;
-      $('barAccessCardLabel').value = 'Cartão avulso ' + String(nextCode).padStart(2, '0');
+      $('barAccessCardLabel').value = 'Cartão ' + String(nextCode).padStart(2, '0');
       $('barAccessCardModalTitle').textContent = 'Novo cartão individual';
       $('barAccessCardSaveBtn').textContent = 'Salvar cartão';
     }
@@ -29160,6 +29236,9 @@
       $('barPrintAllTableStickersBtn').addEventListener('click', function () {
         openBarTableStickers((opsData.barTables || []).filter(function (table) { return table.active; }));
       });
+      $('barPrintAllAccessCardStickersBtn').addEventListener('click', function () {
+        openBarAccessCardStickers((opsData.barAccessCards || []).filter(function (card) { return card.active; }));
+      });
       $('barCommandScreenBtn').addEventListener('click', function () {
         toggleBarValuesVisibility();
       });
@@ -29373,6 +29452,11 @@
         const stickerBtn = event.target.closest('[data-bar-sticker]');
         if (stickerBtn) {
           openBarTableSticker(barTableById(stickerBtn.dataset.barSticker));
+          return;
+        }
+        const cardStickerBtn = event.target.closest('[data-bar-card-sticker]');
+        if (cardStickerBtn) {
+          openBarAccessCardSticker(barAccessCardById(cardStickerBtn.dataset.barCardSticker));
           return;
         }
         const qrCopyBtn = event.target.closest('[data-bar-copy-qr]');
