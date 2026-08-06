@@ -9032,6 +9032,18 @@
       margin-top: 16px;
     }
 
+    .bar-qr-availability-btn {
+      border-color: #a9dcba;
+      background: #effaf3;
+      color: #14723a;
+    }
+
+    .bar-qr-availability-btn.is-blocked {
+      border-color: #f1b3b9;
+      background: #fff2f3;
+      color: #b72f3d;
+    }
+
     .bar-qr-card {
       min-height: 226px;
       grid-template-columns: 108px minmax(0, 1fr);
@@ -16255,6 +16267,7 @@
               <div class="bar-section-header">
                 <div><h2>QR Codes</h2><div class="muted">Acessos do cardápio online para mesas e clientes.</div></div>
                 <div class="bar-section-actions">
+                  <button class="ghost-btn bar-icon-button bar-qr-availability-btn" type="button" id="barQrOrdersToggleBtn" aria-pressed="true"><svg><use href="#bar-icon-close"></use></svg><span>Bloquear QR Codes</span></button>
                   <button class="ghost-btn bar-icon-button" type="button" id="barPrintAllTableStickersBtn"><svg><use href="#admin-icon-table"></use></svg><span>Imprimir adesivos</span></button>
                   <button class="primary-btn bar-icon-button" type="button" id="barQrAddTableBtn"><svg><use href="#admin-icon-table"></use></svg><span>Criar mesa</span></button>
                   <button class="primary-btn bar-icon-button" type="button" id="barAddAccessCardBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Novo cartão</span></button>
@@ -21082,6 +21095,10 @@
         { id: 'bar_card_2', code: 2, label: 'Cartão 02', token: 'ilha-cartao-avulso-02', active: true, notes: 'Pedidos vinculados no balcão' },
         { id: 'bar_card_3', code: 3, label: 'Cartão 03', token: 'ilha-cartao-avulso-03', active: true, notes: 'Pedidos vinculados no balcão' }
       ],
+      barSettings: {
+        qrOrdersEnabled: true,
+        closedMessage: 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.'
+      },
       barCustomers: [],
       barOrders: [
         { id: 'bar_order_1', tableId: 'bar_table_2', commandNumber: 101, customerName: 'Leandro', customerPhone: '5527999999999', source: 'QR_MESA', status: 'EM_PREPARO', subtotal: 33, serviceCharge: 0, discount: 0, total: 33, paymentStatus: 'ABERTO', paymentMethod: '', openedAt: new Date().toISOString(), closedAt: '' },
@@ -21477,6 +21494,13 @@
       };
     }
 
+    function mapBarRuntimeSettingsRow(row) {
+      return {
+        qrOrdersEnabled: !row || row.qr_orders_enabled !== false,
+        closedMessage: row && row.closed_message || 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.'
+      };
+    }
+
     function mapBarCustomerRow(row) {
       return {
         id: row.id || '',
@@ -21613,6 +21637,7 @@
       opsData.barInventory = [];
       opsData.barFinance = [];
       opsData.barAccessCards = [];
+      opsData.barSettings = mapBarRuntimeSettingsRow(null);
       opsData.barEvents = [];
       opsData.barCustomers = [];
       opsState.barKnownIncomingIds = null;
@@ -21642,7 +21667,8 @@
             supabaseRest('bar_public_cards?select=*&order=code.asc'),
             supabaseRest('bar_events?select=*&order=event_date.asc,starts_at.asc'),
             supabaseRest('bar_customers?select=*&order=last_order_at.desc&limit=500'),
-            supabaseRest('bar_service_requests?select=*&order=created_at.desc&limit=200')
+            supabaseRest('bar_service_requests?select=*&order=created_at.desc&limit=200'),
+            supabaseRest('bar_runtime_settings?select=*&id=eq.true&limit=1')
           ]);
         };
         let results;
@@ -21662,6 +21688,7 @@
         opsData.barEvents = results[7].map(mapBarEventRow);
         opsData.barCustomers = results[8].map(mapBarCustomerRow);
         opsData.barServiceRequests = results[9].map(mapBarServiceRequestRow);
+        opsData.barSettings = mapBarRuntimeSettingsRow(results[10] && results[10][0]);
         handleBarIncomingChanges(opsData.barOrderItems);
         handleBarServiceRequestChanges(opsData.barServiceRequests);
         opsState.barDataLoaded = true;
@@ -24101,6 +24128,20 @@
       return textMatch || phoneMatch;
     }
 
+    function renderBarQrAvailability() {
+      const button = $('barQrOrdersToggleBtn');
+      if (!button) return;
+      const enabled = !opsData.barSettings || opsData.barSettings.qrOrdersEnabled !== false;
+      button.classList.toggle('is-blocked', !enabled);
+      button.setAttribute('aria-pressed', String(enabled));
+      button.title = enabled
+        ? 'Bloquear temporariamente os pedidos feitos pelos QR Codes'
+        : 'Liberar novamente os pedidos feitos pelos QR Codes';
+      button.innerHTML = enabled
+        ? '<svg><use href="#bar-icon-close"></use></svg><span>Bloquear QR Codes</span>'
+        : '<svg><use href="#bar-icon-check"></use></svg><span>Ativar QR Codes</span>';
+    }
+
     function renderBarTablesAndQr() {
       const allTables = opsData.barTables.slice().sort(function (a, b) { return a.number - b.number; });
       const activeTables = allTables.filter(function (table) { return table.active; });
@@ -24121,6 +24162,7 @@
       const tableEmptyLabel = isInitialBarLoad
         ? (opsState.barLoadError ? 'Reconectando ao sistema...' : 'Carregando mesas...')
         : (hasSearch ? 'Nenhuma mesa encontrada.' : 'Nenhuma mesa cadastrada.');
+      renderBarQrAvailability();
       $('barLooseCommandBoard').innerHTML = looseOrders.map(barUnifiedOrderCard).join('') || '<div class="lesson-empty-state bar-command-board-empty">' + escapeHtml(looseEmptyLabel) + '</div>';
       $('barTableCommandBoard').innerHTML = tableOrders.map(barUnifiedOrderCard).concat(freeTables.map(barUnifiedFreeTableCard)).join('') || '<div class="lesson-empty-state bar-command-board-empty">' + escapeHtml(tableEmptyLabel) + '</div>';
       $('barQrGrid').innerHTML = activeTables.map(barQrCard).join('') || '<div class="lesson-empty-state">Cadastre uma mesa ativa para gerar o QR Code.</div>';
@@ -26050,6 +26092,41 @@
         navigator.clipboard.writeText(value).then(function () { toast('Link do cardápio copiado.'); }).catch(function () { toast(value); });
       } else {
         toast(value);
+      }
+    }
+
+    async function toggleBarQrOrdersAvailability() {
+      const button = $('barQrOrdersToggleBtn');
+      const currentEnabled = !opsData.barSettings || opsData.barSettings.qrOrdersEnabled !== false;
+      const nextEnabled = !currentEnabled;
+      button.disabled = true;
+      try {
+        requireAdminSession();
+        let nextSettings = {
+          qrOrdersEnabled: nextEnabled,
+          closedMessage: opsData.barSettings && opsData.barSettings.closedMessage || 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.'
+        };
+        if (barCanPersist()) {
+          const saved = await supabaseRest('bar_runtime_settings?id=eq.true', {
+            method: 'PATCH',
+            body: {
+              qr_orders_enabled: nextEnabled,
+              updated_by: adminProfile && adminProfile.id || null,
+              updated_at: new Date().toISOString()
+            },
+            prefer: 'return=representation'
+          });
+          nextSettings = mapBarRuntimeSettingsRow(Array.isArray(saved) ? saved[0] : saved);
+        }
+        opsData.barSettings = nextSettings;
+        renderBarQrAvailability();
+        toast(nextEnabled
+          ? 'QR Codes liberados. Os clientes já podem fazer pedidos.'
+          : 'QR Codes bloqueados. Os clientes verão que o Bar está fechado.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        button.disabled = false;
       }
     }
 
@@ -29233,6 +29310,9 @@
       $('barNewTableOrderBtn').addEventListener('click', function () { openBarNewOrderModal('table'); });
       $('barCreateTableBtn').addEventListener('click', function () { openBarTableModal(); });
       $('barQrAddTableBtn').addEventListener('click', function () { openBarTableModal(); });
+      $('barQrOrdersToggleBtn').addEventListener('click', function () {
+        toggleBarQrOrdersAvailability();
+      });
       $('barPrintAllTableStickersBtn').addEventListener('click', function () {
         openBarTableStickers((opsData.barTables || []).filter(function (table) { return table.active; }));
       });

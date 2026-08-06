@@ -458,7 +458,7 @@
       </section>
 
       <section class="view" id="errorView">
-        <div class="error-view"><div class="error-box"><h1>Não conseguimos abrir este QR Code</h1><p id="errorMessage">Confira se o código pertence ao Ilha Bar.</p><button class="primary-btn" id="retryBtn" type="button" style="width:100%;margin-top:20px"><svg><use href="#icon-refresh"></use></svg>Tentar novamente</button></div></div>
+        <div class="error-view"><div class="error-box"><h1 id="errorTitle">Não conseguimos abrir este QR Code</h1><p id="errorMessage">Confira se o código pertence ao Ilha Bar.</p><button class="primary-btn" id="retryBtn" type="button" style="width:100%;margin-top:20px"><svg><use href="#icon-refresh"></use></svg>Tentar novamente</button></div></div>
       </section>
 
       <section class="view" id="accessView">
@@ -521,6 +521,7 @@
       cart: {},
       identity: null,
       order: null,
+      availability: { enabled: true, message: '' },
       polling: null,
       menuPolling: null,
       menuPayload: '',
@@ -615,6 +616,19 @@
       document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === id));
       window.scrollTo({ top: 0, behavior: 'auto' });
       $('cartBar').hidden = id !== 'menuView' || cartCount() === 0;
+    }
+
+    function showClosedView(availability) {
+      state.availability = availability || { enabled: false, message: '' };
+      $('errorTitle').textContent = 'Estamos fechados no momento';
+      $('errorMessage').textContent = state.availability.message || 'Em breve estaremos atendendo novamente.';
+      $('retryBtn').innerHTML = '<svg><use href="#icon-refresh"></use></svg>Verificar novamente';
+      showView('errorView');
+    }
+
+    function resetErrorView() {
+      $('errorTitle').textContent = 'Não conseguimos abrir este QR Code';
+      $('retryBtn').innerHTML = '<svg><use href="#icon-refresh"></use></svg>Tentar novamente';
     }
 
     let toastTimer = 0;
@@ -854,7 +868,18 @@
       state.menuRefreshInFlight = true;
       try {
         const data = await rpc('bar_public_menu', { p_token: qrToken });
-        const payload = JSON.stringify({ access: data.access || {}, tables: data.tables || [], products: data.products || [] });
+        const availability = data.availability || { enabled: true, message: '' };
+        const wasClosed = state.availability && state.availability.enabled === false;
+        state.availability = availability;
+        if (availability.enabled === false) {
+          showClosedView(availability);
+          return;
+        }
+        if (wasClosed) {
+          loadMenu();
+          return;
+        }
+        const payload = JSON.stringify({ availability, access: data.access || {}, tables: data.tables || [], products: data.products || [] });
         if (payload !== state.menuPayload) {
           state.menuPayload = payload;
           state.access = data.access || {};
@@ -951,11 +976,17 @@
         return;
       }
       try {
+        resetErrorView();
         const data = await rpc('bar_public_menu', { p_token: qrToken });
+        state.availability = data.availability || { enabled: true, message: '' };
+        if (state.availability.enabled === false) {
+          showClosedView(state.availability);
+          return;
+        }
         state.access = data.access || {};
         state.tables = data.tables || [];
         state.products = data.products || [];
-        state.menuPayload = JSON.stringify({ access: state.access, tables: state.tables, products: state.products });
+        state.menuPayload = JSON.stringify({ availability: state.availability, access: state.access, tables: state.tables, products: state.products });
         renderAccess();
         const saved = readSession();
         if (saved && saved.name && validPhone(saved.phone)) {
@@ -968,6 +999,7 @@
           showView('accessView');
         }
       } catch (error) {
+        resetErrorView();
         $('errorMessage').textContent = error.message;
         showView('errorView');
       }

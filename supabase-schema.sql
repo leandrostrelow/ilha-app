@@ -299,6 +299,18 @@ create table if not exists public.bar_push_config (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.bar_runtime_settings (
+  id boolean primary key default true check (id = true),
+  qr_orders_enabled boolean not null default true,
+  closed_message text not null default 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.',
+  updated_by uuid references public.profiles(id) on delete set null,
+  updated_at timestamptz not null default now()
+);
+
+insert into public.bar_runtime_settings (id, qr_orders_enabled)
+values (true, true)
+on conflict (id) do nothing;
+
 create table if not exists public.bar_push_dispatches (
   dispatch_key text primary key,
   order_id uuid not null references public.bar_orders(id) on delete cascade,
@@ -1842,6 +1854,8 @@ as $$
 declare
   table_row public.bar_tables%rowtype;
   card_row public.bar_public_cards%rowtype;
+  qr_orders_enabled_value boolean := true;
+  closed_message_value text := 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.';
   has_fixed_table boolean := false;
   has_card boolean := false;
 begin
@@ -1869,7 +1883,19 @@ begin
     raise exception 'Este QR Code nao esta ativo.';
   end if;
 
+  select settings.qr_orders_enabled, settings.closed_message
+    into qr_orders_enabled_value, closed_message_value
+    from public.bar_runtime_settings settings
+   where settings.id = true;
+
+  qr_orders_enabled_value := coalesce(qr_orders_enabled_value, true);
+  closed_message_value := coalesce(nullif(trim(closed_message_value), ''), 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.');
+
   return jsonb_build_object(
+    'availability', jsonb_build_object(
+      'enabled', qr_orders_enabled_value,
+      'message', closed_message_value
+    ),
     'access', jsonb_build_object(
       'kind', case when has_fixed_table then 'MESA' else 'CARTAO' end,
       'label', case when has_fixed_table then table_row.name else card_row.label end,
@@ -1884,7 +1910,7 @@ begin
       ))
       else '[]'::jsonb
     end,
-    'products', coalesce((
+    'products', case when qr_orders_enabled_value then coalesce((
       select jsonb_agg(jsonb_build_object(
         'id', product.id,
         'name', product.name,
@@ -1897,7 +1923,7 @@ begin
       from public.bar_products product
       where product.active = true
         and product.stock_quantity > 0
-    ), '[]'::jsonb)
+    ), '[]'::jsonb) else '[]'::jsonb end
   );
 end;
 $$;
@@ -1935,9 +1961,20 @@ declare
   item_notes text;
   has_fixed_table boolean := false;
   has_card boolean := false;
+  qr_orders_enabled_value boolean := true;
+  closed_message_value text := 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.';
 begin
   if length(trim(coalesce(p_token, ''))) < 12 then
     raise exception 'QR Code invalido.';
+  end if;
+
+  select settings.qr_orders_enabled, settings.closed_message
+    into qr_orders_enabled_value, closed_message_value
+    from public.bar_runtime_settings settings
+   where settings.id = true;
+
+  if not coalesce(qr_orders_enabled_value, true) then
+    raise exception '%', coalesce(nullif(trim(closed_message_value), ''), 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.');
   end if;
 
   customer_value := left(trim(coalesce(p_customer_name, '')), 80);
@@ -2650,6 +2687,7 @@ alter table public.bar_financial_entries enable row level security;
 alter table public.bar_events enable row level security;
 alter table public.bar_push_subscriptions enable row level security;
 alter table public.bar_push_config enable row level security;
+alter table public.bar_runtime_settings enable row level security;
 alter table public.bar_push_dispatches enable row level security;
 alter table public.teachers enable row level security;
 alter table public.students enable row level security;
@@ -2685,6 +2723,7 @@ grant select, insert, update, delete on
   public.bar_financial_entries,
   public.bar_events,
   public.bar_push_subscriptions,
+  public.bar_runtime_settings,
   public.teachers,
   public.students,
   public.courts,
@@ -2814,6 +2853,7 @@ drop policy if exists "bar staff manage inventory" on public.bar_inventory_movem
 drop policy if exists "bar staff manage finance" on public.bar_financial_entries;
 drop policy if exists "bar staff manage events" on public.bar_events;
 drop policy if exists "bar staff manage own push subscriptions" on public.bar_push_subscriptions;
+drop policy if exists "bar staff manage runtime settings" on public.bar_runtime_settings;
 drop policy if exists "staff read teachers" on public.teachers;
 drop policy if exists "office manage teachers" on public.teachers;
 drop policy if exists "staff read students" on public.students;
@@ -3029,6 +3069,12 @@ on public.bar_push_subscriptions for all
 to authenticated
 using (user_id = (select auth.uid()) and public.is_bar_staff())
 with check (user_id = (select auth.uid()) and public.is_bar_staff());
+
+create policy "bar staff manage runtime settings"
+on public.bar_runtime_settings for all
+to authenticated
+using (public.is_bar_staff())
+with check (public.is_bar_staff());
 
 do $$
 begin
