@@ -637,7 +637,15 @@
     }
 
     function renderCategories() {
-      const categories = ['Todos'].concat(Array.from(new Set(state.products.map(product => product.category || 'Outros'))).sort((a, b) => String(a).localeCompare(String(b), 'pt-BR')));
+      const categoryPriority = ['porcoes', 'porcao', 'cervejas', 'cerveja', 'bebidas', 'bebida', 'refrigerantes', 'refrigerante', 'lanches', 'lanche'];
+      const categories = Array.from(new Set(state.products.map(product => product.category || 'Outros'))).sort((a, b) => {
+        const normalizedA = String(a).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const normalizedB = String(b).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const priorityA = categoryPriority.indexOf(normalizedA);
+        const priorityB = categoryPriority.indexOf(normalizedB);
+        if (priorityA !== priorityB) return (priorityA < 0 ? categoryPriority.length : priorityA) - (priorityB < 0 ? categoryPriority.length : priorityB);
+        return String(a).localeCompare(String(b), 'pt-BR');
+      }).concat('Todos');
       if (!categories.includes(state.category)) state.category = 'Todos';
       $('categoryNav').innerHTML = categories.map(category => '<button class="category-btn' + (state.category === category ? ' active' : '') + '" type="button" data-category="' + escapeHtml(category) + '">' + escapeHtml(category) + '</button>').join('');
     }
