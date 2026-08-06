@@ -16600,6 +16600,7 @@
             <div class="bar-compact-editor-grid">
               <div class="field"><label for="barCustomerEditName">Nome</label><input id="barCustomerEditName" maxlength="80" required /></div>
               <div class="field"><label for="barCustomerEditPhone">Telefone</label><input id="barCustomerEditPhone" type="tel" inputmode="tel" maxlength="15" /></div>
+              <div class="field full" id="barCustomerEditTableField"><label for="barCustomerEditTable">Mesa <small>opcional</small></label><select id="barCustomerEditTable"><option value="">Sem mesa</option></select><small class="muted">Ao vincular, o QR Code da mesa passa a abrir esta mesma comanda.</small></div>
               <div class="field full" id="barCustomerEditCardField"><label for="barCustomerEditCard">Cartão QR <small>opcional</small></label><select id="barCustomerEditCard"><option value="">Sem cartão</option></select><small class="muted">Ao salvar, o QR Code do cartão escolhido será ativado nesta comanda.</small></div>
               <div class="field full"><label for="barCustomerEditNotes">Observação da comanda</label><textarea id="barCustomerEditNotes" rows="3" maxlength="500"></textarea></div>
             </div>
@@ -24626,6 +24627,15 @@
       const customer = barOrderCustomerDetails(order, barItemsForOrder(order.id));
       $('barCustomerEditName').value = String(order.customerName || customer.name || '').trim();
       $('barCustomerEditPhone').value = barPhoneLabel(barPhoneDigits(order.customerPhone || customer.phone || ''));
+      const currentTableId = String(order.tableId || '');
+      const availableTables = (opsData.barTables || []).filter(function (table) {
+        if (String(table.id) === currentTableId) return true;
+        return table.active !== false && !barOrderForTable(table.id);
+      }).sort(function (a, b) { return Number(a.number || 0) - Number(b.number || 0); });
+      $('barCustomerEditTable').innerHTML = '<option value="">Sem mesa</option>' + availableTables.map(function (table) {
+        return '<option value="' + escapeHtml(table.id) + '">' + escapeHtml(table.name) + '</option>';
+      }).join('');
+      $('barCustomerEditTable').value = currentTableId;
       const currentCardId = String(order.publicAccessId || '');
       const availableCards = (opsData.barAccessCards || []).filter(function (card) {
         if (String(card.id) === currentCardId) return true;
@@ -24635,7 +24645,7 @@
         return '<option value="' + escapeHtml(card.id) + '">' + escapeHtml(card.label) + '</option>';
       }).join('');
       $('barCustomerEditCard').value = currentCardId;
-      $('barCustomerEditCardField').hidden = Boolean(order.tableId);
+      $('barCustomerEditCardField').hidden = false;
       $('barCustomerEditNotes').value = order.notes || '';
       $('barCustomerEditModal').classList.add('show');
       $('barCustomerEditModal').setAttribute('aria-hidden', 'false');
@@ -26665,6 +26675,7 @@
       const currentName = String(order.customerName || customer.name || '').trim();
       const currentPhone = barPhoneDigits(order.customerPhone || customer.phone || '');
       const currentNotes = String(order.notes || '').trim();
+      const currentTableId = String(order.tableId || '');
       const currentCardId = String(order.publicAccessId || '');
       const nextName = String($('barCustomerEditName').value || '').trim().replace(/\s+/g, ' ');
       if (nextName.length < 2) {
@@ -26677,7 +26688,18 @@
       }
       const nextPhone = barPhoneDigits($('barCustomerEditPhone').value);
       const nextNotes = String($('barCustomerEditNotes').value || '').trim();
-      const nextCardId = order.tableId ? currentCardId : String($('barCustomerEditCard').value || '');
+      const nextTableId = String($('barCustomerEditTable').value || '');
+      const nextTable = nextTableId ? barTableById(nextTableId) : null;
+      if (nextTableId && (!nextTable || nextTable.active === false)) {
+        toast('Escolha uma mesa ativa.');
+        return;
+      }
+      const tableOrder = nextTableId ? barOrderForTable(nextTableId) : null;
+      if (tableOrder && String(tableOrder.id) !== String(order.id)) {
+        toast('Essa mesa já possui uma comanda aberta.');
+        return;
+      }
+      const nextCardId = String($('barCustomerEditCard').value || '');
       const nextCard = nextCardId ? barAccessCardById(nextCardId) : null;
       if (nextCardId && (!nextCard || nextCard.active === false)) {
         toast('Escolha um cartão ativo.');
@@ -26695,8 +26717,9 @@
       const sameName = normalizeMatchText(nextName) === normalizeMatchText(currentName);
       const samePhone = nextPhone === currentPhone;
       const sameNotes = nextNotes === currentNotes;
+      const sameTable = nextTableId === currentTableId;
       const sameCard = nextCardId === currentCardId;
-      if (sameName && samePhone && sameNotes && sameCard) {
+      if (sameName && samePhone && sameNotes && sameTable && sameCard) {
         closeBarCustomerEditModal();
         return;
       }
@@ -26714,6 +26737,7 @@
               p_order_id: order.id,
               p_customer_name: nextName,
               p_customer_phone: nextPhone || null,
+              p_table_id: nextTableId || null,
               p_public_access_id: nextCardId || null,
               p_notes: nextNotes || null
             },
@@ -26732,10 +26756,13 @@
           const previousNames = [currentName, customer.name, order.customerName].map(normalizeMatchText).filter(Boolean);
           order.customerName = nextName;
           order.customerPhone = nextPhone;
+          order.tableId = nextTableId;
+          order.tableName = nextTable && nextTable.name || '';
+          order.tableNumber = nextTable && nextTable.number || '';
           order.publicAccessId = nextCardId;
           order.notes = nextNotes;
           orderItems.forEach(function (item) {
-            if (!order.tableId || previousNames.includes(normalizeMatchText(item.customerName))) {
+            if (!currentTableId || previousNames.includes(normalizeMatchText(item.customerName))) {
               item.customerName = nextName;
               item.customerPhone = nextPhone;
             }
@@ -26744,7 +26771,7 @@
         closeBarCustomerEditModal();
         renderBarModule();
         renderBarCommandModal();
-        toast(!sameCard && nextCard ? nextCard.label + ' vinculado. O QR Code já está ativo.' : !sameCard ? 'Cartão removido da comanda.' : 'Dados da comanda atualizados.');
+        toast(!sameTable && nextTable ? nextTable.name + ' vinculada. O QR Code já abre esta comanda.' : !sameTable ? 'Mesa removida da comanda.' : !sameCard && nextCard ? nextCard.label + ' vinculado. O QR Code já está ativo.' : !sameCard ? 'Cartão removido da comanda.' : 'Dados da comanda atualizados.');
       } catch (error) {
         reportActionError(error);
       } finally {

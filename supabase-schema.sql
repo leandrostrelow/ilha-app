@@ -1844,10 +1844,13 @@ as $$
   select public.current_user_role() in ('admin', 'secretaria', 'bar')
 $$;
 
+drop function if exists public.bar_update_order_customer(uuid, text, text, uuid, text);
+
 create or replace function public.bar_update_order_customer(
   p_order_id uuid,
   p_customer_name text,
   p_customer_phone text,
+  p_table_id uuid,
   p_public_access_id uuid,
   p_notes text
 )
@@ -1886,9 +1889,26 @@ begin
     raise exception 'Comanda aberta não encontrada.';
   end if;
 
+  if p_table_id is not null and not exists (
+    select 1 from public.bar_tables where id = p_table_id and active = true
+  ) then
+    raise exception 'Escolha uma mesa ativa.';
+  end if;
+
+  if p_table_id is not null and exists (
+    select 1
+      from public.bar_orders
+     where table_id = p_table_id
+       and id <> p_order_id
+       and status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+  ) then
+    raise exception 'Essa mesa já possui uma comanda aberta.';
+  end if;
+
   update public.bar_orders
      set customer_name = customer_value,
          customer_phone = phone_value,
+         table_id = p_table_id,
          public_access_id = p_public_access_id,
          notes = nullif(left(trim(coalesce(p_notes, '')), 500), ''),
          updated_at = now()
@@ -1922,8 +1942,8 @@ begin
 end;
 $$;
 
-revoke all on function public.bar_update_order_customer(uuid, text, text, uuid, text) from public, anon;
-grant execute on function public.bar_update_order_customer(uuid, text, text, uuid, text) to authenticated;
+revoke all on function public.bar_update_order_customer(uuid, text, text, uuid, uuid, text) from public, anon;
+grant execute on function public.bar_update_order_customer(uuid, text, text, uuid, uuid, text) to authenticated;
 
 create or replace function public.bar_public_menu(p_token text)
 returns jsonb
