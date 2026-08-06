@@ -618,6 +618,15 @@
       return { className: '', icon: 'icon-food' };
     }
 
+    function beverageProductRank(product) {
+      const name = String(product && product.name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      if (name.includes('gatorade')) return 0;
+      if (name.includes('red bull')) return 1;
+      if (name.includes('beats')) return 2;
+      if (name.includes('agua tonica')) return 3;
+      return 10;
+    }
+
     function renderAccess() {
       $('accessLabel').textContent = state.access.label || 'Ilha Bar';
       const fixed = state.access.kind === 'MESA';
@@ -653,6 +662,9 @@
     function renderProducts() {
       renderCategories();
       const products = state.products.filter(product => state.category === 'Todos' || product.category === state.category);
+      if (String(state.category).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() === 'bebidas') {
+        products.sort((a, b) => beverageProductRank(a) - beverageProductRank(b) || String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'));
+      }
       $('productGrid').innerHTML = products.map(product => {
         const kind = categoryKind((product.category || '') + ' ' + (product.name || ''));
         const quantity = state.cart[product.id] && state.cart[product.id].quantity || 0;
