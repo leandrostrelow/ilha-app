@@ -1144,7 +1144,12 @@
       const MOBILE_MENU_VIEW = new URLSearchParams(window.location.search).get('view') === 'mobile';
       const MENU_VISIBILITY_FIELD = MOBILE_MENU_VIEW ? 'menu_visible' : 'menu_tv_visible';
       const MENU_QUERY = 'bar_products?select=id,name,category,sale_price,image_url,notes,menu_featured,menu_sort_order,updated_at&active=eq.true&' + MENU_VISIBILITY_FIELD + '=eq.true&order=category.asc,menu_sort_order.asc,name.asc';
-      const MENU_REFRESH_INTERVAL = 10000;
+      const MENU_REFRESH_INTERVAL = 3000;
+      const APP_SYNC_CHANNEL = 'ilha-app-sync-v1';
+      const APP_SYNC_STORAGE_KEY = 'ilha-app:last-change';
+      const appSyncSource = Math.random().toString(36).slice(2);
+      let appSyncBroadcastChannel = null;
+      let appSyncTimer = 0;
       const MENU_CACHE_KEY = 'ilha-menu-products-v1';
       const CATEGORY_PRIORITY = ['porcoes', 'cervejas', 'refeic', 'almoc', 'bebidas', 'refrigerantes', 'lanches', 'aguas'];
       const LAYOUT_KEY = 'ilha-menu-layout-v1';
@@ -1432,6 +1437,28 @@
         }
       }
 
+      function scheduleMenuSync() {
+        clearTimeout(appSyncTimer);
+        appSyncTimer = setTimeout(loadMenu, 180);
+      }
+
+      function initAppSync() {
+        if ('BroadcastChannel' in window) {
+          appSyncBroadcastChannel = new BroadcastChannel(APP_SYNC_CHANNEL);
+          appSyncBroadcastChannel.addEventListener('message', function (event) {
+            if (!event.data || event.data.source === appSyncSource || event.data.type !== 'data-change') return;
+            scheduleMenuSync();
+          });
+        }
+        window.addEventListener('storage', function (event) {
+          if (event.key !== APP_SYNC_STORAGE_KEY || !event.newValue) return;
+          try {
+            const message = JSON.parse(event.newValue);
+            if (message.source !== appSyncSource && message.type === 'data-change') scheduleMenuSync();
+          } catch (error) {}
+        });
+      }
+
       function updateClock() {
         const now = new Date();
         const timeLabel = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -1488,6 +1515,7 @@
         }, 120);
       });
       updateClock();
+      initAppSync();
       loadMenu();
       setInterval(updateClock, 1000);
       setInterval(function () {
@@ -1500,5 +1528,6 @@
       window.addEventListener('online', loadMenu);
     })();
   </script>
+  <script src="/auto-update.js"></script>
 </body>
 </html>

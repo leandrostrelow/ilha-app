@@ -506,6 +506,11 @@
   <script>
     const SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_zcX8te5g99p0bA12xy_E-A_MTyNpJNx';
+    const APP_SYNC_CHANNEL = 'ilha-app-sync-v1';
+    const APP_SYNC_STORAGE_KEY = 'ilha-app:last-change';
+    const appSyncSource = Math.random().toString(36).slice(2);
+    let appSyncBroadcastChannel = null;
+    let appSyncRefreshTimer = 0;
     const params = new URLSearchParams(window.location.search);
     const qrToken = String(params.get('token') || '').trim();
     const state = {
@@ -517,6 +522,9 @@
       identity: null,
       order: null,
       polling: null,
+      menuPolling: null,
+      menuPayload: '',
+      menuRefreshInFlight: false,
       sessionKey: 'ilha-bar:' + (qrToken ? qrToken.slice(0, 18) : 'sem-token')
     };
     const $ = id => document.getElementById(id);
@@ -552,7 +560,39 @@
       let data = null;
       try { data = text ? JSON.parse(text) : null; } catch (error) { data = null; }
       if (!response.ok) throw new Error(data && (data.message || data.error_description || data.hint) || 'Não foi possível concluir agora.');
+      if (!['bar_public_menu', 'bar_public_order_status'].includes(name)) broadcastAppChange(name);
       return data;
+    }
+
+    function broadcastAppChange(resource) {
+      const message = { type: 'data-change', resource: resource || '', at: Date.now(), source: appSyncSource };
+      if (appSyncBroadcastChannel) appSyncBroadcastChannel.postMessage(message);
+      try { localStorage.setItem(APP_SYNC_STORAGE_KEY, JSON.stringify(message)); } catch (error) {}
+    }
+
+    function scheduleOpenPageSync() {
+      clearTimeout(appSyncRefreshTimer);
+      appSyncRefreshTimer = setTimeout(() => {
+        syncOpenBarPage();
+        if (state.identity && state.identity.trackingToken) loadOrderStatus(false);
+      }, 180);
+    }
+
+    function initAppSync() {
+      if ('BroadcastChannel' in window) {
+        appSyncBroadcastChannel = new BroadcastChannel(APP_SYNC_CHANNEL);
+        appSyncBroadcastChannel.addEventListener('message', event => {
+          if (!event.data || event.data.source === appSyncSource || event.data.type !== 'data-change') return;
+          scheduleOpenPageSync();
+        });
+      }
+      window.addEventListener('storage', event => {
+        if (event.key !== APP_SYNC_STORAGE_KEY || !event.newValue) return;
+        try {
+          const message = JSON.parse(event.newValue);
+          if (message.source !== appSyncSource && message.type === 'data-change') scheduleOpenPageSync();
+        } catch (error) {}
+      });
     }
 
     async function notifyBarTeamAboutOrder(order) {
@@ -804,7 +844,33 @@
     function startPolling() {
       clearInterval(state.polling);
       if (!state.identity || !state.identity.trackingToken) return;
-      state.polling = setInterval(() => loadOrderStatus(false), 5000);
+      state.polling = setInterval(() => loadOrderStatus(false), 3000);
+    }
+
+    async function syncOpenBarPage() {
+      if (!qrToken || document.hidden || state.menuRefreshInFlight) return;
+      state.menuRefreshInFlight = true;
+      try {
+        const data = await rpc('bar_public_menu', { p_token: qrToken });
+        const payload = JSON.stringify({ access: data.access || {}, tables: data.tables || [], products: data.products || [] });
+        if (payload !== state.menuPayload) {
+          state.menuPayload = payload;
+          state.access = data.access || {};
+          state.tables = data.tables || [];
+          state.products = data.products || [];
+          if ($('menuView').classList.contains('active')) renderProducts();
+          if ($('accessView').classList.contains('active')) renderAccess();
+        }
+      } catch (error) {
+        // Mantém os últimos dados visíveis e tenta novamente no próximo ciclo.
+      } finally {
+        state.menuRefreshInFlight = false;
+      }
+    }
+
+    function startMenuPolling() {
+      clearInterval(state.menuPolling);
+      state.menuPolling = setInterval(syncOpenBarPage, 3000);
     }
 
     function enterMenu() {
@@ -887,6 +953,7 @@
         state.access = data.access || {};
         state.tables = data.tables || [];
         state.products = data.products || [];
+        state.menuPayload = JSON.stringify({ access: state.access, tables: state.tables, products: state.products });
         renderAccess();
         const saved = readSession();
         if (saved && saved.name && validPhone(saved.phone)) {
@@ -944,10 +1011,20 @@
     $('headerOrderBtn').addEventListener('click', async () => { await loadOrderStatus(true); showView('orderView'); });
     $('activeOrderBtn').addEventListener('click', async () => { await loadOrderStatus(true); showView('orderView'); });
 
-    window.addEventListener('beforeunload', () => clearInterval(state.polling));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) syncOpenBarPage(); });
+    window.addEventListener('focus', syncOpenBarPage);
+    window.addEventListener('online', syncOpenBarPage);
+    window.addEventListener('beforeunload', () => {
+      clearInterval(state.polling);
+      clearInterval(state.menuPolling);
+      if (appSyncBroadcastChannel) appSyncBroadcastChannel.close();
+    });
+    initAppSync();
+    startMenuPolling();
     loadMenu();
 
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('../service-worker.js').catch(() => {});
   </script>
+  <script src="/auto-update.js"></script>
 </body>
 </html>

@@ -20573,12 +20573,52 @@
     const LESSONS_SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
     const LESSONS_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrcXRncHRlYmtnZndndXlreGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzEyNjAsImV4cCI6MjA5NzcwNzI2MH0.S-dopp-fbBgq8_YclyiAheOdK-QhXt92RYLu8JKmKCg';
     const BAR_PUSH_PUBLIC_KEY = 'BJtga8GuviTBc3mzDwBkr0kKw-kV02hVSwu6DjgZgSgAhFuvPZNj88WfTwyV7mXgJJnxKD5ZiJCRW8nv7ndx-RU';
+    const APP_SYNC_CHANNEL = 'ilha-app-sync-v1';
+    const APP_SYNC_STORAGE_KEY = 'ilha-app:last-change';
+    const appSyncSource = Math.random().toString(36).slice(2);
+    let appSyncBroadcastChannel = null;
+    let appSyncRefreshTimer = 0;
     const IS_BAR_ADMIN_SURFACE = /^\/admbar(?:\/|$)/.test(window.location.pathname) || new URLSearchParams(window.location.search).get('surface') === 'bar';
     if (IS_BAR_ADMIN_SURFACE && 'scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
     }
     const BAR_LAUNCH_TAB = new URLSearchParams(window.location.search).get('tab') === 'kitchen' ? 'kitchen' : 'orders';
     const BAR_PIX_KEY = 'ilhateniscolatina@gmail.com';
+
+    function broadcastAppChange(resource) {
+      const message = { type: 'data-change', resource: resource || '', at: Date.now(), source: appSyncSource };
+      if (appSyncBroadcastChannel) appSyncBroadcastChannel.postMessage(message);
+      try { localStorage.setItem(APP_SYNC_STORAGE_KEY, JSON.stringify(message)); } catch (error) {}
+    }
+
+    function refreshOpenAdminPage() {
+      clearTimeout(appSyncRefreshTimer);
+      appSyncRefreshTimer = setTimeout(function () {
+        if (document.hidden || document.body.classList.contains('adm-locked') || isAdminDemoMode()) return;
+        if (!document.body.classList.contains('club-bar')) return;
+        loadBarData(true).then(function () {
+          renderBarModule();
+          if (opsState.selectedBarOrderId && !barCommandModalHasActiveEditor()) renderBarCommandModal();
+        }).catch(reportActionError);
+      }, 180);
+    }
+
+    function initAppSync() {
+      if ('BroadcastChannel' in window) {
+        appSyncBroadcastChannel = new BroadcastChannel(APP_SYNC_CHANNEL);
+        appSyncBroadcastChannel.addEventListener('message', function (event) {
+          if (!event.data || event.data.source === appSyncSource || event.data.type !== 'data-change') return;
+          refreshOpenAdminPage();
+        });
+      }
+      window.addEventListener('storage', function (event) {
+        if (event.key !== APP_SYNC_STORAGE_KEY || !event.newValue) return;
+        try {
+          const message = JSON.parse(event.newValue);
+          if (message.source !== appSyncSource && message.type === 'data-change') refreshOpenAdminPage();
+        } catch (error) {}
+      });
+    }
     const lessonDays = [
       { key: 'segunda', label: 'SEG' },
       { key: 'terca', label: 'TER' },
@@ -22925,7 +22965,7 @@
     }
 
     function barUnifiedFreeTableCard(table) {
-      return '<article class="bar-command-unified-card is-table is-free" data-bar-new-table-order="' + escapeHtml(table.id) + '"><button class="bar-command-unified-main" type="button" data-bar-new-table-order="' + escapeHtml(table.id) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="#admin-icon-table"></use></svg></span><span class="bar-command-unified-copy"><strong>Nº ' + escapeHtml(table.number) + '</strong><small>Livre · ' + escapeHtml(table.seats) + ' lugares</small></span></button><div class="bar-command-unified-side"><b>Livre</b></div></article>';
+      return '<article class="bar-command-unified-card is-table is-free" data-bar-new-table-order="' + escapeHtml(table.id) + '"><button class="bar-command-unified-main" type="button" data-bar-new-table-order="' + escapeHtml(table.id) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="#admin-icon-table"></use></svg></span><span class="bar-command-unified-copy"><strong>Nº ' + escapeHtml(table.number) + '</strong></span></button><div class="bar-command-unified-side"><b>Livre</b></div></article>';
     }
 
     function barTableManagementCard(table) {
@@ -23961,7 +24001,7 @@
       }).join('');
       printWindow.document.open();
       printWindow.document.write('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Adesivos das mesas | Ilha Bar</title><style>' +
-        '@page{size:16cm 8cm;margin:0}*{box-sizing:border-box}html,body{margin:0;background:#d9dde1;font-family:Arial,Helvetica,sans-serif;color:#fff}.print-toolbar{position:sticky;z-index:5;top:0;display:flex;align-items:center;justify-content:center;gap:16px;padding:12px;background:#fff;color:#172238;box-shadow:0 3px 14px rgba(0,0,0,.14)}.print-toolbar button{border:0;border-radius:10px;padding:11px 18px;background:#0b8993;color:#fff;font:800 14px Arial;cursor:pointer}.print-toolbar span{font-size:13px;font-weight:700}.print-sheet{display:grid;justify-content:center;gap:20px;padding:20px}.table-sticker{position:relative;display:grid;grid-template-columns:8.15cm 1fr;width:16cm;height:8cm;overflow:hidden;background:#000;break-after:page;page-break-after:always;-webkit-print-color-adjust:exact;print-color-adjust:exact}.table-sticker:last-child{break-after:auto;page-break-after:auto}.sticker-left{display:grid;grid-template-rows:1.45cm 1fr .88cm;justify-items:center;align-items:center;padding:.38cm .25cm .3cm .42cm}.sticker-logo{display:block;width:5.35cm;height:1.25cm;object-fit:contain}.sticker-table{display:grid;justify-items:center;align-content:center;min-height:0;transform:translateY(.16cm)}.sticker-table-label{color:#fff;font-size:.34cm;font-weight:950;letter-spacing:.18cm}.sticker-number{color:#9bf000;font-size:4.6cm;line-height:.8;letter-spacing:-.25cm}.sticker-wifi{align-self:end;display:flex;flex-wrap:wrap;justify-content:center;gap:.08cm .22cm;color:#fff;font-size:.31cm;font-weight:900;line-height:1.15}.sticker-wifi b{color:#9bf000}.sticker-right{min-width:0;display:grid;grid-template-rows:.98cm 1fr;justify-items:center;align-items:center;padding:.48cm .42cm .38cm .18cm;text-align:center}.sticker-callout{align-self:center;text-align:center;line-height:1.05;letter-spacing:.025cm}.sticker-callout strong,.sticker-callout span{display:block}.sticker-callout strong{font-size:.34cm;color:#9bf000}.sticker-callout span{margin-top:.09cm;font-size:.25cm;font-weight:900;color:#fff}.sticker-qr-shell{align-self:center;display:grid;place-items:center;width:5.65cm;height:5.65cm;padding:.13cm;background:#fff}.sticker-qr{display:block;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}.sticker-page-count{display:none}.table-sticker::after{content:"";position:absolute;right:-1.05cm;top:-1.55cm;width:2.7cm;height:2.7cm;border:.22cm solid rgba(155,240,0,.25);border-radius:50%}@media print{html,body{width:16cm;background:#000}.print-toolbar{display:none}.print-sheet{display:block;padding:0}.table-sticker{margin:0}.sticker-page-count{display:none}}' +
+        '@page{size:16cm 8cm;margin:0}*{box-sizing:border-box}html,body{margin:0;background:#d9dde1;font-family:Arial,Helvetica,sans-serif;color:#fff}.print-toolbar{position:sticky;z-index:5;top:0;display:flex;align-items:center;justify-content:center;gap:16px;padding:12px;background:#fff;color:#172238;box-shadow:0 3px 14px rgba(0,0,0,.14)}.print-toolbar button{border:0;border-radius:10px;padding:11px 18px;background:#0b8993;color:#fff;font:800 14px Arial;cursor:pointer}.print-toolbar span{font-size:13px;font-weight:700}.print-sheet{display:grid;justify-content:center;gap:20px;padding:20px}.table-sticker{position:relative;display:grid;grid-template-columns:8.15cm 1fr;width:16cm;height:8cm;overflow:hidden;background:#000;break-after:page;page-break-after:always;-webkit-print-color-adjust:exact;print-color-adjust:exact}.table-sticker:last-child{break-after:auto;page-break-after:auto}.sticker-left{display:grid;grid-template-rows:1.45cm 1fr .88cm;justify-items:center;align-items:center;padding:.38cm .25cm .3cm .42cm}.sticker-logo{display:block;width:5.35cm;height:1.25cm;object-fit:contain}.sticker-table{display:grid;justify-items:center;align-content:center;min-height:0;transform:translateY(.16cm)}.sticker-table-label{color:#fff;font-size:.34cm;font-weight:950;letter-spacing:.18cm}.sticker-number{color:#fff;font-size:4.6cm;line-height:.8;letter-spacing:-.25cm}.sticker-wifi{align-self:end;display:flex;flex-wrap:wrap;justify-content:center;gap:.08cm .22cm;color:#fff;font-size:.31cm;font-weight:900;line-height:1.15}.sticker-wifi b{color:#9bf000}.sticker-right{min-width:0;display:grid;grid-template-rows:.98cm 1fr;justify-items:center;align-items:center;padding:.48cm .42cm .38cm .18cm;text-align:center}.sticker-callout{align-self:center;text-align:center;line-height:1.05;letter-spacing:.025cm}.sticker-callout strong,.sticker-callout span{display:block}.sticker-callout strong{font-size:.34cm;color:#9bf000}.sticker-callout span{margin-top:.09cm;font-size:.25cm;font-weight:900;color:#fff}.sticker-qr-shell{align-self:center;display:grid;place-items:center;width:5.65cm;height:5.65cm;padding:.13cm;background:#fff}.sticker-qr{display:block;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}.sticker-page-count{display:none}.table-sticker::after{content:"";position:absolute;right:-1.05cm;top:-1.55cm;width:2.7cm;height:2.7cm;border:.22cm solid rgba(155,240,0,.25);border-radius:50%}@media print{html,body{width:16cm;background:#000}.print-toolbar{display:none}.print-sheet{display:block;padding:0}.table-sticker{margin:0}.sticker-page-count{display:none}}' +
         '.sticker-table-label{transform:translateY(-.14cm)}' +
         '</style></head><body><div class="print-toolbar"><span>Formato exato: 8 × 16 cm horizontal · escala 100% · sem margens</span><button type="button" onclick="window.print()">Imprimir / salvar PDF</button></div><main class="print-sheet">' + stickers + '</main></body></html>');
       printWindow.document.close();
@@ -25389,7 +25429,7 @@
             renderBarModule();
             if (opsState.selectedBarOrderId && !barCommandModalHasActiveEditor()) renderBarCommandModal();
           }).catch(reportActionError);
-        }, 4000);
+        }, 2500);
       }
     }
 
@@ -27399,6 +27439,9 @@
         const message = data && (data.message || data.msg || data.error_description || data.details);
         throw new Error(message || 'Falha ao conversar com o Supabase.');
       }
+      if (String(options.method || 'GET').toUpperCase() !== 'GET') {
+        broadcastAppChange(String(path || '').split('?')[0]);
+      }
       return data;
     }
 
@@ -28752,6 +28795,7 @@
     function initAdminLogin() {
       configurePreviewEnvironment();
       configureAdminSurface();
+      initAppSync();
       initBarPullToRefresh();
       initBarPwaInstall();
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
@@ -28777,6 +28821,7 @@
       });
       document.addEventListener('visibilitychange', function () {
         if (document.visibilityState !== 'visible') return;
+        refreshOpenAdminPage();
         if (document.body.classList.contains('adm-locked') && readStoredAdminSession()) restoreAdminSession();
         else if (adminSession && isSessionExpired(adminSession)) {
           refreshAdminSession(adminSession).catch(function () {
@@ -29906,5 +29951,6 @@
     window.addEventListener('pagehide', rememberBarScrollPosition);
     initAdminLogin();
   </script>
+  <script src="/auto-update.js"></script>
 </body>
 </html>
