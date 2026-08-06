@@ -666,9 +666,20 @@
       closeCart();
       renderActiveOrderStrip();
       showView('accessView');
-      showToast(status === 'CANCELADA'
-        ? 'A comanda foi cancelada. Identifique-se novamente para pedir.'
-        : 'A comanda foi encerrada. Identifique-se novamente para pedir.');
+      showToast(status === 'EXCLUIDA'
+        ? 'A comanda foi excluída. O QR Code está livre para um novo atendimento.'
+        : status === 'CANCELADA'
+          ? 'A comanda foi cancelada. Identifique-se novamente para pedir.'
+          : 'A comanda foi encerrada. Identifique-se novamente para pedir.');
+    }
+
+    function barOrderWasRemoved(error) {
+      const message = String(error && error.message || error || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+      return message.includes('comanda nao encontrada') ||
+        message.includes('cartao nao esta vinculado a uma comanda aberta');
     }
 
     function productById(id) { return state.products.find(product => String(product.id) === String(id)); }
@@ -867,6 +878,10 @@
         if ($('cartSheet').classList.contains('open')) renderCart();
         return state.order;
       } catch (error) {
+        if (barOrderWasRemoved(error)) {
+          clearSessionAfterOrderEnd('EXCLUIDA');
+          return null;
+        }
         if (showErrors) showToast(error.message, true);
         return null;
       }
