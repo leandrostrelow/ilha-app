@@ -25273,10 +25273,6 @@
       });
     }
 
-    function barProductNeedsDeliveryLocation(product) {
-      return barProductRequiresProduction(product);
-    }
-
     function barOrderCartItem(productId) {
       return (opsState.barOrderCart || []).find(function (item) {
         return String(item.productId) === String(productId);
@@ -25293,16 +25289,9 @@
         return;
       }
       if (existing) existing.quantity = nextQuantity;
-      else (opsState.barOrderCart || (opsState.barOrderCart = [])).push({ productId: product.id, quantity: 1, notes: '', deliveryLocation: '' });
+      else (opsState.barOrderCart || (opsState.barOrderCart = [])).push({ productId: product.id, quantity: 1, notes: '' });
       updateBarOrderProductCardStates();
       renderBarOrderProductPreview();
-    }
-
-    function barOrderCartLocationOptions(selected) {
-      const locations = ['', 'Quadra 1', 'Quadra 2', 'Quadra 3', 'Quadra 4', 'Quadra 5', 'Salão', 'Deck externo'];
-      return locations.map(function (location) {
-        return '<option value="' + escapeHtml(location) + '"' + (location === selected ? ' selected' : '') + '>' + escapeHtml(location || 'Escolha o local') + '</option>';
-      }).join('');
     }
 
     function renderBarOrderProductPreview() {
@@ -25320,12 +25309,11 @@
       $('barOrderCartCount').textContent = totalUnits + (totalUnits === 1 ? ' item' : ' itens');
       list.innerHTML = cart.map(function (item) {
         const product = barProductById(item.productId);
-        const needsLocation = barProductNeedsDeliveryLocation(product);
         const itemTotal = money(Number(product.salePrice || 0) * Number(item.quantity || 0));
         return '<div class="bar-order-cart-row" data-bar-cart-row="' + escapeHtml(product.id) + '">' +
           '<div class="bar-order-cart-product"><strong>' + escapeHtml(product.name) + '</strong><span class="bar-order-cart-product-price">' + itemTotal + '</span></div>' +
           '<div class="bar-order-cart-quantity"><button type="button" data-bar-cart-step="-1" data-bar-cart-product="' + escapeHtml(product.id) + '" aria-label="Diminuir ' + escapeHtml(product.name) + '">−</button><input type="number" min="1" max="' + escapeHtml(Number(product.stock || 0)) + '" value="' + escapeHtml(item.quantity) + '" data-bar-cart-quantity="' + escapeHtml(product.id) + '" aria-label="Quantidade de ' + escapeHtml(product.name) + '" /><button type="button" data-bar-cart-step="1" data-bar-cart-product="' + escapeHtml(product.id) + '" aria-label="Aumentar ' + escapeHtml(product.name) + '">+</button></div>' +
-          '<div class="bar-order-cart-details' + (needsLocation ? ' has-location' : '') + '">' + (needsLocation ? '<select class="' + (item.deliveryLocation ? '' : 'is-required-empty') + '" data-bar-cart-location="' + escapeHtml(product.id) + '" aria-label="Local de entrega de ' + escapeHtml(product.name) + '">' + barOrderCartLocationOptions(item.deliveryLocation || '') + '</select>' : '') + '<input value="' + escapeHtml(item.notes || '') + '" data-bar-cart-notes="' + escapeHtml(product.id) + '" placeholder="Observação (opcional)" aria-label="Observação de ' + escapeHtml(product.name) + '" /></div>' +
+          '<div class="bar-order-cart-details"><input value="' + escapeHtml(item.notes || '') + '" data-bar-cart-notes="' + escapeHtml(product.id) + '" placeholder="Observação (opcional)" aria-label="Observação de ' + escapeHtml(product.name) + '" /></div>' +
           '<button class="bar-order-cart-remove" type="button" data-bar-cart-remove="' + escapeHtml(product.id) + '" aria-label="Remover ' + escapeHtml(product.name) + '">×</button>' +
         '</div>';
       }).join('');
@@ -26348,8 +26336,7 @@
           return {
             product: barProductById(entry.productId),
             quantity: Math.max(1, Math.floor(Number(entry.quantity || 1))),
-            notes: String(entry.notes || '').trim(),
-            deliveryLocation: String(entry.deliveryLocation || '').trim()
+            notes: String(entry.notes || '').trim()
           };
         });
         if (!order || !barOrderCanEdit(order)) throw new Error('Esta comanda já foi paga ou não está aberta para novos itens.');
@@ -26358,7 +26345,6 @@
           if (!entry.product) throw new Error('Um produto do carrinho não está mais disponível.');
           if (entry.quantity <= 0) throw new Error('Informe a quantidade de ' + entry.product.name + '.');
           if (Number(entry.product.stock || 0) < entry.quantity) throw new Error('Estoque insuficiente para ' + entry.product.name + '.');
-          if (barProductNeedsDeliveryLocation(entry.product) && !entry.deliveryLocation) throw new Error('Escolha onde entregar ' + entry.product.name + '.');
         });
         opsState.barOrderCartSaving = true;
         renderBarOrderProductPreview();
@@ -26371,8 +26357,7 @@
                 return {
                   product_id: entry.product.id,
                   quantity: entry.quantity,
-                  notes: entry.notes || null,
-                  delivery_location: entry.deliveryLocation || null
+                  notes: entry.notes || null
                 };
               })
             },
@@ -26386,7 +26371,7 @@
               id: localId('bar_item'), orderId: order.id, productId: product.id, productName: product.name,
               productCategory: product.category,
               quantity: entry.quantity, unitPrice: product.salePrice, costPrice: product.costPrice,
-              status: 'SOLICITADO', notes: entry.notes, deliveryLocation: entry.deliveryLocation, created: new Date().toISOString()
+              status: 'SOLICITADO', notes: entry.notes, deliveryLocation: '', created: new Date().toISOString()
             };
             product.stock = Number(product.stock) - entry.quantity;
             opsData.barOrderItems.push(item);
@@ -29721,12 +29706,6 @@
           updateBarOrderProductCardStates();
           renderBarOrderProductPreview();
           return;
-        }
-        const locationSelect = event.target.closest('[data-bar-cart-location]');
-        if (locationSelect) {
-          const item = barOrderCartItem(locationSelect.dataset.barCartLocation);
-          if (item) item.deliveryLocation = locationSelect.value;
-          renderBarOrderProductPreview();
         }
       });
       $('barCheckoutService').addEventListener('input', function () { updateBarCheckoutPreview(); });
