@@ -339,6 +339,11 @@
     .cart-item h3 { margin: 0; font-size: 16px; }
     .cart-item p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
     .cart-item-actions { display: flex; align-items: center; gap: 10px; }
+    .cart-section-title { margin: 0 0 10px; color: var(--muted); font-size: 12px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+    .cart-existing { margin-bottom: 18px; padding: 14px 16px; background: #f3f7f8; border: 1px solid var(--line); border-radius: 8px; }
+    .cart-existing .cart-item { padding: 9px 0; }
+    .cart-existing .cart-item:last-child { border-bottom: 0; }
+    .cart-new-title { margin-top: 2px; }
     .cart-total { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 0 4px; font-size: 20px; }
     .send-order-btn { width: 100%; margin-top: 18px; }
 
@@ -497,7 +502,7 @@
   <div class="sheet-backdrop" id="cartSheet" aria-hidden="true">
     <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
       <header class="sheet-header"><h2 id="cartTitle">Revisar pedido</h2><button class="close-btn" id="closeCartBtn" type="button" aria-label="Fechar"><svg><use href="#icon-x"></use></svg></button></header>
-      <div class="sheet-body"><div id="cartItems"></div><div class="form-field"><label for="orderNotes">Observação geral</label><textarea id="orderNotes" maxlength="300" placeholder="Ex.: entregar tudo junto"></textarea></div><div class="cart-total"><span>Total</span><strong id="cartTotal">R$ 0,00</strong></div><button class="primary-btn send-order-btn" id="sendOrderBtn" type="button">Enviar pedido <svg><use href="#icon-arrow"></use></svg></button></div>
+      <div class="sheet-body"><div id="cartExisting" class="cart-existing" hidden></div><h3 class="cart-section-title cart-new-title" id="cartNewTitle" hidden>Adicionar agora</h3><div id="cartItems"></div><div class="form-field"><label for="orderNotes">Observação geral</label><textarea id="orderNotes" maxlength="300" placeholder="Ex.: entregar tudo junto"></textarea></div><div class="cart-total"><span>Total deste pedido</span><strong id="cartTotal">R$ 0,00</strong></div><button class="primary-btn send-order-btn" id="sendOrderBtn" type="button">Enviar pedido <svg><use href="#icon-arrow"></use></svg></button></div>
     </section>
   </div>
 
@@ -575,7 +580,7 @@
       clearTimeout(appSyncRefreshTimer);
       appSyncRefreshTimer = setTimeout(() => {
         syncOpenBarPage();
-        if (state.identity && state.identity.trackingToken) loadOrderStatus(false);
+        if (state.identity && (state.identity.trackingToken || state.identity.cardLinked)) loadOrderStatus(false);
       }, 180);
     }
 
@@ -597,16 +602,18 @@
     }
 
     async function notifyBarTeamAboutOrder(order) {
-      if (!order || !order.order_id || !order.tracking_token) return;
+      if (!order || !order.order_id || (!order.tracking_token && !(state.identity && state.identity.cardLinked && qrToken))) return;
       const response = await fetch(SUPABASE_URL + '/functions/v1/bar-order-push', {
         method: 'POST',
         headers: {
           apikey: SUPABASE_KEY,
+          Authorization: 'Bearer ' + SUPABASE_KEY,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           order_id: order.order_id,
-          tracking_token: order.tracking_token
+          tracking_token: order.tracking_token || null,
+          card_token: state.identity && state.identity.cardLinked ? qrToken : null
         })
       });
       if (!response.ok) throw new Error('A equipe verá o pedido na tela, mas o aviso do celular pode atrasar.');
@@ -701,7 +708,8 @@
       $('tableField').hidden = fixed || card;
       if (fixed && state.tables[0]) $('tableSelect').value = state.tables[0].id;
       const saved = readSession();
-      if (saved && saved.name) $('customerName').value = saved.name;
+      if (state.access.linked_customer_name) $('customerName').value = state.access.linked_customer_name;
+      else if (saved && saved.name) $('customerName').value = saved.name;
       if (saved && saved.phone) $('customerPhone').value = saved.phone;
       if (!fixed && saved && saved.tableId && tableById(saved.tableId)) $('tableSelect').value = saved.tableId;
     }
@@ -766,6 +774,10 @@
 
     function renderCart() {
       const entries = cartEntries();
+      const existingItems = state.order && Array.isArray(state.order.items) ? state.order.items : [];
+      $('cartExisting').hidden = existingItems.length === 0;
+      $('cartNewTitle').hidden = existingItems.length === 0;
+      $('cartExisting').innerHTML = existingItems.length ? '<h3 class="cart-section-title">Já na comanda #' + escapeHtml(state.order.command_number) + '</h3>' + existingItems.map(item => '<article class="cart-item"><div><h3>' + escapeHtml(Number(item.quantity).toLocaleString('pt-BR') + 'x ' + item.name) + '</h3><p>' + escapeHtml(itemStatusLabel(item.status)) + '</p></div><strong>' + money(Number(item.quantity) * Number(item.unit_price)) + '</strong></article>').join('') : '';
       $('cartItems').innerHTML = entries.map(item => '<article class="cart-item"><div><h3>' + escapeHtml(item.quantity + 'x ' + item.product.name) + '</h3><p>' + money(item.quantity * Number(item.product.price || 0)) + '</p></div><div class="cart-item-actions"><div class="qty-control"><button type="button" data-product-dec="' + escapeHtml(item.product.id) + '">−</button><strong>' + item.quantity + '</strong><button type="button" data-product-inc="' + escapeHtml(item.product.id) + '">+</button></div></div></article>').join('');
       $('cartTotal').textContent = money(cartTotal());
       $('sendOrderBtn').disabled = entries.length === 0;
@@ -793,7 +805,7 @@
     }
 
     function renderActiveOrderStrip() {
-      const hasTracking = Boolean(state.identity && state.identity.trackingToken);
+      const hasTracking = Boolean(state.identity && (state.identity.trackingToken || state.identity.cardLinked));
       $('headerOrderBtn').hidden = !hasTracking;
       $('headerOrderBtn').classList.toggle('has-order', hasTracking);
       $('activeOrderStrip').hidden = !hasTracking || !state.order;
@@ -836,9 +848,11 @@
     }
 
     async function loadOrderStatus(showErrors) {
-      if (!state.identity || !state.identity.trackingToken) return null;
+      if (!state.identity || (!state.identity.trackingToken && !state.identity.cardLinked)) return null;
       try {
-        const order = await rpc('bar_public_order_status', {
+        const order = state.identity.cardLinked ? await rpc('bar_public_card_order_status', {
+          p_token: qrToken
+        }) : await rpc('bar_public_order_status', {
           p_tracking_token: state.identity.trackingToken,
           p_customer_phone: state.identity.phone || null
         });
@@ -850,6 +864,7 @@
         state.order = order;
         renderOrder();
         renderActiveOrderStrip();
+        if ($('cartSheet').classList.contains('open')) renderCart();
         return state.order;
       } catch (error) {
         if (showErrors) showToast(error.message, true);
@@ -859,7 +874,7 @@
 
     function startPolling() {
       clearInterval(state.polling);
-      if (!state.identity || !state.identity.trackingToken) return;
+      if (!state.identity || (!state.identity.trackingToken && !state.identity.cardLinked)) return;
       state.polling = setInterval(() => loadOrderStatus(false), 3000);
     }
 
@@ -906,12 +921,19 @@
       renderProducts();
       showView('menuView');
       renderActiveOrderStrip();
-      if (state.identity && state.identity.trackingToken) loadOrderStatus(false);
+      if (state.identity && (state.identity.trackingToken || state.identity.cardLinked)) loadOrderStatus(false);
+    }
+
+    function linkedCardIdentity() {
+      if (!state.access || state.access.kind !== 'CARTAO') return null;
+      const name = String(state.access.linked_customer_name || '').trim();
+      if (!state.access.linked || name.length < 2) return null;
+      return { name, phone: '', tableId: '', trackingToken: '', cardLinked: true };
     }
 
     async function requestService() {
       if (!state.identity) return;
-      if (!state.identity.trackingToken) {
+      if (!state.identity.trackingToken && !state.identity.cardLinked) {
         showToast('Faça seu primeiro pedido para abrir a comanda e chamar o garçom.', true);
         return;
       }
@@ -919,7 +941,11 @@
       button.disabled = true;
       button.querySelector('span').textContent = 'Enviando...';
       try {
-        const result = await rpc('bar_public_request_service', {
+        const result = state.identity.cardLinked ? await rpc('bar_public_card_request_service', {
+          p_token: qrToken,
+          p_request_type: 'ATENDIMENTO',
+          p_message: null
+        }) : await rpc('bar_public_request_service', {
           p_tracking_token: state.identity.trackingToken,
           p_request_type: 'ATENDIMENTO',
           p_customer_name: state.identity.name,
@@ -941,16 +967,22 @@
       $('sendOrderBtn').disabled = true;
       $('sendOrderBtn').textContent = 'Enviando...';
       try {
-        const result = await rpc('bar_public_submit_order', {
+        const itemPayload = entries.map(item => ({ product_id: item.product.id, quantity: item.quantity, notes: item.notes || '' }));
+        const notesPayload = $('orderNotes').value.trim() || null;
+        const result = state.identity.cardLinked ? await rpc('bar_public_submit_card_order', {
+          p_token: qrToken,
+          p_items: itemPayload,
+          p_notes: notesPayload
+        }) : await rpc('bar_public_submit_order', {
           p_token: qrToken,
           p_customer_name: state.identity.name,
           p_customer_phone: state.identity.phone,
           p_table_id: state.identity.tableId || null,
-          p_items: entries.map(item => ({ product_id: item.product.id, quantity: item.quantity, notes: item.notes || '' })),
-          p_notes: $('orderNotes').value.trim() || null
+          p_items: itemPayload,
+          p_notes: notesPayload
         });
-        state.identity.trackingToken = result.tracking_token;
-        notifyBarTeamAboutOrder(result).catch(error => console.warn(error.message));
+        if (result.tracking_token) state.identity.trackingToken = result.tracking_token;
+      notifyBarTeamAboutOrder(result).catch(error => console.warn(error.message));
         saveSession();
         state.cart = {};
         $('orderNotes').value = '';
@@ -988,8 +1020,14 @@
         state.products = data.products || [];
         state.menuPayload = JSON.stringify({ availability: state.availability, access: state.access, tables: state.tables, products: state.products });
         renderAccess();
+        const linkedIdentity = linkedCardIdentity();
         const saved = readSession();
-        if (saved && saved.name && validPhone(saved.phone)) {
+        if (linkedIdentity) {
+          state.identity = linkedIdentity;
+          saveSession();
+          enterMenu();
+          startPolling();
+        } else if (saved && saved.name && validPhone(saved.phone)) {
           const fixedTableId = state.access.fixed_table_id || '';
           const savedTableId = fixedTableId || (saved.tableId && tableById(saved.tableId) ? saved.tableId : '');
           state.identity = { name: saved.name, phone: normalizePhone(saved.phone), tableId: savedTableId, trackingToken: saved.trackingToken || '' };

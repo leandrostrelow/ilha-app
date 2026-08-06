@@ -1854,6 +1854,7 @@ as $$
 declare
   table_row public.bar_tables%rowtype;
   card_row public.bar_public_cards%rowtype;
+  linked_order_row public.bar_orders%rowtype;
   qr_orders_enabled_value boolean := true;
   closed_message_value text := 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.';
   has_fixed_table boolean := false;
@@ -1877,6 +1878,15 @@ begin
        and active = true
      limit 1;
     has_card := found;
+
+    if has_card then
+      select * into linked_order_row
+        from public.bar_orders
+       where public_access_id = card_row.id
+         and status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+       order by opened_at desc
+       limit 1;
+    end if;
   end if;
 
   if not has_fixed_table and not has_card then
@@ -1899,7 +1909,10 @@ begin
     'access', jsonb_build_object(
       'kind', case when has_fixed_table then 'MESA' else 'CARTAO' end,
       'label', case when has_fixed_table then table_row.name else card_row.label end,
-      'fixed_table_id', case when has_fixed_table then table_row.id else null end
+      'fixed_table_id', case when has_fixed_table then table_row.id else null end,
+      'linked_customer_name', case when has_card then linked_order_row.customer_name else null end,
+      'linked', case when has_card then linked_order_row.id is not null else false end,
+      'linked_command_number', case when has_card then linked_order_row.command_number else null end
     ),
     'tables', case
       when has_fixed_table then jsonb_build_array(jsonb_build_object(
@@ -2144,6 +2157,109 @@ begin
     'table_name', coalesce((
       select table_item.name from public.bar_tables table_item where table_item.id = order_row.table_id
     ), card_row.label, 'Balcao')
+  );
+end;
+$$;
+
+create or replace function public.bar_public_submit_card_order(
+  p_token text,
+  p_items jsonb default '[]'::jsonb,
+  p_notes text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  order_row public.bar_orders%rowtype;
+  result_value jsonb;
+begin
+  select orders.* into order_row
+    from public.bar_public_cards cards
+    join public.bar_orders orders on orders.public_access_id = cards.id
+   where cards.token = trim(coalesce(p_token, ''))
+     and cards.active = true
+     and orders.status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+   order by orders.opened_at desc
+   limit 1;
+
+  if not found then
+    raise exception 'Este cartão ainda não foi vinculado a uma comanda. Solicite a abertura no balcão.';
+  end if;
+
+  result_value := public.bar_public_submit_order(
+    p_token,
+    order_row.customer_name,
+    null,
+    p_items,
+    p_notes,
+    order_row.customer_phone
+  );
+
+  return result_value - 'tracking_token';
+end;
+$$;
+
+create or replace function public.bar_public_card_order_status(p_token text)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  order_row public.bar_orders%rowtype;
+begin
+  select orders.* into order_row
+    from public.bar_public_cards cards
+    join public.bar_orders orders on orders.public_access_id = cards.id
+   where cards.token = trim(coalesce(p_token, ''))
+     and cards.active = true
+     and orders.status in ('ABERTA', 'EM_PREPARO', 'PRONTA', 'FECHADA', 'CANCELADA')
+   order by orders.opened_at desc
+   limit 1;
+
+  if not found then
+    raise exception 'Este cartão não está vinculado a uma comanda aberta.';
+  end if;
+
+  return public.bar_public_order_status(order_row.public_tracking_token, null);
+end;
+$$;
+
+create or replace function public.bar_public_card_request_service(
+  p_token text,
+  p_request_type text,
+  p_message text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  order_row public.bar_orders%rowtype;
+begin
+  select orders.* into order_row
+    from public.bar_public_cards cards
+    join public.bar_orders orders on orders.public_access_id = cards.id
+   where cards.token = trim(coalesce(p_token, ''))
+     and cards.active = true
+     and orders.status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+   order by orders.opened_at desc
+   limit 1;
+
+  if not found then
+    raise exception 'Este cartão ainda não foi vinculado a uma comanda. Solicite a abertura no balcão.';
+  end if;
+
+  return public.bar_public_request_service(
+    order_row.public_tracking_token,
+    p_request_type,
+    order_row.customer_name,
+    order_row.customer_phone,
+    p_message
   );
 end;
 $$;
@@ -2799,10 +2915,16 @@ grant execute on function public.bar_finalize_paid_order(uuid) to authenticated;
 grant execute on function public.bar_reopen_order(uuid) to authenticated;
 revoke all on function public.bar_public_menu(text) from public;
 revoke all on function public.bar_public_submit_order(text, text, uuid, jsonb, text, text) from public;
+revoke all on function public.bar_public_submit_card_order(text, jsonb, text) from public;
+revoke all on function public.bar_public_card_order_status(text) from public;
+revoke all on function public.bar_public_card_request_service(text, text, text) from public;
 revoke all on function public.bar_public_order_status(text, text) from public;
 revoke all on function public.bar_public_request_service(text, text, text, text, text) from public;
 grant execute on function public.bar_public_menu(text) to anon, authenticated;
 grant execute on function public.bar_public_submit_order(text, text, uuid, jsonb, text, text) to anon, authenticated;
+grant execute on function public.bar_public_submit_card_order(text, jsonb, text) to anon, authenticated;
+grant execute on function public.bar_public_card_order_status(text) to anon, authenticated;
+grant execute on function public.bar_public_card_request_service(text, text, text) to anon, authenticated;
 grant execute on function public.bar_public_order_status(text, text) to anon, authenticated;
 grant execute on function public.bar_public_request_service(text, text, text, text, text) to anon, authenticated;
 

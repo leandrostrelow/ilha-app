@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import webpush from "npm:web-push@3.6.7";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://app.ilhatenis.com",
   "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
 };
 
@@ -35,8 +35,8 @@ Deno.serve(async (request) => {
 
   let failureStage = "request";
   try {
-    const { order_id: orderId, tracking_token: trackingToken } = await request.json();
-    if (!orderId || !trackingToken) return json({ error: "Pedido inválido." }, 400);
+    const { order_id: orderId, tracking_token: trackingToken, card_token: cardToken } = await request.json();
+    if (!orderId || (!trackingToken && !cardToken)) return json({ error: "Pedido inválido." }, 400);
 
     failureStage = "database_setup";
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
@@ -49,13 +49,25 @@ Deno.serve(async (request) => {
     failureStage = "order_lookup";
     const { data: order, error: orderError } = await supabase
       .from("bar_orders")
-      .select("id, table_id, command_number, customer_name, source, public_tracking_token")
+      .select("id, table_id, public_access_id, command_number, customer_name, source, public_tracking_token")
       .eq("id", orderId)
-      .eq("public_tracking_token", String(trackingToken))
       .in("source", ["QR_MESA", "QR_CARTAO"])
       .maybeSingle();
     if (orderError) throw orderError;
     if (!order) return json({ error: "Pedido não encontrado." }, 404);
+
+    if (trackingToken) {
+      if (order.public_tracking_token !== String(trackingToken)) return json({ error: "Pedido não encontrado." }, 404);
+    } else {
+      const { data: card, error: cardError } = await supabase
+        .from("bar_public_cards")
+        .select("id")
+        .eq("token", String(cardToken))
+        .eq("active", true)
+        .maybeSingle();
+      if (cardError) throw cardError;
+      if (!card || card.id !== order.public_access_id) return json({ error: "Cartão inválido." }, 404);
+    }
 
     failureStage = "item_lookup";
     const recentLimit = new Date(Date.now() - 2 * 60 * 1000).toISOString();
