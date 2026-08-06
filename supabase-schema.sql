@@ -2705,6 +2705,7 @@ grant select (
   category,
   sale_price,
   image_url,
+  notes,
   active,
   menu_visible,
   menu_tv_visible,
@@ -2956,7 +2957,7 @@ with check (public.is_bar_staff());
 create policy "public read visible menu products"
 on public.bar_products for select
 to anon
-using (active = true and menu_visible = true);
+using (active = true and (menu_visible = true or menu_tv_visible = true));
 
 create policy "bar staff manage tables"
 on public.bar_tables for all

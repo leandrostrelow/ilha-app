@@ -1140,11 +1140,12 @@
       'use strict';
 
       const SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrcXRncHRlYmtnZndndXlreGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzEyNjAsImV4cCI6MjA5NzcwNzI2MH0.S-dopp-fbBgq8_YclyiAheOdK-QhXt92RYLu8JKmKCg';
+      const SUPABASE_ANON_KEY = 'sb_publishable_zcX8te5g99p0bA12xy_E-A_MTyNpJNx';
       const MOBILE_MENU_VIEW = new URLSearchParams(window.location.search).get('view') === 'mobile';
       const MENU_VISIBILITY_FIELD = MOBILE_MENU_VIEW ? 'menu_visible' : 'menu_tv_visible';
       const MENU_QUERY = 'bar_products?select=id,name,category,sale_price,image_url,notes,menu_featured,menu_sort_order,updated_at&active=eq.true&' + MENU_VISIBILITY_FIELD + '=eq.true&order=category.asc,menu_sort_order.asc,name.asc';
       const MENU_REFRESH_INTERVAL = 10000;
+      const MENU_CACHE_KEY = 'ilha-menu-products-v1';
       const CATEGORY_PRIORITY = ['porcoes', 'cervejas', 'refeic', 'almoc', 'bebidas', 'refrigerantes', 'lanches', 'aguas'];
       const LAYOUT_KEY = 'ilha-menu-layout-v1';
       const THEME_KEY = 'ilha-menu-theme-v1';
@@ -1401,8 +1402,7 @@
         try {
           const response = await fetch(SUPABASE_URL + '/rest/v1/' + MENU_QUERY, {
             headers: {
-              apikey: SUPABASE_ANON_KEY,
-              Authorization: 'Bearer ' + SUPABASE_ANON_KEY
+              apikey: SUPABASE_ANON_KEY
             },
             cache: 'no-store'
           });
@@ -1412,11 +1412,19 @@
           if (payload !== lastPayload) {
             lastPayload = payload;
             render(products);
+            try { localStorage.setItem(MENU_CACHE_KEY, payload); } catch (cacheError) {}
           }
           document.getElementById('menuUpdatedAt').textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         } catch (error) {
           if (!lastPayload) {
-            document.getElementById('menuBoard').innerHTML = '<div class="menu-state"><div><strong>Conexão temporariamente indisponível</strong><span>O cardápio tentará carregar novamente sozinho.</span></div></div>';
+            let cachedProducts = [];
+            try { cachedProducts = JSON.parse(localStorage.getItem(MENU_CACHE_KEY) || '[]'); } catch (cacheError) {}
+            if (Array.isArray(cachedProducts) && cachedProducts.length) {
+              lastPayload = JSON.stringify(cachedProducts);
+              render(cachedProducts);
+            } else {
+              document.getElementById('menuBoard').innerHTML = '<div class="menu-state"><div><strong>Conexão temporariamente indisponível</strong><span>O cardápio tentará carregar novamente sozinho.</span></div></div>';
+            }
           }
           document.getElementById('menuUpdatedAt').textContent = 'Tentando reconectar...';
         } finally {
