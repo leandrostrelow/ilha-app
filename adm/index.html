@@ -9103,6 +9103,10 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
+    .bar-qr-card-actions.has-sticker {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
     .bar-qr-card-actions .small-btn {
       width: 100%;
       min-width: 0;
@@ -9131,6 +9135,12 @@
       border-color: #dce3e9;
       background: #ffffff;
       color: #3b485a;
+    }
+
+    .bar-qr-card-actions .bar-qr-action-sticker {
+      border-color: #c7ea68;
+      background: #effbd1;
+      color: #2e5300;
     }
 
     .bar-qr-card-actions svg,
@@ -10572,7 +10582,8 @@
         grid-template-columns: 1fr;
       }
 
-      .bar-qr-card-actions.has-edit {
+      .bar-qr-card-actions.has-edit,
+      .bar-qr-card-actions.has-sticker {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
@@ -10624,7 +10635,8 @@
       }
 
       .bar-qr-card-actions,
-      .bar-qr-card-actions.has-edit {
+      .bar-qr-card-actions.has-edit,
+      .bar-qr-card-actions.has-sticker {
         grid-template-columns: 1fr;
       }
 
@@ -16163,6 +16175,7 @@
               <div class="bar-section-header">
                 <div><h2>QR Codes</h2><div class="muted">Acessos do cardápio online para mesas e clientes.</div></div>
                 <div class="bar-section-actions">
+                  <button class="ghost-btn bar-icon-button" type="button" id="barPrintAllTableStickersBtn"><svg><use href="#admin-icon-table"></use></svg><span>Imprimir adesivos</span></button>
                   <button class="primary-btn bar-icon-button" type="button" id="barQrAddTableBtn"><svg><use href="#admin-icon-table"></use></svg><span>Criar mesa</span></button>
                   <button class="primary-btn bar-icon-button" type="button" id="barAddAccessCardBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Novo cartão</span></button>
                 </div>
@@ -16557,12 +16570,13 @@
         <div class="admin-modal-body bar-qr-modal-body">
           <div class="bar-qr-modal-layout">
             <div class="bar-qr-preview-shell"><img class="bar-qr-preview" id="barQrPreview" alt="QR Code da mesa" /><span>Aponte a câmera para conferir</span></div>
-            <div class="bar-qr-modal-details"><span class="bar-modal-kicker">Link do cardápio</span><strong>QR pronto para impressão</strong><p>Você pode copiar o link, abrir o QR em outra aba ou testar a experiência do cliente.</p><div class="bar-qr-url" id="barQrUrl"></div></div>
+            <div class="bar-qr-modal-details"><span class="bar-modal-kicker">Link do cardápio</span><strong>Adesivo 8 × 16 cm pronto</strong><p>Imprima a arte completa com o número da mesa, Wi-Fi e QR para fazer pedidos.</p><div class="bar-qr-url" id="barQrUrl"></div></div>
           </div>
         </div>
         <div class="modal-actions">
           <button class="ghost-btn bar-modal-secondary" type="button" id="barQrCopyBtn"><svg><use href="#bar-icon-link"></use></svg>Copiar link</button>
           <a class="ghost-btn bar-modal-secondary" id="barQrOpenBtn" href="#" target="_blank" rel="noopener"><svg><use href="#admin-icon-qr"></use></svg>Abrir QR Code</a>
+          <button class="primary-btn bar-modal-primary" type="button" id="barQrStickerBtn"><svg><use href="#admin-icon-table"></use></svg>Imprimir adesivo</button>
           <a class="primary-btn bar-modal-primary" id="barQrTestBtn" href="#" target="_blank" rel="noopener"><svg><use href="#bar-icon-check"></use></svg>Testar cardápio</a>
         </div>
       </div>
@@ -17379,6 +17393,7 @@
   </button>
   <div class="toast" id="toast"></div>
 
+  <script src="../assets/vendor/qrcode-generator.js"></script>
   <script>
     window.addEventListener('error', function (event) {
       var status = document.getElementById('syncStatus');
@@ -20790,6 +20805,8 @@
       barCheckoutSplitDraggedGroup: -1,
       selectedBarQrUrl: '',
       selectedBarQrLabel: '',
+      selectedBarQrKind: '',
+      selectedBarQrId: '',
       barAlertsEnabled: localStorage.getItem('ilha-bar-alerts-enabled') === 'true',
       barPushSubscriptionReady: false,
       barKnownIncomingIds: null,
@@ -23819,15 +23836,73 @@
     }
 
     function barQrImageFromUrl(url, size) {
-      return 'https://api.qrserver.com/v1/create-qr-code/?size=' + (size || 320) + 'x' + (size || 320) + '&margin=16&data=' + encodeURIComponent(url);
+      const qr = qrcode(0, 'M');
+      qr.addData(url);
+      qr.make();
+      const marginModules = 4;
+      const cellSize = Math.max(2, Math.floor(Number(size || 320) / (qr.getModuleCount() + marginModules * 2)));
+      const svg = qr.createSvgTag({
+        cellSize: cellSize,
+        margin: cellSize * marginModules,
+        scalable: true,
+        title: 'QR Code do cardápio Ilha Bar'
+      });
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
     }
 
     function barQrImageUrl(table, size) {
       return barQrImageFromUrl(barQrUrl(table), size);
     }
 
+    const BAR_STICKER_WIFI_NAME = 'Ilha_5g';
+    const BAR_STICKER_WIFI_PASSWORD = 'Ilha2026-1';
+
+    function barTableStickerMarkup(table, index, total) {
+      const number = String(Math.max(0, Number(table.number || 0))).padStart(2, '0');
+      const qrUrl = barQrImageUrl(table, 1000);
+      const logoUrl = window.location.origin + '/assets/branding/ilha-bar-logo-light.png';
+      return '<section class="table-sticker" aria-label="Adesivo da Mesa ' + escapeHtml(number) + '">' +
+        '<div class="sticker-left">' +
+          '<img class="sticker-logo" src="' + escapeHtml(logoUrl) + '" alt="Ilha Bar" />' +
+          '<div class="sticker-callout"><strong>ACESSE O CARDÁPIO</strong><span>FAÇA SEU PEDIDO PELO QR CODE</span></div>' +
+          '<div class="sticker-qr-shell"><img class="sticker-qr" src="' + escapeHtml(qrUrl) + '" alt="QR Code da Mesa ' + escapeHtml(number) + '" /></div>' +
+        '</div>' +
+        '<div class="sticker-right">' +
+          '<span class="sticker-table-label">MESA</span>' +
+          '<strong class="sticker-number">' + escapeHtml(number) + '</strong>' +
+          '<div class="sticker-wifi"><span>Wi-Fi: <b>' + escapeHtml(BAR_STICKER_WIFI_NAME) + '</b></span><span>Senha: <b>' + escapeHtml(BAR_STICKER_WIFI_PASSWORD) + '</b></span></div>' +
+        '</div>' +
+        (total > 1 ? '<span class="sticker-page-count">' + escapeHtml(index + 1) + ' / ' + escapeHtml(total) + '</span>' : '') +
+      '</section>';
+    }
+
+    function openBarTableStickers(tables) {
+      const printableTables = (tables || []).filter(function (table) { return table && table.active; });
+      if (!printableTables.length) {
+        toast('Nenhuma mesa ativa para imprimir.');
+        return;
+      }
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        toast('Libere a abertura de pop-ups para imprimir o adesivo.');
+        return;
+      }
+      const stickers = printableTables.map(function (table, index) {
+        return barTableStickerMarkup(table, index, printableTables.length);
+      }).join('');
+      printWindow.document.open();
+      printWindow.document.write('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Adesivos das mesas | Ilha Bar</title><style>' +
+        '@page{size:16cm 8cm;margin:0}*{box-sizing:border-box}html,body{margin:0;background:#d9dde1;font-family:Arial,Helvetica,sans-serif;color:#fff}.print-toolbar{position:sticky;z-index:5;top:0;display:flex;align-items:center;justify-content:center;gap:16px;padding:12px;background:#fff;color:#172238;box-shadow:0 3px 14px rgba(0,0,0,.14)}.print-toolbar button{border:0;border-radius:10px;padding:11px 18px;background:#0b8993;color:#fff;font:800 14px Arial;cursor:pointer}.print-toolbar span{font-size:13px;font-weight:700}.print-sheet{display:grid;justify-content:center;gap:20px;padding:20px}.table-sticker{position:relative;display:grid;grid-template-columns:7.1cm 1fr;width:16cm;height:8cm;overflow:hidden;background:#000;break-after:page;page-break-after:always;-webkit-print-color-adjust:exact;print-color-adjust:exact}.table-sticker:last-child{break-after:auto;page-break-after:auto}.sticker-left{display:grid;grid-template-rows:1.38cm .72cm 1fr;justify-items:center;align-items:center;padding:.34cm .22cm .32cm .38cm}.sticker-logo{display:block;width:5.15cm;height:1.2cm;object-fit:contain}.sticker-callout{text-align:center;line-height:1.04;letter-spacing:.025cm}.sticker-callout strong,.sticker-callout span{display:block}.sticker-callout strong{font-size:.32cm;color:#9bf000}.sticker-callout span{margin-top:.08cm;font-size:.25cm;font-weight:900;color:#fff}.sticker-qr-shell{display:grid;place-items:center;width:4.95cm;height:4.95cm;padding:.12cm;background:#fff}.sticker-qr{display:block;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}.sticker-right{min-width:0;display:grid;grid-template-rows:.78cm 1fr 1.05cm;align-items:center;padding:.38cm .35cm .28cm .12cm;text-align:center}.sticker-table-label{align-self:end;color:#fff;font-size:.36cm;font-weight:950;letter-spacing:.16cm}.sticker-number{align-self:center;color:#9bf000;font-size:5.15cm;line-height:.76;letter-spacing:-.3cm}.sticker-wifi{align-self:end;display:flex;flex-wrap:wrap;justify-content:center;gap:.08cm .24cm;color:#fff;font-size:.28cm;font-weight:900;line-height:1.15}.sticker-wifi b{color:#9bf000}.sticker-page-count{display:none}.table-sticker::after{content:"";position:absolute;right:-1.05cm;top:-1.55cm;width:2.7cm;height:2.7cm;border:.22cm solid rgba(155,240,0,.25);border-radius:50%}@media print{html,body{width:16cm;background:#000}.print-toolbar{display:none}.print-sheet{display:block;padding:0}.table-sticker{margin:0}.sticker-page-count{display:none}}' +
+        '</style></head><body><div class="print-toolbar"><span>Formato exato: 8 × 16 cm horizontal · escala 100% · sem margens</span><button type="button" onclick="window.print()">Imprimir / salvar PDF</button></div><main class="print-sheet">' + stickers + '</main></body></html>');
+      printWindow.document.close();
+    }
+
+    function openBarTableSticker(table) {
+      openBarTableStickers(table ? [table] : []);
+    }
+
     function barQrCard(table) {
-      return '<article class="bar-qr-card"><div class="bar-qr-card-visual"><img src="' + escapeHtml(barQrImageUrl(table, 240)) + '" alt="QR Code da ' + escapeHtml(table.name) + '" loading="lazy" /></div><div class="bar-qr-card-content"><div class="bar-qr-card-head"><div><span class="bar-qr-card-kicker">QR da mesa</span><h3>' + escapeHtml(table.name) + '</h3><p>Mesa ' + escapeHtml(table.number) + ' · ' + escapeHtml(table.seats) + ' lugares</p></div><span class="ops-pill good">Ativo</span></div></div><div class="bar-qr-card-actions"><button class="small-btn bar-qr-action-primary" type="button" data-bar-qr-kind="table" data-bar-qr="' + escapeHtml(table.id) + '"><svg><use href="#admin-icon-qr"></use></svg>Ampliar</button><button class="small-btn bar-qr-action-copy" type="button" data-bar-copy-qr-kind="table" data-bar-copy-qr="' + escapeHtml(table.id) + '"><svg><use href="#bar-icon-link"></use></svg>Copiar link</button></div></article>';
+      return '<article class="bar-qr-card"><div class="bar-qr-card-visual"><img src="' + escapeHtml(barQrImageUrl(table, 240)) + '" alt="QR Code da ' + escapeHtml(table.name) + '" loading="lazy" /></div><div class="bar-qr-card-content"><div class="bar-qr-card-head"><div><span class="bar-qr-card-kicker">QR da mesa</span><h3>' + escapeHtml(table.name) + '</h3><p>Mesa ' + escapeHtml(table.number) + ' · ' + escapeHtml(table.seats) + ' lugares</p></div><span class="ops-pill good">Ativo</span></div></div><div class="bar-qr-card-actions has-sticker"><button class="small-btn bar-qr-action-primary" type="button" data-bar-qr-kind="table" data-bar-qr="' + escapeHtml(table.id) + '"><svg><use href="#admin-icon-qr"></use></svg>Ampliar</button><button class="small-btn bar-qr-action-copy" type="button" data-bar-copy-qr-kind="table" data-bar-copy-qr="' + escapeHtml(table.id) + '"><svg><use href="#bar-icon-link"></use></svg>Copiar link</button><button class="small-btn bar-qr-action-sticker" type="button" data-bar-sticker="' + escapeHtml(table.id) + '"><svg><use href="#admin-icon-table"></use></svg>Adesivo</button></div></article>';
     }
 
     function barAccessCardQrCard(card) {
@@ -25179,12 +25254,15 @@
       const label = kind === 'card' ? entry.label : entry.name;
       opsState.selectedBarQrUrl = url;
       opsState.selectedBarQrLabel = label;
+      opsState.selectedBarQrKind = kind;
+      opsState.selectedBarQrId = String(id);
       $('barQrModalTitle').textContent = 'QR Code | ' + label;
       $('barQrPreview').src = qrUrl;
       $('barQrPreview').alt = 'QR Code | ' + label;
       $('barQrUrl').textContent = url;
       $('barQrOpenBtn').href = qrUrl;
       $('barQrTestBtn').href = url;
+      $('barQrStickerBtn').hidden = kind !== 'table';
       $('barQrModal').classList.add('show');
       $('barQrModal').setAttribute('aria-hidden', 'false');
     }
@@ -25193,6 +25271,8 @@
       $('barQrModal').classList.remove('show');
       $('barQrModal').setAttribute('aria-hidden', 'true');
       opsState.selectedBarQrLabel = '';
+      opsState.selectedBarQrKind = '';
+      opsState.selectedBarQrId = '';
     }
 
     function restoreBarViewAfterLoad() {
@@ -25912,6 +25992,7 @@
         closeBarTableModal();
         renderBarModule();
         toast(currentId ? 'Mesa atualizada.' : 'Mesa criada.');
+        if (!currentId && finalTable.active) openBarQrModal('table', finalTable.id);
       } catch (error) {
         reportActionError(error);
       }
@@ -28961,6 +29042,9 @@
       $('barNewTableOrderBtn').addEventListener('click', function () { openBarNewOrderModal('table'); });
       $('barCreateTableBtn').addEventListener('click', function () { openBarTableModal(); });
       $('barQrAddTableBtn').addEventListener('click', function () { openBarTableModal(); });
+      $('barPrintAllTableStickersBtn').addEventListener('click', function () {
+        openBarTableStickers((opsData.barTables || []).filter(function (table) { return table.active; }));
+      });
       $('barCommandScreenBtn').addEventListener('click', function () {
         toggleBarValuesVisibility();
       });
@@ -29169,6 +29253,11 @@
         if (financeFilter) {
           opsState.barFinanceFilter = financeFilter.dataset.barFinanceFilter;
           renderBarFinance();
+          return;
+        }
+        const stickerBtn = event.target.closest('[data-bar-sticker]');
+        if (stickerBtn) {
+          openBarTableSticker(barTableById(stickerBtn.dataset.barSticker));
           return;
         }
         const qrCopyBtn = event.target.closest('[data-bar-copy-qr]');
@@ -29547,6 +29636,10 @@
         } else if (value) {
           toast(value);
         }
+      });
+      $('barQrStickerBtn').addEventListener('click', function () {
+        if (opsState.selectedBarQrKind !== 'table') return;
+        openBarTableSticker(barTableById(opsState.selectedBarQrId));
       });
       $('storeReloadBtn').addEventListener('click', function () {
         loadOpsData(true).then(renderStoreModule).catch(reportActionError);
