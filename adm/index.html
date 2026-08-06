@@ -16259,7 +16259,7 @@
                 <div class="bar-qr-grid" id="barQrGrid"></div>
               </section>
               <section class="ops-panel bar-qr-section">
-                <div class="ops-panel-head"><div><h2>Cartões individuais</h2><div class="muted">Para entregar ao cliente e usar com mesa ou no balcão.</div></div></div>
+                <div class="ops-panel-head"><div><h2>Cartões individuais</h2></div></div>
                 <div class="bar-qr-grid" id="barAccessCardGrid"></div>
               </section>
             </div>
@@ -23977,7 +23977,7 @@
 
     function barAccessCardQrCard(card) {
       const url = barAccessCardUrl(card);
-      return '<article class="bar-qr-card' + (card.active ? '' : ' is-inactive') + '"><div class="bar-qr-card-visual"><img src="' + escapeHtml(barQrImageFromUrl(url, 240)) + '" alt="QR Code do ' + escapeHtml(card.label) + '" loading="lazy" /></div><div class="bar-qr-card-content"><div class="bar-qr-card-head"><div><span class="bar-qr-card-kicker">Cartão individual</span><h3>' + escapeHtml(card.label) + '</h3><p>' + escapeHtml(card.notes || 'Mesa ou retirada no balcão') + '</p></div>' + statusPill(card.active ? 'ATIVO' : 'INATIVO') + '</div></div><div class="bar-qr-card-actions has-edit"><button class="small-btn bar-qr-action-primary" type="button" data-bar-qr-kind="card" data-bar-qr="' + escapeHtml(card.id) + '"><svg><use href="#admin-icon-qr"></use></svg>Ampliar</button><button class="small-btn bar-qr-action-copy" type="button" data-bar-copy-qr-kind="card" data-bar-copy-qr="' + escapeHtml(card.id) + '"><svg><use href="#bar-icon-link"></use></svg>Copiar link</button><button class="small-btn bar-qr-action-edit" type="button" data-bar-card-edit="' + escapeHtml(card.id) + '"><svg><use href="#bar-icon-edit"></use></svg>Editar</button></div></article>';
+      return '<article class="bar-qr-card bar-qr-table-card bar-qr-access-card' + (card.active ? '' : ' is-inactive') + '"><div class="bar-qr-card-visual"><img src="' + escapeHtml(barQrImageFromUrl(url, 240)) + '" alt="QR Code do ' + escapeHtml(card.label) + '" loading="lazy" /></div><div class="bar-qr-card-content"><h3>' + escapeHtml(card.label) + '</h3></div><div class="bar-qr-card-actions has-edit"><button class="small-btn bar-qr-action-primary" type="button" data-bar-qr-kind="card" data-bar-qr="' + escapeHtml(card.id) + '" aria-label="Ampliar QR Code do ' + escapeHtml(card.label) + '"><svg><use href="#admin-icon-qr"></use></svg>Ver</button><button class="small-btn bar-qr-action-copy" type="button" data-bar-copy-qr-kind="card" data-bar-copy-qr="' + escapeHtml(card.id) + '" aria-label="Copiar link do ' + escapeHtml(card.label) + '"><svg><use href="#bar-icon-link"></use></svg>Copiar</button><button class="small-btn bar-qr-action-edit" type="button" data-bar-card-edit="' + escapeHtml(card.id) + '" aria-label="Editar ' + escapeHtml(card.label) + '"><svg><use href="#bar-icon-edit"></use></svg>Editar</button></div></article>';
     }
 
     function barCommandMatchesSearch(order, table) {
