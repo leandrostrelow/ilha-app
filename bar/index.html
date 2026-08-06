@@ -1095,8 +1095,14 @@
     $('changeIdentityBtn').addEventListener('click', () => { renderAccess(); showView('accessView'); });
     $('requestServiceBtn').addEventListener('click', requestService);
     $('backToMenuBtn').addEventListener('click', enterMenu);
-    $('headerOrderBtn').addEventListener('click', async () => { await loadOrderStatus(true); showView('orderView'); });
-    $('activeOrderBtn').addEventListener('click', async () => { await loadOrderStatus(true); showView('orderView'); });
+    $('headerOrderBtn').addEventListener('click', async () => {
+      const order = await loadOrderStatus(true);
+      if (order) showView('orderView');
+    });
+    $('activeOrderBtn').addEventListener('click', async () => {
+      const order = await loadOrderStatus(true);
+      if (order) showView('orderView');
+    });
 
     document.addEventListener('visibilitychange', () => { if (!document.hidden) syncOpenBarPage(); });
     window.addEventListener('focus', syncOpenBarPage);
