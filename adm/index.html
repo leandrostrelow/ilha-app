@@ -11166,6 +11166,144 @@
       text-align: center;
     }
 
+    .bar-finance-sales-panel {
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .bar-finance-sales-overview {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .bar-finance-sales-card {
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid #dce7e9;
+      border-radius: 13px;
+      background: #f7fbfb;
+    }
+
+    .bar-finance-sales-card.is-food {
+      border-color: #eadfbd;
+      background: #fffbf0;
+    }
+
+    .bar-finance-sales-card.is-drink {
+      border-color: #cce5e6;
+      background: #f1fafa;
+    }
+
+    .bar-finance-sales-card span,
+    .bar-finance-sales-card strong,
+    .bar-finance-sales-card small {
+      display: block;
+    }
+
+    .bar-finance-sales-card span {
+      color: #667085;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .bar-finance-sales-card strong {
+      margin-top: 6px;
+      color: #17262f;
+      font-size: 21px;
+      letter-spacing: -.035em;
+    }
+
+    .bar-finance-sales-card small {
+      margin-top: 4px;
+      color: #72808b;
+      font-size: 10px;
+      font-weight: 750;
+    }
+
+    .bar-finance-product-sales {
+      display: grid;
+      gap: 7px;
+    }
+
+    .bar-finance-product-sale {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 12px;
+      align-items: center;
+      padding: 11px 13px;
+      border: 1px solid #e2e9ec;
+      border-radius: 11px;
+      background: #fbfcfd;
+    }
+
+    .bar-finance-product-sale-copy {
+      min-width: 0;
+    }
+
+    .bar-finance-product-sale-copy strong,
+    .bar-finance-product-sale-copy small {
+      display: block;
+    }
+
+    .bar-finance-product-sale-copy strong {
+      overflow: hidden;
+      color: #1a2d35;
+      font-size: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-finance-product-sale-copy small {
+      margin-top: 3px;
+      color: #788692;
+      font-size: 10px;
+      font-weight: 750;
+    }
+
+    .bar-finance-product-sale-quantity {
+      min-width: 62px;
+      color: #52626e;
+      font-size: 11px;
+      font-weight: 900;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .bar-finance-product-sale-value {
+      min-width: 92px;
+      color: #087f88;
+      font-size: 14px;
+      font-weight: 950;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 700px) {
+      .bar-finance-sales-overview {
+        grid-template-columns: 1fr;
+      }
+
+      .bar-finance-product-sale {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 6px 10px;
+      }
+
+      .bar-finance-product-sale-quantity {
+        grid-column: 1;
+        text-align: left;
+      }
+
+      .bar-finance-product-sale-value {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+      }
+    }
+
     .bar-finance-movement-head {
       min-height: 76px;
       display: flex;
@@ -16274,6 +16412,12 @@
                   <div class="bar-finance-chart" id="barFinanceChart"></div>
                 </section>
               </div>
+
+              <section class="ops-panel bar-finance-sales-panel">
+                <div class="ops-panel-head"><div><h2>Produtos vendidos</h2><div class="muted" id="barFinanceSalesSubtitle">Resumo de comidas e bebidas do período.</div></div></div>
+                <div class="bar-finance-sales-overview" id="barFinanceSalesOverview"></div>
+                <div class="bar-finance-product-sales" id="barFinanceProductSales"></div>
+              </section>
 
               <div class="bar-finance-bottom-grid">
                 <section class="ops-panel bar-finance-movement-panel">
@@ -23634,6 +23778,68 @@
       return '"' + text.replace(/"/g, '""') + '"';
     }
 
+    function barFinanceProductGroup(item) {
+      const product = barProductById(item && item.productId);
+      const category = String(item && (item.productCategory || product && product.category) || 'Outros');
+      const normalized = normalizeMatchText(category);
+      const drinkCategories = ['agua', 'aguas', 'bebida', 'bebidas', 'cerveja', 'cervejas', 'refrigerante', 'refrigerantes'];
+      return {
+        key: drinkCategories.includes(normalized) ? 'drink' : 'food',
+        label: drinkCategories.includes(normalized) ? 'Bebida' : 'Comida',
+        category: category
+      };
+    }
+
+    function barFinanceSalesData(entries) {
+      const paidOrderIds = new Set((entries || []).filter(function (entry) {
+        return String(entry.type || '').toUpperCase() === 'RECEITA' && barFinanceIsConfirmed(entry) && entry.orderId;
+      }).map(function (entry) { return String(entry.orderId); }));
+      const physicalItemsCounted = new Set();
+      const productsByKey = new Map();
+      const summary = {
+        total: { quantity: 0, amount: 0 },
+        food: { quantity: 0, amount: 0 },
+        drink: { quantity: 0, amount: 0 }
+      };
+
+      (opsData.barOrderItems || []).filter(function (item) {
+        return paidOrderIds.has(String(item.orderId)) && String(item.status || '').toUpperCase() !== 'CANCELADO';
+      }).forEach(function (item) {
+        const quantity = Number(item.quantity || 0);
+        const amount = quantity * Number(item.unitPrice || 0);
+        const group = barFinanceProductGroup(item);
+        const physicalKey = String(item.splitSourceItemId || item.id || [item.orderId, item.productId, item.created].join('|'));
+        const physicalQuantity = physicalItemsCounted.has(physicalKey) ? 0 : quantity;
+        physicalItemsCounted.add(physicalKey);
+        summary[group.key].quantity += physicalQuantity;
+        summary[group.key].amount += amount;
+        summary.total.quantity += physicalQuantity;
+        summary.total.amount += amount;
+
+        const productKey = String(item.productId || item.productName || 'produto');
+        let product = productsByKey.get(productKey);
+        if (!product) {
+          product = {
+            name: item.productName || 'Produto',
+            group: group.label,
+            category: group.category,
+            quantity: 0,
+            amount: 0
+          };
+          productsByKey.set(productKey, product);
+        }
+        product.quantity += physicalQuantity;
+        product.amount += amount;
+      });
+
+      return {
+        summary: summary,
+        products: Array.from(productsByKey.values()).sort(function (a, b) {
+          return b.quantity - a.quantity || b.amount - a.amount || a.name.localeCompare(b.name, 'pt-BR');
+        })
+      };
+    }
+
     function exportBarFinanceReport() {
       const entries = barFinancePeriodEntries().slice().sort(function (a, b) {
         return String(barFinanceEntryDateKey(a)).localeCompare(String(barFinanceEntryDateKey(b)));
@@ -23642,6 +23848,7 @@
         toast('Não há lançamentos para exportar neste período.');
         return;
       }
+      const salesData = barFinanceSalesData(entries);
       const rows = [['Data', 'Tipo', 'Descrição', 'Cliente / fornecedor', 'Categoria', 'Forma de pagamento', 'Status', 'Valor']].concat(entries.map(function (item) {
         return [
           barFinanceEntryDateKey(item).split('-').reverse().join('/'),
@@ -23652,6 +23859,18 @@
           barFinancePaymentLabel(item.paymentMethod),
           item.status || '',
           Number(item.amount || 0).toFixed(2).replace('.', ',')
+        ];
+      })).concat([
+        [],
+        ['Produtos vendidos'],
+        ['Produto', 'Grupo', 'Categoria', 'Quantidade', 'Valor']
+      ], salesData.products.map(function (product) {
+        return [
+          product.name,
+          product.group,
+          product.category,
+          product.quantity.toLocaleString('pt-BR'),
+          product.amount.toFixed(2).replace('.', ',')
         ];
       }));
       const csv = '\uFEFF' + rows.map(function (row) { return row.map(barFinanceCsvCell).join(';'); }).join('\r\n');
@@ -23762,6 +23981,20 @@
           return '<div class="bar-finance-chart-column' + (bucket.value ? '' : ' is-zero') + '" title="' + escapeHtml(bucket.label + ': ' + money(bucket.value)) + '"><div class="bar-finance-chart-track"><span class="bar-finance-chart-bar" style="height:' + height.toFixed(2) + '%"></span></div><span class="bar-finance-chart-label">' + escapeHtml(bucket.label) + '</span></div>';
         }).join('') + '</div>';
       }
+
+      const salesData = barFinanceSalesData(entries);
+      const salesSummary = salesData.summary;
+      $('barFinanceSalesSubtitle').textContent = barFinancePeriodLabel() + ' · ' + salesSummary.total.quantity.toLocaleString('pt-BR') + (salesSummary.total.quantity === 1 ? ' item vendido' : ' itens vendidos');
+      $('barFinanceSalesOverview').innerHTML = [
+        { label: 'Total em produtos', data: salesSummary.total, className: '' },
+        { label: 'Comidas', data: salesSummary.food, className: ' is-food' },
+        { label: 'Bebidas', data: salesSummary.drink, className: ' is-drink' }
+      ].map(function (card) {
+        return '<article class="bar-finance-sales-card' + card.className + '"><span>' + card.label + '</span><strong>' + money(card.data.amount) + '</strong><small>' + card.data.quantity.toLocaleString('pt-BR') + (card.data.quantity === 1 ? ' item' : ' itens') + '</small></article>';
+      }).join('');
+      $('barFinanceProductSales').innerHTML = salesData.products.map(function (product) {
+        return '<article class="bar-finance-product-sale"><div class="bar-finance-product-sale-copy"><strong>' + escapeHtml(product.name) + '</strong><small>' + escapeHtml(product.group + ' · ' + product.category) + '</small></div><span class="bar-finance-product-sale-quantity">' + escapeHtml(product.quantity.toLocaleString('pt-BR') + (product.quantity === 1 ? ' item' : ' itens')) + '</span><strong class="bar-finance-product-sale-value">' + money(product.amount) + '</strong></article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhum produto vendido neste período.</div>';
 
       const filters = [
         ['todos', 'Todas'],
