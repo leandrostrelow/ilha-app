@@ -9365,6 +9365,7 @@
     .bar-command-unified-card.is-inactive { opacity: .62; }
     .bar-command-unified-card.has-pending-delivery { border-left-color: #e14854; }
     .bar-command-unified-card.is-delivery-complete { border-left-color: #38a35b; }
+    .bar-command-unified-card.is-awaiting-staff { border-left-color: #e14854; }
 
     .bar-command-unified-main {
       min-width: 0;
@@ -9415,6 +9416,31 @@
     }
 
     .bar-command-delivery-alert svg {
+      width: 11px;
+      height: 11px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
+    .bar-command-new-table-alert {
+      width: max-content;
+      max-width: 100%;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 7px;
+      border: 1px solid #ffb7bc;
+      border-radius: 999px;
+      color: #a31923;
+      background: #ffe3e5;
+      font-size: 9px;
+      font-weight: 950;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .bar-command-new-table-alert svg {
       width: 11px;
       height: 11px;
       fill: none;
@@ -12173,6 +12199,7 @@
       body.bar-admin-surface .bar-command-unified-main .bar-command-table-number { font-size: 15px; }
       body.bar-admin-surface .bar-command-unified-side b { font-size: 10px; }
       body.bar-admin-surface .bar-command-delivery-alert { padding: 3px 5px; font-size: 8px; }
+      body.bar-admin-surface .bar-command-new-table-alert { padding: 3px 5px; font-size: 8px; }
 
       body.bar-admin-surface .bar-command-board-legend {
         gap: 3px;
@@ -21765,6 +21792,7 @@
         paymentStatus: row.payment_status || 'ABERTO',
         paymentMethod: row.payment_method || '',
         notes: row.notes || '',
+        openedBy: row.opened_by || '',
         openedAt: row.opened_at || row.created_at || '',
         closedAt: row.closed_at || ''
       };
@@ -22581,6 +22609,23 @@
       return barOrderIsOpen(order) && !barOrderIsPaid(order);
     }
 
+    function barOrderAwaitingStaffView(order) {
+      return barOrderIsOpen(order) &&
+        String(order && order.source || '').toUpperCase() === 'QR_MESA' &&
+        !String(order && order.openedBy || '').trim();
+    }
+
+    function barOrderOpenedTimeLabel(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      return date.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'America/Sao_Paulo'
+      });
+    }
+
     function barPendingPortionItemsForOrder(orderId) {
       return barItemsForOrder(orderId).filter(function (item) {
         return barKitchenIsPortionItem(item) &&
@@ -22794,11 +22839,12 @@
 
     function updateBarOrderBadges() {
       const approvalCount = newIncomingBarOrderCount();
+      const unseenTableOrders = (opsData.barOrders || []).filter(barOrderAwaitingStaffView).length;
       ['barOrdersNavBadge', 'barOrdersTabBadge'].forEach(function (id) {
         const badge = $(id);
         if (!badge) return;
-        badge.textContent = '0';
-        badge.hidden = true;
+        badge.textContent = unseenTableOrders;
+        badge.hidden = unseenTableOrders === 0;
       });
       const kitchenCount = barPortionQueueItems().length + approvalCount + activeBarServiceRequests().length;
       ['barKitchenNavBadge', 'barKitchenTabBadge'].forEach(function (id) {
@@ -23240,6 +23286,11 @@
       const customerName = details.name || order.customerName || card && card.label || 'Cliente';
       const icon = table ? '#admin-icon-table' : '#admin-icon-receipt';
       const location = table ? '<small class="bar-command-table-number">' + escapeHtml(table.number) + '</small>' : card ? '<small>' + escapeHtml(card.label) + '</small>' : '';
+      const awaitingStaff = Boolean(table) && barOrderAwaitingStaffView(order);
+      const openedTime = barOrderOpenedTimeLabel(order.openedAt);
+      const newTableAlert = awaitingStaff
+        ? '<span class="bar-command-new-table-alert"><svg aria-hidden="true"><use href="#admin-icon-bell"></use></svg>Nova mesa' + (openedTime ? ' · ' + escapeHtml(openedTime) : '') + '</span>'
+        : '';
       const deliveryItems = barItemsForOrder(order.id).filter(function (item) {
         return !item.billingOnly && !['CANCELADO'].includes(String(item.status || '').toUpperCase());
       });
@@ -23251,8 +23302,8 @@
       const deliveryAlert = deliveryQuantity
         ? '<span class="bar-command-delivery-alert"><svg aria-hidden="true"><use href="#admin-icon-bell"></use></svg>' + escapeHtml(deliveryQuantity) + 'x para entregar</span>'
         : '';
-      return '<article class="bar-command-unified-card has-money-value' + (table ? ' is-table' : ' is-loose') + (paidOpen ? ' is-paid-open' : '') + deliveryStateClass + '" data-bar-order-open="' + escapeHtml(order.id) + '">' +
-        '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="' + icon + '"></use></svg></span><span class="bar-command-unified-copy"><strong>' + escapeHtml(customerName) + '</strong>' + deliveryAlert + location + '</span></button>' +
+      return '<article class="bar-command-unified-card has-money-value' + (table ? ' is-table' : ' is-loose') + (paidOpen ? ' is-paid-open' : '') + deliveryStateClass + (awaitingStaff ? ' is-awaiting-staff' : '') + '" data-bar-order-open="' + escapeHtml(order.id) + '">' +
+        '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="' + icon + '"></use></svg></span><span class="bar-command-unified-copy"><strong>' + escapeHtml(customerName) + '</strong>' + newTableAlert + deliveryAlert + location + '</span></button>' +
         '<div class="bar-command-unified-side"><b class="bar-command-unified-value">' + money(barOrderTotal(order)) + '</b>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + '</div>' +
       '</article>';
     }
@@ -25781,6 +25832,28 @@
       setBarCommandTab(opsState.barCommandTab);
     }
 
+    async function acknowledgeBarQrTableOrder(order) {
+      if (!barOrderAwaitingStaffView(order)) return;
+      const viewerId = adminProfile && adminProfile.id || '';
+      order.openedBy = viewerId || 'demo';
+      renderBarTablesAndQr();
+      updateBarOrderBadges();
+      if (!barCanPersist(order.id) || !viewerId) return;
+      try {
+        await supabaseRest('bar_orders?id=eq.' + encodeURIComponent(order.id) + '&opened_by=is.null', {
+          method: 'PATCH',
+          body: { opened_by: viewerId, updated_at: new Date().toISOString() },
+          prefer: 'return=minimal'
+        });
+        broadcastAppChange('bar_orders');
+      } catch (error) {
+        order.openedBy = '';
+        renderBarTablesAndQr();
+        updateBarOrderBadges();
+        console.warn('Não foi possível confirmar a visualização da nova mesa.', error);
+      }
+    }
+
     function openBarCommandModal(orderId) {
       const order = barOrderById(orderId);
       if (!order) return;
@@ -25811,6 +25884,7 @@
       $('barCommandModal').classList.add('show');
       $('barCommandModal').setAttribute('aria-hidden', 'false');
       persistBarViewState();
+      acknowledgeBarQrTableOrder(order);
     }
 
     function closeBarCommandModal() {
