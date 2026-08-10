@@ -907,6 +907,7 @@
       }
       $('productGrid').innerHTML = products.map(product => {
         const kind = categoryKind((product.category || '') + ' ' + (product.name || ''));
+        const isPortion = normalizeCategory(product.category || '').includes('porc');
         const quantity = state.cart[product.id] && state.cart[product.id].quantity || 0;
         const media = product.image_url
           ? '<img src="' + escapeHtml(product.image_url) + '" alt="' + escapeHtml(product.name) + '" loading="lazy" />'
@@ -914,7 +915,8 @@
         const control = quantity > 0
           ? '<div class="qty-control"><button type="button" data-product-dec="' + escapeHtml(product.id) + '" aria-label="Remover uma unidade">−</button><strong>' + quantity + '</strong><button type="button" data-product-inc="' + escapeHtml(product.id) + '" aria-label="Adicionar uma unidade">+</button></div>'
           : '<button class="add-btn" type="button" data-product-inc="' + escapeHtml(product.id) + '" aria-label="Adicionar ' + escapeHtml(product.name) + '"><svg><use href="#icon-plus"></use></svg></button>';
-        return '<article class="product-card"><div class="product-media ' + kind.className + '">' + media + '</div><div class="product-copy"><h2>' + escapeHtml(product.name) + '</h2><p>' + escapeHtml(product.description || product.category || '') + '</p><div class="product-bottom"><span class="product-price">' + money(product.price) + '</span>' + control + '</div></div></article>';
+        const description = isPortion ? '' : String(product.description || product.category || '').trim();
+        return '<article class="product-card"><div class="product-media ' + kind.className + '">' + media + '</div><div class="product-copy"><h2>' + escapeHtml(product.name) + '</h2>' + (description ? '<p>' + escapeHtml(description) + '</p>' : '') + '<div class="product-bottom"><span class="product-price">' + money(product.price) + '</span>' + control + '</div></div></article>';
       }).join('') || '<div class="empty-menu">' + (search ? 'Nenhum produto encontrado para esta busca.' : 'Nenhum produto disponível nesta categoria.') + '</div>';
       $('clearProductSearch').hidden = !state.search;
       updateCartBar();

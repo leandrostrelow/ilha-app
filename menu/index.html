@@ -1353,7 +1353,7 @@
       function productHtml(product) {
         const source = imageSource(product.image_url);
         const initial = escapeHtml(String(product.name || 'P').trim().charAt(0).toUpperCase() || 'P');
-        const description = String(product.notes || '').trim();
+        const description = normalize(product.category || '').includes('porc') ? '' : String(product.notes || '').trim();
         const image = source
           ? '<img src="' + escapeHtml(source) + '" alt="' + escapeHtml(product.name) + '" decoding="async" loading="eager" />'
           : '<span>' + initial + '</span>';
