@@ -303,9 +303,13 @@ create table if not exists public.bar_runtime_settings (
   id boolean primary key default true check (id = true),
   qr_orders_enabled boolean not null default true,
   closed_message text not null default 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.',
+  category_images jsonb not null default '{}'::jsonb,
   updated_by uuid references public.profiles(id) on delete set null,
   updated_at timestamptz not null default now()
 );
+
+alter table public.bar_runtime_settings
+  add column if not exists category_images jsonb not null default '{}'::jsonb;
 
 insert into public.bar_runtime_settings (id, qr_orders_enabled)
 values (true, true)
@@ -1958,6 +1962,7 @@ declare
   linked_order_row public.bar_orders%rowtype;
   qr_orders_enabled_value boolean := true;
   closed_message_value text := 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.';
+  category_images_value jsonb := '{}'::jsonb;
   has_fixed_table boolean := false;
   has_card boolean := false;
 begin
@@ -2001,8 +2006,8 @@ begin
     raise exception 'Este QR Code nao esta ativo.';
   end if;
 
-  select settings.qr_orders_enabled, settings.closed_message
-    into qr_orders_enabled_value, closed_message_value
+  select settings.qr_orders_enabled, settings.closed_message, settings.category_images
+    into qr_orders_enabled_value, closed_message_value, category_images_value
     from public.bar_runtime_settings settings
    where settings.id = true;
 
@@ -2014,6 +2019,7 @@ begin
       'enabled', qr_orders_enabled_value,
       'message', closed_message_value
     ),
+    'category_images', coalesce(category_images_value, '{}'::jsonb),
     'access', jsonb_build_object(
       'kind', case when has_fixed_table then 'MESA' else 'CARTAO' end,
       'label', case when has_fixed_table then table_row.name else card_row.label end,

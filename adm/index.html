@@ -4557,6 +4557,103 @@
       font-weight: 800;
     }
 
+    .bar-category-images-panel {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #ffffff;
+    }
+
+    .bar-category-images-head {
+      margin-bottom: 12px;
+    }
+
+    .bar-category-images-head h3 {
+      margin: 0 0 3px;
+      font-size: 16px;
+    }
+
+    .bar-category-images-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+      gap: 9px;
+    }
+
+    .bar-category-image-card {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #f8fbfc;
+    }
+
+    .bar-category-image-preview {
+      width: 52px;
+      height: 52px;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      border: 2px solid #dce8eb;
+      border-radius: 50%;
+      background: #ffffff;
+      color: var(--teal);
+    }
+
+    .bar-category-image-preview img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .bar-category-image-preview svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
+    .bar-category-image-copy {
+      min-width: 0;
+    }
+
+    .bar-category-image-copy strong,
+    .bar-category-image-copy small {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-category-image-copy small {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .bar-category-image-actions {
+      display: flex;
+      gap: 5px;
+      margin-top: 7px;
+    }
+
+    .bar-category-image-actions button {
+      min-height: 28px;
+      padding: 4px 7px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--teal);
+      font-size: 10px;
+      font-weight: 900;
+    }
+
     .bar-category-filters {
       width: 100%;
       min-width: 0;
@@ -16424,6 +16521,12 @@
                 <div class="bar-product-metric"><span class="bar-product-metric-icon"><svg><use href="#bar-icon-inventory-value"></use></svg></span><div><strong id="barProductsValueMetric">R$ 0</strong><span>valor em estoque</span></div></div>
               </div>
 
+              <section class="bar-category-images-panel" aria-labelledby="barCategoryImagesTitle">
+                <div class="bar-category-images-head"><h3 id="barCategoryImagesTitle">Fotos dos ícones</h3><div class="muted">Imagens das categorias no cardápio do cliente.</div></div>
+                <div class="bar-category-images-grid" id="barCategoryImagesGrid"></div>
+                <input id="barCategoryImageFile" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+              </section>
+
               <div data-bar-product-panel="catalog" class="active-product-panel">
                 <section class="ops-panel">
                 <div class="bar-toolbar">
@@ -21220,6 +21323,7 @@
       pendingBarProductImage: null,
       pendingBarProductImagePreview: '',
       removeBarProductImage: false,
+      pendingBarCategoryImage: '',
       barFinanceFilter: 'todos',
       barFinancePeriod: 'daily',
       barFinanceReportDate: localDateString(new Date()),
@@ -21406,7 +21510,8 @@
       ],
       barSettings: {
         qrOrdersEnabled: true,
-        closedMessage: 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.'
+        closedMessage: 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.',
+        categoryImages: {}
       },
       barCustomers: [],
       barOrders: [
@@ -21806,7 +21911,8 @@
     function mapBarRuntimeSettingsRow(row) {
       return {
         qrOrdersEnabled: !row || row.qr_orders_enabled !== false,
-        closedMessage: row && row.closed_message || 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.'
+        closedMessage: row && row.closed_message || 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.',
+        categoryImages: row && row.category_images && typeof row.category_images === 'object' && !Array.isArray(row.category_images) ? row.category_images : {}
       };
     }
 
@@ -23697,6 +23803,28 @@
       });
     }
 
+    function barCategoryAutomaticImage(category) {
+      const product = opsData.barProducts.find(function (item) {
+        return item.category === category && String(item.imageUrl || '').trim();
+      });
+      return product ? barProductImageSource(product.imageUrl) : '';
+    }
+
+    function renderBarCategoryImages(categories) {
+      const customImages = opsData.barSettings && opsData.barSettings.categoryImages || {};
+      $('barCategoryImagesGrid').innerHTML = categories.map(function (category) {
+        const customImage = String(customImages[category] || '').trim();
+        const imageUrl = customImage || barCategoryAutomaticImage(category);
+        const media = imageUrl
+          ? '<img src="' + escapeHtml(imageUrl) + '" alt="" loading="eager" decoding="async" />'
+          : barProductCategoryIcon(category);
+        return '<article class="bar-category-image-card"><span class="bar-category-image-preview">' + media + '</span>' +
+          '<div class="bar-category-image-copy"><strong>' + escapeHtml(barProductCategoryLabel(category)) + '</strong><small>' + (customImage ? 'Foto personalizada' : 'Foto automática') + '</small>' +
+          '<div class="bar-category-image-actions"><button type="button" data-bar-category-image-pick="' + escapeHtml(category) + '">Trocar foto</button>' +
+          (customImage ? '<button type="button" data-bar-category-image-remove="' + escapeHtml(category) + '">Automática</button>' : '') + '</div></div></article>';
+      }).join('') || '<div class="lesson-empty-state">Cadastre um produto para criar as categorias.</div>';
+    }
+
     function renderBarProducts() {
       const selectedOrderProduct = $('barOrderProduct').value;
       const allProducts = opsData.barProducts.slice().sort(function (a, b) {
@@ -23705,6 +23833,7 @@
       const categories = Array.from(new Set(allProducts.map(function (product) { return product.category || 'Outros'; }))).sort(function (a, b) {
         return String(a).localeCompare(String(b));
       });
+      renderBarCategoryImages(categories);
       if (opsState.barProductCategory !== 'todos' && !categories.includes(opsState.barProductCategory)) {
         opsState.barProductCategory = 'todos';
       }
@@ -26213,9 +26342,68 @@
     function barProductImageInUse(imageUrl) {
       const normalizedUrl = String(imageUrl || '').trim();
       if (!normalizedUrl) return false;
-      return opsData.barProducts.some(function (product) {
+      const usedByProduct = opsData.barProducts.some(function (product) {
         return String(product.imageUrl || '').trim() === normalizedUrl;
       });
+      if (usedByProduct) return true;
+      return Object.keys(opsData.barSettings && opsData.barSettings.categoryImages || {}).some(function (category) {
+        return String(opsData.barSettings.categoryImages[category] || '').trim() === normalizedUrl;
+      });
+    }
+
+    async function saveBarCategoryImages(nextImages) {
+      let nextSettings = Object.assign({}, opsData.barSettings || {}, { categoryImages: nextImages });
+      if (barCanPersist()) {
+        const saved = await supabaseRest('bar_runtime_settings?id=eq.true', {
+          method: 'PATCH',
+          body: {
+            category_images: nextImages,
+            updated_by: adminProfile && adminProfile.id || null,
+            updated_at: new Date().toISOString()
+          },
+          prefer: 'return=representation'
+        });
+        nextSettings = mapBarRuntimeSettingsRow(Array.isArray(saved) ? saved[0] : saved);
+      }
+      opsData.barSettings = nextSettings;
+      renderBarProducts();
+    }
+
+    async function selectBarCategoryImage(file) {
+      const category = opsState.pendingBarCategoryImage;
+      if (!category) return;
+      const prepared = await resizeBarProductImage(file);
+      if (!prepared) return;
+      const previousUrl = String(opsData.barSettings && opsData.barSettings.categoryImages && opsData.barSettings.categoryImages[category] || '');
+      let uploadedUrl = prepared.previewUrl;
+      try {
+        requireAdminSession();
+        if (barCanPersist()) uploadedUrl = await uploadBarProductImage(prepared.blob, 'categoria-' + category);
+        const nextImages = Object.assign({}, opsData.barSettings && opsData.barSettings.categoryImages || {});
+        nextImages[category] = uploadedUrl;
+        await saveBarCategoryImages(nextImages);
+        if (barCanPersist() && previousUrl && previousUrl !== uploadedUrl && !barProductImageInUse(previousUrl)) {
+          deleteBarProductImage(previousUrl);
+        }
+        toast('Foto de ' + barProductCategoryLabel(category) + ' atualizada.');
+      } catch (error) {
+        if (barCanPersist() && uploadedUrl && uploadedUrl !== prepared.previewUrl && uploadedUrl !== previousUrl) deleteBarProductImage(uploadedUrl);
+        throw error;
+      } finally {
+        opsState.pendingBarCategoryImage = '';
+        $('barCategoryImageFile').value = '';
+      }
+    }
+
+    async function removeBarCategoryImage(category) {
+      const previousUrl = String(opsData.barSettings && opsData.barSettings.categoryImages && opsData.barSettings.categoryImages[category] || '');
+      if (!previousUrl) return;
+      requireAdminSession();
+      const nextImages = Object.assign({}, opsData.barSettings && opsData.barSettings.categoryImages || {});
+      delete nextImages[category];
+      await saveBarCategoryImages(nextImages);
+      if (barCanPersist() && !barProductImageInUse(previousUrl)) deleteBarProductImage(previousUrl);
+      toast('A foto de ' + barProductCategoryLabel(category) + ' voltou ao modo automático.');
     }
 
     function resetBarProductForm() {
@@ -26660,7 +26848,8 @@
         requireAdminSession();
         let nextSettings = {
           qrOrdersEnabled: nextEnabled,
-          closedMessage: opsData.barSettings && opsData.barSettings.closedMessage || 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.'
+          closedMessage: opsData.barSettings && opsData.barSettings.closedMessage || 'No momento, o Ilha Bar está fechado. Em breve estaremos atendendo novamente.',
+          categoryImages: opsData.barSettings && opsData.barSettings.categoryImages || {}
         };
         if (barCanPersist()) {
           const saved = await supabaseRest('bar_runtime_settings?id=eq.true', {
@@ -29969,6 +30158,23 @@
         });
       });
       $('barProductImageRemoveBtn').addEventListener('click', removeBarProductImage);
+      $('barCategoryImagesGrid').addEventListener('click', function (event) {
+        const pickButton = event.target.closest('[data-bar-category-image-pick]');
+        if (pickButton) {
+          opsState.pendingBarCategoryImage = pickButton.dataset.barCategoryImagePick || '';
+          $('barCategoryImageFile').click();
+          return;
+        }
+        const removeButton = event.target.closest('[data-bar-category-image-remove]');
+        if (removeButton) {
+          removeBarCategoryImage(removeButton.dataset.barCategoryImageRemove || '').catch(reportActionError);
+        }
+      });
+      $('barCategoryImageFile').addEventListener('change', function (event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        selectBarCategoryImage(file).catch(reportActionError);
+      });
       $('barStockForm').addEventListener('submit', saveBarStockAction);
       $('barTableForm').addEventListener('submit', saveBarTableAction);
       $('barTableModalClose').addEventListener('click', closeBarTableModal);

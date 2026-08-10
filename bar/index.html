@@ -647,6 +647,7 @@
       access: null,
       tables: [],
       products: [],
+      categoryImages: {},
       category: 'Porções',
       search: '',
       cart: {},
@@ -876,16 +877,19 @@
       }).concat('Todos');
       if (!categories.includes(state.category)) state.category = categories.find(category => normalizeCategory(category) === 'porcoes') || 'Todos';
       const categorySignature = categories.map(category => {
-        const sample = category === 'Todos' ? null : state.products.find(product => product.category === category && product.image_url);
-        return category + ':' + (sample && sample.image_url || '');
+        const customImage = category === 'Todos' ? '' : String(state.categoryImages[category] || '');
+        const sample = category === 'Todos' || customImage ? null : state.products.find(product => product.category === category && product.image_url);
+        return category + ':' + (customImage || sample && sample.image_url || '');
       }).join('|') + '::' + state.category;
       if ($('categoryNav').dataset.signature === categorySignature) return;
       $('categoryNav').dataset.signature = categorySignature;
       $('categoryNav').innerHTML = categories.map(category => {
-        const sample = category === 'Todos' ? null : state.products.find(product => product.category === category && product.image_url);
+        const customImage = category === 'Todos' ? '' : String(state.categoryImages[category] || '');
+        const sample = category === 'Todos' || customImage ? null : state.products.find(product => product.category === category && product.image_url);
+        const imageUrl = customImage || sample && sample.image_url || '';
         const kind = categoryKind(category);
-        const media = sample
-          ? '<img src="' + escapeHtml(sample.image_url) + '" alt="" loading="eager" decoding="async" />'
+        const media = imageUrl
+          ? '<img src="' + escapeHtml(imageUrl) + '" alt="" loading="eager" decoding="async" />'
           : '<svg aria-hidden="true"><use href="#' + (category === 'Todos' ? 'icon-menu' : kind.icon) + '"></use></svg>';
         return '<button class="category-btn' + (state.category === category ? ' active' : '') + '" type="button" data-category="' + escapeHtml(category) + '" aria-pressed="' + (state.category === category ? 'true' : 'false') + '"><span class="category-thumb ' + kind.className + '">' + media + '</span><span class="category-name">' + escapeHtml(category) + '</span></button>';
       }).join('');
@@ -1064,10 +1068,11 @@
           loadMenu();
           return;
         }
-        const payload = JSON.stringify({ availability, access: data.access || {}, tables: data.tables || [], products: data.products || [] });
+        const payload = JSON.stringify({ availability, access: data.access || {}, tables: data.tables || [], products: data.products || [], categoryImages: data.category_images || {} });
         if (payload !== state.menuPayload) {
           state.menuPayload = payload;
           state.access = data.access || {};
+          state.categoryImages = data.category_images || {};
           state.tables = data.tables || [];
           state.products = data.products || [];
           const linkedIdentity = linkedAccessIdentity();
@@ -1218,7 +1223,8 @@
         state.access = data.access || {};
         state.tables = data.tables || [];
         state.products = data.products || [];
-        state.menuPayload = JSON.stringify({ availability: state.availability, access: state.access, tables: state.tables, products: state.products });
+        state.categoryImages = data.category_images || {};
+        state.menuPayload = JSON.stringify({ availability: state.availability, access: state.access, tables: state.tables, products: state.products, categoryImages: state.categoryImages });
         renderAccess();
         const linkedIdentity = linkedAccessIdentity();
         const saved = readSession();
