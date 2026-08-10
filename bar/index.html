@@ -592,7 +592,7 @@
             <div class="form-field"><label for="customerName">Seu nome</label><input id="customerName" name="customerName" autocomplete="name" maxlength="80" placeholder="Como podemos chamar você?" required /></div>
             <div class="form-field"><label for="customerPhone">Telefone</label><input id="customerPhone" name="customerPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="(27) 99999-9999" required /></div>
             <div class="form-field" id="tableField"><label for="tableSelect">Mesa</label><select id="tableSelect" name="tableSelect"></select></div>
-            <button class="primary-btn access-submit" type="submit">Ver cardápio <svg><use href="#icon-arrow"></use></svg></button>
+            <button class="primary-btn access-submit" id="accessSubmitBtn" type="submit">Ver cardápio <svg><use href="#icon-arrow"></use></svg></button>
           </form>
         </div>
       </section>
@@ -847,7 +847,7 @@
       $('accessLabel').textContent = state.access.label || 'Ilha Bar';
       const fixed = state.access.kind === 'MESA';
       const card = state.access.kind === 'CARTAO';
-      $('accessHint').textContent = fixed ? 'Mesa identificada pelo QR Code.' : card ? 'Cartão vinculado à comanda aberta no balcão.' : 'Pedidos sem mesa fixa.';
+      $('accessHint').textContent = fixed ? 'Mesa identificada pelo QR Code.' : card ? 'Use este cartão para abrir sua comanda e pedir de onde estiver.' : 'Pedidos sem mesa fixa.';
       $('tableSelect').innerHTML = (fixed || card ? '' : '<option value="">Sem mesa | retirar no balcão</option>') + state.tables.map(table => '<option value="' + escapeHtml(table.id) + '">' + escapeHtml(table.name) + '</option>').join('');
       $('tableField').hidden = fixed || card;
       if (fixed && state.tables[0]) $('tableSelect').value = state.tables[0].id;
@@ -1243,17 +1243,46 @@
       }
     }
 
-    $('accessForm').addEventListener('submit', event => {
+    $('accessForm').addEventListener('submit', async event => {
       event.preventDefault();
       const name = $('customerName').value.trim();
       if (name.length < 2) { showToast('Informe seu nome.', true); return; }
       const phone = normalizePhone($('customerPhone').value);
       if (!validPhone(phone)) { showToast('Informe um telefone válido com DDD.', true); return; }
-      const fixedTableId = state.access.fixed_table_id || '';
-      state.identity = { name, phone, tableId: fixedTableId || $('tableSelect').value || '', trackingToken: readSession() && readSession().trackingToken || '' };
-      saveSession();
-      enterMenu();
-      startPolling();
+      const submitButton = $('accessSubmitBtn');
+      submitButton.disabled = true;
+      submitButton.textContent = 'Abrindo comanda...';
+      try {
+        const fixedTableId = state.access.fixed_table_id || '';
+        const isQrAccess = ['MESA', 'CARTAO'].includes(state.access.kind);
+        let linkedName = name;
+        if (isQrAccess && !state.access.linked) {
+          const claim = await rpc('bar_public_claim_access', {
+            p_token: qrToken,
+            p_customer_name: name,
+            p_customer_phone: phone
+          });
+          linkedName = claim && claim.customer_name || name;
+          state.access.linked = true;
+          state.access.linked_customer_name = linkedName;
+        }
+        state.identity = {
+          name: linkedName,
+          phone,
+          tableId: fixedTableId || $('tableSelect').value || '',
+          trackingToken: readSession() && readSession().trackingToken || '',
+          cardLinked: isQrAccess
+        };
+        saveSession();
+        enterMenu();
+        startPolling();
+        if (isQrAccess) showToast('Comanda aberta. Você já pode fazer seu pedido.');
+      } catch (error) {
+        showToast(error.message, true);
+      } finally {
+        submitButton.disabled = false;
+        submitButton.innerHTML = 'Ver cardápio <svg><use href="#icon-arrow"></use></svg>';
+      }
     });
 
     $('categoryNav').addEventListener('click', event => {
