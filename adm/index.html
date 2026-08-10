@@ -5339,6 +5339,16 @@
       font-size: 10px;
     }
 
+    .bar-command-tab small.has-pending-delivery {
+      background: #d93f4b;
+      box-shadow: 0 0 0 3px rgba(217, 63, 75, .12);
+    }
+
+    .bar-command-tab small.is-delivery-complete {
+      color: #ffffff;
+      background: #2f9d57;
+    }
+
     .bar-command-body {
       min-height: 350px;
       flex: 1 1 auto;
@@ -5443,6 +5453,17 @@
       border-left-color: #8fbd00;
     }
 
+    .bar-command-modal .bar-command-item.is-pending-delivery {
+      border-left-color: #dc3f4d;
+      background: #fff7f7;
+      box-shadow: 0 5px 18px rgba(180, 34, 49, .09);
+    }
+
+    .bar-command-modal .bar-command-item.is-delivered {
+      border-left-color: #2f9d57;
+      background: #f5fcf7;
+    }
+
     .bar-command-modal .bar-command-item.cancelled {
       border-left-color: #aebbc0;
       background: #f3f5f6;
@@ -5502,6 +5523,30 @@
       font-size: 15px;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .bar-command-item-delivery-state {
+      width: max-content;
+      max-width: 100%;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 6px;
+      padding: 4px 7px;
+      border: 1px solid #ffb7bc;
+      border-radius: 999px;
+      color: #a31923;
+      background: #ffe3e5;
+      font-size: 9px;
+      font-weight: 950;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .bar-command-item-delivery-state.is-delivered {
+      border-color: #a9d8b9;
+      color: #176437;
+      background: #e8f7ed;
     }
 
     .bar-command-item-total {
@@ -9318,6 +9363,8 @@
     .bar-command-unified-card.is-table { border-left-color: #8b9ba1; background: #414d52; }
     .bar-command-unified-card.is-free { border-left-color: #b7df36; color: #223240; background: #f5fae8; }
     .bar-command-unified-card.is-inactive { opacity: .62; }
+    .bar-command-unified-card.has-pending-delivery { border-left-color: #e14854; }
+    .bar-command-unified-card.is-delivery-complete { border-left-color: #38a35b; }
 
     .bar-command-unified-main {
       min-width: 0;
@@ -22541,11 +22588,10 @@
       });
     }
 
-    function barPendingDirectDeliveryItemsForOrder(orderId) {
+    function barPendingDeliveryItemsForOrder(orderId) {
       return barItemsForOrder(orderId).filter(function (item) {
-        return isPublicBarItem(item) &&
-          !barKitchenIsPortionItem(item) &&
-          ['EM_PREPARO', 'PRONTO'].includes(String(item.status || '').toUpperCase());
+        return !item.billingOnly &&
+          ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(String(item.status || '').toUpperCase());
       });
     }
 
@@ -23194,14 +23240,19 @@
       const customerName = details.name || order.customerName || card && card.label || 'Cliente';
       const icon = table ? '#admin-icon-table' : '#admin-icon-receipt';
       const location = table ? '<small class="bar-command-table-number">' + escapeHtml(table.number) + '</small>' : card ? '<small>' + escapeHtml(card.label) + '</small>' : '';
-      const deliveryQuantity = barPendingDirectDeliveryItemsForOrder(order.id).reduce(function (sum, item) {
+      const deliveryItems = barItemsForOrder(order.id).filter(function (item) {
+        return !item.billingOnly && !['CANCELADO'].includes(String(item.status || '').toUpperCase());
+      });
+      const pendingDeliveryItems = barPendingDeliveryItemsForOrder(order.id);
+      const deliveryQuantity = pendingDeliveryItems.reduce(function (sum, item) {
         return sum + Number(item.quantity || 0);
       }, 0);
+      const deliveryStateClass = deliveryQuantity ? ' has-pending-delivery' : (deliveryItems.length ? ' is-delivery-complete' : '');
       const deliveryAlert = deliveryQuantity
         ? '<span class="bar-command-delivery-alert"><svg aria-hidden="true"><use href="#admin-icon-bell"></use></svg>' + escapeHtml(deliveryQuantity) + 'x para entregar</span>'
         : '';
-      return '<article class="bar-command-unified-card has-money-value' + (table ? ' is-table' : ' is-loose') + (paidOpen ? ' is-paid-open' : '') + '" data-bar-order-open="' + escapeHtml(order.id) + '">' +
-        '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="' + icon + '"></use></svg></span><span class="bar-command-unified-copy">' + deliveryAlert + '<strong>' + escapeHtml(customerName) + '</strong>' + location + '</span></button>' +
+      return '<article class="bar-command-unified-card has-money-value' + (table ? ' is-table' : ' is-loose') + (paidOpen ? ' is-paid-open' : '') + deliveryStateClass + '" data-bar-order-open="' + escapeHtml(order.id) + '">' +
+        '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="' + icon + '"></use></svg></span><span class="bar-command-unified-copy"><strong>' + escapeHtml(customerName) + '</strong>' + deliveryAlert + location + '</span></button>' +
         '<div class="bar-command-unified-side"><b class="bar-command-unified-value">' + money(barOrderTotal(order)) + '</b>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + '</div>' +
       '</article>';
     }
@@ -25625,6 +25676,10 @@
       const activeItems = items.filter(function (item) { return item.status !== 'CANCELADO'; });
       const customer = barOrderCustomerDetails(order, activeItems.length ? activeItems : items);
       const itemQuantity = activeItems.reduce(function (sum, item) { return sum + Number(item.quantity || 0); }, 0);
+      const pendingDeliveryItems = activeItems.filter(function (item) {
+        return !item.billingOnly && ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(String(item.status || '').toUpperCase());
+      });
+      const pendingDeliveryQuantity = pendingDeliveryItems.reduce(function (sum, item) { return sum + Number(item.quantity || 0); }, 0);
 
       $('barCommandModalTitle').textContent = customer.name;
       const commandTable = barTableById(order.tableId);
@@ -25637,7 +25692,12 @@
       setBarQuickAction('barOrderMessageBtn', canMessage ? barGreetingWhatsAppUrl(order) : '');
       setBarQuickAction('barOrderChargeBtn', canMessage && barOrderCanEdit(order) ? barChargeWhatsAppUrl(order) : '');
       setBarQuickAction('barOrderAccountBtn', canMessage ? barAccountWhatsAppUrl(order) : '');
-      $('barCommandItemsCount').textContent = itemQuantity;
+      $('barCommandItemsCount').textContent = pendingDeliveryQuantity || itemQuantity;
+      $('barCommandItemsCount').classList.toggle('has-pending-delivery', pendingDeliveryQuantity > 0);
+      $('barCommandItemsCount').classList.toggle('is-delivery-complete', itemQuantity > 0 && pendingDeliveryQuantity === 0);
+      $('barCommandItemsCount').title = pendingDeliveryQuantity
+        ? pendingDeliveryQuantity + (pendingDeliveryQuantity === 1 ? ' item ainda não entregue' : ' itens ainda não entregues')
+        : (itemQuantity ? 'Todos os itens foram entregues' : 'Nenhum item');
       $('barCheckoutItemCount').textContent = itemQuantity;
 
       const open = barOrderIsOpen(order);
@@ -25650,16 +25710,20 @@
       $('barCommandItems').innerHTML = items.map(function (item) {
         const status = String(item.status || '').toUpperCase();
         const cancelled = status === 'CANCELADO';
-        const statusClass = status === 'EM_PREPARO' ? ' is-preparing' : (status === 'PRONTO' ? ' is-ready' : (status === 'ENTREGUE' ? ' is-delivered' : ''));
+        const pendingDelivery = !cancelled && !item.billingOnly && ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(status);
+        const statusClass = (status === 'EM_PREPARO' ? ' is-preparing' : (status === 'PRONTO' ? ' is-ready' : (status === 'ENTREGUE' ? ' is-delivered' : ''))) + (pendingDelivery ? ' is-pending-delivery' : '');
         const meta = [];
         const orderedAt = barOrderItemDateTimeLabel(item.created);
         if (orderedAt) meta.push('<span class="bar-command-item-ordered-at"><svg><use href="#admin-icon-calendar"></use></svg>' + escapeHtml(orderedAt) + '</span>');
         if (item.splitWith) meta.push('<span><strong>Divisão com:</strong> ' + escapeHtml(item.splitWith) + '</span>');
         if (item.notes) meta.push('<span><strong>Obs.:</strong> ' + escapeHtml(item.notes) + '</span>');
+        const deliveryState = pendingDelivery
+          ? '<span class="bar-command-item-delivery-state">Falta entregar</span>'
+          : (status === 'ENTREGUE' ? '<span class="bar-command-item-delivery-state is-delivered">Entregue</span>' : '');
         const deliveryAction = cancelled || item.billingOnly ? '' : '<button class="small-btn bar-item-deliver" type="button"' + (status === 'ENTREGUE' ? ' disabled' : ' data-bar-item-status="' + escapeHtml(item.id) + '" data-next-status="ENTREGUE"') + '>Entregue</button>';
         return '<article class="bar-item-row bar-command-item' + statusClass + (cancelled ? ' cancelled' : '') + '">' +
           '<div class="bar-command-item-product"><span class="bar-command-item-quantity">' + escapeHtml(item.quantity + 'x') + '</span>' +
-          '<div class="bar-command-item-content"><div class="bar-command-item-title"><strong>' + escapeHtml(item.productName) + '</strong></div>' +
+          '<div class="bar-command-item-content"><div class="bar-command-item-title"><strong>' + escapeHtml(item.productName) + '</strong></div>' + deliveryState +
           (meta.length ? '<div class="bar-command-item-meta">' + meta.join('') + '</div>' : '') + '</div></div>' +
           '<strong class="bar-command-item-total">' + money(item.quantity * item.unitPrice) + '</strong>' +
           '<div class="bar-command-item-actions">' + deliveryAction + '</div></article>';
