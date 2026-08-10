@@ -193,6 +193,24 @@
     .identity-btn { flex: 0 0 auto; min-height: 40px; padding: 8px 12px; }
     .service-request-btn { flex: 0 0 auto; min-height: 42px; padding: 9px 14px; }
     .service-request-btn.is-requested { color: #58751f; background: var(--lime-soft); border-color: #cce879; }
+    .menu-search {
+      min-height: 52px;
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr) 40px;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 20px;
+      padding: 0 8px 0 14px;
+      color: var(--teal);
+      background: #fff;
+      border: 1px solid #cbdce1;
+      border-radius: 14px;
+      box-shadow: 0 4px 14px rgba(16, 39, 44, .04);
+    }
+    .menu-search:focus-within { border-color: var(--lime); box-shadow: 0 0 0 3px rgba(181, 229, 0, .16); }
+    .menu-search input { min-width: 0; height: 50px; padding: 0; color: var(--text); background: transparent; border: 0; outline: 0; font-size: 16px; }
+    .menu-search input::placeholder { color: #829198; }
+    .menu-search button { width: 40px; height: 40px; display: grid; place-items: center; color: var(--muted); background: transparent; border: 0; border-radius: 50%; }
     .active-order-strip {
       display: flex;
       align-items: center;
@@ -210,25 +228,47 @@
 
     .category-nav {
       display: flex;
-      gap: 8px;
+      gap: 14px;
       margin: 0 -24px 20px;
-      padding: 0 24px 6px;
+      padding: 0 24px 10px;
       overflow-x: auto;
       scrollbar-width: none;
     }
     .category-nav::-webkit-scrollbar { display: none; }
     .category-btn {
       flex: 0 0 auto;
-      min-height: 42px;
-      padding: 9px 14px;
+      width: 82px;
+      min-height: 104px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      padding: 0;
       color: #49606a;
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 900;
+      background: transparent;
+      border: 0;
+      font-size: 13px;
+      font-weight: 800;
     }
-    .category-btn.active { color: #fff; background: var(--teal); border-color: var(--teal); }
+    .category-thumb {
+      width: 74px;
+      height: 74px;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      color: var(--teal);
+      background: #fff;
+      border: 2px solid #d6e1e4;
+      border-radius: 50%;
+      box-shadow: 0 5px 14px rgba(16, 39, 44, .08);
+      transition: border-color .16s ease, transform .16s ease;
+    }
+    .category-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .category-thumb svg { width: 30px; height: 30px; }
+    .category-name { max-width: 82px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .category-btn.active { color: var(--teal); }
+    .category-btn.active .category-thumb { border: 3px solid var(--lime); transform: translateY(-2px); }
+    .category-btn.active .category-name { font-weight: 900; }
     .product-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
     .product-card {
       min-width: 0;
@@ -238,7 +278,7 @@
       padding: 14px;
       background: #fff;
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 16px;
       box-shadow: 0 5px 16px rgba(16, 39, 44, .05);
     }
     .product-media {
@@ -249,7 +289,7 @@
       place-items: center;
       color: var(--teal);
       background: #edf5f6;
-      border-radius: 7px;
+      border-radius: 12px;
     }
     .product-media img { width: 100%; height: 100%; object-fit: cover; }
     .product-media svg { width: 42px; height: 42px; }
@@ -299,6 +339,8 @@
     .cart-bar strong, .cart-bar span { display: block; }
     .cart-bar span { margin-top: 3px; color: #d2e1e4; font-size: 12px; }
     .cart-bar button { min-height: 44px; padding: 9px 14px; color: var(--teal); background: var(--lime); border: 0; border-radius: 6px; font-weight: 900; }
+
+    .customer-bottom-nav { display: none; }
 
     .sheet-backdrop {
       position: fixed;
@@ -396,35 +438,106 @@
       .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 640px) {
-      .app-shell { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
-      .app-header { min-height: 74px; padding: 12px 16px; }
+      .app-shell { padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
+      .app-header { min-height: 68px; padding: 10px 16px; }
       .brand { gap: 9px; }
-      .brand img { width: 150px; }
+      .brand img { width: 138px; max-height: 48px; }
       .header-actions { gap: 6px; }
       .header-order-btn { min-width: 42px; height: 42px; }
-      .main { padding: 18px 16px; }
+      .main { padding: 18px 16px 36px; }
       .access-wrap, .loading-view, .error-view { min-height: calc(100vh - 122px); }
       .access-panel { padding: 22px 18px; }
       .access-panel h1 { font-size: 27px; }
-      .menu-top { align-items: flex-start; }
-      .menu-top h1 { font-size: 25px; }
+      .menu-top { align-items: flex-start; margin-bottom: 16px; }
+      .menu-top h1 { font-size: 29px; line-height: 1.05; }
+      .menu-top p { max-width: 260px; margin-top: 6px; font-size: 15px; }
       .identity-btn { width: 42px; padding: 8px; }
       .identity-btn span { display: none; }
-      .service-request-btn { min-height: 40px; padding: 8px 10px; font-size: 12px; }
-      .category-nav { margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
+      .service-request-btn { display: none; }
+      .menu-search { min-height: 50px; margin-bottom: 18px; }
+      .category-nav { gap: 11px; margin-left: -16px; margin-right: -16px; margin-bottom: 18px; padding-left: 16px; padding-right: 16px; }
+      .category-btn { width: 72px; min-height: 94px; font-size: 12px; }
+      .category-thumb { width: 66px; height: 66px; }
+      .category-name { max-width: 72px; }
       .product-grid { grid-template-columns: 1fr; gap: 10px; }
-      .product-card { grid-template-columns: 90px minmax(0, 1fr); padding: 12px; }
-      .product-media { width: 90px; height: 90px; }
+      .product-card { min-height: 130px; grid-template-columns: 108px minmax(0, 1fr); gap: 14px; padding: 12px; border-radius: 16px; box-shadow: 0 6px 18px rgba(16, 39, 44, .06); }
+      .product-media { width: 108px; height: 108px; border-radius: 13px; background: #fff; }
+      .product-copy h2 { font-size: 18px; }
       .product-copy p { min-height: 0; }
+      .product-price { color: #75a300; font-size: 20px; }
+      .add-btn { width: 44px; height: 44px; border-radius: 12px; }
       .active-order-strip { align-items: flex-start; }
       .sheet-backdrop { padding: 0; }
       .sheet { max-height: calc(100vh - 16px); border-radius: 8px 8px 0 0; }
       .order-panel { padding: 19px 16px; }
       .order-actions { grid-template-columns: 1fr; }
       .status-step { font-size: 10px; }
+      .cart-bar { bottom: calc(84px + env(safe-area-inset-bottom)); width: calc(100% - 28px); }
+      .customer-bottom-nav {
+        position: fixed;
+        z-index: 35;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        min-height: calc(76px + env(safe-area-inset-bottom));
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        align-items: end;
+        padding: 7px 8px calc(7px + env(safe-area-inset-bottom));
+        background: rgba(255, 255, 255, .98);
+        border-top: 1px solid var(--line);
+        box-shadow: 0 -8px 24px rgba(16, 39, 44, .08);
+      }
+      .customer-nav-btn {
+        min-width: 0;
+        min-height: 56px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 3px;
+        padding: 4px 2px;
+        color: #64767e;
+        background: transparent;
+        border: 0;
+        font-size: 10px;
+        font-weight: 800;
+      }
+      .customer-nav-btn svg { width: 22px; height: 22px; }
+      .customer-nav-btn.active { color: var(--teal); }
+      .customer-nav-btn.is-requested { color: #719800; }
+      .customer-nav-btn.customer-nav-primary { position: relative; padding-top: 0; color: var(--teal); }
+      .customer-nav-primary .customer-nav-icon {
+        width: 58px;
+        height: 58px;
+        display: grid;
+        place-items: center;
+        margin-top: -28px;
+        color: #fff;
+        background: var(--teal);
+        border: 5px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 8px 20px rgba(8, 52, 60, .25);
+      }
+      .customer-nav-primary .customer-nav-icon svg { width: 25px; height: 25px; }
+      .customer-nav-badge {
+        position: absolute;
+        top: -26px;
+        right: calc(50% - 32px);
+        min-width: 20px;
+        height: 20px;
+        display: grid;
+        place-items: center;
+        padding: 0 5px;
+        color: #fff;
+        background: var(--red);
+        border: 2px solid #fff;
+        border-radius: 999px;
+        font-size: 10px;
+      }
     }
     @media (max-width: 370px) {
-      .brand img { width: 142px; }
+      .brand img { width: 126px; }
       .product-card { grid-template-columns: 78px minmax(0, 1fr); }
       .product-media { width: 78px; height: 78px; }
       .product-price { font-size: 16px; }
@@ -446,6 +559,9 @@
     <symbol id="icon-beer" viewBox="0 0 24 24"><path d="M6 7h10v13H6zM16 10h2a3 3 0 0 1 0 6h-2M8 4h6M9 7V4M13 7V4"/></symbol>
     <symbol id="icon-water" viewBox="0 0 24 24"><path d="M12 2s6 7 6 12a6 6 0 0 1-12 0c0-5 6-12 6-12Z"/></symbol>
     <symbol id="icon-food" viewBox="0 0 24 24"><path d="M4 11h16M6 11a6 6 0 0 1 12 0M3 15h18M8 4h8"/></symbol>
+    <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+    <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="icon-wallet" viewBox="0 0 24 24"><path d="M4 6h14a2 2 0 0 1 2 2v11H4a2 2 0 0 1-2-2V6a3 3 0 0 1 3-3h12"/><path d="M15 11h7v5h-7a2 2 0 0 1 0-5Z"/></symbol>
   </svg>
 
   <div class="app-shell">
@@ -484,6 +600,7 @@
       <section class="view" id="menuView">
         <div class="menu-top"><div><h1>Cardápio</h1><p id="menuIdentity">Seu pedido no Ilha Bar</p></div><button class="secondary-btn service-request-btn" id="requestServiceBtn" type="button"><svg><use href="#icon-bell"></use></svg><span>Solicitar atendimento</span></button></div>
         <div class="active-order-strip" id="activeOrderStrip" hidden><div><strong id="activeOrderTitle">Comanda em andamento</strong><small id="activeOrderStatus">Acompanhe o preparo por aqui.</small></div><button id="activeOrderBtn" type="button">Ver pedido</button></div>
+        <div class="menu-search" role="search"><svg aria-hidden="true"><use href="#icon-search"></use></svg><input id="productSearch" type="search" inputmode="search" autocomplete="off" aria-label="Buscar produto" placeholder="Buscar produto" /><button id="clearProductSearch" type="button" aria-label="Limpar busca" hidden><svg><use href="#icon-x"></use></svg></button></div>
         <nav class="category-nav" id="categoryNav" aria-label="Categorias do cardápio"></nav>
         <div class="product-grid" id="productGrid"></div>
       </section>
@@ -498,6 +615,14 @@
 
     <div class="cart-bar" id="cartBar" hidden><div><strong id="cartBarTitle">Seu pedido</strong><span id="cartBarMeta">0 itens</span></div><button id="openCartBtn" type="button">Ver pedido</button></div>
   </div>
+
+  <nav class="customer-bottom-nav" id="customerBottomNav" aria-label="Ações do cardápio" hidden>
+    <button class="customer-nav-btn" id="bottomServiceBtn" type="button"><svg><use href="#icon-bell"></use></svg><span>Garçom</span></button>
+    <button class="customer-nav-btn active" id="bottomMenuBtn" type="button"><svg><use href="#icon-menu"></use></svg><span>Cardápio</span></button>
+    <button class="customer-nav-btn customer-nav-primary" id="bottomCartBtn" type="button"><span class="customer-nav-icon"><svg><use href="#icon-food"></use></svg></span><span>Pedir</span><b class="customer-nav-badge" id="bottomCartCount" hidden>0</b></button>
+    <button class="customer-nav-btn" id="bottomOrderBtn" type="button"><svg><use href="#icon-receipt"></use></svg><span>Pedido</span></button>
+    <button class="customer-nav-btn" id="bottomProfileBtn" type="button"><svg><use href="#icon-user"></use></svg><span>Perfil</span></button>
+  </nav>
 
   <div class="sheet-backdrop" id="cartSheet" aria-hidden="true">
     <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
@@ -523,6 +648,7 @@
       tables: [],
       products: [],
       category: 'Porções',
+      search: '',
       cart: {},
       identity: null,
       order: null,
@@ -621,6 +747,12 @@
 
     function showView(id) {
       document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === id));
+      const bottomNav = $('customerBottomNav');
+      if (bottomNav) {
+        bottomNav.hidden = !state.identity || !['menuView', 'orderView'].includes(id);
+        $('bottomMenuBtn').classList.toggle('active', id === 'menuView');
+        $('bottomOrderBtn').classList.toggle('active', id === 'orderView');
+      }
       window.scrollTo({ top: 0, behavior: 'auto' });
       $('cartBar').hidden = id !== 'menuView' || cartCount() === 0;
     }
@@ -743,12 +875,29 @@
         return String(a).localeCompare(String(b), 'pt-BR');
       }).concat('Todos');
       if (!categories.includes(state.category)) state.category = categories.find(category => normalizeCategory(category) === 'porcoes') || 'Todos';
-      $('categoryNav').innerHTML = categories.map(category => '<button class="category-btn' + (state.category === category ? ' active' : '') + '" type="button" data-category="' + escapeHtml(category) + '">' + escapeHtml(category) + '</button>').join('');
+      const categorySignature = categories.map(category => {
+        const sample = category === 'Todos' ? null : state.products.find(product => product.category === category && product.image_url);
+        return category + ':' + (sample && sample.image_url || '');
+      }).join('|') + '::' + state.category;
+      if ($('categoryNav').dataset.signature === categorySignature) return;
+      $('categoryNav').dataset.signature = categorySignature;
+      $('categoryNav').innerHTML = categories.map(category => {
+        const sample = category === 'Todos' ? null : state.products.find(product => product.category === category && product.image_url);
+        const kind = categoryKind(category);
+        const media = sample
+          ? '<img src="' + escapeHtml(sample.image_url) + '" alt="" loading="eager" decoding="async" />'
+          : '<svg aria-hidden="true"><use href="#' + (category === 'Todos' ? 'icon-menu' : kind.icon) + '"></use></svg>';
+        return '<button class="category-btn' + (state.category === category ? ' active' : '') + '" type="button" data-category="' + escapeHtml(category) + '" aria-pressed="' + (state.category === category ? 'true' : 'false') + '"><span class="category-thumb ' + kind.className + '">' + media + '</span><span class="category-name">' + escapeHtml(category) + '</span></button>';
+      }).join('');
     }
 
     function renderProducts() {
       renderCategories();
-      const products = state.products.filter(product => state.category === 'Todos' || product.category === state.category);
+      const search = normalizeCategory(state.search).trim();
+      const products = state.products.filter(product => {
+        if (search) return normalizeCategory([product.name, product.description, product.category].filter(Boolean).join(' ')).includes(search);
+        return state.category === 'Todos' || product.category === state.category;
+      });
       if (String(state.category).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() === 'bebidas') {
         products.sort((a, b) => beverageProductRank(a) - beverageProductRank(b) || String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'));
       }
@@ -762,7 +911,8 @@
           ? '<div class="qty-control"><button type="button" data-product-dec="' + escapeHtml(product.id) + '" aria-label="Remover uma unidade">−</button><strong>' + quantity + '</strong><button type="button" data-product-inc="' + escapeHtml(product.id) + '" aria-label="Adicionar uma unidade">+</button></div>'
           : '<button class="add-btn" type="button" data-product-inc="' + escapeHtml(product.id) + '" aria-label="Adicionar ' + escapeHtml(product.name) + '"><svg><use href="#icon-plus"></use></svg></button>';
         return '<article class="product-card"><div class="product-media ' + kind.className + '">' + media + '</div><div class="product-copy"><h2>' + escapeHtml(product.name) + '</h2><p>' + escapeHtml(product.description || product.category || '') + '</p><div class="product-bottom"><span class="product-price">' + money(product.price) + '</span>' + control + '</div></div></article>';
-      }).join('') || '<div class="empty-menu">Nenhum produto disponível nesta categoria.</div>';
+      }).join('') || '<div class="empty-menu">' + (search ? 'Nenhum produto encontrado para esta busca.' : 'Nenhum produto disponível nesta categoria.') + '</div>';
+      $('clearProductSearch').hidden = !state.search;
       updateCartBar();
     }
 
@@ -771,6 +921,8 @@
       $('cartBar').hidden = !$('menuView').classList.contains('active') || count === 0;
       $('cartBarTitle').textContent = count === 1 ? '1 item no pedido' : count + ' itens no pedido';
       $('cartBarMeta').textContent = money(cartTotal());
+      $('bottomCartCount').hidden = count === 0;
+      $('bottomCartCount').textContent = count > 9 ? '9+' : String(count);
     }
 
     function setQuantity(productId, delta) {
@@ -833,12 +985,14 @@
     }
 
     function renderServiceRequestButton() {
-      const button = $('requestServiceBtn');
-      if (!button) return;
       const active = activeServiceRequest();
-      button.disabled = active;
-      button.classList.toggle('is-requested', active);
-      button.querySelector('span').textContent = active ? 'Atendimento solicitado' : 'Solicitar atendimento';
+      [$('requestServiceBtn'), $('bottomServiceBtn')].filter(Boolean).forEach(button => {
+        button.disabled = active;
+        button.classList.toggle('is-requested', active);
+        button.querySelector('span').textContent = button.id === 'bottomServiceBtn'
+          ? (active ? 'Chamado' : 'Garçom')
+          : (active ? 'Atendimento solicitado' : 'Solicitar atendimento');
+      });
     }
 
     function renderOrder() {
@@ -947,11 +1101,22 @@
 
     function enterMenu() {
       $('menuIdentity').textContent = identityLabel();
+      state.search = '';
+      $('productSearch').value = '';
       state.category = state.products.find(product => normalizeCategory(product.category) === 'porcoes')?.category || 'Todos';
       renderProducts();
       showView('menuView');
       renderActiveOrderStrip();
       if (state.identity && (state.identity.trackingToken || state.identity.cardLinked)) loadOrderStatus(false);
+    }
+
+    async function openOrderView() {
+      if (!state.identity || (!state.identity.trackingToken && !state.identity.cardLinked)) {
+        showToast('Faça seu primeiro pedido para acompanhar a comanda.', true);
+        return;
+      }
+      const order = await loadOrderStatus(true);
+      if (order) showView('orderView');
     }
 
     function linkedAccessIdentity() {
@@ -967,9 +1132,10 @@
         showToast('Faça seu primeiro pedido para abrir a comanda e chamar o garçom.', true);
         return;
       }
-      const button = $('requestServiceBtn');
-      button.disabled = true;
-      button.querySelector('span').textContent = 'Enviando...';
+      [$('requestServiceBtn'), $('bottomServiceBtn')].filter(Boolean).forEach(button => {
+        button.disabled = true;
+        button.querySelector('span').textContent = 'Enviando...';
+      });
       try {
         const result = state.identity.cardLinked ? await rpc('bar_public_card_request_service', {
           p_token: qrToken,
@@ -1094,6 +1260,19 @@
       const button = event.target.closest('[data-category]');
       if (!button) return;
       state.category = button.dataset.category;
+      state.search = '';
+      $('productSearch').value = '';
+      renderProducts();
+    });
+
+    $('productSearch').addEventListener('input', event => {
+      state.search = event.target.value;
+      renderProducts();
+    });
+    $('clearProductSearch').addEventListener('click', () => {
+      state.search = '';
+      $('productSearch').value = '';
+      $('productSearch').focus();
       renderProducts();
     });
 
@@ -1113,15 +1292,14 @@
     $('retryBtn').addEventListener('click', loadMenu);
     $('changeIdentityBtn').addEventListener('click', () => { renderAccess(); showView('accessView'); });
     $('requestServiceBtn').addEventListener('click', requestService);
+    $('bottomServiceBtn').addEventListener('click', requestService);
+    $('bottomMenuBtn').addEventListener('click', enterMenu);
+    $('bottomCartBtn').addEventListener('click', () => cartCount() ? openCart() : showToast('Escolha um produto para começar o pedido.'));
+    $('bottomOrderBtn').addEventListener('click', openOrderView);
+    $('bottomProfileBtn').addEventListener('click', () => { renderAccess(); showView('accessView'); });
     $('backToMenuBtn').addEventListener('click', enterMenu);
-    $('headerOrderBtn').addEventListener('click', async () => {
-      const order = await loadOrderStatus(true);
-      if (order) showView('orderView');
-    });
-    $('activeOrderBtn').addEventListener('click', async () => {
-      const order = await loadOrderStatus(true);
-      if (order) showView('orderView');
-    });
+    $('headerOrderBtn').addEventListener('click', openOrderView);
+    $('activeOrderBtn').addEventListener('click', openOrderView);
 
     document.addEventListener('visibilitychange', () => { if (!document.hidden) syncOpenBarPage(); });
     window.addEventListener('focus', syncOpenBarPage);
