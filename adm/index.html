@@ -13494,14 +13494,53 @@
       font-weight: 950;
     }
 
-    .bar-menu-order-actions button:disabled {
-      opacity: .35;
+    .bar-menu-order-actions .bar-menu-drag-handle {
+      width: 34px;
+      color: var(--teal);
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .bar-menu-order-actions .bar-menu-drag-handle:active,
+    .bar-menu-order-actions .bar-menu-drag-handle[aria-grabbed="true"] {
+      cursor: grabbing;
+      color: #ffffff;
+      border-color: var(--teal);
+      background: var(--teal);
+    }
+
+    .bar-menu-order-actions .bar-menu-drag-handle svg {
+      width: 17px;
+      height: 17px;
+      fill: currentColor;
+      stroke: none;
     }
 
     .bar-menu-order-actions .bar-menu-edit-product {
       width: auto;
       padding: 0 7px;
       font-size: 9px;
+    }
+
+    .bar-menu-editor-item.is-dragging {
+      position: relative;
+      z-index: 4;
+      opacity: .66;
+      border-color: var(--teal);
+      box-shadow: 0 10px 24px rgba(0, 133, 145, .18);
+    }
+
+    .bar-menu-editor-item.is-drag-target {
+      border-color: #9fca18;
+      background: #f7fce8;
+    }
+
+    body.bar-menu-is-dragging {
+      cursor: grabbing;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .bar-customers-panel {
@@ -15505,6 +15544,14 @@
       <rect x="14" y="4" width="6" height="6" rx="1" />
       <rect x="4" y="14" width="6" height="6" rx="1" />
       <rect x="14" y="14" width="6" height="6" rx="1" />
+    </symbol>
+    <symbol id="bar-icon-grip" viewBox="0 0 24 24">
+      <circle cx="8" cy="6" r="1.6" />
+      <circle cx="16" cy="6" r="1.6" />
+      <circle cx="8" cy="12" r="1.6" />
+      <circle cx="16" cy="12" r="1.6" />
+      <circle cx="8" cy="18" r="1.6" />
+      <circle cx="16" cy="18" r="1.6" />
     </symbol>
     <symbol id="bar-icon-photo" viewBox="0 0 24 24">
       <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -23768,14 +23815,14 @@
           const tvUnavailable = unavailable || product.menuOnlineVisible === false;
           const published = product.active && (product.menuOnlineVisible !== false || product.menuVisible !== false);
           const inactiveText = unavailable ? ' · produto inativo' : '';
-          return '<article class="bar-menu-editor-item' + (published ? '' : ' is-hidden') + '">' +
+          return '<article class="bar-menu-editor-item' + (published ? '' : ' is-hidden') + '" data-bar-menu-item="' + escapeHtml(product.id) + '">' +
             '<div class="bar-menu-editor-thumb">' + thumb + '</div>' +
             '<div class="bar-menu-editor-copy"><strong>' + escapeHtml(product.name) + '</strong><small>' + money(product.salePrice) + escapeHtml(inactiveText) + '</small></div>' +
             '<div class="bar-menu-editor-controls">' +
               '<label class="bar-menu-toggle" title="' + (unavailable ? 'Ative o produto no catálogo para publicar' : 'Exibir no cardápio oficial do celular') + '"><input type="checkbox" data-bar-menu-online="' + escapeHtml(product.id) + '"' + (product.menuOnlineVisible !== false ? ' checked' : '') + (unavailable ? ' disabled' : '') + ' /><span>' + (unavailable ? 'Inativo' : 'Online') + '</span></label>' +
               '<label class="bar-menu-toggle" title="' + (unavailable ? 'Ative o produto no catálogo para exibir na TV' : (tvUnavailable ? 'Marque Online antes de publicar na TV' : 'Exibir na seleção reduzida da televisão')) + '"><input type="checkbox" data-bar-menu-visible="' + escapeHtml(product.id) + '"' + (product.menuVisible !== false ? ' checked' : '') + (tvUnavailable ? ' disabled' : '') + ' /><span>TV</span></label>' +
               '<label class="bar-menu-toggle" title="Dar destaque visual no cardápio"><input type="checkbox" data-bar-menu-featured="' + escapeHtml(product.id) + '"' + (product.menuFeatured ? ' checked' : '') + (unavailable ? ' disabled' : '') + ' /><span>Destaque</span></label>' +
-              '<div class="bar-menu-order-actions"><button type="button" data-bar-menu-move="up" data-bar-menu-product="' + escapeHtml(product.id) + '" aria-label="Mover para cima"' + (index === 0 ? ' disabled' : '') + '>↑</button><button type="button" data-bar-menu-move="down" data-bar-menu-product="' + escapeHtml(product.id) + '" aria-label="Mover para baixo"' + (index === products.length - 1 ? ' disabled' : '') + '>↓</button><button class="bar-menu-edit-product" type="button" data-bar-product-edit="' + escapeHtml(product.id) + '">Editar</button></div>' +
+              '<div class="bar-menu-order-actions"><button class="bar-menu-drag-handle" type="button" data-bar-menu-drag="' + escapeHtml(product.id) + '" aria-label="Arrastar ' + escapeHtml(product.name) + ' para reorganizar" aria-grabbed="false" title="Segure e arraste para reorganizar"><svg aria-hidden="true"><use href="#bar-icon-grip"></use></svg></button><button class="bar-menu-edit-product" type="button" data-bar-product-edit="' + escapeHtml(product.id) + '">Editar</button></div>' +
             '</div></article>';
         }).join('');
         return '<section class="bar-menu-editor-category"><div class="bar-menu-editor-category-head"><strong>' + barProductCategoryIcon(category) + escapeHtml(barProductCategoryLabel(category)) + '</strong><span>' + products.length + ' item(ns)</span></div><div class="bar-menu-editor-products">' + items + '</div></section>';
@@ -23827,29 +23874,38 @@
       }
     }
 
-    async function moveBarMenuProductAction(id, direction) {
-      const product = barProductById(id);
-      if (!product) return;
+    let barMenuDragState = null;
+
+    async function reorderBarMenuProductsAction(visibleOrderIds) {
+      const visibleProducts = visibleOrderIds.map(barProductById).filter(Boolean);
+      if (visibleProducts.length < 2) return;
+      const category = String(visibleProducts[0].category || 'Outros');
+      if (visibleProducts.some(function (item) { return String(item.category || 'Outros') !== category; })) return;
       const categoryProducts = barMenuSortedProducts(opsData.barProducts.filter(function (item) {
-        return String(item.category || 'Outros') === String(product.category || 'Outros');
+        return String(item.category || 'Outros') === category;
       }));
-      const index = categoryProducts.findIndex(function (item) { return String(item.id) === String(id); });
-      const targetIndex = direction === 'up' ? index - 1 : index + 1;
-      if (index < 0 || targetIndex < 0 || targetIndex >= categoryProducts.length) return;
+      const visibleIds = new Set(visibleProducts.map(function (item) { return String(item.id); }));
+      let visibleIndex = 0;
+      const reordered = categoryProducts.map(function (item) {
+        return visibleIds.has(String(item.id)) ? visibleProducts[visibleIndex++] : item;
+      });
+      const unchanged = reordered.every(function (item, index) {
+        return String(item.id) === String(categoryProducts[index] && categoryProducts[index].id);
+      });
+      if (unchanged) return;
       const previousOrders = categoryProducts.map(function (item) { return { id: item.id, value: item.menuSortOrder }; });
-      const moved = categoryProducts.splice(index, 1)[0];
-      categoryProducts.splice(targetIndex, 0, moved);
-      categoryProducts.forEach(function (item, position) { item.menuSortOrder = position + 1; });
+      reordered.forEach(function (item, position) { item.menuSortOrder = position + 1; });
       renderBarMenuEditor();
       try {
         requireAdminSession();
-        if (barCanPersist(product.id)) {
-          await Promise.all(categoryProducts.map(function (item, position) {
+        if (barCanPersist(reordered[0] && reordered[0].id)) {
+          await Promise.all(reordered.map(function (item, position) {
             return supabaseRest('bar_products?id=eq.' + encodeURIComponent(item.id), {
               method: 'PATCH',
               body: { menu_sort_order: position + 1, updated_at: new Date().toISOString() }
             });
           }));
+          broadcastAppChange('bar_products');
         }
         toast('Ordem do cardápio atualizada.');
       } catch (error) {
@@ -23860,6 +23916,71 @@
         renderBarMenuEditor();
         reportActionError(error);
       }
+    }
+
+    function barMenuVisibleOrderIds(container) {
+      return Array.from(container.querySelectorAll('[data-bar-menu-item]')).map(function (item) {
+        return item.dataset.barMenuItem;
+      });
+    }
+
+    function beginBarMenuDrag(event) {
+      const handle = event.target.closest('[data-bar-menu-drag]');
+      if (!handle || (event.button !== undefined && event.button !== 0)) return;
+      const item = handle.closest('[data-bar-menu-item]');
+      const container = item && item.parentElement;
+      if (!item || !container || container.querySelectorAll('[data-bar-menu-item]').length < 2) return;
+      event.preventDefault();
+      barMenuDragState = { pointerId: event.pointerId, handle: handle, item: item, container: container, moved: false };
+      if (handle.setPointerCapture) handle.setPointerCapture(event.pointerId);
+      handle.setAttribute('aria-grabbed', 'true');
+      item.classList.add('is-dragging');
+      document.body.classList.add('bar-menu-is-dragging');
+    }
+
+    function moveBarMenuDrag(event) {
+      if (!barMenuDragState || event.pointerId !== barMenuDragState.pointerId) return;
+      event.preventDefault();
+      const target = document.elementFromPoint(event.clientX, event.clientY);
+      const targetItem = target && target.closest('[data-bar-menu-item]');
+      if (!targetItem || targetItem === barMenuDragState.item || targetItem.parentElement !== barMenuDragState.container) return;
+      barMenuDragState.container.querySelectorAll('.is-drag-target').forEach(function (item) { item.classList.remove('is-drag-target'); });
+      targetItem.classList.add('is-drag-target');
+      const rect = targetItem.getBoundingClientRect();
+      const insertAfter = event.clientY > rect.top + rect.height / 2;
+      barMenuDragState.container.insertBefore(barMenuDragState.item, insertAfter ? targetItem.nextSibling : targetItem);
+      barMenuDragState.moved = true;
+    }
+
+    function finishBarMenuDrag(event) {
+      if (!barMenuDragState || event.pointerId !== barMenuDragState.pointerId) return;
+      const state = barMenuDragState;
+      barMenuDragState = null;
+      if (state.handle.releasePointerCapture && state.handle.hasPointerCapture && state.handle.hasPointerCapture(event.pointerId)) {
+        state.handle.releasePointerCapture(event.pointerId);
+      }
+      state.handle.setAttribute('aria-grabbed', 'false');
+      state.item.classList.remove('is-dragging');
+      state.container.querySelectorAll('.is-drag-target').forEach(function (item) { item.classList.remove('is-drag-target'); });
+      document.body.classList.remove('bar-menu-is-dragging');
+      if (state.moved) reorderBarMenuProductsAction(barMenuVisibleOrderIds(state.container));
+    }
+
+    function moveBarMenuHandleWithKeyboard(event) {
+      const handle = event.target.closest('[data-bar-menu-drag]');
+      if (!handle || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+      const item = handle.closest('[data-bar-menu-item]');
+      const container = item && item.parentElement;
+      const target = event.key === 'ArrowUp' ? item && item.previousElementSibling : item && item.nextElementSibling;
+      if (!item || !container || !target || !target.matches('[data-bar-menu-item]')) return;
+      event.preventDefault();
+      container.insertBefore(item, event.key === 'ArrowUp' ? target : target.nextSibling);
+      const productId = item.dataset.barMenuItem;
+      reorderBarMenuProductsAction(barMenuVisibleOrderIds(container));
+      window.setTimeout(function () {
+        const nextHandle = document.querySelector('[data-bar-menu-drag="' + CSS.escape(productId) + '"]');
+        if (nextHandle) nextHandle.focus();
+      }, 0);
     }
 
     function barFinancePeriodLabel() {
@@ -29877,6 +29998,11 @@
       $('barOrderItemForm').addEventListener('submit', addBarOrderItemAction);
       $('barProductSearch').addEventListener('input', renderBarProducts);
       $('barMenuEditorSearch').addEventListener('input', renderBarMenuEditor);
+      $('barMenuEditorList').addEventListener('pointerdown', beginBarMenuDrag);
+      $('barMenuEditorList').addEventListener('pointermove', moveBarMenuDrag);
+      $('barMenuEditorList').addEventListener('pointerup', finishBarMenuDrag);
+      $('barMenuEditorList').addEventListener('pointercancel', finishBarMenuDrag);
+      $('barMenuEditorList').addEventListener('keydown', moveBarMenuHandleWithKeyboard);
       $('barMenuEditorList').addEventListener('change', function (event) {
         const onlineInput = event.target.closest('[data-bar-menu-online]');
         if (onlineInput) {
@@ -29972,11 +30098,6 @@
         const reopenOrderBtn = event.target.closest('[data-bar-order-reopen]');
         if (reopenOrderBtn) {
           reopenBarOrderAction(reopenOrderBtn.dataset.barOrderReopen);
-          return;
-        }
-        const menuMoveBtn = event.target.closest('[data-bar-menu-move]');
-        if (menuMoveBtn) {
-          moveBarMenuProductAction(menuMoveBtn.dataset.barMenuProduct, menuMoveBtn.dataset.barMenuMove);
           return;
         }
         const productBtn = event.target.closest('[data-bar-product-edit]');
