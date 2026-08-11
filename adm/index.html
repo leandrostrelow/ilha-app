@@ -3518,6 +3518,12 @@
       overflow-wrap: anywhere;
     }
 
+    .bar-incoming-note.bar-incoming-location {
+      color: #075f68;
+      background: #e8f5f5;
+      border: 1px solid #b8dfe1;
+    }
+
     .bar-incoming-actions {
       display: grid;
       justify-items: end;
@@ -23409,11 +23415,17 @@
         const requestNotes = Array.from(new Set(entry.items.map(function (item) {
           return String(item.notes || '').trim();
         }).filter(Boolean)));
+        const deliveryLocations = Array.from(new Set(entry.items.map(function (item) {
+          return String(item.deliveryLocation || '').trim();
+        }).filter(Boolean)));
+        const deliveryLocationMarkup = deliveryLocations.length
+          ? '<div class="bar-incoming-note bar-incoming-location"><strong>Local:</strong><span>' + escapeHtml(deliveryLocations.join(' · ')) + '</span></div>'
+          : '';
         const requestNoteMarkup = requestNotes.length
           ? '<div class="bar-incoming-note"><strong>Observação:</strong><span>' + escapeHtml(requestNotes.join(' · ')) + '</span></div>'
           : '';
         return '<article class="bar-incoming-card"><div class="bar-incoming-identity"><span><svg><use href="' + (table ? '#admin-icon-table' : '#admin-icon-receipt') + '"></use></svg></span><div><strong>' + escapeHtml(customerName) + '</strong><small>' + escapeHtml(location) + '</small></div></div>' +
-          '<div class="bar-incoming-items">' + itemTags + requestNoteMarkup + '</div>' +
+          '<div class="bar-incoming-items">' + itemTags + deliveryLocationMarkup + requestNoteMarkup + '</div>' +
           '<div class="bar-incoming-actions"><span class="bar-incoming-time">' + escapeHtml(barDateTimeLabel(entry.created)) + '</span><div class="bar-incoming-approval-actions"><button class="small-btn" type="button" data-bar-order-open="' + escapeHtml(order.id) + '">Ver</button><button class="small-btn bar-incoming-approve" type="button" data-bar-approve-order="' + escapeHtml(order.id) + '">Aceitar pedido</button></div></div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum pedido online aguardando.</div>';
       updateBarOrderBadges();

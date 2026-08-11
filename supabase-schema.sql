@@ -257,6 +257,7 @@ create table if not exists public.bar_order_items (
   source text not null default 'EQUIPE' check (source in ('EQUIPE', 'QR_MESA', 'QR_CARTAO')),
   status text not null default 'SOLICITADO' check (status in ('SOLICITADO', 'EM_PREPARO', 'PRONTO', 'ENTREGUE', 'CANCELADO')),
   notes text,
+  delivery_location text,
   added_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -343,6 +344,14 @@ alter table public.bar_order_items
   add column if not exists split_with text;
 alter table public.bar_order_items
   add column if not exists billing_only boolean not null default false;
+alter table public.bar_order_items
+  add column if not exists delivery_location text;
+alter table public.bar_order_items
+  drop constraint if exists bar_order_items_delivery_location_check;
+alter table public.bar_order_items
+  add constraint bar_order_items_delivery_location_check check (
+    delivery_location is null or length(trim(delivery_location)) between 2 and 80
+  );
 do $$
 begin
   if not exists (
@@ -2096,6 +2105,7 @@ declare
   product_id_value uuid;
   quantity_value numeric;
   item_notes text;
+  delivery_location_value text;
   has_fixed_table boolean := false;
   has_card boolean := false;
   qr_orders_enabled_value boolean := true;
@@ -2235,13 +2245,20 @@ begin
     end if;
 
     item_notes := nullif(left(trim(coalesce(item_payload ->> 'notes', '')), 160), '');
+    delivery_location_value := nullif(left(trim(coalesce(item_payload ->> 'delivery_location', '')), 80), '');
+    if has_card and delivery_location_value is null then
+      raise exception 'Informe onde você está para receber o pedido.';
+    end if;
+    if has_fixed_table then
+      delivery_location_value := null;
+    end if;
     insert into public.bar_order_items (
       order_id, product_id, product_name, quantity, unit_price, cost_price,
-      customer_name, customer_phone, source, notes
+      customer_name, customer_phone, source, notes, delivery_location
     ) values (
       order_row.id, product_row.id, product_row.name, quantity_value,
       product_row.sale_price, product_row.cost_price, customer_value, phone_value,
-      access_source, item_notes
+      access_source, item_notes, delivery_location_value
     ) returning * into item_row;
 
     update public.bar_products
