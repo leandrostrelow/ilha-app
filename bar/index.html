@@ -161,9 +161,6 @@
     }
     .form-field textarea { min-height: 82px; resize: vertical; }
     .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--lime); box-shadow: 0 0 0 3px rgba(181, 229, 0, .16); }
-    .location-examples { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
-    .location-examples button { min-height: 34px; padding: 7px 10px; color: var(--teal); background: #f3f8f9; border: 1px solid var(--line); border-radius: 999px; font-size: 12px; font-weight: 850; }
-    .location-examples button.selected { color: #fff; background: var(--teal); border-color: var(--teal); }
     .primary-btn, .secondary-btn, .icon-btn {
       min-height: 48px;
       display: inline-flex;
@@ -624,7 +621,7 @@
   <div class="sheet-backdrop" id="cartSheet" aria-hidden="true">
     <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
       <header class="sheet-header"><h2 id="cartTitle">Revisar pedido</h2><button class="close-btn" id="closeCartBtn" type="button" aria-label="Fechar"><svg><use href="#icon-x"></use></svg></button></header>
-      <div class="sheet-body"><div id="cartExisting" class="cart-existing" hidden></div><h3 class="cart-section-title cart-new-title" id="cartNewTitle" hidden>Adicionar agora</h3><div id="cartItems"></div><div class="form-field" id="deliveryLocationField" hidden><label for="deliveryLocation">Onde você está?</label><input id="deliveryLocation" maxlength="80" autocomplete="off" placeholder="Ex.: Mesa, Beach Tennis, Tênis - Quadra 1" /><div class="location-examples" aria-label="Exemplos de localização"><button type="button" data-location-example="Mesa">Mesa</button><button type="button" data-location-example="Beach Tennis">Beach Tennis</button><button type="button" data-location-example="Tênis - Quadra 1">Tênis - Quadra 1</button><button type="button" data-location-example="Futevôlei">Futevôlei</button></div></div><div class="form-field"><label for="orderNotes">Observação geral</label><textarea id="orderNotes" maxlength="300" placeholder="Ex.: entregar tudo junto"></textarea></div><div class="cart-total"><span>Total deste pedido</span><strong id="cartTotal">R$ 0,00</strong></div><button class="primary-btn send-order-btn" id="sendOrderBtn" type="button">Enviar pedido <svg><use href="#icon-arrow"></use></svg></button></div>
+      <div class="sheet-body"><div id="cartExisting" class="cart-existing" hidden></div><h3 class="cart-section-title cart-new-title" id="cartNewTitle" hidden>Adicionar agora</h3><div id="cartItems"></div><div class="form-field" id="deliveryLocationField" hidden><label for="deliveryLocation">Onde você está?</label><input id="deliveryLocation" maxlength="80" autocomplete="off" placeholder="Nº da mesa, Beach, Tênis, Futevôlei..." /></div><div class="form-field"><label for="orderNotes">Observação geral</label><textarea id="orderNotes" maxlength="300" placeholder="Ex.: entregar tudo junto"></textarea></div><div class="cart-total"><span>Total deste pedido</span><strong id="cartTotal">R$ 0,00</strong></div><button class="primary-btn send-order-btn" id="sendOrderBtn" type="button">Enviar pedido <svg><use href="#icon-arrow"></use></svg></button></div>
     </section>
   </div>
 
@@ -1205,7 +1202,6 @@
         state.cart = {};
         $('orderNotes').value = '';
         $('deliveryLocation').value = '';
-        document.querySelectorAll('[data-location-example]').forEach(button => button.classList.remove('selected'));
         closeCart();
         await loadOrderStatus(true);
         renderProducts();
@@ -1338,16 +1334,6 @@
     $('openCartBtn').addEventListener('click', openCart);
     $('closeCartBtn').addEventListener('click', closeCart);
     $('cartSheet').addEventListener('click', event => { if (event.target.id === 'cartSheet') closeCart(); });
-    $('cartSheet').addEventListener('click', event => {
-      const locationExample = event.target.closest('[data-location-example]');
-      if (!locationExample) return;
-      $('deliveryLocation').value = locationExample.dataset.locationExample;
-      document.querySelectorAll('[data-location-example]').forEach(button => button.classList.toggle('selected', button === locationExample));
-    });
-    $('deliveryLocation').addEventListener('input', () => {
-      const value = $('deliveryLocation').value.trim().toLocaleLowerCase('pt-BR');
-      document.querySelectorAll('[data-location-example]').forEach(button => button.classList.toggle('selected', button.dataset.locationExample.toLocaleLowerCase('pt-BR') === value));
-    });
     $('sendOrderBtn').addEventListener('click', sendOrder);
     $('retryBtn').addEventListener('click', loadMenu);
     $('changeIdentityBtn').addEventListener('click', () => { renderAccess(); showView('accessView'); });
