@@ -396,9 +396,6 @@
     .status-pill.preparing { color: #874000; background: #ffe0c4; }
     .status-pill.ready { color: #395800; background: var(--lime-soft); }
     .status-pill.closed { color: #fff; background: var(--teal); }
-    .status-track { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 22px 0; }
-    .status-step { min-width: 0; padding-top: 12px; color: #87979e; border-top: 4px solid #dce6e9; font-size: 11px; font-weight: 900; text-align: center; }
-    .status-step.done { color: var(--teal); border-color: var(--lime); }
     .order-items-title { margin: 0 0 6px; font-size: 18px; }
     .order-item-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--line); }
     .order-item-row strong, .order-item-row small { display: block; }
@@ -466,7 +463,6 @@
       .sheet { max-height: calc(100vh - 16px); border-radius: 8px 8px 0 0; }
       .order-panel { padding: 19px 16px; }
       .order-actions { grid-template-columns: 1fr; }
-      .status-step { font-size: 10px; }
       .cart-bar { bottom: calc(84px + env(safe-area-inset-bottom)); width: calc(100% - 28px); }
       .customer-bottom-nav {
         position: fixed;
@@ -947,7 +943,7 @@
       const existingItems = state.order && Array.isArray(state.order.items) ? state.order.items : [];
       $('cartExisting').hidden = existingItems.length === 0;
       $('cartNewTitle').hidden = existingItems.length === 0;
-      $('cartExisting').innerHTML = existingItems.length ? '<h3 class="cart-section-title">Já na comanda #' + escapeHtml(state.order.command_number) + '</h3>' + existingItems.map(item => '<article class="cart-item"><div><h3>' + escapeHtml(Number(item.quantity).toLocaleString('pt-BR') + 'x ' + item.name) + '</h3><p>' + escapeHtml(itemStatusLabel(item.status)) + '</p></div><strong>' + money(Number(item.quantity) * Number(item.unit_price)) + '</strong></article>').join('') : '';
+      $('cartExisting').innerHTML = existingItems.length ? '<h3 class="cart-section-title">Já na comanda · ' + escapeHtml(state.order.table_name || 'Balcão') + '</h3>' + existingItems.map(item => '<article class="cart-item"><div><h3>' + escapeHtml(Number(item.quantity).toLocaleString('pt-BR') + 'x ' + item.name) + '</h3><p>' + escapeHtml(itemStatusLabel(item.status)) + '</p></div><strong>' + money(Number(item.quantity) * Number(item.unit_price)) + '</strong></article>').join('') : '';
       $('cartItems').innerHTML = entries.map(item => '<article class="cart-item"><div><h3>' + escapeHtml(item.quantity + 'x ' + item.product.name) + '</h3><p>' + money(item.quantity * Number(item.product.price || 0)) + '</p></div><div class="cart-item-actions"><div class="qty-control"><button type="button" data-product-dec="' + escapeHtml(item.product.id) + '">−</button><strong>' + item.quantity + '</strong><button type="button" data-product-inc="' + escapeHtml(item.product.id) + '">+</button></div></div></article>').join('');
       $('cartTotal').textContent = money(cartTotal());
       $('sendOrderBtn').disabled = entries.length === 0;
@@ -967,7 +963,7 @@
     }
 
     function orderStatusLabel(status) {
-      return ({ ABERTA: 'Recebido', EM_PREPARO: 'Em preparo', PRONTA: 'Pronto para entregar', FECHADA: 'Finalizado', CANCELADA: 'Cancelado' })[status] || status || 'Recebido';
+      return ({ ABERTA: 'Recebido', EM_PREPARO: 'Aceito', PRONTA: 'Aceito', FECHADA: 'Finalizado', CANCELADA: 'Cancelado' })[status] || status || 'Recebido';
     }
 
     function itemStatusLabel(status) {
@@ -980,7 +976,7 @@
       $('headerOrderBtn').classList.toggle('has-order', hasTracking);
       $('activeOrderStrip').hidden = !hasTracking || !state.order;
       if (state.order) {
-        $('activeOrderTitle').textContent = 'Comanda #' + state.order.command_number;
+        $('activeOrderTitle').textContent = 'Comanda · ' + (state.order.table_name || 'Balcão');
         $('activeOrderStatus').textContent = orderStatusLabel(state.order.status) + ' | ' + money(state.order.total);
       }
       renderServiceRequestButton();
@@ -1007,12 +1003,12 @@
         return;
       }
       const order = state.order;
-      const steps = ['ABERTA', 'EM_PREPARO', 'PRONTA', 'FECHADA'];
-      const index = order.status === 'CANCELADA' ? -1 : Math.max(0, steps.indexOf(order.status));
-      const pillClass = order.status === 'EM_PREPARO' ? ' preparing' : order.status === 'PRONTA' ? ' ready' : order.status === 'FECHADA' ? ' closed' : '';
-      const items = (order.items || []).map(item => '<div class="order-item-row"><div><strong>' + escapeHtml(Number(item.quantity).toLocaleString('pt-BR') + 'x ' + item.name) + '</strong><small>' + escapeHtml([item.notes, itemStatusLabel(item.status)].filter(Boolean).join(' | ')) + '</small></div><span>' + money(Number(item.quantity) * Number(item.unit_price)) + '</span></div>').join('');
-      $('orderPanel').innerHTML = '<div class="order-number"><div><span>Comanda</span><strong>#' + escapeHtml(order.command_number) + '</strong><small>' + escapeHtml(order.table_name || 'Balcão') + '</small></div><div class="status-pill' + pillClass + '">' + escapeHtml(orderStatusLabel(order.status)) + '</div></div>' +
-        '<div class="status-track">' + ['Recebido', 'Preparando', 'Pronto', 'Finalizado'].map((label, stepIndex) => '<div class="status-step' + (index >= stepIndex ? ' done' : '') + '">' + label + '</div>').join('') + '</div>' +
+      const pillClass = ['EM_PREPARO', 'PRONTA'].includes(order.status) ? ' ready' : order.status === 'FECHADA' ? ' closed' : '';
+      const items = (order.items || []).map(item => {
+        const notes = String(item.notes || '').trim();
+        return '<div class="order-item-row"><div><strong>' + escapeHtml(Number(item.quantity).toLocaleString('pt-BR') + 'x ' + item.name) + '</strong>' + (notes ? '<small>' + escapeHtml(notes) + '</small>' : '') + '</div><span>' + money(Number(item.quantity) * Number(item.unit_price)) + '</span></div>';
+      }).join('');
+      $('orderPanel').innerHTML = '<div class="order-number"><div><span>Comanda</span><strong>' + escapeHtml(order.table_name || 'Balcão') + '</strong></div><div class="status-pill' + pillClass + '">' + escapeHtml(orderStatusLabel(order.status)) + '</div></div>' +
         '<h2 class="order-items-title">Itens</h2>' + (items || '<div class="empty-menu">Carregando os itens...</div>') +
         '<div class="order-total"><span>Total</span><strong>' + money(order.total) + '</strong></div>' +
         '<div class="order-actions"><button class="secondary-btn" type="button" data-order-refresh><svg><use href="#icon-refresh"></use></svg>Atualizar</button><button class="primary-btn" type="button" data-order-more>Fazer outro pedido</button></div>';
