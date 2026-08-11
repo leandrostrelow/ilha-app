@@ -121,25 +121,16 @@
 
     .access-wrap { min-height: calc(100vh - 154px); display: grid; place-items: center; }
     .access-panel {
-      width: min(520px, 100%);
+      width: min(480px, 100%);
       padding: 28px;
+      text-align: center;
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
       box-shadow: var(--shadow);
     }
-    .access-mark {
-      width: 54px;
-      height: 54px;
-      display: grid;
-      place-items: center;
-      margin-bottom: 20px;
-      color: var(--teal);
-      background: var(--lime-soft);
-      border-radius: 8px;
-    }
     .access-panel h1 { margin: 0; font-size: 30px; line-height: 1.1; }
-    .access-panel > p { margin: 8px 0 24px; color: var(--muted); line-height: 1.5; }
+    .access-panel > p { max-width: 390px; margin: 9px auto 22px; color: var(--muted); line-height: 1.45; }
     .access-location {
       display: flex;
       align-items: center;
@@ -149,11 +140,13 @@
       background: #f4f8f9;
       border: 1px solid var(--line);
       border-radius: 8px;
+      text-align: left;
     }
+    .access-location.compact { justify-content: center; padding: 11px 14px; }
     .access-location span { width: 38px; height: 38px; display: grid; place-items: center; color: var(--teal); background: #fff; border-radius: 6px; }
     .access-location strong, .access-location small { display: block; }
     .access-location small { margin-top: 3px; color: var(--muted); }
-    .form-field { margin-top: 16px; }
+    .form-field { margin-top: 16px; text-align: left; }
     .form-field label { display: block; margin-bottom: 7px; font-size: 12px; font-weight: 900; text-transform: uppercase; }
     .form-field input, .form-field select, .form-field textarea {
       width: 100%;
@@ -446,7 +439,8 @@
       .header-order-btn { min-width: 42px; height: 42px; }
       .main { padding: 18px 16px 36px; }
       .access-wrap, .loading-view, .error-view { min-height: calc(100vh - 122px); }
-      .access-panel { padding: 22px 18px; }
+      .access-wrap { align-items: start; padding-top: 24px; }
+      .access-panel { padding: 24px 20px; }
       .access-panel h1 { font-size: 27px; }
       .menu-top { align-items: flex-start; margin-bottom: 16px; }
       .menu-top h1 { font-size: 29px; line-height: 1.05; }
@@ -568,7 +562,7 @@
     <header class="app-header">
       <div class="brand"><img src="../assets/branding/ilha-bar-logo-dark.png" alt="Ilha Bar" /></div>
       <div class="header-actions">
-        <button class="header-order-btn identity-btn" id="changeIdentityBtn" type="button" aria-label="Alterar perfil, nome ou mesa" title="Alterar perfil"><svg><use href="#icon-user"></use></svg></button>
+        <button class="header-order-btn identity-btn" id="changeIdentityBtn" type="button" aria-label="Alterar perfil, nome ou mesa" title="Alterar perfil" hidden><svg><use href="#icon-user"></use></svg></button>
         <button class="header-order-btn" id="headerOrderBtn" type="button" aria-label="Acompanhar meu pedido" hidden><svg><use href="#icon-cart"></use></svg></button>
       </div>
     </header>
@@ -585,10 +579,9 @@
       <section class="view" id="accessView">
         <div class="access-wrap">
           <form class="access-panel" id="accessForm">
-            <div class="access-mark"><svg><use href="#icon-user"></use></svg></div>
             <h1>Bem-vindo ao Ilha Bar</h1>
             <p>Informe seu nome e telefone para abrir o cardápio e acompanhar sua comanda.</p>
-            <div class="access-location"><span><svg><use href="#icon-pin"></use></svg></span><div><strong id="accessLabel">Acesso do Bar</strong><small id="accessHint">Escolha onde você está.</small></div></div>
+            <div class="access-location" id="accessLocation"><span><svg><use href="#icon-pin"></use></svg></span><div><strong id="accessLabel">Acesso do Bar</strong><small id="accessHint">Escolha onde você está.</small></div></div>
             <div class="form-field"><label for="customerName">Seu nome</label><input id="customerName" name="customerName" autocomplete="name" maxlength="80" placeholder="Como podemos chamar você?" required /></div>
             <div class="form-field"><label for="customerPhone">Telefone</label><input id="customerPhone" name="customerPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="(27) 99999-9999" required /></div>
             <div class="form-field" id="tableField"><label for="tableSelect">Mesa</label><select id="tableSelect" name="tableSelect"></select></div>
@@ -748,6 +741,7 @@
 
     function showView(id) {
       document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === id));
+      $('changeIdentityBtn').hidden = !state.identity || !['menuView', 'orderView'].includes(id);
       const bottomNav = $('customerBottomNav');
       if (bottomNav) {
         bottomNav.hidden = !state.identity || !['menuView', 'orderView'].includes(id);
@@ -849,6 +843,8 @@
       const fixed = state.access.kind === 'MESA';
       const card = state.access.kind === 'CARTAO';
       $('accessHint').textContent = fixed ? 'Mesa identificada pelo QR Code.' : card ? 'Use este cartão para abrir sua comanda e pedir de onde estiver.' : 'Pedidos sem mesa fixa.';
+      $('accessHint').hidden = card;
+      $('accessLocation').classList.toggle('compact', card);
       $('tableSelect').innerHTML = (fixed || card ? '' : '<option value="">Sem mesa | retirar no balcão</option>') + state.tables.map(table => '<option value="' + escapeHtml(table.id) + '">' + escapeHtml(table.name) + '</option>').join('');
       $('tableField').hidden = fixed || card;
       if (fixed && state.tables[0]) $('tableSelect').value = state.tables[0].id;
