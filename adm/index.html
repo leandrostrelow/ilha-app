@@ -23911,7 +23911,7 @@
           const item = barAccessPermissionCatalog.find(function (permission) { return permission.key === key; });
           return item && item.label;
         }).filter(Boolean);
-        const accessLabel = user.role === 'admin' ? 'Acesso total' : (hasGranularBarPermissions(user) ? labels.length + ' áreas liberadas' : 'Acesso operacional');
+        const accessLabel = user.role === 'admin' ? 'Acesso total' : (hasGranularBarPermissions(user) ? labels.length + (labels.length === 1 ? ' área liberada' : ' áreas liberadas') : 'Acesso operacional');
         return '<article class="bar-access-user"><div class="bar-access-user-main"><strong>' + escapeHtml(user.name) + '</strong><small>' + escapeHtml(user.email || 'E-mail não informado') + '</small><small>' + escapeHtml(user.notes || accessLabel) + '</small></div>' +
           '<div class="bar-access-permissions">' + (labels.map(function (label) { return '<span class="bar-access-permission">' + escapeHtml(label) + '</span>'; }).join('') || '<span class="bar-access-permission">Sem áreas liberadas</span>') + '</div>' +
           '<div class="bar-row-actions">' + barStatusPill(user.active ? 'ATIVO' : 'BLOQUEADO') + (user.role === 'admin' ? '' : '<button class="small-btn" type="button" data-bar-access-edit="' + escapeHtml(user.id) + '">Editar</button>') + '</div></article>';
