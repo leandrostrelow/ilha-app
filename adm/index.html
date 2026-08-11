@@ -1502,6 +1502,121 @@
       line-height: 1.35;
     }
 
+    .bar-access-page,
+    .bar-access-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .bar-access-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .bar-access-metric {
+      min-height: 78px;
+      display: grid;
+      align-content: center;
+      gap: 3px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #ffffff;
+    }
+
+    .bar-access-metric strong {
+      color: var(--navy);
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .bar-access-metric span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .bar-access-user {
+      display: grid;
+      grid-template-columns: minmax(190px, .75fr) minmax(0, 1.6fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #ffffff;
+    }
+
+    .bar-access-user-main strong,
+    .bar-access-user-main small {
+      display: block;
+    }
+
+    .bar-access-user-main small {
+      margin-top: 3px;
+      color: var(--muted);
+      font-weight: 750;
+    }
+
+    .bar-access-permissions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .bar-access-permission {
+      padding: 5px 8px;
+      border-radius: 999px;
+      color: #16515a;
+      background: #e8f6f7;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .bar-access-modal .admin-modal {
+      width: min(920px, calc(100vw - 24px));
+    }
+
+    .bar-access-permission-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .bar-access-permission-card {
+      min-height: 88px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f8fbfc;
+    }
+
+    .bar-access-permission-card label {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      margin: 0;
+      color: var(--navy);
+      font-size: 13px;
+      font-weight: 950;
+      text-transform: none;
+    }
+
+    .bar-access-permission-card input {
+      width: auto;
+      min-height: auto;
+      margin-top: 2px;
+    }
+
+    .bar-access-permission-card small {
+      display: block;
+      margin: 6px 0 0 25px;
+      color: var(--muted);
+      font-weight: 750;
+      line-height: 1.35;
+    }
+
     .cashflow-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
@@ -3190,6 +3305,12 @@
 
     [data-bar-panel] {
       display: none;
+    }
+
+    [data-bar-side-tab][hidden],
+    [data-bar-tab][hidden],
+    [data-bar-panel][hidden] {
+      display: none !important;
     }
 
     [data-bar-panel].active-tab-panel {
@@ -7649,6 +7770,13 @@
       .client-detail-grid,
       .team-permission-grid,
       .cashflow-grid {
+        grid-template-columns: 1fr;
+      }
+      .bar-access-summary,
+      .bar-access-permission-grid {
+        grid-template-columns: 1fr;
+      }
+      .bar-access-user {
         grid-template-columns: 1fr;
       }
       .finance-form-card {
@@ -15799,6 +15927,7 @@
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="qrcodes"><span class="admin-nav-icon"><svg><use href="#admin-icon-qr"></use></svg></span><span>QR Codes</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="events"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Agenda</span></button>
+        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="access"><span class="admin-nav-icon"><svg><use href="#admin-icon-team"></use></svg></span><span>Acessos</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-store"><span class="admin-nav-icon"><svg><use href="#admin-icon-bag"></use></svg></span><span>Ilha Store</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-announcements"><span class="admin-nav-icon"><svg><use href="#admin-icon-megaphone"></use></svg></span><span>Comunicados</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-team"><span class="admin-nav-icon"><svg><use href="#admin-icon-team"></use></svg></span><span>Equipe</span></button>
@@ -16320,6 +16449,7 @@
             <button class="ops-tab-btn" type="button" data-bar-tab="menu">Cardápio TV</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="finance">Financeiro</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="qrcodes">QR Codes</button>
+            <button class="ops-tab-btn" type="button" data-bar-tab="access">Acessos</button>
           </div>
 
           <div data-bar-panel="overview" class="active-tab-panel">
@@ -16715,9 +16845,57 @@
               </details>
             </div>
           </div>
+
+          <div data-bar-panel="access">
+            <div class="bar-access-page">
+              <div class="bar-section-header">
+                <div><h2>Acessos do Bar</h2><div class="muted">Controle exatamente quais áreas cada pessoa pode abrir.</div></div>
+                <div class="bar-section-actions">
+                  <button class="ghost-btn" type="button" id="barAccessReloadBtn">Atualizar</button>
+                  <button class="primary-btn" type="button" id="barAccessCreateBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Novo usuário</span></button>
+                </div>
+              </div>
+              <div class="bar-access-summary">
+                <div class="bar-access-metric"><strong id="barAccessTotalMetric">0</strong><span>usuários do Bar</span></div>
+                <div class="bar-access-metric"><strong id="barAccessActiveMetric">0</strong><span>acessos ativos</span></div>
+                <div class="bar-access-metric"><strong id="barAccessLimitedMetric">0</strong><span>acessos personalizados</span></div>
+              </div>
+              <section class="ops-panel">
+                <div class="ops-panel-head"><div><h2>Usuários cadastrados</h2><div class="muted">Os acessos que já existem aparecem aqui automaticamente.</div></div></div>
+                <div class="bar-access-list" id="barAccessUserList"><div class="lesson-empty-state">Carregando acessos…</div></div>
+              </section>
+            </div>
+          </div>
         </div>
       </div>
     </section>
+
+    <div class="admin-modal-overlay bar-access-modal" id="barAccessModal" aria-hidden="true">
+      <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="barAccessModalTitle">
+        <div class="admin-modal-head">
+          <div><h2 id="barAccessModalTitle">Novo usuário do Bar</h2><div class="muted" id="barAccessModalSubtitle">Crie o login e escolha o que a pessoa poderá visualizar.</div></div>
+          <button class="ghost-btn" type="button" id="barAccessModalClose">Fechar</button>
+        </div>
+        <form id="barAccessForm">
+          <input id="barAccessUserId" type="hidden" />
+          <div class="admin-modal-body">
+            <div class="form-grid">
+              <div class="field"><label for="barAccessName">Nome</label><input id="barAccessName" maxlength="80" placeholder="Nome da pessoa" required /></div>
+              <div class="field"><label for="barAccessEmail">E-mail de acesso</label><input id="barAccessEmail" type="email" inputmode="email" autocomplete="off" placeholder="equipe@ilhatenis.com" required /></div>
+              <div class="field"><label for="barAccessPassword">Senha provisória</label><input id="barAccessPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo 8 caracteres" /></div>
+              <div class="field"><label for="barAccessStatus">Status</label><select id="barAccessStatus"><option value="true">Ativo</option><option value="false">Bloqueado</option></select></div>
+              <div class="field full"><label for="barAccessNotes">Observação interna</label><input id="barAccessNotes" maxlength="180" placeholder="Ex.: caixa, garçom, cozinha ou turno da noite" /></div>
+            </div>
+            <div class="ops-panel-head" style="margin-top:16px"><div><h2>O que este usuário pode ver</h2><div class="muted">Marque somente as áreas necessárias para o trabalho.</div></div></div>
+            <div class="bar-access-permission-grid" id="barAccessPermissionGrid"></div>
+          </div>
+          <div class="modal-actions">
+            <button class="ghost-btn" type="button" id="barAccessCancelBtn">Cancelar</button>
+            <button class="primary-btn" type="submit" id="barAccessSaveBtn">Criar usuário</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <div class="admin-modal-overlay" id="barEventModal" aria-hidden="true">
       <div class="admin-modal bar-event-modal" role="dialog" aria-modal="true" aria-labelledby="barEventModalTitle">
@@ -21040,7 +21218,10 @@
     if (IS_BAR_ADMIN_SURFACE && 'scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
     }
-    const BAR_LAUNCH_TAB = new URLSearchParams(window.location.search).get('tab') === 'kitchen' ? 'kitchen' : 'orders';
+    const BAR_LAUNCH_TAB_PARAM = new URLSearchParams(window.location.search).get('tab');
+    const BAR_LAUNCH_TAB = ['overview', 'events', 'orders', 'customers', 'kitchen', 'products', 'menu', 'finance', 'qrcodes', 'access'].includes(BAR_LAUNCH_TAB_PARAM)
+      ? BAR_LAUNCH_TAB_PARAM
+      : 'orders';
     const BAR_PIX_KEY = 'ilhateniscolatina@gmail.com';
 
     function broadcastAppChange(resource) {
@@ -21301,7 +21482,7 @@
       const fallback = { tab: 'orders', commandTab: 'items', orderId: null, scrollY: 0 };
       try {
         const stored = JSON.parse(localStorage.getItem(BAR_VIEW_STATE_KEY) || '{}');
-        const barTabs = ['overview', 'events', 'orders', 'customers', 'kitchen', 'tables', 'products', 'menu', 'finance', 'qrcodes'];
+        const barTabs = ['overview', 'events', 'orders', 'customers', 'kitchen', 'tables', 'products', 'menu', 'finance', 'qrcodes', 'access'];
         const commandTabs = ['items', 'add', 'checkout'];
         return {
           tab: barTabs.includes(stored.tab) ? stored.tab : fallback.tab,
@@ -21324,6 +21505,9 @@
       financeFilter: 'abertos',
       financeView: 'list',
       teamTab: 'list',
+      barAccessUsersLoaded: false,
+      barAccessUsersLoading: false,
+      editingBarAccessUserId: '',
       planTab: 'list',
       selectedClientId: null,
       editingPlanId: null,
@@ -21445,6 +21629,23 @@
       bar: ['dashboard', 'bar']
     };
 
+    const barAccessPermissionCatalog = [
+      { key: 'bar.overview', tab: 'overview', label: 'Visão geral', detail: 'Resumo da operação, comandas em atenção e estoque baixo.' },
+      { key: 'bar.orders', tab: 'orders', label: 'Comandas e mesas', detail: 'Abrir comandas, adicionar pedidos, receber e encerrar contas.' },
+      { key: 'bar.kitchen', tab: 'kitchen', label: 'Pedidos e produção', detail: 'Aprovar pedidos do QR Code e acompanhar preparo e entrega.' },
+      { key: 'bar.customers', tab: 'customers', label: 'Clientes', detail: 'Consultar cadastro, consumo, telefone e histórico do cliente.' },
+      { key: 'bar.products', tab: 'products', label: 'Produtos e estoque', detail: 'Criar produtos, editar preços, fotos, disponibilidade e estoque.' },
+      { key: 'bar.menu', tab: 'menu', label: 'Cardápio e TV', detail: 'Organizar produtos e controlar o cardápio exibido na televisão.' },
+      { key: 'bar.finance', tab: 'finance', label: 'Financeiro', detail: 'Ver faturamento, formas de pagamento, despesas e relatórios.' },
+      { key: 'bar.qrcodes', tab: 'qrcodes', label: 'QR Codes', detail: 'Criar mesas e cartões, imprimir artes e bloquear pedidos online.' },
+      { key: 'bar.events', tab: 'events', label: 'Agenda', detail: 'Criar, editar e acompanhar eventos e programação do Bar.' },
+      { key: 'bar.access', tab: 'access', label: 'Acessos', detail: 'Criar usuários, bloquear logins e alterar estas permissões.' }
+    ];
+
+    const barAccessDefaultPermissions = barAccessPermissionCatalog
+      .filter(function (permission) { return permission.key !== 'bar.access'; })
+      .map(function (permission) { return permission.key; });
+
     const opsData = {
       clients: [
         { name: 'Cliente exemplo', email: 'cliente@ilhatenis.com', phone: '5527999999999', status: 'ATIVO', type: 'cliente', created: '2026-06-22', lastLogin: '' }
@@ -21490,6 +21691,7 @@
       team: [
         { name: 'Leandro Strelow', email: 'kikostrelow@gmail.com', role: 'admin', active: true, permissions: roleDefaultPermissions.admin, notes: 'Gestao geral do clube.' }
       ],
+      barAccessUsers: [],
       audiences: [
         { name: 'Alunos ativos', contacts: 42, purpose: 'Avisos de aula, feriados e comunicados gerais' },
         { name: 'Responsaveis Kids', contacts: 18, purpose: 'Comunicados para responsaveis e turmas infantis' },
@@ -23639,8 +23841,177 @@
         (barFinanceIsSettled(item) ? '' : '<button class="small-btn" type="button" data-bar-finance-paid="' + escapeHtml(item.id) + '">' + (isExpense ? 'Marcar pago' : 'Receber') + '</button>') + '</div></article>';
     }
 
+    function mapBarAccessUser(row) {
+      return {
+        id: row.id || '',
+        name: row.full_name || row.name || row.email || 'Equipe do Bar',
+        email: row.email || '',
+        role: row.role || 'bar',
+        active: row.active !== false,
+        permissions: Array.isArray(row.permissions) ? row.permissions : [],
+        notes: row.notes || ''
+      };
+    }
+
+    function effectiveBarAccessPermissions(user) {
+      if (user && user.role === 'admin') return barAccessPermissionCatalog.map(function (permission) { return permission.key; });
+      const permissions = Array.isArray(user && user.permissions) ? user.permissions : [];
+      const granular = permissions.filter(function (permission) { return String(permission).indexOf('bar.') === 0; });
+      if (granular.length) return granular;
+      if (user && user.role === 'bar' || permissions.includes('bar')) return barAccessDefaultPermissions.slice();
+      return [];
+    }
+
+    async function barAccessFunctionRequest(payload) {
+      requireAdminSession();
+      const response = await fetch(supabaseBaseUrl() + '/functions/v1/bar-user-access', {
+        method: 'POST',
+        headers: {
+          apikey: LESSONS_SUPABASE_ANON_KEY,
+          Authorization: 'Bearer ' + adminSession.access_token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload || {})
+      });
+      const data = await response.json().catch(function () { return {}; });
+      if (!response.ok) throw new Error(data.error || 'Não foi possível atualizar os acessos.');
+      return data;
+    }
+
+    async function loadBarAccessUsers(force) {
+      if (!canUseBarPermission('bar.access') || opsState.barAccessUsersLoading || opsState.barAccessUsersLoaded && !force) return;
+      opsState.barAccessUsersLoading = true;
+      if ($('barAccessUserList')) $('barAccessUserList').innerHTML = '<div class="lesson-empty-state">Carregando acessos…</div>';
+      try {
+        if (isAdminDemoMode()) {
+          opsData.barAccessUsers = opsData.team.map(mapBarAccessUser);
+        } else {
+          const result = await barAccessFunctionRequest({ action: 'list' });
+          opsData.barAccessUsers = (result.users || []).map(mapBarAccessUser);
+        }
+        opsState.barAccessUsersLoaded = true;
+        renderBarAccessUsers();
+      } catch (error) {
+        if ($('barAccessUserList')) $('barAccessUserList').innerHTML = '<div class="lesson-empty-state">' + escapeHtml(error.message || 'Não foi possível carregar os acessos.') + '</div>';
+      } finally {
+        opsState.barAccessUsersLoading = false;
+      }
+    }
+
+    function renderBarAccessUsers() {
+      if (!$('barAccessUserList')) return;
+      const users = opsData.barAccessUsers || [];
+      $('barAccessTotalMetric').textContent = users.length;
+      $('barAccessActiveMetric').textContent = users.filter(function (user) { return user.active; }).length;
+      $('barAccessLimitedMetric').textContent = users.filter(function (user) { return user.role !== 'admin' && hasGranularBarPermissions(user); }).length;
+      if (!opsState.barAccessUsersLoaded && !isAdminDemoMode()) return;
+      $('barAccessUserList').innerHTML = users.map(function (user) {
+        const permissions = effectiveBarAccessPermissions(user);
+        const labels = permissions.map(function (key) {
+          const item = barAccessPermissionCatalog.find(function (permission) { return permission.key === key; });
+          return item && item.label;
+        }).filter(Boolean);
+        const accessLabel = user.role === 'admin' ? 'Acesso total' : (hasGranularBarPermissions(user) ? labels.length + ' áreas liberadas' : 'Acesso operacional');
+        return '<article class="bar-access-user"><div class="bar-access-user-main"><strong>' + escapeHtml(user.name) + '</strong><small>' + escapeHtml(user.email || 'E-mail não informado') + '</small><small>' + escapeHtml(user.notes || accessLabel) + '</small></div>' +
+          '<div class="bar-access-permissions">' + (labels.map(function (label) { return '<span class="bar-access-permission">' + escapeHtml(label) + '</span>'; }).join('') || '<span class="bar-access-permission">Sem áreas liberadas</span>') + '</div>' +
+          '<div class="bar-row-actions">' + barStatusPill(user.active ? 'ATIVO' : 'BLOQUEADO') + (user.role === 'admin' ? '' : '<button class="small-btn" type="button" data-bar-access-edit="' + escapeHtml(user.id) + '">Editar</button>') + '</div></article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhum acesso do Bar cadastrado.</div>';
+    }
+
+    function renderBarAccessPermissionOptions(selectedPermissions) {
+      const selected = new Set(selectedPermissions || barAccessDefaultPermissions);
+      $('barAccessPermissionGrid').innerHTML = barAccessPermissionCatalog.map(function (permission) {
+        return '<article class="bar-access-permission-card"><label><input type="checkbox" data-bar-access-permission value="' + escapeHtml(permission.key) + '"' + (selected.has(permission.key) ? ' checked' : '') + ' /><span>' + escapeHtml(permission.label) + '</span></label><small>' + escapeHtml(permission.detail) + '</small></article>';
+      }).join('');
+    }
+
+    function openBarAccessModal(user) {
+      const editing = Boolean(user && user.id);
+      opsState.editingBarAccessUserId = editing ? user.id : '';
+      $('barAccessForm').reset();
+      $('barAccessUserId').value = editing ? user.id : '';
+      $('barAccessName').value = editing ? user.name : '';
+      $('barAccessEmail').value = editing ? user.email : '';
+      $('barAccessEmail').disabled = editing;
+      $('barAccessPassword').required = !editing;
+      $('barAccessPassword').placeholder = editing ? 'Deixe vazio para manter a senha' : 'Mínimo 8 caracteres';
+      $('barAccessStatus').value = String(editing ? user.active : true);
+      $('barAccessNotes').value = editing ? user.notes : '';
+      $('barAccessModalTitle').textContent = editing ? 'Editar acesso do Bar' : 'Novo usuário do Bar';
+      $('barAccessModalSubtitle').textContent = editing ? 'Atualize as áreas que esta pessoa pode visualizar.' : 'Crie o login e escolha o que a pessoa poderá visualizar.';
+      $('barAccessSaveBtn').textContent = editing ? 'Salvar alterações' : 'Criar usuário';
+      renderBarAccessPermissionOptions(editing ? effectiveBarAccessPermissions(user) : barAccessDefaultPermissions);
+      $('barAccessModal').classList.add('show');
+      $('barAccessModal').setAttribute('aria-hidden', 'false');
+      window.setTimeout(function () { $('barAccessName').focus(); }, 80);
+    }
+
+    function closeBarAccessModal() {
+      $('barAccessModal').classList.remove('show');
+      $('barAccessModal').setAttribute('aria-hidden', 'true');
+      opsState.editingBarAccessUserId = '';
+    }
+
+    function selectedBarAccessPermissions() {
+      return Array.from(document.querySelectorAll('[data-bar-access-permission]:checked')).map(function (input) { return input.value; });
+    }
+
+    async function saveBarAccessUserAction(event) {
+      event.preventDefault();
+      const editingId = $('barAccessUserId').value;
+      const name = $('barAccessName').value.trim();
+      const email = $('barAccessEmail').value.trim().toLowerCase();
+      const password = $('barAccessPassword').value;
+      const permissions = selectedBarAccessPermissions();
+      if (!name || !email || !editingId && password.length < 8) {
+        toast('Informe nome, e-mail e uma senha provisória com 8 caracteres.');
+        return;
+      }
+      if (!permissions.length) {
+        toast('Selecione pelo menos uma área para este usuário.');
+        return;
+      }
+      $('barAccessSaveBtn').disabled = true;
+      try {
+        const payload = {
+          action: editingId ? 'update' : 'create',
+          user_id: editingId || undefined,
+          full_name: name,
+          email: email,
+          password: password || undefined,
+          active: $('barAccessStatus').value === 'true',
+          notes: $('barAccessNotes').value.trim(),
+          permissions: permissions
+        };
+        if (isAdminDemoMode()) {
+          const saved = mapBarAccessUser(Object.assign({}, payload, { id: editingId || localId('bar-user'), role: 'bar' }));
+          const index = opsData.barAccessUsers.findIndex(function (user) { return user.id === saved.id; });
+          if (index >= 0) opsData.barAccessUsers.splice(index, 1, saved);
+          else opsData.barAccessUsers.unshift(saved);
+        } else {
+          const result = await barAccessFunctionRequest(payload);
+          const saved = mapBarAccessUser(result.user || {});
+          const index = opsData.barAccessUsers.findIndex(function (user) { return user.id === saved.id; });
+          if (index >= 0) opsData.barAccessUsers.splice(index, 1, saved);
+          else opsData.barAccessUsers.unshift(saved);
+        }
+        closeBarAccessModal();
+        renderBarAccessUsers();
+        toast(editingId ? 'Acesso atualizado.' : 'Usuário do Bar criado.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        $('barAccessSaveBtn').disabled = false;
+      }
+    }
+
     function setBarTab(tab) {
-      opsState.barTab = tab || 'overview';
+      const requestedTab = tab || firstAllowedBarTab(adminProfile) || 'orders';
+      const permission = barPermissionForTab(requestedTab);
+      opsState.barTab = permission && canUseBarPermission(permission)
+        ? requestedTab
+        : (firstAllowedBarTab(adminProfile) || 'orders');
+      applyBarAccessVisibility();
       document.querySelectorAll('[data-bar-tab]').forEach(function (button) {
         button.classList.toggle('active', button.dataset.barTab === opsState.barTab);
       });
@@ -23651,6 +24022,7 @@
         panel.classList.toggle('active-tab-panel', panel.dataset.barPanel === opsState.barTab);
       });
       persistBarViewState();
+      if (opsState.barTab === 'access') loadBarAccessUsers(false);
     }
 
     function barCommandScreenIsActive() {
@@ -25170,6 +25542,7 @@
       renderBarProducts();
       renderBarMenuEditor();
       renderBarFinance();
+      renderBarAccessUsers();
     }
 
     function barOrderCustomerDetails(order, items) {
@@ -28204,9 +28577,50 @@
       return Array.isArray(profile && profile.permissions) ? profile.permissions : [];
     }
 
+    function barPermissionForTab(tab) {
+      const item = barAccessPermissionCatalog.find(function (permission) { return permission.tab === tab; });
+      return item && item.key || '';
+    }
+
+    function hasGranularBarPermissions(profile) {
+      return profilePermissions(profile).some(function (permission) { return String(permission).indexOf('bar.') === 0; });
+    }
+
+    function canUseBarPermission(permission, profile) {
+      profile = profile || adminProfile;
+      if (isAdminDemoMode() || profile && profile.role === 'admin') return true;
+      if (!profile || profile.active === false) return false;
+      const permissions = profilePermissions(profile);
+      if (permissions.includes(permission)) return true;
+      if (permission === 'bar.access') return false;
+      return (profile.role === 'bar' || permissions.includes('bar')) && !hasGranularBarPermissions(profile);
+    }
+
+    function firstAllowedBarTab(profile) {
+      const preferredOrder = ['orders', 'kitchen', 'overview', 'customers', 'products', 'menu', 'finance', 'qrcodes', 'events', 'access'];
+      return preferredOrder.find(function (tab) { return canUseBarPermission(barPermissionForTab(tab), profile); }) || '';
+    }
+
+    function applyBarAccessVisibility() {
+      document.querySelectorAll('[data-bar-side-tab], [data-bar-tab]').forEach(function (button) {
+        const tab = button.dataset.barSideTab || button.dataset.barTab;
+        const allowed = canUseBarPermission(barPermissionForTab(tab));
+        button.hidden = !allowed;
+        button.setAttribute('aria-hidden', String(!allowed));
+      });
+      document.querySelectorAll('[data-bar-panel]').forEach(function (panel) {
+        const allowed = canUseBarPermission(barPermissionForTab(panel.dataset.barPanel));
+        panel.hidden = !allowed;
+      });
+      const currentPermission = barPermissionForTab(opsState.barTab);
+      if (!currentPermission || !canUseBarPermission(currentPermission)) {
+        opsState.barTab = firstAllowedBarTab(adminProfile) || 'orders';
+      }
+    }
+
     function canOpenBarSurface(profile) {
       if (!profile || profile.active === false) return false;
-      return profile.role === 'admin' || profile.role === 'bar' || profilePermissions(profile).includes('bar');
+      return profile.role === 'admin' || profile.role === 'bar' || profilePermissions(profile).includes('bar') || hasGranularBarPermissions(profile);
     }
 
     function routeProfileToAdminSurface() {
@@ -28566,6 +28980,7 @@
       document.body.classList.remove('adm-locked');
       document.body.classList.add('adm-unlocked');
       updateAdminIdentity();
+      applyBarAccessVisibility();
       if (IS_BAR_ADMIN_SURFACE) openBarModule();
       else showClubHome();
       $('adminApp').setAttribute('aria-hidden', 'false');
@@ -29930,6 +30345,20 @@
         if (!tabBtn) return;
         opsState.teamTab = tabBtn.dataset.teamTab;
         renderTeamModule();
+      });
+      $('barAccessCreateBtn').addEventListener('click', function () { openBarAccessModal(null); });
+      $('barAccessReloadBtn').addEventListener('click', function () { loadBarAccessUsers(true); });
+      $('barAccessModalClose').addEventListener('click', closeBarAccessModal);
+      $('barAccessCancelBtn').addEventListener('click', closeBarAccessModal);
+      $('barAccessForm').addEventListener('submit', saveBarAccessUserAction);
+      $('barAccessModal').addEventListener('click', function (event) {
+        if (event.target.id === 'barAccessModal') closeBarAccessModal();
+      });
+      $('barAccessUserList').addEventListener('click', function (event) {
+        const editButton = event.target.closest('[data-bar-access-edit]');
+        if (!editButton) return;
+        const user = (opsData.barAccessUsers || []).find(function (item) { return item.id === editButton.dataset.barAccessEdit; });
+        if (user) openBarAccessModal(user);
       });
       $('planForm').addEventListener('submit', savePlanAction);
       $('planNewBtn').addEventListener('click', function () {
