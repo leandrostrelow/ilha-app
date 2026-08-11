@@ -1786,7 +1786,17 @@ values
   (7, 'Cartão 07', 'Cartão individual para pedidos sem mesa fixa'),
   (8, 'Cartão 08', 'Cartão individual para pedidos sem mesa fixa'),
   (9, 'Cartão 09', 'Cartão individual para pedidos sem mesa fixa'),
-  (10, 'Cartão 10', 'Cartão individual para pedidos sem mesa fixa')
+  (10, 'Cartão 10', 'Cartão individual para pedidos sem mesa fixa'),
+  (11, 'Cartão 11', 'Cartão individual para pedidos sem mesa fixa'),
+  (12, 'Cartão 12', 'Cartão individual para pedidos sem mesa fixa'),
+  (13, 'Cartão 13', 'Cartão individual para pedidos sem mesa fixa'),
+  (14, 'Cartão 14', 'Cartão individual para pedidos sem mesa fixa'),
+  (15, 'Cartão 15', 'Cartão individual para pedidos sem mesa fixa'),
+  (16, 'Cartão 16', 'Cartão individual para pedidos sem mesa fixa'),
+  (17, 'Cartão 17', 'Cartão individual para pedidos sem mesa fixa'),
+  (18, 'Cartão 18', 'Cartão individual para pedidos sem mesa fixa'),
+  (19, 'Cartão 19', 'Cartão individual para pedidos sem mesa fixa'),
+  (20, 'Cartão 20', 'Cartão individual para pedidos sem mesa fixa')
 on conflict (code) do update
 set label = excluded.label,
     notes = excluded.notes,
