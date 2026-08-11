@@ -45,6 +45,7 @@
     [hidden] { display: none !important; }
 
     .app-shell { min-height: 100vh; padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
+    body.intro-view .app-shell { padding-bottom: 0; }
     .app-header {
       position: sticky;
       z-index: 20;
@@ -741,6 +742,7 @@
 
     function showView(id) {
       document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === id));
+      document.body.classList.toggle('intro-view', ['loadingView', 'accessView', 'errorView'].includes(id));
       $('changeIdentityBtn').hidden = !state.identity || !['menuView', 'orderView'].includes(id);
       const bottomNav = $('customerBottomNav');
       if (bottomNav) {
