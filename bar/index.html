@@ -391,6 +391,7 @@
     .order-number span, .order-number strong, .order-number small { display: block; }
     .order-number span { color: var(--muted); font-size: 12px; font-weight: 900; text-transform: uppercase; }
     .order-number strong { margin-top: 4px; font-size: 25px; }
+    .order-access-number { color: #79a800; font-weight: 950; }
     .order-number small { margin-top: 4px; color: var(--muted); }
     .status-pill { padding: 8px 10px; border-radius: 6px; color: #735400; background: #fff1bf; font-size: 12px; font-weight: 900; }
     .status-pill.preparing { color: #874000; background: #ffe0c4; }
@@ -399,9 +400,12 @@
     .order-items-title { margin: 0 0 6px; font-size: 18px; }
     .order-item-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--line); }
     .order-item-row strong, .order-item-row small { display: block; }
+    .order-item-name { display: flex; align-items: baseline; gap: 7px; }
+    .order-item-quantity { flex: 0 0 auto; color: #79a800; font-weight: 950; }
     .order-item-row small { margin-top: 4px; color: var(--muted); }
-    .order-item-row > span { white-space: nowrap; font-weight: 900; }
+    .order-item-row > span { color: #79a800; white-space: nowrap; font-weight: 950; }
     .order-total { display: flex; justify-content: space-between; gap: 12px; padding-top: 18px; font-size: 21px; font-weight: 900; }
+    .order-total strong { color: #79a800; }
     .order-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 22px; }
 
     .toast {
@@ -1003,12 +1007,17 @@
         return;
       }
       const order = state.order;
+      const accessLabel = String(order.table_name || 'Balcão');
+      const accessNumber = accessLabel.match(/^(.*?)(\d+)$/);
+      const accessLabelMarkup = accessNumber
+        ? escapeHtml(accessNumber[1]) + '<b class="order-access-number">' + escapeHtml(accessNumber[2]) + '</b>'
+        : escapeHtml(accessLabel);
       const pillClass = ['EM_PREPARO', 'PRONTA'].includes(order.status) ? ' ready' : order.status === 'FECHADA' ? ' closed' : '';
       const items = (order.items || []).map(item => {
         const notes = String(item.notes || '').trim();
-        return '<div class="order-item-row"><div><strong>' + escapeHtml(Number(item.quantity).toLocaleString('pt-BR') + 'x ' + item.name) + '</strong>' + (notes ? '<small>' + escapeHtml(notes) + '</small>' : '') + '</div><span>' + money(Number(item.quantity) * Number(item.unit_price)) + '</span></div>';
+        return '<div class="order-item-row"><div><strong class="order-item-name"><b class="order-item-quantity">' + escapeHtml(Number(item.quantity).toLocaleString('pt-BR') + 'x') + '</b><span>' + escapeHtml(item.name) + '</span></strong>' + (notes ? '<small>' + escapeHtml(notes) + '</small>' : '') + '</div><span>' + money(Number(item.quantity) * Number(item.unit_price)) + '</span></div>';
       }).join('');
-      $('orderPanel').innerHTML = '<div class="order-number"><div><span>Comanda</span><strong>' + escapeHtml(order.table_name || 'Balcão') + '</strong></div><div class="status-pill' + pillClass + '">' + escapeHtml(orderStatusLabel(order.status)) + '</div></div>' +
+      $('orderPanel').innerHTML = '<div class="order-number"><div><span>Comanda</span><strong>' + accessLabelMarkup + '</strong></div><div class="status-pill' + pillClass + '">' + escapeHtml(orderStatusLabel(order.status)) + '</div></div>' +
         '<h2 class="order-items-title">Itens</h2>' + (items || '<div class="empty-menu">Carregando os itens...</div>') +
         '<div class="order-total"><span>Total</span><strong>' + money(order.total) + '</strong></div>' +
         '<div class="order-actions"><button class="secondary-btn" type="button" data-order-refresh><svg><use href="#icon-refresh"></use></svg>Atualizar</button><button class="primary-btn" type="button" data-order-more>Fazer outro pedido</button></div>';
