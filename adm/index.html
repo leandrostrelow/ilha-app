@@ -16852,7 +16852,7 @@
                 <div><h2>Acessos do Bar</h2><div class="muted">Controle exatamente quais áreas cada pessoa pode abrir.</div></div>
                 <div class="bar-section-actions">
                   <button class="ghost-btn" type="button" id="barAccessReloadBtn">Atualizar</button>
-                  <button class="primary-btn" type="button" id="barAccessCreateBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Novo usuário</span></button>
+                  <button class="primary-btn bar-icon-button" type="button" id="barAccessCreateBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Novo usuário</span></button>
                 </div>
               </div>
               <div class="bar-access-summary">
@@ -21507,6 +21507,7 @@
       teamTab: 'list',
       barAccessUsersLoaded: false,
       barAccessUsersLoading: false,
+      barAccessUsersAttempted: false,
       editingBarAccessUserId: '',
       planTab: 'list',
       selectedClientId: null,
@@ -23879,15 +23880,19 @@
     }
 
     async function loadBarAccessUsers(force) {
-      if (!canUseBarPermission('bar.access') || opsState.barAccessUsersLoading || opsState.barAccessUsersLoaded && !force) return;
+      if (!canUseBarPermission('bar.access') || opsState.barAccessUsersLoading || !force && (opsState.barAccessUsersLoaded || opsState.barAccessUsersAttempted)) return;
       opsState.barAccessUsersLoading = true;
+      opsState.barAccessUsersAttempted = true;
       if ($('barAccessUserList')) $('barAccessUserList').innerHTML = '<div class="lesson-empty-state">Carregando acessos…</div>';
       try {
         if (isAdminDemoMode()) {
           opsData.barAccessUsers = opsData.team.map(mapBarAccessUser);
         } else {
-          const result = await barAccessFunctionRequest({ action: 'list' });
-          opsData.barAccessUsers = (result.users || []).map(mapBarAccessUser);
+          const profiles = await supabaseRest('profiles?select=id,full_name,email,role,active,permissions,notes,created_at&order=created_at.asc');
+          opsData.barAccessUsers = (profiles || []).filter(function (profile) {
+            const permissions = Array.isArray(profile.permissions) ? profile.permissions : [];
+            return profile.role === 'admin' || profile.role === 'bar' || permissions.includes('bar') || permissions.some(function (permission) { return String(permission).indexOf('bar.') === 0; });
+          }).map(mapBarAccessUser);
         }
         opsState.barAccessUsersLoaded = true;
         renderBarAccessUsers();
@@ -23934,7 +23939,8 @@
       $('barAccessEmail').value = editing ? user.email : '';
       $('barAccessEmail').disabled = editing;
       $('barAccessPassword').required = !editing;
-      $('barAccessPassword').placeholder = editing ? 'Deixe vazio para manter a senha' : 'Mínimo 8 caracteres';
+      $('barAccessPassword').disabled = editing;
+      $('barAccessPassword').placeholder = editing ? 'A senha permanece a mesma' : 'Mínimo 8 caracteres';
       $('barAccessStatus').value = String(editing ? user.active : true);
       $('barAccessNotes').value = editing ? user.notes : '';
       $('barAccessModalTitle').textContent = editing ? 'Editar acesso do Bar' : 'Novo usuário do Bar';
@@ -23989,8 +23995,32 @@
           if (index >= 0) opsData.barAccessUsers.splice(index, 1, saved);
           else opsData.barAccessUsers.unshift(saved);
         } else {
-          const result = await barAccessFunctionRequest(payload);
-          const saved = mapBarAccessUser(result.user || {});
+          let savedProfile;
+          if (editingId) {
+            savedProfile = await patchTeamProfile(editingId, {
+              full_name: name,
+              active: payload.active,
+              permissions: permissions,
+              notes: payload.notes
+            });
+          } else {
+            const result = await supabaseAuthRequest('signup', {
+              email: email,
+              password: password,
+              data: { full_name: name, app_context: 'bar' }
+            }, false);
+            const userId = result.user && result.user.id || result.id || (result.session && result.session.user && result.session.user.id);
+            if (!userId) throw new Error('Não foi possível identificar o novo usuário.');
+            savedProfile = await patchTeamProfile(userId, {
+              full_name: name,
+              email: email,
+              role: 'bar',
+              active: payload.active,
+              permissions: permissions,
+              notes: payload.notes
+            });
+          }
+          const saved = mapBarAccessUser(savedProfile || Object.assign({}, payload, { id: editingId, role: 'bar' }));
           const index = opsData.barAccessUsers.findIndex(function (user) { return user.id === saved.id; });
           if (index >= 0) opsData.barAccessUsers.splice(index, 1, saved);
           else opsData.barAccessUsers.unshift(saved);

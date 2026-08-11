@@ -50,6 +50,19 @@ function serviceRoleKey() {
   }
 }
 
+function publicApiKey() {
+  const legacyKey = Deno.env.get("SUPABASE_ANON_KEY");
+  if (legacyKey) return legacyKey;
+  const currentKeys = Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
+  if (!currentKeys) return "";
+  try {
+    const parsed = JSON.parse(currentKeys);
+    return parsed.default || "";
+  } catch (_error) {
+    return currentKeys.startsWith("sb_publishable_") ? currentKeys : "";
+  }
+}
+
 function normalizePermissions(value: unknown) {
   if (!Array.isArray(value)) return [];
   return Array.from(new Set(value.map(String).filter((permission) => allowedPermissions.has(permission))));
@@ -75,21 +88,25 @@ Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(request) });
   if (request.method !== "POST") return json(request, { error: "Método inválido." }, 405);
 
+  let failureStage = "setup";
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const supabaseKey = serviceRoleKey();
-    if (!supabaseUrl || !supabaseKey) throw new Error("Configuração do Supabase ausente.");
+    const anonKey = publicApiKey();
+    if (!supabaseUrl || !anonKey) throw new Error("Configuração do Supabase ausente.");
 
     const authorization = request.headers.get("authorization") || "";
     const token = authorization.replace(/^Bearer\s+/i, "");
     if (!token) return json(request, { error: "Sessão inválida." }, 401);
 
-    const supabase = createClient(supabaseUrl, supabaseKey, {
+    const supabase = createClient(supabaseUrl, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { Authorization: authorization } },
     });
+    failureStage = "session";
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
     if (userError || !userData.user) return json(request, { error: "Sessão inválida." }, 401);
 
+    failureStage = "caller_profile";
     const { data: caller, error: callerError } = await supabase
       .from("profiles")
       .select("id, role, active, permissions")
@@ -100,10 +117,12 @@ Deno.serve(async (request) => {
     const canManage = caller?.active !== false && (caller?.role === "admin" || callerPermissions.includes("bar.access"));
     if (!canManage) return json(request, { error: "Você não tem permissão para gerenciar acessos." }, 403);
 
+    failureStage = "payload";
     const payload = await request.json().catch(() => ({}));
     const action = String(payload.action || "list");
 
     if (action === "list") {
+      failureStage = "list_profiles";
       const { data: profiles, error } = await supabase
         .from("profiles")
         .select("id, full_name, email, role, active, permissions, notes, created_at")
@@ -124,12 +143,18 @@ Deno.serve(async (request) => {
     if (!permissions.length) return json(request, { error: "Selecione pelo menos uma área." }, 400);
 
     if (action === "create") {
+      failureStage = "create_user";
       const email = normalizeText(payload.email, 180).toLowerCase();
       const password = String(payload.password || "");
       if (!/^\S+@\S+\.\S+$/.test(email)) return json(request, { error: "Informe um e-mail válido." }, 400);
       if (password.length < 8) return json(request, { error: "A senha provisória deve ter 8 caracteres." }, 400);
 
-      const { data: created, error: createError } = await supabase.auth.admin.createUser({
+      const supabaseKey = serviceRoleKey();
+      if (!supabaseKey) throw new Error("Configuração administrativa do Supabase ausente.");
+      const adminClient = createClient(supabaseUrl, supabaseKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { data: created, error: createError } = await adminClient.auth.admin.createUser({
         email,
         password,
         email_confirm: true,
@@ -150,15 +175,17 @@ Deno.serve(async (request) => {
         notes,
         updated_at: new Date().toISOString(),
       };
+      failureStage = "create_profile";
       const { data: saved, error: saveError } = await supabase.from("profiles").upsert(profile).select().single();
       if (saveError) {
-        await supabase.auth.admin.deleteUser(created.user.id);
+        await adminClient.auth.admin.deleteUser(created.user.id);
         throw saveError;
       }
       return json(request, { user: publicProfile(saved) }, 201);
     }
 
     if (action === "update") {
+      failureStage = "update_lookup";
       const targetId = String(payload.user_id || "");
       if (!targetId) return json(request, { error: "Usuário não encontrado." }, 400);
       const { data: target, error: targetError } = await supabase.from("profiles").select("id, role").eq("id", targetId).maybeSingle();
@@ -172,9 +199,16 @@ Deno.serve(async (request) => {
       const password = String(payload.password || "");
       if (password && password.length < 8) return json(request, { error: "A nova senha deve ter 8 caracteres." }, 400);
       if (password) {
-        const { error: passwordError } = await supabase.auth.admin.updateUserById(targetId, { password });
+        failureStage = "update_password";
+        const supabaseKey = serviceRoleKey();
+        if (!supabaseKey) throw new Error("Configuração administrativa do Supabase ausente.");
+        const adminClient = createClient(supabaseUrl, supabaseKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        const { error: passwordError } = await adminClient.auth.admin.updateUserById(targetId, { password });
         if (passwordError) throw passwordError;
       }
+      failureStage = "update_profile";
       const { data: saved, error: saveError } = await supabase
         .from("profiles")
         .update({ full_name: fullName, active, permissions, notes, updated_at: new Date().toISOString() })
@@ -187,7 +221,8 @@ Deno.serve(async (request) => {
 
     return json(request, { error: "Ação inválida." }, 400);
   } catch (error) {
-    console.error(error);
-    return json(request, { error: "Não foi possível concluir a alteração de acesso." }, 500);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("bar-user-access failure", { stage: failureStage, message });
+    return json(request, { error: "Não foi possível concluir a alteração de acesso.", code: failureStage }, 500);
   }
 });
