@@ -24288,6 +24288,17 @@
       return Math.max(0, Math.round((gross - barOrderReceivedTotal(order)) * 100) / 100);
     }
 
+    function barOrderSplitExternalReceivedTotal(order) {
+      const paidPartsTotal = barPaidPartsForOrder(order).reduce(function (sum, part) {
+        return sum + Number(part.amount || 0);
+      }, 0);
+      return Math.max(0, Math.round((barOrderReceivedTotal(order) - paidPartsTotal) * 100) / 100);
+    }
+
+    function barCheckoutSplitTargetTotal(order) {
+      return Math.max(0, Math.round((barCheckoutFinalTotal(order) - barOrderSplitExternalReceivedTotal(order)) * 100) / 100);
+    }
+
     function barDayClosingMethodMatches(method, filter) {
       const value = String(method || '').toUpperCase();
       const selected = String(filter || 'TODOS').toUpperCase();
@@ -26753,20 +26764,37 @@
         });
       });
       const rawTotalCents = rawByPerson.reduce(function (sum, cents) { return sum + cents; }, 0);
-      const finalTotalCents = Math.max(0, Math.round(barCheckoutFinalTotal(order) * 100));
+      const splitTargetCents = Math.max(0, Math.round(barCheckoutSplitTargetTotal(order) * 100));
+      const paidByPosition = new Map(barPaidPartsForOrder(order).map(function (part) {
+        return [Number(part.position) - 1, Math.max(0, Math.round(Number(part.amount || 0) * 100))];
+      }));
+      const paidCents = Array.from(paidByPosition.values()).reduce(function (sum, cents) { return sum + cents; }, 0);
+      const pendingRawTotalCents = rawByPerson.reduce(function (sum, cents, index) {
+        return paidByPosition.has(index) ? sum : sum + cents;
+      }, 0);
+      let pendingDistributedCents = 0;
+      const pendingIndexes = Array.from({ length: count }, function (_, index) { return index; }).filter(function (index) {
+        return !paidByPosition.has(index);
+      });
       if (rawTotalCents <= 0) {
         opsState.barCheckoutSplitValues = barCheckoutEqualSplitAmounts(order);
       } else {
-        let distributedCents = 0;
         opsState.barCheckoutSplitValues = rawByPerson.map(function (rawCents, index) {
-          if (index === count - 1) return Math.max(0, finalTotalCents - distributedCents) / 100;
-          const scaledCents = Math.max(0, Math.floor((rawCents * finalTotalCents) / rawTotalCents));
-          distributedCents += scaledCents;
+          if (paidByPosition.has(index)) return paidByPosition.get(index) / 100;
+          const pendingPosition = pendingIndexes.indexOf(index);
+          if (pendingPosition === pendingIndexes.length - 1) {
+            return Math.max(0, splitTargetCents - paidCents - pendingDistributedCents) / 100;
+          }
+          const pendingTargetCents = Math.max(0, splitTargetCents - paidCents);
+          const scaledCents = pendingRawTotalCents > 0
+            ? Math.max(0, Math.floor((rawCents * pendingTargetCents) / pendingRawTotalCents))
+            : 0;
+          pendingDistributedCents += scaledCents;
           return scaledCents / 100;
         });
       }
-      opsState.barCheckoutSplitTotalCents = finalTotalCents;
-      opsState.barCheckoutSplitAllocationTotalCents = finalTotalCents;
+      opsState.barCheckoutSplitTotalCents = splitTargetCents;
+      opsState.barCheckoutSplitAllocationTotalCents = splitTargetCents;
     }
 
     function rebalanceBarCheckoutItemAllocation(order, groupIndex, personIndex, editedValue) {
@@ -26862,7 +26890,7 @@
 
     function barCheckoutEqualSplitAmounts(order) {
       const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
-      const totalCents = Math.round(barCheckoutFinalTotal(order) * 100);
+      const totalCents = Math.round(barCheckoutSplitTargetTotal(order) * 100);
       const savedParts = barPaymentPartsForOrder(order);
       const paidByPosition = new Map(savedParts.filter(function (part) { return String(part.status).toUpperCase() === 'PAGO'; }).map(function (part) { return [Number(part.position) - 1, Math.round(Number(part.amount || 0) * 100)]; }));
       const paidCents = Array.from(paidByPosition.values()).reduce(function (sum, cents) { return sum + cents; }, 0);
@@ -26880,7 +26908,7 @@
 
     function barCheckoutSplitAmounts(order) {
       const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
-      const totalCents = Math.round(barCheckoutFinalTotal(order) * 100);
+      const totalCents = Math.round(barCheckoutSplitTargetTotal(order) * 100);
       if (opsState.barCheckoutSplitMode !== 'separate') {
         opsState.barCheckoutSplitValues = barCheckoutEqualSplitAmounts(order);
         opsState.barCheckoutSplitTotalCents = totalCents;
@@ -26901,7 +26929,7 @@
     function syncBarCheckoutSplitBalance(order) {
       const balance = $('barCheckoutSplitBalance');
       if (!balance) return;
-      const total = Math.round(barCheckoutFinalTotal(order) * 100) / 100;
+      const total = barCheckoutSplitTargetTotal(order);
       const divided = Math.round(barCheckoutSplitAmounts(order).reduce(function (sum, amount) {
         return sum + Number(amount || 0);
       }, 0) * 100) / 100;
@@ -26910,10 +26938,10 @@
       balance.classList.toggle('is-valid', valid);
       balance.classList.toggle('is-invalid', !valid);
       balance.textContent = valid
-        ? 'Soma correta: ' + money(divided) + '.'
+        ? 'Saldo distribuído: ' + money(divided) + '.'
         : (difference > 0
-          ? 'Ainda falta distribuir ' + money(difference) + '. Total da comanda: ' + money(total) + '.'
-          : 'A divisão passou ' + money(Math.abs(difference)) + ' do total. Total da comanda: ' + money(total) + '.');
+          ? 'Ainda falta distribuir ' + money(difference) + '. Saldo restante: ' + money(total) + '.'
+          : 'A divisão passou ' + money(Math.abs(difference)) + ' do saldo. Saldo restante: ' + money(total) + '.');
     }
 
     function rebalanceBarCheckoutSplitRemainder(order, editedIndex, editedValue) {
@@ -26921,7 +26949,7 @@
       const values = barCheckoutSplitAmounts(order);
       const lastIndex = values.length - 1;
       if (editedIndex < 0 || editedIndex >= lastIndex) return;
-      const totalCents = Math.round(barCheckoutFinalTotal(order) * 100);
+      const totalCents = Math.round(barCheckoutSplitTargetTotal(order) * 100);
       const requestedEditedCents = Math.max(0, Math.round(Number(editedValue || 0) * 100));
       const editedCents = requestedEditedCents;
       values[editedIndex] = editedCents / 100;
@@ -26971,7 +26999,7 @@
       opsState.barCheckoutSplitNames = parts.map(function (part) { return part.personName; });
       opsState.barCheckoutSplitMethods = parts.map(function (part) { return part.paymentMethod; });
       opsState.barCheckoutSplitValues = parts.map(function (part) { return Number(part.amount || 0); });
-      opsState.barCheckoutSplitTotalCents = Math.round(barCheckoutFinalTotal(order) * 100);
+      opsState.barCheckoutSplitTotalCents = Math.round(barCheckoutSplitTargetTotal(order) * 100);
       if (opsState.barCheckoutSplitMode === 'separate') {
         opsState.barCheckoutSplitAllocations = (opsState.barCheckoutGroups || []).map(function (group) {
           return parts.map(function (part) { return Number(part.allocation && part.allocation[group.key] || 0); });
@@ -27009,7 +27037,7 @@
         const active = button.dataset.barSplitMode === mode;
         button.classList.toggle('active', active);
         button.setAttribute('aria-pressed', active ? 'true' : 'false');
-        button.disabled = receivedTotal > 0 && (barPaidPartsForOrder(order).length > 0 || button.dataset.barSplitMode !== 'partial');
+        button.disabled = false;
       });
       const splitHelp = $('barCheckoutSplitHelp');
       if (splitHelp) {
@@ -27048,8 +27076,8 @@
         return;
       }
       const allocationReset = enabled && mode === 'separate' ? ensureBarCheckoutSplitAllocations(order) : false;
-      const finalTotalCents = Math.max(0, Math.round(barCheckoutFinalTotal(order) * 100));
-      if (enabled && mode === 'separate' && (allocationReset || Number(opsState.barCheckoutSplitAllocationTotalCents) !== finalTotalCents)) {
+      const splitTargetCents = Math.max(0, Math.round(barCheckoutSplitTargetTotal(order) * 100));
+      if (enabled && mode === 'separate' && (allocationReset || Number(opsState.barCheckoutSplitAllocationTotalCents) !== splitTargetCents)) {
         syncBarCheckoutSplitValuesFromAllocations(order);
       }
       const amounts = barCheckoutSplitAmounts(order);
@@ -27093,7 +27121,7 @@
         return '<div class="bar-checkout-split-row' + (partPaid ? ' is-paid' : '') + '"><div class="bar-checkout-split-person"><label><small>Nome</small><input class="bar-checkout-split-name" data-bar-split-name="' + index + '" maxlength="80" value="' + escapeHtml(personName) + '"' + (partPaid ? ' disabled' : '') + ' /></label></div><label class="bar-checkout-split-amount-field"><span>' + amountLabel + '</span><span class="bar-checkout-split-money' + (automaticAmount ? ' is-automatic' : '') + '"><span aria-hidden="true">R$</span><input class="bar-checkout-split-amount-input" data-bar-split-amount="' + index + '" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" spellcheck="false" value="' + amountValue + '" aria-label="Valor pago pela pessoa ' + (index + 1) + '"' + (automaticAmount || partPaid ? ' readonly' : '') + ' /></span></label><label class="bar-checkout-split-method-field"><span>Forma de pagamento</span><select data-bar-split-method="' + index + '" aria-label="Forma de pagamento da pessoa ' + (index + 1) + '"' + (partPaid ? ' disabled' : '') + '>' + options + '</select></label><button class="bar-checkout-split-pay' + (partPaid ? ' is-paid' : '') + '" type="button" data-bar-split-pay="' + (index + 1) + '" aria-label="' + escapeHtml(partPaid ? personName + ' já pagou' : 'Marcar ' + personName + ' como pago') + '"' + (partPaid || opsState.barCheckoutSplitSavingPosition ? ' disabled' : '') + '>' + (partPaid ? '✓ Pago' : (opsState.barCheckoutSplitSavingPosition === index + 1 ? '...' : 'Pago')) + '</button></div>';
       }).join('') : '';
       const paidTotal = barOrderReceivedTotal(order);
-      const outstanding = barOrderOutstandingTotal(order, finalTotalCents / 100);
+      const outstanding = barOrderOutstandingTotal(order, barCheckoutFinalTotal(order));
       const paidSummary = $('barCheckoutPaidSummary');
       paidSummary.hidden = !enabled || paidTotal <= 0;
       paidSummary.innerHTML = paidTotal > 0 ? '<span>Já recebido: <strong>' + money(paidTotal) + '</strong></span><span>Saldo da comanda: <strong>' + money(outstanding) + '</strong></span>' : '';
@@ -27102,7 +27130,7 @@
       const payLabel = $('barOrderPayBtn').querySelector('span');
       if (payLabel && !barOrderIsPaid(order)) payLabel.textContent = enabled ? 'Receba em cada pessoa acima' : 'Marcar como paga';
       if (enabled && !barOrderIsPaid(order)) $('barOrderPayBtn').disabled = true;
-      $('barCheckoutSplitCount').disabled = receivedTotal > 0;
+      $('barCheckoutSplitCount').disabled = barPaidPartsForOrder(order).length > 0;
     }
 
     function updateBarCheckoutPreview(order) {
@@ -27362,6 +27390,7 @@
       const paid = barOrderIsPaid(order);
       const editable = barOrderCanEdit(order);
       const hasSplitItems = items.some(function (item) { return Boolean(item.splitGroupId); });
+      const testOrder = ['test', 'teste'].includes(normalizeMatchText(customer.name));
       const pendingPortions = barPendingPortionItemsForOrder(order.id);
       $('barCommandStatus').hidden = !paid;
       $('barCommandStatus').innerHTML = paid ? '<span class="ops-pill good">Pago</span>' : '';
@@ -27421,7 +27450,7 @@
       cardButton.hidden = !open || Boolean(commandTable);
       cardButton.title = commandCard ? 'Alterar ' + commandCard.label : 'Adicionar cartão QR';
       cardButton.setAttribute('aria-label', cardButton.title);
-      $('barOrderDeleteBtn').hidden = !editable || hasSplitItems;
+      $('barOrderDeleteBtn').hidden = !open || hasSplitItems || (barOrderReceivedTotal(order) > 0 && !testOrder);
       const payButton = $('barOrderPayBtn');
       const closeButton = $('barOrderCloseBtn');
       payButton.style.display = open ? 'inline-flex' : 'none';
@@ -28910,17 +28939,26 @@
 
     async function deleteBarOrderAction() {
       const order = barOrderById(opsState.selectedBarOrderId);
-      if (!order || !barOrderCanEdit(order)) return;
+      if (!order || !barOrderIsOpen(order)) return;
       const activeItems = barActiveItemsForOrder(order.id);
       const itemQuantity = activeItems.reduce(function (sum, item) {
         return sum + Number(item.quantity || 0);
       }, 0);
       const customerName = barOrderCustomerDetails(order, activeItems).name || 'esta comanda';
+      const testOrder = ['test', 'teste'].includes(normalizeMatchText(customerName));
+      if (barOrderReceivedTotal(order) > 0 && !testOrder) {
+        toast('Comandas reais com recebimento não podem ser excluídas. Faça o estorno financeiro primeiro.');
+        return;
+      }
       const itemMessage = itemQuantity
         ? '\n\n' + itemQuantity + (itemQuantity === 1 ? ' item será removido e devolvido' : ' itens serão removidos e devolvidos') + ' ao estoque.'
         : '\n\nEsta comanda está vazia.';
+      const receivedTotal = barOrderReceivedTotal(order);
+      const paymentMessage = receivedTotal > 0
+        ? '\n\nO recebimento de ' + money(receivedTotal) + ' será cancelado no financeiro.'
+        : '';
       const confirmed = window.confirm(
-        'Excluir a comanda de "' + customerName + '"?' + itemMessage + '\n\nEsta ação não pode ser desfeita.'
+        'Excluir a comanda de "' + customerName + '"?' + itemMessage + paymentMessage + '\n\nEsta ação não pode ser desfeita.'
       );
       if (!confirmed) return;
 
@@ -28930,7 +28968,7 @@
         deleteButton.disabled = true;
         deleteButton.textContent = 'Excluindo...';
         if (barCanPersist(order.id)) {
-          await supabaseRest('rpc/bar_delete_open_order', {
+          await supabaseRest(testOrder ? 'rpc/bar_delete_test_order' : 'rpc/bar_delete_open_order', {
             method: 'POST',
             body: { p_order_id: order.id },
             prefer: 'return=representation'
@@ -28947,11 +28985,19 @@
           opsData.barOrders = opsData.barOrders.filter(function (item) {
             return String(item.id) !== String(order.id);
           });
+          opsData.barFinance.forEach(function (entry) {
+            if (String(entry.orderId) !== String(order.id) || !barFinanceIsConfirmed(entry)) return;
+            entry.status = 'CANCELADO';
+            entry.paidAt = '';
+            entry.notes = [entry.notes, 'Comanda excluída'].filter(Boolean).join(' · ');
+          });
         }
         closeBarCustomerEditModal();
         closeBarCommandModal();
         renderBarModule();
-        toast('Comanda excluída e itens devolvidos ao estoque.');
+        toast(receivedTotal > 0
+          ? 'Comanda excluída, recebimento cancelado e itens devolvidos ao estoque.'
+          : 'Comanda excluída e itens devolvidos ao estoque.');
       } catch (error) {
         reportActionError(error);
       } finally {
@@ -28981,9 +29027,9 @@
         }
         if (splitEnabled) {
           const splitTotal = Math.round(splitPayments.reduce(function (sum, payment) { return sum + payment.amount; }, 0) * 100) / 100;
-          const orderTotal = Math.round(barCheckoutFinalTotal(order) * 100) / 100;
-          if (Math.abs(splitTotal - orderTotal) >= 0.01) {
-            throw new Error('A soma das pessoas deve fechar exatamente em ' + money(orderTotal) + '.');
+          const splitTarget = barCheckoutSplitTargetTotal(order);
+          if (Math.abs(splitTotal - splitTarget) >= 0.01) {
+            throw new Error('A soma das pessoas deve fechar exatamente o saldo de ' + money(splitTarget) + '.');
           }
         }
         if (barCanPersist(order.id)) {
@@ -29056,9 +29102,9 @@
         return;
       }
       const splitTotal = Math.round(parts.reduce(function (sum, part) { return sum + Number(part.amount || 0); }, 0) * 100) / 100;
-      const orderTotal = Math.round(barCheckoutFinalTotal(order) * 100) / 100;
-      if (Math.abs(splitTotal - orderTotal) >= 0.01) {
-        toast('A soma das pessoas deve fechar exatamente em ' + money(orderTotal) + '.');
+      const splitTarget = barCheckoutSplitTargetTotal(order);
+      if (Math.abs(splitTotal - splitTarget) >= 0.01) {
+        toast('A soma das pessoas deve fechar exatamente o saldo de ' + money(splitTarget) + '.');
         return;
       }
       try {
@@ -29178,13 +29224,13 @@
       if (!order || !barOrderCanEdit(order) || !opsState.barCheckoutSplitEnabled) return;
       const parts = barCheckoutSplitPayments(order);
       const splitTotal = Math.round(parts.reduce(function (sum, part) { return sum + Number(part.amount || 0); }, 0) * 100) / 100;
-      const orderTotal = Math.round(barCheckoutFinalTotal(order) * 100) / 100;
+      const splitTarget = barCheckoutSplitTargetTotal(order);
       if (parts.some(function (part) { return !part.person_name || !part.payment_method || Number(part.amount || 0) <= 0; })) {
         toast('Confira nome, valor e forma de pagamento de todas as pessoas.');
         return;
       }
-      if (Math.abs(splitTotal - orderTotal) >= 0.01) {
-        toast('A soma das pessoas deve fechar exatamente em ' + money(orderTotal) + '.');
+      if (Math.abs(splitTotal - splitTarget) >= 0.01) {
+        toast('A soma das pessoas deve fechar exatamente o saldo de ' + money(splitTarget) + '.');
         return;
       }
       const button = $('barCheckoutSplitSaveBtn');
