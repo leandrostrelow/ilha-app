@@ -7392,8 +7392,13 @@
       }
 
       .bar-command-body {
+        height: 0;
+        flex: 1 1 0;
         min-height: 0;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
         padding: 13px;
+        -webkit-overflow-scrolling: touch;
       }
 
       .bar-command-panel-head {
@@ -27540,6 +27545,7 @@
     function setBarCommandTab(tab) {
       const order = barOrderById(opsState.selectedBarOrderId);
       const normalized = ['items', 'add', 'checkout'].includes(tab) ? tab : 'items';
+      const previousTab = opsState.barCommandTab;
       opsState.barCommandTab = normalized === 'add' && order && !barOrderCanEdit(order) ? 'items' : normalized;
       document.querySelectorAll('[data-bar-command-tab]').forEach(function (button) {
         const active = button.dataset.barCommandTab === opsState.barCommandTab;
@@ -27554,6 +27560,13 @@
         renderBarOrderProductPreview();
       }
       if (opsState.barCommandTab === 'checkout') updateBarCheckoutPreview(order);
+      if (previousTab !== opsState.barCommandTab) {
+        const body = document.querySelector('#barCommandModal .bar-command-body');
+        if (body) {
+          body.scrollTop = 0;
+          body.scrollLeft = 0;
+        }
+      }
       persistBarViewState();
     }
 
