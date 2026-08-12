@@ -15753,13 +15753,12 @@
     /* Comanda no celular: nome legível, ações organizadas e produtos maiores. */
     @media (max-width: 700px) {
       body.bar-admin-surface .bar-command-head {
+        position: relative;
         min-height: 0;
         grid-template-columns: minmax(0, 1fr) 36px;
-        grid-template-areas:
-          "customer close"
-          "actions actions";
+        grid-template-areas: "customer close";
         align-items: start;
-        gap: 10px 8px;
+        gap: 8px;
         padding: max(12px, env(safe-area-inset-top)) 12px 10px;
       }
 
@@ -15771,8 +15770,23 @@
       body.bar-admin-surface .bar-command-name-row {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto auto;
+        grid-template-areas:
+          "title edit card"
+          "total status status";
         align-items: center;
-        gap: 7px;
+        gap: 6px 7px;
+      }
+
+      body.bar-admin-surface .bar-command-title-line {
+        grid-area: title;
+      }
+
+      body.bar-admin-surface #barOrderEditNameBtn {
+        grid-area: edit;
+      }
+
+      body.bar-admin-surface #barOrderCardBtn {
+        grid-area: card;
       }
 
       body.bar-admin-surface .bar-command-identity h2 {
@@ -15800,14 +15814,22 @@
       }
 
       body.bar-admin-surface .bar-command-header-total {
+        grid-area: total;
+        justify-self: start;
         min-height: 34px;
         padding: 6px 8px;
         font-size: 11px;
       }
 
+      body.bar-admin-surface #barCommandStatus {
+        grid-area: status;
+        justify-self: start;
+      }
+
       body.bar-admin-surface .bar-command-quick-actions {
-        grid-area: actions;
-        justify-self: end;
+        position: absolute;
+        right: 12px;
+        bottom: 10px;
         gap: 6px;
       }
 
