@@ -11394,7 +11394,7 @@
 
     .bar-finance-kpis {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 14px;
     }
 
@@ -11414,6 +11414,11 @@
     .bar-finance-kpi.expense {
       border-color: #f0d8d2;
       background: #fff7f5;
+    }
+
+    .bar-finance-kpi.sold {
+      border-color: #dbeab6;
+      background: #f8fce9;
     }
 
     .bar-finance-kpi.net {
@@ -11439,6 +11444,11 @@
     .bar-finance-kpi.expense .bar-finance-kpi-icon {
       color: #c0523b;
       background: #fde6df;
+    }
+
+    .bar-finance-kpi.sold .bar-finance-kpi-icon {
+      color: #527400;
+      background: #eaf5c8;
     }
 
     .bar-finance-kpi.net .bar-finance-kpi-icon {
@@ -17010,6 +17020,7 @@
 
               <div class="bar-finance-kpis">
                 <article class="bar-finance-kpi revenue"><span class="bar-finance-kpi-icon"><svg><use href="#bar-icon-trend"></use></svg></span><div><small>Faturamento recebido</small><strong id="barFinanceRevenueMetric">R$ 0,00</strong><em id="barFinanceRevenueCount">0 recebimentos</em></div></article>
+                <article class="bar-finance-kpi sold"><span class="bar-finance-kpi-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><div><small id="barFinanceSoldLabel">Vendido no dia</small><strong id="barFinanceSoldMetric">R$ 0,00</strong><em id="barFinanceSoldCount">0 comandas</em></div></article>
                 <article class="bar-finance-kpi expense"><span class="bar-finance-kpi-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><div><small>Despesas pagas</small><strong id="barFinanceExpenseMetric">R$ 0,00</strong><em id="barFinanceExpenseCount">0 pagamentos</em></div></article>
                 <article class="bar-finance-kpi net"><span class="bar-finance-kpi-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><div><small>Resultado líquido</small><strong id="barFinanceNetMetric">R$ 0,00</strong><em>Entradas menos saídas</em></div></article>
                 <article class="bar-finance-kpi ticket"><span class="bar-finance-kpi-icon"><svg><use href="#admin-icon-bar"></use></svg></span><div><small>Ticket médio</small><strong id="barFinanceTicketMetric">R$ 0,00</strong><em>Por recebimento</em></div></article>
@@ -25168,6 +25179,41 @@
       };
     }
 
+    function barFinanceSalePeriodMatches(value) {
+      const key = barOperationalDateKey(value);
+      if (opsState.barFinancePeriod === 'monthly') return key.slice(0, 7) === opsState.barFinanceReportMonth;
+      return key === opsState.barFinanceReportDate;
+    }
+
+    function barFinanceSoldInPeriod() {
+      const activeItems = (opsData.barOrderItems || []).filter(function (item) {
+        const order = barOrderById(item.orderId);
+        return order && String(order.status || '').toUpperCase() !== 'CANCELADA' && String(item.status || '').toUpperCase() !== 'CANCELADO';
+      });
+      const itemsById = new Map(activeItems.map(function (item) { return [String(item.id), item]; }));
+      const saleGroups = new Map();
+      activeItems.forEach(function (item) {
+        const physicalId = String(item.splitSourceItemId || item.id);
+        const sourceItem = itemsById.get(physicalId) || item;
+        let group = saleGroups.get(physicalId);
+        if (!group) {
+          group = { created: sourceItem.created || item.created, amount: 0, orderIds: new Set() };
+          saleGroups.set(physicalId, group);
+        }
+        group.amount += Number(item.quantity || 0) * Number(item.unitPrice || 0);
+        group.orderIds.add(String(item.orderId));
+      });
+
+      const orderIds = new Set();
+      let amount = 0;
+      saleGroups.forEach(function (group) {
+        if (!barFinanceSalePeriodMatches(group.created)) return;
+        amount += group.amount;
+        group.orderIds.forEach(function (orderId) { orderIds.add(orderId); });
+      });
+      return { amount: amount, orderCount: orderIds.size };
+    }
+
     function barFinanceSalesData(entries) {
       const paidOrderIds = new Set((entries || []).filter(function (entry) {
         return String(entry.type || '').toUpperCase() === 'RECEITA' && barFinanceIsConfirmed(entry) && entry.orderId;
@@ -25300,9 +25346,13 @@
       const receivableTotal = sumAmount(pendingRevenue);
       const payableTotal = sumAmount(pendingExpenses);
       const netTotal = revenueTotal - expenseTotal;
+      const soldInPeriod = barFinanceSoldInPeriod();
 
       $('barFinanceRevenueMetric').textContent = money(revenueTotal);
       $('barFinanceRevenueCount').textContent = confirmedRevenue.length + (confirmedRevenue.length === 1 ? ' recebimento' : ' recebimentos');
+      $('barFinanceSoldLabel').textContent = period === 'monthly' ? 'Vendido no mês' : 'Vendido no dia';
+      $('barFinanceSoldMetric').textContent = money(soldInPeriod.amount);
+      $('barFinanceSoldCount').textContent = soldInPeriod.orderCount + (soldInPeriod.orderCount === 1 ? ' comanda movimentada' : ' comandas movimentadas');
       $('barFinanceExpenseMetric').textContent = money(expenseTotal);
       $('barFinanceExpenseCount').textContent = confirmedExpenses.length + (confirmedExpenses.length === 1 ? ' pagamento' : ' pagamentos');
       $('barFinanceNetMetric').textContent = money(netTotal);
