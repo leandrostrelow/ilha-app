@@ -1,0 +1,904 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0a3440" />
+  <meta name="description" content="Torneios, inscrições, chaves, horários e resultados do Ilha Tênis." />
+  <title>Torneios | Ilha Tênis</title>
+  <style>
+    :root {
+      --ink: #102b32;
+      --muted: #687b82;
+      --navy: #0a3440;
+      --teal: #078a94;
+      --lime: #a8e900;
+      --lime-soft: #efffc7;
+      --bg: #f2f6f7;
+      --card: #fff;
+      --line: #d8e4e7;
+      --warn: #f4a024;
+      --danger: #d8414b;
+      --good: #208f55;
+      --shadow: 0 16px 40px rgba(10, 52, 64, .10);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 90% 0, rgba(168,233,0,.11), transparent 25rem),
+        var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    body.modal-open { overflow: hidden; }
+    button, input, select, textarea { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { border: 0; cursor: pointer; }
+    a { color: inherit; }
+    img { display: block; max-width: 100%; }
+    [hidden] { display: none !important; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .site-head {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      border-bottom: 1px solid rgba(216,228,231,.82);
+      background: rgba(255,255,255,.91);
+      backdrop-filter: blur(18px);
+    }
+    .site-head-inner {
+      width: min(1200px, calc(100% - 32px));
+      min-height: 76px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+    .brand-link { display: inline-flex; align-items: center; text-decoration: none; }
+    .brand-link img { width: 132px; height: 58px; object-fit: contain; object-position: left center; }
+    .head-actions { display: flex; align-items: center; gap: 10px; }
+    .head-link, .button {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 14px;
+      padding: 10px 16px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      font-weight: 850;
+      text-decoration: none;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .head-link:hover, .button:hover { transform: translateY(-1px); border-color: #b8cdd2; }
+    .button.primary { background: var(--navy); color: #fff; border-color: var(--navy); box-shadow: 0 10px 22px rgba(10,52,64,.18); }
+    .button.lime { background: var(--lime); color: #133300; border-color: var(--lime); box-shadow: 0 10px 22px rgba(168,233,0,.22); }
+    .button.full { width: 100%; }
+    .button:disabled { cursor: wait; opacity: .6; transform: none; }
+
+    .page { width: min(1200px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 64px; }
+    .landing-hero {
+      min-height: 340px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr);
+      align-items: center;
+      gap: 28px;
+      border-radius: 32px;
+      padding: clamp(28px, 5vw, 58px);
+      overflow: hidden;
+      color: #fff;
+      background:
+        radial-gradient(circle at 88% 16%, rgba(168,233,0,.30), transparent 17rem),
+        linear-gradient(135deg, #082c36, #075c67);
+      box-shadow: var(--shadow);
+    }
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--lime);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    .landing-hero h1 { margin: 0; max-width: 720px; font-size: clamp(38px, 6vw, 72px); line-height: .98; letter-spacing: -.055em; }
+    .landing-hero p { max-width: 650px; margin: 18px 0 0; color: rgba(255,255,255,.78); font-size: clamp(16px, 2vw, 19px); line-height: 1.55; }
+    .hero-mark {
+      width: min(280px, 78vw);
+      aspect-ratio: 1;
+      justify-self: center;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.17);
+      background: rgba(255,255,255,.06);
+      box-shadow: inset 0 0 0 22px rgba(255,255,255,.035);
+    }
+    .hero-mark svg { width: 58%; height: 58%; color: var(--lime); }
+    .section-title { margin: 42px 0 18px; display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+    .section-title h2 { margin: 0; font-size: clamp(26px, 4vw, 38px); letter-spacing: -.04em; }
+    .section-title p { margin: 6px 0 0; color: var(--muted); font-weight: 650; }
+
+    .tournament-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    .tournament-card {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: 190px auto;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: 0 12px 30px rgba(10,52,64,.07);
+      text-decoration: none;
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .tournament-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+    .tournament-cover {
+      position: relative;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: linear-gradient(145deg, #0a3440, #087f89);
+    }
+    .tournament-cover img { width: 100%; height: 100%; object-fit: cover; }
+    .tournament-cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 48%, rgba(3,25,31,.48)); pointer-events: none; }
+    .cover-monogram { color: var(--lime); font-size: 70px; font-weight: 950; letter-spacing: -.08em; }
+    .status-chip {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 1;
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: rgba(255,255,255,.92);
+      color: var(--navy);
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+    .status-chip.open { background: var(--lime); color: #183900; }
+    .status-chip.closed { background: #edf1f2; color: #64747a; }
+    .tournament-card-body { padding: 20px; }
+    .tournament-card h3 { margin: 0; font-size: 21px; letter-spacing: -.025em; }
+    .tournament-card-meta { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 7px 12px; color: var(--muted); font-size: 13px; font-weight: 700; }
+    .card-call { margin-top: 18px; display: flex; align-items: center; justify-content: space-between; color: var(--teal); font-weight: 900; }
+
+    .event-hero {
+      position: relative;
+      min-height: 360px;
+      display: grid;
+      align-items: end;
+      overflow: hidden;
+      border-radius: 32px;
+      background: linear-gradient(135deg, #082c36, #067986);
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+    .event-hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .52; }
+    .event-hero-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(5,35,42,.96) 0, rgba(5,35,42,.76) 48%, rgba(5,35,42,.18) 100%); }
+    .event-hero-body { position: relative; z-index: 1; max-width: 810px; padding: clamp(28px, 5vw, 56px); }
+    .event-hero h1 { margin: 0; font-size: clamp(38px, 6vw, 70px); line-height: .98; letter-spacing: -.055em; }
+    .event-hero p { max-width: 680px; margin: 16px 0 0; color: rgba(255,255,255,.78); font-size: 17px; line-height: 1.5; }
+    .hero-meta { margin-top: 21px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .meta-pill { min-height: 34px; display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 7px 11px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.15); font-size: 12px; font-weight: 850; }
+    .hero-actions { margin-top: 25px; display: flex; flex-wrap: wrap; gap: 10px; }
+
+    .event-nav {
+      position: sticky;
+      top: 76px;
+      z-index: 20;
+      margin: 18px 0;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,.94);
+      backdrop-filter: blur(14px);
+      scrollbar-width: none;
+      box-shadow: 0 8px 22px rgba(10,52,64,.07);
+    }
+    .event-nav::-webkit-scrollbar { display: none; }
+    .event-nav button { flex: 0 0 auto; min-height: 40px; border-radius: 12px; padding: 9px 14px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 900; }
+    .event-nav button.active { background: var(--navy); color: #fff; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .summary-card { min-height: 118px; display: grid; align-content: space-between; gap: 14px; padding: 20px; border: 1px solid var(--line); border-radius: 20px; background: #fff; box-shadow: 0 10px 24px rgba(10,52,64,.055); }
+    .summary-card span { color: var(--muted); font-size: 12px; font-weight: 850; text-transform: uppercase; letter-spacing: .05em; }
+    .summary-card strong { font-size: 28px; line-height: 1; letter-spacing: -.04em; }
+    .content-grid { margin-top: 18px; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: 18px; }
+    .panel { min-width: 0; padding: 22px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; box-shadow: 0 12px 28px rgba(10,52,64,.055); }
+    .panel + .panel { margin-top: 16px; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+    .panel-head h2, .panel-head h3 { margin: 0; letter-spacing: -.03em; }
+    .panel-head h2 { font-size: 25px; }
+    .panel-head h3 { font-size: 19px; }
+    .panel-head p { margin: 5px 0 0; color: var(--muted); font-size: 13px; font-weight: 650; }
+    .info-copy { color: #4d646b; font-size: 15px; line-height: 1.65; white-space: pre-line; }
+
+    .category-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+    .category-card { min-height: 148px; display: grid; align-content: space-between; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(180deg,#fff,#f8fbfb); }
+    .category-card h3 { margin: 0; font-size: 18px; }
+    .category-card p { margin: 7px 0 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
+    .category-card-foot { display: flex; align-items: end; justify-content: space-between; gap: 8px; }
+    .category-card-foot strong { color: var(--teal); font-size: 19px; }
+    .mini-chip { display: inline-flex; align-items: center; min-height: 27px; border-radius: 999px; padding: 5px 8px; background: #edf4f5; color: #526a71; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+
+    .search-row { display: grid; grid-template-columns: minmax(0,1fr) minmax(160px,.35fr); gap: 10px; margin-bottom: 16px; }
+    .field-control { width: 100%; min-height: 46px; border: 1px solid var(--line); border-radius: 14px; padding: 10px 13px; outline: none; background: #fff; color: var(--ink); }
+    .field-control:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(7,138,148,.11); }
+    .registration-list { display: grid; gap: 8px; }
+    .registration-row { min-width: 0; display: grid; grid-template-columns: 44px minmax(0,1fr) auto; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 15px; }
+    .avatar { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; background: var(--navy); color: var(--lime); font-size: 13px; font-weight: 950; }
+    .registration-row strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .registration-row small { display: block; margin-top: 3px; color: var(--muted); font-weight: 650; }
+
+    .filter-strip { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 16px; padding-bottom: 4px; scrollbar-width: none; }
+    .filter-strip::-webkit-scrollbar { display: none; }
+    .filter-btn { flex: 0 0 auto; min-height: 38px; border-radius: 999px; padding: 8px 13px; border: 1px solid var(--line); background: #fff; color: var(--muted); font-size: 12px; font-weight: 900; }
+    .filter-btn.active { border-color: var(--lime); background: var(--lime-soft); color: #315600; }
+
+    .bracket-scroller { overflow-x: auto; padding: 4px 2px 12px; }
+    .bracket-board { min-width: max-content; display: flex; align-items: stretch; gap: 14px; }
+    .bracket-round { width: 245px; display: flex; flex-direction: column; justify-content: space-around; gap: 12px; }
+    .bracket-round-title { position: sticky; left: 0; margin-bottom: 3px; color: var(--muted); font-size: 11px; font-weight: 950; letter-spacing: .06em; text-transform: uppercase; }
+    .match-card { min-height: 82px; overflow: hidden; border: 1px solid var(--line); border-left: 4px solid var(--navy); border-radius: 14px; background: #fff; box-shadow: 0 8px 20px rgba(10,52,64,.055); }
+    .match-card.done { border-left-color: var(--lime); }
+    .match-player { min-height: 39px; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 850; }
+    .match-player + .match-player { border-top: 1px solid var(--line); }
+    .match-player.winner { background: var(--lime-soft); color: #315600; }
+    .match-player span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .match-player b { color: var(--teal); }
+    .match-meta { padding: 5px 9px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 750; }
+
+    .agenda-list, .results-list { display: grid; gap: 10px; }
+    .agenda-card { display: grid; grid-template-columns: 82px minmax(0,1fr) auto; align-items: center; gap: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 17px; background: #fff; }
+    .time-box { min-height: 62px; display: grid; place-items: center; border-radius: 13px; background: var(--navy); color: #fff; text-align: center; }
+    .time-box strong { display: block; font-size: 15px; }
+    .time-box small { display: block; margin-top: 2px; color: var(--lime); font-size: 10px; font-weight: 900; text-transform: uppercase; }
+    .agenda-card h3 { margin: 0; font-size: 15px; }
+    .agenda-card p { margin: 5px 0 0; color: var(--muted); font-size: 12px; font-weight: 650; }
+    .court-chip { min-height: 32px; display: inline-flex; align-items: center; border-radius: 999px; padding: 7px 10px; background: #edf4f5; color: #526a71; font-size: 11px; font-weight: 900; white-space: nowrap; }
+    .result-card { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 12px; padding: 15px; border: 1px solid var(--line); border-radius: 17px; background: #fff; }
+    .result-player { min-width: 0; font-weight: 800; }
+    .result-player:last-child { text-align: right; }
+    .result-player.winner { color: var(--good); font-weight: 950; }
+    .score-pill { min-width: 76px; min-height: 38px; display: grid; place-items: center; border-radius: 12px; background: var(--navy); color: #fff; font-size: 13px; font-weight: 950; }
+
+    .sponsor-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
+    .sponsor { min-height: 90px; display: grid; place-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: #fff; text-decoration: none; }
+    .sponsor img { max-width: 130px; max-height: 58px; object-fit: contain; }
+    .sponsor span { font-weight: 850; }
+
+    .empty-state { min-height: 180px; display: grid; place-items: center; padding: 30px; border: 1px dashed #bdd0d5; border-radius: 18px; background: #fafcfc; color: var(--muted); text-align: center; font-weight: 750; }
+    .loading-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+    .skeleton { min-height: 260px; border-radius: 22px; background: linear-gradient(100deg,#e7edef 20%,#f7fafa 40%,#e7edef 60%); background-size: 220% 100%; animation: shimmer 1.2s infinite linear; }
+    @keyframes shimmer { to { background-position-x: -220%; } }
+    .error-card { max-width: 620px; margin: 80px auto; padding: 32px; border: 1px solid #f0c7c9; border-radius: 24px; background: #fff; text-align: center; box-shadow: var(--shadow); }
+    .error-card h2 { margin: 0; }
+    .error-card p { color: var(--muted); line-height: 1.5; }
+
+    .modal-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; align-items: end; justify-items: center; padding: 24px; background: rgba(4,28,34,.68); backdrop-filter: blur(7px); }
+    .modal {
+      width: min(780px,100%);
+      max-height: calc(100dvh - 48px);
+      display: grid;
+      grid-template-rows: auto minmax(0,1fr) auto;
+      overflow: hidden;
+      border-radius: 28px;
+      background: #fff;
+      box-shadow: 0 28px 80px rgba(0,0,0,.30);
+    }
+    .modal-head { display: flex; align-items: start; justify-content: space-between; gap: 16px; padding: 22px 24px 17px; border-bottom: 1px solid var(--line); }
+    .modal-head h2 { margin: 0; font-size: 27px; letter-spacing: -.04em; }
+    .modal-head p { margin: 6px 0 0; color: var(--muted); font-size: 13px; font-weight: 650; }
+    .close-btn { width: 42px; height: 42px; flex: 0 0 auto; border-radius: 13px; background: #edf3f4; color: var(--ink); font-size: 23px; }
+    .modal-body { overflow-y: auto; padding: 22px 24px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-field { display: grid; gap: 6px; }
+    .form-field.full { grid-column: 1 / -1; }
+    .form-field label { color: #53686e; font-size: 11px; font-weight: 950; letter-spacing: .05em; text-transform: uppercase; }
+    .form-field input, .form-field select, .form-field textarea { width: 100%; min-height: 49px; border: 1px solid var(--line); border-radius: 14px; padding: 11px 13px; outline: none; background: #fff; color: var(--ink); }
+    .form-field textarea { min-height: 90px; resize: vertical; }
+    .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(7,138,148,.11); }
+    .category-checks { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .category-check { min-height: 62px; display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 10px; padding: 11px; border: 1px solid var(--line); border-radius: 14px; cursor: pointer; }
+    .category-check:has(input:checked) { border-color: var(--lime); background: var(--lime-soft); }
+    .category-check input { width: 19px; height: 19px; accent-color: var(--teal); }
+    .category-check strong { display: block; font-size: 13px; }
+    .category-check small { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
+    .consent { margin-top: 16px; display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 9px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .consent input { width: 18px; height: 18px; accent-color: var(--teal); }
+    .form-error { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: #fff0f1; color: #a62e36; font-size: 12px; font-weight: 800; }
+    .modal-foot { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 16px 24px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: #fff; }
+
+    .success-box { display: grid; gap: 17px; text-align: center; }
+    .success-icon { width: 66px; height: 66px; display: grid; place-items: center; margin: 0 auto; border-radius: 50%; background: var(--lime); color: #214500; font-size: 30px; font-weight: 950; }
+    .success-box h3 { margin: 0; font-size: 25px; }
+    .success-box p { margin: 0; color: var(--muted); line-height: 1.5; }
+    .payment-box { display: grid; gap: 9px; padding: 15px; border: 1px solid var(--line); border-radius: 16px; background: #f7fafb; }
+    .payment-qr { width: min(230px, 100%); margin: 2px auto; border: 10px solid #fff; border-radius: 14px; }
+    .pix-copy { word-break: break-all; color: var(--teal); font-size: 12px; font-weight: 800; }
+
+    footer { margin-top: 50px; padding: 28px 0 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; font-weight: 700; text-align: center; }
+
+    @media (max-width: 900px) {
+      .tournament-grid, .category-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .summary-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .content-grid { grid-template-columns: 1fr; }
+      .landing-hero { grid-template-columns: 1fr; }
+      .hero-mark { display: none; }
+    }
+    @media (max-width: 620px) {
+      .site-head-inner, .page { width: min(100% - 20px,1200px); }
+      .site-head-inner { min-height: 66px; }
+      .brand-link img { width: 108px; height: 48px; }
+      .head-link { min-height: 40px; padding: 8px 11px; font-size: 12px; }
+      .page { padding-top: 12px; }
+      .landing-hero, .event-hero { border-radius: 22px; }
+      .landing-hero { min-height: 310px; padding: 25px 21px; }
+      .landing-hero h1, .event-hero h1 { font-size: 38px; }
+      .event-hero { min-height: 380px; }
+      .event-hero-shade { background: linear-gradient(0deg,rgba(5,35,42,.98),rgba(5,35,42,.20)); }
+      .event-hero-body { padding: 25px 20px; }
+      .event-nav { top: 66px; margin: 10px 0; border-radius: 15px; }
+      .event-nav button { min-height: 38px; padding: 8px 11px; font-size: 12px; }
+      .tournament-grid, .category-grid, .loading-grid { grid-template-columns: 1fr; }
+      .tournament-card { grid-template-rows: 160px auto; }
+      .summary-grid { gap: 8px; }
+      .summary-card { min-height: 100px; padding: 15px; }
+      .summary-card strong { font-size: 24px; }
+      .panel { padding: 15px; border-radius: 19px; }
+      .panel-head { align-items: start; }
+      .search-row { grid-template-columns: 1fr; }
+      .registration-row { grid-template-columns: 40px minmax(0,1fr); }
+      .registration-row > .mini-chip { grid-column: 2; justify-self: start; }
+      .agenda-card { grid-template-columns: 66px minmax(0,1fr); gap: 10px; padding: 10px; }
+      .agenda-card .court-chip { grid-column: 2; justify-self: start; }
+      .result-card { grid-template-columns: 1fr; gap: 8px; text-align: center; }
+      .result-player:last-child { text-align: center; }
+      .score-pill { justify-self: center; }
+      .sponsor-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .modal-backdrop { padding: 0; align-items: end; }
+      .modal { max-height: 94dvh; border-radius: 24px 24px 0 0; }
+      .modal-head, .modal-body { padding-left: 17px; padding-right: 17px; }
+      .modal-foot { padding-left: 17px; padding-right: 17px; }
+      .form-grid, .category-checks { grid-template-columns: 1fr; }
+      .form-field.full { grid-column: auto; }
+      .modal-foot .button { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-head">
+    <div class="site-head-inner">
+      <a class="brand-link" href="/torneios" aria-label="Torneios Ilha Tênis"><img src="/logo.png" alt="Ilha Tênis" /></a>
+      <div class="head-actions">
+        <a class="head-link" href="/">Ilha Play</a>
+        <button class="button primary" id="headRegisterBtn" type="button" hidden>Inscrever-se</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page" id="appMain" aria-live="polite">
+    <div class="loading-grid" id="loadingState"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+  </main>
+
+  <div class="modal-backdrop" id="registrationModal" aria-hidden="true" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="registrationTitle">
+      <div class="modal-head">
+        <div><h2 id="registrationTitle">Inscrição</h2><p id="registrationSubtitle">Preencha os dados para participar.</p></div>
+        <button class="close-btn" id="closeRegistrationBtn" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body" id="registrationBody">
+        <form id="registrationForm">
+          <div class="form-grid">
+            <div class="form-field full"><label for="athleteName">Nome completo</label><input id="athleteName" name="name" autocomplete="name" required /></div>
+            <div class="form-field"><label for="athletePhone">WhatsApp</label><input id="athletePhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(27) 99999-9999" required /></div>
+            <div class="form-field"><label for="athleteEmail">E-mail</label><input id="athleteEmail" name="email" type="email" autocomplete="email" required /></div>
+            <div class="form-field"><label for="athleteCpf">CPF</label><input id="athleteCpf" name="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" required /></div>
+            <div class="form-field"><label for="athleteBirthDate">Nascimento</label><input id="athleteBirthDate" name="birth_date" type="date" required /></div>
+            <div class="form-field"><label for="athleteCity">Cidade</label><input id="athleteCity" name="city" autocomplete="address-level2" value="Colatina" /></div>
+            <div class="form-field"><label for="athleteClub">Clube / academia</label><input id="athleteClub" name="club" value="Ilha Tênis" /></div>
+            <div class="form-field full"><label>Classes</label><div class="category-checks" id="registrationCategories"></div></div>
+            <div class="form-field full" id="partnerField" hidden><label for="partnerName">Nome da dupla</label><input id="partnerName" name="partner_name" placeholder="Nome completo do parceiro ou parceira" /></div>
+            <div class="form-field"><label for="shirtSize">Camiseta</label><select id="shirtSize" name="shirt_size"><option value="">Não informar</option><option>PP</option><option>P</option><option>M</option><option>G</option><option>GG</option><option>XG</option></select></div>
+            <div class="form-field"><label for="paymentMethod">Pagamento</label><select id="paymentMethod" name="payment_method"></select></div>
+            <div class="form-field full"><label for="athleteNotes">Observação</label><textarea id="athleteNotes" name="notes" placeholder="Restrição de horário ou informação importante"></textarea></div>
+          </div>
+          <label class="consent"><input id="registrationConsent" type="checkbox" required /><span>Confirmo que os dados estão corretos e autorizo seu uso pela organização para realizar o torneio e entrar em contato comigo.</span></label>
+          <div class="form-error" id="registrationError" role="alert" hidden></div>
+        </form>
+        <div class="success-box" id="registrationSuccess" hidden></div>
+      </div>
+      <div class="modal-foot" id="registrationFoot">
+        <button class="button" id="cancelRegistrationBtn" type="button">Cancelar</button>
+        <button class="button lime" id="submitRegistrationBtn" type="submit" form="registrationForm">Continuar para pagamento</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_zcX8te5g99p0bA12xy_E-A_MTyNpJNx';
+    const PUBLIC_SNAPSHOT_RPC = 'tournament_public_snapshot';
+    const REGISTRATION_FUNCTION = 'tournament-register';
+
+    const state = {
+      slug: routeSlug(),
+      snapshot: null,
+      activeTab: 'overview',
+      bracketCategory: '',
+      agendaCategory: '',
+      registrationSearch: '',
+      submitting: false,
+      lastRegistrationPayload: null
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const list = (value) => Array.isArray(value) ? value : [];
+    const text = (value, fallback) => value === null || value === undefined || value === '' ? (fallback || '') : String(value);
+    const clean = (value) => text(value).trim();
+    const normalize = (value) => clean(value).toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const escapeHtml = (value) => text(value).replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
+    const safeHref = (value, fallback) => {
+      try {
+        const url = new URL(clean(value), location.origin);
+        return ['http:','https:'].includes(url.protocol) ? url.href : (fallback || '#');
+      } catch (error) { return fallback || '#'; }
+    };
+    const field = (row, ...names) => {
+      for (const name of names) if (row && row[name] !== null && row[name] !== undefined && row[name] !== '') return row[name];
+      return '';
+    };
+
+    function routeSlug() {
+      const query = new URLSearchParams(location.search).get('slug');
+      if (query) return query;
+      const parts = location.pathname.split('/').filter(Boolean);
+      const index = parts.indexOf('torneios');
+      return index >= 0 && parts[index + 1] ? decodeURIComponent(parts[index + 1]) : '';
+    }
+
+    function publicUrl(slug) { return '/torneios/' + encodeURIComponent(slug); }
+    function headers() { return { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }; }
+
+    async function requestJson(url, options) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 18000);
+      try {
+        const response = await fetch(url, Object.assign({}, options || {}, { signal: controller.signal }));
+        const raw = await response.text();
+        let data = null;
+        try { data = raw ? JSON.parse(raw) : null; } catch (error) { data = raw; }
+        if (!response.ok) {
+          const message = data && (data.message || data.error || data.hint) || 'Não foi possível concluir agora.';
+          throw new Error(message);
+        }
+        return data;
+      } catch (error) {
+        if (error && error.name === 'AbortError') throw new Error('A conexão demorou demais. Tente novamente.');
+        throw error;
+      } finally { clearTimeout(timer); }
+    }
+
+    async function getSnapshot(slug) {
+      return requestJson(SUPABASE_URL + '/rest/v1/rpc/' + PUBLIC_SNAPSHOT_RPC, {
+        method: 'POST', headers: headers(), body: JSON.stringify({ p_slug: slug || null })
+      });
+    }
+
+    async function loadPage() {
+      try {
+        const payload = await getSnapshot(state.slug);
+        state.snapshot = payload && payload.data ? payload.data : payload;
+        if (state.slug) renderTournament(); else renderLanding();
+      } catch (error) { renderError(error); }
+    }
+
+    function renderError(error) {
+      $('appMain').innerHTML = '<div class="error-card"><h2>Não foi possível carregar</h2><p>' + escapeHtml(error && error.message || 'Tente novamente em alguns instantes.') + '</p><button class="button primary" type="button" onclick="location.reload()">Tentar novamente</button></div>';
+    }
+
+    function tournamentsFromSnapshot() {
+      if (Array.isArray(state.snapshot)) return state.snapshot;
+      return list(state.snapshot && (state.snapshot.tournaments || state.snapshot.torneios));
+    }
+
+    function tournamentStatus(row) { return clean(field(row, 'status', 'registration_status')).toUpperCase(); }
+    function isRegistrationOpen(row) {
+      const status = tournamentStatus(row);
+      const explicit = field(row, 'registration_open', 'registrations_open', 'inscricoes_abertas');
+      if (explicit !== '') {
+        const enabled = explicit === true || String(explicit).toLowerCase() === 'true';
+        return enabled && ['REGISTRATION_OPEN','INSCRICOES_ABERTAS','ABERTO','OPEN'].includes(status);
+      }
+      return ['REGISTRATION_OPEN','INSCRICOES_ABERTAS','ABERTO','OPEN'].includes(status);
+    }
+    function statusLabel(row) {
+      if (isRegistrationOpen(row)) return 'Inscrições abertas';
+      const status = tournamentStatus(row);
+      if (['FINISHED','FINALIZADO','ENCERRADO'].includes(status)) return 'Finalizado';
+      if (['IN_PROGRESS','EM_ANDAMENTO'].includes(status)) return 'Em andamento';
+      return status ? status.replaceAll('_',' ') : 'Em breve';
+    }
+    function statusClass(row) { return isRegistrationOpen(row) ? 'open' : (['FINISHED','FINALIZADO','ENCERRADO'].includes(tournamentStatus(row)) ? 'closed' : ''); }
+    function dateValue(value) { const raw = clean(value); if (!raw) return null; const date = new Date(raw.length <= 10 ? raw + 'T12:00:00' : raw); return Number.isNaN(date.getTime()) ? null : date; }
+    function formatDate(value, options) { const date = dateValue(value); return date ? date.toLocaleDateString('pt-BR', options || {day:'2-digit',month:'short',year:'numeric'}) : ''; }
+    function formatRange(row) {
+      const start = field(row,'starts_on','start_date','data_inicio','starts_at');
+      const end = field(row,'ends_on','end_date','data_fim','ends_at');
+      if (!start) return 'Data a confirmar';
+      if (!end || String(start).slice(0,10) === String(end).slice(0,10)) return formatDate(start);
+      return formatDate(start,{day:'2-digit',month:'short'}) + ' — ' + formatDate(end,{day:'2-digit',month:'short',year:'numeric'});
+    }
+    function money(value) { const number = Number(value || 0); return number ? number.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'Grátis'; }
+    function initials(name) { return clean(name).split(/\s+/).slice(0,2).map((part) => part[0]).join('').toUpperCase() || 'IT'; }
+    function shortTime(value) {
+      const raw = clean(value);
+      if (!raw) return 'A definir';
+      const clock = raw.match(/(?:T|\s)(\d{1,2}):(\d{2})/) || raw.match(/^(\d{1,2}):(\d{2})/);
+      if (clock) return clock[1].padStart(2,'0') + ':' + clock[2];
+      const date = dateValue(raw);
+      return date && raw.length > 10 ? date.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : raw;
+    }
+
+    function renderLanding() {
+      document.title = 'Torneios | Ilha Tênis';
+      state.activeTab = 'overview';
+      $('headRegisterBtn').hidden = true;
+      const tournaments = tournamentsFromSnapshot();
+      $('appMain').innerHTML =
+        '<section class="landing-hero"><div><p class="eyebrow">Ilha Tênis</p><h1>Viva cada ponto do torneio.</h1><p>Inscrições, atletas, chaves, horários e resultados reunidos em um só lugar.</p></div>' +
+        '<div class="hero-mark" aria-hidden="true"><svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="37" stroke="currentColor" stroke-width="7"/><path d="M21 29c29 3 47 21 50 50M29 21c3 29 21 47 50 50" stroke="currentColor" stroke-width="7" stroke-linecap="round"/></svg></div></section>' +
+        '<div class="section-title"><div><h2>Torneios</h2><p>Escolha um evento para acompanhar ou se inscrever.</p></div></div>' +
+        '<section class="tournament-grid">' + (tournaments.map(tournamentCardHtml).join('') || '<div class="empty-state" style="grid-column:1/-1">Nenhum torneio publicado no momento.</div>') + '</section>' + siteFooter();
+    }
+
+    function tournamentCardHtml(row) {
+      const slug = clean(field(row,'slug','public_slug'));
+      const name = field(row,'name','nome') || 'Torneio Ilha';
+      const cover = field(row,'cover_url','banner_url','image_url');
+      return '<a class="tournament-card" href="' + publicUrl(slug) + '"><div class="tournament-cover">' +
+        '<span class="status-chip ' + statusClass(row) + '">' + escapeHtml(statusLabel(row)) + '</span>' +
+        (cover ? '<img src="' + escapeHtml(cover) + '" alt="" loading="lazy" />' : '<span class="cover-monogram">' + escapeHtml(initials(name)) + '</span>') +
+        '</div><div class="tournament-card-body"><h3>' + escapeHtml(name) + '</h3><div class="tournament-card-meta"><span>' + escapeHtml(formatRange(row)) + '</span><span>' + escapeHtml(field(row,'city','cidade') || 'Colatina') + '</span></div><div class="card-call"><span>Ver torneio</span><span>→</span></div></div></a>';
+    }
+
+    function tournament() { return state.snapshot && (state.snapshot.tournament || state.snapshot.torneio) || {}; }
+    function categories() { return list(state.snapshot && (state.snapshot.categories || state.snapshot.categorias)); }
+    function registrations() { return list(state.snapshot && (state.snapshot.registrations || state.snapshot.inscricoes)); }
+    function matches() { return list(state.snapshot && (state.snapshot.matches || state.snapshot.jogos)); }
+    function courts() { return list(state.snapshot && (state.snapshot.courts || state.snapshot.quadras)); }
+    function events() { return list(state.snapshot && (state.snapshot.events || state.snapshot.agenda)); }
+    function sponsors() { return list(state.snapshot && (state.snapshot.sponsors || state.snapshot.patrocinadores)); }
+    function categoryId(row) { return String(field(row,'id','category_id','categoria_id')); }
+    function categoryName(id) { const row = categories().find((item) => categoryId(item) === String(id)); return row ? field(row,'name','nome') : ''; }
+    function playerName(match, slot) { return field(match, 'side' + slot + '_name', 'player' + slot + '_name', 'jogador' + slot + '_nome') || field(match['player' + slot],'name','nome') || 'A definir'; }
+    function matchCategoryId(row) { return String(field(row,'category_id','categoria_id')); }
+
+    function renderTournament() {
+      const item = tournament();
+      if (!item || !Object.keys(item).length) return renderError(new Error('Torneio não encontrado.'));
+      const name = field(item,'name','nome') || 'Torneio Ilha';
+      document.title = name + ' | Ilha Tênis';
+      state.activeTab = 'overview';
+      const open = isRegistrationOpen(item);
+      $('headRegisterBtn').hidden = !open;
+      $('headRegisterBtn').onclick = openRegistration;
+      const cover = field(item,'cover_url','banner_url','image_url');
+      if (!state.bracketCategory || !categories().some((row) => categoryId(row) === String(state.bracketCategory))) {
+        const categoryWithDraw = categories().find((row) => matches().some((match) => matchCategoryId(match) === categoryId(row)));
+        state.bracketCategory = categoryWithDraw ? categoryId(categoryWithDraw) : (categories()[0] ? categoryId(categories()[0]) : '');
+      }
+      $('appMain').innerHTML =
+        '<section class="event-hero">' + (cover ? '<img class="event-hero-bg" src="' + escapeHtml(cover) + '" alt="" />' : '') + '<div class="event-hero-shade"></div><div class="event-hero-body">' +
+        '<p class="eyebrow">' + escapeHtml(field(item,'club_name','clube') || 'Ilha Tênis') + '</p><h1>' + escapeHtml(name) + '</h1><p>' + escapeHtml(field(item,'short_description','description','descricao') || 'Acompanhe todas as informações do torneio.') + '</p>' +
+        '<div class="hero-meta"><span class="meta-pill">' + escapeHtml(formatRange(item)) + '</span><span class="meta-pill">' + escapeHtml(field(item,'location','venue','local') || 'Ilha Tênis') + '</span><span class="meta-pill">' + escapeHtml(statusLabel(item)) + '</span></div>' +
+        (open ? '<div class="hero-actions"><button class="button lime" type="button" data-open-registration>Fazer inscrição</button></div>' : '') + '</div></section>' +
+        '<nav class="event-nav" aria-label="Seções do torneio">' + tabButton('overview','Visão geral') + tabButton('categories','Classes') + tabButton('registrations','Inscritos') + tabButton('brackets','Chaves') + tabButton('schedule','Agenda') + tabButton('results','Resultados') + '</nav>' +
+        '<section class="tab-panel active" data-panel="overview">' + overviewHtml(item) + '</section>' +
+        '<section class="tab-panel" data-panel="categories">' + categoriesHtml() + '</section>' +
+        '<section class="tab-panel" data-panel="registrations">' + registrationsHtml() + '</section>' +
+        '<section class="tab-panel" data-panel="brackets">' + bracketsHtml() + '</section>' +
+        '<section class="tab-panel" data-panel="schedule">' + scheduleHtml() + '</section>' +
+        '<section class="tab-panel" data-panel="results">' + resultsHtml() + '</section>' + siteFooter();
+      bindTournamentEvents();
+    }
+
+    function tabButton(id,label) { return '<button type="button" data-tab="' + id + '" class="' + (id === state.activeTab ? 'active' : '') + '">' + label + '</button>'; }
+    function overviewHtml(item) {
+      const activeRegistrations = registrations().filter((row) => !['CANCELLED','CANCELADO'].includes(clean(field(row,'status','registration_status')).toUpperCase()));
+      const finalized = matches().filter(isFinalized);
+      const scheduled = matches().filter((row) => !isFinalized(row) && (field(row,'scheduled_at','match_date','event_date','date','data') || field(row,'match_time','time','hora')));
+      return '<div class="summary-grid"><div class="summary-card"><span>Atletas</span><strong>' + activeRegistrations.length + '</strong></div><div class="summary-card"><span>Classes</span><strong>' + categories().length + '</strong></div><div class="summary-card"><span>Jogos</span><strong>' + matches().length + '</strong></div><div class="summary-card"><span>Finalizados</span><strong>' + finalized.length + '</strong></div></div>' +
+        '<div class="content-grid"><div><div class="panel"><div class="panel-head"><div><h2>Sobre o torneio</h2></div></div><div class="info-copy">' + escapeHtml(field(item,'description','descricao','notes','observacoes') || 'As informações completas serão publicadas em breve.') + '</div></div>' +
+        (scheduled.length ? '<div class="panel"><div class="panel-head"><div><h2>Próximos jogos</h2><p>Programação mais próxima.</p></div></div><div class="agenda-list">' + scheduled.slice().sort(matchDateSort).slice(0,4).map(agendaMatchHtml).join('') + '</div></div>' : '') + '</div>' +
+        '<aside><div class="panel"><div class="panel-head"><div><h3>Informações</h3></div></div><div class="registration-list">' + infoRow('Período',formatRange(item)) + infoRow('Local',field(item,'location','venue','local') || 'Ilha Tênis') + infoRow('Inscrição',isRegistrationOpen(item) ? 'Aberta' : 'Fechada') + infoRow('Jogos agendados',String(scheduled.length)) + '</div></div>' + sponsorsHtml() + '</aside></div>';
+    }
+    function infoRow(label,value) { return '<div class="registration-row" style="grid-template-columns:minmax(0,1fr) auto"><div><strong>' + escapeHtml(label) + '</strong></div><span class="mini-chip">' + escapeHtml(value) + '</span></div>'; }
+
+    function categoriesHtml() {
+      return '<div class="panel"><div class="panel-head"><div><h2>Classes</h2><p>Confira modalidades, limites e valores.</p></div></div><div class="category-grid">' + (categories().map((row) => {
+        const id = categoryId(row);
+        const rawStoredCount = field(row,'registration_count','quantidade_inscritos');
+        const storedCount = rawStoredCount === '' ? NaN : Number(rawStoredCount);
+        const count = Number.isFinite(storedCount) && storedCount >= 0 ? storedCount : registrations().filter((reg) => String(field(reg,'category_id','categoria_id')) === id && !['CANCELLED','CANCELADO'].includes(clean(field(reg,'status','registration_status')).toUpperCase())).length;
+        return '<article class="category-card"><div><h3>' + escapeHtml(field(row,'name','nome') || 'Classe') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || field(row,'gender','genero') || 'Categoria do torneio') + '</p></div><div class="category-card-foot"><div><strong>' + escapeHtml(money(field(row,'registration_fee','price','valor'))) + '</strong><div><span class="mini-chip">' + count + ' inscritos</span></div></div><span class="mini-chip">' + escapeHtml(field(row,'draw_size','tamanho_chave') || 'Chave auto') + '</span></div></article>';
+      }).join('') || '<div class="empty-state" style="grid-column:1/-1">As classes serão publicadas em breve.</div>') + '</div></div>';
+    }
+
+    function registrationAthlete(row) { return row.athlete || row.player || row.jogador || {}; }
+    function registrationName(row) { return field(row,'public_name','athlete_name','player_name','jogador_nome','name','nome') || field(registrationAthlete(row),'name','nome') || 'Atleta'; }
+    function registrationCategoryNames(row) {
+      const ids = list(field(row,'category_ids','categoria_ids')).map(String);
+      const single = field(row,'category_id','categoria_id'); if (single) ids.push(String(single));
+      const nested = list(row.categories || row.categorias).map((item) => field(item,'name','nome')).filter(Boolean);
+      const names = ids.map(categoryName).filter(Boolean).concat(nested);
+      return Array.from(new Set(names)).join(', ') || 'Classe a confirmar';
+    }
+    function registrationsHtml() {
+      return '<div class="panel"><div class="panel-head"><div><h2>Atletas inscritos</h2><p>Lista pública de participantes confirmados.</p></div></div><div class="search-row"><input class="field-control" id="registrationSearch" placeholder="Buscar atleta" value="' + escapeHtml(state.registrationSearch) + '" /><select class="field-control" id="registrationCategoryFilter"><option value="">Todas as classes</option>' + categories().map((row) => '<option value="' + escapeHtml(categoryId(row)) + '">' + escapeHtml(field(row,'name','nome')) + '</option>').join('') + '</select></div><div class="registration-list" id="publicRegistrationList">' + registrationRowsHtml('',state.registrationSearch) + '</div></div>';
+    }
+    function registrationRowsHtml(categoryFilter,search) {
+      const rows = registrations().filter((row) => {
+        const status = clean(field(row,'status','registration_status','status_pagamento')).toUpperCase();
+        if (!['CONFIRMED','WAITLIST','CONFIRMADO','LISTA_ESPERA'].includes(status)) return false;
+        if (search && !normalize(registrationName(row)).includes(normalize(search))) return false;
+        if (categoryFilter) {
+          const ids = list(field(row,'category_ids','categoria_ids')).map(String);
+          const single = field(row,'category_id','categoria_id'); if (single) ids.push(String(single));
+          if (!ids.includes(String(categoryFilter))) return false;
+        }
+        return true;
+      }).sort((a,b) => registrationName(a).localeCompare(registrationName(b),'pt-BR'));
+      return rows.map((row) => { const waitlist = ['WAITLIST','LISTA_ESPERA'].includes(clean(field(row,'status','registration_status')).toUpperCase()); return '<article class="registration-row"><span class="avatar">' + escapeHtml(initials(registrationName(row))) + '</span><div><strong>' + escapeHtml(registrationName(row)) + '</strong><small>' + escapeHtml(registrationCategoryNames(row)) + '</small></div><span class="mini-chip">' + (waitlist ? 'Lista de espera' : 'Confirmado') + '</span></article>'; }).join('') || '<div class="empty-state">Nenhum atleta encontrado.</div>';
+    }
+
+    function roundNumber(row) { return Number(field(row,'round_no','round_number','round','rodada') || 1); }
+    function roundLabel(row) {
+      const phase = clean(field(row,'phase','fase')).toUpperCase();
+      const code = clean(field(row,'round_code','codigo_rodada')).toUpperCase();
+      const labels = {R64:'64 avos',R32:'32 avos',R16:'Oitavas',QF:'Quartas',SF:'Semifinal',FINAL:'Final'};
+      return labels[phase] || labels[code] || field(row,'round_name','nome_rodada') || 'Rodada ' + roundNumber(row);
+    }
+    function matchId(row) { return String(field(row,'id','match_id','jogo_id')); }
+    function winnerId(row) { return String(field(row,'winner_athlete_id','winner_id','vencedor_id')); }
+    function playerId(row,slot) { return String(field(row,'side' + slot + '_athlete_id','player' + slot + '_id','jogador' + slot + '_id')); }
+    function isFinalized(row) { return ['FINALIZED','FINISHED','FINALIZADO','ENCERRADO','COMPLETED'].includes(clean(field(row,'status')).toUpperCase()) || Boolean(winnerId(row)); }
+    function playerScore(row,slot) {
+      const direct = field(row,'player' + slot + '_score','score' + slot,'placar' + slot);
+      if (direct !== '') return direct;
+      const score = field(row,'score','placar');
+      if (score && typeof score === 'object') return score['p' + slot] || score['player' + slot] || '';
+      if (typeof score === 'string') {
+        const sets = clean(score).split(/\s+/).map((set) => set.split(/[\/×x-]/)).filter((set) => set.length >= 2);
+        return sets.length ? sets.map((set) => set[slot - 1]).join(' ') : (slot === 1 ? score : '');
+      }
+      return '';
+    }
+    function bracketsHtml() {
+      return '<div class="panel"><div class="panel-head"><div><h2>Chaves</h2><p>Selecione a classe e acompanhe o caminho até a final.</p></div></div><div class="filter-strip" id="bracketFilters">' + categories().map((row) => '<button class="filter-btn ' + (categoryId(row) === state.bracketCategory ? 'active' : '') + '" type="button" data-bracket-category="' + escapeHtml(categoryId(row)) + '">' + escapeHtml(field(row,'name','nome')) + '</button>').join('') + '</div><div id="bracketContent">' + bracketBoardHtml(state.bracketCategory) + '</div></div>';
+    }
+    function bracketBoardHtml(category) {
+      const rows = matches().filter((row) => matchCategoryId(row) === String(category));
+      if (!rows.length) return '<div class="empty-state">Chave ainda não publicada para esta classe.</div>';
+      const rounds = new Map();
+      rows.forEach((row) => { const number = roundNumber(row); if (!rounds.has(number)) rounds.set(number,[]); rounds.get(number).push(row); });
+      return '<div class="bracket-scroller"><div class="bracket-board">' + Array.from(rounds.keys()).sort((a,b) => a-b).map((number) => {
+        const roundMatches = rounds.get(number).slice().sort((a,b) => Number(field(a,'match_no','sort_order','position','position_in_round','posicao_chave')||0)-Number(field(b,'match_no','sort_order','position','position_in_round','posicao_chave')||0));
+        return '<section class="bracket-round"><div class="bracket-round-title">' + escapeHtml(roundLabel(roundMatches[0])) + '</div>' + roundMatches.map(matchCardHtml).join('') + '</section>';
+      }).join('') + '</div></div>';
+    }
+    function matchCardHtml(row) {
+      const winner = winnerId(row);
+      const meta = [formatDate(field(row,'scheduled_at','match_date','event_date','date','data'),{day:'2-digit',month:'short'}),shortTime(field(row,'scheduled_at','match_time','time','hora')),field(row,'court_name','quadra')].filter((item) => item && item !== 'A definir').join(' · ');
+      return '<article class="match-card ' + (isFinalized(row)?'done':'') + '" data-match="' + escapeHtml(matchId(row)) + '">' + matchPlayerHtml(row,1,winner) + matchPlayerHtml(row,2,winner) + (meta ? '<div class="match-meta">' + escapeHtml(meta) + '</div>' : '') + '</article>';
+    }
+    function matchPlayerHtml(row,slot,winner) { const id = playerId(row,slot); return '<div class="match-player ' + (winner && id === winner ? 'winner' : '') + '"><span>' + escapeHtml(playerName(row,slot)) + '</span><b>' + escapeHtml(playerScore(row,slot)) + '</b></div>'; }
+
+    function matchDate(row) { return dateValue(field(row,'scheduled_at','match_date','event_date','date','data','starts_at')); }
+    function matchDateSort(a,b) { return (matchDate(a)?.getTime() || Number.MAX_SAFE_INTEGER) - (matchDate(b)?.getTime() || Number.MAX_SAFE_INTEGER) || shortTime(field(a,'match_time','event_time','time','hora')).localeCompare(shortTime(field(b,'match_time','event_time','time','hora'))); }
+    function scheduleItems() {
+      const gameRows = matches().filter((row) => !isFinalized(row) && (field(row,'scheduled_at','match_date','event_date','date','data') || field(row,'match_time','time','hora'))).map((row) => Object.assign({__kind:'match'},row));
+      const eventRows = events().map((row) => Object.assign({__kind:'event'},row));
+      return gameRows.concat(eventRows).sort(matchDateSort);
+    }
+    function scheduleHtml() {
+      return '<div class="panel"><div class="panel-head"><div><h2>Agenda</h2><p>Jogos e eventos publicados pela organização.</p></div></div><div class="filter-strip" id="agendaFilters"><button class="filter-btn ' + (!state.agendaCategory?'active':'') + '" data-agenda-category="">Todos</button>' + categories().map((row) => '<button class="filter-btn ' + (categoryId(row) === state.agendaCategory?'active':'') + '" data-agenda-category="' + escapeHtml(categoryId(row)) + '">' + escapeHtml(field(row,'name','nome')) + '</button>').join('') + '</div><div class="agenda-list" id="agendaContent">' + agendaRowsHtml(state.agendaCategory) + '</div></div>';
+    }
+    function agendaRowsHtml(category) {
+      const rows = scheduleItems().filter((row) => !category || row.__kind === 'event' || matchCategoryId(row) === String(category));
+      return rows.map((row) => row.__kind === 'event' ? agendaEventHtml(row) : agendaMatchHtml(row)).join('') || '<div class="empty-state">Nenhum horário publicado.</div>';
+    }
+    function agendaMatchHtml(row) {
+      const date = matchDate(row);
+      const day = date ? date.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : 'A definir';
+      return '<article class="agenda-card"><div class="time-box"><div><strong>' + escapeHtml(shortTime(field(row,'scheduled_at','match_time','time','hora'))) + '</strong><small>' + escapeHtml(day) + '</small></div></div><div><h3>' + escapeHtml(playerName(row,1)) + ' × ' + escapeHtml(playerName(row,2)) + '</h3><p>' + escapeHtml(categoryName(matchCategoryId(row)) || roundLabel(row)) + '</p></div><span class="court-chip">' + escapeHtml(field(row,'court_name','quadra') || 'Quadra a definir') + '</span></article>';
+    }
+    function agendaEventHtml(row) {
+      const date = matchDate(row);
+      return '<article class="agenda-card"><div class="time-box"><div><strong>' + escapeHtml(shortTime(field(row,'starts_at','event_time','time','hora'))) + '</strong><small>' + escapeHtml(date ? date.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : 'Evento') + '</small></div></div><div><h3>' + escapeHtml(field(row,'title','titulo') || 'Evento') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || '') + '</p></div><span class="court-chip">' + escapeHtml(field(row,'location','court_name','quadra') || 'Torneio') + '</span></article>';
+    }
+
+    function scoreText(row) { const score = field(row,'score','placar'); if (typeof score === 'string') return score; const p1 = playerScore(row,1), p2 = playerScore(row,2); return p1 !== '' || p2 !== '' ? p1 + ' × ' + p2 : 'Finalizado'; }
+    function resultsHtml() {
+      const rows = matches().filter(isFinalized).sort((a,b) => (matchDate(b)?.getTime()||0)-(matchDate(a)?.getTime()||0));
+      return '<div class="panel"><div class="panel-head"><div><h2>Resultados</h2><p>Placares confirmados pela organização.</p></div></div><div class="results-list">' + (rows.map((row) => { const winner = winnerId(row); return '<article class="result-card"><div class="result-player ' + (winner && playerId(row,1)===winner?'winner':'') + '">' + escapeHtml(playerName(row,1)) + '</div><span class="score-pill">' + escapeHtml(scoreText(row)) + '</span><div class="result-player ' + (winner && playerId(row,2)===winner?'winner':'') + '">' + escapeHtml(playerName(row,2)) + '</div></article>'; }).join('') || '<div class="empty-state">Nenhum resultado publicado.</div>') + '</div></div>';
+    }
+
+    function sponsorsHtml() {
+      if (!sponsors().length) return '';
+      return '<div class="panel"><div class="panel-head"><div><h3>Parceiros</h3></div></div><div class="sponsor-grid">' + sponsors().map((row) => { const href = safeHref(field(row,'link_url','url','website_url','instagram_url')); const logo = field(row,'logo_url','image_url'); return '<a class="sponsor" href="' + escapeHtml(href) + '" target="_blank" rel="noopener">' + (logo ? '<img src="' + escapeHtml(logo) + '" alt="' + escapeHtml(field(row,'name','nome')) + '" loading="lazy" />' : '<span>' + escapeHtml(field(row,'name','nome') || 'Parceiro') + '</span>') + '</a>'; }).join('') + '</div></div>';
+    }
+    function siteFooter() { return '<footer>Ilha Tênis Colatina · Torneios, chaves e resultados</footer>'; }
+
+    function bindTournamentEvents() {
+      document.querySelectorAll('[data-tab]').forEach((button) => button.addEventListener('click', () => showTab(button.dataset.tab)));
+      document.querySelectorAll('[data-open-registration]').forEach((button) => button.addEventListener('click', openRegistration));
+      document.querySelectorAll('[data-bracket-category]').forEach((button) => button.addEventListener('click', () => { state.bracketCategory = button.dataset.bracketCategory; document.querySelectorAll('[data-bracket-category]').forEach((item) => item.classList.toggle('active', item === button)); $('bracketContent').innerHTML = bracketBoardHtml(state.bracketCategory); }));
+      document.querySelectorAll('[data-agenda-category]').forEach((button) => button.addEventListener('click', () => { state.agendaCategory = button.dataset.agendaCategory; document.querySelectorAll('[data-agenda-category]').forEach((item) => item.classList.toggle('active', item === button)); $('agendaContent').innerHTML = agendaRowsHtml(state.agendaCategory); }));
+      const search = $('registrationSearch'), category = $('registrationCategoryFilter');
+      if (search && category) {
+        const update = () => { state.registrationSearch = search.value; $('publicRegistrationList').innerHTML = registrationRowsHtml(category.value,search.value); };
+        search.addEventListener('input', update); category.addEventListener('change',update);
+      }
+    }
+    function showTab(tab) {
+      state.activeTab = tab;
+      document.querySelectorAll('[data-tab]').forEach((button) => button.classList.toggle('active',button.dataset.tab===tab));
+      document.querySelectorAll('[data-panel]').forEach((panel) => panel.classList.toggle('active',panel.dataset.panel===tab));
+      const nav = document.querySelector('.event-nav'); if (nav) window.scrollTo({top:Math.max(0,nav.offsetTop-86),behavior:'smooth'});
+    }
+
+    function openRegistration() {
+      const item = tournament();
+      if (!isRegistrationOpen(item)) return;
+      $('registrationForm').reset();
+      $('registrationTitle').textContent = 'Inscrição · ' + (field(item,'name','nome') || 'Torneio');
+      $('registrationSubtitle').textContent = 'Escolha a classe e informe seus dados.';
+      const availableCategories = categories().filter((row) => {
+        const status = clean(field(row,'status')).toUpperCase();
+        const open = field(row,'registration_open','inscricoes_abertas');
+        return !['CLOSED','ENCERRADA','INATIVA'].includes(status) && open !== false && String(open).toLowerCase() !== 'false';
+      });
+      $('registrationCategories').innerHTML = availableCategories.map((row) => '<label class="category-check"><input type="radio" name="category_id" value="' + escapeHtml(categoryId(row)) + '" data-event-type="' + escapeHtml(field(row,'event_type','tipo')) + '" ' + (availableCategories.length===1?'checked':'') + ' /><span><strong>' + escapeHtml(field(row,'name','nome')) + '</strong><small>' + escapeHtml(money(field(row,'registration_fee','price','valor'))) + '</small></span></label>').join('') || '<div class="empty-state">Nenhuma classe disponível.</div>';
+      const allowedPayments = list(field(item,'allowed_payment_methods','formas_pagamento'));
+      const paymentMethods = allowedPayments.length ? allowedPayments : ['PIX','CREDIT_CARD'];
+      const paymentLabels = {PIX:'Pix',CREDIT_CARD:'Cartão de crédito',BOLETO:'Boleto',UNDEFINED:'Escolher no checkout'};
+      $('paymentMethod').innerHTML = paymentMethods.map((method) => '<option value="' + escapeHtml(clean(method).toUpperCase()) + '">' + escapeHtml(paymentLabels[clean(method).toUpperCase()] || method) + '</option>').join('');
+      $('registrationCategories').querySelectorAll('input[name="category_id"]').forEach((input) => input.addEventListener('change',updatePartnerField));
+      updatePartnerField();
+      $('registrationForm').hidden = false;
+      $('registrationSuccess').hidden = true;
+      $('registrationFoot').hidden = false;
+      $('registrationError').hidden = true;
+      $('registrationError').textContent = '';
+      $('registrationModal').hidden = false;
+      $('registrationModal').setAttribute('aria-hidden','false');
+      document.body.classList.add('modal-open');
+      setTimeout(() => $('athleteName').focus(),50);
+    }
+    function closeRegistration() { if (state.submitting) return; $('registrationModal').hidden = true; $('registrationModal').setAttribute('aria-hidden','true'); document.body.classList.remove('modal-open'); }
+    function selectedCategoryId() { return document.querySelector('input[name="category_id"]:checked')?.value || ''; }
+    function updatePartnerField() {
+      const selected = document.querySelector('input[name="category_id"]:checked');
+      const doubles = clean(selected && selected.dataset.eventType).toUpperCase() === 'DOUBLES';
+      $('partnerField').hidden = !doubles;
+      $('partnerName').required = doubles;
+      if (!doubles) $('partnerName').value = '';
+    }
+
+    async function submitRegistration(event) {
+      event.preventDefault();
+      if (state.submitting) return;
+      const categoryIdValue = selectedCategoryId();
+      if (!categoryIdValue) return showRegistrationError('Escolha uma classe.');
+      const form = new FormData($('registrationForm'));
+      const payload = {
+        tournament_slug: state.slug,
+        category_id: categoryIdValue,
+        full_name: clean(form.get('name')),
+        phone: clean(form.get('phone')),
+        email: clean(form.get('email')).toLowerCase(),
+        cpf: clean(form.get('cpf')).replace(/\D/g,''),
+        birth_date: clean(form.get('birth_date')),
+        city: clean(form.get('city')),
+        club: clean(form.get('club')),
+        shirt_size: clean(form.get('shirt_size')) || null,
+        partner_name: clean(form.get('partner_name')) || null,
+        payment_method: clean(form.get('payment_method')) || 'PIX',
+        notes: clean(form.get('notes')) || null,
+        terms_accepted: $('registrationConsent').checked
+      };
+      if (payload.cpf.length !== 11) return showRegistrationError('Informe um CPF válido com 11 números.');
+      if (!payload.birth_date) return showRegistrationError('Informe a data de nascimento.');
+      const trackingKey = ['ilha_torneio',state.slug,payload.category_id,payload.cpf].join(':');
+      try { payload.tracking_token = localStorage.getItem(trackingKey) || undefined; } catch (error) {}
+      state.lastRegistrationPayload = payload;
+      state.submitting = true;
+      $('submitRegistrationBtn').disabled = true;
+      $('submitRegistrationBtn').textContent = 'Criando inscrição…';
+      $('registrationError').hidden = true;
+      try {
+        const result = await requestJson(SUPABASE_URL + '/functions/v1/' + REGISTRATION_FUNCTION, {method:'POST',headers:headers(),body:JSON.stringify(payload)});
+        if (result && result.tracking_token) {
+          try { localStorage.setItem(trackingKey,result.tracking_token); } catch (error) {}
+        }
+        renderRegistrationSuccess(result || {});
+      } catch (error) { showRegistrationError(error && error.message || 'Não foi possível realizar a inscrição.'); }
+      finally { state.submitting = false; $('submitRegistrationBtn').disabled = false; $('submitRegistrationBtn').textContent = 'Continuar para pagamento'; }
+    }
+    function showRegistrationError(message) { $('registrationError').textContent = message; $('registrationError').hidden = false; $('registrationError').scrollIntoView({behavior:'smooth',block:'nearest'}); }
+    function renderRegistrationSuccess(result) {
+      const payment = result.payment || {};
+      const registrationStatus = clean(field(result.registration,'status','registration_status')).toUpperCase();
+      const invoiceUrl = field(payment,'invoice_url','payment_url','checkout_url');
+      const pix = field(payment,'pix_payload','pix_copy_paste','payload');
+      const pixImage = field(payment,'pix_encoded_image','pix_image','encoded_image');
+      const status = field(payment,'status') || field(result.registration,'payment_status','status_pagamento') || 'PENDENTE';
+      const normalizedStatus = clean(status).toUpperCase();
+      const retryable = result.retryable === true || normalizedStatus === 'FAILED';
+      const waitlist = ['WAITLIST','LISTA_ESPERA'].includes(registrationStatus);
+      const confirmed = ['PAID','PAGO','CONFIRMED','CONFIRMADO'].includes(normalizedStatus) || registrationStatus === 'CONFIRMED';
+      const noPayment = normalizedStatus === 'NOT_REQUIRED';
+      const successTitle = waitlist ? 'Inscrição na lista de espera!' : (confirmed || noPayment ? 'Inscrição confirmada!' : 'Inscrição recebida!');
+      const successCopy = result.warning || (waitlist
+        ? 'Sua inscrição foi registrada. A organização entrará em contato se uma vaga for liberada.'
+        : (confirmed || noPayment
+          ? 'Sua vaga foi registrada com sucesso.'
+          : 'Conclua o pagamento abaixo para confirmar sua vaga.'));
+      const statusLabels = { PENDING:'Pendente', PENDENTE:'Pendente', PAID:'Pago', PAGO:'Pago', CONFIRMED:'Confirmado', CONFIRMADO:'Confirmado', NOT_REQUIRED:'Sem pagamento', WAITLIST:'Lista de espera' };
+      const statusLabel = waitlist ? 'Lista de espera' : (statusLabels[normalizedStatus] || status);
+      $('registrationForm').hidden = true;
+      $('registrationFoot').hidden = true;
+      $('registrationSuccess').hidden = false;
+      $('registrationSuccess').innerHTML = '<div class="success-icon">✓</div><div><h3>' + escapeHtml(successTitle) + '</h3><p>' + escapeHtml(successCopy) + '</p></div>' +
+        '<div class="payment-box"><strong>Status: ' + escapeHtml(statusLabel) + '</strong>' +
+        (invoiceUrl ? '<a class="button lime full" href="' + escapeHtml(safeHref(invoiceUrl)) + '" target="_blank" rel="noopener">Pagar inscrição</a>' : '') +
+        (pixImage ? '<img class="payment-qr" src="data:image/png;base64,' + escapeHtml(pixImage) + '" alt="QR Code Pix" />' : '') +
+        (pix ? '<div class="pix-copy" id="pixPayload">' + escapeHtml(pix) + '</div><button class="button full" type="button" id="copyPixBtn">Copiar Pix</button>' : '') + '</div>' +
+        (retryable ? '<button class="button lime full" type="button" id="retryPaymentBtn">Tentar gerar pagamento novamente</button>' : '') +
+        '<button class="button primary full" type="button" id="finishRegistrationBtn">Concluir</button>';
+      const copy = $('copyPixBtn'); if (copy) copy.addEventListener('click',async () => { try { await navigator.clipboard.writeText(pix); copy.textContent='Pix copiado'; } catch(error) { copy.textContent='Selecione e copie o código acima'; } });
+      const retry = $('retryPaymentBtn'); if (retry) retry.addEventListener('click',() => { $('registrationForm').hidden = false; $('registrationSuccess').hidden = true; $('registrationForm').requestSubmit(); });
+      $('finishRegistrationBtn').addEventListener('click',closeRegistration);
+    }
+
+    $('closeRegistrationBtn').addEventListener('click',closeRegistration);
+    $('cancelRegistrationBtn').addEventListener('click',closeRegistration);
+    $('registrationModal').addEventListener('click',(event) => { if (event.target === $('registrationModal')) closeRegistration(); });
+    $('registrationForm').addEventListener('submit',submitRegistration);
+    document.addEventListener('keydown',(event) => { if (event.key === 'Escape' && !$('registrationModal').hidden) closeRegistration(); });
+
+    loadPage();
+  </script>
+  <script src="/auto-update.js"></script>
+</body>
+</html>

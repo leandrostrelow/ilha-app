@@ -2110,6 +2110,56 @@
       gap: 8px;
     }
 
+    .tournament-switcher {
+      min-width: 210px;
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0 34px 0 11px;
+      background: #ffffff;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .tournament-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      display: none;
+      place-items: center;
+      padding: 18px;
+      background: rgba(9, 24, 32, .68);
+      backdrop-filter: blur(6px);
+    }
+
+    .tournament-modal-backdrop.open { display: grid; }
+
+    .tournament-modal {
+      width: min(680px, 100%);
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      background: #ffffff;
+      box-shadow: 0 28px 80px rgba(5, 26, 34, .26);
+    }
+
+    .tournament-modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .tournament-modal-head h2 { margin: 0 0 4px; }
+
+    .category-admin-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
     .obs-link {
       min-height: 34px;
       display: inline-flex;
@@ -8155,11 +8205,21 @@
         justify-content: flex-start;
       }
       .topbar { margin: -10px -10px 10px; padding: 10px; }
-      .topline { align-items: flex-start; }
-      .top-actions {
+      .topline {
+        align-items: flex-start;
         flex-direction: column;
+      }
+      .top-actions {
+        width: 100%;
+        flex-wrap: wrap;
         align-items: flex-end;
+        justify-content: flex-start;
         gap: 6px;
+      }
+      .tournament-switcher {
+        min-width: 0;
+        max-width: 100%;
+        flex: 1 1 220px;
       }
       h1 { font-size: 19px; }
       .tabs {
@@ -16171,6 +16231,39 @@
         height: 82px;
       }
     }
+
+    /* O painel do clube precisa permitir que a coluna encolha no celular.
+       Sem minmax(0, 1fr), a navegação horizontal define a largura da página. */
+    @media (max-width: 860px) {
+      .app {
+        width: 100%;
+        max-width: 100vw;
+        min-width: 0;
+        grid-template-columns: minmax(0, 1fr);
+        overflow-x: hidden;
+      }
+
+      .admin-sidebar {
+        width: 100%;
+        max-width: 100vw;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .admin-sidebar-nav,
+      body.club-bar .admin-sidebar-nav {
+        max-width: calc(100vw - 32px);
+        min-width: 0;
+      }
+
+      .app > :not(.admin-sidebar),
+      body.club-bar .app > :not(.admin-sidebar) {
+        width: 100%;
+        max-width: 100vw;
+        min-width: 0;
+        overflow-x: hidden;
+      }
+    }
   </style>
 </head>
 <body class="adm-locked">
@@ -16218,6 +16311,10 @@
     <symbol id="admin-icon-calendar" viewBox="0 0 24 24">
       <path d="M7 3v3M17 3v3M4 9h16M6 5h12a2 2 0 0 1 2 2v12H4V7a2 2 0 0 1 2-2Z" />
       <path d="M8 14h3M13 14h3M8 17h3M13 17h3" />
+    </symbol>
+    <symbol id="admin-icon-trophy" viewBox="0 0 24 24">
+      <path d="M8 4h8v5a4 4 0 0 1-8 0V4Z" />
+      <path d="M8 6H5a2 2 0 0 0 2 4h1M16 6h3a2 2 0 0 1-2 4h-1M12 13v4M9 21h6M10 17h4" />
     </symbol>
     <symbol id="admin-icon-bag" viewBox="0 0 24 24">
       <path d="M6 8h12l-1 12H7L6 8Z" />
@@ -16412,6 +16509,7 @@
         <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon"><svg><use href="#admin-icon-users"></use></svg></span><span>Alunos</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-courts"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Quadras</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-tournament"><span class="admin-nav-icon"><svg><use href="#admin-icon-trophy"></use></svg></span><span>Torneios</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="orders"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Comandas</span><span class="bar-nav-badge" id="barOrdersNavBadge" hidden>0</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="kitchen"><span class="admin-nav-icon"><svg><use href="#bar-icon-portion"></use></svg></span><span>Pedidos</span><span class="bar-nav-badge" id="barKitchenNavBadge" hidden>0</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="customers"><span class="admin-nav-icon"><svg><use href="#admin-icon-users"></use></svg></span><span>Clientes</span></button>
@@ -18227,6 +18325,9 @@
           <div class="muted" id="tournamentSubtitle">Carregando torneio...</div>
         </div>
         <div class="top-actions">
+          <select class="tournament-switcher" id="tournamentPicker" aria-label="Selecionar torneio"></select>
+          <button class="primary-btn" type="button" id="newTournamentBtn">Criar torneio</button>
+          <a class="obs-link" id="publicTournamentLink" href="../torneios/ilha-open-2026-teste" target="_blank" rel="noopener">Página pública</a>
           <button class="ghost-btn" type="button" id="backToClubHomeBtn">Início</button>
           <a class="obs-link" href="../live.html" target="_blank" rel="noopener">Tela OBS</a>
           <button class="ghost-btn" type="button" id="adminLogoutBtn">Sair</button>
@@ -18476,10 +18577,21 @@
               <div class="field">
                 <label>Status</label>
                 <select id="tournamentStatus">
-                  <option value="ATIVO">Ativo</option>
-                  <option value="FINALIZADO">Finalizado</option>
-                  <option value="ARQUIVADO">Arquivado</option>
+                  <option value="DRAFT">Rascunho</option>
+                  <option value="REGISTRATION_OPEN">Inscrições abertas</option>
+                  <option value="REGISTRATION_CLOSED">Inscrições encerradas</option>
+                  <option value="IN_PROGRESS">Em andamento</option>
+                  <option value="FINISHED">Finalizado</option>
+                  <option value="ARCHIVED">Arquivado</option>
                 </select>
+              </div>
+              <div class="field">
+                <label>Página pública</label>
+                <select id="tournamentPublished"><option value="true">Publicada</option><option value="false">Oculta</option></select>
+              </div>
+              <div class="field">
+                <label>Inscrições</label>
+                <select id="tournamentRegistrationOpen"><option value="true">Abertas</option><option value="false">Fechadas</option></select>
               </div>
               <div class="field">
                 <label>Data inicio</label>
@@ -18508,11 +18620,58 @@
           </form>
         </div>
         <div class="card span-6">
-          <h2>Categorias</h2>
+          <div class="card-title">
+            <div><h2>Classes</h2><div class="muted">Valores, limite de vagas e formato da chave.</div></div>
+            <button class="primary-btn" type="button" id="newCategoryBtn">Nova classe</button>
+          </div>
           <div class="list" id="categoryList" style="margin-top:12px"></div>
         </div>
       </div>
     </section>
+  </div>
+
+  <div class="tournament-modal-backdrop" id="tournamentCreateBackdrop" aria-hidden="true">
+    <div class="tournament-modal" role="dialog" aria-modal="true" aria-labelledby="tournamentCreateTitle">
+      <div class="tournament-modal-head">
+        <div><h2 id="tournamentCreateTitle">Criar torneio</h2><div class="muted">Comece com os dados principais. Classes, chaves e horários vêm depois.</div></div>
+        <button class="icon-btn" type="button" data-close-tournament-modal="tournamentCreateBackdrop" aria-label="Fechar">×</button>
+      </div>
+      <form id="tournamentCreateForm">
+        <div class="form-grid">
+          <div class="field full"><label>Nome do torneio</label><input id="newTournamentName" required maxlength="140" placeholder="Ex.: Ilha Open 2027" /></div>
+          <div class="field"><label>Data inicial</label><input id="newTournamentStart" type="date" /></div>
+          <div class="field"><label>Data final</label><input id="newTournamentEnd" type="date" /></div>
+          <div class="field"><label>Cidade</label><input id="newTournamentCity" value="Colatina" /></div>
+          <div class="field"><label>Local</label><input id="newTournamentClub" value="Ilha Tênis" /></div>
+          <div class="field"><label>Inscrições</label><select id="newTournamentRegistration"><option value="true">Abertas</option><option value="false">Fechadas</option></select></div>
+          <div class="field"><label>Publicação</label><select id="newTournamentPublished"><option value="true">Página pública ativa</option><option value="false">Rascunho privado</option></select></div>
+        </div>
+        <div class="actions"><button class="ghost-btn" type="button" data-close-tournament-modal="tournamentCreateBackdrop">Cancelar</button><button class="primary-btn" type="submit">Criar e administrar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="tournament-modal-backdrop" id="categoryEditorBackdrop" aria-hidden="true">
+    <div class="tournament-modal" role="dialog" aria-modal="true" aria-labelledby="categoryEditorTitle">
+      <div class="tournament-modal-head">
+        <div><h2 id="categoryEditorTitle">Nova classe</h2><div class="muted">Configure inscrição e chave desta classe.</div></div>
+        <button class="icon-btn" type="button" data-close-tournament-modal="categoryEditorBackdrop" aria-label="Fechar">×</button>
+      </div>
+      <form id="categoryEditorForm">
+        <input id="categoryEditorId" type="hidden" />
+        <div class="form-grid">
+          <div class="field full"><label>Nome da classe</label><input id="categoryEditorName" required maxlength="100" placeholder="Ex.: Masculino B" /></div>
+          <div class="field"><label>Modalidade</label><select id="categoryEditorType"><option value="SINGLES">Simples</option><option value="DOUBLES">Duplas</option></select></div>
+          <div class="field"><label>Gênero</label><select id="categoryEditorGender"><option value="OPEN">Livre</option><option value="MALE">Masculino</option><option value="FEMALE">Feminino</option><option value="MIXED">Misto</option></select></div>
+          <div class="field"><label>Valor da inscrição</label><input id="categoryEditorFee" type="number" min="0" step="0.01" value="0" /></div>
+          <div class="field"><label>Máximo de atletas</label><input id="categoryEditorMax" type="number" min="2" placeholder="Sem limite" /></div>
+          <div class="field"><label>Tamanho da chave</label><select id="categoryEditorDraw"><option value="">Automático</option><option value="2">2</option><option value="4">4</option><option value="8">8</option><option value="16">16</option><option value="32">32</option><option value="64">64</option></select></div>
+          <div class="field"><label>Status</label><select id="categoryEditorStatus"><option value="ATIVA">Ativa</option><option value="INATIVA">Inativa</option></select></div>
+          <div class="field full"><label>Descrição</label><textarea id="categoryEditorDescription" placeholder="Regras ou observações da classe"></textarea></div>
+        </div>
+        <div class="actions"><button class="ghost-btn" type="button" data-close-tournament-modal="categoryEditorBackdrop">Cancelar</button><button class="primary-btn" type="submit">Salvar classe</button></div>
+      </form>
+    </div>
   </div>
 
   <div class="match-modal-backdrop" id="matchEditorBackdrop">
@@ -18657,7 +18816,7 @@
       if (status) status.textContent = 'Erro: ' + (reason || 'falha na sincronizacao');
     });
 
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxpm53hx_IN3DUoInBG2SlkSiLkhG7XiZ_j4Ae4l95R-6dqY2PfUlt3Xl-KJiGnotYd/exec';
+    const TOURNAMENT_API_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co/functions/v1/tournament-admin-api';
     const DRAW_ROW_STEP = 58;
     const DRAW_TITLE_SPACE = 36;
     const DRAW_MATCH_HEIGHT = 70;
@@ -18665,6 +18824,7 @@
     const state = {
       data: null,
       selectedCategory: '',
+      selectedTournamentId: '',
       saving: false,
       dirtyMatches: {},
       selectedResultMatches: new Set(),
@@ -18749,49 +18909,37 @@
       updateSaveBracketButton();
     }
 
-    function apiGet() {
-      if (typeof fetch === 'function') {
-        return Promise.race([
-          fetch(SCRIPT_URL + '?t=' + Date.now()).then(function (response) {
-            return response.json();
-          }),
-          new Promise(function (_, reject) {
-            setTimeout(function () { reject(new Error('Tempo esgotado ao carregar a base do torneio.')); }, 90000);
-          })
-        ]).catch(function () {
-          return apiGetJsonp();
-        });
+    async function tournamentApiFetch(url, options, timeoutMessage) {
+      if (!adminSession || !adminSession.access_token) throw new Error('Entre novamente para administrar o torneio.');
+      const controller = new AbortController();
+      const timer = setTimeout(function () { controller.abort(); }, 30000);
+      try {
+        const response = await fetch(url, Object.assign({}, options || {}, {
+          signal: controller.signal,
+          headers: Object.assign({
+            apikey: LESSONS_SUPABASE_ANON_KEY,
+            Authorization: 'Bearer ' + adminSession.access_token,
+            'Content-Type': 'application/json'
+          }, options && options.headers || {})
+        }));
+        const text = await response.text();
+        let json;
+        try { json = JSON.parse(text); } catch (error) { throw new Error('Resposta inválida do servidor do torneio.'); }
+        if (!response.ok || !json.ok) throw new Error(json.error || 'Falha ao acessar o torneio.');
+        return json;
+      } catch (error) {
+        if (error && error.name === 'AbortError') throw new Error(timeoutMessage || 'Tempo esgotado.');
+        throw error;
+      } finally {
+        clearTimeout(timer);
       }
-      return apiGetJsonp();
     }
 
-    function apiGetJsonp() {
-      return new Promise(function (resolve, reject) {
-        const callbackName = '__torneioJsonp' + Date.now() + Math.floor(Math.random() * 1000);
-        const script = document.createElement('script');
-        const timer = setTimeout(function () {
-          cleanup();
-          reject(new Error('Tempo esgotado ao carregar a base do torneio.'));
-        }, 90000);
-
-        function cleanup() {
-          clearTimeout(timer);
-          delete window[callbackName];
-          if (script.parentNode) script.parentNode.removeChild(script);
-        }
-
-        window[callbackName] = function (json) {
-          cleanup();
-          resolve(json);
-        };
-
-        script.onerror = function () {
-          cleanup();
-          reject(new Error('Falha ao conectar com a base do torneio.'));
-        };
-        script.src = SCRIPT_URL + '?callback=' + encodeURIComponent(callbackName) + '&t=' + Date.now();
-        document.body.appendChild(script);
-      });
+    function apiGet() {
+      const params = new URLSearchParams();
+      if (state.selectedTournamentId) params.set('tournament_id', state.selectedTournamentId);
+      params.set('t', String(Date.now()));
+      return tournamentApiFetch(TOURNAMENT_API_URL + '?' + params.toString(), { method: 'GET' }, 'Tempo esgotado ao carregar o torneio.');
     }
 
     function toast(text) {
@@ -18810,20 +18958,8 @@
       state.saving = true;
       setStatus('Salvando...');
       try {
-        const response = await Promise.race([
-          fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }),
-          new Promise(function (_, reject) {
-            setTimeout(function () { reject(new Error('Tempo esgotado ao salvar.')); }, 90000);
-          })
-        ]);
-        const text = await response.text();
-        let json;
-        try {
-          json = JSON.parse(text);
-        } catch (error) {
-          throw new Error('Resposta invalida da base do torneio: ' + text.slice(0, 140));
-        }
-        if (!json.ok) throw new Error(json.error || 'Falha ao salvar.');
+        if (state.selectedTournamentId && !payload.tournament_id && !payload.torneio_id) payload.tournament_id = state.selectedTournamentId;
+        const json = await tournamentApiFetch(TOURNAMENT_API_URL, { method: 'POST', body: JSON.stringify(payload) }, 'Tempo esgotado ao salvar.');
         if (json.data) {
           state.data = json.data;
           if (!options.silent) renderAll();
@@ -18846,6 +18982,7 @@
         const json = await apiGet();
         if (!json.ok) throw new Error(json.error || 'Falha ao carregar.');
         state.data = json.data;
+        state.selectedTournamentId = state.data.torneio && state.data.torneio.torneio_id || state.selectedTournamentId;
         if (!state.selectedCategory && state.data.categorias.length) {
           const categoriesWithDraw = new Set((state.data.jogos || []).map(function (match) {
             return String(match.categoria_id);
@@ -18857,10 +18994,12 @@
         }
         renderAll();
         setStatus('Sincronizado ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
-        if (showToast) toast('Planilha recarregada.');
+        if (showToast) toast('Torneio atualizado.');
+        return true;
       } catch (error) {
         setStatus('Falha na sincronizacao');
         toast(error.message);
+        return false;
       } finally {
         updateSaveBracketButton();
       }
@@ -18871,6 +19010,7 @@
       applyByeAdvancementsLocally();
       applyAdvancementsLocally();
       renderMetrics();
+      renderTournamentPicker();
       renderTournament();
       renderCategoryOptions();
       renderAgendaFilterOptions();
@@ -18961,11 +19101,36 @@
       $('metricScheduled').textContent = data.jogos.filter(function (j) { return j.data || j.hora || j.quadra; }).length;
     }
 
+    function renderTournamentPicker() {
+      const picker = $('tournamentPicker');
+      if (!picker) return;
+      const tournaments = state.data.torneios || [];
+      picker.innerHTML = tournaments.map(function (tournament) {
+        return '<option value="' + escapeHtml(tournament.torneio_id) + '">' + escapeHtml(tournament.nome || 'Torneio') + '</option>';
+      }).join('') || '<option value="">Nenhum torneio</option>';
+      picker.value = state.data.torneio.torneio_id || state.selectedTournamentId || '';
+      state.selectedTournamentId = picker.value;
+      const slug = state.data.torneio.slug || '';
+      const publicLink = $('publicTournamentLink');
+      if (publicLink) {
+        publicLink.href = slug ? '../torneios/' + encodeURIComponent(slug) : '../torneios';
+        publicLink.hidden = !slug;
+      }
+    }
+
     function renderTournament() {
       const t = state.data.torneio || {};
       $('tournamentName').value = t.nome || '';
       $('tournamentYear').value = t.ano || '';
-      $('tournamentStatus').value = t.status || 'ATIVO';
+      const legacyStatusMap = {
+        RASCUNHO: 'DRAFT',
+        ATIVO: 'IN_PROGRESS',
+        FINALIZADO: 'FINISHED',
+        ARQUIVADO: 'ARCHIVED'
+      };
+      $('tournamentStatus').value = t.database_status || legacyStatusMap[t.status] || t.status || 'DRAFT';
+      $('tournamentPublished').value = String(t.publicado === true);
+      $('tournamentRegistrationOpen').value = String(t.inscricoes_abertas === true);
       $('tournamentStart').value = t.data_inicio || '';
       $('tournamentEnd').value = t.data_fim || '';
       $('tournamentInstagram').value = t.instagram || '';
@@ -19109,9 +19274,10 @@
         const count = state.data.inscricoes.filter(function (insc) {
           return String(insc.categoria_id) === String(cat.categoria_id) && String(insc.status_pagamento) !== 'CANCELADO';
         }).length;
-        return '<div class="row"><div><strong>' + escapeHtml(cat.nome) + '</strong><small>' +
+        return '<div class="row category-admin-row"><div><strong>' + escapeHtml(cat.nome) + '</strong><small>' +
           count + ' inscrito(s) | chave ' + escapeHtml(cat.tamanho_chave || 'auto') +
-          '</small></div><button class="small-btn" data-open-category="' + escapeHtml(cat.categoria_id) + '">Abrir chave</button></div>';
+          ' | R$ ' + Number(cat.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) +
+          '</small></div><div class="actions" style="margin:0"><button class="small-btn" data-edit-category="' + escapeHtml(cat.categoria_id) + '">Editar</button><button class="small-btn" data-open-category="' + escapeHtml(cat.categoria_id) + '">Chave</button></div></div>';
       }).join('');
     }
 
@@ -20709,6 +20875,8 @@
           observacoes: $('playerNotes').value.trim()
         };
         const saved = await apiPost({ action: 'savePlayer', jogador: player }, { silent: true });
+        const savedPlayerId = saved && (saved.id || saved.jogador_id) || originalPlayerId;
+        if (!savedPlayerId) throw new Error('Não foi possível identificar o atleta salvo.');
         const sameCategoryReg = previousRegs.find(function (reg) {
           return String(reg.categoria_id) === String(selectedCategory);
         });
@@ -20720,32 +20888,20 @@
             inscricao_id: registrationId,
             torneio_id: state.data.torneio.torneio_id,
             categoria_id: selectedCategory,
-            jogador_id: saved.jogador_id,
+            jogador_id: savedPlayerId,
             status_pagamento: $('registrationPayment').value,
             data_inscricao: new Date().toISOString().slice(0, 10),
             confirmado: true
           }
         }, { silent: true });
 
-        const removedCategories = [];
-        for (let i = 0; i < previousRegs.length; i++) {
-          const reg = previousRegs[i];
-          if (String(reg.categoria_id) === String(selectedCategory)) continue;
-          if (reg.inscricao_id) {
-            await apiPost({ action: 'deleteRegistration', inscricao_id: reg.inscricao_id }, { silent: true });
-          }
-          removedCategories.push(reg.categoria_id);
-        }
-
         if (player.status === 'INATIVO') {
-          await removePlayerFromMatches(saved.jogador_id, null, true);
-        } else if (removedCategories.length) {
-          await removePlayerFromMatches(saved.jogador_id, removedCategories, false);
+          await removePlayerFromMatches(savedPlayerId, null, true);
         }
 
         await loadData(false);
         clearPlayerForm();
-        toast('Jogador salvo e classe atualizada.');
+        toast('Jogador salvo e classe atualizada. As demais inscrições foram preservadas.');
       } catch (error) {
         toast(error.message);
       }
@@ -20777,6 +20933,16 @@
     async function saveTournament(event) {
       event.preventDefault();
       try {
+        const requestedStatus = $('tournamentStatus').value;
+        let registrationsOpen = $('tournamentRegistrationOpen').value === 'true';
+        let status = requestedStatus;
+        if (['FINISHED', 'ARCHIVED'].includes(status)) {
+          registrationsOpen = false;
+        } else if (registrationsOpen) {
+          status = 'REGISTRATION_OPEN';
+        } else if (status === 'REGISTRATION_OPEN') {
+          status = 'REGISTRATION_CLOSED';
+        }
         await apiPost({
           action: 'saveTournament',
           torneio: {
@@ -20787,7 +20953,9 @@
             clube: state.data.torneio.clube || 'Ilha Tenis',
             data_inicio: $('tournamentStart').value,
             data_fim: $('tournamentEnd').value,
-            status: $('tournamentStatus').value,
+            status: status,
+            publicado: $('tournamentPublished').value === 'true',
+            inscricoes_abertas: registrationsOpen,
             instagram: $('tournamentInstagram').value,
             whatsapp: $('tournamentWhatsapp').value,
             observacoes: $('tournamentNotes').value
@@ -20795,6 +20963,108 @@
         });
         await loadData(false);
         toast('Torneio salvo.');
+      } catch (error) {
+        toast(error.message);
+      }
+    }
+
+    function setTournamentModal(id, open) {
+      const modal = $(id);
+      if (!modal) return;
+      modal.classList.toggle('open', Boolean(open));
+      modal.setAttribute('aria-hidden', String(!open));
+      document.body.style.overflow = open ? 'hidden' : '';
+    }
+
+    function openTournamentCreateModal() {
+      $('tournamentCreateForm').reset();
+      $('newTournamentCity').value = 'Colatina';
+      $('newTournamentClub').value = 'Ilha Tênis';
+      $('newTournamentRegistration').value = 'true';
+      $('newTournamentPublished').value = 'true';
+      setTournamentModal('tournamentCreateBackdrop', true);
+      setTimeout(function () { $('newTournamentName').focus(); }, 50);
+    }
+
+    async function createTournament(event) {
+      event.preventDefault();
+      const start = $('newTournamentStart').value;
+      const end = $('newTournamentEnd').value;
+      if (start && end && end < start) {
+        toast('A data final precisa ser depois da data inicial.');
+        return;
+      }
+      try {
+        const result = await apiPost({
+          action: 'createTournament',
+          torneio: {
+            nome: $('newTournamentName').value.trim(),
+            ano: start ? start.slice(0, 4) : new Date().getFullYear(),
+            cidade: $('newTournamentCity').value.trim(),
+            clube: $('newTournamentClub').value.trim(),
+            data_inicio: start,
+            data_fim: end,
+            status: $('newTournamentRegistration').value === 'true' ? 'REGISTRATION_OPEN' : 'RASCUNHO',
+            inscricoes_abertas: $('newTournamentRegistration').value === 'true',
+            publicado: $('newTournamentPublished').value === 'true'
+          }
+        }, { silent: true });
+        clearDirtyMatches();
+        state.selectedResultMatches.clear();
+        state.selectedTournamentId = result.id || result.torneio_id || '';
+        state.selectedCategory = '';
+        setTournamentModal('tournamentCreateBackdrop', false);
+        await loadData(false);
+        showTab('settings');
+        toast('Torneio criado. Agora configure as classes.');
+      } catch (error) {
+        toast(error.message);
+      }
+    }
+
+    function openCategoryEditor(categoryId) {
+      const category = (state.data && state.data.categorias || []).find(function (item) {
+        return String(item.categoria_id) === String(categoryId || '');
+      }) || {};
+      $('categoryEditorForm').reset();
+      $('categoryEditorId').value = category.categoria_id || '';
+      $('categoryEditorTitle').textContent = category.categoria_id ? 'Editar classe' : 'Nova classe';
+      $('categoryEditorName').value = category.nome || '';
+      $('categoryEditorType').value = category.event_type || 'SINGLES';
+      $('categoryEditorGender').value = category.gender || 'OPEN';
+      $('categoryEditorFee').value = Number(category.valor || 0).toFixed(2);
+      $('categoryEditorMax').value = category.max_inscritos || '';
+      $('categoryEditorDraw').value = category.tamanho_chave || '';
+      $('categoryEditorStatus').value = category.status || 'ATIVA';
+      $('categoryEditorDescription').value = category.descricao || '';
+      setTournamentModal('categoryEditorBackdrop', true);
+      setTimeout(function () { $('categoryEditorName').focus(); }, 50);
+    }
+
+    async function saveCategoryFromEditor(event) {
+      event.preventDefault();
+      try {
+        const id = $('categoryEditorId').value;
+        const result = await apiPost({
+          action: 'saveCategory',
+          categoria: {
+            categoria_id: id,
+            torneio_id: state.selectedTournamentId,
+            nome: $('categoryEditorName').value.trim(),
+            event_type: $('categoryEditorType').value,
+            gender: $('categoryEditorGender').value,
+            valor: $('categoryEditorFee').value,
+            max_inscritos: $('categoryEditorMax').value,
+            tamanho_chave: $('categoryEditorDraw').value,
+            status: $('categoryEditorStatus').value,
+            descricao: $('categoryEditorDescription').value.trim(),
+            inscricoes_abertas: $('categoryEditorStatus').value === 'ATIVA'
+          }
+        }, { returnData: true, silent: true });
+        if (result && (result.id || result.categoria_id)) state.selectedCategory = result.id || result.categoria_id;
+        setTournamentModal('categoryEditorBackdrop', false);
+        await loadData(false);
+        toast(id ? 'Classe atualizada.' : 'Classe criada.');
       } catch (error) {
         toast(error.message);
       }
@@ -21753,7 +22023,7 @@
     }
 
     const LESSONS_SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
-    const LESSONS_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrcXRncHRlYmtnZndndXlreGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzEyNjAsImV4cCI6MjA5NzcwNzI2MH0.S-dopp-fbBgq8_YclyiAheOdK-QhXt92RYLu8JKmKCg';
+    const LESSONS_SUPABASE_ANON_KEY = 'sb_publishable_zcX8te5g99p0bA12xy_E-A_MTyNpJNx';
     const BAR_PUSH_PUBLIC_KEY = 'BJtga8GuviTBc3mzDwBkr0kKw-kV02hVSwu6DjgZgSgAhFuvPZNj88WfTwyV7mXgJJnxKD5ZiJCRW8nv7ndx-RU';
     const APP_SYNC_CHANNEL = 'ilha-app-sync-v1';
     const APP_SYNC_STORAGE_KEY = 'ilha-app:last-change';
@@ -32780,6 +33050,18 @@
         return;
       }
 
+      const editCategoryBtn = event.target.closest('[data-edit-category]');
+      if (editCategoryBtn) {
+        openCategoryEditor(editCategoryBtn.dataset.editCategory);
+        return;
+      }
+
+      const closeTournamentModalBtn = event.target.closest('[data-close-tournament-modal]');
+      if (closeTournamentModalBtn) {
+        setTournamentModal(closeTournamentModalBtn.dataset.closeTournamentModal, false);
+        return;
+      }
+
       const editPlayerBtn = event.target.closest('[data-edit-player]');
       if (editPlayerBtn) {
         editPlayer(editPlayerBtn.dataset.editPlayer);
@@ -32890,6 +33172,33 @@
     $('agendaEventForm').addEventListener('submit', saveAgendaEvent);
     $('playerForm').addEventListener('submit', savePlayer);
     $('tournamentForm').addEventListener('submit', saveTournament);
+    $('newTournamentBtn').addEventListener('click', openTournamentCreateModal);
+    $('newCategoryBtn').addEventListener('click', function () { openCategoryEditor(''); });
+    $('tournamentCreateForm').addEventListener('submit', createTournament);
+    $('categoryEditorForm').addEventListener('submit', saveCategoryFromEditor);
+    $('tournamentPicker').addEventListener('change', async function () {
+      const previousTournamentId = state.selectedTournamentId;
+      const nextTournamentId = this.value;
+      if (nextTournamentId === previousTournamentId) return;
+      if (dirtyMatchCount() && !confirm('Há alterações não salvas na chave atual. Deseja descartá-las e trocar de torneio?')) {
+        this.value = previousTournamentId;
+        return;
+      }
+      clearDirtyMatches();
+      state.selectedResultMatches.clear();
+      state.selectedTournamentId = nextTournamentId;
+      state.selectedCategory = '';
+      const loaded = await loadData(false);
+      if (!loaded) {
+        state.selectedTournamentId = previousTournamentId;
+        this.value = previousTournamentId;
+      }
+    });
+    ['tournamentCreateBackdrop', 'categoryEditorBackdrop'].forEach(function (id) {
+      $(id).addEventListener('click', function (event) {
+        if (event.target === this) setTournamentModal(id, false);
+      });
+    });
 
     window.addEventListener('pagehide', rememberBarScrollPosition);
     initAdminLogin();
