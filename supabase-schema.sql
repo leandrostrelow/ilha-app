@@ -10,6 +10,9 @@ create table if not exists public.profiles (
   active boolean not null default true,
   permissions jsonb not null default '[]'::jsonb,
   notes text,
+  avatar_url text,
+  job_title text,
+  bio text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -18,8 +21,27 @@ alter table public.profiles add column if not exists email text;
 alter table public.profiles add column if not exists phone text;
 alter table public.profiles add column if not exists permissions jsonb not null default '[]'::jsonb;
 alter table public.profiles add column if not exists notes text;
+alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists job_title text;
+alter table public.profiles add column if not exists bio text;
 alter table public.profiles drop constraint if exists profiles_role_check;
 alter table public.profiles add constraint profiles_role_check check (role in ('admin', 'secretaria', 'professor', 'bar'));
+
+create table if not exists public.bar_user_tasks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  title text not null,
+  details text,
+  due_date date,
+  status text not null default 'PENDENTE' check (status in ('PENDENTE', 'CONCLUIDA')),
+  created_by uuid references public.profiles(id) on delete set null,
+  completed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists bar_user_tasks_user_status_idx on public.bar_user_tasks(user_id, status, due_date);
+create index if not exists bar_user_tasks_created_by_idx on public.bar_user_tasks(created_by);
 
 create table if not exists public.app_plans (
   id uuid primary key default gen_random_uuid(),
@@ -3089,6 +3111,7 @@ create index if not exists financial_transactions_due_idx on public.financial_tr
 create index if not exists communication_campaigns_status_idx on public.communication_campaigns(status);
 
 alter table public.profiles enable row level security;
+alter table public.bar_user_tasks enable row level security;
 alter table public.app_plans enable row level security;
 alter table public.app_clients enable row level security;
 alter table public.app_plan_requests enable row level security;
@@ -3126,6 +3149,7 @@ grant usage on schema public to anon, authenticated;
 grant usage, select on all sequences in schema public to authenticated;
 grant select, insert, update, delete on
   public.profiles,
+  public.bar_user_tasks,
   public.app_plans,
   public.app_clients,
   public.app_plan_requests,
@@ -3317,6 +3341,33 @@ on public.profiles for all
 to authenticated
 using (public.current_user_role() = 'admin')
 with check (public.current_user_role() = 'admin');
+
+drop policy if exists "bar users read own tasks" on public.bar_user_tasks;
+drop policy if exists "bar users update own tasks" on public.bar_user_tasks;
+drop policy if exists "bar access managers manage tasks" on public.bar_user_tasks;
+drop policy if exists "bar access managers add tasks" on public.bar_user_tasks;
+drop policy if exists "bar access managers delete tasks" on public.bar_user_tasks;
+
+create policy "bar users read own tasks"
+on public.bar_user_tasks for select
+to authenticated
+using (user_id = (select auth.uid()) or public.current_user_role() = 'admin');
+
+create policy "bar users update own tasks"
+on public.bar_user_tasks for update
+to authenticated
+using (user_id = (select auth.uid()) or public.current_user_role() = 'admin')
+with check (user_id = (select auth.uid()) or public.current_user_role() = 'admin');
+
+create policy "bar access managers add tasks"
+on public.bar_user_tasks for insert
+to authenticated
+with check (public.current_user_role() = 'admin');
+
+create policy "bar access managers delete tasks"
+on public.bar_user_tasks for delete
+to authenticated
+using (public.current_user_role() = 'admin');
 
 create policy "plans read active or staff"
 on public.app_plans for select
@@ -3748,3 +3799,147 @@ $$;
 
 revoke all on function public.bar_add_order_items(uuid, jsonb) from public;
 grant execute on function public.bar_add_order_items(uuid, jsonb) to authenticated;
+
+-- User profiles and operational task list for the Bar team.
+alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists job_title text;
+alter table public.profiles add column if not exists bio text;
+
+create table if not exists public.bar_user_tasks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  title text not null,
+  details text,
+  due_date date,
+  status text not null default 'PENDENTE' check (status in ('PENDENTE', 'CONCLUIDA')),
+  created_by uuid references public.profiles(id) on delete set null,
+  completed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists bar_user_tasks_user_status_idx on public.bar_user_tasks(user_id, status, due_date);
+create index if not exists bar_user_tasks_created_by_idx on public.bar_user_tasks(created_by);
+alter table public.bar_user_tasks enable row level security;
+grant select, insert, update, delete on public.bar_user_tasks to authenticated;
+
+drop policy if exists "bar users read own tasks" on public.bar_user_tasks;
+drop policy if exists "bar users update own tasks" on public.bar_user_tasks;
+drop policy if exists "bar access managers manage tasks" on public.bar_user_tasks;
+drop policy if exists "bar access managers add tasks" on public.bar_user_tasks;
+drop policy if exists "bar access managers delete tasks" on public.bar_user_tasks;
+
+create policy "bar users read own tasks"
+on public.bar_user_tasks for select
+to authenticated
+using (user_id = (select auth.uid()) or public.current_user_role() = 'admin');
+
+create policy "bar users update own tasks"
+on public.bar_user_tasks for update
+to authenticated
+using (user_id = (select auth.uid()) or public.current_user_role() = 'admin')
+with check (user_id = (select auth.uid()) or public.current_user_role() = 'admin');
+
+create policy "bar access managers add tasks"
+on public.bar_user_tasks for insert
+to authenticated
+with check (public.current_user_role() = 'admin');
+
+create policy "bar access managers delete tasks"
+on public.bar_user_tasks for delete
+to authenticated
+using (public.current_user_role() = 'admin');
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'bar-profiles',
+  'bar-profiles',
+  false,
+  3145728,
+  array['image/jpeg', 'image/png', 'image/webp']
+)
+on conflict (id) do update
+set public = excluded.public,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "bar profile photos read" on storage.objects;
+drop policy if exists "bar profile photos insert" on storage.objects;
+drop policy if exists "bar profile photos update" on storage.objects;
+drop policy if exists "bar profile photos delete" on storage.objects;
+
+create policy "bar profile photos read"
+on storage.objects for select
+to authenticated
+using (bucket_id = 'bar-profiles' and public.is_bar_staff());
+
+create policy "bar profile photos insert"
+on storage.objects for insert
+to authenticated
+with check (
+  bucket_id = 'bar-profiles'
+  and public.is_bar_staff()
+  and ((storage.foldername(name))[1] = (select auth.uid())::text or public.current_user_role() = 'admin')
+);
+
+create policy "bar profile photos update"
+on storage.objects for update
+to authenticated
+using (
+  bucket_id = 'bar-profiles'
+  and public.is_bar_staff()
+  and ((storage.foldername(name))[1] = (select auth.uid())::text or public.current_user_role() = 'admin')
+)
+with check (
+  bucket_id = 'bar-profiles'
+  and public.is_bar_staff()
+  and ((storage.foldername(name))[1] = (select auth.uid())::text or public.current_user_role() = 'admin')
+);
+
+create policy "bar profile photos delete"
+on storage.objects for delete
+to authenticated
+using (
+  bucket_id = 'bar-profiles'
+  and public.is_bar_staff()
+  and ((storage.foldername(name))[1] = (select auth.uid())::text or public.current_user_role() = 'admin')
+);
+
+create or replace function public.bar_update_own_profile(
+  p_full_name text,
+  p_phone text,
+  p_job_title text,
+  p_bio text,
+  p_avatar_url text
+)
+returns public.profiles
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved public.profiles%rowtype;
+begin
+  if auth.uid() is null or not public.is_bar_staff() then
+    raise exception 'Acesso negado ao perfil do Bar.';
+  end if;
+
+  update public.profiles
+  set full_name = left(nullif(trim(p_full_name), ''), 80),
+      phone = left(nullif(regexp_replace(coalesce(p_phone, ''), '\D', '', 'g'), ''), 13),
+      job_title = left(nullif(trim(p_job_title), ''), 80),
+      bio = left(nullif(trim(p_bio), ''), 500),
+      avatar_url = left(nullif(trim(p_avatar_url), ''), 1000),
+      updated_at = now()
+  where id = auth.uid()
+  returning * into saved;
+
+  if saved.id is null then
+    raise exception 'Perfil não encontrado.';
+  end if;
+  return saved;
+end;
+$$;
+
+revoke all on function public.bar_update_own_profile(text, text, text, text, text) from public;
+grant execute on function public.bar_update_own_profile(text, text, text, text, text) to authenticated;

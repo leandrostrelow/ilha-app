@@ -1539,7 +1539,7 @@
 
     .bar-access-user {
       display: grid;
-      grid-template-columns: minmax(190px, .75fr) minmax(0, 1.6fr) auto;
+      grid-template-columns: 44px minmax(190px, .75fr) minmax(0, 1.6fr) auto;
       gap: 14px;
       align-items: center;
       padding: 14px;
@@ -1601,6 +1601,179 @@
       font-size: 13px;
       font-weight: 950;
       text-transform: none;
+    }
+
+    .bar-user-profile-page {
+      display: grid;
+      gap: 14px;
+    }
+
+    .bar-user-profile-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, .8fr) minmax(0, 1.2fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .bar-user-profile-card,
+    .bar-user-task-panel {
+      overflow: hidden;
+    }
+
+    .bar-user-profile-identity {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(135deg, #10243d, #17344b);
+      color: #ffffff;
+    }
+
+    .bar-user-profile-avatar {
+      width: 86px;
+      height: 86px;
+      flex: 0 0 86px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border: 3px solid var(--lime);
+      border-radius: 50%;
+      background: #ffffff;
+      color: var(--teal);
+      font-size: 24px;
+      font-weight: 950;
+    }
+
+    .bar-user-profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .bar-user-profile-identity h3,
+    .bar-user-profile-identity p {
+      margin: 0;
+    }
+
+    .bar-user-profile-identity h3 {
+      font-size: 20px;
+    }
+
+    .bar-user-profile-identity p {
+      margin-top: 4px;
+      color: #c7d6df;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .bar-user-profile-form,
+    .bar-user-task-form {
+      padding: 16px;
+    }
+
+    .bar-user-profile-photo-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .bar-user-profile-photo-actions button {
+      min-height: 38px;
+    }
+
+    .bar-user-profile-save {
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    .bar-user-task-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 150px auto;
+      gap: 8px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .bar-user-task-form .full {
+      grid-column: 1 / -1;
+    }
+
+    .bar-user-task-list {
+      display: grid;
+      gap: 8px;
+      padding: 14px;
+    }
+
+    .bar-user-task {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #ffffff;
+    }
+
+    .bar-user-task.is-done {
+      background: #f0f8ef;
+      opacity: .78;
+    }
+
+    .bar-user-task-check {
+      width: 24px;
+      height: 24px;
+      margin: 1px 0 0;
+      accent-color: var(--teal);
+    }
+
+    .bar-user-task-copy strong,
+    .bar-user-task-copy small {
+      display: block;
+    }
+
+    .bar-user-task-copy strong {
+      font-size: 13px;
+    }
+
+    .bar-user-task.is-done .bar-user-task-copy strong {
+      text-decoration: line-through;
+    }
+
+    .bar-user-task-copy small {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.35;
+    }
+
+    .bar-user-task-due {
+      color: #8b5a13;
+      font-weight: 900;
+    }
+
+    .bar-access-user-avatar {
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border-radius: 50%;
+      background: #e7f4f5;
+      color: var(--teal);
+      font-weight: 950;
+    }
+
+    .bar-access-user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .bar-access-user-main {
+      min-width: 0;
     }
 
     .bar-access-permission-card input {
@@ -7815,6 +7988,15 @@
       }
       .bar-access-user {
         grid-template-columns: 1fr;
+      }
+      .bar-user-profile-grid {
+        grid-template-columns: 1fr;
+      }
+      .bar-user-task-form {
+        grid-template-columns: 1fr;
+      }
+      .bar-user-task-form .full {
+        grid-column: auto;
       }
       .finance-form-card {
         position: static;
@@ -15991,6 +16173,7 @@
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="qrcodes"><span class="admin-nav-icon"><svg><use href="#admin-icon-qr"></use></svg></span><span>QR Codes</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="events"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Agenda</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="access"><span class="admin-nav-icon"><svg><use href="#admin-icon-team"></use></svg></span><span>Acessos</span></button>
+        <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="profile"><span class="admin-nav-icon"><svg><use href="#admin-icon-team"></use></svg></span><span>Meu perfil</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-store"><span class="admin-nav-icon"><svg><use href="#admin-icon-bag"></use></svg></span><span>Ilha Store</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-announcements"><span class="admin-nav-icon"><svg><use href="#admin-icon-megaphone"></use></svg></span><span>Comunicados</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-team"><span class="admin-nav-icon"><svg><use href="#admin-icon-team"></use></svg></span><span>Equipe</span></button>
@@ -16513,6 +16696,7 @@
             <button class="ops-tab-btn" type="button" data-bar-tab="finance">Financeiro</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="qrcodes">QR Codes</button>
             <button class="ops-tab-btn" type="button" data-bar-tab="access">Acessos</button>
+            <button class="ops-tab-btn" type="button" data-bar-tab="profile">Meu perfil</button>
           </div>
 
           <div data-bar-panel="overview" class="active-tab-panel">
@@ -16927,6 +17111,50 @@
                 <div class="ops-panel-head"><div><h2>Usuários cadastrados</h2><div class="muted">Os acessos que já existem aparecem aqui automaticamente.</div></div></div>
                 <div class="bar-access-list" id="barAccessUserList"><div class="lesson-empty-state">Carregando acessos…</div></div>
               </section>
+            </div>
+          </div>
+
+          <div data-bar-panel="profile">
+            <div class="bar-user-profile-page">
+              <div class="bar-section-header">
+                <div><h2 id="barUserProfilePageTitle">Meu perfil</h2><div class="muted" id="barUserProfilePageSubtitle">Dados pessoais, foto e tarefas.</div></div>
+                <button class="ghost-btn" type="button" id="barUserProfileBackBtn" hidden>Voltar aos acessos</button>
+              </div>
+              <div class="bar-user-profile-grid">
+                <section class="ops-panel bar-user-profile-card">
+                  <div class="bar-user-profile-identity">
+                    <span class="bar-user-profile-avatar" id="barUserProfileAvatar">IB</span>
+                    <div><h3 id="barUserProfileIdentityName">Usuário do Bar</h3><p id="barUserProfileIdentityRole">Equipe</p></div>
+                  </div>
+                  <form class="bar-user-profile-form" id="barUserProfileForm">
+                    <input type="hidden" id="barUserProfileId" />
+                    <div class="bar-user-profile-photo-actions">
+                      <button class="primary-btn" type="button" id="barUserProfilePhotoBtn">Escolher foto</button>
+                      <button class="ghost-btn" type="button" id="barUserProfilePhotoRemoveBtn">Remover</button>
+                      <input id="barUserProfilePhotoFile" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+                    </div>
+                    <div class="form-grid">
+                      <div class="field full"><label for="barUserProfileName">Nome</label><input id="barUserProfileName" maxlength="80" required /></div>
+                      <div class="field"><label for="barUserProfileEmail">E-mail</label><input id="barUserProfileEmail" type="email" disabled /></div>
+                      <div class="field"><label for="barUserProfilePhone">Telefone</label><input id="barUserProfilePhone" type="tel" inputmode="tel" maxlength="20" /></div>
+                      <div class="field full"><label for="barUserProfileJobTitle">Função</label><input id="barUserProfileJobTitle" maxlength="80" placeholder="Ex.: Garçom, caixa ou cozinha" /></div>
+                      <div class="field full"><label for="barUserProfileBio">Sobre / observações</label><textarea id="barUserProfileBio" maxlength="500" rows="4" placeholder="Informações úteis sobre este usuário"></textarea></div>
+                    </div>
+                    <button class="primary-btn bar-user-profile-save" type="submit" id="barUserProfileSaveBtn">Salvar perfil</button>
+                  </form>
+                </section>
+
+                <section class="ops-panel bar-user-task-panel">
+                  <div class="ops-panel-head"><div><h2>Tarefas</h2><div class="muted" id="barUserTaskSummary">Nenhuma tarefa pendente.</div></div></div>
+                  <form class="bar-user-task-form" id="barUserTaskForm">
+                    <div class="field"><label for="barUserTaskTitle">Nova tarefa</label><input id="barUserTaskTitle" maxlength="160" placeholder="Ex.: Conferir estoque das cervejas" required /></div>
+                    <div class="field"><label for="barUserTaskDue">Prazo</label><input id="barUserTaskDue" type="date" /></div>
+                    <button class="primary-btn" type="submit" id="barUserTaskAddBtn">Adicionar</button>
+                    <div class="field full"><label for="barUserTaskDetails">Detalhes</label><input id="barUserTaskDetails" maxlength="500" placeholder="Orientação opcional" /></div>
+                  </form>
+                  <div class="bar-user-task-list" id="barUserTaskList"></div>
+                </section>
+              </div>
             </div>
           </div>
         </div>
@@ -21279,12 +21507,13 @@
     const appSyncSource = Math.random().toString(36).slice(2);
     let appSyncBroadcastChannel = null;
     let appSyncRefreshTimer = 0;
+    const barProfileImageCache = new Map();
     const IS_BAR_ADMIN_SURFACE = /^\/admbar(?:\/|$)/.test(window.location.pathname) || new URLSearchParams(window.location.search).get('surface') === 'bar';
     if (IS_BAR_ADMIN_SURFACE && 'scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
     }
     const BAR_LAUNCH_TAB_PARAM = new URLSearchParams(window.location.search).get('tab');
-    const BAR_LAUNCH_TAB = ['overview', 'events', 'orders', 'customers', 'kitchen', 'products', 'menu', 'finance', 'qrcodes', 'access'].includes(BAR_LAUNCH_TAB_PARAM)
+    const BAR_LAUNCH_TAB = ['overview', 'events', 'orders', 'customers', 'kitchen', 'products', 'menu', 'finance', 'qrcodes', 'access', 'profile'].includes(BAR_LAUNCH_TAB_PARAM)
       ? BAR_LAUNCH_TAB_PARAM
       : 'orders';
     const BAR_PIX_KEY = 'ilhateniscolatina@gmail.com';
@@ -21302,6 +21531,9 @@
         if (!document.body.classList.contains('club-bar')) return;
         loadBarData(true).then(function () {
           renderBarModule();
+          if (opsState.barTab === 'profile' && opsState.selectedBarUserProfileId) {
+            loadBarUserProfileTasks(opsState.selectedBarUserProfileId, true).catch(reportActionError);
+          }
           if (opsState.selectedBarOrderId && !barCommandModalHasActiveEditor()) renderBarCommandModal();
         }).catch(reportActionError);
       }, 180);
@@ -21547,7 +21779,7 @@
       const fallback = { tab: 'orders', commandTab: 'items', orderId: null, scrollY: 0 };
       try {
         const stored = JSON.parse(localStorage.getItem(BAR_VIEW_STATE_KEY) || '{}');
-        const barTabs = ['overview', 'events', 'orders', 'customers', 'kitchen', 'tables', 'products', 'menu', 'finance', 'qrcodes', 'access'];
+        const barTabs = ['overview', 'events', 'orders', 'customers', 'kitchen', 'tables', 'products', 'menu', 'finance', 'qrcodes', 'access', 'profile'];
         const commandTabs = ['items', 'add', 'checkout'];
         return {
           tab: barTabs.includes(stored.tab) ? stored.tab : fallback.tab,
@@ -21574,6 +21806,12 @@
       barAccessUsersLoading: false,
       barAccessUsersAttempted: false,
       editingBarAccessUserId: '',
+      selectedBarUserProfileId: '',
+      barUserProfileTasks: [],
+      barUserProfileTasksLoadedFor: '',
+      pendingBarUserProfileImage: null,
+      pendingBarUserProfileImagePreview: '',
+      removeBarUserProfileImage: false,
       planTab: 'list',
       selectedClientId: null,
       editingPlanId: null,
@@ -21758,6 +21996,7 @@
         { name: 'Leandro Strelow', email: 'kikostrelow@gmail.com', role: 'admin', active: true, permissions: roleDefaultPermissions.admin, notes: 'Gestao geral do clube.' }
       ],
       barAccessUsers: [],
+      barUserTasks: [],
       audiences: [
         { name: 'Alunos ativos', contacts: 42, purpose: 'Avisos de aula, feriados e comunicados gerais' },
         { name: 'Responsaveis Kids', contacts: 18, purpose: 'Comunicados para responsaveis e turmas infantis' },
@@ -21931,6 +22170,9 @@
         name: row.full_name || row.email || 'Cliente',
         email: row.email || '',
         phone: row.phone || '',
+        avatarUrl: row.avatar_url || row.avatarUrl || '',
+        jobTitle: row.job_title || row.jobTitle || '',
+        bio: row.bio || '',
         cpf: row.cpf || '',
         age: row.age || '',
         guardian: row.guardian_name || '',
@@ -23916,7 +24158,10 @@
         role: row.role || 'bar',
         active: row.active !== false,
         permissions: Array.isArray(row.permissions) ? row.permissions : [],
-        notes: row.notes || ''
+        notes: row.notes || '',
+        avatarUrl: row.avatar_url || row.avatarUrl || '',
+        jobTitle: row.job_title || row.jobTitle || '',
+        bio: row.bio || ''
       };
     }
 
@@ -23954,7 +24199,7 @@
         if (isAdminDemoMode()) {
           opsData.barAccessUsers = opsData.team.map(mapBarAccessUser);
         } else {
-          const profiles = await supabaseRest('profiles?select=id,full_name,email,phone,role,active,permissions,notes,created_at&order=created_at.asc');
+          const profiles = await supabaseRest('profiles?select=id,full_name,email,phone,avatar_url,job_title,bio,role,active,permissions,notes,created_at&order=created_at.asc');
           opsData.barAccessUsers = (profiles || []).filter(function (profile) {
             const permissions = Array.isArray(profile.permissions) ? profile.permissions : [];
             return profile.role === 'admin' || profile.role === 'bar' || permissions.includes('bar') || permissions.some(function (permission) { return String(permission).indexOf('bar.') === 0; });
@@ -23983,10 +24228,12 @@
           return item && item.label;
         }).filter(Boolean);
         const accessLabel = user.role === 'admin' ? 'Acesso total' : (hasGranularBarPermissions(user) ? labels.length + (labels.length === 1 ? ' área liberada' : ' áreas liberadas') : 'Acesso operacional');
-        return '<article class="bar-access-user"><div class="bar-access-user-main"><strong>' + escapeHtml(user.name) + '</strong><small>' + escapeHtml(user.email || 'E-mail não informado') + '</small>' + (user.phone ? '<small>' + escapeHtml(barPhoneInputLabel(user.phone)) + '</small>' : '') + '<small>' + escapeHtml(user.notes || accessLabel) + '</small></div>' +
+        const cachedAvatar = barProfileImageCache.get(user.avatarUrl) || (!String(user.avatarUrl || '').startsWith('bar-profiles/') ? user.avatarUrl : '');
+        return '<article class="bar-access-user"><span class="bar-access-user-avatar" data-bar-profile-avatar="' + escapeHtml(user.avatarUrl || '') + '">' + (cachedAvatar ? '<img src="' + escapeHtml(cachedAvatar) + '" alt="" />' : escapeHtml(clientInitials(user.name))) + '</span><div class="bar-access-user-main"><strong>' + escapeHtml(user.name) + '</strong><small>' + escapeHtml(user.email || 'E-mail não informado') + '</small>' + (user.phone ? '<small>' + escapeHtml(barPhoneInputLabel(user.phone)) + '</small>' : '') + '<small>' + escapeHtml(user.jobTitle || user.notes || accessLabel) + '</small></div>' +
           '<div class="bar-access-permissions">' + (labels.map(function (label) { return '<span class="bar-access-permission">' + escapeHtml(label) + '</span>'; }).join('') || '<span class="bar-access-permission">Sem áreas liberadas</span>') + '</div>' +
-          '<div class="bar-row-actions">' + barStatusPill(user.active ? 'ATIVO' : 'BLOQUEADO') + (user.role === 'admin' ? '' : '<button class="small-btn" type="button" data-bar-access-edit="' + escapeHtml(user.id) + '">Editar</button>') + '</div></article>';
+          '<div class="bar-row-actions">' + barStatusPill(user.active ? 'ATIVO' : 'BLOQUEADO') + '<button class="small-btn" type="button" data-bar-user-profile="' + escapeHtml(user.id) + '">Perfil</button>' + (user.role === 'admin' ? '' : '<button class="small-btn" type="button" data-bar-access-edit="' + escapeHtml(user.id) + '">Acesso</button>') + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum acesso do Bar cadastrado.</div>';
+      hydrateBarProfileAvatars();
     }
 
     function renderBarAccessPermissionOptions(selectedPermissions) {
@@ -24142,6 +24389,239 @@
       }
     }
 
+    function currentBarUserProfile() {
+      const targetId = opsState.selectedBarUserProfileId || adminProfile && adminProfile.id || '';
+      if (adminProfile && String(adminProfile.id) === String(targetId)) return mapBarAccessUser(adminProfile);
+      return (opsData.barAccessUsers || []).find(function (user) { return String(user.id) === String(targetId); }) || null;
+    }
+
+    function mapBarUserTask(row) {
+      return {
+        id: row.id || '',
+        userId: row.user_id || row.userId || '',
+        title: row.title || 'Tarefa',
+        details: row.details || '',
+        dueDate: row.due_date || row.dueDate || '',
+        status: row.status || 'PENDENTE',
+        createdBy: row.created_by || row.createdBy || '',
+        completedAt: row.completed_at || row.completedAt || '',
+        created: row.created_at || row.created || ''
+      };
+    }
+
+    function barUserTaskDateLabel(value) {
+      if (!value) return '';
+      const parts = String(value).split('-');
+      return parts.length === 3 ? parts[2] + '/' + parts[1] + '/' + parts[0] : value;
+    }
+
+    function barUserCanManageProfile(user) {
+      if (isAdminDemoMode()) return true;
+      return Boolean((user && adminProfile && String(user.id) === String(adminProfile.id)) || (adminProfile && adminProfile.role === 'admin'));
+    }
+
+    function updateBarUserProfileAvatar(user, previewUrl) {
+      const avatar = $('barUserProfileAvatar');
+      if (!avatar) return;
+      const storedUrl = user && user.avatarUrl || '';
+      const url = opsState.removeBarUserProfileImage ? '' : (previewUrl || barProfileImageCache.get(storedUrl) || (!String(storedUrl).startsWith('bar-profiles/') ? storedUrl : ''));
+      avatar.innerHTML = url ? '<img src="' + escapeHtml(url) + '" alt="Foto de ' + escapeHtml(user && user.name || 'usuário') + '" />' : escapeHtml(clientInitials(user && user.name || 'IB'));
+      if (!url && storedUrl) loadBarProfileImage(storedUrl).then(function (resolved) {
+        if (resolved && currentBarUserProfile() && String(currentBarUserProfile().id) === String(user.id)) updateBarUserProfileAvatar(user, resolved);
+      }).catch(function () {});
+    }
+
+    async function loadBarProfileImage(value) {
+      const path = String(value || '');
+      if (!path || !path.startsWith('bar-profiles/')) return path;
+      if (barProfileImageCache.has(path)) return barProfileImageCache.get(path);
+      requireAdminSession();
+      const response = await fetch(supabaseBaseUrl() + '/storage/v1/object/authenticated/bar-profiles/' + encodeStoragePath(path.slice('bar-profiles/'.length)), { headers: supabaseHeaders(true) });
+      if (!response.ok) throw new Error('Foto indisponível.');
+      const url = URL.createObjectURL(await response.blob());
+      barProfileImageCache.set(path, url);
+      return url;
+    }
+
+    function hydrateBarProfileAvatars() {
+      document.querySelectorAll('[data-bar-profile-avatar]').forEach(function (avatar) {
+        const path = avatar.dataset.barProfileAvatar || '';
+        if (!path || !path.startsWith('bar-profiles/')) return;
+        loadBarProfileImage(path).then(function (url) {
+          if (url && avatar.isConnected) avatar.innerHTML = '<img src="' + escapeHtml(url) + '" alt="" />';
+        }).catch(function () {});
+      });
+    }
+
+    async function loadBarUserProfileTasks(userId, force) {
+      if (!userId || !force && opsState.barUserProfileTasksLoadedFor === String(userId)) return;
+      if (isAdminDemoMode()) {
+        opsState.barUserProfileTasks = (opsData.barUserTasks || []).filter(function (task) { return String(task.userId) === String(userId); });
+      } else {
+        const rows = await supabaseRest('bar_user_tasks?select=*&user_id=eq.' + encodeURIComponent(userId) + '&order=status.asc,due_date.asc.nullslast,created_at.desc');
+        opsState.barUserProfileTasks = (rows || []).map(mapBarUserTask);
+      }
+      opsState.barUserProfileTasksLoadedFor = String(userId);
+      renderBarUserProfileTasks();
+    }
+
+    function renderBarUserProfileTasks() {
+      if (!$('barUserTaskList')) return;
+      const tasks = opsState.barUserProfileTasks || [];
+      const pending = tasks.filter(function (task) { return task.status !== 'CONCLUIDA'; }).length;
+      $('barUserTaskSummary').textContent = pending ? pending + (pending === 1 ? ' tarefa pendente.' : ' tarefas pendentes.') : 'Nenhuma tarefa pendente.';
+      const canDelete = isAdminDemoMode() || Boolean(adminProfile && adminProfile.role === 'admin');
+      $('barUserTaskList').innerHTML = tasks.map(function (task) {
+        const done = task.status === 'CONCLUIDA';
+        const meta = [task.dueDate ? 'Prazo ' + barUserTaskDateLabel(task.dueDate) : '', task.details].filter(Boolean).join(' · ');
+        return '<article class="bar-user-task' + (done ? ' is-done' : '') + '"><input class="bar-user-task-check" type="checkbox" data-bar-user-task-toggle="' + escapeHtml(task.id) + '"' + (done ? ' checked' : '') + ' aria-label="' + (done ? 'Reabrir' : 'Concluir') + ' tarefa" /><div class="bar-user-task-copy"><strong>' + escapeHtml(task.title) + '</strong>' + (meta ? '<small>' + escapeHtml(meta) + '</small>' : '') + '</div>' + (canDelete ? '<button class="small-btn" type="button" data-bar-user-task-delete="' + escapeHtml(task.id) + '" aria-label="Excluir tarefa">Excluir</button>' : '') + '</article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhuma tarefa cadastrada.</div>';
+    }
+
+    function renderBarUserProfile() {
+      if (!$('barUserProfileForm')) return;
+      const user = currentBarUserProfile();
+      if (!user) return;
+      const ownProfile = adminProfile && String(user.id) === String(adminProfile.id);
+      const canManage = barUserCanManageProfile(user);
+      $('barUserProfileId').value = user.id;
+      $('barUserProfileName').value = user.name || '';
+      $('barUserProfileEmail').value = user.email || '';
+      $('barUserProfilePhone').value = barPhoneInputLabel(user.phone);
+      $('barUserProfileJobTitle').value = user.jobTitle || '';
+      $('barUserProfileBio').value = user.bio || '';
+      $('barUserProfileIdentityName').textContent = user.name || 'Usuário do Bar';
+      $('barUserProfileIdentityRole').textContent = user.jobTitle || roleLabel(user.role);
+      $('barUserProfilePageTitle').textContent = ownProfile ? 'Meu perfil' : 'Perfil de ' + (user.name || 'usuário');
+      $('barUserProfilePageSubtitle').textContent = ownProfile ? 'Seus dados, foto e tarefas.' : 'Edite os dados e organize as tarefas deste usuário.';
+      $('barUserProfileBackBtn').hidden = ownProfile || !canUseBarPermission('bar.access');
+      $('barUserProfileForm').querySelectorAll('input:not([type="hidden"]), textarea, button').forEach(function (field) { field.disabled = !canManage; });
+      $('barUserProfileEmail').disabled = true;
+      $('barUserTaskForm').hidden = !isAdminDemoMode() && (!adminProfile || adminProfile.role !== 'admin');
+      updateBarUserProfileAvatar(user, opsState.pendingBarUserProfileImagePreview);
+      renderBarUserProfileTasks();
+      loadBarUserProfileTasks(user.id, false).catch(reportActionError);
+    }
+
+    function openBarUserProfile(userId) {
+      opsState.selectedBarUserProfileId = String(userId || adminProfile && adminProfile.id || '');
+      opsState.barUserProfileTasksLoadedFor = '';
+      opsState.barUserProfileTasks = [];
+      opsState.pendingBarUserProfileImage = null;
+      opsState.pendingBarUserProfileImagePreview = '';
+      opsState.removeBarUserProfileImage = false;
+      setBarTab('profile');
+      renderBarUserProfile();
+    }
+
+    async function uploadBarUserProfileImage(blob, userId) {
+      if (!blob || !userId) return '';
+      requireAdminSession();
+      const objectPath = String(userId) + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 7) + '.webp';
+      const headers = supabaseHeaders(true);
+      headers['Content-Type'] = blob.type || 'image/webp';
+      headers['cache-control'] = '31536000';
+      const response = await fetch(supabaseBaseUrl() + '/storage/v1/object/bar-profiles/' + encodeStoragePath(objectPath), { method: 'POST', headers: headers, body: blob });
+      const data = await response.json().catch(function () { return {}; });
+      if (!response.ok) throw new Error(data.message || data.error || 'Não consegui enviar a foto do perfil.');
+      return 'bar-profiles/' + objectPath;
+    }
+
+    async function saveBarUserProfileAction(event) {
+      event.preventDefault();
+      const user = currentBarUserProfile();
+      if (!user || !barUserCanManageProfile(user)) return;
+      const name = $('barUserProfileName').value.trim();
+      const phone = barPhoneDigits($('barUserProfilePhone').value);
+      if (name.length < 2 || phone && phone.length < 10) {
+        toast('Informe um nome e um telefone válido.');
+        return;
+      }
+      const button = $('barUserProfileSaveBtn');
+      try {
+        button.disabled = true;
+        button.textContent = 'Salvando...';
+        let avatarUrl = opsState.removeBarUserProfileImage ? '' : user.avatarUrl || '';
+        if (opsState.pendingBarUserProfileImage) avatarUrl = await uploadBarUserProfileImage(opsState.pendingBarUserProfileImage, user.id);
+        const payload = {
+          full_name: name,
+          phone: phone || null,
+          job_title: $('barUserProfileJobTitle').value.trim() || null,
+          bio: $('barUserProfileBio').value.trim() || null,
+          avatar_url: avatarUrl || null,
+          updated_at: new Date().toISOString()
+        };
+        let saved;
+        if (isAdminDemoMode()) saved = Object.assign({}, user, payload, { id: user.id, name: name, avatarUrl: avatarUrl, jobTitle: payload.job_title || '' });
+        else if (adminProfile && String(user.id) === String(adminProfile.id) && adminProfile.role !== 'admin') {
+          saved = await supabaseRest('rpc/bar_update_own_profile', { method: 'POST', body: { p_full_name: name, p_phone: phone || null, p_job_title: payload.job_title, p_bio: payload.bio, p_avatar_url: payload.avatar_url }, prefer: 'return=representation' });
+          saved = Array.isArray(saved) ? saved[0] : saved;
+        } else saved = await patchTeamProfile(user.id, payload);
+        const mapped = mapBarAccessUser(saved || Object.assign({}, user, payload));
+        const index = opsData.barAccessUsers.findIndex(function (item) { return String(item.id) === String(user.id); });
+        if (index >= 0) opsData.barAccessUsers.splice(index, 1, mapped);
+        if (adminProfile && String(adminProfile.id) === String(user.id)) adminProfile = Object.assign({}, adminProfile, saved || payload);
+        opsState.pendingBarUserProfileImage = null;
+        opsState.pendingBarUserProfileImagePreview = '';
+        opsState.removeBarUserProfileImage = false;
+        renderBarAccessUsers();
+        renderBarUserProfile();
+        broadcastAppChange('bar-user-profile');
+        toast('Perfil atualizado.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Salvar perfil';
+      }
+    }
+
+    async function addBarUserTaskAction(event) {
+      event.preventDefault();
+      const user = currentBarUserProfile();
+      const title = $('barUserTaskTitle').value.trim();
+      if (!user || !title) return;
+      const payload = { user_id: user.id, title: title, details: $('barUserTaskDetails').value.trim() || null, due_date: $('barUserTaskDue').value || null, status: 'PENDENTE', created_by: adminProfile && adminProfile.id || null };
+      try {
+        let saved;
+        if (isAdminDemoMode()) saved = Object.assign({}, payload, { id: localId('bar-task'), created_at: new Date().toISOString() });
+        else saved = await supabaseInsert('bar_user_tasks', payload);
+        const mapped = mapBarUserTask(saved);
+        opsState.barUserProfileTasks.unshift(mapped);
+        if (isAdminDemoMode()) opsData.barUserTasks.push(mapped);
+        $('barUserTaskForm').reset();
+        renderBarUserProfileTasks();
+        broadcastAppChange('bar-user-tasks');
+        toast('Tarefa adicionada.');
+      } catch (error) { reportActionError(error); }
+    }
+
+    async function toggleBarUserTaskAction(taskId) {
+      const task = opsState.barUserProfileTasks.find(function (item) { return String(item.id) === String(taskId); });
+      if (!task) return;
+      const done = task.status !== 'CONCLUIDA';
+      const payload = { status: done ? 'CONCLUIDA' : 'PENDENTE', completed_at: done ? new Date().toISOString() : null, updated_at: new Date().toISOString() };
+      try {
+        if (!isAdminDemoMode()) await supabaseRest('bar_user_tasks?id=eq.' + encodeURIComponent(task.id), { method: 'PATCH', body: payload, prefer: 'return=representation' });
+        Object.assign(task, { status: payload.status, completedAt: payload.completed_at || '' });
+        renderBarUserProfileTasks();
+        broadcastAppChange('bar-user-tasks');
+      } catch (error) { reportActionError(error); }
+    }
+
+    async function deleteBarUserTaskAction(taskId) {
+      const task = opsState.barUserProfileTasks.find(function (item) { return String(item.id) === String(taskId); });
+      if (!task) return;
+      try {
+        if (!isAdminDemoMode()) await supabaseRest('bar_user_tasks?id=eq.' + encodeURIComponent(task.id), { method: 'DELETE' });
+        opsState.barUserProfileTasks = opsState.barUserProfileTasks.filter(function (item) { return String(item.id) !== String(taskId); });
+        opsData.barUserTasks = (opsData.barUserTasks || []).filter(function (item) { return String(item.id) !== String(taskId); });
+        renderBarUserProfileTasks();
+        broadcastAppChange('bar-user-tasks');
+        toast('Tarefa removida.');
+      } catch (error) { reportActionError(error); }
+    }
+
     function setBarTab(tab) {
       const requestedTab = tab || firstAllowedBarTab(adminProfile) || 'orders';
       const permission = barPermissionForTab(requestedTab);
@@ -24160,6 +24640,10 @@
       });
       persistBarViewState();
       if (opsState.barTab === 'access') loadBarAccessUsers(false);
+      if (opsState.barTab === 'profile') {
+        if (!opsState.selectedBarUserProfileId && adminProfile) opsState.selectedBarUserProfileId = String(adminProfile.id || '');
+        renderBarUserProfile();
+      }
     }
 
     function barCommandScreenIsActive() {
@@ -25680,6 +26164,7 @@
       renderBarMenuEditor();
       renderBarFinance();
       renderBarAccessUsers();
+      renderBarUserProfile();
     }
 
     function barOrderCustomerDetails(order, items) {
@@ -28715,6 +29200,7 @@
     }
 
     function barPermissionForTab(tab) {
+      if (tab === 'profile') return 'bar.profile';
       const item = barAccessPermissionCatalog.find(function (permission) { return permission.tab === tab; });
       return item && item.key || '';
     }
@@ -28725,6 +29211,7 @@
 
     function canUseBarPermission(permission, profile) {
       profile = profile || adminProfile;
+      if (permission === 'bar.profile') return Boolean(isAdminDemoMode() || profile && profile.active !== false && canOpenBarSurface(profile));
       if (isAdminDemoMode() || profile && profile.role === 'admin') return true;
       if (!profile || profile.active === false) return false;
       const permissions = profilePermissions(profile);
@@ -28734,7 +29221,7 @@
     }
 
     function firstAllowedBarTab(profile) {
-      const preferredOrder = ['orders', 'kitchen', 'overview', 'customers', 'products', 'menu', 'finance', 'qrcodes', 'events', 'access'];
+      const preferredOrder = ['orders', 'kitchen', 'overview', 'customers', 'products', 'menu', 'finance', 'qrcodes', 'events', 'access', 'profile'];
       return preferredOrder.find(function (tab) { return canUseBarPermission(barPermissionForTab(tab), profile); }) || '';
     }
 
@@ -29100,7 +29587,11 @@
         user: { email: 'demo@ilhatenis.com' }
       };
       adminProfile = {
+        id: 'demo-admin',
         full_name: 'Equipe Ilha Demo',
+        email: 'demo@ilhatenis.com',
+        phone: '5527999999999',
+        job_title: 'Administração',
         role: 'admin',
         active: true
       };
@@ -30431,6 +30922,10 @@
       });
       document.querySelectorAll('[data-bar-side-tab]').forEach(function (btn) {
         btn.addEventListener('click', function () {
+          if (btn.dataset.barSideTab === 'profile' && adminProfile) {
+            opsState.selectedBarUserProfileId = String(adminProfile.id || '');
+            opsState.barUserProfileTasksLoadedFor = '';
+          }
           setBarTab(btn.dataset.barSideTab);
         });
       });
@@ -30498,10 +30993,48 @@
         if (event.target.id === 'barAccessModal') closeBarAccessModal();
       });
       $('barAccessUserList').addEventListener('click', function (event) {
+        const profileButton = event.target.closest('[data-bar-user-profile]');
+        if (profileButton) {
+          openBarUserProfile(profileButton.dataset.barUserProfile);
+          return;
+        }
         const editButton = event.target.closest('[data-bar-access-edit]');
         if (!editButton) return;
         const user = (opsData.barAccessUsers || []).find(function (item) { return item.id === editButton.dataset.barAccessEdit; });
         if (user) openBarAccessModal(user);
+      });
+      $('barUserProfileBackBtn').addEventListener('click', function () { setBarTab('access'); });
+      $('barUserProfileForm').addEventListener('submit', saveBarUserProfileAction);
+      $('barUserProfilePhone').addEventListener('input', function () { this.value = barPhoneInputLabel(this.value); });
+      $('barUserProfilePhotoBtn').addEventListener('click', function () { $('barUserProfilePhotoFile').click(); });
+      $('barUserProfilePhotoRemoveBtn').addEventListener('click', function () {
+        opsState.pendingBarUserProfileImage = null;
+        opsState.pendingBarUserProfileImagePreview = '';
+        opsState.removeBarUserProfileImage = true;
+        updateBarUserProfileAvatar(currentBarUserProfile(), '');
+      });
+      $('barUserProfilePhotoFile').addEventListener('change', async function () {
+        try {
+          const prepared = await resizeBarProductImage(this.files && this.files[0]);
+          if (!prepared) return;
+          opsState.pendingBarUserProfileImage = prepared.blob;
+          opsState.pendingBarUserProfileImagePreview = prepared.previewUrl;
+          opsState.removeBarUserProfileImage = false;
+          updateBarUserProfileAvatar(currentBarUserProfile(), prepared.previewUrl);
+        } catch (error) {
+          reportActionError(error);
+        } finally {
+          this.value = '';
+        }
+      });
+      $('barUserTaskForm').addEventListener('submit', addBarUserTaskAction);
+      $('barUserTaskList').addEventListener('change', function (event) {
+        const checkbox = event.target.closest('[data-bar-user-task-toggle]');
+        if (checkbox) toggleBarUserTaskAction(checkbox.dataset.barUserTaskToggle);
+      });
+      $('barUserTaskList').addEventListener('click', function (event) {
+        const button = event.target.closest('[data-bar-user-task-delete]');
+        if (button) deleteBarUserTaskAction(button.dataset.barUserTaskDelete);
       });
       $('planForm').addEventListener('submit', savePlanAction);
       $('planNewBtn').addEventListener('click', function () {
