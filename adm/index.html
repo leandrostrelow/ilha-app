@@ -6472,7 +6472,7 @@
 
     .bar-command-modal .bar-checkout-grid {
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      align-items: end;
+      align-items: start;
       gap: 8px;
       margin-top: 8px;
       padding: 10px;
@@ -6490,12 +6490,26 @@
       min-width: 0;
       min-height: 40px;
       height: 40px;
-      align-self: end;
+      align-self: stretch;
       justify-content: center;
       margin: 0;
       padding: 7px 10px;
       font-size: 10px;
       box-sizing: border-box;
+    }
+
+    .bar-checkout-split-field {
+      min-width: 0;
+    }
+
+    .bar-checkout-split-field > span {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 900;
+      line-height: 1.15;
+      text-transform: uppercase;
     }
 
     .bar-checkout-split-head {
@@ -14872,6 +14886,7 @@
       width: 100%;
       height: 100%;
       min-width: 0;
+      min-height: 0;
       padding: 0;
       border: 0;
       outline: 0;
@@ -14879,9 +14894,11 @@
       background: #ffffff;
       font-size: 12px;
       font-weight: 900;
-      line-height: 1;
+      line-height: 29px;
       text-align: center;
+      vertical-align: middle;
       box-sizing: border-box;
+      appearance: textfield;
       -moz-appearance: textfield;
     }
 
@@ -17651,7 +17668,7 @@
             </div>
             <div class="bar-checkout-split" id="barCheckoutSplitSection">
               <div class="bar-checkout-grid">
-                <label class="bar-checkout-split-toggle bar-checkout-split-action"><input id="barCheckoutSplitToggle" type="checkbox" /><span>Ativar divisão</span></label>
+                <div class="bar-checkout-split-field"><span>Divisão</span><label class="bar-checkout-split-toggle bar-checkout-split-action"><input id="barCheckoutSplitToggle" type="checkbox" /><span>Ativar divisão</span></label></div>
                 <div class="field"><label for="barCheckoutService">Valor adicional</label><input id="barCheckoutService" inputmode="decimal" value="0,00" /></div>
                 <div class="field"><label for="barCheckoutDiscount">Desconto</label><input id="barCheckoutDiscount" inputmode="decimal" value="0,00" /></div>
                 <div class="field" id="barCheckoutSingleMethodField"><label for="barCheckoutMethod">Forma de pagamento</label><select id="barCheckoutMethod"><option value="PIX">Pix</option><option value="DINHEIRO">Dinheiro</option><option value="CARTAO_CREDITO">Cartão de crédito</option><option value="CARTAO_DEBITO">Cartão de débito</option><option value="CONTA_CLIENTE">Conta do cliente</option></select></div>
