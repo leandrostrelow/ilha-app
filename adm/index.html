@@ -6773,7 +6773,7 @@
     .bar-checkout-split-row {
       min-height: 50px;
       display: grid;
-      grid-template-columns: minmax(92px, .5fr) minmax(125px, .72fr) minmax(150px, 1fr);
+      grid-template-columns: minmax(130px, .7fr) minmax(125px, .72fr) minmax(150px, 1fr) auto;
       align-items: center;
       gap: 6px;
       padding: 6px 8px;
@@ -6790,6 +6790,83 @@
     .bar-checkout-split-person strong {
       color: #18363d;
       font-size: 12px;
+    }
+
+    .bar-checkout-split-name {
+      width: 100%;
+      min-height: 38px;
+      box-sizing: border-box;
+      padding: 8px 10px;
+      border: 1px solid #cbdde1;
+      border-radius: 9px;
+      color: #18363d;
+      background: #ffffff;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .bar-checkout-split-row.is-paid {
+      border-color: #9fd5b3;
+      background: #f0fbf4;
+    }
+
+    .bar-checkout-split-row.is-paid input,
+    .bar-checkout-split-row.is-paid select {
+      opacity: .72;
+    }
+
+    .bar-checkout-split-pay {
+      min-height: 38px;
+      align-self: end;
+      padding: 7px 12px;
+      border: 1px solid var(--teal);
+      border-radius: 9px;
+      color: #ffffff;
+      background: var(--teal);
+      font: inherit;
+      font-size: 11px;
+      font-weight: 950;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .bar-checkout-split-pay.is-paid {
+      border-color: #80c49b;
+      color: #176337;
+      background: #dff6e7;
+      cursor: default;
+    }
+
+    .bar-checkout-paid-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 6px;
+      padding: 8px 11px;
+      border: 1px solid #b8dfc6;
+      border-radius: 9px;
+      color: #176337;
+      background: #effaf3;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .bar-checkout-paid-summary strong { color: #176337; }
+
+    .bar-checkout-split-save {
+      width: 100%;
+      min-height: 36px;
+      margin-top: 6px;
+      border: 1px solid #9fcdd1;
+      border-radius: 9px;
+      color: var(--teal);
+      background: #f2f9fa;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 950;
+      cursor: pointer;
     }
 
     .bar-checkout-split-person small {
@@ -6876,6 +6953,8 @@
       .bar-checkout-split-person {
         grid-column: 1 / -1;
       }
+
+      .bar-checkout-split-pay { align-self: stretch; }
     }
 
     @media (max-width: 520px) {
@@ -6909,7 +6988,8 @@
 
       .bar-checkout-split-person,
       .bar-checkout-split-amount-field,
-      .bar-checkout-split-method-field {
+      .bar-checkout-split-method-field,
+      .bar-checkout-split-pay {
         grid-column: 1;
       }
     }
@@ -17486,7 +17566,9 @@
                 </div>
                 <div class="bar-checkout-split-allocation" id="barCheckoutSplitAllocation"></div>
                 <div class="bar-checkout-split-rows" id="barCheckoutSplitRows"></div>
+                <div class="bar-checkout-paid-summary" id="barCheckoutPaidSummary" hidden></div>
                 <div class="bar-checkout-split-balance" id="barCheckoutSplitBalance" role="status"></div>
+                <button class="bar-checkout-split-save" id="barCheckoutSplitSaveBtn" type="button">Salvar divisão</button>
               </div>
             </div>
             <div class="bar-command-payment-actions">
@@ -21867,12 +21949,15 @@
       barCheckoutSplitMode: 'equal',
       barCheckoutSplitCount: 2,
       barCheckoutSplitMethods: ['PIX', 'PIX'],
+      barCheckoutSplitNames: ['Pessoa 1', 'Pessoa 2'],
       barCheckoutSplitValues: [],
       barCheckoutSplitTotalCents: null,
       barCheckoutSplitAllocations: [],
       barCheckoutSplitAllocationSignature: '',
       barCheckoutSplitAllocationTotalCents: null,
       barCheckoutSplitDraggedGroup: -1,
+      barCheckoutSplitSavingPosition: 0,
+      barCheckoutSplitHydratedOrderId: '',
       selectedBarQrUrl: '',
       selectedBarQrLabel: '',
       selectedBarQrKind: '',
@@ -22065,6 +22150,7 @@
       barServiceRequests: [],
       barInventory: [],
       barFinance: [],
+      barOrderPaymentParts: [],
       barEvents: [
         { id: 'bar_event_happy_hour', title: 'Happy hour do Bar', eventType: 'PROMOCAO', eventDate: localDateString(new Date()), startsAt: '18:00', endsAt: '21:00', location: 'Deck do Bar', expectedGuests: 45, status: 'CONFIRMADO', description: 'Promoção especial e música ambiente para os clientes.', notes: 'Preparar equipe e estoque até 17h.', created: new Date().toISOString(), updated: new Date().toISOString() },
         { id: 'bar_event_music', title: 'Música ao vivo', eventType: 'MUSICA', eventDate: localDateString(new Date(Date.now() + 2 * 86400000)), startsAt: '19:30', endsAt: '22:30', location: 'Deck principal', expectedGuests: 80, status: 'AGENDADO', description: 'Noite de música ao vivo aberta aos associados e convidados.', notes: 'Confirmar passagem de som.', created: new Date().toISOString(), updated: new Date().toISOString() },
@@ -22564,6 +22650,22 @@
       };
     }
 
+    function mapBarOrderPaymentPartRow(row) {
+      return {
+        id: row.id || '',
+        orderId: row.order_id || '',
+        position: Number(row.position || 0),
+        personName: row.person_name || ('Pessoa ' + (row.position || '')),
+        amount: Number(row.amount || 0),
+        paymentMethod: row.payment_method || 'PIX',
+        splitMode: row.split_mode || 'equal',
+        allocation: row.allocation && typeof row.allocation === 'object' ? row.allocation : {},
+        status: row.status || 'PENDENTE',
+        paidAt: row.paid_at || '',
+        created: row.created_at || ''
+      };
+    }
+
     function mapBarEventRow(row) {
       return {
         id: row.id || '',
@@ -22593,6 +22695,7 @@
       opsData.barServiceRequests = [];
       opsData.barInventory = [];
       opsData.barFinance = [];
+      opsData.barOrderPaymentParts = [];
       opsData.barAccessCards = [];
       opsData.barSettings = mapBarRuntimeSettingsRow(null);
       opsData.barEvents = [];
@@ -22625,7 +22728,8 @@
             supabaseRest('bar_events?select=*&order=event_date.asc,starts_at.asc'),
             supabaseRest('bar_customers?select=*&order=last_order_at.desc&limit=500'),
             supabaseRest('bar_service_requests?select=*&order=created_at.desc&limit=200'),
-            supabaseRest('bar_runtime_settings?select=*&id=eq.true&limit=1')
+            supabaseRest('bar_runtime_settings?select=*&id=eq.true&limit=1'),
+            supabaseRest('bar_order_payment_parts?select=*&order=order_id.asc,position.asc').catch(function () { return []; })
           ]);
         };
         let results;
@@ -22646,6 +22750,7 @@
         opsData.barCustomers = results[8].map(mapBarCustomerRow);
         opsData.barServiceRequests = results[9].map(mapBarServiceRequestRow);
         opsData.barSettings = mapBarRuntimeSettingsRow(results[10] && results[10][0]);
+        opsData.barOrderPaymentParts = (results[11] || []).map(mapBarOrderPaymentPartRow);
         handleBarIncomingChanges(opsData.barOrderItems);
         handleBarServiceRequestChanges(opsData.barServiceRequests);
         opsState.barDataLoaded = true;
@@ -23382,6 +23487,12 @@
       return Math.max(0, barOrderSubtotal(order) + Number(order.serviceCharge || 0) - Number(order.discount || 0));
     }
 
+    function barOrderDisplayBalance(order) {
+      return barOrderIsOpen(order) && barOrderReceivedTotal(order) > 0
+        ? barOrderOutstandingTotal(order)
+        : barOrderTotal(order);
+    }
+
     function recalculateLocalBarOrder(order) {
       if (!order) return;
       order.subtotal = barOrderSubtotal(order);
@@ -23401,6 +23512,7 @@
         ABERTO: 'Em aberto',
         RECEBIDO: 'Recebido',
         PAGO: 'Pago',
+        PARCIAL: 'Parcial',
         VENCIDO: 'Vencido',
         PENDENTE: 'Pendente',
         EM_ATENDIMENTO: 'Em atendimento',
@@ -23740,7 +23852,7 @@
     function barOrderCard(order) {
       const paid = barOrderIsPaid(order);
       return '<button class="bar-order-card' + (order.status === 'PRONTA' ? ' is-ready' : '') + '" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(barTableLabel(order)) + '">' +
-        '<span class="bar-order-top"><strong>' + escapeHtml(barTableLabel(order)) + '</strong><span class="bar-order-card-value">' + money(barOrderTotal(order)) + '</span>' + (paid ? '<span class="bar-order-card-paid">Pago</span>' : '') + '</span>' +
+        '<span class="bar-order-top"><strong>' + escapeHtml(barTableLabel(order)) + '</strong><span class="bar-order-card-value">' + money(barOrderDisplayBalance(order)) + '</span>' + (paid ? '<span class="bar-order-card-paid">Pago</span>' : '') + '</span>' +
       '</button>';
     }
 
@@ -23804,7 +23916,7 @@
       else message.push('• Consumo registrado na comanda');
       message.push(
         '',
-        'Total pendente: ' + money(barOrderTotal(order)),
+        'Total pendente: ' + money(barOrderOutstandingTotal(order)),
         '',
         'Você pode realizar o pagamento via Pix:',
         BAR_PIX_KEY,
@@ -23818,7 +23930,7 @@
       const items = barActiveItemsForOrder(order.id);
       const customer = barOrderCustomerDetails(order, items);
       const phone = barPhoneWhatsApp(customer.phone);
-      if (!phone || phone.length < 12 || barOrderTotal(order) <= 0) return '';
+      if (!phone || phone.length < 12 || barOrderOutstandingTotal(order) <= 0) return '';
       return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(barChargeMessage(order));
     }
 
@@ -23851,7 +23963,7 @@
       });
       const message = ['Olá, ' + customer.name + '! Segue o resumo da sua conta no Ilha Bar:', ''];
       message.push.apply(message, lines.length ? lines : ['• Nenhum item ativo']);
-      message.push('', 'Total: ' + money(barOrderTotal(order)));
+      message.push('', 'Saldo: ' + money(barOrderDisplayBalance(order)));
       return barWhatsAppUrl(order, message.join('\n'));
     }
 
@@ -23973,7 +24085,7 @@
       return '<article class="bar-table-card' + (order ? ' is-open' : '') + '">' +
         '<div class="bar-table-card-top"><span class="bar-table-number">' + escapeHtml(String(table.number).padStart(2, '0')) + '</span>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago · falta encerrar</span>' : order ? '<span class="ops-pill warn">Ocupada</span>' : '<span class="ops-pill good">Livre</span>') + '</div>' +
         '<div><h3>' + escapeHtml(table.name) + '</h3><div class="bar-table-card-meta"><span><svg><use href="#bar-icon-seat"></use></svg>' + escapeHtml(table.seats) + ' lugares</span>' + (table.notes ? '<span>' + escapeHtml(table.notes) + '</span>' : '') + '</div></div>' +
-        '<div class="bar-table-command-summary">' + (order ? '<div><span>Comanda #' + escapeHtml(commandNumber) + '</span><strong>' + escapeHtml(barStatusLabel(order.status)) + '</strong></div><strong>' + money(barOrderTotal(order)) + '</strong>' : '<div><span>Disponível</span><strong>Pronta para novo pedido</strong></div>') + '</div>' +
+        '<div class="bar-table-command-summary">' + (order ? '<div><span>Comanda #' + escapeHtml(commandNumber) + '</span><strong>' + escapeHtml(barStatusLabel(order.status)) + '</strong></div><strong>' + money(barOrderDisplayBalance(order)) + '</strong>' : '<div><span>Disponível</span><strong>Pronta para novo pedido</strong></div>') + '</div>' +
         '<div class="bar-table-card-actions"><button class="' + (order ? 'primary-btn' : 'ghost-btn') + '" type="button" data-bar-table-open="' + escapeHtml(table.id) + '">' + (order ? 'Abrir comanda' : 'Abrir mesa') + '</button></div>' +
       '</article>';
     }
@@ -24004,7 +24116,7 @@
         : '';
       return '<article class="bar-command-unified-card has-money-value' + (table ? ' is-table' : ' is-loose') + (paidOpen ? ' is-paid-open' : '') + deliveryStateClass + (awaitingStaff ? ' is-awaiting-staff' : '') + '" data-bar-order-open="' + escapeHtml(order.id) + '">' +
         '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="' + icon + '"></use></svg></span><span class="bar-command-unified-copy"><strong>' + escapeHtml(customerName) + '</strong>' + newTableAlert + deliveryAlert + location + '</span></button>' +
-        '<div class="bar-command-unified-side"><b class="bar-command-unified-value">' + money(barOrderTotal(order)) + '</b>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + '</div>' +
+        '<div class="bar-command-unified-side"><b class="bar-command-unified-value">' + money(barOrderDisplayBalance(order)) + '</b>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + '</div>' +
       '</article>';
     }
 
@@ -24121,6 +24233,32 @@
           String(item.type || '').toUpperCase() === 'RECEITA' &&
           barFinanceIsConfirmed(item);
       });
+    }
+
+    function barPaymentPartsForOrder(order) {
+      const orderId = String(order && order.id || '');
+      return (opsData.barOrderPaymentParts || []).filter(function (part) {
+        return String(part.orderId || '') === orderId;
+      }).sort(function (a, b) { return Number(a.position || 0) - Number(b.position || 0); });
+    }
+
+    function barPaidPartsForOrder(order) {
+      return barPaymentPartsForOrder(order).filter(function (part) {
+        return String(part.status || '').toUpperCase() === 'PAGO';
+      });
+    }
+
+    function barOrderReceivedTotal(order) {
+      const parts = barPaidPartsForOrder(order);
+      if (parts.length) return parts.reduce(function (sum, part) { return sum + Number(part.amount || 0); }, 0);
+      return barReceivedPaymentsForOrder(order).reduce(function (sum, payment) {
+        return sum + Number(payment.amount || 0);
+      }, 0);
+    }
+
+    function barOrderOutstandingTotal(order, total) {
+      const gross = Number.isFinite(Number(total)) ? Number(total) : barOrderTotal(order);
+      return Math.max(0, Math.round((gross - barOrderReceivedTotal(order)) * 100) / 100);
     }
 
     function barDayClosingMethodMatches(method, filter) {
@@ -26537,9 +26675,26 @@
       const shouldReset = opsState.barCheckoutSplitAllocationSignature !== signature ||
         opsState.barCheckoutSplitAllocations.length !== opsState.barCheckoutGroups.length;
       if (!shouldReset) return false;
+      const savedParts = barPaymentPartsForOrder(order);
+      const paidPositions = new Set(savedParts.filter(function (part) { return String(part.status).toUpperCase() === 'PAGO'; }).map(function (part) { return Number(part.position) - 1; }));
+      const pendingIndexes = Array.from({ length: count }, function (_, index) { return index; }).filter(function (index) { return !paidPositions.has(index); });
       opsState.barCheckoutSplitAllocations = opsState.barCheckoutGroups.map(function (group) {
         const quantity = Math.max(0, Number(group.quantity || 0));
         const unitCents = Math.max(0, Math.round(Number(group.unitPrice || 0) * 100));
+        const savedAllocation = savedParts.map(function (part) { return Math.max(0, Math.round(Number(part.allocation && part.allocation[group.key] || 0))); });
+        const savedTotal = savedAllocation.reduce(function (sum, cents) { return sum + cents; }, 0);
+        const groupTotalCents = Math.max(0, Math.round(quantity * unitCents));
+        if (savedTotal > 0 || paidPositions.size) {
+          const result = Array.from({ length: count }, function (_, index) { return savedAllocation[index] || 0; });
+          let remaining = Math.max(0, groupTotalCents - savedTotal);
+          pendingIndexes.forEach(function (index, pendingIndex) {
+            const peopleLeft = pendingIndexes.length - pendingIndex;
+            const share = peopleLeft > 0 ? Math.floor(remaining / peopleLeft) : 0;
+            result[index] += share;
+            remaining -= share;
+          });
+          return result;
+        }
         if (barCheckoutGroupUsesQuantity(group)) {
           const baseQuantity = Math.floor(quantity / count);
           return Array.from({ length: count }, function (_, index) {
@@ -26681,10 +26836,18 @@
     function barCheckoutEqualSplitAmounts(order) {
       const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
       const totalCents = Math.round(barCheckoutFinalTotal(order) * 100);
-      const baseCents = Math.floor(totalCents / count);
-      const remainder = totalCents - baseCents * count;
+      const savedParts = barPaymentPartsForOrder(order);
+      const paidByPosition = new Map(savedParts.filter(function (part) { return String(part.status).toUpperCase() === 'PAGO'; }).map(function (part) { return [Number(part.position) - 1, Math.round(Number(part.amount || 0) * 100)]; }));
+      const paidCents = Array.from(paidByPosition.values()).reduce(function (sum, cents) { return sum + cents; }, 0);
+      const pendingIndexes = Array.from({ length: count }, function (_, index) { return index; }).filter(function (index) { return !paidByPosition.has(index); });
+      let remainingCents = Math.max(0, totalCents - paidCents);
       return Array.from({ length: count }, function (_, index) {
-        return (baseCents + (index < remainder ? 1 : 0)) / 100;
+        if (paidByPosition.has(index)) return paidByPosition.get(index) / 100;
+        const pendingPosition = pendingIndexes.indexOf(index);
+        const peopleLeft = pendingIndexes.length - pendingPosition;
+        const share = peopleLeft > 0 ? Math.floor(remainingCents / peopleLeft) : 0;
+        remainingCents -= share;
+        return share / 100;
       });
     }
 
@@ -26749,10 +26912,42 @@
       const amounts = barCheckoutSplitAmounts(order);
       return amounts.map(function (amount, index) {
         return {
+          position: index + 1,
+          person_name: String(opsState.barCheckoutSplitNames[index] || ('Pessoa ' + (index + 1))).trim(),
           payment_method: opsState.barCheckoutSplitMethods[index] || 'PIX',
-          amount: amount
+          amount: amount,
+          allocation: opsState.barCheckoutSplitMode === 'separate' ? barCheckoutSplitAllocationForPerson(index) : {}
         };
       });
+    }
+
+    function barCheckoutSplitAllocationForPerson(personIndex) {
+      const allocation = {};
+      (opsState.barCheckoutGroups || []).forEach(function (group, groupIndex) {
+        const cents = Math.max(0, Math.round(Number(opsState.barCheckoutSplitAllocations[groupIndex] && opsState.barCheckoutSplitAllocations[groupIndex][personIndex] || 0)));
+        if (cents > 0) allocation[group.key] = cents;
+      });
+      return allocation;
+    }
+
+    function hydrateBarCheckoutSplit(order) {
+      const parts = barPaymentPartsForOrder(order);
+      if (!parts.length) return false;
+      opsState.barCheckoutSplitEnabled = true;
+      opsState.barCheckoutSplitMode = parts[0].splitMode === 'separate' ? 'separate' : 'equal';
+      opsState.barCheckoutSplitCount = parts.length;
+      opsState.barCheckoutSplitNames = parts.map(function (part) { return part.personName; });
+      opsState.barCheckoutSplitMethods = parts.map(function (part) { return part.paymentMethod; });
+      opsState.barCheckoutSplitValues = parts.map(function (part) { return Number(part.amount || 0); });
+      opsState.barCheckoutSplitTotalCents = Math.round(barCheckoutFinalTotal(order) * 100);
+      if (opsState.barCheckoutSplitMode === 'separate') {
+        opsState.barCheckoutSplitAllocations = (opsState.barCheckoutGroups || []).map(function (group) {
+          return parts.map(function (part) { return Number(part.allocation && part.allocation[group.key] || 0); });
+        });
+        opsState.barCheckoutSplitAllocationSignature = barCheckoutSplitAllocationKey(order);
+        opsState.barCheckoutSplitAllocationTotalCents = opsState.barCheckoutSplitTotalCents;
+      }
+      return true;
     }
 
     function renderBarCheckoutSplit(order) {
@@ -26766,8 +26961,13 @@
       opsState.barCheckoutSplitMode = mode;
       while (opsState.barCheckoutSplitMethods.length < count) opsState.barCheckoutSplitMethods.push(defaultMethod);
       opsState.barCheckoutSplitMethods = opsState.barCheckoutSplitMethods.slice(0, count);
+      while (opsState.barCheckoutSplitNames.length < count) opsState.barCheckoutSplitNames.push('Pessoa ' + (opsState.barCheckoutSplitNames.length + 1));
+      opsState.barCheckoutSplitNames = opsState.barCheckoutSplitNames.slice(0, count);
       section.hidden = !open;
       $('barCheckoutSplitToggle').checked = enabled;
+      const receivedTotal = barOrderReceivedTotal(order);
+      $('barCheckoutSplitToggle').disabled = receivedTotal > 0;
+      $('barCheckoutSplitToggle').closest('label').title = receivedTotal > 0 ? 'A divisão não pode ser removida depois do primeiro pagamento.' : '';
       $('barCheckoutSplitBody').hidden = !enabled;
       $('barCheckoutSingleMethodField').hidden = enabled;
       $('barCheckoutSplitCount').value = String(count);
@@ -26775,6 +26975,7 @@
         const active = button.dataset.barSplitMode === mode;
         button.classList.toggle('active', active);
         button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        button.disabled = receivedTotal > 0;
       });
       const splitHelp = $('barCheckoutSplitHelp');
       if (splitHelp) {
@@ -26793,26 +26994,34 @@
         syncBarCheckoutSplitValuesFromAllocations(order);
       }
       const amounts = barCheckoutSplitAmounts(order);
+      const savedParts = barPaymentPartsForOrder(order);
+      const savedByPosition = new Map(savedParts.map(function (part) { return [Number(part.position), part]; }));
       $('barCheckoutSplitAllocation').innerHTML = enabled && mode === 'separate' ? opsState.barCheckoutGroups.map(function (group, groupIndex) {
         const groupTotalCents = Math.max(0, Math.round(Number(group.quantity || 0) * Number(group.unitPrice || 0) * 100));
         const unitCents = Math.max(0, Math.round(Number(group.unitPrice || 0) * 100));
         const usesQuantity = barCheckoutGroupUsesQuantity(group);
         const allocation = opsState.barCheckoutSplitAllocations[groupIndex] || [];
         const people = Array.from({ length: count }, function (_, personIndex) {
+          const savedPart = savedByPosition.get(personIndex + 1);
+          const partPaid = savedPart && String(savedPart.status || '').toUpperCase() === 'PAGO';
           const automaticRemainder = personIndex === count - 1;
           const cents = Math.max(0, Math.round(Number(allocation[personIndex] || 0)));
           const quantity = unitCents > 0 ? Math.max(0, Math.round(cents / unitCents)) : 0;
           const allocationControl = usesQuantity
-            ? '<span class="bar-split-allocation-quantity"><input data-bar-split-item-quantity="' + groupIndex + ':' + personIndex + '" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" value="' + quantity + '" aria-label="Quantidade de ' + escapeHtml(group.productName) + ' da pessoa ' + (personIndex + 1) + '"' + (automaticRemainder ? ' readonly' : '') + ' /><span>un</span></span>'
-            : '<span class="bar-split-allocation-money"><span>R$</span><input data-bar-split-item-amount="' + groupIndex + ':' + personIndex + '" type="text" inputmode="decimal" autocomplete="off" value="' + (cents / 100).toFixed(2).replace('.', ',') + '" aria-label="Parte de ' + escapeHtml(group.productName) + ' da pessoa ' + (personIndex + 1) + '"' + (automaticRemainder ? ' readonly' : '') + ' /></span>';
-          return '<label class="bar-split-allocation-cell" data-bar-split-drop-person="' + personIndex + '" data-bar-split-drop-group="' + groupIndex + '"><span class="bar-split-allocation-person-label">Pessoa ' + (personIndex + 1) + '</span>' + allocationControl + '</label>';
+            ? '<span class="bar-split-allocation-quantity"><input data-bar-split-item-quantity="' + groupIndex + ':' + personIndex + '" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" value="' + quantity + '" aria-label="Quantidade de ' + escapeHtml(group.productName) + ' da pessoa ' + (personIndex + 1) + '"' + (automaticRemainder || partPaid ? ' readonly' : '') + ' /><span>un</span></span>'
+            : '<span class="bar-split-allocation-money"><span>R$</span><input data-bar-split-item-amount="' + groupIndex + ':' + personIndex + '" type="text" inputmode="decimal" autocomplete="off" value="' + (cents / 100).toFixed(2).replace('.', ',') + '" aria-label="Parte de ' + escapeHtml(group.productName) + ' da pessoa ' + (personIndex + 1) + '"' + (automaticRemainder || partPaid ? ' readonly' : '') + ' /></span>';
+          return '<label class="bar-split-allocation-cell"' + (partPaid ? '' : ' data-bar-split-drop-person="' + personIndex + '" data-bar-split-drop-group="' + groupIndex + '"') + '><span class="bar-split-allocation-person-label">' + escapeHtml(opsState.barCheckoutSplitNames[personIndex] || ('Pessoa ' + (personIndex + 1))) + (partPaid ? ' · Pago' : '') + '</span>' + allocationControl + '</label>';
         }).join('');
         const directActions = '<div class="bar-split-allocation-actions"><button type="button" data-bar-split-item-equal="' + groupIndex + '">Dividir igual</button>' + Array.from({ length: count }, function (_, personIndex) {
-          return '<button type="button" data-bar-split-item-person="' + groupIndex + ':' + personIndex + '">Pessoa ' + (personIndex + 1) + '</button>';
+          const paidPerson = savedByPosition.get(personIndex + 1);
+          const disabled = paidPerson && String(paidPerson.status || '').toUpperCase() === 'PAGO';
+          return '<button type="button" data-bar-split-item-person="' + groupIndex + ':' + personIndex + '"' + (disabled ? ' disabled' : '') + '>' + escapeHtml(opsState.barCheckoutSplitNames[personIndex] || ('Pessoa ' + (personIndex + 1))) + '</button>';
         }).join('') + '</div>';
         return '<div class="bar-split-allocation-row"><div class="bar-split-allocation-product" draggable="true" data-bar-split-drag-group="' + groupIndex + '" title="Arraste para atribuir o item inteiro a uma pessoa"><strong>' + Number(group.quantity || 0) + 'x ' + escapeHtml(group.productName) + '</strong><small>' + money(groupTotalCents / 100) + (usesQuantity ? ' · por unidades' : ' · por valor') + '</small>' + directActions + '</div><div class="bar-split-allocation-people" style="--split-count:' + count + '">' + people + '</div></div>';
       }).join('') : '';
       $('barCheckoutSplitRows').innerHTML = enabled ? amounts.map(function (amount, index) {
+        const savedPart = savedByPosition.get(index + 1);
+        const partPaid = savedPart && String(savedPart.status || '').toUpperCase() === 'PAGO';
         const automaticRemainder = mode === 'separate' && index === amounts.length - 1;
         const automaticAmount = mode === 'equal' || automaticRemainder;
         const selectedMethod = opsState.barCheckoutSplitMethods[index] || defaultMethod;
@@ -26821,11 +27030,19 @@
         }).join('');
         const amountValue = Number(amount || 0).toFixed(2).replace('.', ',');
         const amountLabel = mode === 'equal' ? 'Valor dividido' : (automaticRemainder ? 'Restante automático' : 'Valor');
-        return '<div class="bar-checkout-split-row"><div class="bar-checkout-split-person"><strong>Pessoa ' + (index + 1) + '</strong></div><label class="bar-checkout-split-amount-field"><span>' + amountLabel + '</span><span class="bar-checkout-split-money' + (automaticAmount ? ' is-automatic' : '') + '"><span aria-hidden="true">R$</span><input class="bar-checkout-split-amount-input" data-bar-split-amount="' + index + '" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" spellcheck="false" value="' + amountValue + '" aria-label="Valor pago pela pessoa ' + (index + 1) + '"' + (automaticAmount ? ' readonly' : '') + ' /></span></label><label class="bar-checkout-split-method-field"><span>Forma de pagamento</span><select data-bar-split-method="' + index + '" aria-label="Forma de pagamento da pessoa ' + (index + 1) + '">' + options + '</select></label></div>';
+        return '<div class="bar-checkout-split-row' + (partPaid ? ' is-paid' : '') + '"><div class="bar-checkout-split-person"><label><small>Nome</small><input class="bar-checkout-split-name" data-bar-split-name="' + index + '" maxlength="80" value="' + escapeHtml(opsState.barCheckoutSplitNames[index] || ('Pessoa ' + (index + 1))) + '"' + (partPaid ? ' disabled' : '') + ' /></label></div><label class="bar-checkout-split-amount-field"><span>' + amountLabel + '</span><span class="bar-checkout-split-money' + (automaticAmount ? ' is-automatic' : '') + '"><span aria-hidden="true">R$</span><input class="bar-checkout-split-amount-input" data-bar-split-amount="' + index + '" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" spellcheck="false" value="' + amountValue + '" aria-label="Valor pago pela pessoa ' + (index + 1) + '"' + (automaticAmount || partPaid ? ' readonly' : '') + ' /></span></label><label class="bar-checkout-split-method-field"><span>Forma de pagamento</span><select data-bar-split-method="' + index + '" aria-label="Forma de pagamento da pessoa ' + (index + 1) + '"' + (partPaid ? ' disabled' : '') + '>' + options + '</select></label><button class="bar-checkout-split-pay' + (partPaid ? ' is-paid' : '') + '" type="button" data-bar-split-pay="' + (index + 1) + '"' + (partPaid || opsState.barCheckoutSplitSavingPosition ? ' disabled' : '') + '>' + (partPaid ? '✓ Pago' : (opsState.barCheckoutSplitSavingPosition === index + 1 ? 'Recebendo...' : 'Marcar pago')) + '</button></div>';
       }).join('') : '';
+      const paidTotal = barOrderReceivedTotal(order);
+      const outstanding = barOrderOutstandingTotal(order, finalTotalCents / 100);
+      const paidSummary = $('barCheckoutPaidSummary');
+      paidSummary.hidden = !enabled || paidTotal <= 0;
+      paidSummary.innerHTML = paidTotal > 0 ? '<span>Já recebido: <strong>' + money(paidTotal) + '</strong></span><span>Saldo da comanda: <strong>' + money(outstanding) + '</strong></span>' : '';
+      $('barCheckoutSplitSaveBtn').hidden = !enabled;
       if (enabled) syncBarCheckoutSplitBalance(order);
       const payLabel = $('barOrderPayBtn').querySelector('span');
-      if (payLabel && !barOrderIsPaid(order)) payLabel.textContent = enabled ? 'Receber pagamentos' : 'Marcar como paga';
+      if (payLabel && !barOrderIsPaid(order)) payLabel.textContent = enabled ? 'Receba em cada pessoa acima' : 'Marcar como paga';
+      if (enabled && !barOrderIsPaid(order)) $('barOrderPayBtn').disabled = true;
+      $('barCheckoutSplitCount').disabled = receivedTotal > 0;
     }
 
     function updateBarCheckoutPreview(order) {
@@ -26833,9 +27050,11 @@
       if (!order) return;
       const subtotal = barOrderSubtotal(order);
       const finalTotal = barCheckoutFinalTotal(order);
+      const displayTotal = barOrderReceivedTotal(order) > 0 ? barOrderOutstandingTotal(order, finalTotal) : finalTotal;
       $('barCheckoutSubtotal').textContent = money(subtotal);
-      $('barCheckoutTotal').textContent = money(finalTotal);
-      $('barCommandHeaderTotal').textContent = money(finalTotal);
+      $('barCheckoutTotal').textContent = money(displayTotal);
+      $('barCommandHeaderTotal').textContent = money(displayTotal);
+      $('barCommandTotal').textContent = money(displayTotal);
       renderBarCheckoutSplit(order);
       syncBarPresetDiscountButtons(order);
     }
@@ -27108,6 +27327,10 @@
           '<div class="bar-command-item-actions">' + deliveryAction + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum item nesta comanda. Use “Adicionar produto” para começar.</div>';
       opsState.barCheckoutGroups = barGroupCheckoutItems(activeItems);
+      if (opsState.barCheckoutSplitHydratedOrderId !== String(order.id)) {
+        hydrateBarCheckoutSplit(order);
+        opsState.barCheckoutSplitHydratedOrderId = String(order.id);
+      }
       $('barCheckoutItems').innerHTML = opsState.barCheckoutGroups.map(function (group, index) {
         const details = [];
         if (group.deliveryLocation) details.push(group.deliveryLocation);
@@ -27146,13 +27369,20 @@
       payButton.disabled = paid;
       payButton.querySelector('span').textContent = paid ? 'Pagamento recebido' : (opsState.barCheckoutSplitEnabled ? 'Receber pagamentos' : 'Marcar como paga');
       payButton.title = paid ? 'O pagamento desta comanda já foi registrado.' : 'Registrar o pagamento sem encerrar a comanda.';
+      const receivedTotal = barOrderReceivedTotal(order);
+      if (receivedTotal > 0 && !paid) {
+        $('barCommandStatus').hidden = false;
+        $('barCommandStatus').innerHTML = '<span class="ops-pill warn">Parcial · ' + money(receivedTotal) + ' pago</span>';
+        $('barCommandTotal').textContent = money(barOrderOutstandingTotal(order));
+        $('barCommandHeaderTotal').textContent = money(barOrderOutstandingTotal(order));
+      }
       closeButton.disabled = !paid || pendingPortions.length > 0;
       closeButton.title = !paid
         ? 'Marque a comanda como paga antes de encerrar.'
         : (pendingPortions.length ? 'Entregue as porções antes de encerrar a comanda.' : 'Encerrar esta comanda.');
       ['barCheckoutService', 'barCheckoutDiscount', 'barCheckoutMethod', 'barCheckoutSplitToggle', 'barCheckoutSplitCount'].forEach(function (id) {
         const field = $(id);
-        if (field) field.disabled = paid;
+        if (field) field.disabled = paid || (receivedTotal > 0 && ['barCheckoutService', 'barCheckoutDiscount', 'barCheckoutSplitToggle', 'barCheckoutSplitCount'].includes(id));
       });
       renderBarProducts();
       renderBarOrderProductPreview();
@@ -27199,12 +27429,15 @@
         $('barCheckoutMethod').value || 'PIX',
         $('barCheckoutMethod').value || 'PIX'
       ];
+      opsState.barCheckoutSplitNames = ['Pessoa 1', 'Pessoa 2'];
       opsState.barCheckoutSplitValues = [];
       opsState.barCheckoutSplitTotalCents = null;
       opsState.barCheckoutSplitAllocations = [];
       opsState.barCheckoutSplitAllocationSignature = '';
       opsState.barCheckoutSplitAllocationTotalCents = null;
       opsState.barCheckoutSplitDraggedGroup = -1;
+      opsState.barCheckoutSplitSavingPosition = 0;
+      opsState.barCheckoutSplitHydratedOrderId = '';
       $('barOrderProduct').value = '';
       opsState.barOrderCart = [];
       opsState.barOrderProductCategory = '';
@@ -28675,6 +28908,7 @@
         const discount = parseOptionalMoney($('barCheckoutDiscount').value);
         const paymentNotes = String($('barCheckoutNotes').value || '').trim();
         const splitEnabled = Boolean(opsState.barCheckoutSplitEnabled);
+        if (splitEnabled) throw new Error('Use o botão “Marcar pago” ao lado de cada pessoa.');
         const splitPayments = splitEnabled ? barCheckoutSplitPayments(order) : [];
         const paymentMethod = splitEnabled ? 'DIVIDIDO' : $('barCheckoutMethod').value;
         if (splitEnabled && splitPayments.length < 2) throw new Error('Informe ao menos duas pessoas para dividir a conta.');
@@ -28740,6 +28974,116 @@
       } finally {
         const currentOrder = barOrderById(opsState.selectedBarOrderId);
         payButton.disabled = barOrderIsPaid(currentOrder);
+      }
+    }
+
+    async function receiveBarOrderPaymentPartAction(position) {
+      const order = barOrderById(opsState.selectedBarOrderId);
+      if (!order || !barOrderCanEdit(order) || !opsState.barCheckoutSplitEnabled) return;
+      const parts = barCheckoutSplitPayments(order);
+      const selected = parts.find(function (part) { return Number(part.position) === Number(position); });
+      if (!selected) return;
+      if (!selected.person_name) {
+        toast('Informe o nome da pessoa antes de receber.');
+        return;
+      }
+      if (parts.some(function (part) { return !part.person_name || !part.payment_method || Number(part.amount || 0) <= 0; })) {
+        toast('Confira nome, valor e forma de pagamento de todas as pessoas.');
+        return;
+      }
+      const splitTotal = Math.round(parts.reduce(function (sum, part) { return sum + Number(part.amount || 0); }, 0) * 100) / 100;
+      const orderTotal = Math.round(barCheckoutFinalTotal(order) * 100) / 100;
+      if (Math.abs(splitTotal - orderTotal) >= 0.01) {
+        toast('A soma das pessoas deve fechar exatamente em ' + money(orderTotal) + '.');
+        return;
+      }
+      try {
+        requireAdminSession();
+        opsState.barCheckoutSplitSavingPosition = Number(position);
+        renderBarCheckoutSplit(order);
+        const serviceCharge = parseOptionalMoney($('barCheckoutService').value);
+        const discount = parseOptionalMoney($('barCheckoutDiscount').value);
+        const paymentNotes = String($('barCheckoutNotes').value || '').trim();
+        if (barCanPersist(order.id)) {
+          await supabaseRest('rpc/bar_receive_order_payment_part', {
+            method: 'POST',
+            body: {
+              p_order_id: order.id,
+              p_position: Number(position),
+              p_parts: parts,
+              p_discount: discount,
+              p_service_charge: serviceCharge,
+              p_split_mode: opsState.barCheckoutSplitMode,
+              p_notes: paymentNotes || null
+            },
+            prefer: 'return=representation'
+          });
+          await loadBarData(true);
+        } else {
+          order.serviceCharge = serviceCharge;
+          order.discount = discount;
+          order.paymentMethod = 'DIVIDIDO';
+          recalculateLocalBarOrder(order);
+          const now = new Date().toISOString();
+          const existing = barPaymentPartsForOrder(order);
+          opsData.barOrderPaymentParts = (opsData.barOrderPaymentParts || []).filter(function (part) { return String(part.orderId) !== String(order.id); });
+          parts.forEach(function (part) {
+            const previous = existing.find(function (saved) { return Number(saved.position) === Number(part.position); });
+            const paid = Number(part.position) === Number(position) || previous && String(previous.status).toUpperCase() === 'PAGO';
+            opsData.barOrderPaymentParts.push({ id: previous && previous.id || localId('bar_payment_part'), orderId: order.id, position: part.position, personName: part.person_name, amount: part.amount, paymentMethod: part.payment_method, splitMode: opsState.barCheckoutSplitMode, allocation: part.allocation, status: paid ? 'PAGO' : 'PENDENTE', paidAt: paid ? now : '' });
+          });
+          opsData.barFinance.unshift({ id: localId('bar_finance'), orderId: order.id, type: 'RECEITA', description: 'Venda da comanda #' + order.commandNumber + ' · ' + selected.person_name, counterparty: selected.person_name, category: 'Vendas', amount: selected.amount, dueDate: localDateString(), status: 'RECEBIDO', paymentMethod: selected.payment_method, paidAt: now, created: now, notes: 'Pagamento individual' });
+          order.paymentStatus = barOrderOutstandingTotal(order, order.total) <= 0 ? 'PAGO' : 'PARCIAL';
+        }
+        opsState.barCheckoutSplitHydratedOrderId = '';
+        renderBarModule();
+        renderBarCommandModal();
+        toast(selected.person_name + ' pagou ' + money(selected.amount) + '. Saldo restante: ' + money(barOrderOutstandingTotal(barOrderById(order.id))) + '.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        opsState.barCheckoutSplitSavingPosition = 0;
+        const currentOrder = barOrderById(opsState.selectedBarOrderId);
+        if (currentOrder) renderBarCommandModal();
+      }
+    }
+
+    async function saveBarOrderPaymentSplitAction() {
+      const order = barOrderById(opsState.selectedBarOrderId);
+      if (!order || !barOrderCanEdit(order) || !opsState.barCheckoutSplitEnabled) return;
+      const parts = barCheckoutSplitPayments(order);
+      const splitTotal = Math.round(parts.reduce(function (sum, part) { return sum + Number(part.amount || 0); }, 0) * 100) / 100;
+      const orderTotal = Math.round(barCheckoutFinalTotal(order) * 100) / 100;
+      if (parts.some(function (part) { return !part.person_name || !part.payment_method || Number(part.amount || 0) <= 0; })) {
+        toast('Confira nome, valor e forma de pagamento de todas as pessoas.');
+        return;
+      }
+      if (Math.abs(splitTotal - orderTotal) >= 0.01) {
+        toast('A soma das pessoas deve fechar exatamente em ' + money(orderTotal) + '.');
+        return;
+      }
+      const button = $('barCheckoutSplitSaveBtn');
+      try {
+        requireAdminSession();
+        button.disabled = true;
+        button.textContent = 'Salvando...';
+        if (barCanPersist(order.id)) {
+          await supabaseRest('rpc/bar_save_order_payment_split', {
+            method: 'POST',
+            body: { p_order_id: order.id, p_parts: parts, p_discount: parseOptionalMoney($('barCheckoutDiscount').value), p_service_charge: parseOptionalMoney($('barCheckoutService').value), p_split_mode: opsState.barCheckoutSplitMode },
+            prefer: 'return=representation'
+          });
+          await loadBarData(true);
+        }
+        opsState.barCheckoutSplitHydratedOrderId = '';
+        renderBarModule();
+        renderBarCommandModal();
+        toast('Divisão e nomes salvos.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Salvar divisão';
       }
     }
 
@@ -31689,6 +32033,7 @@
       });
       $('barCheckoutSplitCount').addEventListener('change', function () {
         opsState.barCheckoutSplitCount = Number(this.value || 2);
+        while (opsState.barCheckoutSplitNames.length < opsState.barCheckoutSplitCount) opsState.barCheckoutSplitNames.push('Pessoa ' + (opsState.barCheckoutSplitNames.length + 1));
         opsState.barCheckoutSplitValues = [];
         opsState.barCheckoutSplitTotalCents = null;
         opsState.barCheckoutSplitAllocations = [];
@@ -31785,6 +32130,11 @@
         });
       });
       $('barCheckoutSplitRows').addEventListener('input', function (event) {
+        const nameInput = event.target.closest('[data-bar-split-name]');
+        if (nameInput) {
+          opsState.barCheckoutSplitNames[Number(nameInput.dataset.barSplitName)] = nameInput.value;
+          return;
+        }
         const input = event.target.closest('[data-bar-split-amount]');
         if (!input || input.readOnly) return;
         input.removeAttribute('data-bar-split-select-all');
@@ -31816,6 +32166,15 @@
         input.removeAttribute('data-bar-split-select-all');
       });
       $('barCheckoutSplitRows').addEventListener('change', function (event) {
+        const nameInput = event.target.closest('[data-bar-split-name]');
+        if (nameInput) {
+          const index = Number(nameInput.dataset.barSplitName);
+          const value = String(nameInput.value || '').trim() || ('Pessoa ' + (index + 1));
+          opsState.barCheckoutSplitNames[index] = value;
+          nameInput.value = value;
+          renderBarCheckoutSplit(barOrderById(opsState.selectedBarOrderId));
+          return;
+        }
         const amountInput = event.target.closest('[data-bar-split-amount]');
         if (amountInput && !amountInput.readOnly) {
           const order = barOrderById(opsState.selectedBarOrderId);
@@ -31830,6 +32189,12 @@
         if (!select) return;
         opsState.barCheckoutSplitMethods[Number(select.dataset.barSplitMethod)] = select.value;
       });
+      $('barCheckoutSplitRows').addEventListener('click', function (event) {
+        const button = event.target.closest('[data-bar-split-pay]');
+        if (!button) return;
+        receiveBarOrderPaymentPartAction(Number(button.dataset.barSplitPay));
+      });
+      $('barCheckoutSplitSaveBtn').addEventListener('click', saveBarOrderPaymentSplitAction);
       $('barTeamDiscountBtn').addEventListener('click', function () {
         toggleBarPresetDiscountAction(35, 'equipe', 'barTeamDiscountBtn');
       });
