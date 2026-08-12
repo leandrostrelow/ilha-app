@@ -27395,8 +27395,20 @@
       const categories = Array.from(new Set(activeProducts.map(function (product) {
         return product.category || 'Outros';
       }))).sort(function (a, b) {
-        const aPriority = normalizeMatchText(a).includes('cervej') ? 0 : 1;
-        const bPriority = normalizeMatchText(b).includes('cervej') ? 0 : 1;
+        const categoryPriority = function (category) {
+          const value = normalizeMatchText(category || '');
+          if (value.includes('cervej') || value.includes('chopp')) return 0;
+          if (value.includes('refriger')) return 1;
+          if (value.includes('refeic') || value.includes('almoc')) return 2;
+          if (value.includes('porc')) return 3;
+          if (value.includes('bebid')) return 4;
+          if (value.includes('lanche')) return 5;
+          if (value.includes('agua')) return 6;
+          if (value.includes('doce')) return 7;
+          return 8;
+        };
+        const aPriority = categoryPriority(a);
+        const bPriority = categoryPriority(b);
         return aPriority - bPriority || String(a).localeCompare(String(b), 'pt-BR');
       });
       if (!categories.includes(opsState.barOrderProductCategory)) {
