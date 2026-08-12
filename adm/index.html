@@ -21733,13 +21733,16 @@
       try { localStorage.setItem(APP_SYNC_STORAGE_KEY, JSON.stringify(message)); } catch (error) {}
     }
 
-    function refreshOpenAdminPage() {
+    function refreshOpenAdminPage(resource) {
       clearTimeout(appSyncRefreshTimer);
       appSyncRefreshTimer = setTimeout(function () {
         if (document.hidden || document.body.classList.contains('adm-locked') || isAdminDemoMode()) return;
         if (!document.body.classList.contains('club-bar')) return;
-        loadBarData(true).then(function () {
-          renderBarModule();
+        const staticResources = ['bar_products', 'bar_tables', 'bar_public_cards', 'bar_events', 'bar_customers', 'bar_runtime_settings', 'bar_financial_entries'];
+        const requiresFullSnapshot = staticResources.includes(String(resource || '').split('?')[0]);
+        const refresh = opsState.barDataLoaded && !requiresFullSnapshot ? loadBarLiveData() : loadBarData(true);
+        refresh.then(function () {
+          renderBarModule(!requiresFullSnapshot);
           if (opsState.barTab === 'profile' && opsState.selectedBarUserProfileId) {
             loadBarUserProfileTasks(opsState.selectedBarUserProfileId, true).catch(reportActionError);
           }
@@ -21753,14 +21756,14 @@
         appSyncBroadcastChannel = new BroadcastChannel(APP_SYNC_CHANNEL);
         appSyncBroadcastChannel.addEventListener('message', function (event) {
           if (!event.data || event.data.source === appSyncSource || event.data.type !== 'data-change') return;
-          refreshOpenAdminPage();
+          refreshOpenAdminPage(event.data.resource);
         });
       }
       window.addEventListener('storage', function (event) {
         if (event.key !== APP_SYNC_STORAGE_KEY || !event.newValue) return;
         try {
           const message = JSON.parse(event.newValue);
-          if (message.source !== appSyncSource && message.type === 'data-change') refreshOpenAdminPage();
+          if (message.source !== appSyncSource && message.type === 'data-change') refreshOpenAdminPage(message.resource);
         } catch (error) {}
       });
     }
@@ -22884,6 +22887,72 @@
       }
     }
 
+    function mergeBarSnapshotRows(currentRows, nextRows, shouldReplace) {
+      const kept = (currentRows || []).filter(function (row) { return !shouldReplace(row); });
+      const byId = new Map();
+      kept.concat(nextRows || []).forEach(function (row) {
+        const key = String(row && row.id || '');
+        if (key) byId.set(key, row);
+      });
+      return Array.from(byId.values());
+    }
+
+    async function loadBarLiveData() {
+      if (!adminSession || !adminSession.access_token || isAdminDemoMode()) return;
+      if (!opsState.barDataLoaded) return loadBarData(false);
+      if (opsState.barDataLoading) return;
+      opsState.barDataLoading = true;
+      try {
+        const today = barOperationalDateString();
+        const dayStart = encodeURIComponent(today + 'T00:00:00-03:00');
+        const baseResults = await Promise.all([
+          supabaseRest('bar_orders?select=*,bar_tables(number,name)&status=in.(ABERTA,EM_PREPARO,PRONTA)&order=opened_at.desc,id.desc'),
+          supabaseRest('bar_orders?select=*,bar_tables(number,name)&status=eq.FECHADA&closed_at=gte.' + dayStart + '&order=closed_at.desc,id.desc&limit=200'),
+          supabaseRest('bar_service_requests?select=*&status=in.(PENDENTE,EM_ATENDIMENTO)&order=created_at.desc&limit=100')
+        ]);
+        const liveOrders = baseResults[0].concat(baseResults[1]).map(mapBarOrderRow);
+        const liveOrderIds = liveOrders.map(function (order) { return String(order.id); }).filter(Boolean);
+        const orderFilter = liveOrderIds.length ? 'order_id=in.(' + liveOrderIds.join(',') + ')' : 'order_id=eq.00000000-0000-0000-0000-000000000000';
+        const detailResults = await Promise.all([
+          supabaseRestAll('bar_order_items?select=*,bar_products(category)&' + orderFilter + '&order=created_at.desc,id.desc'),
+          supabaseRest('bar_financial_entries?select=*&' + orderFilter + '&order=created_at.desc'),
+          supabaseRest('bar_financial_entries?select=*&paid_at=gte.' + dayStart + '&order=created_at.desc'),
+          supabaseRest('bar_order_payment_parts?select=*&' + orderFilter + '&order=order_id.asc,position.asc').catch(function () { return []; })
+        ]);
+        const previousLiveOrderIds = new Set((opsData.barOrders || []).filter(function (order) {
+          return barOrderIsOpen(order) || (String(order.status || '').toUpperCase() === 'FECHADA' && barOperationalDateKey(order.closedAt || order.openedAt) === today);
+        }).map(function (order) { return String(order.id); }));
+        const currentLiveOrderIds = new Set(liveOrderIds);
+        const replaceOrderIds = new Set(Array.from(previousLiveOrderIds).concat(Array.from(currentLiveOrderIds)));
+        opsData.barOrders = mergeBarSnapshotRows(opsData.barOrders, liveOrders, function (order) {
+          return replaceOrderIds.has(String(order.id));
+        });
+        const liveItems = detailResults[0].map(mapBarOrderItemRow);
+        opsData.barOrderItems = mergeBarSnapshotRows(opsData.barOrderItems, liveItems, function (item) {
+          return replaceOrderIds.has(String(item.orderId));
+        });
+        const liveFinance = detailResults[1].concat(detailResults[2]).map(mapBarFinanceRow);
+        opsData.barFinance = mergeBarSnapshotRows(opsData.barFinance, liveFinance, function (entry) {
+          return replaceOrderIds.has(String(entry.orderId)) || barFinanceEntryDateKey(entry) === today;
+        });
+        const liveParts = (detailResults[3] || []).map(mapBarOrderPaymentPartRow);
+        opsData.barOrderPaymentParts = mergeBarSnapshotRows(opsData.barOrderPaymentParts, liveParts, function (part) {
+          return replaceOrderIds.has(String(part.orderId));
+        });
+        opsData.barServiceRequests = mergeBarSnapshotRows(opsData.barServiceRequests, baseResults[2].map(mapBarServiceRequestRow), function (request) {
+          return ['PENDENTE', 'EM_ATENDIMENTO'].includes(String(request.status || '').toUpperCase());
+        });
+        handleBarIncomingChanges(liveItems);
+        handleBarServiceRequestChanges(opsData.barServiceRequests);
+        opsState.barLoadError = '';
+      } catch (error) {
+        opsState.barLoadError = error && error.message ? error.message : 'Falha temporária de conexão.';
+        console.warn('Não foi possível atualizar os dados ao vivo do Bar agora.', opsState.barLoadError);
+      } finally {
+        opsState.barDataLoading = false;
+      }
+    }
+
     async function loadOpsData(force) {
       if (!adminSession || !adminSession.access_token) return;
       if (isAdminDemoMode()) {
@@ -23750,17 +23819,19 @@
     }
 
     function barDeliveredPortionItems() {
+      const today = barOperationalDateString();
       return opsData.barOrderItems.filter(function (item) {
         const status = String(item.status || '').toUpperCase();
         const order = barOrderById(item.orderId);
         const orderClosed = order && String(order.status || '').toUpperCase() === 'FECHADA';
         return barKitchenIsPortionItem(item) &&
+          barKitchenDayKey(item.updated || item.created) === today &&
           (status === 'ENTREGUE' || (orderClosed && ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(status)));
       }).sort(function (a, b) {
         const updatedDifference = barKitchenQueueTimestamp({ created: b.updated || b.created }) - barKitchenQueueTimestamp({ created: a.updated || a.created });
         if (updatedDifference) return updatedDifference;
         return String(b && b.id || '').localeCompare(String(a && a.id || ''));
-      });
+      }).slice(0, 100);
     }
 
     function updateBarOrderBadges() {
@@ -26126,7 +26197,7 @@
         : '<svg><use href="#bar-icon-check"></use></svg><span>Ativar QR Codes</span>';
     }
 
-    function renderBarTablesAndQr() {
+    function renderBarTablesAndQr(liveOnly) {
       const allTables = opsData.barTables.slice().sort(function (a, b) { return a.number - b.number; });
       const activeTables = allTables.filter(function (table) { return table.active; });
       const visibleOrders = opsData.barOrders.filter(function (order) {
@@ -26149,6 +26220,7 @@
       renderBarQrAvailability();
       $('barLooseCommandBoard').innerHTML = looseOrders.map(barUnifiedOrderCard).join('') || '<div class="lesson-empty-state bar-command-board-empty">' + escapeHtml(looseEmptyLabel) + '</div>';
       $('barTableCommandBoard').innerHTML = tableOrders.map(barUnifiedOrderCard).concat(freeTables.map(barUnifiedFreeTableCard)).join('') || '<div class="lesson-empty-state bar-command-board-empty">' + escapeHtml(tableEmptyLabel) + '</div>';
+      if (liveOnly) return;
       $('barQrGrid').innerHTML = activeTables.map(barQrCard).join('') || '<div class="lesson-empty-state">Cadastre uma mesa ativa para gerar o QR Code.</div>';
       $('barAccessCardGrid').innerHTML = (opsData.barAccessCards || []).map(barAccessCardQrCard).join('') || '<div class="lesson-empty-state">Crie o primeiro cartão individual.</div>';
     }
@@ -26423,7 +26495,7 @@
       $('barCustomersGrid').innerHTML = visible.map(barCustomerCardMarkup).join('') || '<div class="lesson-empty-state">' + escapeHtml((query || filter !== 'todos') ? 'Nenhum cliente corresponde aos filtros.' : 'Os clientes com telefone aparecerão aqui automaticamente.') + '</div>';
     }
 
-    function renderBarModule() {
+    function renderBarModule(liveOnly) {
       setBarTab(opsState.barTab);
       syncBarValuesVisibility();
       $('barSchemaNote').classList.remove('show');
@@ -26463,7 +26535,7 @@
       renderBarServiceRequests();
       renderBarIncomingOrders();
       renderBarKitchenQueue();
-      renderBarCustomers();
+      if (!liveOnly || opsState.barTab === 'customers') renderBarCustomers();
       $('barOverviewOrders').innerHTML = openOrders.map(barOrderCard).join('') || '<div class="lesson-empty-state">Nenhuma comanda aberta.</div>';
       $('barLowStockList').innerHTML = lowStock.map(function (product) {
         return '<div class="bar-stock-alert"><div><strong>' + escapeHtml(product.name) + '</strong><div class="muted">Mínimo: ' + escapeHtml(Number(product.minimumStock || 0).toLocaleString('pt-BR')) + ' ' + escapeHtml(product.unit) + '</div></div><span class="ops-pill bad">' + escapeHtml(Number(product.stock || 0).toLocaleString('pt-BR')) + ' ' + escapeHtml(product.unit) + '</span></div>';
@@ -26490,6 +26562,10 @@
         }, 0);
         return '<div class="bar-day-payment-summary-item">' + barPaymentMethodBadge(method) + '<strong>' + money(methodTotal) + '</strong></div>';
       }).join('') + '<div class="bar-day-payment-summary-item is-total"><span>Total geral</span><strong>' + money(dayPaymentTotal) + '</strong></div>';
+      if (liveOnly) {
+        renderBarTablesAndQr(true);
+        return;
+      }
       renderBarEvents();
       renderBarTablesAndQr();
       renderBarProducts();
@@ -27716,12 +27792,12 @@
       }).catch(reportActionError);
       if (!barRefreshTimer) {
         barRefreshTimer = setInterval(function () {
-          if (!document.body.classList.contains('club-bar') || isAdminDemoMode()) return;
-          loadBarData(true).then(function () {
-            renderBarModule();
+          if (!document.body.classList.contains('club-bar') || document.hidden || isAdminDemoMode()) return;
+          loadBarLiveData().then(function () {
+            renderBarModule(true);
             if (opsState.selectedBarOrderId && !barCommandModalHasActiveEditor()) renderBarCommandModal();
           }).catch(reportActionError);
-        }, 2500);
+        }, 5000);
       }
     }
 
