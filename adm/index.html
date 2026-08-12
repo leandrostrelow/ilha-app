@@ -6594,10 +6594,10 @@
 
     .bar-split-allocation-row {
       display: grid;
-      grid-template-columns: minmax(300px, 1fr) minmax(330px, .9fr);
+      grid-template-columns: minmax(0, 1fr);
       align-items: center;
       gap: 7px;
-      padding: 5px 6px;
+      padding: 7px;
       border: 1px solid #dce7e9;
       border-radius: 7px;
       background: #ffffff;
@@ -6663,16 +6663,15 @@
     .bar-split-allocation-people {
       min-width: 0;
       display: grid;
-      grid-template-columns: repeat(var(--split-count), minmax(150px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 5px;
-      overflow-x: auto;
-      padding-bottom: 1px;
+      overflow: visible;
     }
 
     .bar-split-allocation-cell {
       min-width: 0;
       display: grid;
-      grid-template-columns: 58px minmax(82px, 1fr);
+      grid-template-columns: minmax(70px, .8fr) minmax(90px, 1fr);
       align-items: center;
       gap: 6px;
       min-height: 42px;
@@ -6765,7 +6764,7 @@
 
     .bar-checkout-split-rows {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 5px;
       margin-top: 6px;
     }
@@ -6773,9 +6772,9 @@
     .bar-checkout-split-row {
       min-height: 50px;
       display: grid;
-      grid-template-columns: minmax(130px, .7fr) minmax(125px, .72fr) minmax(150px, 1fr) auto;
-      align-items: center;
-      gap: 6px;
+      grid-template-columns: minmax(150px, .9fr) minmax(135px, .75fr) minmax(180px, 1.15fr) 68px;
+      align-items: end;
+      gap: 8px;
       padding: 6px 8px;
       border: 1px solid #dbe6e8;
       border-radius: 9px;
@@ -6785,6 +6784,16 @@
     .bar-checkout-split-person strong,
     .bar-checkout-split-person small {
       display: block;
+    }
+
+    .bar-checkout-split-person label {
+      min-width: 0;
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
     }
 
     .bar-checkout-split-person strong {
@@ -6817,9 +6826,10 @@
     }
 
     .bar-checkout-split-pay {
+      width: 100%;
       min-height: 38px;
       align-self: end;
-      padding: 7px 12px;
+      padding: 7px 8px;
       border: 1px solid var(--teal);
       border-radius: 9px;
       color: #ffffff;
@@ -6964,14 +6974,19 @@
       }
 
       .bar-checkout-split-row {
+        grid-template-columns: minmax(130px, .9fr) minmax(120px, .75fr) minmax(160px, 1.15fr) 66px;
+      }
+
+      .bar-checkout-split-pay { align-self: end; }
+    }
+
+    @media (max-width: 700px) {
+      .bar-checkout-split-row {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      .bar-checkout-split-person {
-        grid-column: 1 / -1;
-      }
-
-      .bar-checkout-split-pay { align-self: stretch; }
+      .bar-checkout-split-method-field { grid-column: 1; }
+      .bar-checkout-split-pay { grid-column: 2; }
     }
 
     @media (max-width: 520px) {
@@ -7009,6 +7024,8 @@
       .bar-checkout-split-pay {
         grid-column: 1;
       }
+
+      .bar-checkout-split-pay { width: 100%; }
     }
 
     .bar-checkout-split-balance {
@@ -13593,6 +13610,16 @@
 
       body.bar-admin-surface .bar-checkout-split-row {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      body.bar-admin-surface .bar-checkout-split-method-field {
+        grid-column: 1;
+      }
+
+      body.bar-admin-surface .bar-checkout-split-pay {
+        grid-column: 2;
+        width: 100%;
       }
 
       body.bar-admin-surface .bar-command-payment-actions {
@@ -13609,6 +13636,17 @@
     }
 
     @media (max-width: 380px) {
+      body.bar-admin-surface .bar-checkout-split-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      body.bar-admin-surface .bar-checkout-split-person,
+      body.bar-admin-surface .bar-checkout-split-amount-field,
+      body.bar-admin-surface .bar-checkout-split-method-field,
+      body.bar-admin-surface .bar-checkout-split-pay {
+        grid-column: 1;
+      }
+
       body.bar-admin-surface .bar-table-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
