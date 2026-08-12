@@ -9931,6 +9931,14 @@
     .bar-command-unified-card.is-delivery-complete { border-left-color: #38a35b; }
     .bar-command-unified-card.is-awaiting-staff { border-left-color: #e14854; }
 
+    .bar-command-unified-card.has-money-value {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      align-content: center;
+      align-items: start;
+      gap: 7px;
+    }
+
     .bar-command-unified-main {
       min-width: 0;
       display: grid;
@@ -9961,6 +9969,37 @@
     .bar-command-unified-card.is-free .bar-command-unified-icon { color: #58751f; background: transparent; }
 
     .bar-command-unified-copy { min-width: 0; display: grid; gap: 3px; }
+
+    .bar-command-unified-heading {
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .bar-command-unified-heading strong {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-command-unified-footer {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 7px;
+      padding-left: 31px;
+    }
+
+    .bar-command-unified-alerts {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
 
     .bar-command-delivery-alert {
       width: max-content;
@@ -10029,8 +10068,9 @@
     .bar-command-unified-card.is-free .bar-command-unified-main small { color: #627246; }
 
     .bar-command-unified-side {
-      display: grid;
-      justify-items: end;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
       gap: 5px;
     }
 
@@ -12775,10 +12815,11 @@
 
       body.bar-admin-surface .bar-command-unified-card {
         min-height: 70px;
-        gap: 6px;
+        gap: 5px;
         padding: 9px 8px;
       }
 
+      body.bar-admin-surface .bar-command-unified-footer { padding-left: 31px; gap: 4px; }
       body.bar-admin-surface .bar-command-unified-main strong { font-size: 12px; }
       body.bar-admin-surface .bar-command-unified-main small { font-size: 8px; }
       body.bar-admin-surface .bar-command-unified-main .bar-command-table-number { font-size: 15px; }
@@ -24194,8 +24235,8 @@
         ? '<span class="bar-command-delivery-alert"><svg aria-hidden="true"><use href="#admin-icon-bell"></use></svg>' + escapeHtml(deliveryQuantity) + 'x para entregar</span>'
         : '';
       return '<article class="bar-command-unified-card has-money-value' + (table ? ' is-table' : ' is-loose') + (paidOpen ? ' is-paid-open' : '') + deliveryStateClass + (awaitingStaff ? ' is-awaiting-staff' : '') + '" data-bar-order-open="' + escapeHtml(order.id) + '">' +
-        '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="' + icon + '"></use></svg></span><span class="bar-command-unified-copy"><strong>' + escapeHtml(customerName) + '</strong>' + newTableAlert + deliveryAlert + location + '</span></button>' +
-        '<div class="bar-command-unified-side"><b class="bar-command-unified-value">' + money(barOrderDisplayBalance(order)) + '</b>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + '</div>' +
+        '<button class="bar-command-unified-main" type="button" data-bar-order-open="' + escapeHtml(order.id) + '" aria-label="Abrir comanda de ' + escapeHtml(customerName) + '"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="' + icon + '"></use></svg></span><span class="bar-command-unified-copy"><span class="bar-command-unified-heading"><strong>' + escapeHtml(customerName) + '</strong>' + location + '</span></span></button>' +
+        '<div class="bar-command-unified-footer"><div class="bar-command-unified-alerts">' + newTableAlert + deliveryAlert + '</div><div class="bar-command-unified-side"><b class="bar-command-unified-value">' + money(barOrderDisplayBalance(order)) + '</b>' + (paidOpen ? '<span class="bar-paid-open-pill">Pago</span>' : '') + '</div></div>' +
       '</article>';
     }
 
