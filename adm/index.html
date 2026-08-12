@@ -1692,6 +1692,43 @@
       border-top: 1px solid var(--line);
     }
 
+    .bar-access-password-wrap {
+      position: relative;
+    }
+
+    .bar-access-password-wrap input {
+      width: 100%;
+      padding-right: 48px;
+    }
+
+    .bar-access-password-toggle {
+      position: absolute;
+      right: 6px;
+      bottom: 6px;
+      width: 36px;
+      min-height: 34px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      background: #eef5f6;
+      color: var(--teal);
+    }
+
+    .bar-access-password-toggle svg {
+      width: 19px;
+      height: 19px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
+    .bar-access-whatsapp-btn {
+      background: #22a652;
+      color: #ffffff;
+    }
+
     .weekday-grid {
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -12954,6 +12991,32 @@
         min-height: 44px;
       }
 
+      body.bar-admin-surface .bar-access-modal .modal-actions {
+        display: grid;
+        grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+      }
+
+      body.bar-admin-surface .bar-access-modal .modal-actions > button {
+        width: 100%;
+        min-width: 0;
+        padding-inline: 8px;
+      }
+
+      body.bar-admin-surface .bar-access-modal #barAccessCancelBtn {
+        grid-column: 1;
+        order: 1;
+      }
+
+      body.bar-admin-surface .bar-access-modal #barAccessSaveBtn {
+        grid-column: 2;
+        order: 2;
+      }
+
+      body.bar-admin-surface .bar-access-modal #barAccessWhatsAppBtn {
+        grid-column: 1 / -1;
+        order: 3;
+      }
+
       body.bar-admin-surface .bar-new-order-modal {
         max-width: 520px;
       }
@@ -16882,7 +16945,8 @@
             <div class="form-grid">
               <div class="field"><label for="barAccessName">Nome</label><input id="barAccessName" maxlength="80" placeholder="Nome da pessoa" required /></div>
               <div class="field"><label for="barAccessEmail">E-mail de acesso</label><input id="barAccessEmail" type="email" inputmode="email" autocomplete="off" placeholder="equipe@ilhatenis.com" required /></div>
-              <div class="field"><label for="barAccessPassword">Senha provisória</label><input id="barAccessPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo 8 caracteres" /></div>
+              <div class="field"><label for="barAccessPhone">Telefone / WhatsApp</label><input id="barAccessPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="(27) 99999-9999" required /></div>
+              <div class="field bar-access-password-wrap"><label for="barAccessPassword">Senha provisória</label><input id="barAccessPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo 8 caracteres" /><button class="bar-access-password-toggle" type="button" id="barAccessPasswordToggle" aria-label="Mostrar senha" title="Mostrar senha"><svg><use id="barAccessPasswordToggleIcon" href="#bar-icon-eye"></use></svg></button></div>
               <div class="field"><label for="barAccessStatus">Status</label><select id="barAccessStatus"><option value="true">Ativo</option><option value="false">Bloqueado</option></select></div>
               <div class="field full"><label for="barAccessNotes">Observação interna</label><input id="barAccessNotes" maxlength="180" placeholder="Ex.: caixa, garçom, cozinha ou turno da noite" /></div>
             </div>
@@ -16891,6 +16955,7 @@
           </div>
           <div class="modal-actions">
             <button class="ghost-btn" type="button" id="barAccessCancelBtn">Cancelar</button>
+            <button class="ghost-btn bar-access-whatsapp-btn" type="submit" id="barAccessWhatsAppBtn">Criar e enviar no WhatsApp</button>
             <button class="primary-btn" type="submit" id="barAccessSaveBtn">Criar usuário</button>
           </div>
         </form>
@@ -23847,6 +23912,7 @@
         id: row.id || '',
         name: row.full_name || row.name || row.email || 'Equipe do Bar',
         email: row.email || '',
+        phone: row.phone || '',
         role: row.role || 'bar',
         active: row.active !== false,
         permissions: Array.isArray(row.permissions) ? row.permissions : [],
@@ -23888,7 +23954,7 @@
         if (isAdminDemoMode()) {
           opsData.barAccessUsers = opsData.team.map(mapBarAccessUser);
         } else {
-          const profiles = await supabaseRest('profiles?select=id,full_name,email,role,active,permissions,notes,created_at&order=created_at.asc');
+          const profiles = await supabaseRest('profiles?select=id,full_name,email,phone,role,active,permissions,notes,created_at&order=created_at.asc');
           opsData.barAccessUsers = (profiles || []).filter(function (profile) {
             const permissions = Array.isArray(profile.permissions) ? profile.permissions : [];
             return profile.role === 'admin' || profile.role === 'bar' || permissions.includes('bar') || permissions.some(function (permission) { return String(permission).indexOf('bar.') === 0; });
@@ -23917,7 +23983,7 @@
           return item && item.label;
         }).filter(Boolean);
         const accessLabel = user.role === 'admin' ? 'Acesso total' : (hasGranularBarPermissions(user) ? labels.length + (labels.length === 1 ? ' área liberada' : ' áreas liberadas') : 'Acesso operacional');
-        return '<article class="bar-access-user"><div class="bar-access-user-main"><strong>' + escapeHtml(user.name) + '</strong><small>' + escapeHtml(user.email || 'E-mail não informado') + '</small><small>' + escapeHtml(user.notes || accessLabel) + '</small></div>' +
+        return '<article class="bar-access-user"><div class="bar-access-user-main"><strong>' + escapeHtml(user.name) + '</strong><small>' + escapeHtml(user.email || 'E-mail não informado') + '</small>' + (user.phone ? '<small>' + escapeHtml(barPhoneInputLabel(user.phone)) + '</small>' : '') + '<small>' + escapeHtml(user.notes || accessLabel) + '</small></div>' +
           '<div class="bar-access-permissions">' + (labels.map(function (label) { return '<span class="bar-access-permission">' + escapeHtml(label) + '</span>'; }).join('') || '<span class="bar-access-permission">Sem áreas liberadas</span>') + '</div>' +
           '<div class="bar-row-actions">' + barStatusPill(user.active ? 'ATIVO' : 'BLOQUEADO') + (user.role === 'admin' ? '' : '<button class="small-btn" type="button" data-bar-access-edit="' + escapeHtml(user.id) + '">Editar</button>') + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum acesso do Bar cadastrado.</div>';
@@ -23938,14 +24004,18 @@
       $('barAccessName').value = editing ? user.name : '';
       $('barAccessEmail').value = editing ? user.email : '';
       $('barAccessEmail').disabled = editing;
+      $('barAccessPhone').value = editing ? barPhoneInputLabel(user.phone) : '';
       $('barAccessPassword').required = !editing;
       $('barAccessPassword').disabled = editing;
       $('barAccessPassword').placeholder = editing ? 'A senha permanece a mesma' : 'Mínimo 8 caracteres';
+      $('barAccessPasswordToggle').hidden = editing;
       $('barAccessStatus').value = String(editing ? user.active : true);
       $('barAccessNotes').value = editing ? user.notes : '';
       $('barAccessModalTitle').textContent = editing ? 'Editar acesso do Bar' : 'Novo usuário do Bar';
       $('barAccessModalSubtitle').textContent = editing ? 'Atualize as áreas que esta pessoa pode visualizar.' : 'Crie o login e escolha o que a pessoa poderá visualizar.';
       $('barAccessSaveBtn').textContent = editing ? 'Salvar alterações' : 'Criar usuário';
+      $('barAccessWhatsAppBtn').hidden = editing;
+      setBarAccessPasswordVisible(false);
       renderBarAccessPermissionOptions(editing ? effectiveBarAccessPermissions(user) : barAccessDefaultPermissions);
       $('barAccessModal').classList.add('show');
       $('barAccessModal').setAttribute('aria-hidden', 'false');
@@ -23962,15 +24032,45 @@
       return Array.from(document.querySelectorAll('[data-bar-access-permission]:checked')).map(function (input) { return input.value; });
     }
 
+    function setBarAccessPasswordVisible(visible) {
+      const input = $('barAccessPassword');
+      if (!input) return;
+      input.type = visible ? 'text' : 'password';
+      const icon = $('barAccessPasswordToggleIcon');
+      if (icon) icon.setAttribute('href', visible ? '#bar-icon-eye-off' : '#bar-icon-eye');
+      const button = $('barAccessPasswordToggle');
+      if (button) {
+        button.setAttribute('aria-label', visible ? 'Ocultar senha' : 'Mostrar senha');
+        button.title = visible ? 'Ocultar senha' : 'Mostrar senha';
+      }
+    }
+
+    function barAccessInvitationUrl(phone, name, email, password) {
+      const whatsapp = barPhoneWhatsApp(phone);
+      if (!whatsapp) return '';
+      const message = [
+        'Olá, ' + name + '! Seu acesso ao sistema do Ilha Bar foi criado.',
+        '',
+        'Acesse: https://app.ilhatenis.com/admbar',
+        'E-mail: ' + email,
+        'Senha provisória: ' + password,
+        '',
+        'Por segurança, não compartilhe estes dados.'
+      ].join('\n');
+      return 'https://wa.me/' + whatsapp + '?text=' + encodeURIComponent(message);
+    }
+
     async function saveBarAccessUserAction(event) {
       event.preventDefault();
       const editingId = $('barAccessUserId').value;
       const name = $('barAccessName').value.trim();
       const email = $('barAccessEmail').value.trim().toLowerCase();
+      const phone = barPhoneDigits($('barAccessPhone').value);
       const password = $('barAccessPassword').value;
       const permissions = selectedBarAccessPermissions();
-      if (!name || !email || !editingId && password.length < 8) {
-        toast('Informe nome, e-mail e uma senha provisória com 8 caracteres.');
+      const sendWhatsApp = event.submitter && event.submitter.id === 'barAccessWhatsAppBtn';
+      if (!name || !email || phone.length < 10 || !editingId && password.length < 8) {
+        toast('Informe nome, e-mail, WhatsApp e uma senha provisória com 8 caracteres.');
         return;
       }
       if (!permissions.length) {
@@ -23978,12 +24078,14 @@
         return;
       }
       $('barAccessSaveBtn').disabled = true;
+      $('barAccessWhatsAppBtn').disabled = true;
       try {
         const payload = {
           action: editingId ? 'update' : 'create',
           user_id: editingId || undefined,
           full_name: name,
           email: email,
+          phone: phone,
           password: password || undefined,
           active: $('barAccessStatus').value === 'true',
           notes: $('barAccessNotes').value.trim(),
@@ -23999,6 +24101,7 @@
           if (editingId) {
             savedProfile = await patchTeamProfile(editingId, {
               full_name: name,
+              phone: phone,
               active: payload.active,
               permissions: permissions,
               notes: payload.notes
@@ -24007,13 +24110,14 @@
             const result = await supabaseAuthRequest('signup', {
               email: email,
               password: password,
-              data: { full_name: name, app_context: 'bar' }
+              data: { full_name: name, phone: phone, app_context: 'bar' }
             }, false);
             const userId = result.user && result.user.id || result.id || (result.session && result.session.user && result.session.user.id);
             if (!userId) throw new Error('Não foi possível identificar o novo usuário.');
             savedProfile = await patchTeamProfile(userId, {
               full_name: name,
               email: email,
+              phone: phone,
               role: 'bar',
               active: payload.active,
               permissions: permissions,
@@ -24025,13 +24129,16 @@
           if (index >= 0) opsData.barAccessUsers.splice(index, 1, saved);
           else opsData.barAccessUsers.unshift(saved);
         }
+        const invitationUrl = !editingId && sendWhatsApp ? barAccessInvitationUrl(phone, name, email, password) : '';
         closeBarAccessModal();
         renderBarAccessUsers();
         toast(editingId ? 'Acesso atualizado.' : 'Usuário do Bar criado.');
+        if (invitationUrl) window.location.href = invitationUrl;
       } catch (error) {
         reportActionError(error);
       } finally {
         $('barAccessSaveBtn').disabled = false;
+        $('barAccessWhatsAppBtn').disabled = false;
       }
     }
 
@@ -30381,6 +30488,12 @@
       $('barAccessModalClose').addEventListener('click', closeBarAccessModal);
       $('barAccessCancelBtn').addEventListener('click', closeBarAccessModal);
       $('barAccessForm').addEventListener('submit', saveBarAccessUserAction);
+      $('barAccessPhone').addEventListener('input', function () {
+        this.value = barPhoneInputLabel(this.value);
+      });
+      $('barAccessPasswordToggle').addEventListener('click', function () {
+        setBarAccessPasswordVisible($('barAccessPassword').type === 'password');
+      });
       $('barAccessModal').addEventListener('click', function (event) {
         if (event.target.id === 'barAccessModal') closeBarAccessModal();
       });
