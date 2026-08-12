@@ -1610,7 +1610,7 @@
 
     .bar-user-profile-grid {
       display: grid;
-      grid-template-columns: minmax(280px, .8fr) minmax(0, 1.2fr);
+      grid-template-columns: 1fr;
       gap: 14px;
       align-items: start;
     }
@@ -21812,6 +21812,8 @@
       pendingBarUserProfileImage: null,
       pendingBarUserProfileImagePreview: '',
       removeBarUserProfileImage: false,
+      barUserProfileDirty: false,
+      barUserProfileRenderedFor: '',
       planTab: 'list',
       selectedClientId: null,
       editingPlanId: null,
@@ -24484,12 +24486,16 @@
       if (!user) return;
       const ownProfile = adminProfile && String(user.id) === String(adminProfile.id);
       const canManage = barUserCanManageProfile(user);
-      $('barUserProfileId').value = user.id;
-      $('barUserProfileName').value = user.name || '';
-      $('barUserProfileEmail').value = user.email || '';
-      $('barUserProfilePhone').value = barPhoneInputLabel(user.phone);
-      $('barUserProfileJobTitle').value = user.jobTitle || '';
-      $('barUserProfileBio').value = user.bio || '';
+      const preserveForm = opsState.barUserProfileDirty && String(opsState.barUserProfileRenderedFor) === String(user.id);
+      if (!preserveForm) {
+        $('barUserProfileId').value = user.id;
+        $('barUserProfileName').value = user.name || '';
+        $('barUserProfileEmail').value = user.email || '';
+        $('barUserProfilePhone').value = barPhoneInputLabel(user.phone);
+        $('barUserProfileJobTitle').value = user.jobTitle || '';
+        $('barUserProfileBio').value = user.bio || '';
+        opsState.barUserProfileRenderedFor = String(user.id);
+      }
       $('barUserProfileIdentityName').textContent = user.name || 'Usuário do Bar';
       $('barUserProfileIdentityRole').textContent = user.jobTitle || roleLabel(user.role);
       $('barUserProfilePageTitle').textContent = ownProfile ? 'Meu perfil' : 'Perfil de ' + (user.name || 'usuário');
@@ -24510,6 +24516,8 @@
       opsState.pendingBarUserProfileImage = null;
       opsState.pendingBarUserProfileImagePreview = '';
       opsState.removeBarUserProfileImage = false;
+      opsState.barUserProfileDirty = false;
+      opsState.barUserProfileRenderedFor = '';
       setBarTab('profile');
       renderBarUserProfile();
     }
@@ -24553,7 +24561,7 @@
         };
         let saved;
         if (isAdminDemoMode()) saved = Object.assign({}, user, payload, { id: user.id, name: name, avatarUrl: avatarUrl, jobTitle: payload.job_title || '' });
-        else if (adminProfile && String(user.id) === String(adminProfile.id) && adminProfile.role !== 'admin') {
+        else if (adminProfile && String(user.id) === String(adminProfile.id)) {
           saved = await supabaseRest('rpc/bar_update_own_profile', { method: 'POST', body: { p_full_name: name, p_phone: phone || null, p_job_title: payload.job_title, p_bio: payload.bio, p_avatar_url: payload.avatar_url }, prefer: 'return=representation' });
           saved = Array.isArray(saved) ? saved[0] : saved;
         } else saved = await patchTeamProfile(user.id, payload);
@@ -24564,6 +24572,7 @@
         opsState.pendingBarUserProfileImage = null;
         opsState.pendingBarUserProfileImagePreview = '';
         opsState.removeBarUserProfileImage = false;
+        opsState.barUserProfileDirty = false;
         renderBarAccessUsers();
         renderBarUserProfile();
         broadcastAppChange('bar-user-profile');
@@ -31005,12 +31014,16 @@
       });
       $('barUserProfileBackBtn').addEventListener('click', function () { setBarTab('access'); });
       $('barUserProfileForm').addEventListener('submit', saveBarUserProfileAction);
+      $('barUserProfileForm').addEventListener('input', function (event) {
+        if (event.target.id !== 'barUserProfileEmail') opsState.barUserProfileDirty = true;
+      });
       $('barUserProfilePhone').addEventListener('input', function () { this.value = barPhoneInputLabel(this.value); });
       $('barUserProfilePhotoBtn').addEventListener('click', function () { $('barUserProfilePhotoFile').click(); });
       $('barUserProfilePhotoRemoveBtn').addEventListener('click', function () {
         opsState.pendingBarUserProfileImage = null;
         opsState.pendingBarUserProfileImagePreview = '';
         opsState.removeBarUserProfileImage = true;
+        opsState.barUserProfileDirty = true;
         updateBarUserProfileAvatar(currentBarUserProfile(), '');
       });
       $('barUserProfilePhotoFile').addEventListener('change', async function () {
@@ -31020,6 +31033,7 @@
           opsState.pendingBarUserProfileImage = prepared.blob;
           opsState.pendingBarUserProfileImagePreview = prepared.previewUrl;
           opsState.removeBarUserProfileImage = false;
+          opsState.barUserProfileDirty = true;
           updateBarUserProfileAvatar(currentBarUserProfile(), prepared.previewUrl);
         } catch (error) {
           reportActionError(error);
