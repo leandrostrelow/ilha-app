@@ -6549,7 +6549,7 @@
 
     .bar-checkout-split-mode {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 5px;
       margin-bottom: 7px;
       padding: 4px;
@@ -6854,6 +6854,23 @@
     }
 
     .bar-checkout-paid-summary strong { color: #176337; }
+
+    .bar-checkout-partial-history {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 6px;
+    }
+
+    .bar-checkout-partial-history span {
+      padding: 6px 9px;
+      border: 1px solid #b8dfc6;
+      border-radius: 999px;
+      color: #176337;
+      background: #effaf3;
+      font-size: 10px;
+      font-weight: 900;
+    }
 
     .bar-checkout-split-save {
       width: 100%;
@@ -17547,8 +17564,9 @@
                 <div class="bar-checkout-split-mode" role="group" aria-label="Tipo de divisão">
                   <button type="button" data-bar-split-mode="equal"><span>Dividir igualmente</span></button>
                   <button type="button" data-bar-split-mode="separate"><span>Separar por itens</span></button>
+                  <button type="button" data-bar-split-mode="partial"><span>Pagar uma parte</span></button>
                 </div>
-                <div class="bar-checkout-split-controls">
+                <div class="bar-checkout-split-controls" id="barCheckoutSplitControls">
                   <label class="bar-checkout-split-count" for="barCheckoutSplitCount"><span>Quantidade de pessoas</span><select id="barCheckoutSplitCount">
                     <option value="2">2 pessoas</option>
                     <option value="3">3 pessoas</option>
@@ -17565,6 +17583,7 @@
                   <div class="bar-checkout-split-help" id="barCheckoutSplitHelp"></div>
                 </div>
                 <div class="bar-checkout-split-allocation" id="barCheckoutSplitAllocation"></div>
+                <div class="bar-checkout-partial-history" id="barCheckoutPartialHistory" hidden></div>
                 <div class="bar-checkout-split-rows" id="barCheckoutSplitRows"></div>
                 <div class="bar-checkout-paid-summary" id="barCheckoutPaidSummary" hidden></div>
                 <div class="bar-checkout-split-balance" id="barCheckoutSplitBalance" role="status"></div>
@@ -21958,6 +21977,10 @@
       barCheckoutSplitDraggedGroup: -1,
       barCheckoutSplitSavingPosition: 0,
       barCheckoutSplitHydratedOrderId: '',
+      barCheckoutPartialName: '',
+      barCheckoutPartialAmount: '',
+      barCheckoutPartialMethod: 'PIX',
+      barCheckoutPartialSaving: false,
       selectedBarQrUrl: '',
       selectedBarQrLabel: '',
       selectedBarQrKind: '',
@@ -24249,11 +24272,15 @@
     }
 
     function barOrderReceivedTotal(order) {
-      const parts = barPaidPartsForOrder(order);
-      if (parts.length) return parts.reduce(function (sum, part) { return sum + Number(part.amount || 0); }, 0);
       return barReceivedPaymentsForOrder(order).reduce(function (sum, payment) {
         return sum + Number(payment.amount || 0);
       }, 0);
+    }
+
+    function barPartialPaymentsForOrder(order) {
+      return barReceivedPaymentsForOrder(order).filter(function (payment) {
+        return String(payment.notes || '').includes('Pagamento parcial avulso');
+      });
     }
 
     function barOrderOutstandingTotal(order, total) {
@@ -26932,7 +26959,12 @@
 
     function hydrateBarCheckoutSplit(order) {
       const parts = barPaymentPartsForOrder(order);
-      if (!parts.length) return false;
+      if (!parts.length) {
+        if (!barPartialPaymentsForOrder(order).length) return false;
+        opsState.barCheckoutSplitEnabled = true;
+        opsState.barCheckoutSplitMode = 'partial';
+        return true;
+      }
       opsState.barCheckoutSplitEnabled = true;
       opsState.barCheckoutSplitMode = parts[0].splitMode === 'separate' ? 'separate' : 'equal';
       opsState.barCheckoutSplitCount = parts.length;
@@ -26954,7 +26986,7 @@
       const section = $('barCheckoutSplitSection');
       const open = Boolean(order && barOrderCanEdit(order));
       const enabled = open && Boolean(opsState.barCheckoutSplitEnabled);
-      const mode = opsState.barCheckoutSplitMode === 'separate' ? 'separate' : 'equal';
+      const mode = ['equal', 'separate', 'partial'].includes(opsState.barCheckoutSplitMode) ? opsState.barCheckoutSplitMode : 'equal';
       const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
       const defaultMethod = $('barCheckoutMethod').value || 'PIX';
       opsState.barCheckoutSplitCount = count;
@@ -26971,11 +27003,13 @@
       $('barCheckoutSplitBody').hidden = !enabled;
       $('barCheckoutSingleMethodField').hidden = enabled;
       $('barCheckoutSplitCount').value = String(count);
+      $('barCheckoutSplitControls').hidden = mode === 'partial';
+      $('barCheckoutSplitControls').style.display = mode === 'partial' ? 'none' : '';
       document.querySelectorAll('[data-bar-split-mode]').forEach(function (button) {
         const active = button.dataset.barSplitMode === mode;
         button.classList.toggle('active', active);
         button.setAttribute('aria-pressed', active ? 'true' : 'false');
-        button.disabled = receivedTotal > 0;
+        button.disabled = receivedTotal > 0 && (barPaidPartsForOrder(order).length > 0 || button.dataset.barSplitMode !== 'partial');
       });
       const splitHelp = $('barCheckoutSplitHelp');
       if (splitHelp) {
@@ -26988,6 +27022,31 @@
         ['CARTAO_DEBITO', 'Cartão de débito'],
         ['CONTA_CLIENTE', 'Conta do cliente']
       ];
+      const partialPayments = barPartialPaymentsForOrder(order);
+      const partialHistory = $('barCheckoutPartialHistory');
+      partialHistory.hidden = mode !== 'partial' || !partialPayments.length;
+      partialHistory.innerHTML = mode === 'partial' ? partialPayments.map(function (payment) {
+        return '<span>✓ ' + escapeHtml(payment.counterparty || 'Pagamento') + ' · ' + money(payment.amount) + '</span>';
+      }).join('') : '';
+      if (enabled && mode === 'partial') {
+        const outstanding = barOrderOutstandingTotal(order);
+        const selectedMethod = opsState.barCheckoutPartialMethod || defaultMethod;
+        const options = paymentOptions.map(function (option) {
+          return '<option value="' + option[0] + '"' + (option[0] === selectedMethod ? ' selected' : '') + '>' + option[1] + '</option>';
+        }).join('');
+        $('barCheckoutSplitAllocation').innerHTML = '';
+        $('barCheckoutSplitRows').innerHTML = '<div class="bar-checkout-split-row"><div class="bar-checkout-split-person"><label><small>Nome</small><input class="bar-checkout-split-name" data-bar-partial-name maxlength="80" value="' + escapeHtml(opsState.barCheckoutPartialName) + '" placeholder="Quem está pagando" /></label></div><label class="bar-checkout-split-amount-field"><span>Valor que vai pagar</span><span class="bar-checkout-split-money"><span aria-hidden="true">R$</span><input class="bar-checkout-split-amount-input" data-bar-partial-amount type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" value="' + escapeHtml(opsState.barCheckoutPartialAmount) + '" placeholder="0,00" aria-label="Valor do pagamento parcial" /></span></label><label class="bar-checkout-split-method-field"><span>Forma de pagamento</span><select data-bar-partial-method aria-label="Forma do pagamento parcial">' + options + '</select></label><button class="bar-checkout-split-pay" type="button" data-bar-partial-pay aria-label="Receber pagamento parcial"' + (opsState.barCheckoutPartialSaving ? ' disabled' : '') + '>' + (opsState.barCheckoutPartialSaving ? '...' : 'Pago') + '</button></div>';
+        const paidSummary = $('barCheckoutPaidSummary');
+        paidSummary.hidden = receivedTotal <= 0;
+        paidSummary.innerHTML = receivedTotal > 0 ? '<span>Já recebido: <strong>' + money(receivedTotal) + '</strong></span><span>Saldo da comanda: <strong>' + money(outstanding) + '</strong></span>' : '';
+        $('barCheckoutSplitBalance').className = 'bar-checkout-split-balance is-valid';
+        $('barCheckoutSplitBalance').textContent = 'Informe quanto a pessoa vai pagar. O saldo atual é ' + money(outstanding) + '.';
+        $('barCheckoutSplitSaveBtn').hidden = true;
+        const payLabel = $('barOrderPayBtn').querySelector('span');
+        if (payLabel && !barOrderIsPaid(order)) payLabel.textContent = 'Receba a parte acima';
+        if (!barOrderIsPaid(order)) $('barOrderPayBtn').disabled = true;
+        return;
+      }
       const allocationReset = enabled && mode === 'separate' ? ensureBarCheckoutSplitAllocations(order) : false;
       const finalTotalCents = Math.max(0, Math.round(barCheckoutFinalTotal(order) * 100));
       if (enabled && mode === 'separate' && (allocationReset || Number(opsState.barCheckoutSplitAllocationTotalCents) !== finalTotalCents)) {
@@ -27439,6 +27498,10 @@
       opsState.barCheckoutSplitDraggedGroup = -1;
       opsState.barCheckoutSplitSavingPosition = 0;
       opsState.barCheckoutSplitHydratedOrderId = '';
+      opsState.barCheckoutPartialName = '';
+      opsState.barCheckoutPartialAmount = '';
+      opsState.barCheckoutPartialMethod = $('barCheckoutMethod').value || 'PIX';
+      opsState.barCheckoutPartialSaving = false;
       $('barOrderProduct').value = '';
       opsState.barOrderCart = [];
       opsState.barOrderProductCategory = '';
@@ -29044,6 +29107,67 @@
         reportActionError(error);
       } finally {
         opsState.barCheckoutSplitSavingPosition = 0;
+        const currentOrder = barOrderById(opsState.selectedBarOrderId);
+        if (currentOrder) renderBarCommandModal();
+      }
+    }
+
+    async function receiveBarOrderPartialPaymentAction() {
+      const order = barOrderById(opsState.selectedBarOrderId);
+      if (!order || !barOrderCanEdit(order) || opsState.barCheckoutSplitMode !== 'partial') return;
+      const personName = String(opsState.barCheckoutPartialName || '').trim();
+      const amount = barCheckoutSplitDraftValue(opsState.barCheckoutPartialAmount);
+      const paymentMethod = opsState.barCheckoutPartialMethod || 'PIX';
+      const outstanding = barOrderOutstandingTotal(order);
+      if (!personName) return toast('Informe o nome de quem está pagando.');
+      if (amount === null || amount <= 0) return toast('Informe um valor maior que zero.');
+      if (amount > outstanding) return toast('O valor não pode passar do saldo de ' + money(outstanding) + '.');
+      try {
+        requireAdminSession();
+        opsState.barCheckoutPartialSaving = true;
+        renderBarCheckoutSplit(order);
+        const paymentNotes = String($('barCheckoutNotes').value || '').trim();
+        if (barCanPersist(order.id)) {
+          await supabaseRest('rpc/bar_receive_order_partial_payment', {
+            method: 'POST',
+            body: {
+              p_order_id: order.id,
+              p_person_name: personName,
+              p_amount: amount,
+              p_payment_method: paymentMethod,
+              p_discount: parseOptionalMoney($('barCheckoutDiscount').value),
+              p_service_charge: parseOptionalMoney($('barCheckoutService').value),
+              p_notes: paymentNotes || null
+            },
+            prefer: 'return=representation'
+          });
+          await loadBarData(true);
+        } else {
+          const now = new Date().toISOString();
+          order.serviceCharge = parseOptionalMoney($('barCheckoutService').value);
+          order.discount = parseOptionalMoney($('barCheckoutDiscount').value);
+          recalculateLocalBarOrder(order);
+          opsData.barFinance.unshift({
+            id: localId('bar_finance'), orderId: order.id, type: 'RECEITA',
+            description: 'Venda da comanda #' + order.commandNumber + ' · ' + personName,
+            counterparty: personName, category: 'Vendas', amount: amount, dueDate: localDateString(), status: 'RECEBIDO',
+            paymentMethod: paymentMethod, paidAt: now, created: now,
+            notes: ['Pagamento parcial avulso', paymentNotes].filter(Boolean).join(' · ')
+          });
+          order.paymentMethod = 'DIVIDIDO';
+          order.paymentStatus = barOrderOutstandingTotal(order) <= 0 ? 'PAGO' : 'PARCIAL';
+        }
+        opsState.barCheckoutPartialName = '';
+        opsState.barCheckoutPartialAmount = '';
+        opsState.barCheckoutSplitMode = 'partial';
+        opsState.barCheckoutSplitHydratedOrderId = String(order.id);
+        renderBarModule();
+        renderBarCommandModal();
+        toast(personName + ' pagou ' + money(amount) + '. Saldo restante: ' + money(barOrderOutstandingTotal(barOrderById(order.id))) + '.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        opsState.barCheckoutPartialSaving = false;
         const currentOrder = barOrderById(opsState.selectedBarOrderId);
         if (currentOrder) renderBarCommandModal();
       }
@@ -32003,7 +32127,7 @@
       $('barCheckoutSplitSection').addEventListener('click', function (event) {
         const modeButton = event.target.closest('[data-bar-split-mode]');
         if (modeButton) {
-          const nextMode = modeButton.dataset.barSplitMode === 'separate' ? 'separate' : 'equal';
+          const nextMode = ['equal', 'separate', 'partial'].includes(modeButton.dataset.barSplitMode) ? modeButton.dataset.barSplitMode : 'equal';
           if (opsState.barCheckoutSplitMode === nextMode) return;
           opsState.barCheckoutSplitMode = nextMode;
           opsState.barCheckoutSplitValues = [];
@@ -32131,6 +32255,16 @@
         });
       });
       $('barCheckoutSplitRows').addEventListener('input', function (event) {
+        const partialName = event.target.closest('[data-bar-partial-name]');
+        if (partialName) {
+          opsState.barCheckoutPartialName = partialName.value;
+          return;
+        }
+        const partialAmount = event.target.closest('[data-bar-partial-amount]');
+        if (partialAmount) {
+          opsState.barCheckoutPartialAmount = partialAmount.value;
+          return;
+        }
         const nameInput = event.target.closest('[data-bar-split-name]');
         if (nameInput) {
           opsState.barCheckoutSplitNames[Number(nameInput.dataset.barSplitName)] = nameInput.value;
@@ -32167,6 +32301,11 @@
         input.removeAttribute('data-bar-split-select-all');
       });
       $('barCheckoutSplitRows').addEventListener('change', function (event) {
+        const partialMethod = event.target.closest('[data-bar-partial-method]');
+        if (partialMethod) {
+          opsState.barCheckoutPartialMethod = partialMethod.value;
+          return;
+        }
         const nameInput = event.target.closest('[data-bar-split-name]');
         if (nameInput) {
           const index = Number(nameInput.dataset.barSplitName);
@@ -32191,6 +32330,10 @@
         opsState.barCheckoutSplitMethods[Number(select.dataset.barSplitMethod)] = select.value;
       });
       $('barCheckoutSplitRows').addEventListener('click', function (event) {
+        if (event.target.closest('[data-bar-partial-pay]')) {
+          receiveBarOrderPartialPaymentAction();
+          return;
+        }
         const button = event.target.closest('[data-bar-split-pay]');
         if (!button) return;
         receiveBarOrderPaymentPartAction(Number(button.dataset.barSplitPay));

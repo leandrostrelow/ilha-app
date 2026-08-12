@@ -1882,6 +1882,108 @@ begin
 end;
 $$;
 
+create or replace function public.bar_receive_order_partial_payment(
+  p_order_id uuid,
+  p_person_name text,
+  p_amount numeric,
+  p_payment_method text,
+  p_discount numeric default 0,
+  p_service_charge numeric default 0,
+  p_notes text default null
+)
+returns public.bar_orders
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  order_row public.bar_orders%rowtype;
+  person_name_value text;
+  payment_method_value text;
+  payment_amount numeric(10, 2);
+  received_total numeric(10, 2);
+  outstanding_total numeric(10, 2);
+  order_total numeric(10, 2);
+begin
+  if not public.is_bar_staff() then
+    raise exception 'Acesso negado ao Bar.';
+  end if;
+
+  select * into order_row
+    from public.bar_orders
+   where id = p_order_id
+     and status in ('ABERTA', 'EM_PREPARO', 'PRONTA')
+   for update;
+
+  if not found then
+    raise exception 'Comanda nao encontrada ou ja encerrada.';
+  end if;
+
+  person_name_value := left(trim(coalesce(p_person_name, '')), 80);
+  payment_method_value := upper(trim(coalesce(p_payment_method, '')));
+  payment_amount := round(greatest(0, coalesce(p_amount, 0)), 2);
+
+  if person_name_value = '' then
+    raise exception 'Informe o nome de quem esta pagando.';
+  end if;
+  if payment_method_value not in ('PIX', 'DINHEIRO', 'CARTAO_CREDITO', 'CARTAO_DEBITO', 'CONTA_CLIENTE') then
+    raise exception 'Forma de pagamento invalida.';
+  end if;
+  if payment_amount <= 0 then
+    raise exception 'Informe um valor maior que zero.';
+  end if;
+
+  order_total := round(greatest(
+    0,
+    order_row.subtotal
+      + greatest(0, coalesce(p_service_charge, 0))
+      - greatest(0, coalesce(p_discount, 0))
+  ), 2);
+
+  select coalesce(sum(amount), 0) into received_total
+    from public.bar_financial_entries
+   where order_id = order_row.id
+     and type = 'RECEITA'
+     and status in ('RECEBIDO', 'PAGO');
+
+  outstanding_total := round(greatest(0, order_total - received_total), 2);
+  if payment_amount > outstanding_total then
+    raise exception 'O valor informado e maior que o saldo da comanda (%).', outstanding_total;
+  end if;
+
+  insert into public.bar_financial_entries (
+    order_id, type, description, counterparty, category, amount, due_date,
+    status, payment_method, paid_at, notes, created_by
+  ) values (
+    order_row.id,
+    'RECEITA',
+    'Venda da comanda #' || order_row.command_number || ' · ' || person_name_value,
+    person_name_value,
+    'Vendas',
+    payment_amount,
+    current_date,
+    'RECEBIDO',
+    payment_method_value,
+    now(),
+    concat_ws(' · ', 'Pagamento parcial avulso', nullif(trim(coalesce(p_notes, '')), '')),
+    auth.uid()
+  );
+
+  received_total := received_total + payment_amount;
+  update public.bar_orders
+     set discount = greatest(0, coalesce(p_discount, 0)),
+         service_charge = greatest(0, coalesce(p_service_charge, 0)),
+         total = order_total,
+         payment_status = case when received_total >= order_total and order_total > 0 then 'PAGO' else 'PARCIAL' end,
+         payment_method = 'DIVIDIDO',
+         updated_at = now()
+   where id = order_row.id
+   returning * into order_row;
+
+  return order_row;
+end;
+$$;
+
 create or replace function public.bar_finalize_paid_order(p_order_id uuid)
 returns public.bar_orders
 language plpgsql
@@ -3492,6 +3594,7 @@ revoke all on function public.bar_pay_order(uuid, text, numeric, numeric) from p
 revoke all on function public.bar_pay_order_split(uuid, jsonb, numeric, numeric) from public;
 revoke all on function public.bar_save_order_payment_split(uuid, jsonb, numeric, numeric, text) from public;
 revoke all on function public.bar_receive_order_payment_part(uuid, integer, jsonb, numeric, numeric, text, text) from public;
+revoke all on function public.bar_receive_order_partial_payment(uuid, text, numeric, text, numeric, numeric, text) from public;
 revoke all on function public.bar_finalize_paid_order(uuid) from public;
 revoke all on function public.bar_reopen_order(uuid) from public;
 revoke all on function public.refresh_bar_order_totals() from public;
@@ -3509,6 +3612,7 @@ grant execute on function public.bar_pay_order(uuid, text, numeric, numeric) to 
 grant execute on function public.bar_pay_order_split(uuid, jsonb, numeric, numeric) to authenticated;
 grant execute on function public.bar_save_order_payment_split(uuid, jsonb, numeric, numeric, text) to authenticated;
 grant execute on function public.bar_receive_order_payment_part(uuid, integer, jsonb, numeric, numeric, text, text) to authenticated;
+grant execute on function public.bar_receive_order_partial_payment(uuid, text, numeric, text, numeric, numeric, text) to authenticated;
 grant execute on function public.bar_finalize_paid_order(uuid) to authenticated;
 grant execute on function public.bar_reopen_order(uuid) to authenticated;
 revoke all on function public.bar_public_menu(text) from public;
