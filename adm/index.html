@@ -15541,8 +15541,20 @@
 
     .bar-compact-editor-actions {
       display: grid;
-      grid-template-columns: auto 1fr auto auto;
+      grid-template-columns: auto minmax(0, 1fr) minmax(150px, .85fr) minmax(150px, .85fr);
       align-items: center;
+      gap: 8px;
+    }
+
+    .bar-compact-editor-actions > button {
+      width: 100%;
+      min-width: 0;
+      min-height: 42px;
+      margin: 0;
+    }
+
+    .bar-compact-editor-actions .bar-command-delete {
+      width: auto;
     }
 
     .bar-item-group-editor-body > label {
@@ -15655,6 +15667,12 @@
 
       .bar-compact-editor-actions > span {
         display: none;
+      }
+
+      .bar-compact-editor-actions .bar-command-delete {
+        width: 100%;
+        grid-column: 1 / -1;
+        order: 3;
       }
 
       .bar-checkout-item-edit {
