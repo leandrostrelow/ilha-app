@@ -539,8 +539,10 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "") {
   ]);
   [categoriesResult, athletesResult, registrationsResult, matchesResult, courtsResult, eventsResult, liveResult].forEach((result) => assertNoError(result.error));
 
-  const registrations = (registrationsResult.data || []) as Row[];
-  const matches = (matchesResult.data || []) as Row[];
+  const categories = ((categoriesResult.data || []) as Row[]).filter((row) => row.active !== false);
+  const visibleCategoryIds = new Set(categories.map((row) => String(row.id)));
+  const registrations = ((registrationsResult.data || []) as Row[]).filter((row) => visibleCategoryIds.has(String(row.category_id)));
+  const matches = ((matchesResult.data || []) as Row[]).filter((row) => visibleCategoryIds.has(String(row.category_id)));
   // Atletas são um cadastro global e precisam continuar disponíveis para novas inscrições.
   // Esta rota é autenticada e protegida pela permissão administrativa de torneios/RLS.
   const athletes = (athletesResult.data || []) as Row[];
@@ -557,7 +559,7 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "") {
 
   return {
     torneio: mapTournament(tournament),
-    categorias: ((categoriesResult.data || []) as Row[]).map(mapCategory),
+    categorias: categories.map(mapCategory),
     jogadores: athletes.map(mapAthlete),
     inscricoes: registrations.map(mapRegistration),
     jogos: matches.map((row) => mapMatch(row, athleteMap)),
