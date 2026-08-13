@@ -2215,6 +2215,43 @@
     #players .player-list-card { order: 1; }
     #players .player-form-card { order: 2; }
 
+    .player-edit-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 118;
+      display: none;
+      background: rgba(9, 24, 32, .68);
+      backdrop-filter: blur(6px);
+    }
+
+    #playerEditCloseBtn { display: none; }
+
+    body.player-editing {
+      overflow: hidden;
+    }
+
+    body.player-editing .player-edit-backdrop {
+      display: block;
+    }
+
+    body.player-editing #players .player-form-card {
+      position: fixed;
+      z-index: 120;
+      top: 50%;
+      left: 50%;
+      width: min(760px, calc(100vw - 32px));
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      transform: translate(-50%, -50%);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 28px 80px rgba(5, 26, 34, .3);
+    }
+
+    body.player-editing #playerEditCloseBtn {
+      display: inline-flex;
+    }
+
     .tabs {
       display: grid;
       grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -4903,6 +4940,14 @@
     }
 
     @media (max-width: 520px) {
+      body.player-editing #players .player-form-card {
+        top: 10px;
+        left: 10px;
+        width: calc(100vw - 20px);
+        max-height: calc(100vh - 20px);
+        transform: none;
+        padding: 14px;
+      }
       .bar-product-modal .modal-actions > * {
         flex: 1 1 100%;
       }
@@ -18410,6 +18455,7 @@
     </section>
 
     <section class="section" id="players">
+      <div class="player-edit-backdrop" id="playerEditBackdrop" aria-hidden="true"></div>
       <div class="grid">
         <div class="card span-5 player-form-card">
           <div class="card-title">
@@ -18417,6 +18463,7 @@
               <h2 id="playerFormTitle">Novo jogador</h2>
               <div class="muted">Cadastre o atleta e ligue ele a uma categoria.</div>
             </div>
+            <button class="icon-btn" id="playerEditCloseBtn" type="button" aria-label="Fechar edição">×</button>
           </div>
           <form id="playerForm">
             <input type="hidden" id="playerId" />
@@ -18484,7 +18531,7 @@
             </div>
             <div class="actions">
               <button class="primary-btn" type="submit">Salvar jogador</button>
-              <button class="ghost-btn" type="button" onclick="clearPlayerForm()">Limpar</button>
+              <button class="ghost-btn" id="playerClearBtn" type="button" onclick="clearPlayerForm()">Limpar</button>
             </div>
           </form>
         </div>
@@ -20877,12 +20924,17 @@
       } else if ($('playerCategoryFilter').value) {
         $('registrationCategory').value = $('playerCategoryFilter').value;
       }
-      const formCard = document.querySelector('#players .player-form-card');
-      if (formCard) formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      $('playerClearBtn').textContent = 'Cancelar';
+      document.body.classList.add('player-editing');
+      $('playerEditBackdrop').setAttribute('aria-hidden', 'false');
+      window.setTimeout(function () { $('playerName').focus(); }, 80);
     }
 
     function clearPlayerForm() {
+      document.body.classList.remove('player-editing');
+      $('playerEditBackdrop').setAttribute('aria-hidden', 'true');
       $('playerFormTitle').textContent = 'Novo jogador';
+      $('playerClearBtn').textContent = 'Limpar';
       $('playerForm').reset();
       $('playerId').value = '';
       $('registrationId').value = '';
@@ -33207,6 +33259,11 @@
     });
     $('agendaEventForm').addEventListener('submit', saveAgendaEvent);
     $('playerForm').addEventListener('submit', savePlayer);
+    $('playerEditCloseBtn').addEventListener('click', clearPlayerForm);
+    $('playerEditBackdrop').addEventListener('click', clearPlayerForm);
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && document.body.classList.contains('player-editing')) clearPlayerForm();
+    });
     $('tournamentForm').addEventListener('submit', saveTournament);
     $('newTournamentBtn').addEventListener('click', openTournamentCreateModal);
     $('newCategoryBtn').addEventListener('click', function () { openCategoryEditor(''); });
