@@ -2108,11 +2108,34 @@
       align-items: center;
       justify-content: flex-end;
       gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .top-actions > .primary-btn,
+    .top-actions > .ghost-btn,
+    .top-actions > .obs-link,
+    .top-actions > .status {
+      min-height: 40px;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: none;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .top-actions > .primary-btn {
+      background: #11a65a;
+      border-color: #11a65a;
     }
 
     .tournament-switcher {
       min-width: 210px;
-      height: 36px;
+      height: 40px;
       border: 1px solid var(--line);
       border-radius: 12px;
       padding: 0 34px 0 11px;
@@ -2176,6 +2199,21 @@
       white-space: nowrap;
       box-shadow: 0 8px 20px rgba(36, 56, 71, .16);
     }
+
+    /* O gestor trabalha de cima para baixo: consulta primeiro e edita depois. */
+    #players > .grid,
+    #settings > .grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    #players .player-list-card,
+    #players .player-form-card,
+    #settings > .grid > .card {
+      grid-column: 1 / -1;
+    }
+
+    #players .player-list-card { order: 1; }
+    #players .player-form-card { order: 2; }
 
     .tabs {
       display: grid;
@@ -18373,7 +18411,7 @@
 
     <section class="section" id="players">
       <div class="grid">
-        <div class="card span-5">
+        <div class="card span-5 player-form-card">
           <div class="card-title">
             <div>
               <h2 id="playerFormTitle">Novo jogador</h2>
@@ -18450,7 +18488,7 @@
             </div>
           </form>
         </div>
-        <div class="card span-7">
+        <div class="card span-7 player-list-card">
           <div class="card-title">
             <div>
               <h2>Jogadores cadastrados</h2>
