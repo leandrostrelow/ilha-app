@@ -477,13 +477,13 @@
             <div class="form-field full"><label for="athleteName">Nome completo</label><input id="athleteName" name="name" autocomplete="name" required /></div>
             <div class="form-field"><label for="athletePhone">WhatsApp</label><input id="athletePhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(27) 99999-9999" required /></div>
             <div class="form-field"><label for="athleteEmail">E-mail</label><input id="athleteEmail" name="email" type="email" autocomplete="email" required /></div>
-            <div class="form-field full"><label>Tipo de inscrição</label><div class="choice-grid pricing" id="registrationParticipantType"><label class="choice-card"><input type="radio" name="participant_type" value="CINCATE" required /><span><strong>CINCATE</strong></span></label><label class="choice-card"><input type="radio" name="participant_type" value="ILHA_STUDENT" required /><span><strong>Aluno Ilha Tênis</strong></span></label><label class="choice-card"><input type="radio" name="participant_type" value="NON_MEMBER" required /><span><strong>Não associado</strong></span></label></div></div>
+            <div class="form-field full" id="participantTypeField"><label>Tipo de inscrição</label><div class="choice-grid pricing" id="registrationParticipantType"><label class="choice-card"><input type="radio" name="participant_type" value="CINCATE" required /><span><strong>CINCATE</strong></span></label><label class="choice-card"><input type="radio" name="participant_type" value="ILHA_STUDENT" required /><span><strong>Aluno Ilha Tênis</strong></span></label><label class="choice-card"><input type="radio" name="participant_type" value="NON_MEMBER" required /><span><strong>Não associado</strong></span></label></div></div>
             <div class="form-field full" id="registrationPriceField" hidden><div class="registration-price"><span>Valor da inscrição</span><strong id="registrationPrice">R$ 0,00</strong></div></div>
             <div class="form-field full"><label>Sexo</label><div class="choice-grid" id="registrationGender"><label class="choice-card"><input type="radio" name="gender" value="MALE" required /><span>Masculino</span></label><label class="choice-card"><input type="radio" name="gender" value="FEMALE" required /><span>Feminino</span></label></div></div>
             <div class="form-field full" id="categoryField" hidden><label>Classes disponíveis</label><div class="category-checks" id="registrationCategories"></div></div>
             <div class="form-field full"><label>Dias em que posso jogar</label><div class="choice-grid days"><label class="choice-card"><input type="checkbox" name="availability_days" value="MONDAY" /><span>Segunda</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="TUESDAY" /><span>Terça</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="WEDNESDAY" /><span>Quarta</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="THURSDAY" /><span>Quinta</span></label></div><p class="field-hint">Marque todos os dias em que você tem disponibilidade.</p></div>
             <div class="form-field"><label for="athleteCity">Cidade</label><input id="athleteCity" name="city" autocomplete="address-level2" value="Colatina" /></div>
-            <div class="form-field"><label for="paymentMethod">Pagamento</label><select id="paymentMethod" name="payment_method"></select></div>
+            <div class="form-field" id="paymentMethodField"><label for="paymentMethod">Pagamento</label><select id="paymentMethod" name="payment_method"></select></div>
             <div class="form-field full" id="partnerField" hidden><label for="partnerName">Nome da dupla</label><input id="partnerName" name="partner_name" placeholder="Nome completo do parceiro ou parceira" /></div>
             <div class="form-field full"><label for="athleteNotes">Observação</label><textarea id="athleteNotes" name="notes" placeholder="Restrição de horário ou informação importante"></textarea></div>
           </div>
@@ -505,9 +505,13 @@
     const PUBLIC_SNAPSHOT_RPC = 'tournament_public_snapshot';
     const REGISTRATION_FUNCTION = 'tournament-register';
 
+    const routeParts = location.pathname.split('/').filter(Boolean);
+    const courtesySegmentIndex = routeParts.indexOf('cortesia');
     const state = {
       slug: routeSlug(),
-      registrationOnly: location.pathname.split('/').filter(Boolean)[0] === 'inscricoes',
+      registrationOnly: routeParts[0] === 'inscricoes',
+      courtesyMode: courtesySegmentIndex >= 0,
+      courtesyToken: courtesySegmentIndex >= 0 ? decodeURIComponent(routeParts[courtesySegmentIndex + 1] || '') : '',
       snapshot: null,
       activeTab: 'overview',
       bracketCategory: '',
@@ -696,7 +700,7 @@
       document.title = 'Inscrição · ' + name;
       document.body.classList.add('registration-only');
       $('headRegisterBtn').hidden = true;
-      $('appMain').innerHTML = '<section class="registration-intro"><p class="eyebrow">Inscrições</p><h1>' + escapeHtml(name) + '</h1><p>Escolha sua classe, preencha seus dados e conclua o pagamento para confirmar a inscrição.</p><div class="hero-meta"><span class="meta-pill">' + escapeHtml(formatRange(item)) + '</span><span class="meta-pill">' + escapeHtml(field(item,'location','venue','local') || 'Ilha Tênis') + '</span><span class="meta-pill">' + escapeHtml(statusLabel(item)) + '</span></div></section>';
+      $('appMain').innerHTML = '<section class="registration-intro"><p class="eyebrow">' + (state.courtesyMode ? 'Inscrição isenta' : 'Inscrições') + '</p><h1>' + escapeHtml(name) + '</h1><p>' + (state.courtesyMode ? 'Link reservado para professores e parceiros. Escolha sua classe e confirme a inscrição sem pagamento.' : 'Escolha sua classe, preencha seus dados e conclua o pagamento para confirmar a inscrição.') + '</p><div class="hero-meta"><span class="meta-pill">' + escapeHtml(formatRange(item)) + '</span><span class="meta-pill">' + escapeHtml(field(item,'location','venue','local') || 'Ilha Tênis') + '</span><span class="meta-pill">' + escapeHtml(statusLabel(item)) + '</span></div></section>';
       if (isRegistrationOpen(item)) openRegistration();
       else $('appMain').innerHTML += '<div class="error-card"><h2>Inscrições encerradas</h2><p>A organização informará quando houver uma nova oportunidade.</p><a class="button primary" href="' + publicUrl(state.slug) + '">Ver página do torneio</a></div>';
     }
@@ -851,7 +855,7 @@
       if (!isRegistrationOpen(item)) return;
       $('registrationForm').reset();
       $('registrationTitle').textContent = 'Inscrição · ' + (field(item,'name','nome') || 'Torneio');
-      $('registrationSubtitle').textContent = 'Escolha seu tipo de inscrição e a classe.';
+      $('registrationSubtitle').textContent = state.courtesyMode ? 'Inscrição isenta para professor ou parceiro.' : 'Escolha seu tipo de inscrição e a classe.';
       state.registrationCategories = categories().filter((row) => {
         const status = clean(field(row,'status')).toUpperCase();
         const open = field(row,'registration_open','inscricoes_abertas');
@@ -860,11 +864,16 @@
       $('categoryField').hidden = true;
       $('registrationCategories').innerHTML = '';
       $('registrationPriceField').hidden = true;
+      $('participantTypeField').hidden = state.courtesyMode;
+      $('paymentMethodField').hidden = state.courtesyMode;
       const allowedPayments = list(field(item,'allowed_payment_methods','formas_pagamento'));
       const paymentMethods = allowedPayments.length ? allowedPayments : ['PIX','CREDIT_CARD'];
       const paymentLabels = {PIX:'Pix',CREDIT_CARD:'Cartão de crédito',BOLETO:'Boleto',UNDEFINED:'Escolher no checkout'};
       $('paymentMethod').innerHTML = paymentMethods.map((method) => '<option value="' + escapeHtml(clean(method).toUpperCase()) + '">' + escapeHtml(paymentLabels[clean(method).toUpperCase()] || method) + '</option>').join('');
-      $('registrationParticipantType').querySelectorAll('input[name="participant_type"]').forEach((input) => input.onchange = updateRegistrationPrice);
+      $('registrationParticipantType').querySelectorAll('input[name="participant_type"]').forEach((input) => {
+        input.required = !state.courtesyMode;
+        input.onchange = updateRegistrationPrice;
+      });
       $('registrationGender').querySelectorAll('input[name="gender"]').forEach((input) => input.onchange = renderRegistrationCategories);
       updatePartnerField();
       $('registrationForm').hidden = false;
@@ -875,6 +884,7 @@
       $('registrationModal').hidden = false;
       $('registrationModal').setAttribute('aria-hidden','false');
       document.body.classList.add('modal-open');
+      $('submitRegistrationBtn').textContent = state.courtesyMode ? 'Confirmar inscrição isenta' : 'Continuar para pagamento';
       setTimeout(() => $('athleteName').focus(),50);
     }
     function updateRegistrationPrice() {
@@ -918,7 +928,8 @@
         full_name: clean(form.get('name')),
         phone: clean(form.get('phone')),
         email: clean(form.get('email')).toLowerCase(),
-        participant_type: clean(form.get('participant_type')),
+        participant_type: state.courtesyMode ? 'COURTESY' : clean(form.get('participant_type')),
+        courtesy_token: state.courtesyMode ? state.courtesyToken : undefined,
         gender: clean(form.get('gender')),
         availability_days: availabilityDays,
         city: clean(form.get('city')),
@@ -927,7 +938,7 @@
         notes: clean(form.get('notes')) || null,
         terms_accepted: $('registrationConsent').checked
       };
-      if (!['CINCATE','ILHA_STUDENT','NON_MEMBER'].includes(payload.participant_type)) return showRegistrationError('Escolha o tipo de inscrição.');
+      if (!['CINCATE','ILHA_STUDENT','NON_MEMBER','COURTESY'].includes(payload.participant_type)) return showRegistrationError('Escolha o tipo de inscrição.');
       if (!['MALE','FEMALE'].includes(payload.gender)) return showRegistrationError('Escolha o sexo.');
       if (!payload.availability_days.length) return showRegistrationError('Marque pelo menos um dia em que você pode jogar.');
       const trackingKey = ['ilha_torneio',state.slug,payload.category_id,payload.phone.replace(/\D/g,'')].join(':');
@@ -944,7 +955,7 @@
         }
         renderRegistrationSuccess(result || {});
       } catch (error) { showRegistrationError(error && error.message || 'Não foi possível realizar a inscrição.'); }
-      finally { state.submitting = false; $('submitRegistrationBtn').disabled = false; $('submitRegistrationBtn').textContent = 'Continuar para pagamento'; }
+      finally { state.submitting = false; $('submitRegistrationBtn').disabled = false; $('submitRegistrationBtn').textContent = state.courtesyMode ? 'Confirmar inscrição isenta' : 'Continuar para pagamento'; }
     }
     function showRegistrationError(message) { $('registrationError').textContent = message; $('registrationError').hidden = false; $('registrationError').scrollIntoView({behavior:'smooth',block:'nearest'}); }
     function renderRegistrationSuccess(result) {

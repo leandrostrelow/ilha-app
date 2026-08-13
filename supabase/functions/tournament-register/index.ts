@@ -10,8 +10,8 @@ const allowedOrigins = new Set([
 const allowedBillingTypes = new Set(["PIX", "BOLETO", "CREDIT_CARD", "UNDEFINED"]);
 const allowedGenders = new Set(["MALE", "FEMALE"]);
 const allowedAvailabilityDays = new Set(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY"]);
-const participantPrices: Record<string, number> = { CINCATE: 100, ILHA_STUDENT: 130, NON_MEMBER: 180 };
-const participantLabels: Record<string, string> = { CINCATE: "CINCATE", ILHA_STUDENT: "Aluno Ilha Tênis", NON_MEMBER: "Não associado" };
+const participantPrices: Record<string, number> = { CINCATE: 100, ILHA_STUDENT: 130, NON_MEMBER: 180, COURTESY: 0 };
+const participantLabels: Record<string, string> = { CINCATE: "CINCATE", ILHA_STUDENT: "Aluno Ilha Tênis", NON_MEMBER: "Não associado", COURTESY: "Cortesia (isento)" };
 const retryablePaymentStatuses = new Set(["CREATED", "FAILED"]);
 
 type JsonRecord = Record<string, unknown>;
@@ -279,6 +279,7 @@ Deno.serve(async (request) => {
     const email = text(payload.email, 180).toLowerCase();
     const phone = digits(payload.phone);
     const participantType = text(payload.participant_type, 30).toUpperCase();
+    const courtesyToken = text(payload.courtesy_token, 100);
     const gender = text(payload.gender, 20).toUpperCase();
     const availabilityDays = Array.isArray(payload.availability_days)
       ? payload.availability_days.map((day) => text(day, 20).toUpperCase()).filter(Boolean)
@@ -314,7 +315,7 @@ Deno.serve(async (request) => {
 
     failureStage = "tournament_lookup";
     const { data: tournament, error: tournamentError } = await supabase.from("tournaments")
-      .select("id,name,slug,status,registration_open,registration_opens_at,registration_closes_at,default_fee,allowed_payment_methods,is_published")
+      .select("id,name,slug,status,registration_open,registration_opens_at,registration_closes_at,default_fee,allowed_payment_methods,is_published,courtesy_registration_token")
       .eq("slug", tournamentSlug)
       .maybeSingle();
     if (tournamentError) throw tournamentError;
@@ -325,6 +326,9 @@ Deno.serve(async (request) => {
     if (tournament.status !== "REGISTRATION_OPEN" || !tournament.registration_open ||
       (opensAt && now < opensAt) || (closesAt && now > closesAt)) {
       return json(request, { error: "As inscrições deste torneio estão fechadas." }, 409);
+    }
+    if (participantType === "COURTESY" && (!courtesyToken || courtesyToken !== String(tournament.courtesy_registration_token || ""))) {
+      return json(request, { error: "Este link de inscrição isenta é inválido ou expirou." }, 403);
     }
 
     failureStage = "category_lookup";
@@ -346,12 +350,12 @@ Deno.serve(async (request) => {
     const allowedMethods = Array.isArray(tournament.allowed_payment_methods)
       ? tournament.allowed_payment_methods.map((item: unknown) => String(item).toUpperCase())
       : ["PIX", "BOLETO", "CREDIT_CARD"];
-    if (billingType === "UNDEFINED") {
+    if (participantType !== "COURTESY" && billingType === "UNDEFINED") {
       const canChoose = allowedMethods.includes("UNDEFINED") ||
         ["PIX", "BOLETO", "CREDIT_CARD"].filter((method) => allowedMethods.includes(method)).length > 1;
       if (!canChoose) return json(request, { error: "Escolha uma forma de pagamento disponível." }, 400);
     }
-    if (!allowedMethods.includes(billingType)) {
+    if (participantType !== "COURTESY" && !allowedMethods.includes(billingType)) {
       return json(request, { error: "Esta forma de pagamento não está disponível no torneio." }, 400);
     }
     const amount = participantPrices[participantType];

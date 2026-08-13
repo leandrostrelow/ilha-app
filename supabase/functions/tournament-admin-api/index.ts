@@ -371,7 +371,10 @@ function mapTournament(row: Row) {
     registration_open: row.registration_open === true,
     publicado: row.is_published === true,
     is_published: row.is_published === true,
-    settings: row.settings || {},
+    settings: {
+      ...firstObject(row.settings),
+      courtesy_registration_token: row.courtesy_registration_token || "",
+    },
   };
 }
 

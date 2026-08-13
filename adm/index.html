@@ -18411,6 +18411,7 @@
           <select class="tournament-switcher" id="tournamentPicker" aria-label="Selecionar torneio"></select>
           <button class="primary-btn" type="button" id="newTournamentBtn">Criar torneio</button>
           <a class="obs-link" id="registrationTournamentLink" href="../inscricoes/ilha-open-2026-teste" target="_blank" rel="noopener">Link inscrições</a>
+          <a class="obs-link" id="courtesyRegistrationLink" href="../inscricoes/ilha-open-2026/cortesia" target="_blank" rel="noopener">Link isentos</a>
           <a class="obs-link" id="publicTournamentLink" href="../torneios/ilha-open-2026-teste" target="_blank" rel="noopener">Página pública</a>
           <button class="ghost-btn" type="button" id="backToClubHomeBtn">Início</button>
           <a class="obs-link" href="../live.html" target="_blank" rel="noopener">Tela OBS</a>
@@ -19199,6 +19200,7 @@
       const slug = state.data.torneio.slug || '';
       const publicLink = $('publicTournamentLink');
       const registrationLink = $('registrationTournamentLink');
+      const courtesyLink = $('courtesyRegistrationLink');
       if (publicLink) {
         publicLink.href = slug ? '../torneios/' + encodeURIComponent(slug) : '../torneios';
         publicLink.hidden = !slug;
@@ -19206,6 +19208,13 @@
       if (registrationLink) {
         registrationLink.href = slug ? '../inscricoes/' + encodeURIComponent(slug) : '../torneios';
         registrationLink.hidden = !slug;
+      }
+      if (courtesyLink) {
+        const courtesyToken = String(((state.data.torneio || {}).settings || {}).courtesy_registration_token || '');
+        courtesyLink.href = slug && courtesyToken
+          ? '../inscricoes/' + encodeURIComponent(slug) + '/cortesia/' + encodeURIComponent(courtesyToken)
+          : '../torneios';
+        courtesyLink.hidden = !slug || !courtesyToken;
       }
     }
 
@@ -19303,6 +19312,9 @@
             return '<span class="mini-tag cat-chip ' + categoryColorClass(r.categoria_id) + '">' + escapeHtml(getCategoryName(r.categoria_id)) + '</span>';
           }).join('');
           const payment = regs[0] ? regs[0].status_pagamento : '';
+          const courtesy = regs.some(function (r) {
+            return normalizeSearch(r.observacoes || '').indexOf('tipo de inscricao: cortesia') !== -1;
+          });
           const statusClass = String(player.status || 'ATIVO') === 'INATIVO' ? ' off' : '';
           return '<div class="row">' +
             '<div><strong>' + escapeHtml(player.nome) + '</strong><small>' +
@@ -19310,6 +19322,7 @@
             '</small><div class="tag-line">' +
             (cats || '<span class="mini-tag warn">sem classe</span>') +
             '<span class="mini-tag' + statusClass + '">' + escapeHtml(player.status || 'ATIVO') + '</span>' +
+            (courtesy ? '<span class="mini-tag">CORTESIA</span>' : '') +
             (payment ? '<span class="mini-tag warn">' + escapeHtml(payment) + '</span>' : '') +
             '</div></div>' +
             '<div class="actions" style="margin:0">' +
@@ -19706,7 +19719,6 @@
         .filter(function (insc) { return String(insc.categoria_id) === String(state.selectedCategory) && String(insc.status_pagamento) !== 'CANCELADO'; })
         .map(function (insc) { return String(insc.jogador_id); }));
       const categoryPlayers = activePlayers.filter(function (p) { return categoryIds.has(String(p.jogador_id)); });
-      const otherPlayers = activePlayers.filter(function (p) { return !categoryIds.has(String(p.jogador_id)); });
       function opts(players) {
         return players.map(function (p) {
           return '<option value="' + escapeHtml(p.jogador_id) + '"' + (String(selected) === String(p.jogador_id) ? ' selected' : '') + '>' +
@@ -19714,8 +19726,7 @@
         }).join('');
       }
       return '<option value="">BYE / vazio</option>' +
-        '<optgroup label="Categoria atual">' + opts(categoryPlayers) + '</optgroup>' +
-        '<optgroup label="Outros jogadores">' + opts(otherPlayers) + '</optgroup>';
+        '<optgroup label="Atletas desta classe">' + opts(categoryPlayers) + '</optgroup>';
     }
 
     function dayOptions(selected) {
@@ -20971,11 +20982,7 @@
         const saved = await apiPost({ action: 'savePlayer', jogador: player }, { silent: true });
         const savedPlayerId = saved && (saved.id || saved.jogador_id) || originalPlayerId;
         if (!savedPlayerId) throw new Error('Não foi possível identificar o atleta salvo.');
-        const sameCategoryReg = previousRegs.find(function (reg) {
-          return String(reg.categoria_id) === String(selectedCategory);
-        });
-        const registrationId = sameCategoryReg ? sameCategoryReg.inscricao_id :
-          (String($('registrationCategory').value) === String((previousRegs[0] || {}).categoria_id) ? $('registrationId').value : '');
+        const registrationId = $('registrationId').value || '';
         await apiPost({
           action: 'saveRegistration',
           inscricao: {
@@ -20989,13 +20996,22 @@
           }
         }, { silent: true });
 
+        const movedFromCategoryIds = previousRegs
+          .filter(function (reg) {
+            return String(reg.inscricao_id) === String(registrationId) && String(reg.categoria_id) !== String(selectedCategory);
+          })
+          .map(function (reg) { return reg.categoria_id; });
+        if (movedFromCategoryIds.length) {
+          await removePlayerFromMatches(savedPlayerId, movedFromCategoryIds, false);
+        }
+
         if (player.status === 'INATIVO') {
           await removePlayerFromMatches(savedPlayerId, null, true);
         }
 
         await loadData(false);
         clearPlayerForm();
-        toast('Jogador salvo e classe atualizada. As demais inscrições foram preservadas.');
+        toast('Atleta salvo e classe sincronizada.');
       } catch (error) {
         toast(error.message);
       }
