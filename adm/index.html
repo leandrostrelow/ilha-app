@@ -18404,14 +18404,14 @@
     <div class="topbar">
       <div class="topline">
         <div>
-          <h1>Gestao Torneio Ilha</h1>
+          <h1>Gestão do Torneio Ilha</h1>
           <div class="muted" id="tournamentSubtitle">Carregando torneio...</div>
         </div>
         <div class="top-actions">
           <select class="tournament-switcher" id="tournamentPicker" aria-label="Selecionar torneio"></select>
           <button class="primary-btn" type="button" id="newTournamentBtn">Criar torneio</button>
-          <a class="obs-link" id="registrationTournamentLink" href="../inscricoes/ilha-open-2026-teste" target="_blank" rel="noopener">Link inscrições</a>
-          <a class="obs-link" id="courtesyRegistrationLink" href="../inscricoes/ilha-open-2026/cortesia" target="_blank" rel="noopener">Link isentos</a>
+          <a class="obs-link" id="registrationTournamentLink" href="../inscricoes/ilha-open-2026-teste" target="_blank" rel="noopener">Link de inscrições</a>
+          <a class="obs-link" id="courtesyRegistrationLink" href="../inscricoes/ilha-open-2026/cortesia" target="_blank" rel="noopener">Link para isentos</a>
           <a class="obs-link" id="publicTournamentLink" href="../torneios/ilha-open-2026-teste" target="_blank" rel="noopener">Página pública</a>
           <button class="ghost-btn" type="button" id="backToClubHomeBtn">Início</button>
           <a class="obs-link" href="../live.html" target="_blank" rel="noopener">Tela OBS</a>
@@ -18425,7 +18425,7 @@
         <button class="tab-btn" data-tab="schedule">Agenda</button>
         <button class="tab-btn" data-tab="results">Resultados</button>
         <button class="tab-btn" data-tab="settings">Torneio</button>
-        <button class="tab-btn" data-tab="dashboard">Informacoes</button>
+        <button class="tab-btn" data-tab="dashboard">Informações</button>
       </div>
     </div>
 
@@ -18439,7 +18439,7 @@
           <div class="card-title">
             <div>
               <h2>Atalhos do torneio</h2>
-              <div class="muted">Fluxo sugerido: jogadores, inscricoes, chave, agenda e placar.</div>
+              <div class="muted">Fluxo sugerido: jogadores, inscrições, chave, agenda e placar.</div>
             </div>
           </div>
           <div class="actions">
@@ -18450,7 +18450,7 @@
           </div>
         </div>
         <div class="card span-4">
-          <h2>Publicacao</h2>
+          <h2>Publicação</h2>
           <p class="muted">Na aba Chaves, use "Imagem Instagram" para baixar a arte da categoria atual em alta qualidade.</p>
         </div>
       </div>
@@ -18484,7 +18484,7 @@
                 <input id="playerWhatsapp" inputmode="tel" placeholder="5527999999999" />
               </div>
               <div class="field">
-                <label>Genero</label>
+                <label>Gênero</label>
                 <select id="playerGender">
                   <option value="MASC">Masculino</option>
                   <option value="FEM">Feminino</option>
@@ -18511,10 +18511,10 @@
               </div>
               <div class="field">
                 <label>Seed</label>
-                <input id="playerSeed" type="number" min="1" placeholder="Cabeca de chave" />
+                <input id="playerSeed" type="number" min="1" placeholder="Cabeça de chave" />
               </div>
               <div class="field full">
-                <label>Observacoes</label>
+                <label>Observações</label>
                 <textarea id="playerNotes" placeholder="Pagamento, restricao de horario, etc."></textarea>
               </div>
               <div class="field">
@@ -18610,7 +18610,7 @@
         <form class="agenda-event-form" id="agendaEventForm">
           <input id="eventTitle" placeholder="Evento: Duplas, Coffee break..." />
           <select id="eventDay"></select>
-          <input id="eventTime" placeholder="18:00 ou Apos" />
+          <input id="eventTime" placeholder="18:00 ou Após" />
           <select id="eventCourt"></select>
           <input id="eventDescription" placeholder="Detalhe opcional" />
           <button type="submit" class="primary-btn">Adicionar evento</button>
@@ -18697,7 +18697,7 @@
                 <input id="tournamentWhatsapp" />
               </div>
               <div class="field full">
-                <label>Observacoes</label>
+                <label>Observações</label>
                 <textarea id="tournamentNotes"></textarea>
               </div>
             </div>
@@ -18808,11 +18808,11 @@
           <label>Agenda do jogo</label>
           <div class="match-agenda-grid">
             <select id="editorDate"></select>
-            <input id="editorTime" list="timeOptions" placeholder="18:00 ou Apos" />
+            <input id="editorTime" list="timeOptions" placeholder="18:00 ou Após" />
             <select id="editorCourt"></select>
           </div>
           <datalist id="timeOptions">
-            <option value="Apos"></option>
+            <option value="Apos">Após</option>
             <option value="08:00"></option>
             <option value="09:00"></option>
             <option value="10:00"></option>
@@ -18950,7 +18950,7 @@
     function normalizeAgendaTime(value) {
       const raw = normalizeSearch(value).replace(/\s+/g, '');
       if (!raw) return '';
-      if (raw.indexOf('apos') === 0) return 'Apos';
+      if (raw.indexOf('apos') === 0) return 'Após';
       const hourOnly = raw.match(/^(\d{1,2})h?$/);
       if (hourOnly) return String(Number(hourOnly[1])).padStart(2, '0') + ':00';
       const hourMinute = raw.match(/^(\d{1,2})(?:h|:)(\d{2})$/);
@@ -19347,11 +19347,11 @@
     async function addPlayerToIlhaCard(playerId) {
       const category = ilhaCardCategory();
       if (!category) {
-        toast('Categoria Especial ainda nao existe.');
+        toast('A categoria Especial ainda não existe.');
         return;
       }
       if (playerRegistrations(playerId).some(function (reg) { return isIlhaCardCategoryId(reg.categoria_id); })) {
-        toast('Jogador ja esta na classe Especial.');
+        toast('O jogador já está na classe Especial.');
         return;
       }
       await apiPost({
@@ -19820,7 +19820,7 @@
       const original = currentMatchById(data.jogo_id);
       if (!original) return [data];
       if (data.jogador1_id && data.jogador1_id === data.jogador2_id) {
-        throw new Error('O mesmo jogador nao pode ficar dos dois lados do jogo.');
+        throw new Error('O mesmo jogador não pode ficar dos dois lados do jogo.');
       }
 
       const pending = {};
@@ -20368,7 +20368,7 @@
 
     function formatAgendaTime(value) {
       if (!value) return '--:--';
-      return normalizeSearch(value).indexOf('apos') === 0 ? 'Apos' : value;
+      return normalizeSearch(value).indexOf('apos') === 0 ? 'Após' : value;
     }
 
     function currentMatches() {
@@ -20427,7 +20427,7 @@
       }
       const phone = whatsappNumber(player.whatsapp);
       if (!phone) {
-        toast('Este jogador nao tem WhatsApp cadastrado.');
+        toast('Este jogador não tem WhatsApp cadastrado.');
         return;
       }
 
@@ -21199,7 +21199,7 @@
       }
       const background = await loadInstagramBackground();
       if (!background) {
-        toast('Fundo nao carregou. Abra pelo link 127.0.0.1 ou atualize com Ctrl+F5.');
+        toast('O fundo não carregou. Abra pelo link 127.0.0.1 ou atualize com Ctrl+F5.');
         return;
       }
       const canvas = document.createElement('canvas');
@@ -21216,7 +21216,7 @@
       try {
         imageUrl = canvas.toDataURL('image/png');
       } catch (error) {
-        toast('Nao foi possivel exportar. Abra pelo servidor local ou suba o fundo junto com o HTML.');
+        toast('Não foi possível exportar. Abra pelo servidor local ou envie o fundo junto com o HTML.');
         return;
       }
       showInstagramPreview(imageUrl, fileName);
@@ -21250,7 +21250,7 @@
 
       const background = await loadInstagramBackground();
       if (!background) {
-        toast('Fundo nao carregou. Abra pelo link 127.0.0.1 ou atualize com Ctrl+F5.');
+        toast('O fundo não carregou. Abra pelo link 127.0.0.1 ou atualize com Ctrl+F5.');
         return;
       }
 
@@ -21268,7 +21268,7 @@
       try {
         imageUrl = canvas.toDataURL('image/png');
       } catch (error) {
-        toast('Nao foi possivel exportar. Abra pelo servidor local ou suba o fundo junto com o HTML.');
+        toast('Não foi possível exportar. Abra pelo servidor local ou envie o fundo junto com o HTML.');
         return;
       }
       showInstagramPreview(imageUrl, fileName);
@@ -21282,13 +21282,13 @@
       if (!state.data) return;
       const matches = agendaPosterMatches(day);
       if (!matches.length) {
-        toast('Esse dia nao tem jogos abertos na agenda.');
+        toast('Esse dia não tem jogos abertos na agenda.');
         return;
       }
 
       const background = await loadInstagramBackground();
       if (!background) {
-        toast('Fundo nao carregou. Abra pelo link 127.0.0.1 ou atualize com Ctrl+F5.');
+        toast('O fundo não carregou. Abra pelo link 127.0.0.1 ou atualize com Ctrl+F5.');
         return;
       }
 
@@ -21306,7 +21306,7 @@
       try {
         imageUrl = canvas.toDataURL('image/png');
       } catch (error) {
-        toast('Nao foi possivel exportar. Abra pelo servidor local ou suba o fundo junto com o HTML.');
+        toast('Não foi possível exportar. Abra pelo servidor local ou envie o fundo junto com o HTML.');
         return;
       }
       showInstagramPreview(imageUrl, fileName);
@@ -21335,7 +21335,7 @@
       download.href = imageUrl;
       download.download = fileName;
       backdrop.style.display = 'flex';
-      toast('Imagem gerada. Se nao baixar automatico, use Baixar PNG.');
+      toast('Imagem gerada. Se não baixar automaticamente, use Baixar PNG.');
     }
 
     function closeInstagramPreview() {
@@ -21362,7 +21362,7 @@
       if (window.fetch && window.URL && URL.createObjectURL) {
         return fetch(src + '?v=' + Date.now())
           .then(function (response) {
-            if (!response.ok) throw new Error('Fundo nao encontrado.');
+            if (!response.ok) throw new Error('Fundo não encontrado.');
             return response.blob();
           })
           .then(function (blob) {
