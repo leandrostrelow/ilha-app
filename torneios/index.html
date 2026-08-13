@@ -334,6 +334,12 @@
     .category-check input { width: 19px; height: 19px; accent-color: var(--teal); }
     .category-check strong { display: block; font-size: 13px; }
     .category-check small { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
+    .choice-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+    .choice-grid.days { grid-template-columns: repeat(4,minmax(0,1fr)); }
+    .choice-card { position: relative; min-height: 52px; display: grid; place-items: center; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: #fff; color: #53686e; font-size: 13px; font-weight: 900; text-align: center; cursor: pointer; }
+    .choice-card:has(input:checked) { border-color: var(--lime); background: var(--lime-soft); color: var(--ink); box-shadow: inset 0 0 0 1px var(--lime); }
+    .choice-card input { position: absolute; opacity: 0; pointer-events: none; }
+    .field-hint { margin: 0; color: var(--muted); font-size: 11px; font-weight: 700; }
     .consent { margin-top: 16px; display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 9px; color: var(--muted); font-size: 12px; line-height: 1.45; }
     .consent input { width: 18px; height: 18px; accent-color: var(--teal); }
     .form-error { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: #fff0f1; color: #a62e36; font-size: 12px; font-weight: 800; }
@@ -349,20 +355,27 @@
 
     body.registration-only .site-head { position: static; }
     body.registration-only .head-actions { display: none; }
-    body.registration-only .page { width: min(820px, calc(100% - 32px)); padding-bottom: 20px; }
+    body.registration-only .page { width: min(720px, calc(100% - 32px)); padding-top: 18px; padding-bottom: 20px; }
     body.registration-only .registration-intro {
-      margin-bottom: 18px;
-      padding: clamp(22px, 5vw, 38px);
-      border-radius: 28px;
+      margin-bottom: 12px;
+      padding: clamp(18px, 3.5vw, 28px);
+      border-radius: 22px;
       color: #fff;
       background: radial-gradient(circle at 92% 10%, rgba(168,233,0,.28), transparent 14rem), linear-gradient(135deg,#082c36,#067986);
       box-shadow: var(--shadow);
     }
-    body.registration-only .registration-intro h1 { margin: 0; font-size: clamp(30px,6vw,48px); line-height: 1; letter-spacing: -.045em; }
-    body.registration-only .registration-intro p { margin: 12px 0 0; color: rgba(255,255,255,.78); line-height: 1.5; }
-    body.registration-only .registration-intro .hero-meta { margin-top: 17px; }
+    body.registration-only .registration-intro h1 { margin: 0; font-size: clamp(28px,5vw,40px); line-height: 1.05; letter-spacing: -.045em; }
+    body.registration-only .registration-intro p { margin: 8px 0 0; color: rgba(255,255,255,.78); font-size: 13px; line-height: 1.4; }
+    body.registration-only .registration-intro .hero-meta { margin-top: 12px; }
     body.registration-only .modal-backdrop { position: static; display: block; padding: 0; background: transparent; backdrop-filter: none; }
-    body.registration-only .modal { width: 100%; max-height: none; overflow: visible; border: 1px solid var(--line); border-radius: 26px; box-shadow: var(--shadow); }
+    body.registration-only .modal { width: 100%; max-height: none; overflow: visible; border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); }
+    body.registration-only .modal-head { padding: 17px 20px; }
+    body.registration-only .modal-head h2 { font-size: 23px; }
+    body.registration-only .modal-body { padding: 17px 20px; }
+    body.registration-only .form-grid { gap: 11px; }
+    body.registration-only .form-field input,
+    body.registration-only .form-field select,
+    body.registration-only .form-field textarea { min-height: 44px; }
     body.registration-only .modal-body { overflow: visible; }
     body.registration-only #closeRegistrationBtn,
     body.registration-only #cancelRegistrationBtn { display: none; }
@@ -413,11 +426,19 @@
       .modal-head, .modal-body { padding-left: 17px; padding-right: 17px; }
       .modal-foot { padding-left: 17px; padding-right: 17px; }
       .form-grid, .category-checks { grid-template-columns: 1fr; }
+      .choice-grid.days { grid-template-columns: repeat(2,minmax(0,1fr)); }
       .form-field.full { grid-column: auto; }
       .modal-foot .button { flex: 1; }
-      body.registration-only .page { width: min(100% - 20px,820px); }
-      body.registration-only .registration-intro { border-radius: 21px; }
-      body.registration-only .modal { max-height: none; border-radius: 21px; }
+      body.registration-only .page { width: min(100% - 14px,720px); padding-top: 8px; }
+      body.registration-only .registration-intro { margin-bottom: 8px; padding: 17px; border-radius: 18px; }
+      body.registration-only .registration-intro p { font-size: 12px; }
+      body.registration-only .registration-intro .hero-meta { gap: 6px; }
+      body.registration-only .registration-intro .meta-pill { padding: 7px 9px; font-size: 10px; }
+      body.registration-only .modal { max-height: none; border-radius: 18px; }
+      body.registration-only .modal-head,
+      body.registration-only .modal-body { padding-left: 14px; padding-right: 14px; }
+      body.registration-only .modal-foot { padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); }
+      body.registration-only .category-check { min-height: 54px; }
     }
   </style>
 </head>
@@ -448,14 +469,12 @@
             <div class="form-field full"><label for="athleteName">Nome completo</label><input id="athleteName" name="name" autocomplete="name" required /></div>
             <div class="form-field"><label for="athletePhone">WhatsApp</label><input id="athletePhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(27) 99999-9999" required /></div>
             <div class="form-field"><label for="athleteEmail">E-mail</label><input id="athleteEmail" name="email" type="email" autocomplete="email" required /></div>
-            <div class="form-field"><label for="athleteCpf">CPF</label><input id="athleteCpf" name="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" required /></div>
-            <div class="form-field"><label for="athleteBirthDate">Nascimento</label><input id="athleteBirthDate" name="birth_date" type="date" required /></div>
+            <div class="form-field full"><label>Sexo</label><div class="choice-grid" id="registrationGender"><label class="choice-card"><input type="radio" name="gender" value="MALE" required /><span>Masculino</span></label><label class="choice-card"><input type="radio" name="gender" value="FEMALE" required /><span>Feminino</span></label></div></div>
+            <div class="form-field full" id="categoryField" hidden><label>Classes disponíveis</label><div class="category-checks" id="registrationCategories"></div></div>
+            <div class="form-field full"><label>Dias em que posso jogar</label><div class="choice-grid days"><label class="choice-card"><input type="checkbox" name="availability_days" value="MONDAY" /><span>Segunda</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="TUESDAY" /><span>Terça</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="WEDNESDAY" /><span>Quarta</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="THURSDAY" /><span>Quinta</span></label></div><p class="field-hint">Marque todos os dias em que você tem disponibilidade.</p></div>
             <div class="form-field"><label for="athleteCity">Cidade</label><input id="athleteCity" name="city" autocomplete="address-level2" value="Colatina" /></div>
-            <div class="form-field"><label for="athleteClub">Clube / academia</label><input id="athleteClub" name="club" value="Ilha Tênis" /></div>
-            <div class="form-field full"><label>Classes</label><div class="category-checks" id="registrationCategories"></div></div>
-            <div class="form-field full" id="partnerField" hidden><label for="partnerName">Nome da dupla</label><input id="partnerName" name="partner_name" placeholder="Nome completo do parceiro ou parceira" /></div>
-            <div class="form-field"><label for="shirtSize">Camiseta</label><select id="shirtSize" name="shirt_size"><option value="">Não informar</option><option>PP</option><option>P</option><option>M</option><option>G</option><option>GG</option><option>XG</option></select></div>
             <div class="form-field"><label for="paymentMethod">Pagamento</label><select id="paymentMethod" name="payment_method"></select></div>
+            <div class="form-field full" id="partnerField" hidden><label for="partnerName">Nome da dupla</label><input id="partnerName" name="partner_name" placeholder="Nome completo do parceiro ou parceira" /></div>
             <div class="form-field full"><label for="athleteNotes">Observação</label><textarea id="athleteNotes" name="notes" placeholder="Restrição de horário ou informação importante"></textarea></div>
           </div>
           <label class="consent"><input id="registrationConsent" type="checkbox" required /><span>Confirmo que os dados estão corretos e autorizo seu uso pela organização para realizar o torneio e entrar em contato comigo.</span></label>
@@ -822,18 +841,19 @@
       if (!isRegistrationOpen(item)) return;
       $('registrationForm').reset();
       $('registrationTitle').textContent = 'Inscrição · ' + (field(item,'name','nome') || 'Torneio');
-      $('registrationSubtitle').textContent = 'Escolha a classe e informe seus dados.';
-      const availableCategories = categories().filter((row) => {
+      $('registrationSubtitle').textContent = 'Informe seus dados e escolha a classe.';
+      state.registrationCategories = categories().filter((row) => {
         const status = clean(field(row,'status')).toUpperCase();
         const open = field(row,'registration_open','inscricoes_abertas');
         return !['CLOSED','ENCERRADA','INATIVA'].includes(status) && open !== false && String(open).toLowerCase() !== 'false';
       });
-      $('registrationCategories').innerHTML = availableCategories.map((row) => '<label class="category-check"><input type="radio" name="category_id" value="' + escapeHtml(categoryId(row)) + '" data-event-type="' + escapeHtml(field(row,'event_type','tipo')) + '" ' + (availableCategories.length===1?'checked':'') + ' /><span><strong>' + escapeHtml(field(row,'name','nome')) + '</strong><small>' + escapeHtml(money(field(row,'registration_fee','price','valor'))) + '</small></span></label>').join('') || '<div class="empty-state">Nenhuma classe disponível.</div>';
+      $('categoryField').hidden = true;
+      $('registrationCategories').innerHTML = '';
       const allowedPayments = list(field(item,'allowed_payment_methods','formas_pagamento'));
       const paymentMethods = allowedPayments.length ? allowedPayments : ['PIX','CREDIT_CARD'];
       const paymentLabels = {PIX:'Pix',CREDIT_CARD:'Cartão de crédito',BOLETO:'Boleto',UNDEFINED:'Escolher no checkout'};
       $('paymentMethod').innerHTML = paymentMethods.map((method) => '<option value="' + escapeHtml(clean(method).toUpperCase()) + '">' + escapeHtml(paymentLabels[clean(method).toUpperCase()] || method) + '</option>').join('');
-      $('registrationCategories').querySelectorAll('input[name="category_id"]').forEach((input) => input.addEventListener('change',updatePartnerField));
+      $('registrationGender').querySelectorAll('input[name="gender"]').forEach((input) => input.onchange = renderRegistrationCategories);
       updatePartnerField();
       $('registrationForm').hidden = false;
       $('registrationSuccess').hidden = true;
@@ -844,6 +864,18 @@
       $('registrationModal').setAttribute('aria-hidden','false');
       document.body.classList.add('modal-open');
       setTimeout(() => $('athleteName').focus(),50);
+    }
+    function renderRegistrationCategories() {
+      const gender = document.querySelector('input[name="gender"]:checked')?.value || '';
+      $('categoryField').hidden = !gender;
+      if (!gender) { $('registrationCategories').innerHTML = ''; return; }
+      const filtered = (state.registrationCategories || []).filter((row) => {
+        const categoryGender = clean(field(row,'gender','genero')).toUpperCase();
+        return categoryGender === gender || ['MIXED','OPEN','MISTO','LIVRE',''].includes(categoryGender);
+      });
+      $('registrationCategories').innerHTML = filtered.map((row) => '<label class="category-check"><input type="radio" name="category_id" value="' + escapeHtml(categoryId(row)) + '" data-event-type="' + escapeHtml(field(row,'event_type','tipo')) + '" /><span><strong>' + escapeHtml(field(row,'name','nome')) + '</strong><small>' + escapeHtml(money(field(row,'registration_fee','price','valor'))) + '</small></span></label>').join('') || '<div class="empty-state">Nenhuma classe disponível para esta opção.</div>';
+      $('registrationCategories').querySelectorAll('input[name="category_id"]').forEach((input) => input.addEventListener('change',updatePartnerField));
+      updatePartnerField();
     }
     function closeRegistration() { if (state.submitting || state.registrationOnly) return; $('registrationModal').hidden = true; $('registrationModal').setAttribute('aria-hidden','true'); document.body.classList.remove('modal-open'); }
     function selectedCategoryId() { return document.querySelector('input[name="category_id"]:checked')?.value || ''; }
@@ -861,25 +893,24 @@
       const categoryIdValue = selectedCategoryId();
       if (!categoryIdValue) return showRegistrationError('Escolha uma classe.');
       const form = new FormData($('registrationForm'));
+      const availabilityDays = form.getAll('availability_days').map(clean).filter(Boolean);
       const payload = {
         tournament_slug: state.slug,
         category_id: categoryIdValue,
         full_name: clean(form.get('name')),
         phone: clean(form.get('phone')),
         email: clean(form.get('email')).toLowerCase(),
-        cpf: clean(form.get('cpf')).replace(/\D/g,''),
-        birth_date: clean(form.get('birth_date')),
+        gender: clean(form.get('gender')),
+        availability_days: availabilityDays,
         city: clean(form.get('city')),
-        club: clean(form.get('club')),
-        shirt_size: clean(form.get('shirt_size')) || null,
         partner_name: clean(form.get('partner_name')) || null,
         payment_method: clean(form.get('payment_method')) || 'PIX',
         notes: clean(form.get('notes')) || null,
         terms_accepted: $('registrationConsent').checked
       };
-      if (payload.cpf.length !== 11) return showRegistrationError('Informe um CPF válido com 11 números.');
-      if (!payload.birth_date) return showRegistrationError('Informe a data de nascimento.');
-      const trackingKey = ['ilha_torneio',state.slug,payload.category_id,payload.cpf].join(':');
+      if (!['MALE','FEMALE'].includes(payload.gender)) return showRegistrationError('Escolha o sexo.');
+      if (!payload.availability_days.length) return showRegistrationError('Marque pelo menos um dia em que você pode jogar.');
+      const trackingKey = ['ilha_torneio',state.slug,payload.category_id,payload.phone.replace(/\D/g,'')].join(':');
       try { payload.tracking_token = localStorage.getItem(trackingKey) || undefined; } catch (error) {}
       state.lastRegistrationPayload = payload;
       state.submitting = true;

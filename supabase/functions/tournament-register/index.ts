@@ -8,6 +8,8 @@ const allowedOrigins = new Set([
 ]);
 
 const allowedBillingTypes = new Set(["PIX", "BOLETO", "CREDIT_CARD", "UNDEFINED"]);
+const allowedGenders = new Set(["MALE", "FEMALE"]);
+const allowedAvailabilityDays = new Set(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY"]);
 const retryablePaymentStatuses = new Set(["CREATED", "FAILED"]);
 
 type JsonRecord = Record<string, unknown>;
@@ -58,22 +60,21 @@ function digits(value: unknown) {
   return String(value || "").replace(/\D/g, "");
 }
 
-function validCpf(value: string) {
-  if (!/^\d{11}$/.test(value) || /^(\d)\1{10}$/.test(value)) return false;
-  const checksum = (length: number) => {
-    let sum = 0;
-    for (let index = 0; index < length; index += 1) sum += Number(value[index]) * (length + 1 - index);
-    const result = (sum * 10) % 11;
-    return result === 10 ? 0 : result;
-  };
-  return checksum(9) === Number(value[9]) && checksum(10) === Number(value[10]);
+async function publicAthleteSourceKey(email: string, phone: string) {
+  const bytes = new TextEncoder().encode(`${email}|${phone}`);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return `public:${Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, "0")).join("")}`;
 }
 
-function validBirthDate(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const date = new Date(`${value}T12:00:00Z`);
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value &&
-    date >= new Date("1900-01-01T00:00:00Z") && date < new Date();
+function availabilityNotes(days: string[], notes: string | null) {
+  const labels: Record<string, string> = {
+    MONDAY: "segunda-feira",
+    TUESDAY: "terça-feira",
+    WEDNESDAY: "quarta-feira",
+    THURSDAY: "quinta-feira",
+  };
+  const availability = `Disponibilidade: ${days.map((day) => labels[day]).join(", ")}.`;
+  return notes ? `${availability}\nObservação: ${notes}`.slice(0, 500) : availability;
 }
 
 function normalizeBillingType(value: unknown) {
@@ -166,6 +167,7 @@ async function findAsaasPayment(externalReference: string) {
 async function ensureAsaasCustomer(supabase: ReturnType<typeof createClient>, athlete: JsonRecord) {
   if (athlete.asaas_customer_id) return String(athlete.asaas_customer_id);
   const cpf = String(athlete.cpf || "");
+  if (!cpf) throw new Error("O pagamento online ainda precisa ser concluído pela organização.");
   const existing = await asaasRequest(`/customers?cpfCnpj=${encodeURIComponent(cpf)}&limit=1`);
   const rows = Array.isArray(existing.data) ? existing.data : [];
   let customer = (rows[0] || null) as JsonRecord | null;
@@ -272,13 +274,13 @@ Deno.serve(async (request) => {
     const tournamentSlug = text(payload.tournament_slug, 100).toLowerCase();
     const categoryId = text(payload.category_id, 80);
     const fullName = text(payload.full_name, 120);
-    const cpf = digits(payload.cpf);
-    const birthDate = text(payload.birth_date, 10);
     const email = text(payload.email, 180).toLowerCase();
     const phone = digits(payload.phone);
+    const gender = text(payload.gender, 20).toUpperCase();
+    const availabilityDays = Array.isArray(payload.availability_days)
+      ? payload.availability_days.map((day) => text(day, 20).toUpperCase()).filter(Boolean)
+      : [];
     const city = nullableText(payload.city, 100);
-    const club = nullableText(payload.club, 120);
-    const shirtSize = nullableText(payload.shirt_size, 20);
     const partnerName = nullableText(payload.partner_name, 120);
     const notes = nullableText(payload.notes, 500);
     const billingType = normalizeBillingType(payload.payment_method);
@@ -289,10 +291,12 @@ Deno.serve(async (request) => {
       return json(request, { error: "Torneio ou categoria inválidos." }, 400);
     }
     if (fullName.length < 2) return json(request, { error: "Informe seu nome completo." }, 400);
-    if (!validCpf(cpf)) return json(request, { error: "Informe um CPF válido." }, 400);
-    if (!validBirthDate(birthDate)) return json(request, { error: "Informe uma data de nascimento válida." }, 400);
     if (!/^\S+@\S+\.\S+$/.test(email)) return json(request, { error: "Informe um e-mail válido." }, 400);
     if (phone.length < 10 || phone.length > 13) return json(request, { error: "Informe um telefone válido com DDD." }, 400);
+    if (!allowedGenders.has(gender)) return json(request, { error: "Escolha o sexo." }, 400);
+    if (!availabilityDays.length || availabilityDays.some((day) => !allowedAvailabilityDays.has(day))) {
+      return json(request, { error: "Marque pelo menos um dia disponível entre segunda e quinta." }, 400);
+    }
     if (!termsAccepted) return json(request, { error: "Confirme os dados e a autorização para realizar a inscrição." }, 400);
     if (!allowedBillingTypes.has(billingType)) return json(request, { error: "Forma de pagamento inválida." }, 400);
 
@@ -321,13 +325,16 @@ Deno.serve(async (request) => {
 
     failureStage = "category_lookup";
     const { data: category, error: categoryError } = await supabase.from("tournament_categories")
-      .select("id,tournament_id,name,event_type,registration_fee,registration_open,max_entries,active")
+      .select("id,tournament_id,name,event_type,gender,registration_fee,registration_open,max_entries,active")
       .eq("id", categoryId)
       .eq("tournament_id", tournament.id)
       .maybeSingle();
     if (categoryError) throw categoryError;
     if (!category || !category.active || !category.registration_open) {
       return json(request, { error: "Esta categoria não está recebendo inscrições." }, 409);
+    }
+    if (category.gender && ![gender, "MIXED", "OPEN"].includes(String(category.gender).toUpperCase())) {
+      return json(request, { error: "Esta classe não está disponível para o sexo selecionado." }, 400);
     }
     if (category.event_type === "DOUBLES" && !partnerName) {
       return json(request, { error: "Informe o nome da dupla para esta categoria." }, 400);
@@ -346,35 +353,32 @@ Deno.serve(async (request) => {
     const amount = Math.max(0, Number(category.registration_fee ?? tournament.default_fee ?? 0));
 
     failureStage = "athlete_upsert";
+    const sourceKey = await publicAthleteSourceKey(email, phone);
     let { data: athlete, error: athleteError } = await supabase.from("tournament_athletes")
       .select("*")
-      .eq("cpf", cpf)
+      .eq("source_key", sourceKey)
       .maybeSingle();
     if (athleteError) throw athleteError;
     const athleteValues = {
       full_name: fullName,
+      source_key: sourceKey,
       email,
       phone,
-      cpf,
-      birth_date: birthDate,
+      gender,
       city,
-      club_name: club,
       active: true,
       status: "ACTIVE",
       updated_at: new Date().toISOString(),
     };
     if (athlete) {
-      if (String(athlete.birth_date || "") !== birthDate) {
-        return json(request, { error: "Os dados informados não conferem com o cadastro deste CPF." }, 409);
-      }
+      const updated = await supabase.from("tournament_athletes").update(athleteValues).eq("id", athlete.id).select("*").single();
+      if (updated.error) throw updated.error;
+      athlete = updated.data;
     } else {
       const result = await supabase.from("tournament_athletes").insert(athleteValues).select("*").single();
       if (result.error?.code === "23505") {
-        const retry = await supabase.from("tournament_athletes").select("*").eq("cpf", cpf).single();
+        const retry = await supabase.from("tournament_athletes").select("*").eq("source_key", sourceKey).single();
         if (retry.error) throw retry.error;
-        if (String(retry.data.birth_date || "") !== birthDate) {
-          return json(request, { error: "Os dados informados não conferem com o cadastro deste CPF." }, 409);
-        }
         athlete = retry.data;
       } else if (result.error) throw result.error;
       else athlete = result.data;
@@ -390,7 +394,7 @@ Deno.serve(async (request) => {
     if (registrationResult.error) throw registrationResult.error;
     let registration = registrationResult.data as JsonRecord | null;
     if (registration && (!trackingToken || trackingToken !== String(registration.public_token))) {
-      return json(request, { error: "Já existe uma inscrição deste CPF nesta categoria. Use o acompanhamento enviado na primeira inscrição." }, 409);
+      return json(request, { error: "Já existe uma inscrição deste atleta nesta classe. Use o acompanhamento da primeira inscrição." }, 409);
     }
 
     if (registration) {
@@ -415,11 +419,11 @@ Deno.serve(async (request) => {
         p_athlete_id: athlete.id,
         p_public_name: fullName,
         p_public_city: city,
-        p_public_club: club,
+        p_public_club: null,
         p_partner_name: partnerName,
-        p_shirt_size: shirtSize,
+        p_shirt_size: null,
         p_total_amount: amount,
-        p_notes: notes,
+        p_notes: availabilityNotes(availabilityDays, notes),
       });
       if (result.error?.code === "23505") {
         return json(request, { error: "Esta inscrição já está sendo processada. Aguarde alguns segundos e use o acompanhamento da primeira solicitação." }, 409);
