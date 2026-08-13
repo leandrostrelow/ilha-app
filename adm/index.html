@@ -18410,6 +18410,7 @@
         <div class="top-actions">
           <select class="tournament-switcher" id="tournamentPicker" aria-label="Selecionar torneio"></select>
           <button class="primary-btn" type="button" id="newTournamentBtn">Criar torneio</button>
+          <a class="obs-link" id="registrationTournamentLink" href="../inscricoes/ilha-open-2026-teste" target="_blank" rel="noopener">Link inscrições</a>
           <a class="obs-link" id="publicTournamentLink" href="../torneios/ilha-open-2026-teste" target="_blank" rel="noopener">Página pública</a>
           <button class="ghost-btn" type="button" id="backToClubHomeBtn">Início</button>
           <a class="obs-link" href="../live.html" target="_blank" rel="noopener">Tela OBS</a>
@@ -19197,9 +19198,14 @@
       state.selectedTournamentId = picker.value;
       const slug = state.data.torneio.slug || '';
       const publicLink = $('publicTournamentLink');
+      const registrationLink = $('registrationTournamentLink');
       if (publicLink) {
         publicLink.href = slug ? '../torneios/' + encodeURIComponent(slug) : '../torneios';
         publicLink.hidden = !slug;
+      }
+      if (registrationLink) {
+        registrationLink.href = slug ? '../inscricoes/' + encodeURIComponent(slug) : '../torneios';
+        registrationLink.hidden = !slug;
       }
     }
 

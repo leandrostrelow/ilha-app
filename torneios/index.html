@@ -37,6 +37,7 @@
       -webkit-font-smoothing: antialiased;
     }
     body.modal-open { overflow: hidden; }
+    body.registration-only.modal-open { overflow: auto; }
     button, input, select, textarea { font: inherit; }
     button, a { -webkit-tap-highlight-color: transparent; }
     button { border: 0; cursor: pointer; }
@@ -346,6 +347,28 @@
     .payment-qr { width: min(230px, 100%); margin: 2px auto; border: 10px solid #fff; border-radius: 14px; }
     .pix-copy { word-break: break-all; color: var(--teal); font-size: 12px; font-weight: 800; }
 
+    body.registration-only .site-head { position: static; }
+    body.registration-only .head-actions { display: none; }
+    body.registration-only .page { width: min(820px, calc(100% - 32px)); padding-bottom: 20px; }
+    body.registration-only .registration-intro {
+      margin-bottom: 18px;
+      padding: clamp(22px, 5vw, 38px);
+      border-radius: 28px;
+      color: #fff;
+      background: radial-gradient(circle at 92% 10%, rgba(168,233,0,.28), transparent 14rem), linear-gradient(135deg,#082c36,#067986);
+      box-shadow: var(--shadow);
+    }
+    body.registration-only .registration-intro h1 { margin: 0; font-size: clamp(30px,6vw,48px); line-height: 1; letter-spacing: -.045em; }
+    body.registration-only .registration-intro p { margin: 12px 0 0; color: rgba(255,255,255,.78); line-height: 1.5; }
+    body.registration-only .registration-intro .hero-meta { margin-top: 17px; }
+    body.registration-only .modal-backdrop { position: static; display: block; padding: 0; background: transparent; backdrop-filter: none; }
+    body.registration-only .modal { width: 100%; max-height: none; overflow: visible; border: 1px solid var(--line); border-radius: 26px; box-shadow: var(--shadow); }
+    body.registration-only .modal-body { overflow: visible; }
+    body.registration-only #closeRegistrationBtn,
+    body.registration-only #cancelRegistrationBtn { display: none; }
+    body.registration-only .modal-foot { border-radius: 0 0 26px 26px; }
+    body.registration-only #submitRegistrationBtn { width: 100%; }
+
     footer { margin-top: 50px; padding: 28px 0 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; font-weight: 700; text-align: center; }
 
     @media (max-width: 900px) {
@@ -392,6 +415,9 @@
       .form-grid, .category-checks { grid-template-columns: 1fr; }
       .form-field.full { grid-column: auto; }
       .modal-foot .button { flex: 1; }
+      body.registration-only .page { width: min(100% - 20px,820px); }
+      body.registration-only .registration-intro { border-radius: 21px; }
+      body.registration-only .modal { max-height: none; border-radius: 21px; }
     }
   </style>
 </head>
@@ -452,6 +478,7 @@
 
     const state = {
       slug: routeSlug(),
+      registrationOnly: location.pathname.split('/').filter(Boolean)[0] === 'inscricoes',
       snapshot: null,
       activeTab: 'overview',
       bracketCategory: '',
@@ -482,7 +509,7 @@
       const query = new URLSearchParams(location.search).get('slug');
       if (query) return query;
       const parts = location.pathname.split('/').filter(Boolean);
-      const index = parts.indexOf('torneios');
+      const index = parts.indexOf('inscricoes') >= 0 ? parts.indexOf('inscricoes') : parts.indexOf('torneios');
       return index >= 0 && parts[index + 1] ? decodeURIComponent(parts[index + 1]) : '';
     }
 
@@ -518,7 +545,8 @@
       try {
         const payload = await getSnapshot(state.slug);
         state.snapshot = payload && payload.data ? payload.data : payload;
-        if (state.slug) renderTournament(); else renderLanding();
+        if (state.registrationOnly && state.slug) renderRegistrationOnly();
+        else if (state.slug) renderTournament(); else renderLanding();
       } catch (error) { renderError(error); }
     }
 
@@ -630,6 +658,18 @@
         '<section class="tab-panel" data-panel="schedule">' + scheduleHtml() + '</section>' +
         '<section class="tab-panel" data-panel="results">' + resultsHtml() + '</section>' + siteFooter();
       bindTournamentEvents();
+    }
+
+    function renderRegistrationOnly() {
+      const item = tournament();
+      if (!item || !Object.keys(item).length) return renderError(new Error('Torneio não encontrado.'));
+      const name = field(item,'name','nome') || 'Torneio Ilha';
+      document.title = 'Inscrição · ' + name;
+      document.body.classList.add('registration-only');
+      $('headRegisterBtn').hidden = true;
+      $('appMain').innerHTML = '<section class="registration-intro"><p class="eyebrow">Inscrições</p><h1>' + escapeHtml(name) + '</h1><p>Escolha sua classe, preencha seus dados e conclua o pagamento para confirmar a inscrição.</p><div class="hero-meta"><span class="meta-pill">' + escapeHtml(formatRange(item)) + '</span><span class="meta-pill">' + escapeHtml(field(item,'location','venue','local') || 'Ilha Tênis') + '</span><span class="meta-pill">' + escapeHtml(statusLabel(item)) + '</span></div></section>';
+      if (isRegistrationOpen(item)) openRegistration();
+      else $('appMain').innerHTML += '<div class="error-card"><h2>Inscrições encerradas</h2><p>A organização informará quando houver uma nova oportunidade.</p><a class="button primary" href="' + publicUrl(state.slug) + '">Ver página do torneio</a></div>';
     }
 
     function tabButton(id,label) { return '<button type="button" data-tab="' + id + '" class="' + (id === state.activeTab ? 'active' : '') + '">' + label + '</button>'; }
@@ -805,7 +845,7 @@
       document.body.classList.add('modal-open');
       setTimeout(() => $('athleteName').focus(),50);
     }
-    function closeRegistration() { if (state.submitting) return; $('registrationModal').hidden = true; $('registrationModal').setAttribute('aria-hidden','true'); document.body.classList.remove('modal-open'); }
+    function closeRegistration() { if (state.submitting || state.registrationOnly) return; $('registrationModal').hidden = true; $('registrationModal').setAttribute('aria-hidden','true'); document.body.classList.remove('modal-open'); }
     function selectedCategoryId() { return document.querySelector('input[name="category_id"]:checked')?.value || ''; }
     function updatePartnerField() {
       const selected = document.querySelector('input[name="category_id"]:checked');
@@ -888,7 +928,12 @@
         '<button class="button primary full" type="button" id="finishRegistrationBtn">Concluir</button>';
       const copy = $('copyPixBtn'); if (copy) copy.addEventListener('click',async () => { try { await navigator.clipboard.writeText(pix); copy.textContent='Pix copiado'; } catch(error) { copy.textContent='Selecione e copie o código acima'; } });
       const retry = $('retryPaymentBtn'); if (retry) retry.addEventListener('click',() => { $('registrationForm').hidden = false; $('registrationSuccess').hidden = true; $('registrationForm').requestSubmit(); });
-      $('finishRegistrationBtn').addEventListener('click',closeRegistration);
+      if (state.registrationOnly) {
+        $('finishRegistrationBtn').textContent = 'Ver página do torneio';
+        $('finishRegistrationBtn').addEventListener('click',() => { location.href = publicUrl(state.slug); });
+      } else {
+        $('finishRegistrationBtn').addEventListener('click',closeRegistration);
+      }
     }
 
     $('closeRegistrationBtn').addEventListener('click',closeRegistration);
