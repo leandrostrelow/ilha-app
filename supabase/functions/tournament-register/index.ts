@@ -10,6 +10,8 @@ const allowedOrigins = new Set([
 const allowedBillingTypes = new Set(["PIX", "BOLETO", "CREDIT_CARD", "UNDEFINED"]);
 const allowedGenders = new Set(["MALE", "FEMALE"]);
 const allowedAvailabilityDays = new Set(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY"]);
+const participantPrices: Record<string, number> = { CINCATE: 100, ILHA_STUDENT: 130, NON_MEMBER: 180 };
+const participantLabels: Record<string, string> = { CINCATE: "CINCATE", ILHA_STUDENT: "Aluno Ilha Tênis", NON_MEMBER: "Não associado" };
 const retryablePaymentStatuses = new Set(["CREATED", "FAILED"]);
 
 type JsonRecord = Record<string, unknown>;
@@ -66,15 +68,15 @@ async function publicAthleteSourceKey(email: string, phone: string) {
   return `public:${Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, "0")).join("")}`;
 }
 
-function availabilityNotes(days: string[], notes: string | null) {
+function registrationNotes(participantType: string, days: string[], notes: string | null) {
   const labels: Record<string, string> = {
     MONDAY: "segunda-feira",
     TUESDAY: "terça-feira",
     WEDNESDAY: "quarta-feira",
     THURSDAY: "quinta-feira",
   };
-  const availability = `Disponibilidade: ${days.map((day) => labels[day]).join(", ")}.`;
-  return notes ? `${availability}\nObservação: ${notes}`.slice(0, 500) : availability;
+  const details = `Tipo de inscrição: ${participantLabels[participantType]}.\nDisponibilidade: ${days.map((day) => labels[day]).join(", ")}.`;
+  return notes ? `${details}\nObservação: ${notes}`.slice(0, 500) : details;
 }
 
 function normalizeBillingType(value: unknown) {
@@ -276,6 +278,7 @@ Deno.serve(async (request) => {
     const fullName = text(payload.full_name, 120);
     const email = text(payload.email, 180).toLowerCase();
     const phone = digits(payload.phone);
+    const participantType = text(payload.participant_type, 30).toUpperCase();
     const gender = text(payload.gender, 20).toUpperCase();
     const availabilityDays = Array.isArray(payload.availability_days)
       ? payload.availability_days.map((day) => text(day, 20).toUpperCase()).filter(Boolean)
@@ -293,6 +296,7 @@ Deno.serve(async (request) => {
     if (fullName.length < 2) return json(request, { error: "Informe seu nome completo." }, 400);
     if (!/^\S+@\S+\.\S+$/.test(email)) return json(request, { error: "Informe um e-mail válido." }, 400);
     if (phone.length < 10 || phone.length > 13) return json(request, { error: "Informe um telefone válido com DDD." }, 400);
+    if (!(participantType in participantPrices)) return json(request, { error: "Escolha um tipo de inscrição válido." }, 400);
     if (!allowedGenders.has(gender)) return json(request, { error: "Escolha o sexo." }, 400);
     if (!availabilityDays.length || availabilityDays.some((day) => !allowedAvailabilityDays.has(day))) {
       return json(request, { error: "Marque pelo menos um dia disponível entre segunda e quinta." }, 400);
@@ -350,7 +354,7 @@ Deno.serve(async (request) => {
     if (!allowedMethods.includes(billingType)) {
       return json(request, { error: "Esta forma de pagamento não está disponível no torneio." }, 400);
     }
-    const amount = Math.max(0, Number(category.registration_fee ?? tournament.default_fee ?? 0));
+    const amount = participantPrices[participantType];
 
     failureStage = "athlete_upsert";
     const sourceKey = await publicAthleteSourceKey(email, phone);
@@ -423,7 +427,7 @@ Deno.serve(async (request) => {
         p_partner_name: partnerName,
         p_shirt_size: null,
         p_total_amount: amount,
-        p_notes: availabilityNotes(availabilityDays, notes),
+        p_notes: registrationNotes(participantType, availabilityDays, notes),
       });
       if (result.error?.code === "23505") {
         return json(request, { error: "Esta inscrição já está sendo processada. Aguarde alguns segundos e use o acompanhamento da primeira solicitação." }, 409);
