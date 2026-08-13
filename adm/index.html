@@ -19251,7 +19251,6 @@
           }).join('');
           const payment = regs[0] ? regs[0].status_pagamento : '';
           const statusClass = String(player.status || 'ATIVO') === 'INATIVO' ? ' off' : '';
-          const inIlhaCard = regs.some(function (r) { return isIlhaCardCategoryId(r.categoria_id); });
           return '<div class="row">' +
             '<div><strong>' + escapeHtml(player.nome) + '</strong><small>' +
             escapeHtml(player.cidade || 'sem cidade') + ' | ' + escapeHtml(player.whatsapp || 'sem WhatsApp') +
@@ -19261,9 +19260,7 @@
             (payment ? '<span class="mini-tag warn">' + escapeHtml(payment) + '</span>' : '') +
             '</div></div>' +
             '<div class="actions" style="margin:0">' +
-            '<button class="small-btn ilha-card-btn ' + (inIlhaCard ? 'active' : '') + '" type="button" data-ilha-card-player="' + escapeHtml(player.jogador_id) + '"' +
-            (inIlhaCard ? ' disabled title="Jogador ja esta na classe Especial"' : ' title="Adicionar na classe Especial"') + '>Especial</button>' +
-            '<button class="icon-btn" title="Editar" data-edit-player="' + escapeHtml(player.jogador_id) + '">...</button>' +
+            '<button class="small-btn" type="button" data-edit-player="' + escapeHtml(player.jogador_id) + '">Editar</button>' +
             '</div></div>';
         }).join('') || '<div class="empty">Nenhum jogador cadastrado.</div>';
     }
@@ -20880,7 +20877,8 @@
       } else if ($('playerCategoryFilter').value) {
         $('registrationCategory').value = $('playerCategoryFilter').value;
       }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const formCard = document.querySelector('#players .player-form-card');
+      if (formCard) formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function clearPlayerForm() {
