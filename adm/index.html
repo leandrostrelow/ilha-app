@@ -11618,7 +11618,7 @@
 
     .bar-finance-period-switch {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 3px;
       padding: 4px;
       border: 1px solid rgba(255, 255, 255, .12);
@@ -17429,6 +17429,7 @@
                 <div class="bar-finance-report-controls">
                   <div class="bar-finance-period-switch" role="tablist" aria-label="Período do relatório">
                     <button class="active" type="button" data-bar-finance-period="daily" role="tab" aria-selected="true">Diário</button>
+                    <button type="button" data-bar-finance-period="weekly" role="tab" aria-selected="false">Semanal</button>
                     <button type="button" data-bar-finance-period="monthly" role="tab" aria-selected="false">Mensal</button>
                   </div>
                   <label class="bar-finance-date-control" data-bar-finance-date-control="daily"><span>Dia</span><input id="barFinanceReportDate" type="date" /></label>
@@ -24783,12 +24784,29 @@
     }
 
     function barFinancePeriodEntries() {
-      const period = opsState.barFinancePeriod === 'monthly' ? 'monthly' : 'daily';
+      const period = ['daily', 'weekly', 'monthly'].includes(opsState.barFinancePeriod) ? opsState.barFinancePeriod : 'daily';
       const reference = period === 'monthly' ? opsState.barFinanceReportMonth : opsState.barFinanceReportDate;
       return (opsData.barFinance || []).filter(function (item) {
         const key = barFinanceEntryDateKey(item);
-        return period === 'monthly' ? key.slice(0, 7) === reference : key === reference;
+        if (period === 'monthly') return key.slice(0, 7) === reference;
+        if (period === 'weekly') return barFinanceIsInLastSevenDays(key);
+        return key === reference;
       });
+    }
+
+    function barFinanceLastSevenDays() {
+      const end = new Date();
+      end.setHours(12, 0, 0, 0);
+      return Array.from({ length: 7 }, function (_, index) {
+        const date = new Date(end);
+        date.setDate(end.getDate() - (6 - index));
+        return localDateString(date);
+      });
+    }
+
+    function barFinanceIsInLastSevenDays(key) {
+      const days = barFinanceLastSevenDays();
+      return Boolean(key) && key >= days[0] && key <= days[days.length - 1];
     }
 
     function barFinancePaymentGroup(method) {
@@ -25925,6 +25943,16 @@
           return label.charAt(0).toUpperCase() + label.slice(1);
         }
       }
+      if (opsState.barFinancePeriod === 'weekly') {
+        const days = barFinanceLastSevenDays();
+        const start = financeDateValue(days[0]);
+        const end = financeDateValue(days[days.length - 1]);
+        if (start && end) {
+          return 'Últimos 7 dias · ' + start.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) +
+            ' a ' + end.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        }
+        return 'Últimos 7 dias';
+      }
       const date = financeDateValue(opsState.barFinanceReportDate);
       return date ? date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : 'Período selecionado';
     }
@@ -25950,6 +25978,7 @@
     function barFinanceSalePeriodMatches(value) {
       const key = barOperationalDateKey(value);
       if (opsState.barFinancePeriod === 'monthly') return key.slice(0, 7) === opsState.barFinanceReportMonth;
+      if (opsState.barFinancePeriod === 'weekly') return barFinanceIsInLastSevenDays(key);
       return key === opsState.barFinanceReportDate;
     }
 
@@ -26068,7 +26097,9 @@
       const csv = '\uFEFF' + rows.map(function (row) { return row.map(barFinanceCsvCell).join(';'); }).join('\r\n');
       const blobUrl = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
       const link = document.createElement('a');
-      const reference = opsState.barFinancePeriod === 'monthly' ? opsState.barFinanceReportMonth : opsState.barFinanceReportDate;
+      const reference = opsState.barFinancePeriod === 'monthly'
+        ? opsState.barFinanceReportMonth
+        : (opsState.barFinancePeriod === 'weekly' ? 'ultimos-7-dias' : opsState.barFinanceReportDate);
       link.href = blobUrl;
       link.download = 'financeiro-bar-' + reference + '.csv';
       document.body.appendChild(link);
@@ -26081,7 +26112,7 @@
     function renderBarFinance() {
       if (!opsState.barFinanceReportDate) opsState.barFinanceReportDate = localDateString(new Date());
       if (!opsState.barFinanceReportMonth) opsState.barFinanceReportMonth = localDateString(new Date()).slice(0, 7);
-      const period = opsState.barFinancePeriod === 'monthly' ? 'monthly' : 'daily';
+      const period = ['daily', 'weekly', 'monthly'].includes(opsState.barFinancePeriod) ? opsState.barFinancePeriod : 'daily';
       $('barFinanceReportDate').value = opsState.barFinanceReportDate;
       $('barFinanceReportMonth').value = opsState.barFinanceReportMonth;
       document.querySelectorAll('[data-bar-finance-period]').forEach(function (button) {
@@ -26118,7 +26149,9 @@
 
       $('barFinanceRevenueMetric').textContent = money(revenueTotal);
       $('barFinanceRevenueCount').textContent = confirmedRevenue.length + (confirmedRevenue.length === 1 ? ' recebimento' : ' recebimentos');
-      $('barFinanceSoldLabel').textContent = period === 'monthly' ? 'Vendido no mês' : 'Vendido no dia';
+      $('barFinanceSoldLabel').textContent = period === 'monthly'
+        ? 'Vendido no mês'
+        : (period === 'weekly' ? 'Vendido nos últimos 7 dias' : 'Vendido no dia');
       $('barFinanceSoldMetric').textContent = money(soldInPeriod.amount);
       $('barFinanceSoldCount').textContent = soldInPeriod.orderCount + (soldInPeriod.orderCount === 1 ? ' comanda movimentada' : ' comandas movimentadas');
       $('barFinanceExpenseMetric').textContent = money(expenseTotal);
@@ -26156,6 +26189,21 @@
           if (day >= 1 && day <= chartBuckets.length) chartBuckets[day - 1].value += Number(item.amount || 0);
         });
         $('barFinanceChartTitle').textContent = 'Recebimentos por dia';
+      } else if (period === 'weekly') {
+        chartBuckets = barFinanceLastSevenDays().map(function (key) {
+          const date = financeDateValue(key);
+          return {
+            key: key,
+            label: date ? date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }).replace('.', '') : key,
+            value: 0
+          };
+        });
+        confirmedRevenue.forEach(function (item) {
+          const key = barFinanceEntryDateKey(item);
+          const bucket = chartBuckets.find(function (entry) { return entry.key === key; });
+          if (bucket) bucket.value += Number(item.amount || 0);
+        });
+        $('barFinanceChartTitle').textContent = 'Recebimentos nos últimos 7 dias';
       } else {
         chartBuckets = Array.from({ length: 12 }, function (_, index) {
           return { label: pad2(index * 2) + 'h', value: 0 };
@@ -32643,7 +32691,8 @@
         }
         const financePeriod = event.target.closest('[data-bar-finance-period]');
         if (financePeriod) {
-          opsState.barFinancePeriod = financePeriod.dataset.barFinancePeriod === 'monthly' ? 'monthly' : 'daily';
+          const selectedPeriod = financePeriod.dataset.barFinancePeriod;
+          opsState.barFinancePeriod = ['daily', 'weekly', 'monthly'].includes(selectedPeriod) ? selectedPeriod : 'daily';
           renderBarFinance();
           return;
         }
