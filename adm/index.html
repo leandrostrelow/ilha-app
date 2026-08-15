@@ -11618,7 +11618,7 @@
 
     .bar-finance-period-switch {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 3px;
       padding: 4px;
       border: 1px solid rgba(255, 255, 255, .12);
@@ -11703,9 +11703,115 @@
       background: rgba(255, 255, 255, .14);
     }
 
+    .bar-finance-export-btn[hidden] {
+      display: none;
+    }
+
     .bar-finance-export-btn svg {
       width: 17px;
       height: 17px;
+    }
+
+    .bar-finance-general-overview {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .bar-finance-general-overview[hidden],
+    .bar-finance-detail-content[hidden] {
+      display: none;
+    }
+
+    .bar-finance-detail-content {
+      display: grid;
+      gap: 18px;
+    }
+
+    .bar-finance-summary-card {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid #d8e5e7;
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: 0 10px 28px rgba(30, 55, 62, .06);
+    }
+
+    .bar-finance-summary-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      color: #ffffff;
+      background: linear-gradient(125deg, #14233a, #1c4254);
+    }
+
+    .bar-finance-summary-card-head h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .bar-finance-summary-card-head span {
+      color: #c8d5df;
+      font-size: 10px;
+      font-weight: 750;
+      text-align: right;
+    }
+
+    .bar-finance-summary-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .bar-finance-summary-metric {
+      min-width: 0;
+      padding: 15px 18px;
+      border-top: 1px solid #edf1f2;
+    }
+
+    .bar-finance-summary-metric:nth-child(even) {
+      border-left: 1px solid #edf1f2;
+    }
+
+    .bar-finance-summary-metric small,
+    .bar-finance-summary-metric strong,
+    .bar-finance-summary-metric em {
+      display: block;
+    }
+
+    .bar-finance-summary-metric small {
+      color: #697785;
+      font-size: 9px;
+      font-weight: 850;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .bar-finance-summary-metric strong {
+      margin-top: 5px;
+      overflow: hidden;
+      color: #14232b;
+      font-size: clamp(18px, 2vw, 24px);
+      letter-spacing: -.035em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-finance-summary-metric.is-positive strong {
+      color: #16834c;
+    }
+
+    .bar-finance-summary-metric.is-negative strong {
+      color: #c14343;
+    }
+
+    .bar-finance-summary-metric em {
+      margin-top: 4px;
+      color: #87929d;
+      font-size: 9px;
+      font-style: normal;
+      font-weight: 700;
     }
 
     .bar-finance-kpis {
@@ -12444,6 +12550,10 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
+      .bar-finance-general-overview {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
       .bar-finance-bottom-grid {
         grid-template-columns: minmax(0, 1fr);
       }
@@ -12473,6 +12583,18 @@
         gap: 12px;
       }
 
+      .bar-finance-detail-content {
+        gap: 12px;
+      }
+
+      .bar-finance-summary-card-head {
+        padding: 14px 16px;
+      }
+
+      .bar-finance-summary-metric {
+        padding: 13px 15px;
+      }
+
       .bar-finance-report-head {
         padding: 18px;
       }
@@ -12486,6 +12608,11 @@
 
       .bar-finance-period-switch {
         width: 100%;
+      }
+
+      .bar-finance-period-switch button {
+        padding: 0 7px;
+        font-size: 10px;
       }
 
       .bar-finance-kpis,
@@ -17423,14 +17550,15 @@
           </div>
 
           <div data-bar-panel="finance">
-            <div class="bar-finance-page">
+            <div class="bar-finance-page" id="barFinancePage">
               <div class="bar-finance-report-head">
                 <div class="bar-finance-report-title"><span><svg><use href="#admin-icon-wallet"></use></svg></span><div><h2>Relatórios financeiros</h2><p>Acompanhe recebimentos, despesas e resultado do Bar.</p></div></div>
                 <div class="bar-finance-report-controls">
                   <div class="bar-finance-period-switch" role="tablist" aria-label="Período do relatório">
-                    <button class="active" type="button" data-bar-finance-period="daily" role="tab" aria-selected="true">Diário</button>
-                    <button type="button" data-bar-finance-period="weekly" role="tab" aria-selected="false">Semanal</button>
-                    <button type="button" data-bar-finance-period="monthly" role="tab" aria-selected="false">Mensal</button>
+                    <button class="active" type="button" data-bar-finance-period="general" role="tab" aria-selected="true">Resumo geral</button>
+                    <button type="button" data-bar-finance-period="monthly" role="tab" aria-selected="false">Mês</button>
+                    <button type="button" data-bar-finance-period="weekly" role="tab" aria-selected="false">Semana</button>
+                    <button type="button" data-bar-finance-period="daily" role="tab" aria-selected="false">Dia</button>
                   </div>
                   <label class="bar-finance-date-control" data-bar-finance-date-control="daily"><span>Dia</span><input id="barFinanceReportDate" type="date" /></label>
                   <label class="bar-finance-date-control" data-bar-finance-date-control="monthly"><span>Mês</span><input id="barFinanceReportMonth" type="month" /></label>
@@ -17438,6 +17566,9 @@
                 </div>
               </div>
 
+              <div class="bar-finance-general-overview" id="barFinanceGeneralOverview"></div>
+
+              <div class="bar-finance-detail-content" id="barFinanceDetailContent" hidden>
               <div class="bar-finance-kpis">
                 <article class="bar-finance-kpi revenue"><span class="bar-finance-kpi-icon"><svg><use href="#bar-icon-trend"></use></svg></span><div><small>Faturamento recebido</small><strong id="barFinanceRevenueMetric">R$ 0,00</strong><em id="barFinanceRevenueCount">0 recebimentos</em></div></article>
                 <article class="bar-finance-kpi sold"><span class="bar-finance-kpi-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><div><small id="barFinanceSoldLabel">Vendido no dia</small><strong id="barFinanceSoldMetric">R$ 0,00</strong><em id="barFinanceSoldCount">0 comandas</em></div></article>
@@ -17492,6 +17623,7 @@
                     <div class="field full"><button class="primary-btn bar-finance-save-btn" type="submit"><svg><use href="#bar-icon-check"></use></svg>Salvar lançamento</button></div>
                   </form>
                 </section>
+              </div>
               </div>
             </div>
           </div>
@@ -22470,7 +22602,7 @@
       removeBarProductImage: false,
       pendingBarCategoryImage: '',
       barFinanceFilter: 'todos',
-      barFinancePeriod: 'daily',
+      barFinancePeriod: 'general',
       barFinanceReportDate: localDateString(new Date()),
       barFinanceReportMonth: localDateString(new Date()).slice(0, 7),
       selectedBarOrderId: storedBarViewState.orderId,
@@ -24783,14 +24915,15 @@
       return barFinanceDateKey(value);
     }
 
-    function barFinancePeriodEntries() {
-      const period = ['daily', 'weekly', 'monthly'].includes(opsState.barFinancePeriod) ? opsState.barFinancePeriod : 'daily';
-      const reference = period === 'monthly' ? opsState.barFinanceReportMonth : opsState.barFinanceReportDate;
+    function barFinancePeriodEntries(periodOverride, dateOverride, monthOverride) {
+      const period = ['daily', 'weekly', 'monthly'].includes(periodOverride) ? periodOverride : (['daily', 'weekly', 'monthly'].includes(opsState.barFinancePeriod) ? opsState.barFinancePeriod : 'daily');
+      const reportDate = dateOverride || opsState.barFinanceReportDate;
+      const reportMonth = monthOverride || opsState.barFinanceReportMonth;
       return (opsData.barFinance || []).filter(function (item) {
         const key = barFinanceEntryDateKey(item);
-        if (period === 'monthly') return key.slice(0, 7) === reference;
+        if (period === 'monthly') return key.slice(0, 7) === reportMonth;
         if (period === 'weekly') return barFinanceIsInLastSevenDays(key);
-        return key === reference;
+        return key === reportDate;
       });
     }
 
@@ -25975,14 +26108,15 @@
       };
     }
 
-    function barFinanceSalePeriodMatches(value) {
+    function barFinanceSalePeriodMatches(value, periodOverride, dateOverride, monthOverride) {
       const key = barOperationalDateKey(value);
-      if (opsState.barFinancePeriod === 'monthly') return key.slice(0, 7) === opsState.barFinanceReportMonth;
-      if (opsState.barFinancePeriod === 'weekly') return barFinanceIsInLastSevenDays(key);
-      return key === opsState.barFinanceReportDate;
+      const period = ['daily', 'weekly', 'monthly'].includes(periodOverride) ? periodOverride : opsState.barFinancePeriod;
+      if (period === 'monthly') return key.slice(0, 7) === (monthOverride || opsState.barFinanceReportMonth);
+      if (period === 'weekly') return barFinanceIsInLastSevenDays(key);
+      return key === (dateOverride || opsState.barFinanceReportDate);
     }
 
-    function barFinanceSoldInPeriod() {
+    function barFinanceSoldInPeriod(periodOverride, dateOverride, monthOverride) {
       const activeItems = (opsData.barOrderItems || []).filter(function (item) {
         const order = barOrderById(item.orderId);
         return order && String(order.status || '').toUpperCase() !== 'CANCELADA' && String(item.status || '').toUpperCase() !== 'CANCELADO';
@@ -26004,11 +26138,76 @@
       const orderIds = new Set();
       let amount = 0;
       saleGroups.forEach(function (group) {
-        if (!barFinanceSalePeriodMatches(group.created)) return;
+        if (!barFinanceSalePeriodMatches(group.created, periodOverride, dateOverride, monthOverride)) return;
         amount += group.amount;
         group.orderIds.forEach(function (orderId) { orderIds.add(orderId); });
       });
       return { amount: amount, orderCount: orderIds.size };
+    }
+
+    function barFinanceGeneralSummary(period) {
+      const today = localDateString(new Date());
+      const month = today.slice(0, 7);
+      const entries = barFinancePeriodEntries(period, today, month);
+      const revenue = entries.filter(function (item) {
+        return String(item.type || '').toUpperCase() === 'RECEITA' && barFinanceIsConfirmed(item);
+      });
+      const expenses = entries.filter(function (item) {
+        return String(item.type || '').toUpperCase() === 'DESPESA' && barFinanceIsConfirmed(item);
+      });
+      const sumAmount = function (items) {
+        return items.reduce(function (sum, item) { return sum + Number(item.amount || 0); }, 0);
+      };
+      const received = sumAmount(revenue);
+      const expense = sumAmount(expenses);
+      return {
+        received: received,
+        receivedCount: revenue.length,
+        expense: expense,
+        expenseCount: expenses.length,
+        net: received - expense,
+        sold: barFinanceSoldInPeriod(period, today, month)
+      };
+    }
+
+    function renderBarFinanceGeneralOverview() {
+      const todayKey = localDateString(new Date());
+      const todayDate = financeDateValue(todayKey);
+      const weekDays = barFinanceLastSevenDays();
+      const weekStart = financeDateValue(weekDays[0]);
+      const weekEnd = financeDateValue(weekDays[weekDays.length - 1]);
+      const monthParts = todayKey.slice(0, 7).split('-').map(Number);
+      const monthLabel = new Date(monthParts[0], monthParts[1] - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      const periods = [
+        {
+          key: 'daily',
+          title: 'Dia',
+          detail: todayDate ? todayDate.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '') : 'Hoje'
+        },
+        {
+          key: 'weekly',
+          title: 'Semana',
+          detail: weekStart && weekEnd ? weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' a ' + weekEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : 'Últimos 7 dias'
+        },
+        {
+          key: 'monthly',
+          title: 'Mês',
+          detail: monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)
+        }
+      ];
+      $('barFinanceGeneralOverview').innerHTML = periods.map(function (period) {
+        const summary = barFinanceGeneralSummary(period.key);
+        const netClass = summary.net < 0 ? ' is-negative' : ' is-positive';
+        return '<article class="bar-finance-summary-card">' +
+          '<div class="bar-finance-summary-card-head"><h3>' + escapeHtml(period.title) + '</h3><span>' + escapeHtml(period.detail) + '</span></div>' +
+          '<div class="bar-finance-summary-metrics">' +
+            '<div class="bar-finance-summary-metric"><small>Recebido</small><strong>' + money(summary.received) + '</strong><em>' + summary.receivedCount + (summary.receivedCount === 1 ? ' recebimento' : ' recebimentos') + '</em></div>' +
+            '<div class="bar-finance-summary-metric"><small>Vendido</small><strong>' + money(summary.sold.amount) + '</strong><em>' + summary.sold.orderCount + (summary.sold.orderCount === 1 ? ' comanda' : ' comandas') + '</em></div>' +
+            '<div class="bar-finance-summary-metric"><small>Despesas</small><strong>' + money(summary.expense) + '</strong><em>' + summary.expenseCount + (summary.expenseCount === 1 ? ' pagamento' : ' pagamentos') + '</em></div>' +
+            '<div class="bar-finance-summary-metric' + netClass + '"><small>Resultado</small><strong>' + money(summary.net) + '</strong><em>Entradas menos saídas</em></div>' +
+          '</div>' +
+        '</article>';
+      }).join('');
     }
 
     function barFinanceSalesData(entries) {
@@ -26112,17 +26311,25 @@
     function renderBarFinance() {
       if (!opsState.barFinanceReportDate) opsState.barFinanceReportDate = localDateString(new Date());
       if (!opsState.barFinanceReportMonth) opsState.barFinanceReportMonth = localDateString(new Date()).slice(0, 7);
-      const period = ['daily', 'weekly', 'monthly'].includes(opsState.barFinancePeriod) ? opsState.barFinancePeriod : 'daily';
+      const view = ['general', 'daily', 'weekly', 'monthly'].includes(opsState.barFinancePeriod) ? opsState.barFinancePeriod : 'general';
+      const period = view === 'general' ? 'daily' : view;
       $('barFinanceReportDate').value = opsState.barFinanceReportDate;
       $('barFinanceReportMonth').value = opsState.barFinanceReportMonth;
       document.querySelectorAll('[data-bar-finance-period]').forEach(function (button) {
-        const active = button.dataset.barFinancePeriod === period;
+        const active = button.dataset.barFinancePeriod === view;
         button.classList.toggle('active', active);
         button.setAttribute('aria-selected', String(active));
       });
       document.querySelectorAll('[data-bar-finance-date-control]').forEach(function (control) {
-        control.hidden = control.dataset.barFinanceDateControl !== period;
+        control.hidden = control.dataset.barFinanceDateControl !== view;
       });
+      $('barFinanceExportBtn').hidden = view === 'general';
+      $('barFinanceGeneralOverview').hidden = view !== 'general';
+      $('barFinanceDetailContent').hidden = view === 'general';
+      if (view === 'general') {
+        renderBarFinanceGeneralOverview();
+        return;
+      }
 
       const entries = barFinancePeriodEntries();
       const confirmedRevenue = entries.filter(function (item) {
@@ -32692,7 +32899,7 @@
         const financePeriod = event.target.closest('[data-bar-finance-period]');
         if (financePeriod) {
           const selectedPeriod = financePeriod.dataset.barFinancePeriod;
-          opsState.barFinancePeriod = ['daily', 'weekly', 'monthly'].includes(selectedPeriod) ? selectedPeriod : 'daily';
+          opsState.barFinancePeriod = ['general', 'daily', 'weekly', 'monthly'].includes(selectedPeriod) ? selectedPeriod : 'general';
           renderBarFinance();
           return;
         }
