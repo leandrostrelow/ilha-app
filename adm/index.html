@@ -11814,6 +11814,38 @@
       font-weight: 700;
     }
 
+    .bar-finance-summary-footer {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border-top: 1px solid #dfe8ea;
+      background: #f5f9f9;
+    }
+
+    .bar-finance-summary-footer > span {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 11px 16px;
+      color: #697785;
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .bar-finance-summary-footer > span + span {
+      border-left: 1px solid #dfe8ea;
+    }
+
+    .bar-finance-summary-footer strong {
+      overflow: hidden;
+      color: #087d83;
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .bar-finance-kpis {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -12593,6 +12625,12 @@
 
       .bar-finance-summary-metric {
         padding: 13px 15px;
+      }
+
+      .bar-finance-summary-footer > span {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 10px 14px;
       }
 
       .bar-finance-report-head {
@@ -26128,7 +26166,13 @@
         const sourceItem = itemsById.get(physicalId) || item;
         let group = saleGroups.get(physicalId);
         if (!group) {
-          group = { created: sourceItem.created || item.created, amount: 0, orderIds: new Set() };
+          group = {
+            created: sourceItem.created || item.created,
+            amount: 0,
+            quantity: Number(sourceItem.quantity || item.quantity || 0),
+            productGroup: barFinanceProductGroup(sourceItem).key,
+            orderIds: new Set()
+          };
           saleGroups.set(physicalId, group);
         }
         group.amount += Number(item.quantity || 0) * Number(item.unitPrice || 0);
@@ -26137,12 +26181,25 @@
 
       const orderIds = new Set();
       let amount = 0;
+      const productTotals = {
+        food: { quantity: 0, amount: 0 },
+        drink: { quantity: 0, amount: 0 }
+      };
       saleGroups.forEach(function (group) {
         if (!barFinanceSalePeriodMatches(group.created, periodOverride, dateOverride, monthOverride)) return;
         amount += group.amount;
+        const productTotal = productTotals[group.productGroup] || productTotals.food;
+        productTotal.quantity += group.quantity;
+        productTotal.amount += group.amount;
         group.orderIds.forEach(function (orderId) { orderIds.add(orderId); });
       });
-      return { amount: amount, orderCount: orderIds.size };
+      return {
+        amount: amount,
+        orderCount: orderIds.size,
+        quantity: productTotals.food.quantity + productTotals.drink.quantity,
+        food: productTotals.food,
+        drink: productTotals.drink
+      };
     }
 
     function barFinanceGeneralSummary(period) {
@@ -26166,6 +26223,7 @@
         expense: expense,
         expenseCount: expenses.length,
         net: received - expense,
+        ticket: revenue.length ? received / revenue.length : 0,
         sold: barFinanceSoldInPeriod(period, today, month)
       };
     }
@@ -26203,9 +26261,12 @@
           '<div class="bar-finance-summary-metrics">' +
             '<div class="bar-finance-summary-metric"><small>Recebido</small><strong>' + money(summary.received) + '</strong><em>' + summary.receivedCount + (summary.receivedCount === 1 ? ' recebimento' : ' recebimentos') + '</em></div>' +
             '<div class="bar-finance-summary-metric"><small>Vendido</small><strong>' + money(summary.sold.amount) + '</strong><em>' + summary.sold.orderCount + (summary.sold.orderCount === 1 ? ' comanda' : ' comandas') + '</em></div>' +
+            '<div class="bar-finance-summary-metric"><small>Comidas</small><strong>' + summary.sold.food.quantity.toLocaleString('pt-BR') + '</strong><em>' + money(summary.sold.food.amount) + ' vendido</em></div>' +
+            '<div class="bar-finance-summary-metric"><small>Bebidas</small><strong>' + summary.sold.drink.quantity.toLocaleString('pt-BR') + '</strong><em>' + money(summary.sold.drink.amount) + ' vendido</em></div>' +
             '<div class="bar-finance-summary-metric"><small>Despesas</small><strong>' + money(summary.expense) + '</strong><em>' + summary.expenseCount + (summary.expenseCount === 1 ? ' pagamento' : ' pagamentos') + '</em></div>' +
             '<div class="bar-finance-summary-metric' + netClass + '"><small>Resultado</small><strong>' + money(summary.net) + '</strong><em>Entradas menos saídas</em></div>' +
           '</div>' +
+          '<div class="bar-finance-summary-footer"><span>Ticket médio <strong>' + money(summary.ticket) + '</strong></span><span>Total de itens <strong>' + summary.sold.quantity.toLocaleString('pt-BR') + '</strong></span></div>' +
         '</article>';
       }).join('');
     }
