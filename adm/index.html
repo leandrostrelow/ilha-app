@@ -11846,6 +11846,94 @@
       white-space: nowrap;
     }
 
+    .bar-finance-daily-panel {
+      min-width: 0;
+      grid-column: 1 / -1;
+      overflow: hidden;
+      border: 1px solid #d8e5e7;
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: 0 10px 28px rgba(30, 55, 62, .06);
+    }
+
+    .bar-finance-daily-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid #e3eaec;
+    }
+
+    .bar-finance-daily-panel-head h3 {
+      margin: 0;
+      color: #17283a;
+      font-size: 17px;
+    }
+
+    .bar-finance-daily-panel-head span {
+      color: #75818e;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .bar-finance-daily-table {
+      overflow-x: auto;
+    }
+
+    .bar-finance-daily-row {
+      min-width: 760px;
+      display: grid;
+      grid-template-columns: minmax(135px, 1.2fr) repeat(5, minmax(105px, 1fr));
+      align-items: center;
+    }
+
+    .bar-finance-daily-row + .bar-finance-daily-row {
+      border-top: 1px solid #edf1f2;
+    }
+
+    .bar-finance-daily-row.is-head {
+      color: #72808e;
+      background: #f5f8f9;
+      font-size: 9px;
+      font-weight: 850;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .bar-finance-daily-cell {
+      min-width: 0;
+      padding: 12px 14px;
+    }
+
+    .bar-finance-daily-cell strong,
+    .bar-finance-daily-cell small {
+      display: block;
+    }
+
+    .bar-finance-daily-cell strong {
+      overflow: hidden;
+      color: #17283a;
+      font-size: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-finance-daily-cell small {
+      margin-top: 3px;
+      color: #87929d;
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .bar-finance-daily-cell.is-positive strong {
+      color: #16834c;
+    }
+
+    .bar-finance-daily-cell.is-negative strong {
+      color: #c14343;
+    }
+
     .bar-finance-kpis {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -12631,6 +12719,68 @@
         align-items: flex-start;
         flex-direction: column;
         padding: 10px 14px;
+      }
+
+      .bar-finance-daily-panel-head {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 14px 16px;
+      }
+
+      .bar-finance-daily-table {
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+        overflow: visible;
+        background: #f5f8f9;
+      }
+
+      .bar-finance-daily-row.is-head {
+        display: none;
+      }
+
+      .bar-finance-daily-row {
+        min-width: 0;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: hidden;
+        border: 1px solid #dfe8ea;
+        border-radius: 12px;
+        background: #ffffff;
+      }
+
+      .bar-finance-daily-row + .bar-finance-daily-row {
+        border-top: 1px solid #dfe8ea;
+      }
+
+      .bar-finance-daily-cell {
+        padding: 10px 12px;
+        border-top: 1px solid #edf1f2;
+      }
+
+      .bar-finance-daily-cell:nth-child(odd):not(.is-date) {
+        border-left: 1px solid #edf1f2;
+      }
+
+      .bar-finance-daily-cell.is-date {
+        grid-column: 1 / -1;
+        border-top: 0;
+        border-left: 0;
+        background: #17283a;
+      }
+
+      .bar-finance-daily-cell.is-date strong {
+        color: #ffffff;
+      }
+
+      .bar-finance-daily-cell:not(.is-date)::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 4px;
+        color: #7b8793;
+        font-size: 8px;
+        font-weight: 850;
+        letter-spacing: .04em;
+        text-transform: uppercase;
       }
 
       .bar-finance-report-head {
@@ -26154,7 +26304,7 @@
       return key === (dateOverride || opsState.barFinanceReportDate);
     }
 
-    function barFinanceSoldInPeriod(periodOverride, dateOverride, monthOverride) {
+    function barFinanceActiveSaleGroups() {
       const activeItems = (opsData.barOrderItems || []).filter(function (item) {
         const order = barOrderById(item.orderId);
         return order && String(order.status || '').toUpperCase() !== 'CANCELADA' && String(item.status || '').toUpperCase() !== 'CANCELADO';
@@ -26178,7 +26328,11 @@
         group.amount += Number(item.quantity || 0) * Number(item.unitPrice || 0);
         group.orderIds.add(String(item.orderId));
       });
+      return Array.from(saleGroups.values());
+    }
 
+    function barFinanceSoldInPeriod(periodOverride, dateOverride, monthOverride, saleGroupsOverride) {
+      const saleGroups = Array.isArray(saleGroupsOverride) ? saleGroupsOverride : barFinanceActiveSaleGroups();
       const orderIds = new Set();
       let amount = 0;
       const productTotals = {
@@ -26202,10 +26356,10 @@
       };
     }
 
-    function barFinanceGeneralSummary(period) {
-      const today = localDateString(new Date());
-      const month = today.slice(0, 7);
-      const entries = barFinancePeriodEntries(period, today, month);
+    function barFinanceGeneralSummary(period, dateOverride, monthOverride, saleGroupsOverride) {
+      const reportDate = dateOverride || localDateString(new Date());
+      const reportMonth = monthOverride || reportDate.slice(0, 7);
+      const entries = barFinancePeriodEntries(period, reportDate, reportMonth);
       const revenue = entries.filter(function (item) {
         return String(item.type || '').toUpperCase() === 'RECEITA' && barFinanceIsConfirmed(item);
       });
@@ -26224,7 +26378,7 @@
         expenseCount: expenses.length,
         net: received - expense,
         ticket: revenue.length ? received / revenue.length : 0,
-        sold: barFinanceSoldInPeriod(period, today, month)
+        sold: barFinanceSoldInPeriod(period, reportDate, reportMonth, saleGroupsOverride)
       };
     }
 
@@ -26234,6 +26388,7 @@
       const weekDays = barFinanceLastSevenDays();
       const weekStart = financeDateValue(weekDays[0]);
       const weekEnd = financeDateValue(weekDays[weekDays.length - 1]);
+      const saleGroups = barFinanceActiveSaleGroups();
       const monthParts = todayKey.slice(0, 7).split('-').map(Number);
       const monthLabel = new Date(monthParts[0], monthParts[1] - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
       const periods = [
@@ -26253,8 +26408,8 @@
           detail: monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)
         }
       ];
-      $('barFinanceGeneralOverview').innerHTML = periods.map(function (period) {
-        const summary = barFinanceGeneralSummary(period.key);
+      const periodCards = periods.map(function (period) {
+        const summary = barFinanceGeneralSummary(period.key, '', '', saleGroups);
         const netClass = summary.net < 0 ? ' is-negative' : ' is-positive';
         return '<article class="bar-finance-summary-card">' +
           '<div class="bar-finance-summary-card-head"><h3>' + escapeHtml(period.title) + '</h3><span>' + escapeHtml(period.detail) + '</span></div>' +
@@ -26269,6 +26424,28 @@
           '<div class="bar-finance-summary-footer"><span>Ticket médio <strong>' + money(summary.ticket) + '</strong></span><span>Total de itens <strong>' + summary.sold.quantity.toLocaleString('pt-BR') + '</strong></span></div>' +
         '</article>';
       }).join('');
+      const dailyRows = weekDays.map(function (dayKey) {
+        const summary = barFinanceGeneralSummary('daily', dayKey, dayKey.slice(0, 7), saleGroups);
+        const date = financeDateValue(dayKey);
+        const dayLabel = date ? date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' }) : dayKey;
+        const resultClass = summary.net < 0 ? ' is-negative' : ' is-positive';
+        return '<div class="bar-finance-daily-row">' +
+          '<div class="bar-finance-daily-cell is-date"><strong>' + escapeHtml(dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)) + '</strong><small>' + summary.sold.quantity.toLocaleString('pt-BR') + (summary.sold.quantity === 1 ? ' item vendido' : ' itens vendidos') + '</small></div>' +
+          '<div class="bar-finance-daily-cell" data-label="Recebido"><strong>' + money(summary.received) + '</strong><small>' + summary.receivedCount + (summary.receivedCount === 1 ? ' recebimento' : ' recebimentos') + '</small></div>' +
+          '<div class="bar-finance-daily-cell" data-label="Vendido"><strong>' + money(summary.sold.amount) + '</strong><small>' + summary.sold.orderCount + (summary.sold.orderCount === 1 ? ' comanda' : ' comandas') + '</small></div>' +
+          '<div class="bar-finance-daily-cell" data-label="Comidas"><strong>' + summary.sold.food.quantity.toLocaleString('pt-BR') + '</strong><small>' + money(summary.sold.food.amount) + '</small></div>' +
+          '<div class="bar-finance-daily-cell" data-label="Bebidas"><strong>' + summary.sold.drink.quantity.toLocaleString('pt-BR') + '</strong><small>' + money(summary.sold.drink.amount) + '</small></div>' +
+          '<div class="bar-finance-daily-cell' + resultClass + '" data-label="Resultado"><strong>' + money(summary.net) + '</strong><small>Entradas menos saídas</small></div>' +
+        '</div>';
+      }).reverse().join('');
+      const dailyPanel = '<section class="bar-finance-daily-panel">' +
+        '<div class="bar-finance-daily-panel-head"><h3>Resumo por dia</h3><span>Últimos 7 dias, do mais recente ao mais antigo</span></div>' +
+        '<div class="bar-finance-daily-table">' +
+          '<div class="bar-finance-daily-row is-head"><div class="bar-finance-daily-cell">Dia</div><div class="bar-finance-daily-cell">Recebido</div><div class="bar-finance-daily-cell">Vendido</div><div class="bar-finance-daily-cell">Comidas</div><div class="bar-finance-daily-cell">Bebidas</div><div class="bar-finance-daily-cell">Resultado</div></div>' +
+          dailyRows +
+        '</div>' +
+      '</section>';
+      $('barFinanceGeneralOverview').innerHTML = periodCards + dailyPanel;
     }
 
     function barFinanceSalesData(entries) {
