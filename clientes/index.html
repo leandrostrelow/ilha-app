@@ -4264,7 +4264,12 @@
     }
 
     function planOptions() {
-      return '<option value="">Ainda não sei / confirmar com o clube</option>' + officialPlanSeed.map(function (plan) {
+      const registrationPlans = [
+        { code: 'aulas_mensal_1x', name: 'Aula 1x na semana' },
+        { code: 'aulas_mensal_2x', name: 'Aula 2x na semana' },
+        { code: 'jogar_mensal', name: 'Somente jogar' }
+      ];
+      return '<option value="">Ainda não sei / confirmar com o clube</option>' + registrationPlans.map(function (plan) {
         return '<option value="' + escapeHtml(plan.code) + '">' + escapeHtml(plan.name) + '</option>';
       }).join('');
     }
