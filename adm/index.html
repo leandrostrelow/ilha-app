@@ -17335,9 +17335,10 @@
         <div class="module-head">
           <div>
             <h1>Quadras</h1>
-            <div class="muted">Teste interno do novo agendamento com login.</div>
+            <div class="muted">Reservas do Ilha Play e bloqueios das quadras.</div>
           </div>
           <div class="module-actions">
+            <button class="ghost-btn" type="button" id="courtRulesBtn">Dias e regras</button>
             <button class="ghost-btn" type="button" data-home-action>Início</button>
             <button class="ghost-btn" type="button" id="courtReloadBtn">Recarregar</button>
           </div>
@@ -17350,25 +17351,7 @@
             <div class="ops-card"><strong id="courtBlockedMetric">0</strong><span>bloqueios</span></div>
           </div>
           <div class="ops-grid">
-            <div class="ops-panel span-4">
-              <div class="ops-panel-head"><div><h2>Dias e regras</h2><div class="muted">A agenda abre sábado e domingo. Adicione dias extras quando precisar.</div></div></div>
-              <div class="form-grid" id="courtBookingTools">
-                <div class="field full">
-                  <label for="courtExtraDate">Adicionar outro dia</label>
-                  <input id="courtExtraDate" type="date" />
-                </div>
-                <div class="field full">
-                  <button class="primary-btn" type="button" id="courtAddDayBtn">Adicionar dia</button>
-                </div>
-                <div class="field full">
-                  <button class="ghost-btn" type="button" id="courtResetWeekendBtn">Resetar fim de semana</button>
-                </div>
-                <div class="field full">
-                  <div class="empty">Clique em um horário livre para reservar ou bloquear. Segunda-feira a agenda já abre o próximo fim de semana limpa.</div>
-                </div>
-              </div>
-            </div>
-            <div class="ops-panel span-8">
+            <div class="ops-panel span-12">
               <div class="ops-panel-head">
                 <div>
                   <h2>Agenda das quadras</h2>
@@ -17382,6 +17365,39 @@
         </div>
       </div>
     </section>
+
+    <div class="admin-modal-overlay" id="courtRulesModal" aria-hidden="true">
+      <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="courtRulesModalTitle">
+        <div class="admin-modal-head">
+          <div>
+            <h2 id="courtRulesModalTitle">Dias e regras</h2>
+            <div class="muted">Sábados e domingos abrem automaticamente. Libere outros dias quando precisar.</div>
+          </div>
+          <button class="ghost-btn" type="button" id="courtRulesModalClose">Fechar</button>
+        </div>
+        <div class="admin-modal-body">
+          <div class="form-grid" id="courtBookingTools">
+            <div class="field">
+              <label for="courtExtraDate">Liberar outro dia</label>
+              <input id="courtExtraDate" type="date" />
+            </div>
+            <div class="field" style="align-self:end">
+              <button class="primary-btn" type="button" id="courtAddDayBtn">Adicionar dia</button>
+            </div>
+            <div class="field full">
+              <label>Dias extras liberados</label>
+              <div class="ops-list" id="courtExtraDaysList"></div>
+            </div>
+            <div class="field full">
+              <button class="ghost-btn" type="button" id="courtResetWeekendBtn">Cancelar reservas do fim de semana</button>
+            </div>
+            <div class="field full">
+              <div class="empty">Cada aluno pode reservar um horário por dia. A Quadra 1 fica bloqueada às 17h nos fins de semana.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="admin-modal-overlay" id="courtSlotModal" aria-hidden="true">
       <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="courtSlotModalTitle">
@@ -22977,6 +22993,7 @@
       storeRequests: [],
       announcements: [],
       courtBookings: [],
+      courtScheduleDays: [],
       paymentInvoices: [],
       barProducts: [
         { id: 'bar_product_water', name: 'Água mineral', sku: 'AGUA500', category: 'Bebidas', salePrice: 5, costPrice: 2, stock: 24, minimumStock: 8, unit: 'un', active: true, notes: '500 ml' },
@@ -23317,6 +23334,14 @@
         status: row.status || 'CONFIRMADO',
         notes: row.notes || '',
         created: row.created_at || ''
+      };
+    }
+
+    function mapCourtScheduleDayRow(row) {
+      return {
+        date: row.schedule_date || '',
+        enabled: row.enabled !== false,
+        notes: row.notes || ''
       };
     }
 
@@ -23715,7 +23740,8 @@
           supabaseRest('app_store_requests?select=*,app_clients(full_name,email,phone)&order=created_at.desc').catch(function () { return []; }),
           supabaseRest('app_announcements?select=*&order=published_at.desc').catch(function () { return []; }),
           supabaseRest('app_court_bookings?select=*,app_clients(full_name,email,phone)&order=booking_date.asc,starts_at.asc').catch(function () { return []; }),
-          supabaseRest('app_payment_invoices?select=*,app_clients(full_name,email)&order=invoice_month.desc').catch(function () { return []; })
+          supabaseRest('app_payment_invoices?select=*,app_clients(full_name,email)&order=invoice_month.desc').catch(function () { return []; }),
+          supabaseRest('app_court_schedule_days?select=*&order=schedule_date.asc').catch(function () { return []; })
         ]);
         opsData.clients = results[0].map(mapClientRow);
         opsData.finance = results[1].map(mapFinanceRow);
@@ -23726,6 +23752,7 @@
         opsData.announcements = (results[6] || []).map(mapAnnouncementRow);
         opsData.courtBookings = (results[7] || []).map(mapCourtBookingRow);
         opsData.paymentInvoices = (results[8] || []).map(mapPaymentInvoiceRow);
+        opsData.courtScheduleDays = (results[9] || []).map(mapCourtScheduleDayRow);
         opsData.students = [];
         opsData.agenda = [];
         opsData.audiences = [];
@@ -24125,7 +24152,9 @@
     }
 
     function courtAgendaDates() {
-      const dates = nextWeekendDates().concat(opsState.extraCourtDates || []);
+      const dates = nextWeekendDates().concat((opsData.courtScheduleDays || []).filter(function (item) {
+        return item.enabled !== false;
+      }).map(function (item) { return item.date; }));
       return Array.from(new Set(dates)).sort();
     }
 
@@ -24184,6 +24213,19 @@
           return '<button class="court-slot-card ' + (blocked ? 'is-blocked' : 'is-busy') + '" type="button" data-court-slot="' + escapeHtml([selectedDate, court, time].join('|')) + '"><div class="court-time">' + time + '</div><div><strong>' + escapeHtml(blocked ? 'Bloqueado' : booking.client) + '</strong><div class="muted">' + escapeHtml(blocked ? (booking.notes || 'Bloqueio manual') : 'Adversário: ' + (booking.opponent || 'A definir')) + '</div></div><div class="ops-meta">' + statusPill(booking.status) + '</div></button>';
         }).join('') + '</div></section>';
       }).join('') + '</div>';
+      renderCourtExtraDays();
+    }
+
+    function renderCourtExtraDays() {
+      const list = $('courtExtraDaysList');
+      if (!list) return;
+      const weekendDates = new Set(nextWeekendDates());
+      const rows = (opsData.courtScheduleDays || []).filter(function (item) {
+        return item.enabled !== false && !weekendDates.has(item.date);
+      });
+      list.innerHTML = rows.map(function (item) {
+        return '<article class="ops-list-card"><div class="ops-list-main"><strong>' + escapeHtml(courtDayLabel(item.date)) + '</strong><button class="small-btn" type="button" data-remove-court-day="' + escapeHtml(item.date) + '">Remover</button></div></article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhum dia extra liberado.</div>';
     }
 
     function openCourtBookingModule() {
@@ -24294,16 +24336,48 @@
       }
     }
 
-    function addCourtExtraDate() {
+    async function addCourtExtraDate() {
       const value = $('courtExtraDate').value;
       if (!value) {
         toast('Escolha uma data.');
         return;
       }
-      opsState.extraCourtDates = Array.from(new Set((opsState.extraCourtDates || []).concat(value))).sort();
-      opsState.courtDate = value;
-      $('courtExtraDate').value = '';
-      renderCourtBookingModule();
+      try {
+        requireAdminSession();
+        if (!isAdminDemoMode()) {
+          await supabaseRest('app_court_schedule_days?on_conflict=schedule_date', {
+            method: 'POST',
+            body: { schedule_date: value, enabled: true },
+            prefer: 'resolution=merge-duplicates,return=representation'
+          });
+        }
+        const existing = (opsData.courtScheduleDays || []).find(function (item) { return item.date === value; });
+        if (existing) existing.enabled = true;
+        else opsData.courtScheduleDays.push({ date: value, enabled: true, notes: '' });
+        opsState.courtDate = value;
+        $('courtExtraDate').value = '';
+        renderCourtBookingModule();
+        toast('Dia liberado no Ilha Play.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function removeCourtExtraDate(dateValue) {
+      try {
+        requireAdminSession();
+        if (!isAdminDemoMode()) {
+          await supabaseRest('app_court_schedule_days?schedule_date=eq.' + encodeURIComponent(dateValue), {
+            method: 'DELETE',
+            prefer: 'return=minimal'
+          });
+        }
+        opsData.courtScheduleDays = (opsData.courtScheduleDays || []).filter(function (item) { return item.date !== dateValue; });
+        renderCourtBookingModule();
+        toast('Dia extra removido.');
+      } catch (error) {
+        reportActionError(error);
+      }
     }
 
     async function resetWeekendBookings() {
@@ -32799,6 +32873,24 @@
       });
       $('courtReloadBtn').addEventListener('click', function () {
         loadOpsData(true).then(renderCourtBookingModule).catch(reportActionError);
+      });
+      $('courtRulesBtn').addEventListener('click', function () {
+        renderCourtExtraDays();
+        $('courtRulesModal').classList.add('show');
+        $('courtRulesModal').setAttribute('aria-hidden', 'false');
+      });
+      $('courtRulesModalClose').addEventListener('click', function () {
+        $('courtRulesModal').classList.remove('show');
+        $('courtRulesModal').setAttribute('aria-hidden', 'true');
+      });
+      $('courtRulesModal').addEventListener('click', function (event) {
+        if (event.target.id === 'courtRulesModal') {
+          $('courtRulesModal').classList.remove('show');
+          $('courtRulesModal').setAttribute('aria-hidden', 'true');
+          return;
+        }
+        const removeBtn = event.target.closest('[data-remove-court-day]');
+        if (removeBtn) removeCourtExtraDate(removeBtn.dataset.removeCourtDay);
       });
       $('courtAddDayBtn').addEventListener('click', addCourtExtraDate);
       $('courtResetWeekendBtn').addEventListener('click', resetWeekendBookings);
