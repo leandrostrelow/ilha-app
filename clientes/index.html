@@ -109,14 +109,17 @@
       animation: tennisBallSpin .8s linear infinite;
     }
 
-    .client-auth {
-      width: min(420px, 100%);
-    }
+    .client-auth { width: min(980px, 100%); }
 
     .auth-card {
-      border-radius: 8px;
+      min-height: 620px;
+      display: grid;
+      grid-template-columns: minmax(280px, .82fr) minmax(420px, 1.18fr);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .18);
+      border-radius: 26px;
       background: #ffffff;
-      box-shadow: 0 24px 80px rgba(0, 0, 0, .22);
+      box-shadow: 0 28px 90px rgba(0, 0, 0, .26);
     }
 
     .muted {
@@ -125,14 +128,144 @@
       font-weight: 800;
     }
 
-    .auth-card {
-      padding: 28px;
+    .auth-welcome {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 32px;
+      overflow: hidden;
+      padding: 40px 34px;
+      background:
+        radial-gradient(circle at 95% 8%, rgba(181, 229, 0, .26), transparent 30%),
+        linear-gradient(145deg, #073f49 0%, #10272c 100%);
+      color: #ffffff;
+    }
+
+    .auth-welcome::after {
+      content: "";
+      position: absolute;
+      right: -74px;
+      bottom: -74px;
+      width: 220px;
+      height: 220px;
+      border: 36px solid rgba(181, 229, 0, .1);
+      border-radius: 999px;
+    }
+
+    .auth-logo-wrap {
+      position: relative;
+      z-index: 1;
+      width: fit-content;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: #ffffff;
     }
 
     .auth-logo {
-      width: 210px;
+      width: 190px;
       display: block;
-      margin: 4px auto 26px;
+      margin: 0;
+    }
+
+    .auth-welcome-copy { position: relative; z-index: 1; }
+    .auth-welcome-copy span {
+      display: block;
+      margin-bottom: 9px;
+      color: var(--lime);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: 2.4px;
+      text-transform: uppercase;
+    }
+    .auth-welcome-copy h1 { margin: 0; font-size: clamp(30px, 4vw, 45px); line-height: 1; }
+    .auth-welcome-copy p { margin: 14px 0 0; color: rgba(255, 255, 255, .78); font-weight: 750; line-height: 1.5; }
+
+    .auth-benefits {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 10px;
+    }
+
+    .auth-benefit {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(255, 255, 255, .9);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .auth-benefit::before {
+      content: "✓";
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 24px;
+      border-radius: 999px;
+      background: var(--lime);
+      color: #233300;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .auth-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 34px 40px;
+      background: #ffffff;
+    }
+
+    .auth-panel-head { margin-bottom: 18px; }
+    .auth-panel-head h2 { margin: 0; font-size: 25px; }
+    .auth-panel-head p { margin: 6px 0 0; color: var(--muted); font-size: 13px; font-weight: 750; line-height: 1.4; }
+
+    .auth-stage[hidden] { display: none !important; }
+    .auth-fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0 12px;
+    }
+    .auth-fields .full { grid-column: 1 / -1; }
+
+    .auth-code-input {
+      height: 66px;
+      text-align: center;
+      font-size: 28px;
+      font-weight: 950;
+      letter-spacing: 10px;
+    }
+
+    .auth-secondary-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .auth-link-btn {
+      min-height: 38px;
+      padding: 0 9px;
+      background: transparent;
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .auth-plan-recognition {
+      margin: 12px 0 2px;
+      padding: 12px 14px;
+      border: 1px solid #dbe8a6;
+      border-radius: 12px;
+      background: #f6fbdd;
+      color: #344a00;
+      font-size: 12px;
+      font-weight: 850;
+      line-height: 1.4;
     }
 
     .auth-tabs {
@@ -231,7 +364,8 @@
       min-height: 52px;
     }
 
-    .auth-form .primary-btn {
+    .auth-form .primary-btn,
+    .auth-stage .primary-btn {
       margin-top: 18px;
     }
 
@@ -573,6 +707,23 @@
       align-items: center;
       gap: 18px;
     }
+
+    .home-plan-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 14px;
+      border: 1px solid #d9e6e8;
+      border-radius: 14px;
+      background: #f7fafb;
+    }
+
+    .home-plan-status strong,
+    .home-plan-status span { display: block; }
+    .home-plan-status span { color: var(--muted); font-size: 12px; font-weight: 800; }
+    .home-plan-status strong { margin-top: 2px; color: var(--ink); font-size: 15px; }
+    .home-plan-status .pill { flex: 0 0 auto; }
 
     .welcome-copy {
       min-width: 0;
@@ -2173,28 +2324,46 @@
       .client-auth {
         width: 100%;
         min-height: 100dvh;
-        display: grid;
-        align-items: start;
-        padding: max(56px, calc(env(safe-area-inset-top) + 42px)) 26px max(28px, env(safe-area-inset-bottom));
-        background:
-          linear-gradient(180deg, #ffffff 0%, #ffffff 76%, #f5fafb 100%);
+        display: block;
+        padding: 0;
+        background: #ffffff;
       }
       .auth-card {
         width: 100%;
-        min-height: auto;
-        display: block;
-        padding: 0;
+        min-height: 100dvh;
+        display: grid;
+        grid-template-columns: 1fr;
         border-radius: 0;
-        background: transparent;
+        border: 0;
+        background: #ffffff;
         box-shadow: none;
       }
-      .auth-logo {
-        width: min(230px, 72vw);
-        margin: clamp(36px, 9dvh, 84px) auto 34px;
+      .auth-welcome {
+        min-height: auto;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 14px;
+        padding: max(22px, env(safe-area-inset-top)) 20px 22px;
       }
+      .auth-welcome::after,
+      .auth-benefits { display: none; }
+      .auth-logo-wrap { padding: 8px 10px; border-radius: 12px; }
+      .auth-logo {
+        width: 112px;
+        margin: 0;
+      }
+      .auth-welcome-copy h1 { font-size: 23px; line-height: 1.05; }
+      .auth-welcome-copy span { margin-bottom: 5px; font-size: 9px; letter-spacing: 1.5px; }
+      .auth-welcome-copy p { margin-top: 7px; font-size: 11px; line-height: 1.35; }
+      .auth-panel { justify-content: start; padding: 24px 20px max(28px, env(safe-area-inset-bottom)); }
+      .auth-panel-head h2 { font-size: 23px; }
+      .auth-fields { grid-template-columns: 1fr; gap: 0; }
+      .auth-fields .full { grid-column: auto; }
+      .auth-secondary-actions { flex-wrap: wrap; }
       .auth-tabs {
         gap: 6px;
-        margin-bottom: 26px;
+        margin-bottom: 18px;
         padding: 5px;
         border-radius: 16px;
         background: #edf4f6;
@@ -2284,6 +2453,7 @@
         text-align: left;
         padding: 8px 0 4px;
       }
+      .home-plan-status { align-items: flex-start; }
       .welcome-card h2 {
         font-size: clamp(36px, 11vw, 52px);
         line-height: .96;
@@ -2749,35 +2919,111 @@
 
   <section class="client-auth" id="clientAuth" aria-label="Acesso do cliente">
     <div class="auth-card">
-      <img class="auth-logo" src="../logo.png" alt="Ilha Tênis Colatina" />
+      <aside class="auth-welcome">
+        <div class="auth-logo-wrap"><img class="auth-logo" src="../logo.png" alt="Ilha Tênis Colatina" /></div>
+        <div class="auth-welcome-copy">
+          <span>Seu clube em um só lugar</span>
+          <h1>Bem-vindo ao Ilha Play</h1>
+          <p>Este será o aplicativo oficial do clube para reservas, planos, pagamentos, torneios e comunicados.</p>
+        </div>
+        <div class="auth-benefits" aria-label="Recursos do aplicativo">
+          <div class="auth-benefit">Reserve sua quadra</div>
+          <div class="auth-benefit">Acompanhe seu plano</div>
+          <div class="auth-benefit">Receba novidades do clube</div>
+        </div>
+      </aside>
 
-      <div class="auth-tabs" role="tablist" aria-label="Entrar ou cadastrar">
-        <button class="auth-tab active" type="button" id="showLoginBtn">Entrar</button>
-        <button class="auth-tab" type="button" id="showSignupBtn">Criar conta</button>
-      </div>
+      <section class="auth-panel">
+        <div class="auth-stage" id="authMainStage">
+          <div class="auth-panel-head">
+            <h2>Acesse sua conta</h2>
+            <p>Use seu e-mail ou faça seu cadastro completo.</p>
+          </div>
+          <div class="auth-tabs" role="tablist" aria-label="Entrar ou cadastrar">
+            <button class="auth-tab active" type="button" id="showLoginBtn">Entrar</button>
+            <button class="auth-tab" type="button" id="showSignupBtn">Criar conta</button>
+          </div>
 
-      <form class="auth-form active" id="loginForm">
-        <label for="loginEmail">E-mail</label>
-        <input id="loginEmail" type="email" autocomplete="username" inputmode="email" autocapitalize="none" placeholder="seu@email.com" required />
-        <label for="loginPassword">Senha</label>
-        <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Sua senha" required />
-        <button class="primary-btn" type="submit" id="loginSubmit">Entrar</button>
-      </form>
+          <form class="auth-form active" id="loginForm">
+            <label for="loginEmail">E-mail</label>
+            <input id="loginEmail" type="email" autocomplete="username" inputmode="email" autocapitalize="none" placeholder="seu@email.com" required />
+            <label for="loginPassword">Senha</label>
+            <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Sua senha" required />
+            <button class="primary-btn" type="submit" id="loginSubmit">Entrar no Ilha Play</button>
+          </form>
 
-      <form class="auth-form" id="signupForm">
-        <label for="signupName">Nome completo</label>
-        <input id="signupName" type="text" autocomplete="name" placeholder="Seu nome" required />
-        <label for="signupPhone">Telefone / WhatsApp</label>
-        <input id="signupPhone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(27) 99999-9999" required />
-        <label for="signupEmail">E-mail</label>
-        <input id="signupEmail" type="email" autocomplete="email" inputmode="email" autocapitalize="none" placeholder="seu@email.com" required />
-        <label for="signupPassword">Senha</label>
-        <input id="signupPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Mínimo 6 caracteres" required />
-        <button class="primary-btn" type="submit" id="signupSubmit">Criar e entrar</button>
-      </form>
+          <form class="auth-form" id="signupForm">
+            <div class="auth-fields">
+              <div class="full">
+                <label for="signupName">Nome completo</label>
+                <input id="signupName" type="text" autocomplete="name" placeholder="Nome e sobrenome" required />
+              </div>
+              <div>
+                <label for="signupPhone">Telefone / WhatsApp</label>
+                <input id="signupPhone" type="tel" autocomplete="tel" inputmode="tel" maxlength="15" placeholder="(27) 99999-9999" required />
+              </div>
+              <div>
+                <label for="signupCpf">CPF</label>
+                <input id="signupCpf" type="text" autocomplete="off" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required />
+              </div>
+              <div class="full">
+                <label for="signupEmail">E-mail</label>
+                <input id="signupEmail" type="email" autocomplete="email" inputmode="email" autocapitalize="none" placeholder="seu@email.com" required />
+              </div>
+              <div class="full">
+                <label for="signupPlan">Qual é seu plano atual?</label>
+                <select id="signupPlan"><option value="">Ainda não sei / confirmar com o clube</option></select>
+              </div>
+              <div>
+                <label for="signupPassword">Crie uma senha</label>
+                <input id="signupPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo 8 caracteres" required />
+              </div>
+              <div>
+                <label for="signupPasswordConfirm">Confirme a senha</label>
+                <input id="signupPasswordConfirm" type="password" autocomplete="new-password" minlength="8" placeholder="Repita a senha" required />
+              </div>
+            </div>
+            <button class="primary-btn" type="submit" id="signupSubmit">Criar minha conta</button>
+          </form>
+        </div>
 
-      <button class="demo-btn preview-only" type="button" id="demoBtn">Entrar em modo demonstração</button>
-      <div class="auth-message" id="authMessage" aria-live="polite"></div>
+        <div class="auth-stage" id="authVerifyStage" hidden>
+          <div class="auth-panel-head">
+            <h2>Confirme seu e-mail</h2>
+            <p>Enviamos a confirmação para <strong id="verifyEmailLabel"></strong>. Digite o código ou use o botão recebido no e-mail.</p>
+          </div>
+          <form id="verifyForm">
+            <label for="signupCode">Código de confirmação</label>
+            <input class="auth-code-input" id="signupCode" type="text" autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="000000" required />
+            <button class="primary-btn" type="submit" id="verifySubmit">Confirmar e entrar</button>
+          </form>
+          <div class="auth-secondary-actions">
+            <button class="auth-link-btn" type="button" id="resendCodeBtn">Reenviar código</button>
+            <button class="auth-link-btn" type="button" id="changeSignupEmailBtn">Alterar e-mail</button>
+            <button class="auth-link-btn" type="button" id="returnToLoginBtn">Já confirmei pelo link</button>
+          </div>
+        </div>
+
+        <div class="auth-stage" id="authCompleteStage" hidden>
+          <div class="auth-panel-head">
+            <h2>Complete seu cadastro</h2>
+            <p>Precisamos destes dados para identificar seu plano atual no clube.</p>
+          </div>
+          <form id="completeRegistrationForm">
+            <div class="auth-fields">
+              <div class="full"><label for="completeName">Nome completo</label><input id="completeName" autocomplete="name" required /></div>
+              <div><label for="completePhone">Telefone / WhatsApp</label><input id="completePhone" type="tel" autocomplete="tel" inputmode="tel" maxlength="15" required /></div>
+              <div><label for="completeCpf">CPF</label><input id="completeCpf" inputmode="numeric" maxlength="14" required /></div>
+              <div class="full"><label for="completePlan">Qual é seu plano atual?</label><select id="completePlan"><option value="">Ainda não sei / confirmar com o clube</option></select></div>
+            </div>
+            <div class="auth-plan-recognition" id="authPlanRecognition">O clube confirmará seu plano. Isso evita que benefícios sejam ativados por engano.</div>
+            <button class="primary-btn" type="submit" id="completeRegistrationSubmit">Entrar no Ilha Play</button>
+          </form>
+        </div>
+
+        <button class="demo-btn preview-only" type="button" id="demoBtn">Entrar em modo demonstração</button>
+        <div class="auth-message" id="authMessage" aria-live="polite"></div>
+      </section>
     </div>
   </section>
 
@@ -2828,6 +3074,7 @@
               <h2 id="homeWelcomeName">Bem-vindo ao Ilha</h2>
             </div>
           </div>
+          <div class="home-plan-status" id="homePlanStatus"></div>
           <div class="home-menu-grid" aria-label="Menu principal">
             <button class="home-menu-card" type="button" data-view="courts"><span class="home-menu-icon tournament"><svg><use href="#client-icon-play"></use></svg></span><span class="home-menu-label">Reservar quadra</span></button>
             <button class="home-menu-card home-plan-link" type="button" data-view="plans"><span class="home-menu-icon plan"><svg><use href="#client-icon-plan"></use></svg></span><span class="home-menu-label">Planos</span></button>
@@ -3090,10 +3337,11 @@
 
   <script>
     const SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrcXRncHRlYmtnZndndXlreGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzEyNjAsImV4cCI6MjA5NzcwNzI2MH0.S-dopp-fbBgq8_YclyiAheOdK-QhXt92RYLu8JKmKCg';
+    const SUPABASE_ANON_KEY = 'sb_publishable_zcX8te5g99p0bA12xy_E-A_MTyNpJNx';
     const SESSION_KEY = 'ilha-client-session';
     const DEMO_SESSION_KEY = 'ilha-client-demo-session';
     const FALLBACK_PROFILE_KEY = 'ilha-client-profile-fallback';
+    const PENDING_SIGNUP_KEY = 'ilha-client-pending-signup';
     const PIX_KEY = '54.969.790/0001-47';
     const officialPlanSeed = [
       { code: 'aulas_anual_1x', name: 'Aulas 1x por semana - Anual', type: 'aluno', amount: 230, weekly_lessons: 1, default_due_day: 10, description: 'Ciclo de 12 meses. Pix 5% OFF no pagamento do ciclo.' },
@@ -3132,6 +3380,7 @@
 
     let session = null;
     let client = null;
+    let pendingSignup = null;
     let demoMode = false;
     let databaseReady = true;
     let appPlans = officialPlanSeed.slice();
@@ -3329,8 +3578,44 @@
     function headers(requireAuth) {
       const h = { apikey: SUPABASE_ANON_KEY };
       if (requireAuth && session && session.access_token) h.Authorization = 'Bearer ' + session.access_token;
-      else h.Authorization = 'Bearer ' + SUPABASE_ANON_KEY;
+      else if (!SUPABASE_ANON_KEY.startsWith('sb_publishable_')) h.Authorization = 'Bearer ' + SUPABASE_ANON_KEY;
       return h;
+    }
+
+    function digitsOnly(value) {
+      return String(value || '').replace(/\D/g, '');
+    }
+
+    function formatPhone(value) {
+      const digits = digitsOnly(value).slice(0, 11);
+      if (digits.length <= 2) return digits;
+      if (digits.length <= 6) return '(' + digits.slice(0, 2) + ') ' + digits.slice(2);
+      if (digits.length <= 10) return '(' + digits.slice(0, 2) + ') ' + digits.slice(2, 6) + '-' + digits.slice(6);
+      return '(' + digits.slice(0, 2) + ') ' + digits.slice(2, 7) + '-' + digits.slice(7);
+    }
+
+    function formatCpf(value) {
+      const digits = digitsOnly(value).slice(0, 11);
+      return digits
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    }
+
+    function isValidCpf(value) {
+      const digits = digitsOnly(value);
+      if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) return false;
+      const check = function (length) {
+        let total = 0;
+        for (let index = 0; index < length; index += 1) total += Number(digits[index]) * (length + 1 - index);
+        const result = (total * 10) % 11;
+        return (result === 10 ? 0 : result) === Number(digits[length]);
+      };
+      return check(9) && check(10);
+    }
+
+    function isCompleteName(value) {
+      return String(value || '').trim().split(/\s+/).filter(Boolean).length >= 2;
     }
 
     function escapeHtml(value) {
@@ -3636,7 +3921,15 @@
       });
       const text = await response.text();
       const data = text ? JSON.parse(text) : {};
-      if (!response.ok) throw new Error(data.error_description || data.msg || data.message || 'Falha na autenticação.');
+      if (!response.ok) {
+        const rawMessage = data.error_description || data.msg || data.message || 'Falha na autenticação.';
+        const normalized = String(rawMessage).toLowerCase();
+        const friendly = normalized.includes('invalid login credentials') ? 'E-mail ou senha incorretos.' :
+          normalized.includes('email not confirmed') ? 'Confirme seu e-mail antes de entrar.' :
+          normalized.includes('already registered') ? 'Este e-mail já possui uma conta. Use a opção Entrar.' :
+          normalized.includes('rate limit') ? 'Muitas tentativas seguidas. Aguarde um pouco e tente novamente.' : rawMessage;
+        throw new Error(friendly);
+      }
       return data;
     }
 
@@ -3737,6 +4030,10 @@
         official_plan_id: stored.official_plan_id || null,
         official_plan_code: stored.official_plan_code || '',
         official_plan_name: stored.official_plan_name || '',
+        declared_plan_code: stored.declared_plan_code || meta.declared_plan_code || '',
+        declared_plan_name: stored.declared_plan_name || '',
+        registration_completed_at: stored.registration_completed_at || '',
+        email_verified_at: stored.email_verified_at || user.email_confirmed_at || '',
         plan_amount: stored.plan_amount || 0,
         weekly_lessons: stored.weekly_lessons || 0,
         preferred_days: Array.isArray(stored.preferred_days) ? stored.preferred_days : []
@@ -3762,6 +4059,29 @@
         localStorage.removeItem(SESSION_KEY);
         return null;
       }
+    }
+
+    function sessionFromUrlHash() {
+      const params = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
+      const accessToken = params.get('access_token');
+      if (!accessToken) return null;
+      const nextSession = {
+        access_token: accessToken,
+        refresh_token: params.get('refresh_token') || '',
+        expires_in: Number(params.get('expires_in') || 3600),
+        token_type: params.get('token_type') || 'bearer',
+        user: pendingSignup ? {
+          email: pendingSignup.email,
+          user_metadata: {
+            full_name: pendingSignup.name,
+            phone: digitsOnly(pendingSignup.phone),
+            cpf: digitsOnly(pendingSignup.cpf),
+            declared_plan_code: pendingSignup.planCode || ''
+          }
+        } : {}
+      };
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+      return nextSession;
     }
 
     function clearSession() {
@@ -3802,6 +4122,10 @@
           official_plan_id: stored.official_plan_id || null,
           official_plan_code: stored.official_plan_code || '',
           official_plan_name: stored.official_plan_name || '',
+          declared_plan_code: stored.declared_plan_code || '',
+          declared_plan_name: stored.declared_plan_name || '',
+          registration_completed_at: stored.registration_completed_at || new Date().toISOString(),
+          email_verified_at: stored.email_verified_at || new Date().toISOString(),
           plan_amount: stored.plan_amount || 0,
           weekly_lessons: stored.weekly_lessons || 0,
           preferred_days: Array.isArray(stored.preferred_days) ? stored.preferred_days : []
@@ -3934,12 +4258,51 @@
     }
 
     function setBusy(isBusy) {
-      ['loginSubmit', 'signupSubmit'].forEach(function (id) {
+      ['loginSubmit', 'signupSubmit', 'verifySubmit', 'completeRegistrationSubmit', 'resendCodeBtn'].forEach(function (id) {
         $(id).disabled = isBusy;
       });
     }
 
+    function planOptions() {
+      return '<option value="">Ainda não sei / confirmar com o clube</option>' + officialPlanSeed.map(function (plan) {
+        return '<option value="' + escapeHtml(plan.code) + '">' + escapeHtml(plan.name) + '</option>';
+      }).join('');
+    }
+
+    function populateRegistrationPlans() {
+      $('signupPlan').innerHTML = planOptions();
+      $('completePlan').innerHTML = planOptions();
+    }
+
+    function savePendingSignup(value) {
+      pendingSignup = value || null;
+      if (value) sessionStorage.setItem(PENDING_SIGNUP_KEY, JSON.stringify(value));
+      else sessionStorage.removeItem(PENDING_SIGNUP_KEY);
+    }
+
+    function readPendingSignup() {
+      try {
+        const raw = sessionStorage.getItem(PENDING_SIGNUP_KEY);
+        pendingSignup = raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        savePendingSignup(null);
+      }
+      return pendingSignup;
+    }
+
+    function showAuthStage(stage) {
+      $('authMainStage').hidden = stage !== 'main';
+      $('authVerifyStage').hidden = stage !== 'verify';
+      $('authCompleteStage').hidden = stage !== 'complete';
+      setAuthMessage('', false);
+      if (stage === 'verify' && pendingSignup) {
+        $('verifyEmailLabel').textContent = pendingSignup.email || '';
+        window.setTimeout(function () { $('signupCode').focus(); }, 50);
+      }
+    }
+
     function showAuthTab(tab) {
+      showAuthStage('main');
       const signup = tab === 'signup';
       $('showLoginBtn').classList.toggle('active', !signup);
       $('showSignupBtn').classList.toggle('active', signup);
@@ -3948,30 +4311,130 @@
       setAuthMessage('', false);
     }
 
+    function registrationDetailsFromClient() {
+      const user = currentUser();
+      const meta = user.user_metadata || {};
+      return {
+        name: client && client.full_name || meta.full_name || '',
+        phone: client && client.phone || meta.phone || '',
+        cpf: client && client.cpf || meta.cpf || '',
+        planCode: client && client.declared_plan_code || meta.declared_plan_code || ''
+      };
+    }
+
+    function needsRegistration(value) {
+      return !value || !value.registration_completed_at || !isCompleteName(value.full_name) || digitsOnly(value.phone).length < 10 || !isValidCpf(value.cpf);
+    }
+
+    function validateRegistrationDetails(details) {
+      if (!isCompleteName(details.name)) throw new Error('Informe seu nome completo.');
+      if (digitsOnly(details.phone).length < 10) throw new Error('Informe um telefone válido com DDD.');
+      if (!isValidCpf(details.cpf)) throw new Error('Informe um CPF válido.');
+      return details;
+    }
+
+    function openRegistrationCompletion() {
+      const details = registrationDetailsFromClient();
+      $('completeName').value = details.name;
+      $('completePhone').value = formatPhone(details.phone);
+      $('completeCpf').value = formatCpf(details.cpf);
+      $('completePlan').value = details.planCode || '';
+      if (client && client.official_plan_name) {
+        $('authPlanRecognition').textContent = 'Plano reconhecido pelo clube: ' + client.official_plan_name + '.';
+      } else {
+        $('authPlanRecognition').textContent = 'Informe o plano que você possui. O clube fará a confirmação antes de liberar os benefícios.';
+      }
+      lock('');
+      showAuthStage('complete');
+    }
+
+    async function completeRegistration(details) {
+      const result = await rest('rpc/complete_current_app_registration', {
+        method: 'POST',
+        body: {
+          p_full_name: details.name,
+          p_phone: digitsOnly(details.phone),
+          p_cpf: digitsOnly(details.cpf),
+          p_declared_plan_code: details.planCode || null
+        },
+        prefer: 'return=representation'
+      });
+      client = Array.isArray(result) ? result[0] : result;
+      if (client) {
+        if (session && session.user && client.id && !session.user.id) {
+          session.user.id = client.id;
+          storeSession(session);
+        }
+        writeStored(storageKey(FALLBACK_PROFILE_KEY), client);
+      }
+      return client;
+    }
+
+    async function finishAuthenticatedAccess() {
+      await ensureClient(null, null);
+      if (needsRegistration(client)) {
+        openRegistrationCompletion();
+        return false;
+      }
+      await loadClientData();
+      unlock();
+      return true;
+    }
+
     async function login(email, password) {
       const nextSession = await authRequest('token?grant_type=password', { email: email, password: password });
       storeSession(nextSession);
-      await ensureClient(null, null);
-      await loadClientData();
-      unlock();
+      await finishAuthenticatedAccess();
     }
 
-    async function signup(name, phone, email, password) {
-      const result = await authRequest('signup', {
-        email: email,
-        password: password,
-        data: { app_context: 'public', full_name: name, phone: phone, client_type: 'cliente' }
+    async function signup(details) {
+      const redirectUrl = window.location.origin + window.location.pathname;
+      const result = await authRequest('signup?redirect_to=' + encodeURIComponent(redirectUrl), {
+        email: details.email,
+        password: details.password,
+        data: {
+          app_context: 'public',
+          full_name: details.name,
+          phone: digitsOnly(details.phone),
+          cpf: digitsOnly(details.cpf),
+          declared_plan_code: details.planCode || '',
+          client_type: 'cliente'
+        }
       });
+      savePendingSignup(details);
       const nextSession = result.session || (result.access_token ? result : null);
       if (nextSession && nextSession.access_token) {
         storeSession(nextSession);
-        await ensureClient(name, phone);
+        await completeRegistration(details);
         await loadClientData();
+        savePendingSignup(null);
         unlock();
         return;
       }
-      showAuthTab('login');
-      setAuthMessage('Cadastro criado. Confirme seu e-mail se o Supabase pedir, depois entre aqui.', false);
+      showAuthStage('verify');
+      setAuthMessage('Digite o código recebido para confirmar sua conta.', false);
+    }
+
+    async function verifySignupCode(code) {
+      if (!pendingSignup || !pendingSignup.email) throw new Error('Refaça o cadastro para solicitar um novo código.');
+      const result = await authRequest('verify', {
+        type: 'signup',
+        email: pendingSignup.email,
+        token: digitsOnly(code)
+      });
+      const nextSession = result.session || (result.access_token ? result : null);
+      if (!nextSession || !nextSession.access_token) throw new Error('Código confirmado, mas não foi possível iniciar sua sessão.');
+      storeSession(nextSession);
+      await completeRegistration(pendingSignup);
+      await loadClientData();
+      savePendingSignup(null);
+      unlock();
+    }
+
+    async function resendSignupCode() {
+      if (!pendingSignup || !pendingSignup.email) throw new Error('Informe seu e-mail novamente.');
+      await authRequest('resend', { type: 'signup', email: pendingSignup.email });
+      setAuthMessage('Novo código enviado. Confira também o spam.', false);
     }
 
     async function restore() {
@@ -3979,17 +4442,31 @@
         enterDemo(false);
         return;
       }
+      readPendingSignup();
+      const linkedSession = sessionFromUrlHash();
+      if (linkedSession) {
+        try {
+          storeSession(linkedSession);
+          if (pendingSignup) await completeRegistration(pendingSignup);
+          savePendingSignup(null);
+          await finishAuthenticatedAccess();
+          return;
+        } catch (error) {
+          clearSession();
+          lock(error.message || 'Não consegui concluir a confirmação.');
+          return;
+        }
+      }
       const stored = readSession();
       if (!stored) {
         lock('');
+        if (readPendingSignup()) showAuthStage('verify');
         return;
       }
       try {
         session = stored;
         if (isExpired(stored)) await refreshSession(stored);
-        await ensureClient(null, null);
-        await loadClientData();
-        unlock();
+        await finishAuthenticatedAccess();
       } catch (error) {
         clearSession();
         lock('Entre novamente para continuar.');
@@ -4037,6 +4514,7 @@
           headers: Object.assign(headers(false), { Authorization: 'Bearer ' + token })
         }).catch(function () {});
       }
+      showAuthTab('login');
       lock('');
     }
 
@@ -4154,6 +4632,15 @@
       const firstName = name.split(' ')[0] || 'aluno';
       $('homeWelcomeName').textContent = 'Olá, ' + firstName;
       $('homeAvatar').innerHTML = avatarMarkup(profilePhoto(), name);
+      const officialPlan = client && client.official_plan_name || '';
+      const declaredPlan = client && client.declared_plan_name || '';
+      if (officialPlan) {
+        $('homePlanStatus').innerHTML = '<div><span>Seu plano atual</span><strong>' + escapeHtml(officialPlan) + '</strong></div><span class="pill good">Reconhecido</span>';
+      } else if (declaredPlan) {
+        $('homePlanStatus').innerHTML = '<div><span>Plano informado no cadastro</span><strong>' + escapeHtml(declaredPlan) + '</strong></div><span class="pill warn">Aguardando clube</span>';
+      } else {
+        $('homePlanStatus').innerHTML = '<div><span>Plano atual</span><strong>Aguardando identificação</strong></div><span class="pill warn">Pendente</span>';
+      }
     }
 
     function renderProfile() {
@@ -4168,19 +4655,32 @@
       $('profileNotes').value = client && client.notes || '';
       $('profileAvatar').innerHTML = avatarMarkup(profilePhoto(), name);
       $('profileSideName').textContent = name || 'Aluno Ilha';
-      $('profileSidePlan').textContent = client && client.official_plan_name || 'A definir';
+      const displayedPlan = client && client.official_plan_name
+        ? client.official_plan_name
+        : client && client.declared_plan_name
+          ? client.declared_plan_name + ' · a confirmar'
+          : 'A definir';
+      $('profileSidePlan').textContent = displayedPlan;
       $('profileSideDue').textContent = client && client.due_day ? 'Dia ' + client.due_day : 'A definir';
       $('profileSideStatus').textContent = client && client.status || 'Ativo';
     }
 
     function renderPlans() {
       const planName = client && client.official_plan_name || '';
+      const declaredPlanName = client && client.declared_plan_name || '';
       const amount = Number(client && client.plan_amount || 0);
       const dueDay = client && client.due_day || '';
       const weeklyLessons = Number(client && client.weekly_lessons || 0);
       const preferredDays = Array.isArray(client && client.preferred_days) ? client.preferred_days : [];
       const hasPlan = Boolean(planName || amount || dueDay || weeklyLessons || preferredDays.length);
       if (!hasPlan) {
+        if (declaredPlanName) {
+          $('planGrid').innerHTML = '<article class="plan-card empty-plan">' +
+            '<div><span class="plan-kicker">Plano informado no cadastro</span><h3>' + escapeHtml(declaredPlanName) + '</h3><p class="muted">A equipe do clube fará a conferência antes de liberar os benefícios.</p></div>' +
+            '<span class="pill warn">Aguardando confirmação</span>' +
+          '</article>' + renderPlanCatalog();
+          return;
+        }
         $('planGrid').innerHTML = '<article class="plan-card empty-plan">' +
           '<div>' +
             '<span class="plan-kicker">Plano atual</span>' +
@@ -4560,11 +5060,13 @@
       const fullName = $('profileName').value.trim();
       const phone = $('profilePhone').value.trim();
       try {
+        const cpf = $('profileCpf').value.trim();
+        if (cpf && !isValidCpf(cpf)) throw new Error('Informe um CPF válido.');
         const photo = await resizeProfilePhoto($('profilePhoto').files && $('profilePhoto').files[0]);
         const profilePayload = {
           full_name: fullName,
           phone: phone,
-          cpf: $('profileCpf').value.trim(),
+          cpf: cpf ? digitsOnly(cpf) : null,
           age: $('profileAge').value ? Number($('profileAge').value) : null,
           guardian_name: $('profileGuardian').value.trim(),
           guardian_phone: $('profileGuardianPhone').value.trim(),
@@ -4681,11 +5183,19 @@
 
     function init() {
       configurePreviewEnvironment();
+      populateRegistrationPlans();
       setupPullToRefresh();
       setupSwipeBack();
       $('showLoginBtn').addEventListener('click', function () { showAuthTab('login'); });
       $('showSignupBtn').addEventListener('click', function () { showAuthTab('signup'); });
       $('demoBtn').addEventListener('click', function () { enterDemo(true); });
+      ['signupPhone', 'completePhone'].forEach(function (id) {
+        $(id).addEventListener('input', function () { this.value = formatPhone(this.value); });
+      });
+      ['signupCpf', 'completeCpf'].forEach(function (id) {
+        $(id).addEventListener('input', function () { this.value = formatCpf(this.value); });
+      });
+      $('signupCode').addEventListener('input', function () { this.value = digitsOnly(this.value).slice(0, 6); });
       document.querySelectorAll('[data-logout]').forEach(function (btn) {
         btn.addEventListener('click', logout);
       });
@@ -4845,9 +5355,69 @@
         setBusy(true);
         setAuthMessage('', false);
         try {
-          await signup($('signupName').value.trim(), $('signupPhone').value.trim(), $('signupEmail').value.trim(), $('signupPassword').value);
+          const details = validateRegistrationDetails({
+            name: $('signupName').value.trim(),
+            phone: $('signupPhone').value.trim(),
+            cpf: $('signupCpf').value.trim(),
+            email: $('signupEmail').value.trim().toLowerCase(),
+            planCode: $('signupPlan').value,
+            password: $('signupPassword').value
+          });
+          if (details.password.length < 8) throw new Error('Sua senha precisa ter pelo menos 8 caracteres.');
+          if (details.password !== $('signupPasswordConfirm').value) throw new Error('As senhas não são iguais.');
+          await signup(details);
         } catch (error) {
           setAuthMessage(error.message || 'Não consegui criar sua conta agora.', true);
+        } finally {
+          setBusy(false);
+        }
+      });
+      $('verifyForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        setBusy(true);
+        setAuthMessage('', false);
+        try {
+          if (digitsOnly($('signupCode').value).length !== 6) throw new Error('Digite os 6 números do código.');
+          await verifySignupCode($('signupCode').value);
+        } catch (error) {
+          setAuthMessage(error.message || 'Código inválido ou expirado.', true);
+        } finally {
+          setBusy(false);
+        }
+      });
+      $('resendCodeBtn').addEventListener('click', async function () {
+        setBusy(true);
+        setAuthMessage('', false);
+        try {
+          await resendSignupCode();
+        } catch (error) {
+          setAuthMessage(error.message || 'Não consegui reenviar o código.', true);
+        } finally {
+          setBusy(false);
+        }
+      });
+      $('changeSignupEmailBtn').addEventListener('click', function () {
+        savePendingSignup(null);
+        $('signupCode').value = '';
+        showAuthTab('signup');
+      });
+      $('returnToLoginBtn').addEventListener('click', function () { showAuthTab('login'); });
+      $('completeRegistrationForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        setBusy(true);
+        setAuthMessage('', false);
+        try {
+          const details = validateRegistrationDetails({
+            name: $('completeName').value.trim(),
+            phone: $('completePhone').value.trim(),
+            cpf: $('completeCpf').value.trim(),
+            planCode: $('completePlan').value
+          });
+          await completeRegistration(details);
+          await loadClientData();
+          unlock();
+        } catch (error) {
+          setAuthMessage(error.message || 'Não consegui concluir seu cadastro.', true);
         } finally {
           setBusy(false);
         }

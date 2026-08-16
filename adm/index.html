@@ -17081,6 +17081,10 @@
                 <select id="clientEditPlan"></select>
               </div>
               <div class="field">
+                <label for="clientEditDeclaredPlan">Plano informado no cadastro</label>
+                <input id="clientEditDeclaredPlan" disabled placeholder="Não informado" />
+              </div>
+              <div class="field">
                 <label for="clientEditDueDay">Dia de vencimento</label>
                 <input id="clientEditDueDay" type="number" min="1" max="31" inputmode="numeric" placeholder="10" />
               </div>
@@ -23165,6 +23169,10 @@
         officialPlanId: row.official_plan_id || '',
         officialPlanCode: row.official_plan_code || '',
         officialPlanName: row.official_plan_name || '',
+        declaredPlanCode: row.declared_plan_code || '',
+        declaredPlanName: row.declared_plan_name || '',
+        registrationCompletedAt: row.registration_completed_at || '',
+        emailVerifiedAt: row.email_verified_at || '',
         planAmount: row.plan_amount == null ? '' : Number(row.plan_amount || 0),
         weeklyLessons: row.weekly_lessons == null ? '' : Number(row.weekly_lessons || 0),
         preferredDays: Array.isArray(row.preferred_days) ? row.preferred_days : [],
@@ -23966,7 +23974,9 @@
       const selectedPlanValue = selectedPlan ? (selectedPlan.id || selectedPlan.code || selectedPlan.name) : (client.officialPlanId || client.officialPlanCode || '');
       const request = findClientRequest(client);
       $('clientModalTitle').textContent = client.name || 'Ficha do aluno';
-      $('clientModalSubtitle').textContent = client.officialPlanName ? 'Plano oficial: ' + client.officialPlanName : 'Plano oficial ainda não definido.';
+      $('clientModalSubtitle').textContent = client.officialPlanName
+        ? 'Plano oficial: ' + client.officialPlanName
+        : (client.declaredPlanName ? 'Informado no cadastro: ' + client.declaredPlanName + ' · aguardando confirmação.' : 'Plano oficial ainda não definido.');
       $('clientModalAvatar').innerHTML = client.photo ? '<img src="' + escapeHtml(client.photo) + '" alt="" />' : escapeHtml(clientInitials(client.name));
       $('clientEditName').value = client.name || '';
       $('clientEditEmail').value = client.email || '';
@@ -23978,6 +23988,7 @@
       $('clientEditType').value = client.type || 'aluno';
       $('clientEditStatus').value = client.status || 'ATIVO';
       renderClientPlanOptions(selectedPlanValue);
+      $('clientEditDeclaredPlan').value = client.declaredPlanName || '';
       $('clientEditDueDay').value = client.dueDay || (request && request.preferredDueDay) || '';
       $('clientEditFrequency').value = client.weeklyLessons || (request && request.weeklyLessons) || '';
       $('clientEditAmount').value = client.planAmount ? String(client.planAmount).replace('.', ',') : '';
@@ -24005,7 +24016,7 @@
         const contactButton = phone ? '<a class="small-btn" href="https://wa.me/' + phone + '" target="_blank" rel="noopener">Contato</a>' : '';
         return '<article class="ops-list-card client-card">' +
           '<div class="client-card-name">' + clientAvatar(client) + '<strong>' + escapeHtml(client.name) + '</strong></div>' +
-          '<div class="client-compact-field"><span>Plano</span><strong>' + escapeHtml(summary.planName) + '</strong></div>' +
+          '<div class="client-compact-field"><span>Plano</span><strong>' + escapeHtml(client.officialPlanName || client.declaredPlanName || summary.planName) + (client.officialPlanName ? '' : client.declaredPlanName ? ' · a confirmar' : '') + '</strong></div>' +
           '<div class="client-compact-field"><span>Valor</span><strong>' + money(summary.amount || 0) + '</strong></div>' +
           '<div class="client-compact-field"><span>Vencimento</span><strong>' + (summary.dueDay ? 'Dia ' + escapeHtml(summary.dueDay) : 'A definir') + '</strong></div>' +
           '<div class="client-card-actions">' +
