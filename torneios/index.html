@@ -249,6 +249,10 @@
     .category-card p { margin: 7px 0 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
     .category-card-foot { display: flex; align-items: end; justify-content: space-between; gap: 8px; }
     .category-card-foot strong { color: var(--teal); font-size: 19px; }
+    .public-price-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin: 0 0 18px; }
+    .public-price-card { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 15px; background: #f7fafb; }
+    .public-price-card span { color: #53686e; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+    .public-price-card strong { color: var(--teal); font-size: 20px; white-space: nowrap; }
     .mini-chip { display: inline-flex; align-items: center; min-height: 27px; border-radius: 999px; padding: 5px 8px; background: #edf4f5; color: #526a71; font-size: 10px; font-weight: 900; text-transform: uppercase; }
 
     .search-row { display: grid; grid-template-columns: minmax(0,1fr) minmax(160px,.35fr); gap: 10px; margin-bottom: 16px; }
@@ -412,6 +416,8 @@
       .event-nav { top: 66px; margin: 10px 0; border-radius: 15px; }
       .event-nav button { min-height: 38px; padding: 8px 11px; font-size: 12px; }
       .tournament-grid, .category-grid, .loading-grid { grid-template-columns: 1fr; }
+      .public-price-grid { grid-template-columns: 1fr; gap: 7px; }
+      .public-price-card { padding: 12px 14px; }
       .tournament-card { grid-template-rows: 160px auto; }
       .summary-grid { gap: 8px; }
       .summary-card { min-height: 100px; padding: 15px; }
@@ -504,6 +510,11 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_zcX8te5g99p0bA12xy_E-A_MTyNpJNx';
     const PUBLIC_SNAPSHOT_RPC = 'tournament_public_snapshot';
     const REGISTRATION_FUNCTION = 'tournament-register';
+    const REGISTRATION_PRICE_OPTIONS = [
+      { key: 'CINCATE', label: 'CINCATE', amount: 100 },
+      { key: 'ILHA_STUDENT', label: 'Aluno Ilha Tênis', amount: 130 },
+      { key: 'NON_MEMBER', label: 'Não associado', amount: 180 }
+    ];
 
     const routeParts = location.pathname.split('/').filter(Boolean);
     const courtesySegmentIndex = routeParts.indexOf('cortesia');
@@ -717,13 +728,19 @@
     }
     function infoRow(label,value) { return '<div class="registration-row" style="grid-template-columns:minmax(0,1fr) auto"><div><strong>' + escapeHtml(label) + '</strong></div><span class="mini-chip">' + escapeHtml(value) + '</span></div>'; }
 
+    function registrationPricesHtml() {
+      return '<div class="public-price-grid" aria-label="Valores da inscrição">' + REGISTRATION_PRICE_OPTIONS.map((option) =>
+        '<div class="public-price-card"><span>' + escapeHtml(option.label) + '</span><strong>' + escapeHtml(money(option.amount)) + '</strong></div>'
+      ).join('') + '</div>';
+    }
+
     function categoriesHtml() {
-      return '<div class="panel"><div class="panel-head"><div><h2>Classes</h2><p>Confira modalidades, limites e valores.</p></div></div><div class="category-grid">' + (categories().map((row) => {
+      return '<div class="panel"><div class="panel-head"><div><h2>Classes</h2><p>Confira modalidades, limites e valores por perfil.</p></div></div>' + registrationPricesHtml() + '<div class="category-grid">' + (categories().map((row) => {
         const id = categoryId(row);
         const rawStoredCount = field(row,'registration_count','quantidade_inscritos');
         const storedCount = rawStoredCount === '' ? NaN : Number(rawStoredCount);
         const count = Number.isFinite(storedCount) && storedCount >= 0 ? storedCount : registrations().filter((reg) => String(field(reg,'category_id','categoria_id')) === id && !['CANCELLED','CANCELADO'].includes(clean(field(reg,'status','registration_status')).toUpperCase())).length;
-        return '<article class="category-card"><div><h3>' + escapeHtml(field(row,'name','nome') || 'Classe') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || field(row,'gender','genero') || 'Categoria do torneio') + '</p></div><div class="category-card-foot"><div><strong>' + escapeHtml(money(field(row,'registration_fee','price','valor'))) + '</strong><div><span class="mini-chip">' + count + ' inscritos</span></div></div><span class="mini-chip">' + escapeHtml(field(row,'draw_size','tamanho_chave') || 'Chave auto') + '</span></div></article>';
+        return '<article class="category-card"><div><h3>' + escapeHtml(field(row,'name','nome') || 'Classe') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || field(row,'gender','genero') || 'Categoria do torneio') + '</p></div><div class="category-card-foot"><span class="mini-chip">' + count + ' inscritos</span><span class="mini-chip">' + escapeHtml(field(row,'draw_size','tamanho_chave') || 'Chave auto') + '</span></div></article>';
       }).join('') || '<div class="empty-state" style="grid-column:1/-1">As classes serão publicadas em breve.</div>') + '</div></div>';
     }
 
@@ -889,9 +906,9 @@
     }
     function updateRegistrationPrice() {
       const type = document.querySelector('input[name="participant_type"]:checked')?.value || '';
-      const prices = {CINCATE:100,ILHA_STUDENT:130,NON_MEMBER:180};
-      $('registrationPriceField').hidden = !(type in prices);
-      if (type in prices) $('registrationPrice').textContent = money(prices[type]);
+      const option = REGISTRATION_PRICE_OPTIONS.find((item) => item.key === type);
+      $('registrationPriceField').hidden = !option;
+      if (option) $('registrationPrice').textContent = money(option.amount);
     }
     function renderRegistrationCategories() {
       const gender = document.querySelector('input[name="gender"]:checked')?.value || '';
