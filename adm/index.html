@@ -324,20 +324,6 @@
       color: var(--text);
     }
 
-    .adm-login-card .adm-login-recovery {
-      margin-top: 8px;
-      height: 42px;
-      color: var(--teal);
-      background: transparent;
-      border: 1px solid var(--line);
-    }
-
-    .adm-recovery-panel {
-      margin-top: 12px;
-      padding-top: 2px;
-      border-top: 1px solid var(--line);
-    }
-
     .adm-login-note {
       margin-top: 12px;
       color: var(--muted);
@@ -16903,14 +16889,6 @@
           <button type="submit" id="adminLoginBtn">Entrar</button>
           <button class="adm-login-secondary" type="button" id="adminSignupBtn">Criar primeiro acesso</button>
         </div>
-        <button class="adm-login-recovery" type="button" id="adminRecoveryBtn">Recuperar acesso</button>
-      </div>
-      <div class="adm-recovery-panel" id="adminRecoveryPanel" hidden>
-        <label for="adminNewPassword">Nova senha</label>
-        <input id="adminNewPassword" type="password" autocomplete="new-password" minlength="8" />
-        <label for="adminConfirmPassword">Confirmar nova senha</label>
-        <input id="adminConfirmPassword" type="password" autocomplete="new-password" minlength="8" />
-        <button type="button" id="adminSaveRecoveryBtn">Salvar nova senha</button>
       </div>
       <button class="adm-login-demo preview-only" type="button" id="adminDemoBtn">Entrar em modo demonstração</button>
       <button class="bar-install-app-login" type="button" id="adminInstallBtn" hidden>Instalar Ilha Bar</button>
@@ -31273,65 +31251,6 @@
       return data;
     }
 
-    async function requestProtectedAccessRecovery(email) {
-      const response = await fetch(supabaseBaseUrl() + '/functions/v1/protected-access-recovery', {
-        method: 'POST',
-        headers: {
-          apikey: LESSONS_SUPABASE_ANON_KEY,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email: email })
-      });
-      const data = await response.json().catch(function () { return {}; });
-      if (!response.ok) throw new Error(data.error || 'Não foi possível enviar a recuperação agora.');
-      return data;
-    }
-
-    function recoverySessionFromLocation() {
-      const params = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
-      if (params.get('type') !== 'recovery' || !params.get('access_token')) return null;
-      return {
-        access_token: params.get('access_token'),
-        refresh_token: params.get('refresh_token') || '',
-        expires_in: Number(params.get('expires_in') || 3600),
-        expires_at: Math.floor(Date.now() / 1000) + Number(params.get('expires_in') || 3600),
-        token_type: params.get('token_type') || 'bearer'
-      };
-    }
-
-    function openPasswordRecovery(session) {
-      adminSession = session;
-      $('adminNormalLoginPanel').hidden = true;
-      $('adminRecoveryPanel').hidden = false;
-      $('adminLoginTitle').textContent = 'Crie sua nova senha';
-      $('adminLoginSubtitle').textContent = 'Seu acesso de equipe foi restaurado. Defina uma nova senha para continuar.';
-      $('adminNewPassword').focus();
-    }
-
-    async function saveRecoveredPassword() {
-      const password = $('adminNewPassword').value;
-      const confirmation = $('adminConfirmPassword').value;
-      if (password.length < 8) throw new Error('A nova senha precisa ter pelo menos 8 caracteres.');
-      if (password !== confirmation) throw new Error('As senhas não conferem.');
-      const response = await fetch(supabaseBaseUrl() + '/auth/v1/user', {
-        method: 'PUT',
-        headers: {
-          apikey: LESSONS_SUPABASE_ANON_KEY,
-          Authorization: 'Bearer ' + adminSession.access_token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ password: password })
-      });
-      const user = await response.json().catch(function () { return {}; });
-      if (!response.ok) throw new Error(user.msg || user.message || 'Não foi possível salvar a nova senha.');
-      adminSession.user = user;
-      storeAdminSession(adminSession);
-      history.replaceState({}, '', window.location.pathname + window.location.search.replace(/[?&]recovery=1(?:&|$)/, function (part) { return part.endsWith('&') ? '?' : ''; }));
-      await ensureAdminProfile();
-      unlockAdmin();
-      toast('Senha atualizada. Seu acesso foi restaurado.');
-    }
-
     async function refreshAdminSession(session) {
       if (!session || !session.refresh_token) throw new Error('Sessao expirada. Entre novamente.');
       const freshSession = await supabaseAuthRequest('token?grant_type=refresh_token', { refresh_token: session.refresh_token }, false);
@@ -32799,36 +32718,6 @@
         }
       });
 
-      $('adminRecoveryBtn').addEventListener('click', async function () {
-        const email = $('adminUser').value.trim();
-        if (!email) {
-          setLoginMessage('Informe seu e-mail para recuperar o acesso.', true);
-          return;
-        }
-        setLoginBusy(true);
-        setLoginMessage('', false);
-        try {
-          const result = await requestProtectedAccessRecovery(email);
-          setLoginMessage(result.message || 'Confira seu e-mail para criar uma nova senha.', false);
-        } catch (error) {
-          setLoginMessage(error.message || 'Não foi possível recuperar o acesso.', true);
-        } finally {
-          setLoginBusy(false);
-        }
-      });
-
-      $('adminSaveRecoveryBtn').addEventListener('click', async function () {
-        this.disabled = true;
-        setLoginMessage('', false);
-        try {
-          await saveRecoveredPassword();
-        } catch (error) {
-          setLoginMessage(error.message || 'Não foi possível salvar a senha.', true);
-        } finally {
-          this.disabled = false;
-        }
-      });
-
       $('adminDemoBtn').addEventListener('click', function () {
         enterAdminDemo(true);
       });
@@ -33927,9 +33816,7 @@
         }
       });
 
-      const recoverySession = recoverySessionFromLocation();
-      if (recoverySession) openPasswordRecovery(recoverySession);
-      else restoreAdminSession();
+      restoreAdminSession();
     }
 
     window.downloadInstagramImage = downloadInstagramImage;
