@@ -1,7 +1,7 @@
-const CACHE_NAME = 'ilha-play-v179-root';
+const CACHE_NAME = 'ilha-play-v180-direct';
 const ASSETS = [
   './',
-  './ilha-play-shell',
+  './index.html',
   './auto-update.js',
   './adm/',
   './adm/index.html',
