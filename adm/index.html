@@ -16938,7 +16938,7 @@
           </div>
         </div>
         <div class="club-home-actions">
-          <a class="obs-link" href="../clientes/" target="_blank" rel="noopener">clientes/</a>
+          <a class="obs-link" href="/" target="_blank" rel="noopener">Ilha Play</a>
           <button class="ghost-btn" type="button" id="homeLogoutBtn">Sair</button>
         </div>
       </div>
@@ -24069,7 +24069,7 @@
           user_id: client.id,
           title: 'Seu acesso ao Ilha Play foi aprovado',
           body: 'Seu cadastro foi aprovado pela equipe do Ilha Tênis. Você já pode entrar no aplicativo.',
-          url: '/clientes/',
+          url: '/',
           tag: 'ilha-play-cadastro-aprovado'
         }).catch(function () { return { sent: 0 }; });
         renderClientsModule();
@@ -30769,7 +30769,7 @@
         if (!isAdminDemoMode()) saved = await supabaseInsert('app_announcements', payload);
         let pushResult = null;
         if (payload.target_type === 'todos' && payload.body) {
-          pushResult = await sendClientAnnouncementPush({ title: payload.title, body: payload.body, url: payload.link_url || '/clientes/' }).catch(function () { return null; });
+          pushResult = await sendClientAnnouncementPush({ title: payload.title, body: payload.body, url: payload.link_url || '/' }).catch(function () { return null; });
         }
         opsData.announcements.unshift(saved ? mapAnnouncementRow(saved) : mapAnnouncementRow(Object.assign({ id: localId('announcement') }, payload)));
         $('announcementForm').reset();

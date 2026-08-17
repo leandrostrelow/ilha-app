@@ -1,11 +1,7 @@
-const CACHE_NAME = 'ilha-play-v178';
+const CACHE_NAME = 'ilha-play-v179-root';
 const ASSETS = [
   './',
-  './index.html',
   './auto-update.js',
-  './clientes/',
-  './clientes/index.html',
-  './clientes/manifest.json',
   './adm/',
   './adm/index.html',
   './menu/',
@@ -54,7 +50,7 @@ self.addEventListener('activate', event => {
         icon: '/icon.png',
         badge: '/icon.png',
         tag: 'ilha-play-novo-cadastro',
-        data: { url: '/clientes/' }
+        data: { url: '/' }
       }).catch(() => {}))
   );
 });
@@ -78,7 +74,7 @@ self.addEventListener('push', event => {
     icon: data.icon || '/icon.png',
     badge: data.badge || '/icon.png',
     tag: data.tag || 'ilha-play-aviso',
-    data: { url: data.url || '/clientes/', orderId: data.orderId || '' },
+    data: { url: data.url || '/', orderId: data.orderId || '' },
     vibrate: [300, 120, 300, 120, 650],
     requireInteraction: true,
     renotify: true,
@@ -88,7 +84,7 @@ self.addEventListener('push', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const targetUrl = new URL(event.notification.data && event.notification.data.url || '/clientes/', self.location.origin).href;
+  const targetUrl = new URL(event.notification.data && event.notification.data.url || '/', self.location.origin).href;
   event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
     const existing = clients.find(client => client.url.startsWith(self.location.origin));
     if (existing) {
@@ -140,7 +136,7 @@ self.addEventListener('fetch', event => {
           if (url.pathname === '/menu' || url.pathname.startsWith('/menu/')) {
             return caches.match('./menu/index.html');
           }
-          return caches.match('./index.html');
+          return caches.match('./');
         }))
     );
     return;

@@ -45,7 +45,7 @@ Deno.serve(async (request) => {
     const input = await request.json();
     const title = String(input.title || "Ilha Play").trim().slice(0, 90);
     const body = String(input.body || "").trim().slice(0, 280);
-    const url = String(input.url || "/clientes/");
+    const url = String(input.url || "/");
     const userId = String(input.user_id || "").trim();
     if (!title || !body) return json({ error: "Informe título e mensagem." }, 400);
     if (userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) {
