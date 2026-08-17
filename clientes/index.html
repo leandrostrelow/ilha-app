@@ -301,6 +301,39 @@
     .push-consent-card p { margin: 4px 0 0; color: var(--muted); font-size: 12px; font-weight: 750; line-height: 1.4; }
     .push-consent-card .primary-btn { min-width: 170px; }
 
+    .welcome-update-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(5, 31, 39, .72);
+      backdrop-filter: blur(8px);
+    }
+    .welcome-update-modal[hidden] { display: none !important; }
+    .welcome-update-card {
+      width: min(520px, 100%);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .24);
+      border-radius: 24px;
+      background: #fff;
+      box-shadow: 0 28px 80px rgba(4, 30, 38, .3);
+    }
+    .welcome-update-head {
+      padding: 24px;
+      background: linear-gradient(135deg, #073b46, #126e70);
+      color: #fff;
+    }
+    .welcome-update-head img { width: 150px; padding: 10px 14px; border-radius: 14px; background: #fff; }
+    .welcome-update-head span { display: block; margin-top: 18px; color: var(--lime); font-size: 11px; font-weight: 950; letter-spacing: 1.8px; text-transform: uppercase; }
+    .welcome-update-head h2 { margin: 7px 0 0; font-size: 30px; line-height: 1.08; }
+    .welcome-update-body { padding: 22px 24px 24px; }
+    .welcome-update-body p { margin: 0; color: #536872; font-size: 15px; font-weight: 720; line-height: 1.55; }
+    .welcome-update-body strong { color: var(--ink); }
+    .welcome-update-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+    .welcome-update-actions button { min-height: 48px; }
+
     .auth-code-input {
       height: 66px;
       text-align: center;
@@ -2426,6 +2459,13 @@
       .auth-welcome-copy h1 { font-size: 23px; line-height: 1.05; }
       .auth-welcome-copy span { margin-bottom: 5px; font-size: 9px; letter-spacing: 1.5px; }
       .auth-welcome-copy p { margin-top: 7px; font-size: 11px; line-height: 1.35; }
+      .welcome-update-modal { align-items: end; padding: 12px; }
+      .welcome-update-card { border-radius: 22px; }
+      .welcome-update-head { padding: 20px; }
+      .welcome-update-head img { width: 130px; }
+      .welcome-update-head h2 { font-size: 25px; }
+      .welcome-update-body { padding: 18px 20px 20px; }
+      .welcome-update-actions { grid-template-columns: 1fr; }
       .auth-panel { justify-content: start; padding: 24px 20px max(28px, env(safe-area-inset-bottom)); }
       .auth-panel-head h2 { font-size: 23px; }
       .auth-fields { grid-template-columns: 1fr; gap: 0; }
@@ -2987,14 +3027,31 @@
     <span>Entrando no Ilha Play</span>
   </div>
 
+  <div class="welcome-update-modal" id="welcomeUpdateModal" hidden role="dialog" aria-modal="true" aria-labelledby="welcomeUpdateTitle">
+    <div class="welcome-update-card">
+      <div class="welcome-update-head">
+        <img src="../logo.png" alt="Ilha Tênis Colatina" />
+        <span>Um novo aplicativo para o clube</span>
+        <h2 id="welcomeUpdateTitle">O antigo app foi descontinuado</h2>
+      </div>
+      <div class="welcome-update-body">
+        <p>Para acessar todas as informações do clube e <strong>reservar quadras</strong>, agora é necessário fazer seu cadastro como cliente no novo Ilha Play.</p>
+        <div class="welcome-update-actions">
+          <button class="primary-btn" type="button" id="welcomeEnableNotificationsBtn">Ativar notificações</button>
+          <button class="ghost-btn" type="button" id="welcomeContinueBtn">Fazer meu cadastro</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <section class="client-auth" id="clientAuth" aria-label="Acesso do cliente">
     <div class="auth-card">
       <aside class="auth-welcome">
         <div class="auth-logo-wrap"><img class="auth-logo" src="../logo.png" alt="Ilha Tênis Colatina" /></div>
         <div class="auth-welcome-copy">
           <span>Seu clube em um só lugar</span>
-          <h1>Bem-vindo ao Ilha Play</h1>
-          <p>Este será o aplicativo oficial do clube para reservas, planos, pagamentos, torneios e comunicados.</p>
+          <h1>O novo Ilha Play chegou</h1>
+          <p>Cadastre-se para acessar as informações do clube, reservar quadras, acompanhar planos, torneios e comunicados.</p>
         </div>
         <div class="auth-benefits" aria-label="Recursos do aplicativo">
           <div class="auth-benefit">Reserve sua quadra</div>
@@ -3623,7 +3680,7 @@
     }
 
     async function ensureClientPushSubscription(requestPermission) {
-      if (!session || session.demo || !('Notification' in window) || !('PushManager' in window)) return false;
+      if (session && session.demo || !('Notification' in window) || !('PushManager' in window)) return false;
       const registration = await ensureClientServiceWorker();
       if (!registration) return false;
       let permission = Notification.permission;
@@ -3636,8 +3693,22 @@
           applicationServerKey: clientUrlBase64ToBytes(CLIENT_PUSH_VAPID_KEY)
         });
       }
-      await saveClientPushSubscription(subscription);
+      if (session && currentUser().id) await saveClientPushSubscription(subscription);
       return true;
+    }
+
+    function closeWelcomeUpdateModal() {
+      $('welcomeUpdateModal').hidden = true;
+      localStorage.setItem('ilha-welcome-update-v1', 'seen');
+    }
+
+    function showWelcomeUpdateModal() {
+      if (localStorage.getItem('ilha-welcome-update-v1') === 'seen') return;
+      const button = $('welcomeEnableNotificationsBtn');
+      if ('Notification' in window && Notification.permission === 'granted') {
+        button.textContent = 'Notificações ativadas';
+      }
+      $('welcomeUpdateModal').hidden = false;
     }
 
     async function renderClientPushState() {
@@ -4635,6 +4706,7 @@
 
     async function finishAuthenticatedAccess() {
       await ensureClient(null, null);
+      ensureClientPushSubscription(false).catch(function () {});
       const status = String(client && client.status || 'PENDENTE').toUpperCase();
       if (status !== 'ATIVO') {
         lock('');
@@ -5679,6 +5751,23 @@
           toast(error.message || 'Não foi possível ativar as notificações.');
         });
       });
+      $('welcomeContinueBtn').addEventListener('click', closeWelcomeUpdateModal);
+      $('welcomeEnableNotificationsBtn').addEventListener('click', function () {
+        const button = this;
+        ensureClientPushSubscription(true).then(function (enabled) {
+          if (enabled) {
+            button.textContent = 'Notificações ativadas';
+            button.disabled = true;
+            toast('Notificações ativadas. Você ficará por dentro das novidades.');
+          } else {
+            button.textContent = 'Permissão não liberada';
+            toast('Libere as notificações nas configurações do navegador.');
+          }
+        }).catch(function () {
+          toast('Não foi possível ativar as notificações agora.');
+        });
+      });
+      showWelcomeUpdateModal();
       restore();
     }
 
