@@ -1,8 +1,7 @@
-const CACHE_NAME = 'ilha-play-v182-install-tip';
+const CACHE_NAME = 'ilha-play-v183-no-reload';
 const ASSETS = [
   './',
   './index.html',
-  './auto-update.js',
   './adm/',
   './adm/index.html',
   './menu/',

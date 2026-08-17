@@ -4774,6 +4774,10 @@
     async function finishAuthenticatedAccess() {
       await ensureClient(null, null);
       ensureClientPushSubscription(false).catch(function () {});
+      if (needsRegistration(client)) {
+        openRegistrationCompletion();
+        return false;
+      }
       const status = String(client && client.status || 'PENDENTE').toUpperCase();
       if (status !== 'ATIVO') {
         lock('');
@@ -4782,10 +4786,6 @@
           $('authPendingStage').querySelector('h2').textContent = 'Acesso temporariamente bloqueado';
           $('authPendingStage').querySelector('p').textContent = 'Fale com a equipe do Ilha Tênis para conferir seu cadastro.';
         }
-        return false;
-      }
-      if (needsRegistration(client)) {
-        openRegistrationCompletion();
         return false;
       }
       await loadClientData();
@@ -4817,16 +4817,16 @@
           client_type: 'cliente'
         }
       });
-      savePendingSignup(details);
       const nextSession = result.session || (result.access_token ? result : null);
-      if (nextSession && nextSession.access_token) {
-        storeSession(nextSession);
-        await completeRegistration(details);
+      if (!nextSession || !nextSession.access_token) {
         savePendingSignup(null);
-        await finishAuthenticatedAccess();
-        return;
+        throw new Error('Este e-mail já possui uma conta. Use a opção Entrar com sua senha para completar o cadastro.');
       }
-      showAuthStage('pending');
+      savePendingSignup(details);
+      storeSession(nextSession);
+      await completeRegistration(details);
+      savePendingSignup(null);
+      await finishAuthenticatedAccess();
     }
 
     async function restore() {
@@ -4852,8 +4852,8 @@
       const stored = readSession();
       if (!stored) {
         lock('');
-        if (readPendingSignup()) showAuthStage('pending');
-        else showAuthTab('signup');
+        savePendingSignup(null);
+        showAuthTab('signup');
         return;
       }
       try {
@@ -5812,8 +5812,7 @@
             guardianPhone: $('completeGuardianPhone').value.trim()
           });
           await completeRegistration(details);
-          await loadClientData();
-          unlock();
+          await finishAuthenticatedAccess();
         } catch (error) {
           setAuthMessage(error.message || 'Não consegui concluir seu cadastro.', true);
         } finally {
@@ -5857,6 +5856,5 @@
 
     init();
   </script>
-  <script src="/auto-update.js"></script>
 </body>
 </html>
