@@ -24065,9 +24065,16 @@
         });
         const saved = Array.isArray(result) ? result[0] : result;
         if (saved) Object.assign(client, mapClientRow(saved));
+        const pushResult = await sendClientAnnouncementPush({
+          user_id: client.id,
+          title: 'Seu acesso ao Ilha Play foi aprovado',
+          body: 'Seu cadastro foi aprovado pela equipe do Ilha Tênis. Você já pode entrar no aplicativo.',
+          url: '/clientes/',
+          tag: 'ilha-play-cadastro-aprovado'
+        }).catch(function () { return { sent: 0 }; });
         renderClientsModule();
         renderHomeDashboard();
-        toast('Acesso de ' + (client.name || 'cliente') + ' aprovado.');
+        toast('Acesso de ' + (client.name || 'cliente') + ' aprovado.' + (pushResult.sent ? ' Aviso enviado.' : ''));
       } catch (error) {
         reportActionError(error);
       }

@@ -247,6 +247,20 @@
     .auth-pending-card h2 { margin: 0; font-size: 25px; }
     .auth-pending-card p { max-width: 390px; margin: 0; color: var(--muted); font-size: 13px; font-weight: 750; line-height: 1.55; }
     .auth-pending-card strong { color: var(--ink); }
+    .auth-pending-actions {
+      width: min(100%, 390px);
+      display: grid;
+      gap: 9px;
+    }
+    .auth-pending-actions .primary-btn,
+    .auth-pending-actions .ghost-btn { width: 100%; }
+    .auth-pending-tip {
+      width: min(100%, 390px);
+      padding: 11px 13px;
+      border-radius: 12px;
+      background: #ecf8fa;
+      color: var(--teal-dark) !important;
+    }
     .auth-fields {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3126,7 +3140,7 @@
                 <input id="signupPasswordConfirm" type="password" autocomplete="new-password" minlength="8" placeholder="Repita a senha" required />
               </div>
             </div>
-            <div class="auth-note">Após confirmar o e-mail, seu cadastro será revisado pela equipe do Ilha Tênis antes da liberação do acesso.</div>
+            <div class="auth-note">Seu cadastro será revisado pela equipe do Ilha Tênis antes da liberação do acesso.</div>
             <button class="primary-btn" type="submit" id="signupSubmit">Criar minha conta</button>
           </form>
         </div>
@@ -3135,9 +3149,14 @@
           <div class="auth-pending-card">
             <div class="auth-pending-icon" aria-hidden="true">✓</div>
             <h2>Cadastro recebido</h2>
-            <p>Use o botão de confirmação recebido no e-mail e aguarde a equipe do Ilha Tênis liberar seu acesso. Não é necessário digitar código.</p>
+            <p>Agora é só aguardar a equipe do Ilha Tênis liberar seu acesso.</p>
+            <p class="auth-pending-tip">Ative as notificações. Assim que seu cadastro for aprovado, você receberá um aviso no celular.</p>
             <p id="pendingEmailLabel"></p>
-            <button class="primary-btn" type="button" id="pendingLoginBtn">Voltar para entrar</button>
+            <div class="auth-pending-actions">
+              <button class="primary-btn" type="button" id="pendingEnableNotificationsBtn">Ativar notificações</button>
+              <button class="ghost-btn" type="button" id="pendingInstallBtn">Adicionar à tela inicial</button>
+              <button class="ghost-btn" type="button" id="pendingLoginBtn">Voltar para entrar</button>
+            </div>
           </div>
         </div>
 
@@ -3497,6 +3516,7 @@
     const PENDING_SIGNUP_KEY = 'ilha-client-pending-signup';
     const CLIENT_PUSH_VAPID_KEY = 'BJtga8GuviTBc3mzDwBkr0kKw-kV02hVSwu6DjgZgSgAhFuvPZNj88WfTwyV7mXgJJnxKD5ZiJCRW8nv7ndx-RU';
     const PIX_KEY = '54.969.790/0001-47';
+    let deferredClientInstallPrompt = null;
     const officialPlanSeed = [
       { code: 'aulas_anual_1x', name: 'Aulas 1x por semana - Anual', type: 'aluno', amount: 230, weekly_lessons: 1, default_due_day: 10, description: 'Ciclo de 12 meses. Pix 5% OFF no pagamento do ciclo.' },
       { code: 'aulas_semestral_1x', name: 'Aulas 1x por semana - Semestral', type: 'aluno', amount: 250, weekly_lessons: 1, default_due_day: 10, description: 'Ciclo de 6 meses. Pix 5% OFF no pagamento do ciclo.' },
@@ -3661,6 +3681,56 @@
       if (!('serviceWorker' in navigator) || window.location.protocol === 'file:') return null;
       await navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
       return navigator.serviceWorker.ready;
+    }
+
+    function clientAppIsInstalled() {
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    function clientUsesIos() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    function syncPendingInstallButton() {
+      const button = $('pendingInstallBtn');
+      if (!button) return;
+      button.hidden = clientAppIsInstalled();
+      button.textContent = deferredClientInstallPrompt ? 'Adicionar à tela inicial' : (clientUsesIos() ? 'Como adicionar à tela inicial' : 'Adicionar à tela inicial');
+    }
+
+    async function installClientApp() {
+      if (clientAppIsInstalled()) {
+        syncPendingInstallButton();
+        toast('O Ilha Play já está na sua tela inicial.');
+        return;
+      }
+      if (deferredClientInstallPrompt) {
+        deferredClientInstallPrompt.prompt();
+        const choice = await deferredClientInstallPrompt.userChoice;
+        deferredClientInstallPrompt = null;
+        syncPendingInstallButton();
+        if (choice && choice.outcome === 'accepted') toast('Ilha Play adicionado à tela inicial.');
+        return;
+      }
+      if (clientUsesIos()) {
+        toast('No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.');
+      } else {
+        toast('Abra o menu do navegador e toque em “Instalar app” ou “Adicionar à tela inicial”.');
+      }
+    }
+
+    function initClientInstallPrompt() {
+      window.addEventListener('beforeinstallprompt', function (event) {
+        event.preventDefault();
+        deferredClientInstallPrompt = event;
+        syncPendingInstallButton();
+      });
+      window.addEventListener('appinstalled', function () {
+        deferredClientInstallPrompt = null;
+        syncPendingInstallButton();
+        toast('Ilha Play adicionado à tela inicial.');
+      });
+      syncPendingInstallButton();
     }
 
     async function saveClientPushSubscription(subscription) {
@@ -4160,7 +4230,7 @@
         const rawMessage = data.error_description || data.msg || data.message || 'Falha na autenticação.';
         const normalized = String(rawMessage).toLowerCase();
         const friendly = normalized.includes('invalid login credentials') ? 'E-mail ou senha incorretos.' :
-          normalized.includes('email not confirmed') ? 'Confirme pelo botão recebido no e-mail. Não é necessário digitar código.' :
+          normalized.includes('email not confirmed') ? 'Seu cadastro ainda está aguardando a liberação da equipe do clube.' :
           normalized.includes('already registered') ? 'Este e-mail já possui uma conta. Use a opção Entrar.' :
           normalized.includes('rate limit') ? 'Muitas tentativas seguidas. Aguarde um pouco e tente novamente.' : rawMessage;
         throw new Error(friendly);
@@ -4544,8 +4614,9 @@
       if (stage === 'pending') {
         const email = pendingSignup && pendingSignup.email || currentUser().email || '';
         $('authPendingStage').querySelector('h2').textContent = 'Cadastro recebido';
-        $('authPendingStage').querySelector('p').textContent = 'Use o botão de confirmação recebido no e-mail e aguarde a equipe do Ilha Tênis liberar seu acesso. Não é necessário digitar código.';
+        $('authPendingStage').querySelector('p').textContent = 'Agora é só aguardar a equipe do Ilha Tênis liberar seu acesso.';
         $('pendingEmailLabel').innerHTML = email ? 'Cadastro: <strong>' + escapeHtml(email) + '</strong>' : '';
+        syncPendingInstallButton();
       }
     }
 
@@ -5714,6 +5785,22 @@
         savePendingSignup(null);
         showAuthTab('login');
       });
+      $('pendingEnableNotificationsBtn').addEventListener('click', function () {
+        const button = this;
+        ensureClientPushSubscription(true).then(function (enabled) {
+          if (enabled) {
+            button.textContent = 'Notificações ativadas';
+            button.disabled = true;
+            toast('Pronto. Você receberá um aviso quando seu cadastro for aprovado.');
+          } else {
+            button.textContent = 'Ativar notificações';
+            toast('Libere as notificações nas configurações do navegador.');
+          }
+        }).catch(function (error) {
+          toast(error.message || 'Não foi possível ativar as notificações agora.');
+        });
+      });
+      $('pendingInstallBtn').addEventListener('click', installClientApp);
       $('completeRegistrationForm').addEventListener('submit', async function (event) {
         event.preventDefault();
         setBusy(true);
@@ -5768,6 +5855,7 @@
           toast('Não foi possível ativar as notificações agora.');
         });
       });
+      initClientInstallPrompt();
       showWelcomeUpdateModal();
       restore();
     }

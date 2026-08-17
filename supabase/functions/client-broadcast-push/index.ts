@@ -46,12 +46,21 @@ Deno.serve(async (request) => {
     const title = String(input.title || "Ilha Play").trim().slice(0, 90);
     const body = String(input.body || "").trim().slice(0, 280);
     const url = String(input.url || "/clientes/");
+    const userId = String(input.user_id || "").trim();
     if (!title || !body) return json({ error: "Informe título e mensagem." }, 400);
+    if (userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) {
+      return json({ error: "Cliente inválido." }, 400);
+    }
 
     const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+    let subscriptionsQuery = supabase
+      .from("app_push_subscriptions")
+      .select("id, endpoint, p256dh, auth_key")
+      .eq("enabled", true);
+    if (userId) subscriptionsQuery = subscriptionsQuery.eq("user_id", userId);
     const [{ data: config, error: configError }, { data: subscriptions, error: subscriptionsError }] = await Promise.all([
       supabase.from("bar_push_config").select("vapid_public_key, vapid_private_key, subject").eq("id", true).maybeSingle(),
-      supabase.from("app_push_subscriptions").select("id, endpoint, p256dh, auth_key").eq("enabled", true),
+      subscriptionsQuery,
     ]);
     if (configError) throw configError;
     if (subscriptionsError) throw subscriptionsError;
