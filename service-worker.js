@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v187-client-plan-cancel';
+const CACHE_NAME = 'ilha-play-v188-students-dashboard';
 const ASSETS = [
   './',
   './index.html',

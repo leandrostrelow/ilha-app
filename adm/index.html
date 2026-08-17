@@ -16807,6 +16807,525 @@
       }
     }
 
+    /* Alunos: painel diário de planos, financeiro e grade. */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .clients-module .ops-content {
+      display: grid;
+      gap: 14px;
+    }
+
+    .client-overview {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .client-overview-card {
+      min-width: 0;
+      min-height: 108px;
+      display: grid;
+      align-content: center;
+      justify-items: start;
+      gap: 3px;
+      padding: 15px 16px;
+      border: 1px solid #d7e4e8;
+      border-radius: 16px;
+      background: #ffffff;
+      color: var(--text);
+      font: inherit;
+      text-align: left;
+      box-shadow: 0 8px 24px rgba(17, 42, 51, .05);
+    }
+
+    button.client-overview-card {
+      cursor: pointer;
+      transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+    }
+
+    button.client-overview-card:hover {
+      border-color: #8caeb6;
+      box-shadow: 0 10px 28px rgba(17, 42, 51, .09);
+      transform: translateY(-1px);
+    }
+
+    .client-overview-card.active {
+      border-color: var(--teal);
+      box-shadow: inset 0 0 0 2px var(--teal), 0 8px 24px rgba(0, 137, 148, .10);
+    }
+
+    .client-overview-card.attention {
+      background: #fffaf0;
+    }
+
+    .client-overview-card.danger {
+      background: #fff6f5;
+    }
+
+    .client-overview-card.schedule {
+      background: #f3fafb;
+    }
+
+    .client-overview-card.revenue {
+      background: linear-gradient(135deg, #102138, #173c4d);
+      color: #ffffff;
+    }
+
+    .client-overview-card > span {
+      color: inherit;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      opacity: .7;
+    }
+
+    .client-overview-card > strong {
+      max-width: 100%;
+      overflow: hidden;
+      font-size: clamp(23px, 2vw, 30px);
+      line-height: 1.05;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .client-overview-card.revenue > strong {
+      color: var(--lime);
+      font-size: clamp(18px, 1.7vw, 25px);
+    }
+
+    .client-overview-card > small {
+      color: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.25;
+      opacity: .62;
+    }
+
+    .client-toolbar {
+      display: grid;
+      grid-template-columns: minmax(230px, 1.8fr) repeat(5, minmax(125px, .75fr)) auto;
+      gap: 8px;
+      align-items: end;
+      padding: 12px;
+      border: 1px solid #d8e5e8;
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: 0 8px 24px rgba(17, 42, 51, .04);
+    }
+
+    .client-search-field,
+    .client-filter-field {
+      min-width: 0;
+    }
+
+    .client-search-field {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 0 12px;
+      border: 1px solid #cbdce1;
+      border-radius: 11px;
+      background: #f9fcfd;
+    }
+
+    .client-search-field:focus-within {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(0, 137, 148, .1);
+    }
+
+    .client-search-field svg {
+      width: 19px;
+      height: 19px;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: #667c84;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+
+    .client-search-field input {
+      width: 100%;
+      min-width: 0;
+      min-height: 42px;
+      padding: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .client-filter-field {
+      display: grid;
+      gap: 4px;
+    }
+
+    .client-filter-field > span {
+      padding-left: 2px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 950;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .client-filter-field select {
+      width: 100%;
+      min-width: 0;
+      min-height: 44px;
+      padding: 0 30px 0 10px;
+      border: 1px solid #cbdce1;
+      border-radius: 11px;
+      background-color: #f9fcfd;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .client-clear-filters {
+      min-height: 44px;
+      white-space: nowrap;
+    }
+
+    .client-list-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 2px 3px 0;
+    }
+
+    .client-list-head strong {
+      font-size: 14px;
+    }
+
+    .client-list-head span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .client-list {
+      gap: 9px;
+    }
+
+    .client-card {
+      min-height: 102px;
+      display: grid;
+      grid-template-columns: minmax(220px, 1.2fr) minmax(190px, 1fr) minmax(250px, 1.35fr) minmax(145px, .7fr) minmax(185px, .8fr);
+      gap: 14px;
+      align-items: center;
+      padding: 14px 15px;
+      border: 1px solid #d7e4e8;
+      border-left: 5px solid #a9bac0;
+      border-radius: 15px;
+      background: #ffffff;
+      box-shadow: 0 7px 22px rgba(17, 42, 51, .045);
+    }
+
+    .client-card.is-active {
+      border-left-color: var(--lime);
+    }
+
+    .client-card.is-pending {
+      border-left-color: #f0a128;
+    }
+
+    .client-card.is-cancelled,
+    .client-card.is-blocked {
+      border-left-color: #e34a53;
+    }
+
+    .client-card-identity,
+    .client-card-block,
+    .client-card-lessons,
+    .client-card-money,
+    .client-card-side {
+      min-width: 0;
+    }
+
+    .client-card-identity {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .client-card-identity .client-avatar {
+      width: 42px;
+      height: 42px;
+      flex: 0 0 42px;
+    }
+
+    .client-card-identity > div,
+    .client-card-block,
+    .client-card-lessons,
+    .client-card-money {
+      display: grid;
+      gap: 4px;
+    }
+
+    .client-card-identity strong,
+    .client-card-block strong {
+      overflow: hidden;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.2;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .client-card-label {
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 950;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .client-contact-line,
+    .client-card-block small,
+    .client-card-lessons small,
+    .client-card-money small {
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 750;
+      line-height: 1.25;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .client-plan-pending {
+      color: #a66a08;
+    }
+
+    .client-lesson-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .client-lesson-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      background: #eaf6f7;
+      color: #075d66;
+      font-size: 10px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .client-lesson-chip.missing {
+      background: #fff4df;
+      color: #9a5f00;
+    }
+
+    .client-card-money > strong {
+      color: #008b95;
+      font-size: 20px;
+      line-height: 1.05;
+      white-space: nowrap;
+    }
+
+    .client-card-money.is-exempt > strong {
+      color: #4f6818;
+      font-size: 15px;
+    }
+
+    .client-card-side {
+      display: grid;
+      justify-items: end;
+      gap: 9px;
+    }
+
+    .client-card-badges,
+    .client-card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 5px;
+    }
+
+    .client-card-actions .small-btn {
+      min-height: 34px;
+    }
+
+    .client-card-actions .client-open-btn {
+      border-color: #0b8791;
+      background: #0b8791;
+      color: #ffffff;
+    }
+
+    .client-list-empty {
+      display: grid;
+      place-items: center;
+      min-height: 180px;
+      padding: 24px;
+      border: 1px dashed #c9dadd;
+      border-radius: 16px;
+      background: #ffffff;
+      color: var(--muted);
+      text-align: center;
+      font-weight: 850;
+    }
+
+    @media (max-width: 1380px) {
+      .client-overview {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .client-toolbar {
+        grid-template-columns: minmax(250px, 1.5fr) repeat(3, minmax(140px, 1fr));
+      }
+
+      .client-search-field {
+        grid-column: span 2;
+      }
+
+      .client-card {
+        grid-template-columns: minmax(230px, 1.1fr) minmax(190px, .9fr) minmax(240px, 1.15fr) minmax(145px, .7fr);
+      }
+
+      .client-card-side {
+        grid-column: 1 / -1;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        justify-items: stretch;
+      }
+
+      .client-card-badges,
+      .client-card-actions {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .client-toolbar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .client-search-field {
+        grid-column: 1 / -1;
+      }
+
+      .client-card {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 12px;
+      }
+
+      .client-card-identity,
+      .client-card-side {
+        grid-column: 1 / -1;
+      }
+
+      .client-card-lessons {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .clients-module .module-head {
+        align-items: center;
+      }
+
+      .clients-module .module-head p {
+        display: none;
+      }
+
+      .client-overview {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .client-overview-card {
+        min-height: 86px;
+        padding: 11px 12px;
+        border-radius: 13px;
+      }
+
+      .client-overview-card > strong {
+        font-size: 23px;
+      }
+
+      .client-overview-card.revenue > strong {
+        font-size: 17px;
+      }
+
+      .client-overview-card > small {
+        font-size: 9px;
+      }
+
+      .client-toolbar {
+        gap: 7px;
+        padding: 9px;
+        border-radius: 13px;
+      }
+
+      .client-filter-field select {
+        min-height: 42px;
+        padding-left: 8px;
+        font-size: 11px;
+      }
+
+      .client-clear-filters {
+        grid-column: 1 / -1;
+      }
+
+      .client-list-head {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .client-list-head span {
+        display: none;
+      }
+
+      .client-card {
+        grid-template-columns: minmax(0, 1fr) minmax(108px, .55fr);
+        gap: 12px 10px;
+        padding: 13px 12px;
+      }
+
+      .client-card-identity,
+      .client-card-lessons,
+      .client-card-side {
+        grid-column: 1 / -1;
+      }
+
+      .client-card-side {
+        gap: 8px;
+      }
+
+      .client-card-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .client-card-actions .small-btn {
+        width: 100%;
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
     /* O painel do clube precisa permitir que a coluna encolha no celular.
        Sem minmax(0, 1fr), a navegação horizontal define a largura da página. */
     @media (max-width: 860px) {
@@ -17178,18 +17697,109 @@
         <div class="module-head">
           <div>
             <h1>Alunos</h1>
+            <p>Planos, mensalidades e aulas em uma visão rápida.</p>
           </div>
           <div class="module-actions">
-          <button class="ghost-btn" type="button" data-home-action>Início</button>
+            <button class="ghost-btn" type="button" data-home-action>Início</button>
             <button class="ghost-btn" type="button" id="clientReloadBtn">Recarregar</button>
           </div>
         </div>
         <div class="ops-content">
-          <div class="ops-grid">
-            <div class="ops-panel span-12">
-              <div class="ops-list" id="clientList"></div>
+          <div class="client-overview" aria-label="Resumo dos alunos">
+            <button class="client-overview-card active" type="button" data-client-status-metric="todos">
+              <span>Total</span>
+              <strong id="clientTotalMetric">0</strong>
+              <small>alunos cadastrados</small>
+            </button>
+            <button class="client-overview-card" type="button" data-client-status-metric="ativo">
+              <span>Ativos</span>
+              <strong id="clientActiveMetric">0</strong>
+              <small>com acesso liberado</small>
+            </button>
+            <button class="client-overview-card attention" type="button" data-client-status-metric="pendente">
+              <span>Pendentes</span>
+              <strong id="clientPendingMetric">0</strong>
+              <small>plano a definir</small>
+            </button>
+            <button class="client-overview-card danger" type="button" data-client-status-metric="cancelado">
+              <span>Cancelamentos</span>
+              <strong id="clientCancelledMetric">0</strong>
+              <small>solicitados ou concluídos</small>
+            </button>
+            <button class="client-overview-card schedule" type="button" data-client-lesson-metric="pendente">
+              <span>Aulas a definir</span>
+              <strong id="clientLessonsMissingMetric">0</strong>
+              <small>grades incompletas</small>
+            </button>
+            <div class="client-overview-card revenue">
+              <span>Mensalidades</span>
+              <strong id="clientMonthlyMetric">R$ 0,00</strong>
+              <small>valor mensal ativo</small>
             </div>
           </div>
+
+          <div class="client-toolbar" aria-label="Filtros de alunos">
+            <label class="client-search-field">
+              <span class="sr-only">Buscar aluno</span>
+              <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+              <input id="clientSearchInput" type="search" autocomplete="off" placeholder="Buscar por nome, telefone ou e-mail" />
+            </label>
+            <label class="client-filter-field">
+              <span>Status</span>
+              <select id="clientStatusFilter">
+                <option value="todos">Todos</option>
+                <option value="ativo">Ativos</option>
+                <option value="pendente">Pendentes</option>
+                <option value="cancelado">Cancelados</option>
+                <option value="bloqueado">Bloqueados</option>
+              </select>
+            </label>
+            <label class="client-filter-field">
+              <span>Plano</span>
+              <select id="clientPlanFilter"><option value="todos">Todos os planos</option></select>
+            </label>
+            <label class="client-filter-field">
+              <span>Financeiro</span>
+              <select id="clientFinanceFilter">
+                <option value="todos">Todas as situações</option>
+                <option value="em_dia">Em dia</option>
+                <option value="pendente">Em aberto</option>
+                <option value="vencido">Vencidos</option>
+                <option value="isento">Isentos</option>
+                <option value="sem_plano">Sem plano</option>
+              </select>
+            </label>
+            <label class="client-filter-field">
+              <span>Dia de aula</span>
+              <select id="clientLessonDayFilter">
+                <option value="todos">Todos os dias</option>
+                <option value="segunda">Segunda-feira</option>
+                <option value="terca">Terça-feira</option>
+                <option value="quarta">Quarta-feira</option>
+                <option value="quinta">Quinta-feira</option>
+                <option value="sexta">Sexta-feira</option>
+                <option value="sabado">Sábado</option>
+                <option value="domingo">Domingo</option>
+                <option value="sem_aula">Sem aula definida</option>
+              </select>
+            </label>
+            <label class="client-filter-field">
+              <span>Ordenar</span>
+              <select id="clientSortFilter">
+                <option value="name-asc">Nome: A–Z</option>
+                <option value="name-desc">Nome: Z–A</option>
+                <option value="amount-desc">Maior mensalidade</option>
+                <option value="due-asc">Próximo vencimento</option>
+              </select>
+            </label>
+            <button class="ghost-btn client-clear-filters" type="button" id="clientClearFilters">Limpar filtros</button>
+          </div>
+
+          <div class="client-list-head">
+            <strong id="clientListHint" aria-live="polite">Alunos em ordem alfabética</strong>
+            <span>Selecione um resumo ou use os filtros para encontrar rápido.</span>
+          </div>
+          <div class="ops-list client-list" id="clientList"></div>
         </div>
       </div>
     </section>
@@ -23131,6 +23741,13 @@
 
     const opsState = {
       studentStatus: 'todos',
+      clientSearch: '',
+      clientStatus: 'todos',
+      clientPlan: 'todos',
+      clientFinance: 'todos',
+      clientLessonDay: 'todos',
+      clientSort: 'name-asc',
+      clientLessonOnlyPending: false,
       agendaType: 'todos',
       financeFilter: 'abertos',
       financeView: 'list',
@@ -23441,7 +24058,7 @@
 
     function statusPill(status) {
       const value = String(status || '').toUpperCase();
-      const kind = value === 'OK' || value === 'EM DIA' || value === 'RECEBIDO' || value === 'CONFIRMADO' || value === 'ATIVO' || value === 'PAGO' || value === 'PAGA' ? 'good' : (value === 'VENCIDO' || value === 'VENCIDA' || value === 'PENDENTE' || value === 'BLOQUEADO' || value === 'INATIVO' ? 'bad' : 'warn');
+      const kind = value === 'OK' || value === 'EM DIA' || value === 'RECEBIDO' || value === 'CONFIRMADO' || value === 'ATIVO' || value === 'PAGO' || value === 'PAGA' ? 'good' : (value === 'VENCIDO' || value === 'VENCIDA' || value === 'PENDENTE' || value === 'BLOQUEADO' || value === 'INATIVO' || value === 'CANCELADO' || value === 'CANCELADA' ? 'bad' : 'warn');
       return '<span class="ops-pill ' + kind + '">' + escapeHtml(status) + '</span>';
     }
 
@@ -24391,26 +25008,224 @@
       $('clientModal').setAttribute('aria-hidden', 'true');
     }
 
+    function normalizedClientText(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+    }
+
+    function clientHasOfficialPlan(client) {
+      return Boolean(client && (client.officialPlanId || client.officialPlanCode || client.officialPlanName));
+    }
+
+    function clientPlanDetails(client) {
+      const plan = findClientPlan(client);
+      const official = client.officialPlanName || plan && plan.name || '';
+      const declared = client.declaredPlanName || '';
+      const name = official || declared || 'Sem plano';
+      return {
+        name: name,
+        key: normalizedClientText(name),
+        official: Boolean(official),
+        isExempt: normalizedClientText(client.officialPlanCode || plan && plan.code || name).includes('isento'),
+        weeklyLessons: Number(client.weeklyLessons || plan && plan.weeklyLessons || 0)
+      };
+    }
+
+    function clientOperationalState(client) {
+      const raw = String(client && client.status || '').toUpperCase();
+      const today = localDateString();
+      if (['CANCELADO', 'CANCELADA', 'INATIVO'].includes(raw)) {
+        return { key: 'cancelado', label: 'Cancelado', className: 'is-cancelled' };
+      }
+      if (client && (client.planCancellationRequestedAt || client.planCancelAt)) {
+        const scheduled = client.planCancelAt && String(client.planCancelAt).slice(0, 10) >= today;
+        return { key: 'cancelado', label: scheduled ? 'Cancelamento agendado' : 'Cancelamento solicitado', className: 'is-cancelled' };
+      }
+      if (raw === 'BLOQUEADO') return { key: 'bloqueado', label: 'Bloqueado', className: 'is-blocked' };
+      if (raw === 'PENDENTE' || !clientHasOfficialPlan(client)) {
+        return { key: 'pendente', label: 'Pendente', className: 'is-pending' };
+      }
+      return { key: 'ativo', label: 'Ativo', className: 'is-active' };
+    }
+
+    function clientFinancialState(client, planDetails, summary) {
+      if (planDetails.isExempt) return { key: 'isento', label: 'Isento', kind: 'good' };
+      if (!clientHasOfficialPlan(client)) return { key: 'sem_plano', label: 'Sem plano', kind: 'warn' };
+      const activeInvoices = invoicesForClient(client).filter(function (invoice) {
+        return !['CANCELADO', 'CANCELADA'].includes(String(invoice.status || '').toUpperCase());
+      });
+      const invoice = activeInvoices[0];
+      if (invoice) {
+        const status = String(invoice.status || '').toUpperCase();
+        if (['VENCIDO', 'VENCIDA'].includes(status) || (!['PAGO', 'PAGA', 'RECEBIDO'].includes(status) && invoice.dueDate && invoice.dueDate < localDateString())) {
+          return { key: 'vencido', label: 'Vencido', kind: 'bad' };
+        }
+        if (!['PAGO', 'PAGA', 'RECEBIDO'].includes(status)) return { key: 'pendente', label: 'Em aberto', kind: 'warn' };
+        return { key: 'em_dia', label: 'Em dia', kind: 'good' };
+      }
+      const fallback = String(summary.status || '').toUpperCase();
+      if (['VENCIDO', 'VENCIDA'].includes(fallback)) return { key: 'vencido', label: 'Vencido', kind: 'bad' };
+      if (['ABERTO', 'ABERTA', 'PENDENTE'].includes(fallback)) return { key: 'pendente', label: 'Em aberto', kind: 'warn' };
+      return { key: 'em_dia', label: 'Em dia', kind: 'good' };
+    }
+
+    function clientLessonDetails(client, planDetails) {
+      const schedule = clientLessonSchedule(client);
+      const required = planDetails.weeklyLessons;
+      return {
+        schedule: schedule,
+        required: required,
+        missing: required > schedule.length,
+        dayKeys: schedule.map(function (entry) { return String(entry.slot.day || '').toLowerCase(); })
+      };
+    }
+
+    function clientShortDay(day) {
+      const item = weekDays.find(function (weekday) { return weekday.key === String(day || '').toLowerCase(); });
+      return item ? item.label : lessonDayName(day).slice(0, 3);
+    }
+
+    function buildClientOverview(client) {
+      const plan = clientPlanDetails(client);
+      const summary = clientFinanceSummary(client);
+      const operational = clientOperationalState(client);
+      const financial = clientFinancialState(client, plan, summary);
+      const lessons = clientLessonDetails(client, plan);
+      return { client: client, plan: plan, summary: summary, operational: operational, financial: financial, lessons: lessons };
+    }
+
+    function clientSearchHaystack(row) {
+      const client = row.client;
+      return normalizedClientText([
+        client.name,
+        client.email,
+        client.phone,
+        client.guardian,
+        client.guardianPhone,
+        row.plan.name
+      ].join(' '));
+    }
+
+    function renderClientPlanFilter(rows) {
+      const select = $('clientPlanFilter');
+      const plans = [];
+      const seen = new Set();
+      rows.forEach(function (row) {
+        if (seen.has(row.plan.key)) return;
+        seen.add(row.plan.key);
+        plans.push({ key: row.plan.key, name: row.plan.name });
+      });
+      plans.sort(function (a, b) { return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }); });
+      select.innerHTML = '<option value="todos">Todos os planos</option>' + plans.map(function (plan) {
+        return '<option value="' + escapeHtml(plan.key) + '">' + escapeHtml(plan.name) + '</option>';
+      }).join('');
+      if (!['todos'].concat(plans.map(function (plan) { return plan.key; })).includes(opsState.clientPlan)) opsState.clientPlan = 'todos';
+      select.value = opsState.clientPlan;
+    }
+
+    function syncClientFilterControls() {
+      $('clientSearchInput').value = opsState.clientSearch;
+      $('clientStatusFilter').value = opsState.clientStatus;
+      $('clientPlanFilter').value = opsState.clientPlan;
+      $('clientFinanceFilter').value = opsState.clientFinance;
+      $('clientLessonDayFilter').value = opsState.clientLessonDay;
+      $('clientSortFilter').value = opsState.clientSort;
+      document.querySelectorAll('[data-client-status-metric]').forEach(function (button) {
+        const active = !opsState.clientLessonOnlyPending && button.dataset.clientStatusMetric === opsState.clientStatus;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      document.querySelectorAll('[data-client-lesson-metric]').forEach(function (button) {
+        button.classList.toggle('active', opsState.clientLessonOnlyPending);
+        button.setAttribute('aria-pressed', opsState.clientLessonOnlyPending ? 'true' : 'false');
+      });
+    }
+
+    function renderClientLessons(row) {
+      const lesson = row.lessons;
+      const chips = lesson.schedule.map(function (entry) {
+        return '<span class="client-lesson-chip">' + escapeHtml(clientShortDay(entry.slot.day)) + ' ' + escapeHtml(entry.slot.time || '') + '</span>';
+      });
+      if (lesson.missing) chips.push('<span class="client-lesson-chip missing">Faltam ' + (lesson.required - lesson.schedule.length) + '</span>');
+      if (!chips.length) chips.push('<span class="client-lesson-chip">Sem aulas fixas</span>');
+      const professionals = Array.from(new Set(lesson.schedule.map(function (entry) {
+        return [entry.slot.teacher, entry.slot.court].filter(Boolean).join(' · ');
+      }).filter(Boolean)));
+      const progress = lesson.required
+        ? lesson.schedule.length + ' de ' + lesson.required + ' aula(s) definida(s)'
+        : 'Plano sem aulas semanais';
+      return '<div class="client-card-lessons">' +
+        '<span class="client-card-label">Dias e horários</span>' +
+        '<div class="client-lesson-chips">' + chips.join('') + '</div>' +
+        '<small>' + escapeHtml(professionals.join(' | ') || progress) + '</small>' +
+      '</div>';
+    }
+
+    function renderClientCard(row) {
+      const client = row.client;
+      const key = client.id || client.email || client.name;
+      const phone = String(client.phone || client.guardianPhone || '').replace(/\D/g, '');
+      const contactButton = phone ? '<a class="small-btn" href="https://wa.me/' + phone + '" target="_blank" rel="noopener">WhatsApp</a>' : '';
+      const contact = [client.phone, client.email].filter(Boolean).join(' · ') || 'Sem telefone ou e-mail';
+      const planNote = row.plan.official ? 'Plano oficial' : (client.declaredPlanName ? 'Informado no cadastro · a confirmar' : 'Defina um plano para liberar recursos');
+      const amountLabel = row.plan.isExempt ? 'Sem cobrança' : money(row.summary.amount || 0);
+      const dueLabel = row.plan.isExempt ? 'Sem vencimento' : (row.summary.dueDay ? 'Vence no dia ' + row.summary.dueDay : 'Vencimento a definir');
+      return '<article class="ops-list-card client-card ' + row.operational.className + '">' +
+        '<div class="client-card-identity">' + clientAvatar(client) + '<div><strong>' + escapeHtml(client.name || 'Aluno sem nome') + '</strong><span class="client-contact-line">' + escapeHtml(contact) + '</span></div></div>' +
+        '<div class="client-card-block"><span class="client-card-label">Plano</span><strong class="' + (row.plan.official ? '' : 'client-plan-pending') + '">' + escapeHtml(row.plan.name) + '</strong><small>' + escapeHtml(planNote) + '</small></div>' +
+        renderClientLessons(row) +
+        '<div class="client-card-money' + (row.plan.isExempt ? ' is-exempt' : '') + '"><span class="client-card-label">Mensalidade</span><strong>' + escapeHtml(amountLabel) + '</strong><small>' + escapeHtml(dueLabel) + '</small></div>' +
+        '<div class="client-card-side"><div class="client-card-badges">' +
+          '<span class="ops-pill ' + (row.operational.key === 'ativo' ? 'good' : row.operational.key === 'pendente' ? 'warn' : 'bad') + '">' + escapeHtml(row.operational.label) + '</span>' +
+          '<span class="ops-pill ' + row.financial.kind + '">' + escapeHtml(row.financial.label) + '</span>' +
+        '</div><div class="client-card-actions">' + contactButton + '<button class="small-btn client-open-btn" type="button" data-client-open="' + escapeHtml(key) + '">Abrir ficha</button></div></div>' +
+      '</article>';
+    }
+
     function renderClientsModule() {
       if (!opsState.selectedClientId && opsData.clients[0]) opsState.selectedClientId = opsData.clients[0].id || opsData.clients[0].email;
-      $('clientList').innerHTML = opsData.clients.map(function (client) {
-        const summary = clientFinanceSummary(client);
-        const key = client.id || client.email || client.name;
-        const phone = String(client.phone || client.guardianPhone || '').replace(/\D/g, '');
-        const contactButton = phone ? '<a class="small-btn" href="https://wa.me/' + phone + '" target="_blank" rel="noopener">Contato</a>' : '';
-        return '<article class="ops-list-card client-card">' +
-          '<div class="client-card-name">' + clientAvatar(client) + '<strong>' + escapeHtml(client.name) + '</strong></div>' +
-          '<div class="client-compact-field"><span>Plano</span><strong>' + escapeHtml(client.officialPlanName || client.declaredPlanName || summary.planName) + (client.officialPlanName ? '' : client.declaredPlanName ? ' · a confirmar' : '') + '</strong></div>' +
-          '<div class="client-compact-field"><span>Valor</span><strong>' + money(summary.amount || 0) + '</strong></div>' +
-          '<div class="client-compact-field"><span>Vencimento</span><strong>' + (summary.dueDay ? 'Dia ' + escapeHtml(summary.dueDay) : 'A definir') + '</strong></div>' +
-          '<div class="client-card-actions">' +
-            statusPill(client.status || 'ATIVO') +
-            contactButton +
-            '<button class="small-btn" type="button" data-client-open="' + escapeHtml(key) + '">Abrir</button>' +
-          '</div>' +
-          '</article>';
-      }).join('') || '<div class="lesson-empty-state">Nenhum cliente cadastrado ainda.</div>';
+      const allRows = opsData.clients.map(buildClientOverview);
+      renderClientPlanFilter(allRows);
 
+      const activeRows = allRows.filter(function (row) { return row.operational.key === 'ativo'; });
+      const pendingRows = allRows.filter(function (row) { return row.operational.key === 'pendente'; });
+      const cancelledRows = allRows.filter(function (row) { return row.operational.key === 'cancelado'; });
+      const missingLessonRows = allRows.filter(function (row) { return row.lessons.missing; });
+      const monthlyTotal = activeRows.reduce(function (total, row) {
+        return total + (row.plan.isExempt ? 0 : Number(row.summary.amount || 0));
+      }, 0);
+      $('clientTotalMetric').textContent = allRows.length;
+      $('clientActiveMetric').textContent = activeRows.length;
+      $('clientPendingMetric').textContent = pendingRows.length;
+      $('clientCancelledMetric').textContent = cancelledRows.length;
+      $('clientLessonsMissingMetric').textContent = missingLessonRows.length;
+      $('clientMonthlyMetric').textContent = money(monthlyTotal);
+
+      const query = normalizedClientText(opsState.clientSearch);
+      const rows = allRows.filter(function (row) {
+        if (query && !clientSearchHaystack(row).includes(query)) return false;
+        if (opsState.clientStatus !== 'todos' && row.operational.key !== opsState.clientStatus) return false;
+        if (opsState.clientPlan !== 'todos' && row.plan.key !== opsState.clientPlan) return false;
+        if (opsState.clientFinance !== 'todos' && row.financial.key !== opsState.clientFinance) return false;
+        if (opsState.clientLessonDay === 'sem_aula' && row.lessons.schedule.length) return false;
+        if (opsState.clientLessonDay !== 'todos' && opsState.clientLessonDay !== 'sem_aula' && !row.lessons.dayKeys.includes(opsState.clientLessonDay)) return false;
+        if (opsState.clientLessonOnlyPending && !row.lessons.missing) return false;
+        return true;
+      });
+
+      rows.sort(function (a, b) {
+        if (opsState.clientSort === 'name-desc') return String(b.client.name || '').localeCompare(String(a.client.name || ''), 'pt-BR', { sensitivity: 'base' });
+        if (opsState.clientSort === 'amount-desc') return Number(b.summary.amount || 0) - Number(a.summary.amount || 0) || String(a.client.name || '').localeCompare(String(b.client.name || ''), 'pt-BR', { sensitivity: 'base' });
+        if (opsState.clientSort === 'due-asc') return Number(a.summary.dueDay || 99) - Number(b.summary.dueDay || 99) || String(a.client.name || '').localeCompare(String(b.client.name || ''), 'pt-BR', { sensitivity: 'base' });
+        return String(a.client.name || '').localeCompare(String(b.client.name || ''), 'pt-BR', { sensitivity: 'base' });
+      });
+
+      syncClientFilterControls();
+      $('clientListHint').textContent = rows.length + ' de ' + allRows.length + ' aluno(s) · ' + (opsState.clientSort === 'name-asc' ? 'ordem alfabética' : 'ordenação personalizada');
+      $('clientList').innerHTML = rows.map(renderClientCard).join('') || '<div class="client-list-empty">Nenhum aluno corresponde aos filtros.<br>Limpe os filtros para ver toda a base.</div>';
     }
 
     function renderStudentsModule() {
@@ -31335,7 +32150,7 @@
     function openClientsModule() {
       setClubMode('club-clients');
       renderClientsModule();
-      loadOpsData(false).then(renderClientsModule);
+      Promise.all([loadOpsData(false), loadLessonsData()]).then(renderClientsModule).catch(reportActionError);
     }
 
     function openStudentsModule() {
@@ -33344,13 +34159,68 @@
         });
       });
       $('clientReloadBtn').addEventListener('click', function () {
-        loadOpsData(true).then(renderClientsModule).catch(reportActionError);
+        Promise.all([loadOpsData(true), loadLessonsData()]).then(renderClientsModule).catch(reportActionError);
       });
       $('clientsModule').addEventListener('click', function (event) {
+        const statusMetric = event.target.closest('[data-client-status-metric]');
+        if (statusMetric) {
+          opsState.clientStatus = statusMetric.dataset.clientStatusMetric || 'todos';
+          opsState.clientLessonOnlyPending = false;
+          renderClientsModule();
+          return;
+        }
+        const lessonMetric = event.target.closest('[data-client-lesson-metric]');
+        if (lessonMetric) {
+          opsState.clientLessonOnlyPending = !opsState.clientLessonOnlyPending;
+          if (opsState.clientLessonOnlyPending) opsState.clientStatus = 'todos';
+          renderClientsModule();
+          return;
+        }
         const openBtn = event.target.closest('[data-client-open]');
         if (openBtn) {
           openClientModal(openBtn.dataset.clientOpen);
         }
+      });
+      let clientSearchTimer = null;
+      $('clientSearchInput').addEventListener('input', function () {
+        const value = this.value;
+        clearTimeout(clientSearchTimer);
+        clientSearchTimer = setTimeout(function () {
+          opsState.clientSearch = value;
+          renderClientsModule();
+        }, 180);
+      });
+      $('clientStatusFilter').addEventListener('change', function () {
+        opsState.clientStatus = this.value;
+        opsState.clientLessonOnlyPending = false;
+        renderClientsModule();
+      });
+      $('clientPlanFilter').addEventListener('change', function () {
+        opsState.clientPlan = this.value;
+        renderClientsModule();
+      });
+      $('clientFinanceFilter').addEventListener('change', function () {
+        opsState.clientFinance = this.value;
+        renderClientsModule();
+      });
+      $('clientLessonDayFilter').addEventListener('change', function () {
+        opsState.clientLessonDay = this.value;
+        opsState.clientLessonOnlyPending = false;
+        renderClientsModule();
+      });
+      $('clientSortFilter').addEventListener('change', function () {
+        opsState.clientSort = this.value;
+        renderClientsModule();
+      });
+      $('clientClearFilters').addEventListener('click', function () {
+        opsState.clientSearch = '';
+        opsState.clientStatus = 'todos';
+        opsState.clientPlan = 'todos';
+        opsState.clientFinance = 'todos';
+        opsState.clientLessonDay = 'todos';
+        opsState.clientSort = 'name-asc';
+        opsState.clientLessonOnlyPending = false;
+        renderClientsModule();
       });
       $('clientModalClose').addEventListener('click', closeClientModal);
       $('clientModalCancel').addEventListener('click', closeClientModal);
