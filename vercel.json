@@ -13,7 +13,7 @@
     { "source": "/admin", "destination": "/adm", "permanent": false }
   ],
   "rewrites": [
-    { "source": "/", "destination": "/clientes/index.html" },
+    { "source": "/ilha-play-shell", "destination": "/clientes/index.html" },
     { "source": "/inscricoes/:slug", "destination": "/torneios" },
     { "source": "/inscricoes/:slug/:path*", "destination": "/torneios" },
     { "source": "/torneios", "destination": "/torneios" },
@@ -34,6 +34,12 @@
     },
     {
       "source": "/",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/ilha-play-shell",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
       ]
