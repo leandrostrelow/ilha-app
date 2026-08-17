@@ -22502,6 +22502,10 @@
       clearTimeout(appSyncRefreshTimer);
       appSyncRefreshTimer = setTimeout(function () {
         if (document.hidden || document.body.classList.contains('adm-locked') || isAdminDemoMode()) return;
+        if (document.body.classList.contains('club-courts')) {
+          loadCourtBookingData(false).catch(reportActionError);
+          return;
+        }
         if (!document.body.classList.contains('club-bar')) return;
         const staticResources = ['bar_products', 'bar_tables', 'bar_public_cards', 'bar_events', 'bar_customers', 'bar_runtime_settings', 'bar_financial_entries'];
         const requiresFullSnapshot = staticResources.includes(String(resource || '').split('?')[0]);
@@ -24190,6 +24194,24 @@
       });
     }
 
+    async function loadCourtBookingData(showFeedback) {
+      if (!adminSession || !adminSession.access_token || isAdminDemoMode()) return;
+      try {
+        const results = await Promise.all([
+          supabaseRest('app_court_bookings?select=*,app_clients(full_name,email,phone)&order=booking_date.asc,starts_at.asc'),
+          supabaseRest('app_court_schedule_days?select=*&order=schedule_date.asc')
+        ]);
+        opsData.courtBookings = (results[0] || []).map(mapCourtBookingRow);
+        opsData.courtScheduleDays = (results[1] || []).map(mapCourtScheduleDayRow);
+        if (document.body.classList.contains('club-courts')) renderCourtBookingModule();
+        if (showFeedback) toast('Agenda atualizada.');
+      } catch (error) {
+        if (showFeedback) reportActionError(error);
+        else console.warn('Não foi possível atualizar a agenda das quadras agora.', error && error.message);
+        throw error;
+      }
+    }
+
     function renderCourtBookingModule() {
       const dates = courtAgendaDates();
       if (!dates.includes(opsState.courtDate)) opsState.courtDate = dates[0];
@@ -24242,11 +24264,13 @@
     function openCourtBookingModule() {
       setClubMode('club-courts');
       renderCourtBookingModule();
-      loadOpsData(false).then(renderCourtBookingModule);
+      loadCourtBookingData(false).catch(reportActionError);
       if (!courtRefreshTimer) {
         courtRefreshTimer = setInterval(function () {
-          if (document.body.classList.contains('club-courts')) loadOpsData(false).then(renderCourtBookingModule);
-        }, 10000);
+          if (document.body.classList.contains('club-courts') && document.visibilityState === 'visible') {
+            loadCourtBookingData(false).catch(function () {});
+          }
+        }, 5000);
       }
     }
 
