@@ -1996,6 +1996,38 @@
       font-size: 11px;
     }
 
+    .client-lesson-master-data {
+      border-top: 1px solid #d7e5e8;
+      padding-top: 10px;
+    }
+
+    .client-lesson-master-data summary {
+      cursor: pointer;
+      color: var(--teal);
+      font-size: 11px;
+      font-weight: 900;
+      list-style-position: inside;
+    }
+
+    .client-lesson-master-grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto;
+      gap: 8px;
+      align-items: end;
+      margin-top: 10px;
+    }
+
+    .client-lesson-master-grid button {
+      min-height: 42px;
+    }
+
+    .client-lesson-master-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 9px;
+    }
+
     @media (max-width: 720px) {
       .client-lesson-add-grid {
         grid-template-columns: 1fr 1fr;
@@ -2014,6 +2046,10 @@
       .client-lesson-schedule-item > .muted {
         grid-column: 1 / -1;
         grid-row: 2;
+      }
+
+      .client-lesson-master-grid {
+        grid-template-columns: minmax(0, 1fr) auto;
       }
     }
 
@@ -17226,15 +17262,31 @@
                     </div>
                     <div class="field">
                       <label for="clientLessonTeacher">Professor</label>
-                      <input id="clientLessonTeacher" placeholder="Nome do professor" />
+                      <select id="clientLessonTeacher"></select>
                     </div>
                     <div class="field">
                       <label for="clientLessonCourt">Quadra</label>
-                      <input id="clientLessonCourt" placeholder="Ex.: Quadra 1" />
+                      <select id="clientLessonCourt"></select>
                     </div>
                     <button class="primary-btn" type="button" id="clientLessonAddBtn">Adicionar aula</button>
                   </div>
                   <div class="client-lesson-schedule-list" id="clientLessonScheduleList"></div>
+                  <details class="client-lesson-master-data">
+                    <summary>Gerenciar professores e quadras</summary>
+                    <div class="client-lesson-master-grid">
+                      <div class="field">
+                        <label for="clientNewTeacher">Novo professor</label>
+                        <input id="clientNewTeacher" placeholder="Nome do professor" />
+                      </div>
+                      <button class="ghost-btn" type="button" id="clientNewTeacherBtn">Adicionar</button>
+                      <div class="field">
+                        <label for="clientNewCourt">Nova quadra</label>
+                        <input id="clientNewCourt" placeholder="Nome da quadra" />
+                      </div>
+                      <button class="ghost-btn" type="button" id="clientNewCourtBtn">Adicionar</button>
+                    </div>
+                    <div class="client-lesson-master-list" id="clientLessonMasterList"></div>
+                  </details>
                 </div>
               </div>
               <div class="field full">
@@ -22688,7 +22740,9 @@
       source: 'demo',
       slots: [],
       students: [],
-      enrollments: []
+      enrollments: [],
+      teachers: [],
+      courts: []
     };
 
     const lessonMockData = {
@@ -22713,6 +22767,15 @@
         { id: 'enr_3', student_id: 'stu_3', slot_id: 'slot_4', type: 'FIXO', active: true },
         { id: 'enr_4', student_id: 'stu_4', slot_id: 'slot_4', type: 'FIXO', active: true },
         { id: 'enr_5', student_id: 'stu_5', slot_id: 'slot_4', type: 'FIXO', active: true }
+      ],
+      teachers: [
+        { id: 'teacher_renato', name: 'Renato', active: true },
+        { id: 'teacher_emerson', name: 'Emerson', active: true },
+        { id: 'teacher_gabriel', name: 'Gabriel', active: true }
+      ],
+      courts: [
+        { id: 'court_1', name: 'Quadra 1', active: true },
+        { id: 'court_2', name: 'Quadra 2', active: true }
       ]
     };
 
@@ -22736,6 +22799,8 @@
         lessonState.students = lessonMockData.students.slice();
         lessonState.slots = lessonMockData.slots.slice();
         lessonState.enrollments = lessonMockData.enrollments.slice();
+        lessonState.teachers = lessonMockData.teachers.slice();
+        lessonState.courts = lessonMockData.courts.slice();
         renderLessons();
         return;
       }
@@ -22746,13 +22811,17 @@
         results = await Promise.all([
           lessonSupabaseFetch('students?select=*&order=name.asc'),
           lessonSupabaseFetch('lesson_slots?select=*&active=eq.true&order=day.asc,time.asc'),
-          lessonSupabaseFetch('lesson_enrollments?select=*&active=eq.true')
+          lessonSupabaseFetch('lesson_enrollments?select=*&active=eq.true'),
+          lessonSupabaseFetch('teachers?select=*&active=eq.true&order=name.asc'),
+          lessonSupabaseFetch('courts?select=*&active=eq.true&order=name.asc')
         ]);
       } catch (error) {
         lessonState.source = 'demo-fallback';
         lessonState.students = lessonMockData.students.slice();
         lessonState.slots = lessonMockData.slots.slice();
         lessonState.enrollments = lessonMockData.enrollments.slice();
+        lessonState.teachers = lessonMockData.teachers.slice();
+        lessonState.courts = lessonMockData.courts.slice();
         renderLessons();
         console.info('Supabase indisponivel para aulas; usando demo local.', error && error.message);
         return;
@@ -22772,6 +22841,8 @@
       lessonState.slots = results[1].map(function (slot) {
         return {
           id: slot.id,
+          courtId: slot.court_id || '',
+          teacherId: slot.teacher_id || '',
           day: slot.day,
           time: String(slot.time || '').slice(0, 5),
           period: slot.period,
@@ -22790,6 +22861,12 @@
           type: enrollment.type,
           active: enrollment.active !== false
         };
+      });
+      lessonState.teachers = results[3].map(function (teacher) {
+        return { id: teacher.id, name: teacher.name, active: teacher.active !== false };
+      });
+      lessonState.courts = results[4].map(function (court) {
+        return { id: court.id, name: court.name, active: court.active !== false };
       });
       renderLessons();
     }
@@ -22868,6 +22945,33 @@
           '<button class="small-btn danger" type="button" data-client-lesson-remove="' + escapeHtml(entry.enrollment.id) + '">Remover</button>' +
         '</article>';
       }).join('') || '<div class="lesson-empty-state">Nenhuma aula fixa cadastrada para este aluno.</div>';
+    }
+
+    function renderClientLessonMasterData(selectedTeacherId, selectedCourtId) {
+      const teacherSelect = $('clientLessonTeacher');
+      const courtSelect = $('clientLessonCourt');
+      if (!teacherSelect || !courtSelect) return;
+      const currentTeacher = selectedTeacherId || teacherSelect.value;
+      const currentCourt = selectedCourtId || courtSelect.value;
+      const teachers = lessonState.teachers.filter(function (item) { return item.active !== false; }).sort(function (a, b) {
+        return String(a.name).localeCompare(String(b.name));
+      });
+      const courts = lessonState.courts.filter(function (item) { return item.active !== false; }).sort(function (a, b) {
+        return String(a.name).localeCompare(String(b.name), undefined, { numeric: true });
+      });
+      teacherSelect.innerHTML = teachers.map(function (teacher) {
+        return '<option value="' + escapeHtml(teacher.id) + '">' + escapeHtml(teacher.name) + '</option>';
+      }).join('') || '<option value="">Cadastre um professor</option>';
+      courtSelect.innerHTML = courts.map(function (court) {
+        return '<option value="' + escapeHtml(court.id) + '">' + escapeHtml(court.name) + '</option>';
+      }).join('') || '<option value="">Cadastre uma quadra</option>';
+      if (teachers.some(function (item) { return String(item.id) === String(currentTeacher); })) teacherSelect.value = currentTeacher;
+      if (courts.some(function (item) { return String(item.id) === String(currentCourt); })) courtSelect.value = currentCourt;
+      $('clientLessonMasterList').innerHTML = teachers.map(function (teacher) {
+        return '<span class="ops-pill">Professor · ' + escapeHtml(teacher.name) + '</span>';
+      }).concat(courts.map(function (court) {
+        return '<span class="ops-pill good">Quadra · ' + escapeHtml(court.name) + '</span>';
+      })).join('');
     }
 
     function lessonFilteredSlots() {
@@ -24203,8 +24307,9 @@
       $('clientDeclaredLessonSlots').innerHTML = client.declaredLessonSlots && client.declaredLessonSlots.length
         ? client.declaredLessonSlots.map(function (slot) { return '<span class="ops-pill">' + escapeHtml(slot.day || '') + ' · ' + escapeHtml(slot.time || '') + '</span>'; }).join('')
         : '<span class="muted">Nenhum horário informado.</span>';
-      $('clientLessonTeacher').value = '';
-      $('clientLessonCourt').value = '';
+      $('clientLessonTeacher').innerHTML = '<option value="">Carregando...</option>';
+      $('clientLessonCourt').innerHTML = '<option value="">Carregando...</option>';
+      $('clientLessonMasterList').innerHTML = '';
       $('clientLessonScheduleList').innerHTML = '<div class="lesson-empty-state">Carregando grade oficial...</div>';
       $('clientRequestSummary').innerHTML = request
         ? '<article class="ops-list-card"><div class="ops-list-main"><div><strong>Pedido recebido no app</strong><div class="muted">' + escapeHtml(request.plan) + ' | ' + escapeHtml(request.membershipType || 'tipo não informado') + ' | ' + escapeHtml(formatDays(request.requestedDays) || 'sem dias') + '</div></div><div class="ops-meta">' + statusPill(request.status) + '<span class="ops-pill">' + money(request.amount) + '</span></div></div><div class="ops-meta"><button class="small-btn" type="button" data-plan-request-approve="' + escapeHtml(request.id) + '">Aprovar e vincular</button><button class="small-btn" type="button" data-plan-request-reject="' + escapeHtml(request.id) + '">Recusar</button></div></article>'
@@ -24214,7 +24319,10 @@
       $('clientModal').setAttribute('aria-hidden', 'false');
       loadLessonsData().then(function () {
         const activeClient = findClientByKey(opsState.selectedClientId);
-        if (activeClient && $('clientModal').classList.contains('show')) renderClientLessonSchedule(activeClient);
+        if (activeClient && $('clientModal').classList.contains('show')) {
+          renderClientLessonMasterData();
+          renderClientLessonSchedule(activeClient);
+        }
       }).catch(function () {
         $('clientLessonScheduleList').innerHTML = '<div class="lesson-empty-state">Não consegui carregar a grade agora.</div>';
       });
@@ -31839,6 +31947,44 @@
       return student;
     }
 
+    async function addLessonMasterDataAction(kind) {
+      try {
+        requireAdminSession();
+        const isTeacher = kind === 'teacher';
+        const input = $(isTeacher ? 'clientNewTeacher' : 'clientNewCourt');
+        const button = $(isTeacher ? 'clientNewTeacherBtn' : 'clientNewCourtBtn');
+        const collection = isTeacher ? lessonState.teachers : lessonState.courts;
+        const name = input.value.trim();
+        if (!name) throw new Error(isTeacher ? 'Informe o nome do professor.' : 'Informe o nome da quadra.');
+        const duplicate = collection.find(function (item) {
+          return item.active !== false && String(item.name || '').trim().toLowerCase() === name.toLowerCase();
+        });
+        if (duplicate) {
+          renderClientLessonMasterData(isTeacher ? duplicate.id : '', isTeacher ? '' : duplicate.id);
+          throw new Error((isTeacher ? 'Professor' : 'Quadra') + ' já cadastrado(a).');
+        }
+        button.disabled = true;
+        button.textContent = 'Salvando...';
+        let item;
+        if (isAdminDemoMode()) {
+          item = { id: localId(kind), name: name, active: true };
+        } else {
+          const inserted = await supabaseInsert(isTeacher ? 'teachers' : 'courts', { name: name, active: true });
+          item = { id: inserted.id, name: inserted.name, active: inserted.active !== false };
+        }
+        collection.push(item);
+        input.value = '';
+        renderClientLessonMasterData(isTeacher ? item.id : '', isTeacher ? '' : item.id);
+        toast((isTeacher ? 'Professor' : 'Quadra') + ' adicionado(a).');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        const button = $(kind === 'teacher' ? 'clientNewTeacherBtn' : 'clientNewCourtBtn');
+        button.disabled = false;
+        button.textContent = 'Adicionar';
+      }
+    }
+
     async function addClientLessonAction() {
       const button = $('clientLessonAddBtn');
       try {
@@ -31847,21 +31993,28 @@
         if (!client) throw new Error('Aluno não encontrado.');
         const day = $('clientLessonDay').value;
         const time = String($('clientLessonTime').value || '').slice(0, 5);
-        const teacher = $('clientLessonTeacher').value.trim() || 'Equipe Ilha';
-        const court = $('clientLessonCourt').value.trim() || 'Quadra 1';
+        const teacherId = $('clientLessonTeacher').value;
+        const courtId = $('clientLessonCourt').value;
+        const teacherRecord = lessonState.teachers.find(function (item) { return String(item.id) === String(teacherId); });
+        const courtRecord = lessonState.courts.find(function (item) { return String(item.id) === String(courtId); });
+        const teacher = teacherRecord && teacherRecord.name;
+        const court = courtRecord && courtRecord.name;
         if (!day || !/^\d{2}:\d{2}$/.test(time)) throw new Error('Escolha o dia e o horário da aula.');
+        if (!teacher || !court) throw new Error('Escolha o professor e a quadra.');
         button.disabled = true;
         button.textContent = 'Salvando...';
         const student = await ensureLessonStudentForClient(client);
         let slot = lessonState.slots.find(function (item) {
           return item.active !== false && item.day === day && item.time === time &&
-            String(item.teacher || '').trim().toLowerCase() === teacher.toLowerCase() &&
-            String(item.court || '').trim().toLowerCase() === court.toLowerCase();
+            (String(item.teacherId || '') === String(teacherId) || String(item.teacher || '').trim().toLowerCase() === teacher.toLowerCase()) &&
+            (String(item.courtId || '') === String(courtId) || String(item.court || '').trim().toLowerCase() === court.toLowerCase());
         });
         if (!slot) {
           if (isAdminDemoMode()) {
             slot = {
               id: localId('slot'),
+              courtId: courtId,
+              teacherId: teacherId,
               day: day,
               time: time,
               period: periodFromTime(time),
@@ -31876,7 +32029,9 @@
               day: day,
               time: time,
               period: periodFromTime(time),
+              teacher_id: teacherId,
               teacher_name: teacher,
+              court_id: courtId,
               court_name: court,
               level: 'A definir',
               capacity: 4,
@@ -31884,6 +32039,8 @@
             });
             slot = {
               id: insertedSlot.id,
+              courtId: insertedSlot.court_id || courtId,
+              teacherId: insertedSlot.teacher_id || teacherId,
               day: insertedSlot.day,
               time: String(insertedSlot.time || time).slice(0, 5),
               period: insertedSlot.period,
@@ -33136,6 +33293,8 @@
       $('clientModalCancel').addEventListener('click', closeClientModal);
       $('clientInvoiceSaveBtn').addEventListener('click', saveClientInvoiceAction);
       $('clientLessonAddBtn').addEventListener('click', addClientLessonAction);
+      $('clientNewTeacherBtn').addEventListener('click', function () { addLessonMasterDataAction('teacher'); });
+      $('clientNewCourtBtn').addEventListener('click', function () { addLessonMasterDataAction('court'); });
       $('clientInvoiceMonth').addEventListener('change', function () {
         const client = findClientByKey(opsState.selectedClientId);
         if (client) fillClientInvoiceDefaults(client);
