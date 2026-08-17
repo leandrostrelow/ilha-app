@@ -16914,7 +16914,7 @@
 
     .client-toolbar {
       display: grid;
-      grid-template-columns: minmax(230px, 1.8fr) repeat(5, minmax(125px, .75fr)) auto;
+      grid-template-columns: minmax(230px, 1.8fr) repeat(6, minmax(120px, .72fr)) auto;
       gap: 8px;
       align-items: end;
       padding: 12px;
@@ -17767,6 +17767,12 @@
                 <option value="vencido">Vencidos</option>
                 <option value="isento">Isentos</option>
                 <option value="sem_plano">Sem plano</option>
+              </select>
+            </label>
+            <label class="client-filter-field">
+              <span>Vencimento</span>
+              <select id="clientDueDayFilter">
+                <option value="todos">Todos os dias</option>
               </select>
             </label>
             <label class="client-filter-field">
@@ -23745,6 +23751,7 @@
       clientStatus: 'todos',
       clientPlan: 'todos',
       clientFinance: 'todos',
+      clientDueDay: 'todos',
       clientLessonDay: 'todos',
       clientSort: 'name-asc',
       clientLessonOnlyPending: false,
@@ -25126,11 +25133,31 @@
       select.value = opsState.clientPlan;
     }
 
+    function renderClientDueDayFilter(rows) {
+      const select = $('clientDueDayFilter');
+      const dueDays = Array.from(new Set(rows.map(function (row) {
+        return Number(row.summary.dueDay || 0);
+      }).filter(function (day) {
+        return day >= 1 && day <= 31;
+      }))).sort(function (a, b) { return a - b; });
+      const options = ['<option value="todos">Todos os dias</option>'].concat(dueDays.map(function (day) {
+        return '<option value="' + day + '">Dia ' + day + '</option>';
+      }), [
+        '<option value="sem_vencimento">Sem vencimento</option>',
+        '<option value="a_definir">A definir</option>'
+      ]);
+      select.innerHTML = options.join('');
+      const validValues = ['todos', 'sem_vencimento', 'a_definir'].concat(dueDays.map(String));
+      if (!validValues.includes(String(opsState.clientDueDay))) opsState.clientDueDay = 'todos';
+      select.value = opsState.clientDueDay;
+    }
+
     function syncClientFilterControls() {
       $('clientSearchInput').value = opsState.clientSearch;
       $('clientStatusFilter').value = opsState.clientStatus;
       $('clientPlanFilter').value = opsState.clientPlan;
       $('clientFinanceFilter').value = opsState.clientFinance;
+      $('clientDueDayFilter').value = opsState.clientDueDay;
       $('clientLessonDayFilter').value = opsState.clientLessonDay;
       $('clientSortFilter').value = opsState.clientSort;
       document.querySelectorAll('[data-client-status-metric]').forEach(function (button) {
@@ -25189,6 +25216,7 @@
       if (!opsState.selectedClientId && opsData.clients[0]) opsState.selectedClientId = opsData.clients[0].id || opsData.clients[0].email;
       const allRows = opsData.clients.map(buildClientOverview);
       renderClientPlanFilter(allRows);
+      renderClientDueDayFilter(allRows);
 
       const activeRows = allRows.filter(function (row) { return row.operational.key === 'ativo'; });
       const pendingRows = allRows.filter(function (row) { return row.operational.key === 'pendente'; });
@@ -25210,6 +25238,9 @@
         if (opsState.clientStatus !== 'todos' && row.operational.key !== opsState.clientStatus) return false;
         if (opsState.clientPlan !== 'todos' && row.plan.key !== opsState.clientPlan) return false;
         if (opsState.clientFinance !== 'todos' && row.financial.key !== opsState.clientFinance) return false;
+        if (opsState.clientDueDay === 'sem_vencimento' && !row.plan.isExempt) return false;
+        if (opsState.clientDueDay === 'a_definir' && (row.plan.isExempt || row.summary.dueDay)) return false;
+        if (!['todos', 'sem_vencimento', 'a_definir'].includes(opsState.clientDueDay) && Number(row.summary.dueDay || 0) !== Number(opsState.clientDueDay)) return false;
         if (opsState.clientLessonDay === 'sem_aula' && row.lessons.schedule.length) return false;
         if (opsState.clientLessonDay !== 'todos' && opsState.clientLessonDay !== 'sem_aula' && !row.lessons.dayKeys.includes(opsState.clientLessonDay)) return false;
         if (opsState.clientLessonOnlyPending && !row.lessons.missing) return false;
@@ -34203,6 +34234,10 @@
         opsState.clientFinance = this.value;
         renderClientsModule();
       });
+      $('clientDueDayFilter').addEventListener('change', function () {
+        opsState.clientDueDay = this.value;
+        renderClientsModule();
+      });
       $('clientLessonDayFilter').addEventListener('change', function () {
         opsState.clientLessonDay = this.value;
         opsState.clientLessonOnlyPending = false;
@@ -34217,6 +34252,7 @@
         opsState.clientStatus = 'todos';
         opsState.clientPlan = 'todos';
         opsState.clientFinance = 'todos';
+        opsState.clientDueDay = 'todos';
         opsState.clientLessonDay = 'todos';
         opsState.clientSort = 'name-asc';
         opsState.clientLessonOnlyPending = false;

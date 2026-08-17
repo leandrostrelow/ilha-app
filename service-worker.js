@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v188-students-dashboard';
+const CACHE_NAME = 'ilha-play-v189-students-due-filter';
 const ASSETS = [
   './',
   './index.html',
