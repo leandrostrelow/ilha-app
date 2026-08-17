@@ -3025,6 +3025,395 @@
       .top-actions button,
       .top-actions a { flex: 0 0 auto; }
     }
+
+    /* Nova página inicial do Ilha Play */
+    .dashboard-bell {
+      display: none;
+      position: relative;
+      width: 48px;
+      height: 48px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #ffffff;
+      color: var(--ink);
+      box-shadow: 0 8px 24px rgba(16, 39, 44, .08);
+    }
+
+    .dashboard-bell svg {
+      width: 23px;
+      height: 23px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .dashboard-bell .notice-count {
+      position: absolute;
+      top: -4px;
+      right: -3px;
+    }
+
+    .client-dashboard {
+      width: min(760px, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .dashboard-greeting {
+      display: grid;
+      gap: 4px;
+      padding: 6px 4px 0;
+    }
+
+    .dashboard-greeting span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .dashboard-greeting h2 {
+      margin: 0;
+      color: var(--ink);
+      font-size: clamp(30px, 5vw, 42px);
+      line-height: 1.05;
+      letter-spacing: -.04em;
+    }
+
+    .dashboard-plan-card {
+      position: relative;
+      min-height: 330px;
+      overflow: hidden;
+      border-radius: 30px;
+      background:
+        radial-gradient(circle at 78% 22%, rgba(30, 109, 118, .34), transparent 34%),
+        linear-gradient(145deg, #0d3138 0%, #163c46 55%, #0b2b32 100%);
+      color: #ffffff;
+      box-shadow: 0 20px 46px rgba(7, 40, 47, .22);
+    }
+
+    .dashboard-plan-content {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 34px;
+    }
+
+    .dashboard-kicker {
+      color: rgba(255, 255, 255, .7);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .dashboard-plan-card h3 {
+      max-width: 78%;
+      margin: 8px 0 14px;
+      color: #ffffff;
+      font-size: clamp(34px, 6vw, 52px);
+      line-height: .98;
+      letter-spacing: -.045em;
+    }
+
+    .dashboard-status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      background: var(--lime);
+      color: #163000;
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .dashboard-status.limited {
+      background: rgba(255, 255, 255, .14);
+      color: #ffffff;
+    }
+
+    .dashboard-plan-card p {
+      max-width: 72%;
+      margin: 18px 0 0;
+      color: rgba(255, 255, 255, .82);
+      font-size: 16px;
+      font-weight: 760;
+    }
+
+    .dashboard-plan-card button {
+      margin-top: auto;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--lime);
+      font-size: 16px;
+      font-weight: 950;
+    }
+
+    .dashboard-plan-card button span {
+      margin-left: 8px;
+      font-size: 26px;
+      line-height: 0;
+      vertical-align: -2px;
+    }
+
+    .dashboard-court-lines {
+      position: absolute;
+      z-index: 1;
+      top: 0;
+      right: -28px;
+      width: 52%;
+      height: 100%;
+      opacity: .32;
+      transform: skewX(-12deg);
+      background:
+        linear-gradient(32deg, transparent 46%, rgba(255, 255, 255, .72) 46.5% 47.4%, transparent 48%),
+        linear-gradient(90deg, transparent 47%, rgba(255, 255, 255, .65) 47.5% 48.5%, transparent 49%),
+        linear-gradient(0deg, transparent 47%, rgba(255, 255, 255, .6) 47.5% 48.4%, transparent 49%);
+    }
+
+    .dashboard-tennis-ball {
+      position: absolute;
+      right: -34px;
+      bottom: -48px;
+      z-index: 2;
+      width: 190px;
+      height: 190px;
+      border-radius: 999px;
+      background:
+        radial-gradient(ellipse 80px 170px at -15px 50%, transparent 56%, rgba(255,255,255,.9) 57% 61%, transparent 62%),
+        radial-gradient(ellipse 80px 170px at calc(100% + 15px) 50%, transparent 56%, rgba(255,255,255,.9) 57% 61%, transparent 62%),
+        radial-gradient(circle at 34% 28%, #e9ff48 0%, #c8f500 50%, #91ca00 100%);
+      box-shadow: inset -18px -20px 28px rgba(50, 81, 0, .22), 0 18px 32px rgba(0,0,0,.26);
+      transform: rotate(-18deg);
+    }
+
+    .dashboard-play-section {
+      display: grid;
+      gap: 10px;
+    }
+
+    .dashboard-play-section > h3 {
+      margin: 2px 4px 0;
+      color: var(--ink);
+      font-size: 26px;
+      letter-spacing: -.03em;
+    }
+
+    .dashboard-reserve-card {
+      min-height: 116px;
+      display: grid;
+      grid-template-columns: 66px minmax(0, 1fr) 44px;
+      gap: 16px;
+      align-items: center;
+      padding: 20px 22px;
+      border: 0;
+      border-radius: 26px;
+      background: linear-gradient(135deg, #d9ff2c 0%, #b9ee00 62%, #a8df00 100%);
+      color: #15343b;
+      text-align: left;
+      box-shadow: 0 14px 32px rgba(117, 167, 0, .2);
+    }
+
+    .dashboard-reserve-card > span:nth-child(2) {
+      display: grid;
+      gap: 3px;
+    }
+
+    .dashboard-reserve-card strong { font-size: 22px; }
+    .dashboard-reserve-card small { color: #436000; font-size: 14px; font-weight: 760; }
+
+    .dashboard-reserve-icon {
+      width: 62px;
+      height: 62px;
+      display: grid;
+      place-items: center;
+      border-radius: 19px;
+      background: rgba(255, 255, 255, .48);
+    }
+
+    .dashboard-reserve-icon svg,
+    .dashboard-finance-icon svg {
+      width: 32px;
+      height: 32px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .dashboard-arrow {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: #123b44;
+      color: var(--lime);
+      font-size: 30px;
+    }
+
+    .dashboard-next-card,
+    .dashboard-finance-card {
+      border: 1px solid #e4ebed;
+      border-radius: 24px;
+      background: #ffffff;
+      box-shadow: 0 14px 34px rgba(16, 39, 44, .09);
+    }
+
+    .dashboard-next-card {
+      min-height: 126px;
+      display: grid;
+      gap: 14px;
+      padding: 20px 22px;
+    }
+
+    .dashboard-next-card h3 { margin: 0; font-size: 18px; }
+    .dashboard-booking-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .dashboard-booking-date {
+      min-width: 64px;
+      min-height: 60px;
+      display: grid;
+      place-items: center;
+      padding: 8px;
+      border-radius: 16px;
+      background: #123b44;
+      color: var(--lime);
+      font-size: 12px;
+      font-weight: 950;
+      line-height: 1.05;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .dashboard-booking-copy { display: grid; gap: 3px; }
+    .dashboard-booking-copy strong { font-size: 22px; }
+    .dashboard-booking-copy span { color: var(--muted); font-size: 13px; font-weight: 800; }
+    .dashboard-booking-status { color: #567600; font-size: 12px; font-weight: 900; white-space: nowrap; }
+    .dashboard-booking-status::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 999px; background: var(--lime); }
+    .dashboard-booking-empty { color: var(--muted); font-size: 14px; font-weight: 800; }
+
+    .dashboard-finance-card {
+      min-height: 94px;
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr) 36px;
+      gap: 15px;
+      align-items: center;
+      padding: 18px 20px;
+      color: var(--ink);
+      text-align: left;
+    }
+
+    .dashboard-finance-card > span:nth-child(2) { display: grid; gap: 4px; }
+    .dashboard-finance-card strong { font-size: 18px; }
+    .dashboard-finance-card small { color: var(--muted); font-size: 13px; font-weight: 780; }
+    .dashboard-finance-icon {
+      width: 54px;
+      height: 54px;
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      background: #123b44;
+      color: #ffffff;
+    }
+    .dashboard-finance-arrow { color: var(--muted); font-size: 30px; text-align: center; }
+
+    @media (max-width: 940px) {
+      body.client-home-view .sidebar {
+        border-bottom: 0;
+      }
+      .dashboard-bell { display: grid; }
+      .side-brand { grid-template-columns: minmax(0, 1fr) auto; }
+      .brand-lockup { justify-content: flex-start; }
+    }
+
+    @media (max-width: 560px) {
+      body.client-home-view .content {
+        padding-top: 4px;
+      }
+      .sidebar {
+        padding: max(14px, env(safe-area-inset-top)) 18px 10px;
+      }
+      .side-brand {
+        width: 100%;
+        grid-template-columns: minmax(0, 1fr) auto;
+        justify-items: stretch;
+      }
+      .brand-lockup {
+        justify-content: flex-start;
+      }
+      .brand-lockup img {
+        width: 145px;
+      }
+      .brand-play {
+        font-size: 14px;
+        letter-spacing: 3px;
+      }
+      .content { padding: 14px 16px; }
+      .client-dashboard { gap: 16px; }
+      .dashboard-greeting { padding: 0 3px; }
+      .dashboard-greeting span { font-size: 10px; }
+      .dashboard-greeting h2 { font-size: 31px; }
+      .dashboard-plan-card { min-height: 285px; border-radius: 26px; }
+      .dashboard-plan-content { padding: 26px 24px; }
+      .dashboard-plan-card h3 { max-width: 84%; font-size: clamp(31px, 9vw, 40px); }
+      .dashboard-plan-card p { max-width: 74%; margin-top: 14px; font-size: 13px; line-height: 1.35; }
+      .dashboard-tennis-ball { right: -42px; bottom: -44px; width: 156px; height: 156px; }
+      .dashboard-play-section > h3 { font-size: 23px; }
+      .dashboard-reserve-card {
+        min-height: 96px;
+        grid-template-columns: 52px minmax(0, 1fr) 38px;
+        gap: 12px;
+        padding: 16px;
+        border-radius: 22px;
+      }
+      .dashboard-reserve-icon { width: 50px; height: 50px; border-radius: 15px; }
+      .dashboard-reserve-icon svg { width: 26px; height: 26px; }
+      .dashboard-reserve-card strong { font-size: 18px; }
+      .dashboard-reserve-card small { font-size: 12px; }
+      .dashboard-arrow { width: 36px; height: 36px; font-size: 26px; }
+      .dashboard-next-card { min-height: 112px; padding: 17px; border-radius: 21px; }
+      .dashboard-next-card h3 { font-size: 16px; }
+      .dashboard-booking-row { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; }
+      .dashboard-booking-date { min-width: 56px; min-height: 54px; font-size: 10px; }
+      .dashboard-booking-copy strong { font-size: 19px; }
+      .dashboard-booking-status { grid-column: 2; }
+      .dashboard-finance-card { min-height: 84px; padding: 14px 16px; border-radius: 21px; }
+      .dashboard-finance-icon { width: 50px; height: 50px; border-radius: 16px; }
+      .dashboard-finance-icon svg { width: 27px; height: 27px; }
+      .mobile-bottom-nav {
+        min-height: 76px;
+        align-items: center;
+        padding: 8px 10px max(8px, env(safe-area-inset-bottom));
+        border-radius: 28px;
+        box-shadow: 0 16px 40px rgba(16, 39, 44, .16);
+      }
+      .mobile-bottom-nav button,
+      .mobile-bottom-nav a { min-height: 56px; }
+      .mobile-bottom-nav button::before { width: 58px; height: 56px; border-radius: 18px; }
+      .mobile-bottom-nav button.active::before { border: 0; background: #123b44; }
+      .mobile-bottom-nav button.active { color: var(--lime); }
+      .mobile-bottom-nav button.active > span:not(.notice-count) { color: #ffffff; }
+      .mobile-bottom-nav svg { width: 25px; height: 25px; }
+    }
   </style>
 </head>
 <body class="client-checking">
@@ -3241,15 +3630,19 @@
           <img src="../logo.png" alt="Ilha Tênis" />
           <span class="brand-play">Play</span>
         </div>
+        <button class="dashboard-bell" type="button" data-view="notifications" aria-label="Abrir notificações">
+          <svg><use href="#client-icon-bell"></use></svg>
+          <span class="notice-count" data-notification-count hidden></span>
+        </button>
         <div class="side-user">
           <strong>Aluno</strong>
           <span id="sideClientName">Entrando...</span>
         </div>
       </div>
       <nav class="side-nav">
-        <button class="active" type="button" data-view="plans"><span class="nav-icon"><svg><use href="#client-icon-plan"></use></svg></span><span>Planos</span></button>
-        <button type="button" data-view="payments"><span class="nav-icon"><svg><use href="#client-icon-card"></use></svg></span><span>Financeiro</span></button>
+        <button class="active" type="button" data-view="home"><span class="nav-icon"><svg><use href="#client-icon-home"></use></svg></span><span>Início</span></button>
         <button type="button" data-view="courts"><span class="nav-icon"><svg><use href="#client-icon-play"></use></svg></span><span>Jogar</span></button>
+        <button type="button" data-view="payments"><span class="nav-icon"><svg><use href="#client-icon-card"></use></svg></span><span>Financeiro</span></button>
       </nav>
     </aside>
 
@@ -3259,31 +3652,47 @@
           <h1 id="pageTitle">Planos</h1>
         </div>
         <div class="top-actions">
+          <button class="ghost-btn back-btn" type="button" data-view="home">Início</button>
           <button class="ghost-btn" type="button" data-logout>Sair</button>
         </div>
       </header>
 
       <section class="view active" id="view-home">
-        <div class="welcome-card">
-          <div class="welcome-main">
-            <div class="profile-avatar" id="homeAvatar">IL</div>
-            <div class="welcome-copy">
-              <span class="welcome-eyebrow">Ilha Play</span>
-              <h2 id="homeWelcomeName">Bem-vindo ao Ilha</h2>
+        <div class="client-dashboard">
+          <header class="dashboard-greeting">
+            <span>Bem-vindo ao Ilha Play</span>
+            <h2 id="homeWelcomeName">Olá</h2>
+          </header>
+
+          <article class="dashboard-plan-card">
+            <div class="dashboard-court-lines" aria-hidden="true"></div>
+            <div class="dashboard-tennis-ball" aria-hidden="true"></div>
+            <div class="dashboard-plan-content">
+              <span class="dashboard-kicker">Seu plano</span>
+              <h3 id="homePlanName">Plano ainda não vinculado</h3>
+              <span class="dashboard-status" id="homePlanStatusLabel">Acesso limitado</span>
+              <p id="homePlanMeta">Escolha um plano para liberar as reservas.</p>
+              <button type="button" data-view="plans">Ver plano <span aria-hidden="true">›</span></button>
             </div>
-          </div>
-          <div class="home-plan-status" id="homePlanStatus"></div>
-          <div class="home-menu-grid" aria-label="Menu principal">
-            <button class="home-menu-card" type="button" data-view="courts"><span class="home-menu-icon tournament"><svg><use href="#client-icon-play"></use></svg></span><span class="home-menu-label">Reservar quadra</span></button>
-            <button class="home-menu-card home-plan-link" type="button" data-view="plans"><span class="home-menu-icon plan"><svg><use href="#client-icon-plan"></use></svg></span><span class="home-menu-label">Planos</span></button>
-            <button class="home-menu-card" type="button" data-view="store"><span class="home-menu-icon store"><svg><use href="#client-icon-bag"></use></svg></span><span class="home-menu-label">Loja</span></button>
-            <a class="home-menu-card" href="https://duplafalta.com.br/ranking/finals-masculino.html" data-embed-url="https://duplafalta.com.br/ranking/finals-masculino.html" data-embed-title="Ranking" data-embed-subtitle="Circuito CINCATE"><span class="home-menu-icon ranking"><svg><use href="#client-icon-ranking"></use></svg></span><span class="home-menu-label">Ranking</span></a>
-            <button class="home-menu-card" type="button" data-open-tournaments><span class="home-menu-icon tournament"><svg><use href="#client-icon-trophy"></use></svg></span><span class="home-menu-label">Torneios</span></button>
-          </div>
-          <div class="home-notices">
-            <h3 class="home-section-title">Comunicados <span class="notice-count" data-notification-count hidden></span></h3>
-            <div class="notice-list" id="homeAnnouncements"></div>
-          </div>
+          </article>
+
+          <section class="dashboard-play-section">
+            <h3>Jogar</h3>
+            <button class="dashboard-reserve-card" type="button" data-view="courts">
+              <span class="dashboard-reserve-icon"><svg><use href="#client-icon-play"></use></svg></span>
+              <span><strong>Reservar quadra</strong><small>Escolha o melhor horário</small></span>
+              <span class="dashboard-arrow" aria-hidden="true">›</span>
+            </button>
+          </section>
+
+          <section class="dashboard-next-card" id="homeNextBooking" aria-live="polite"></section>
+
+          <button class="dashboard-finance-card" type="button" data-view="payments">
+            <span class="dashboard-finance-icon"><svg><use href="#client-icon-card"></use></svg></span>
+            <span><strong>Financeiro</strong><small id="homeFinanceSummary">Tudo em dia</small></span>
+            <span class="dashboard-finance-arrow" aria-hidden="true">›</span>
+          </button>
+
           <div class="push-consent-card" id="clientPushConsent" hidden>
             <div><strong>Receba avisos do clube</strong><p>Ative para receber comunicados importantes mesmo com o app fechado.</p></div>
             <button class="primary-btn" type="button" id="clientEnableNotificationsBtn">Ativar notificações</button>
@@ -3426,9 +3835,9 @@
       </section>
     </section>
     <nav class="mobile-bottom-nav" aria-label="Navegação inferior">
-      <button class="active" type="button" data-view="plans" aria-label="Planos"><svg><use href="#client-icon-plan"></use></svg><span>Planos</span></button>
-      <button type="button" data-view="payments" aria-label="Financeiro"><svg><use href="#client-icon-card"></use></svg><span>Financeiro</span></button>
+      <button class="active" type="button" data-view="home" aria-label="Início"><svg><use href="#client-icon-home"></use></svg><span>Início</span></button>
       <button type="button" data-view="courts" aria-label="Jogar"><svg><use href="#client-icon-play"></use></svg><span>Jogar</span></button>
+      <button type="button" data-view="payments" aria-label="Financeiro"><svg><use href="#client-icon-card"></use></svg><span>Financeiro</span></button>
     </nav>
   </main>
 
@@ -4050,6 +4459,7 @@
         myCourtBookings = results[2] || [];
         const dates = clientCourtDates();
         if (!dates.includes(selectedCourtDate)) selectedCourtDate = dates[0] || '';
+        renderHome();
         renderClientCourts();
         if (showFeedback) toast('Agenda atualizada.');
       } catch (error) {
@@ -4954,7 +5364,7 @@
       $('clientApp').setAttribute('aria-hidden', 'false');
       renderAll();
       const requestedView = new URLSearchParams(window.location.search).get('view');
-      showView(window.location.pathname.replace(/\/$/, '') === '/quadras' || requestedView === 'courts' ? 'courts' : (requestedView === 'payments' ? 'payments' : 'plans'));
+      showView(window.location.pathname.replace(/\/$/, '') === '/quadras' || requestedView === 'courts' ? 'courts' : (requestedView === 'payments' ? 'payments' : (requestedView === 'plans' ? 'plans' : 'home')));
     }
 
     function logout() {
@@ -4972,9 +5382,14 @@
     }
 
     function showView(view) {
-      const allowedViews = ['plans', 'payments', 'courts'];
-      if (!allowedViews.includes(view)) view = 'plans';
-      document.body.classList.remove('client-home-view');
+      const allowedViews = ['home', 'plans', 'payments', 'courts', 'notifications'];
+      if (!allowedViews.includes(view)) view = 'home';
+      document.body.classList.toggle('client-home-view', view === 'home');
+      const resetViewScroll = function () { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); };
+      resetViewScroll();
+      window.requestAnimationFrame(resetViewScroll);
+      window.setTimeout(resetViewScroll, 180);
+      window.setTimeout(resetViewScroll, 650);
       document.querySelectorAll('.view').forEach(function (el) {
         el.classList.toggle('active', el.id === 'view-' + view);
       });
@@ -4982,9 +5397,11 @@
         btn.classList.toggle('active', btn.dataset.view === view);
       });
       const labels = {
+        home: 'Início',
         plans: 'Planos',
         payments: 'Financeiro',
-        courts: 'Jogar'
+        courts: 'Jogar',
+        notifications: 'Notificações'
       };
       $('pageTitle').textContent = labels[view] || 'Ilha Play';
       if (view === 'notifications') {
@@ -4994,6 +5411,9 @@
         refresh(true).catch(function () {
           toast('Não consegui atualizar o plano agora.');
         });
+      }
+      if (view === 'home') {
+        loadClientCourtData(false).catch(function () {});
       }
       if (view === 'courts') {
         refresh(true).then(function () {
@@ -5087,15 +5507,100 @@
       const name = client && client.full_name || 'aluno';
       const firstName = name.split(' ')[0] || 'aluno';
       $('homeWelcomeName').textContent = 'Olá, ' + firstName;
-      $('homeAvatar').innerHTML = avatarMarkup(profilePhoto(), name);
       const officialPlan = client && client.official_plan_name || '';
       const declaredPlan = client && client.declared_plan_name || '';
+      const exempt = isExemptClientPlan();
+      const amount = Number(client && client.plan_amount || 0);
+      const dueDay = client && client.due_day || '';
+      const status = $('homePlanStatusLabel');
       if (officialPlan) {
-        $('homePlanStatus').innerHTML = '<div><span>Seu plano atual</span><strong>' + escapeHtml(officialPlan) + '</strong></div><span class="pill good">Reconhecido</span>';
+        $('homePlanName').textContent = officialPlan;
+        status.textContent = 'Ativo';
+        status.classList.remove('limited');
+        $('homePlanMeta').textContent = exempt
+          ? 'Acesso liberado · sem cobrança mensal'
+          : (amount > 0 && dueDay ? 'Próximo vencimento · dia ' + dueDay : (amount > 0 ? money(amount) + ' por mês' : 'Acesso liberado'));
       } else if (declaredPlan) {
-        $('homePlanStatus').innerHTML = '<div><span>Plano informado no cadastro</span><strong>' + escapeHtml(declaredPlan) + '</strong></div><span class="pill warn">Aguardando clube</span>';
+        $('homePlanName').textContent = declaredPlan;
+        status.textContent = 'Acesso limitado';
+        status.classList.add('limited');
+        $('homePlanMeta').textContent = 'Vincule um plano para liberar as reservas.';
       } else {
-        $('homePlanStatus').innerHTML = '<div><span>Plano atual</span><strong>Aguardando identificação</strong></div><span class="pill warn">Pendente</span>';
+        $('homePlanName').textContent = 'Plano ainda não vinculado';
+        status.textContent = 'Acesso limitado';
+        status.classList.add('limited');
+        $('homePlanMeta').textContent = 'Escolha um plano para liberar as reservas.';
+      }
+      renderHomeBooking();
+      renderHomeFinance();
+    }
+
+    function isExemptClientPlan() {
+      const code = String(client && client.official_plan_code || '').toLowerCase();
+      const name = String(client && client.official_plan_name || '').toLowerCase();
+      return code === 'isento' || name.indexOf('isento') >= 0;
+    }
+
+    function nextClientBooking() {
+      const nowKey = localDateString(new Date()) + 'T' + String(new Date().getHours()).padStart(2, '0') + ':' + String(new Date().getMinutes()).padStart(2, '0');
+      return myCourtBookings.filter(function (item) {
+        const key = String(item.booking_date || '') + 'T' + String(item.starts_at || '').slice(0, 5);
+        return String(item.status || '').toUpperCase() !== 'CANCELADO' && key >= nowKey;
+      }).sort(function (a, b) {
+        const first = String(a.booking_date || '') + 'T' + String(a.starts_at || '').slice(0, 5);
+        const second = String(b.booking_date || '') + 'T' + String(b.starts_at || '').slice(0, 5);
+        return first.localeCompare(second);
+      })[0] || null;
+    }
+
+    function bookingDateLabel(value) {
+      const today = localDateString(new Date());
+      const tomorrowDate = new Date();
+      tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+      if (value === today) return 'Hoje';
+      if (value === localDateString(tomorrowDate)) return 'Amanhã';
+      const date = parseLocalDate(value);
+      return date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }).replace('.', '');
+    }
+
+    function renderHomeBooking() {
+      const box = $('homeNextBooking');
+      if (!box) return;
+      const booking = nextClientBooking();
+      if (!booking) {
+        box.innerHTML = '<h3>Próxima reserva</h3><div class="dashboard-booking-empty">Nenhuma reserva agendada.</div>';
+        return;
+      }
+      const time = String(booking.starts_at || '').slice(0, 5);
+      box.innerHTML = '<h3>Próxima reserva</h3><div class="dashboard-booking-row">' +
+        '<span class="dashboard-booking-date">' + escapeHtml(bookingDateLabel(booking.booking_date)) + '</span>' +
+        '<span class="dashboard-booking-copy"><strong>' + escapeHtml(time) + '</strong><span>' + escapeHtml(booking.court_name || 'Quadra') + (booking.opponent_name ? ' · ' + escapeHtml(booking.opponent_name) : '') + '</span></span>' +
+        '<span class="dashboard-booking-status">Confirmada</span>' +
+      '</div>';
+    }
+
+    function renderHomeFinance() {
+      const target = $('homeFinanceSummary');
+      if (!target) return;
+      if (isExemptClientPlan()) {
+        target.textContent = 'Plano isento · sem cobrança mensal';
+        return;
+      }
+      const invoices = buildMonthlyInvoices();
+      const overdue = invoices.filter(function (invoice) { return invoiceEffectiveStatus(invoice) === 'VENCIDA'; });
+      if (overdue.length) {
+        target.textContent = overdue.length + (overdue.length === 1 ? ' pendência' : ' pendências');
+        return;
+      }
+      const open = invoices.filter(function (invoice) { return invoiceEffectiveStatus(invoice) === 'ABERTA'; }).sort(function (a, b) {
+        return String(a.due_date || '').localeCompare(String(b.due_date || ''));
+      })[0];
+      if (open && open.due_date) {
+        target.textContent = 'Próximo vencimento · ' + formatShortDate(open.due_date);
+      } else if (client && client.official_plan_name) {
+        target.textContent = 'Tudo em dia';
+      } else {
+        target.textContent = 'Plano ainda não vinculado';
       }
     }
 
@@ -5117,6 +5622,8 @@
           ? client.declared_plan_name + ' · a confirmar'
           : 'A definir';
       $('profileSidePlan').textContent = displayedPlan;
+      const profileDueBox = $('profileSideDue').closest('.profile-mini');
+      profileDueBox.hidden = isExemptClientPlan();
       $('profileSideDue').textContent = client && client.due_day ? 'Dia ' + client.due_day : 'A definir';
       $('profileSideStatus').textContent = client && client.status || 'Ativo';
     }
@@ -5126,6 +5633,7 @@
       const declaredPlanName = client && client.declared_plan_name || '';
       const amount = Number(client && client.plan_amount || 0);
       const dueDay = client && client.due_day || '';
+      const exempt = isExemptClientPlan();
       const weeklyLessons = Number(client && client.weekly_lessons || 0);
       const preferredDays = Array.isArray(client && client.preferred_days) ? client.preferred_days : [];
       const hasPlan = Boolean(planName || amount || dueDay || weeklyLessons || preferredDays.length);
@@ -5152,8 +5660,11 @@
       if (amount) {
         details.push('<div class="plan-status-item"><span>Valor</span><strong>' + money(amount) + '</strong></div>');
       }
-      if (dueDay) {
+      if (dueDay && !exempt && amount > 0) {
         details.push('<div class="plan-status-item"><span>Vencimento</span><strong>Dia ' + escapeHtml(dueDay) + '</strong></div>');
+      }
+      if (exempt) {
+        details.push('<div class="plan-status-item"><span>Cobrança</span><strong>Isento</strong></div>');
       }
       if (weeklyLessons) {
         details.push('<div class="plan-status-item"><span>Aulas</span><strong>' + weeklyLessons + 'x por semana</strong></div>');
@@ -5305,6 +5816,7 @@
     }
 
     function buildMonthlyInvoices() {
+      if (isExemptClientPlan()) return [];
       const amount = Number(client && client.plan_amount || 0);
       const planName = client && client.official_plan_name || 'Plano a definir';
       const dueDay = client && client.due_day || '';
@@ -5400,6 +5912,13 @@
     }
 
     function renderPayments() {
+      const toolbar = document.querySelector('.payment-toolbar');
+      if (isExemptClientPlan()) {
+        if (toolbar) toolbar.hidden = true;
+        $('paymentList').innerHTML = '<div class="empty"><strong>Plano isento</strong><br />Não há mensalidades ou vencimentos para este plano.</div>';
+        return;
+      }
+      if (toolbar) toolbar.hidden = false;
       const invoices = buildMonthlyInvoices();
       renderPaymentFilters(invoices);
       const list = filteredInvoices();
@@ -5682,7 +6201,6 @@
           if (!client) client = {};
           client.profile_photo = photo;
           $('profileAvatar').innerHTML = avatarMarkup(photo, client.full_name || 'Ilha');
-          $('homeAvatar').innerHTML = avatarMarkup(photo, client.full_name || 'Ilha');
         } catch (error) {
           toast('Não consegui carregar essa foto.');
         }
