@@ -1404,6 +1404,22 @@
       text-decoration: none;
     }
 
+    .plan-cancel-notice {
+      padding: 11px 12px;
+      border: 1px solid #f1cf83;
+      border-radius: 8px;
+      background: #fff8e8;
+      color: #76500d;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .plan-cancel-btn {
+      border-color: #efb3b8 !important;
+      color: #a62f39 !important;
+    }
+
     .plan-status-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -4499,6 +4515,7 @@
 
     function activeClientPlan() {
       if (!client) return null;
+      if (isPlanCancellationEffective()) return null;
       const planId = String(client.official_plan_id || '');
       const planCode = String(client.official_plan_code || '');
       if (!planId && !planCode) return null;
@@ -4508,6 +4525,33 @@
           (planCode && String(plan.code || '') === planCode)
         );
       }) || null;
+    }
+
+    function isPlanCancellationEffective() {
+      const cancelAt = String(client && client.plan_cancel_at || '');
+      return Boolean(cancelAt && cancelAt <= localDateString(new Date()));
+    }
+
+    function hasPlanCancellationRequest() {
+      return Boolean(client && (client.plan_cancellation_requested_at || client.plan_cancel_at));
+    }
+
+    function nextPlanRenewalDate() {
+      const now = new Date();
+      const dueDay = Math.min(31, Math.max(1, Number(client && client.due_day || 10)));
+      let year = now.getFullYear();
+      let month = now.getMonth();
+      const today = new Date(year, month, now.getDate());
+      let lastDay = new Date(year, month + 1, 0).getDate();
+      let renewal = new Date(year, month, Math.min(dueDay, lastDay));
+      if (renewal <= today) {
+        month += 1;
+        year = month > 11 ? year + 1 : year;
+        month = month % 12;
+        lastDay = new Date(year, month + 1, 0).getDate();
+        renewal = new Date(year, month, Math.min(dueDay, lastDay));
+      }
+      return localDateString(renewal);
     }
 
     function canClientBookCourt() {
@@ -4895,6 +4939,9 @@
         email_verified_at: stored.email_verified_at || user.email_confirmed_at || '',
         plan_amount: stored.plan_amount || 0,
         weekly_lessons: stored.weekly_lessons || 0,
+        plan_cancellation_requested_at: stored.plan_cancellation_requested_at || '',
+        plan_cancel_at: stored.plan_cancel_at || '',
+        reenrollment_fee_required: stored.reenrollment_fee_required === true,
         preferred_days: Array.isArray(stored.preferred_days) ? stored.preferred_days : []
       });
       writeStored(storageKey(FALLBACK_PROFILE_KEY), nextClient);
@@ -4991,6 +5038,9 @@
           email_verified_at: stored.email_verified_at || new Date().toISOString(),
           plan_amount: stored.plan_amount || 0,
           weekly_lessons: stored.weekly_lessons || 0,
+          plan_cancellation_requested_at: stored.plan_cancellation_requested_at || '',
+          plan_cancel_at: stored.plan_cancel_at || '',
+          reenrollment_fee_required: stored.reenrollment_fee_required === true,
           preferred_days: Array.isArray(stored.preferred_days) ? stored.preferred_days : []
         };
         return client;
@@ -5690,11 +5740,21 @@
       const status = $('homePlanStatusLabel');
       if (officialPlan) {
         $('homePlanName').textContent = officialPlan;
-        status.textContent = 'Ativo';
-        status.classList.remove('limited');
-        $('homePlanMeta').textContent = exempt
-          ? 'Acesso liberado · sem cobrança mensal'
-          : (amount > 0 && dueDay ? 'Próximo vencimento · dia ' + dueDay : (amount > 0 ? money(amount) + ' por mês' : 'Acesso liberado'));
+        if (isPlanCancellationEffective()) {
+          status.textContent = 'Cancelado';
+          status.classList.add('limited');
+          $('homePlanMeta').textContent = 'Para reativar, será cobrada matrícula de R$ 250,00.';
+        } else if (hasPlanCancellationRequest()) {
+          status.textContent = 'Cancelamento agendado';
+          status.classList.add('limited');
+          $('homePlanMeta').textContent = 'Acesso liberado até ' + formatShortDate(client.plan_cancel_at) + '.';
+        } else {
+          status.textContent = 'Ativo';
+          status.classList.remove('limited');
+          $('homePlanMeta').textContent = exempt
+            ? 'Acesso liberado · sem cobrança mensal'
+            : (amount > 0 && dueDay ? 'Próximo vencimento · dia ' + dueDay : (amount > 0 ? money(amount) + ' por mês' : 'Acesso liberado'));
+        }
       } else if (declaredPlan) {
         $('homePlanName').textContent = declaredPlan;
         status.textContent = 'Acesso limitado';
@@ -5757,6 +5817,10 @@
     function renderHomeFinance() {
       const target = $('homeFinanceSummary');
       if (!target) return;
+      if (isPlanCancellationEffective()) {
+        target.textContent = 'Plano cancelado';
+        return;
+      }
       if (isExemptClientPlan()) {
         target.textContent = 'Plano isento · sem cobrança mensal';
         return;
@@ -5798,9 +5862,9 @@
           : 'A definir';
       $('profileSidePlan').textContent = displayedPlan;
       const profileDueBox = $('profileSideDue').closest('.profile-mini');
-      profileDueBox.hidden = isExemptClientPlan();
+      profileDueBox.hidden = isExemptClientPlan() || isPlanCancellationEffective();
       $('profileSideDue').textContent = client && client.due_day ? 'Dia ' + client.due_day : 'A definir';
-      $('profileSideStatus').textContent = client && client.status || 'Ativo';
+      $('profileSideStatus').textContent = isPlanCancellationEffective() ? 'Cancelado' : client && client.status || 'Ativo';
     }
 
     function renderPlans() {
@@ -5812,6 +5876,9 @@
       const weeklyLessons = Number(client && client.weekly_lessons || 0);
       const preferredDays = Array.isArray(client && client.preferred_days) ? client.preferred_days : [];
       const hasPlan = Boolean(planName || amount || dueDay || weeklyLessons || preferredDays.length);
+      const cancellationRequested = hasPlanCancellationRequest();
+      const cancellationEffective = isPlanCancellationEffective();
+      const cancellationDate = client && client.plan_cancel_at || '';
       if (!hasPlan) {
         if (declaredPlanName) {
           $('planGrid').innerHTML = '<article class="plan-card empty-plan">' +
@@ -5853,11 +5920,17 @@
             '<span class="plan-kicker">Plano atual</span>' +
             '<h3>' + escapeHtml(planName || 'Plano definido pelo clube') + '</h3>' +
           '</div>' +
-          '<span class="pill good">Ativo</span>' +
+          '<span class="pill ' + (cancellationRequested ? 'warn' : 'good') + '">' + (cancellationEffective ? 'Cancelado' : cancellationRequested ? 'Cancelamento agendado' : 'Ativo') + '</span>' +
         '</div>' +
         (details.length ? '<div class="plan-status-grid">' + details.join('') + '</div>' : '') +
+        (cancellationRequested ? '<div class="plan-cancel-notice">' +
+          (cancellationEffective
+            ? 'Plano encerrado. Para contratar novamente será cobrada uma taxa de matrícula de R$ 250,00.'
+            : 'O plano segue ativo até ' + escapeHtml(formatShortDate(cancellationDate)) + '. Ao contratar novamente será cobrada uma taxa de matrícula de R$ 250,00.') +
+        '</div>' : '') +
         '<div class="plan-actions">' +
           '<button class="ghost-btn" type="button" data-refresh-plan>Atualizar</button>' +
+          (!cancellationRequested ? '<button class="ghost-btn plan-cancel-btn" type="button" data-cancel-plan>Cancelar plano</button>' : '') +
         '</div>' +
       '</article>' + renderPlanCatalog();
     }
@@ -6003,6 +6076,8 @@
         const now = new Date();
         for (let index = 0; index < 6; index++) {
           const month = isoMonth(addMonths(now, index));
+          const generatedDueDate = dueDateForMonth(month, dueDay);
+          if (client && client.plan_cancel_at && generatedDueDate >= client.plan_cancel_at) continue;
           if (!map[month]) {
             map[month] = mapPaymentInvoiceRow({
               id: 'generated_' + month,
@@ -6012,7 +6087,7 @@
               plan_code: client && client.official_plan_code || '',
               plan_name: planName,
               amount: amount,
-              due_date: dueDateForMonth(month, dueDay),
+              due_date: generatedDueDate,
               status: 'ABERTA',
               generated: true
             });
@@ -6200,6 +6275,31 @@
           body: basicPayload,
           prefer: 'return=representation'
         });
+      }
+    }
+
+    async function requestClientPlanCancellation() {
+      if (!client || !client.official_plan_name || hasPlanCancellationRequest()) return;
+      const cancelAt = nextPlanRenewalDate();
+      const confirmed = confirm('Seu plano continuará ativo até ' + formatShortDate(cancelAt) + '. Ao contratar novamente, será cobrada uma taxa de matrícula de R$ 250,00. Deseja confirmar o cancelamento?');
+      if (!confirmed) return;
+      const payload = {
+        plan_cancellation_requested_at: new Date().toISOString(),
+        plan_cancel_at: cancelAt,
+        reenrollment_fee_required: true
+      };
+      try {
+        if (demoMode || (session && session.demo) || !databaseReady) {
+          client = Object.assign({}, client, payload);
+        } else {
+          const saved = await patchClientProfile(payload);
+          client = Object.assign({}, client, payload, Array.isArray(saved) && saved[0] ? saved[0] : {});
+        }
+        writeStored(storageKey(FALLBACK_PROFILE_KEY), client);
+        renderAll();
+        toast('Cancelamento agendado para ' + formatShortDate(cancelAt) + '.');
+      } catch (error) {
+        toast(error.message || 'Não consegui agendar o cancelamento.');
       }
     }
 
@@ -6424,6 +6524,10 @@
         const requestBtn = event.target.closest('[data-request-plan]');
         if (requestBtn) {
           requestPlanChange(requestBtn.dataset.requestPlan);
+          return;
+        }
+        if (event.target.closest('[data-cancel-plan]')) {
+          requestClientPlanCancellation();
           return;
         }
         if (event.target.closest('[data-refresh-plan]')) {
