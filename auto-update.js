@@ -1,7 +1,9 @@
 (function () {
   'use strict';
 
-  var currentDocumentVersion = '';
+  var versionKey = 'ilha:auto-version:' + window.location.pathname;
+  var reloadKey = 'ilha:auto-reload-done:' + window.location.pathname;
+  var currentDocumentVersion = sessionStorage.getItem(versionKey) || '';
   var checking = false;
   var reloading = false;
 
@@ -27,11 +29,17 @@
       if (!nextVersion) return;
       if (!currentDocumentVersion) {
         currentDocumentVersion = nextVersion;
+        sessionStorage.setItem(versionKey, nextVersion);
         return;
       }
       if (nextVersion !== currentDocumentVersion) {
-        reloading = true;
-        window.location.reload();
+        currentDocumentVersion = nextVersion;
+        sessionStorage.setItem(versionKey, nextVersion);
+        if (sessionStorage.getItem(reloadKey) !== '1') {
+          sessionStorage.setItem(reloadKey, '1');
+          reloading = true;
+          window.location.reload();
+        }
       }
     } catch (error) {
       // Sem conexão: mantém a tela funcionando e tenta novamente depois.
@@ -48,21 +56,12 @@
     } catch (error) {}
   }
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('controllerchange', function () {
-      if (reloading) return;
-      reloading = true;
-      window.location.reload();
-    });
-  }
-
   checkForAppUpdate();
-  setInterval(checkForAppUpdate, 12000);
-  setInterval(updateServiceWorker, 30000);
+  updateServiceWorker();
+  setInterval(checkForAppUpdate, 60000);
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden) {
       checkForAppUpdate();
-      updateServiceWorker();
     }
   });
   window.addEventListener('focus', checkForAppUpdate);
