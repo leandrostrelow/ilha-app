@@ -224,6 +224,30 @@
     .auth-panel-head p { margin: 6px 0 0; color: var(--muted); font-size: 13px; font-weight: 750; line-height: 1.4; }
 
     .auth-stage[hidden] { display: none !important; }
+    .auth-pending-card {
+      display: grid;
+      justify-items: center;
+      gap: 14px;
+      padding: 24px 18px;
+      border: 1px solid #dce8aa;
+      border-radius: 18px;
+      background: linear-gradient(145deg, #fbfff0, #f4fafb);
+      text-align: center;
+    }
+    .auth-pending-icon {
+      width: 64px;
+      height: 64px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--lime);
+      color: #213800;
+      font-size: 28px;
+      font-weight: 950;
+    }
+    .auth-pending-card h2 { margin: 0; font-size: 25px; }
+    .auth-pending-card p { max-width: 390px; margin: 0; color: var(--muted); font-size: 13px; font-weight: 750; line-height: 1.55; }
+    .auth-pending-card strong { color: var(--ink); }
     .auth-fields {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2987,20 +3011,13 @@
           </form>
         </div>
 
-        <div class="auth-stage" id="authVerifyStage" hidden>
-          <div class="auth-panel-head">
-            <h2>Confirme seu e-mail</h2>
-            <p>Enviamos a confirmação para <strong id="verifyEmailLabel"></strong>. Digite o código ou use o botão recebido no e-mail.</p>
-          </div>
-          <form id="verifyForm">
-            <label for="signupCode">Código de confirmação</label>
-            <input class="auth-code-input" id="signupCode" type="text" autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="000000" required />
-            <button class="primary-btn" type="submit" id="verifySubmit">Confirmar e entrar</button>
-          </form>
-          <div class="auth-secondary-actions">
-            <button class="auth-link-btn" type="button" id="resendCodeBtn">Reenviar código</button>
-            <button class="auth-link-btn" type="button" id="changeSignupEmailBtn">Alterar e-mail</button>
-            <button class="auth-link-btn" type="button" id="returnToLoginBtn">Já confirmei pelo link</button>
+        <div class="auth-stage" id="authPendingStage" hidden>
+          <div class="auth-pending-card">
+            <div class="auth-pending-icon" aria-hidden="true">✓</div>
+            <h2>Cadastro recebido</h2>
+            <p>Use o botão de confirmação recebido no e-mail e aguarde a equipe do Ilha Tênis liberar seu acesso. Não é necessário digitar código.</p>
+            <p id="pendingEmailLabel"></p>
+            <button class="primary-btn" type="button" id="pendingLoginBtn">Voltar para entrar</button>
           </div>
         </div>
 
@@ -3925,7 +3942,7 @@
         const rawMessage = data.error_description || data.msg || data.message || 'Falha na autenticação.';
         const normalized = String(rawMessage).toLowerCase();
         const friendly = normalized.includes('invalid login credentials') ? 'E-mail ou senha incorretos.' :
-          normalized.includes('email not confirmed') ? 'Confirme seu e-mail antes de entrar.' :
+          normalized.includes('email not confirmed') ? 'Confirme pelo botão recebido no e-mail. Não é necessário digitar código.' :
           normalized.includes('already registered') ? 'Este e-mail já possui uma conta. Use a opção Entrar.' :
           normalized.includes('rate limit') ? 'Muitas tentativas seguidas. Aguarde um pouco e tente novamente.' : rawMessage;
         throw new Error(friendly);
@@ -4018,7 +4035,7 @@
         full_name: fullName || stored.full_name || meta.full_name || user.email || 'Cliente Ilha',
         email: user.email || stored.email || '',
         phone: phone || stored.phone || meta.phone || '',
-        status: 'ATIVO',
+        status: 'PENDENTE',
         client_type: 'cliente',
         notes: stored.notes || '',
         cpf: stored.cpf || '',
@@ -4258,8 +4275,8 @@
     }
 
     function setBusy(isBusy) {
-      ['loginSubmit', 'signupSubmit', 'verifySubmit', 'completeRegistrationSubmit', 'resendCodeBtn'].forEach(function (id) {
-        $(id).disabled = isBusy;
+      ['loginSubmit', 'signupSubmit', 'completeRegistrationSubmit', 'pendingLoginBtn'].forEach(function (id) {
+        if ($(id)) $(id).disabled = isBusy;
       });
     }
 
@@ -4297,12 +4314,14 @@
 
     function showAuthStage(stage) {
       $('authMainStage').hidden = stage !== 'main';
-      $('authVerifyStage').hidden = stage !== 'verify';
+      $('authPendingStage').hidden = stage !== 'pending';
       $('authCompleteStage').hidden = stage !== 'complete';
       setAuthMessage('', false);
-      if (stage === 'verify' && pendingSignup) {
-        $('verifyEmailLabel').textContent = pendingSignup.email || '';
-        window.setTimeout(function () { $('signupCode').focus(); }, 50);
+      if (stage === 'pending') {
+        const email = pendingSignup && pendingSignup.email || currentUser().email || '';
+        $('authPendingStage').querySelector('h2').textContent = 'Cadastro recebido';
+        $('authPendingStage').querySelector('p').textContent = 'Use o botão de confirmação recebido no e-mail e aguarde a equipe do Ilha Tênis liberar seu acesso. Não é necessário digitar código.';
+        $('pendingEmailLabel').innerHTML = email ? 'Cadastro: <strong>' + escapeHtml(email) + '</strong>' : '';
       }
     }
 
@@ -4377,6 +4396,16 @@
 
     async function finishAuthenticatedAccess() {
       await ensureClient(null, null);
+      const status = String(client && client.status || 'PENDENTE').toUpperCase();
+      if (status !== 'ATIVO') {
+        lock('');
+        showAuthStage('pending');
+        if (status === 'BLOQUEADO') {
+          $('authPendingStage').querySelector('h2').textContent = 'Acesso temporariamente bloqueado';
+          $('authPendingStage').querySelector('p').textContent = 'Fale com a equipe do Ilha Tênis para conferir seu cadastro.';
+        }
+        return false;
+      }
       if (needsRegistration(client)) {
         openRegistrationCompletion();
         return false;
@@ -4411,35 +4440,11 @@
       if (nextSession && nextSession.access_token) {
         storeSession(nextSession);
         await completeRegistration(details);
-        await loadClientData();
         savePendingSignup(null);
-        unlock();
+        await finishAuthenticatedAccess();
         return;
       }
-      showAuthStage('verify');
-      setAuthMessage('Digite o código recebido para confirmar sua conta.', false);
-    }
-
-    async function verifySignupCode(code) {
-      if (!pendingSignup || !pendingSignup.email) throw new Error('Refaça o cadastro para solicitar um novo código.');
-      const result = await authRequest('verify', {
-        type: 'signup',
-        email: pendingSignup.email,
-        token: digitsOnly(code)
-      });
-      const nextSession = result.session || (result.access_token ? result : null);
-      if (!nextSession || !nextSession.access_token) throw new Error('Código confirmado, mas não foi possível iniciar sua sessão.');
-      storeSession(nextSession);
-      await completeRegistration(pendingSignup);
-      await loadClientData();
-      savePendingSignup(null);
-      unlock();
-    }
-
-    async function resendSignupCode() {
-      if (!pendingSignup || !pendingSignup.email) throw new Error('Informe seu e-mail novamente.');
-      await authRequest('resend', { type: 'signup', email: pendingSignup.email });
-      setAuthMessage('Novo código enviado. Confira também o spam.', false);
+      showAuthStage('pending');
     }
 
     async function restore() {
@@ -4465,7 +4470,7 @@
       const stored = readSession();
       if (!stored) {
         lock('');
-        if (readPendingSignup()) showAuthStage('verify');
+        if (readPendingSignup()) showAuthStage('pending');
         return;
       }
       try {
@@ -5200,7 +5205,6 @@
       ['signupCpf', 'completeCpf'].forEach(function (id) {
         $(id).addEventListener('input', function () { this.value = formatCpf(this.value); });
       });
-      $('signupCode').addEventListener('input', function () { this.value = digitsOnly(this.value).slice(0, 6); });
       document.querySelectorAll('[data-logout]').forEach(function (btn) {
         btn.addEventListener('click', logout);
       });
@@ -5377,36 +5381,11 @@
           setBusy(false);
         }
       });
-      $('verifyForm').addEventListener('submit', async function (event) {
-        event.preventDefault();
-        setBusy(true);
-        setAuthMessage('', false);
-        try {
-          if (digitsOnly($('signupCode').value).length !== 6) throw new Error('Digite os 6 números do código.');
-          await verifySignupCode($('signupCode').value);
-        } catch (error) {
-          setAuthMessage(error.message || 'Código inválido ou expirado.', true);
-        } finally {
-          setBusy(false);
-        }
-      });
-      $('resendCodeBtn').addEventListener('click', async function () {
-        setBusy(true);
-        setAuthMessage('', false);
-        try {
-          await resendSignupCode();
-        } catch (error) {
-          setAuthMessage(error.message || 'Não consegui reenviar o código.', true);
-        } finally {
-          setBusy(false);
-        }
-      });
-      $('changeSignupEmailBtn').addEventListener('click', function () {
+      $('pendingLoginBtn').addEventListener('click', function () {
+        clearSession();
         savePendingSignup(null);
-        $('signupCode').value = '';
-        showAuthTab('signup');
+        showAuthTab('login');
       });
-      $('returnToLoginBtn').addEventListener('click', function () { showAuthTab('login'); });
       $('completeRegistrationForm').addEventListener('submit', async function (event) {
         event.preventDefault();
         setBusy(true);
