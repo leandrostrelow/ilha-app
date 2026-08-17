@@ -1927,6 +1927,96 @@
       margin: 0 0 4px;
     }
 
+    .client-lesson-editor {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f7fbfc;
+    }
+
+    .client-lesson-editor-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .client-lesson-editor-head strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .client-lesson-editor-head .muted {
+      margin-top: 2px;
+      font-size: 11px;
+    }
+
+    .client-lesson-add-grid {
+      display: grid;
+      grid-template-columns: minmax(120px, .8fr) minmax(105px, .6fr) minmax(150px, 1fr) minmax(140px, 1fr) auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .client-lesson-add-grid .field {
+      min-width: 0;
+    }
+
+    .client-lesson-add-grid button {
+      min-height: 42px;
+      white-space: nowrap;
+    }
+
+    .client-lesson-schedule-list {
+      display: grid;
+      gap: 7px;
+    }
+
+    .client-lesson-schedule-item {
+      display: grid;
+      grid-template-columns: minmax(145px, .8fr) minmax(0, 1.5fr) auto;
+      align-items: center;
+      gap: 10px;
+      min-height: 48px;
+      padding: 9px 10px;
+      border: 1px solid #cfe1e5;
+      border-left: 4px solid var(--lime);
+      border-radius: 9px;
+      background: #ffffff;
+    }
+
+    .client-lesson-schedule-item strong {
+      color: var(--teal);
+      font-size: 13px;
+    }
+
+    .client-lesson-schedule-item .muted {
+      font-size: 11px;
+    }
+
+    @media (max-width: 720px) {
+      .client-lesson-add-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .client-lesson-add-grid .field:nth-child(3),
+      .client-lesson-add-grid .field:nth-child(4),
+      .client-lesson-add-grid button {
+        grid-column: 1 / -1;
+      }
+
+      .client-lesson-schedule-item {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .client-lesson-schedule-item > .muted {
+        grid-column: 1 / -1;
+        grid-row: 2;
+      }
+    }
+
     .agenda-timeline {
       display: grid;
       gap: 8px;
@@ -17110,6 +17200,44 @@
                 <div class="weekday-grid" id="clientDeclaredLessonSlots"></div>
               </div>
               <div class="field full">
+                <div class="client-lesson-editor">
+                  <div class="client-lesson-editor-head">
+                    <div>
+                      <strong>Dias e horários das aulas</strong>
+                      <div class="muted">Grade oficial do aluno. As aulas salvas aparecem automaticamente no app.</div>
+                    </div>
+                  </div>
+                  <div class="client-lesson-add-grid">
+                    <div class="field">
+                      <label for="clientLessonDay">Dia</label>
+                      <select id="clientLessonDay">
+                        <option value="segunda">Segunda</option>
+                        <option value="terca">Terça</option>
+                        <option value="quarta">Quarta</option>
+                        <option value="quinta">Quinta</option>
+                        <option value="sexta">Sexta</option>
+                        <option value="sabado">Sábado</option>
+                        <option value="domingo">Domingo</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="clientLessonTime">Horário</label>
+                      <input id="clientLessonTime" type="time" value="08:00" />
+                    </div>
+                    <div class="field">
+                      <label for="clientLessonTeacher">Professor</label>
+                      <input id="clientLessonTeacher" placeholder="Nome do professor" />
+                    </div>
+                    <div class="field">
+                      <label for="clientLessonCourt">Quadra</label>
+                      <input id="clientLessonCourt" placeholder="Ex.: Quadra 1" />
+                    </div>
+                    <button class="primary-btn" type="button" id="clientLessonAddBtn">Adicionar aula</button>
+                  </div>
+                  <div class="client-lesson-schedule-list" id="clientLessonScheduleList"></div>
+                </div>
+              </div>
+              <div class="field full">
                 <label for="clientEditNotes">Observações internas</label>
                 <textarea id="clientEditNotes" placeholder="Horário, professor, regra combinada, restrições e observações."></textarea>
               </div>
@@ -22632,7 +22760,9 @@
       lessonState.students = results[0].map(function (student) {
         return {
           id: student.id,
+          appClientId: student.app_client_id || '',
           name: student.name,
+          email: student.email || '',
           phone: student.phone,
           status: student.status,
           weekly_lessons: student.weekly_lessons,
@@ -22671,6 +22801,73 @@
         .filter(function (enrollment) { return enrollment.active !== false && String(enrollment.slot_id) === String(slotId); })
         .map(function (enrollment) { return byId[String(enrollment.student_id)]; })
         .filter(Boolean);
+    }
+
+    function lessonDayName(day) {
+      const names = {
+        segunda: 'Segunda-feira',
+        terca: 'Terça-feira',
+        quarta: 'Quarta-feira',
+        quinta: 'Quinta-feira',
+        sexta: 'Sexta-feira',
+        sabado: 'Sábado',
+        domingo: 'Domingo'
+      };
+      return names[String(day || '').toLowerCase()] || String(day || 'Dia a definir');
+    }
+
+    function normalizedContact(value) {
+      return String(value || '').replace(/\D/g, '');
+    }
+
+    function findLessonStudentForClient(client) {
+      if (!client) return null;
+      const clientId = String(client.id || '');
+      const email = String(client.email || '').trim().toLowerCase();
+      const phone = normalizedContact(client.phone);
+      return lessonState.students.find(function (student) {
+        if (clientId && String(student.appClientId || '') === clientId) return true;
+        if (email && String(student.email || '').trim().toLowerCase() === email) return true;
+        return phone && normalizedContact(student.phone) === phone;
+      }) || null;
+    }
+
+    function clientLessonSchedule(client) {
+      const student = findLessonStudentForClient(client);
+      if (!student) return [];
+      const slotById = {};
+      lessonState.slots.forEach(function (slot) { slotById[String(slot.id)] = slot; });
+      return lessonState.enrollments
+        .filter(function (enrollment) {
+          return enrollment.active !== false && String(enrollment.student_id) === String(student.id);
+        })
+        .map(function (enrollment) {
+          return { enrollment: enrollment, slot: slotById[String(enrollment.slot_id)] };
+        })
+        .filter(function (entry) { return Boolean(entry.slot); })
+        .sort(function (a, b) {
+          const dayOrder = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+          const dayDiff = dayOrder.indexOf(a.slot.day) - dayOrder.indexOf(b.slot.day);
+          return dayDiff || String(a.slot.time).localeCompare(String(b.slot.time));
+        });
+    }
+
+    function renderClientLessonSchedule(client) {
+      if (!$('clientLessonScheduleList')) return;
+      if (lessonState.source === 'demo-fallback' && !isAdminDemoMode()) {
+        $('clientLessonScheduleList').innerHTML = '<div class="lesson-empty-state">Não consegui carregar a grade agora. Tente novamente.</div>';
+        return;
+      }
+      const schedule = clientLessonSchedule(client);
+      $('clientLessonScheduleList').innerHTML = schedule.map(function (entry) {
+        const slot = entry.slot;
+        const details = [slot.teacher || 'Professor a definir', slot.court || 'Quadra a definir'].join(' · ');
+        return '<article class="client-lesson-schedule-item">' +
+          '<strong>' + escapeHtml(lessonDayName(slot.day)) + ' · ' + escapeHtml(slot.time) + '</strong>' +
+          '<span class="muted">' + escapeHtml(details) + '</span>' +
+          '<button class="small-btn danger" type="button" data-client-lesson-remove="' + escapeHtml(entry.enrollment.id) + '">Remover</button>' +
+        '</article>';
+      }).join('') || '<div class="lesson-empty-state">Nenhuma aula fixa cadastrada para este aluno.</div>';
     }
 
     function lessonFilteredSlots() {
@@ -24006,12 +24203,21 @@
       $('clientDeclaredLessonSlots').innerHTML = client.declaredLessonSlots && client.declaredLessonSlots.length
         ? client.declaredLessonSlots.map(function (slot) { return '<span class="ops-pill">' + escapeHtml(slot.day || '') + ' · ' + escapeHtml(slot.time || '') + '</span>'; }).join('')
         : '<span class="muted">Nenhum horário informado.</span>';
+      $('clientLessonTeacher').value = '';
+      $('clientLessonCourt').value = '';
+      $('clientLessonScheduleList').innerHTML = '<div class="lesson-empty-state">Carregando grade oficial...</div>';
       $('clientRequestSummary').innerHTML = request
         ? '<article class="ops-list-card"><div class="ops-list-main"><div><strong>Pedido recebido no app</strong><div class="muted">' + escapeHtml(request.plan) + ' | ' + escapeHtml(request.membershipType || 'tipo não informado') + ' | ' + escapeHtml(formatDays(request.requestedDays) || 'sem dias') + '</div></div><div class="ops-meta">' + statusPill(request.status) + '<span class="ops-pill">' + money(request.amount) + '</span></div></div><div class="ops-meta"><button class="small-btn" type="button" data-plan-request-approve="' + escapeHtml(request.id) + '">Aprovar e vincular</button><button class="small-btn" type="button" data-plan-request-reject="' + escapeHtml(request.id) + '">Recusar</button></div></article>'
         : '<div class="lesson-empty-state">Sem pedido registrado pelo aluno. Defina o plano manualmente.</div>';
       renderClientInvoices(client);
       $('clientModal').classList.add('show');
       $('clientModal').setAttribute('aria-hidden', 'false');
+      loadLessonsData().then(function () {
+        const activeClient = findClientByKey(opsState.selectedClientId);
+        if (activeClient && $('clientModal').classList.contains('show')) renderClientLessonSchedule(activeClient);
+      }).catch(function () {
+        $('clientLessonScheduleList').innerHTML = '<div class="lesson-empty-state">Não consegui carregar a grade agora.</div>';
+      });
     }
 
     function closeClientModal() {
@@ -31590,6 +31796,175 @@
       }
     }
 
+    async function ensureLessonStudentForClient(client) {
+      let student = findLessonStudentForClient(client);
+      if (student) return student;
+      if (isAdminDemoMode()) {
+        student = {
+          id: localId('student'),
+          appClientId: client.id || '',
+          name: client.name,
+          email: client.email || '',
+          phone: client.phone || '',
+          status: 'ATIVO',
+          weekly_lessons: Number(client.weeklyLessons || 0),
+          monthly_value: Number(client.planAmount || 0)
+        };
+        lessonState.students.push(student);
+        return student;
+      }
+      const inserted = await supabaseInsert('students', {
+        app_client_id: client.id,
+        name: client.name || client.email || 'Aluno',
+        email: client.email || null,
+        phone: client.phone || null,
+        status: client.status === 'ATIVO' ? 'ATIVO' : 'INATIVO',
+        relationship_status: 'ATIVO',
+        weekly_lessons: Number(client.weeklyLessons || 0),
+        monthly_value: Number(client.planAmount || 0),
+        plan_name: client.officialPlanName || 'Aulas',
+        financial_status: 'OK'
+      });
+      student = {
+        id: inserted.id,
+        appClientId: inserted.app_client_id || client.id,
+        name: inserted.name,
+        email: inserted.email || client.email || '',
+        phone: inserted.phone || client.phone || '',
+        status: inserted.status || 'ATIVO',
+        weekly_lessons: inserted.weekly_lessons,
+        monthly_value: inserted.monthly_value
+      };
+      lessonState.students.push(student);
+      return student;
+    }
+
+    async function addClientLessonAction() {
+      const button = $('clientLessonAddBtn');
+      try {
+        requireAdminSession();
+        const client = findClientByKey(opsState.selectedClientId);
+        if (!client) throw new Error('Aluno não encontrado.');
+        const day = $('clientLessonDay').value;
+        const time = String($('clientLessonTime').value || '').slice(0, 5);
+        const teacher = $('clientLessonTeacher').value.trim() || 'Equipe Ilha';
+        const court = $('clientLessonCourt').value.trim() || 'Quadra 1';
+        if (!day || !/^\d{2}:\d{2}$/.test(time)) throw new Error('Escolha o dia e o horário da aula.');
+        button.disabled = true;
+        button.textContent = 'Salvando...';
+        const student = await ensureLessonStudentForClient(client);
+        let slot = lessonState.slots.find(function (item) {
+          return item.active !== false && item.day === day && item.time === time &&
+            String(item.teacher || '').trim().toLowerCase() === teacher.toLowerCase() &&
+            String(item.court || '').trim().toLowerCase() === court.toLowerCase();
+        });
+        if (!slot) {
+          if (isAdminDemoMode()) {
+            slot = {
+              id: localId('slot'),
+              day: day,
+              time: time,
+              period: periodFromTime(time),
+              court: court,
+              teacher: teacher,
+              level: 'A definir',
+              capacity: 4,
+              active: true
+            };
+          } else {
+            const insertedSlot = await supabaseInsert('lesson_slots', {
+              day: day,
+              time: time,
+              period: periodFromTime(time),
+              teacher_name: teacher,
+              court_name: court,
+              level: 'A definir',
+              capacity: 4,
+              active: true
+            });
+            slot = {
+              id: insertedSlot.id,
+              day: insertedSlot.day,
+              time: String(insertedSlot.time || time).slice(0, 5),
+              period: insertedSlot.period,
+              court: insertedSlot.court_name || court,
+              teacher: insertedSlot.teacher_name || teacher,
+              level: insertedSlot.level || 'A definir',
+              capacity: Number(insertedSlot.capacity || 4),
+              active: true
+            };
+          }
+          lessonState.slots.push(slot);
+        }
+        const alreadyActive = lessonState.enrollments.some(function (enrollment) {
+          return enrollment.active !== false && String(enrollment.student_id) === String(student.id) && String(enrollment.slot_id) === String(slot.id);
+        });
+        if (alreadyActive) throw new Error('Esta aula já está na grade do aluno.');
+        if (lessonStudentsForSlot(slot.id).length >= Number(slot.capacity || 4)) throw new Error('Este horário já atingiu a capacidade.');
+        let enrollment;
+        if (isAdminDemoMode()) {
+          enrollment = { id: localId('enrollment'), student_id: student.id, slot_id: slot.id, type: 'FIXO', active: true };
+        } else {
+          const existing = await supabaseRest('lesson_enrollments?select=*&student_id=eq.' + encodeURIComponent(student.id) + '&slot_id=eq.' + encodeURIComponent(slot.id) + '&limit=1');
+          if (existing && existing[0]) {
+            const restored = await supabaseRest('lesson_enrollments?id=eq.' + encodeURIComponent(existing[0].id), {
+              method: 'PATCH',
+              body: { active: true, type: 'FIXO', updated_at: new Date().toISOString() },
+              prefer: 'return=representation'
+            });
+            enrollment = Array.isArray(restored) ? restored[0] : restored;
+          } else {
+            enrollment = await supabaseInsert('lesson_enrollments', {
+              student_id: student.id,
+              slot_id: slot.id,
+              type: 'FIXO',
+              active: true
+            });
+          }
+        }
+        lessonState.enrollments = lessonState.enrollments.filter(function (item) {
+          return String(item.id) !== String(enrollment.id);
+        });
+        lessonState.enrollments.push({
+          id: enrollment.id,
+          student_id: student.id,
+          slot_id: slot.id,
+          type: 'FIXO',
+          active: true
+        });
+        renderClientLessonSchedule(client);
+        renderLessons();
+        toast('Aula adicionada à grade do aluno.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Adicionar aula';
+      }
+    }
+
+    async function removeClientLessonAction(enrollmentId) {
+      try {
+        requireAdminSession();
+        const client = findClientByKey(opsState.selectedClientId);
+        const enrollment = lessonState.enrollments.find(function (item) { return String(item.id) === String(enrollmentId); });
+        if (!client || !enrollment) throw new Error('Aula não encontrada.');
+        if (!isAdminDemoMode()) {
+          await supabaseRest('lesson_enrollments?id=eq.' + encodeURIComponent(enrollment.id), {
+            method: 'PATCH',
+            body: { active: false, updated_at: new Date().toISOString() },
+            prefer: 'return=representation'
+          });
+        }
+        enrollment.active = false;
+        renderClientLessonSchedule(client);
+        renderLessons();
+        toast('Aula removida da grade do aluno.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
     async function saveClientInvoiceAction() {
       try {
         requireAdminSession();
@@ -32760,6 +33135,7 @@
       $('clientModalClose').addEventListener('click', closeClientModal);
       $('clientModalCancel').addEventListener('click', closeClientModal);
       $('clientInvoiceSaveBtn').addEventListener('click', saveClientInvoiceAction);
+      $('clientLessonAddBtn').addEventListener('click', addClientLessonAction);
       $('clientInvoiceMonth').addEventListener('change', function () {
         const client = findClientByKey(opsState.selectedClientId);
         if (client) fillClientInvoiceDefaults(client);
@@ -32773,6 +33149,11 @@
         const rejectBtn = event.target.closest('[data-plan-request-reject]');
         if (rejectBtn) {
           rejectPlanRequestAction(rejectBtn.dataset.planRequestReject);
+          return;
+        }
+        const removeLessonBtn = event.target.closest('[data-client-lesson-remove]');
+        if (removeLessonBtn) {
+          removeClientLessonAction(removeLessonBtn.dataset.clientLessonRemove);
           return;
         }
         if (event.target.id === 'clientModal') closeClientModal();
