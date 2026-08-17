@@ -22957,7 +22957,8 @@
         { id: 'plan_aulas_mensal_1x', code: 'aulas_mensal_1x', name: 'Aulas 1x por semana - Mensal', type: 'aluno', amount: 270, weeklyLessons: 1, dueDay: 10, active: true, description: 'Plano mensal de aulas uma vez por semana.' },
         { id: 'plan_aulas_mensal_2x', code: 'aulas_mensal_2x', name: 'Aulas 2x por semana - Mensal', type: 'aluno', amount: 390, weeklyLessons: 2, dueDay: 10, active: true, description: 'Plano mensal de aulas duas vezes por semana.' },
         { id: 'plan_jogar_mensal', code: 'jogar_mensal', name: 'Somente jogar - Mensal', type: 'mensalista', amount: 150, weeklyLessons: 0, dueDay: 10, active: true, description: 'Acesso mensal as quadras conforme regras do clube.' },
-        { id: 'plan_personalizado', code: 'personalizado', name: 'Plano personalizado', type: 'outro', amount: 0, weeklyLessons: 0, dueDay: 10, active: true, description: 'Valor e frequência definidos individualmente pela equipe do clube.' }
+        { id: 'plan_personalizado', code: 'personalizado', name: 'Plano personalizado', type: 'outro', amount: 0, weeklyLessons: 0, dueDay: 10, active: true, description: 'Valor e frequência definidos individualmente pela equipe do clube.' },
+        { id: 'plan_isento', code: 'isento', name: 'Plano isento', type: 'outro', amount: 0, weeklyLessons: 0, dueDay: 10, active: true, description: 'Acesso liberado sem cobrança mensal, vinculado somente pela equipe do clube.' }
       ],
       students: [
         { name: 'Leandro Strelow', phone: '5527999805814', status: 'ATIVO', plan: 'Aula semanal', level: 'Intermediario', teacher: 'Renato', financial: 'OK', nextAction: 'Confirmar presenca hoje' },
@@ -23958,7 +23959,7 @@
         return plan.active !== false || String(plan.id || plan.code) === String(selectedValue);
       }).map(function (plan) {
         const value = plan.id || plan.code || plan.name;
-        const label = plan.name + ' - ' + money(plan.amount || 0);
+        const label = String(plan.code || '') === 'isento' ? plan.name + ' - sem cobrança' : plan.name + ' - ' + money(plan.amount || 0);
         return '<option value="' + escapeHtml(value) + '"' + (String(value) === String(selectedValue) ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
       }));
       $('clientEditPlan').innerHTML = options.join('');
@@ -23967,7 +23968,7 @@
     function applyPlanToClientForm() {
       const plan = findPlanByValue($('clientEditPlan').value);
       if (!plan) return;
-      $('clientEditType').value = plan.type || 'aluno';
+      if (String(plan.code || '') !== 'isento') $('clientEditType').value = plan.type || 'aluno';
       $('clientEditAmount').value = plan.amount ? String(plan.amount).replace('.', ',') : '';
       $('clientEditFrequency').value = plan.weeklyLessons || 0;
       if (plan.dueDay && !$('clientEditDueDay').value) $('clientEditDueDay').value = plan.dueDay;
@@ -24154,7 +24155,7 @@
       $('planMemberMetric').textContent = visiblePlans.filter(function (plan) { return plan.type === 'mensalista'; }).length;
       $('planList').innerHTML = visiblePlans.map(function (plan) {
         const value = plan.id || plan.code || plan.name;
-        const amountLabel = Number(plan.amount || 0) > 0 ? money(plan.amount) : 'Valor personalizado';
+        const amountLabel = String(plan.code || '') === 'isento' ? 'Sem cobrança' : (Number(plan.amount || 0) > 0 ? money(plan.amount) : 'Valor personalizado');
         return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(plan.name) + '</strong><div class="muted">' + escapeHtml(plan.code || 'sem código') + ' | ' + escapeHtml(plan.type || 'plano') + ' | vence dia ' + escapeHtml(plan.dueDay || '-') + '</div></div><div class="ops-meta">' + statusPill(plan.active === false ? 'INATIVO' : 'ATIVO') + '<span class="ops-pill">' + escapeHtml(amountLabel) + '</span><button class="small-btn" type="button" data-plan-edit="' + escapeHtml(value) + '">Editar</button></div></div><div class="muted" style="margin-top:8px">' + escapeHtml(plan.description || 'Sem descrição.') + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum plano cadastrado ainda.</div>';
     }

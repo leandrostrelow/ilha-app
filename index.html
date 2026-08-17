@@ -3550,7 +3550,8 @@
       { code: 'aulas_mensal_1x', name: 'Aulas 1x por semana - Mensal', type: 'aluno', amount: 270, weekly_lessons: 1, default_due_day: 10, description: 'Plano mensal de aulas uma vez por semana.' },
       { code: 'aulas_mensal_2x', name: 'Aulas 2x por semana - Mensal', type: 'aluno', amount: 390, weekly_lessons: 2, default_due_day: 10, description: 'Plano mensal de aulas duas vezes por semana.' },
       { code: 'jogar_mensal', name: 'Somente jogar - Mensal', type: 'mensalista', amount: 150, weekly_lessons: 0, default_due_day: 10, description: 'Acesso mensal às quadras conforme regras do clube.' },
-      { code: 'personalizado', name: 'Plano personalizado', type: 'outro', amount: 0, weekly_lessons: 0, default_due_day: 10, description: 'Valor e frequência definidos individualmente pela equipe do clube.' }
+      { code: 'personalizado', name: 'Plano personalizado', type: 'outro', amount: 0, weekly_lessons: 0, default_due_day: 10, description: 'Valor e frequência definidos individualmente pela equipe do clube.' },
+      { code: 'isento', name: 'Plano isento', type: 'outro', amount: 0, weekly_lessons: 0, default_due_day: 10, description: 'Acesso liberado sem cobrança mensal, vinculado somente pela equipe do clube.' }
     ];
     const storeProducts = [
       { code: 'camisa_preta', name: 'Camisa preta Ilha', image: '../camisapreta.png', amount: 0, description: 'Uniforme oficial do clube.' },
@@ -5216,7 +5217,7 @@
         return '<button class="plan-tab' + (activePlanTab === tab.key ? ' active' : '') + '" type="button" data-plan-tab="' + escapeHtml(tab.key) + '">' + escapeHtml(tab.label) + '</button>';
       }).join('');
       const plans = appPlans.filter(function (plan) {
-        return plan.active !== false && String(plan.type || 'aluno') === activePlanTab;
+        return plan.active !== false && String(plan.code || '') !== 'isento' && String(plan.type || 'aluno') === activePlanTab;
       }).sort(function (a, b) {
         const lessonDiff = Number(a.weekly_lessons || 0) - Number(b.weekly_lessons || 0);
         if (lessonDiff) return lessonDiff;

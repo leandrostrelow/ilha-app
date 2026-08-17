@@ -6,7 +6,8 @@ where code not in (
   'aulas_mensal_1x',
   'aulas_mensal_2x',
   'jogar_mensal',
-  'personalizado'
+  'personalizado',
+  'isento'
 );
 
 insert into public.app_plans (
@@ -23,7 +24,8 @@ values
   ('aulas_mensal_1x', 'Aulas 1x por semana - Mensal', 'aluno', 270, 1, 10, true, 'Plano mensal de aulas uma vez por semana.'),
   ('aulas_mensal_2x', 'Aulas 2x por semana - Mensal', 'aluno', 390, 2, 10, true, 'Plano mensal de aulas duas vezes por semana.'),
   ('jogar_mensal', 'Somente jogar - Mensal', 'mensalista', 150, 0, 10, true, 'Acesso mensal às quadras conforme regras do clube.'),
-  ('personalizado', 'Plano personalizado', 'outro', 0, 0, 10, true, 'Valor e frequência definidos individualmente pela equipe do clube.')
+  ('personalizado', 'Plano personalizado', 'outro', 0, 0, 10, true, 'Valor e frequência definidos individualmente pela equipe do clube.'),
+  ('isento', 'Plano isento', 'outro', 0, 0, 10, true, 'Acesso liberado sem cobrança mensal, vinculado somente pela equipe do clube.')
 on conflict (code) do update
 set
   name = excluded.name,
