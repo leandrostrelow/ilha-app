@@ -255,6 +255,52 @@
     }
     .auth-fields .full { grid-column: 1 / -1; }
 
+    .auth-note {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border: 1px solid #dbe8a6;
+      border-radius: 12px;
+      background: #f7fbdf;
+      color: #344a00;
+      font-size: 12px;
+      font-weight: 850;
+      line-height: 1.45;
+    }
+
+    .lesson-schedule[hidden],
+    .guardian-fields[hidden] { display: none !important; }
+
+    .lesson-schedule {
+      grid-column: 1 / -1;
+      margin-top: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #f7fafb;
+    }
+
+    .lesson-schedule h3 { margin: 0; font-size: 14px; }
+    .lesson-schedule p { margin: 5px 0 0; color: var(--muted); font-size: 11px; font-weight: 750; line-height: 1.4; }
+    .lesson-slot-list { display: grid; gap: 10px; margin-top: 10px; }
+    .lesson-slot-row { display: grid; grid-template-columns: minmax(0, 1fr) 140px; gap: 10px; }
+    .lesson-slot-row label { margin-top: 0; }
+
+    .push-consent-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 16px;
+      padding: 14px;
+      border: 1px solid #dbe8a6;
+      border-radius: 14px;
+      background: #f7fbdf;
+    }
+    .push-consent-card[hidden] { display: none !important; }
+    .push-consent-card strong { display: block; }
+    .push-consent-card p { margin: 4px 0 0; color: var(--muted); font-size: 12px; font-weight: 750; line-height: 1.4; }
+    .push-consent-card .primary-btn { min-width: 170px; }
+
     .auth-code-input {
       height: 66px;
       text-align: center;
@@ -2990,6 +3036,10 @@
                 <label for="signupCpf">CPF</label>
                 <input id="signupCpf" type="text" autocomplete="off" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required />
               </div>
+              <div>
+                <label for="signupBirthDate">Data de nascimento</label>
+                <input id="signupBirthDate" type="date" autocomplete="bday" required />
+              </div>
               <div class="full">
                 <label for="signupEmail">E-mail</label>
                 <input id="signupEmail" type="email" autocomplete="email" inputmode="email" autocapitalize="none" placeholder="seu@email.com" required />
@@ -2997,6 +3047,17 @@
               <div class="full">
                 <label for="signupPlan">Qual é seu plano atual?</label>
                 <select id="signupPlan"><option value="">Ainda não sei / confirmar com o clube</option></select>
+              </div>
+              <div class="lesson-schedule" id="signupLessonSchedule" hidden>
+                <h3>Dias e horários das suas aulas</h3>
+                <p>Informe os horários atuais para a equipe conferir seu plano.</p>
+                <div class="lesson-slot-list" id="signupLessonSlots"></div>
+              </div>
+              <div class="guardian-fields full" id="signupGuardianFields" hidden>
+                <div class="auth-fields">
+                  <div><label for="signupGuardian">Nome do responsável</label><input id="signupGuardian" autocomplete="name" /></div>
+                  <div><label for="signupGuardianPhone">Telefone do responsável</label><input id="signupGuardianPhone" type="tel" autocomplete="tel" inputmode="tel" maxlength="15" /></div>
+                </div>
               </div>
               <div>
                 <label for="signupPassword">Crie uma senha</label>
@@ -3007,6 +3068,7 @@
                 <input id="signupPasswordConfirm" type="password" autocomplete="new-password" minlength="8" placeholder="Repita a senha" required />
               </div>
             </div>
+            <div class="auth-note">Após confirmar o e-mail, seu cadastro será revisado pela equipe do Ilha Tênis antes da liberação do acesso.</div>
             <button class="primary-btn" type="submit" id="signupSubmit">Criar minha conta</button>
           </form>
         </div>
@@ -3031,7 +3093,19 @@
               <div class="full"><label for="completeName">Nome completo</label><input id="completeName" autocomplete="name" required /></div>
               <div><label for="completePhone">Telefone / WhatsApp</label><input id="completePhone" type="tel" autocomplete="tel" inputmode="tel" maxlength="15" required /></div>
               <div><label for="completeCpf">CPF</label><input id="completeCpf" inputmode="numeric" maxlength="14" required /></div>
+              <div><label for="completeBirthDate">Data de nascimento</label><input id="completeBirthDate" type="date" autocomplete="bday" required /></div>
               <div class="full"><label for="completePlan">Qual é seu plano atual?</label><select id="completePlan"><option value="">Ainda não sei / confirmar com o clube</option></select></div>
+              <div class="lesson-schedule" id="completeLessonSchedule" hidden>
+                <h3>Dias e horários das suas aulas</h3>
+                <p>Informe os horários atuais para a equipe conferir seu plano.</p>
+                <div class="lesson-slot-list" id="completeLessonSlots"></div>
+              </div>
+              <div class="guardian-fields full" id="completeGuardianFields" hidden>
+                <div class="auth-fields">
+                  <div><label for="completeGuardian">Nome do responsável</label><input id="completeGuardian" autocomplete="name" /></div>
+                  <div><label for="completeGuardianPhone">Telefone do responsável</label><input id="completeGuardianPhone" type="tel" autocomplete="tel" inputmode="tel" maxlength="15" /></div>
+                </div>
+              </div>
             </div>
             <div class="auth-plan-recognition" id="authPlanRecognition">O clube confirmará seu plano. Isso evita que benefícios sejam ativados por engano.</div>
             <button class="primary-btn" type="submit" id="completeRegistrationSubmit">Entrar no Ilha Play</button>
@@ -3102,6 +3176,10 @@
           <div class="home-notices">
             <h3 class="home-section-title">Comunicados <span class="notice-count" data-notification-count hidden></span></h3>
             <div class="notice-list" id="homeAnnouncements"></div>
+          </div>
+          <div class="push-consent-card" id="clientPushConsent" hidden>
+            <div><strong>Receba avisos do clube</strong><p>Ative para receber comunicados importantes mesmo com o app fechado.</p></div>
+            <button class="primary-btn" type="button" id="clientEnableNotificationsBtn">Ativar notificações</button>
           </div>
         </div>
       </section>
@@ -3359,6 +3437,7 @@
     const DEMO_SESSION_KEY = 'ilha-client-demo-session';
     const FALLBACK_PROFILE_KEY = 'ilha-client-profile-fallback';
     const PENDING_SIGNUP_KEY = 'ilha-client-pending-signup';
+    const CLIENT_PUSH_VAPID_KEY = 'BJtga8GuviTBc3mzDwBkr0kKw-kV02hVSwu6DjgZgSgAhFuvPZNj88WfTwyV7mXgJJnxKD5ZiJCRW8nv7ndx-RU';
     const PIX_KEY = '54.969.790/0001-47';
     const officialPlanSeed = [
       { code: 'aulas_anual_1x', name: 'Aulas 1x por semana - Anual', type: 'aluno', amount: 230, weekly_lessons: 1, default_due_day: 10, description: 'Ciclo de 12 meses. Pix 5% OFF no pagamento do ciclo.' },
@@ -3512,6 +3591,73 @@
           }));
         }
       } catch (error) {}
+    }
+
+    function clientUrlBase64ToBytes(value) {
+      const padding = '='.repeat((4 - value.length % 4) % 4);
+      const raw = atob((value + padding).replace(/-/g, '+').replace(/_/g, '/'));
+      return Uint8Array.from(Array.from(raw).map(function (char) { return char.charCodeAt(0); }));
+    }
+
+    async function ensureClientServiceWorker() {
+      if (!('serviceWorker' in navigator) || window.location.protocol === 'file:') return null;
+      await navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
+      return navigator.serviceWorker.ready;
+    }
+
+    async function saveClientPushSubscription(subscription) {
+      const json = subscription.toJSON();
+      await rest('app_push_subscriptions?on_conflict=endpoint', {
+        method: 'POST',
+        body: {
+          user_id: currentUser().id,
+          endpoint: json.endpoint,
+          p256dh: json.keys && json.keys.p256dh,
+          auth_key: json.keys && json.keys.auth,
+          user_agent: navigator.userAgent,
+          enabled: true,
+          updated_at: new Date().toISOString()
+        },
+        prefer: 'resolution=merge-duplicates,return=minimal'
+      });
+    }
+
+    async function ensureClientPushSubscription(requestPermission) {
+      if (!session || session.demo || !('Notification' in window) || !('PushManager' in window)) return false;
+      const registration = await ensureClientServiceWorker();
+      if (!registration) return false;
+      let permission = Notification.permission;
+      if (permission === 'default' && requestPermission) permission = await Notification.requestPermission();
+      if (permission !== 'granted') return false;
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: clientUrlBase64ToBytes(CLIENT_PUSH_VAPID_KEY)
+        });
+      }
+      await saveClientPushSubscription(subscription);
+      return true;
+    }
+
+    async function renderClientPushState() {
+      const card = $('clientPushConsent');
+      const button = $('clientEnableNotificationsBtn');
+      if (!card || !button || !session || session.demo || !('Notification' in window) || !('PushManager' in window)) {
+        if (card) card.hidden = true;
+        return;
+      }
+      const registration = await ensureClientServiceWorker().catch(function () { return null; });
+      const subscription = registration ? await registration.pushManager.getSubscription().catch(function () { return null; }) : null;
+      card.hidden = Notification.permission === 'granted' && Boolean(subscription);
+      if (Notification.permission === 'denied') {
+        card.hidden = false;
+        button.disabled = true;
+        button.textContent = 'Bloqueadas no navegador';
+      } else {
+        button.disabled = false;
+        button.textContent = 'Ativar notificações';
+      }
     }
 
     async function runPullRefresh() {
@@ -4039,6 +4185,7 @@
         client_type: 'cliente',
         notes: stored.notes || '',
         cpf: stored.cpf || '',
+        birth_date: stored.birth_date || meta.birth_date || '',
         age: stored.age || '',
         guardian_name: stored.guardian_name || '',
         guardian_phone: stored.guardian_phone || '',
@@ -4049,6 +4196,7 @@
         official_plan_name: stored.official_plan_name || '',
         declared_plan_code: stored.declared_plan_code || meta.declared_plan_code || '',
         declared_plan_name: stored.declared_plan_name || '',
+        declared_lesson_slots: Array.isArray(stored.declared_lesson_slots) ? stored.declared_lesson_slots : (Array.isArray(meta.declared_lesson_slots) ? meta.declared_lesson_slots : []),
         registration_completed_at: stored.registration_completed_at || '',
         email_verified_at: stored.email_verified_at || user.email_confirmed_at || '',
         plan_amount: stored.plan_amount || 0,
@@ -4093,7 +4241,11 @@
             full_name: pendingSignup.name,
             phone: digitsOnly(pendingSignup.phone),
             cpf: digitsOnly(pendingSignup.cpf),
-            declared_plan_code: pendingSignup.planCode || ''
+            birth_date: pendingSignup.birthDate,
+            declared_plan_code: pendingSignup.planCode || '',
+            declared_lesson_slots: pendingSignup.lessonSlots || [],
+            guardian_name: pendingSignup.guardianName || '',
+            guardian_phone: digitsOnly(pendingSignup.guardianPhone)
           }
         } : {}
       };
@@ -4335,6 +4487,72 @@
       setAuthMessage('', false);
     }
 
+    function registrationPlanLessonCount(code) {
+      const match = String(code || '').match(/_(1x|2x)$/);
+      return match ? Number(match[1].charAt(0)) : 0;
+    }
+
+    function birthAge(value) {
+      if (!value) return null;
+      const birth = new Date(value + 'T12:00:00');
+      if (Number.isNaN(birth.getTime()) || birth > new Date()) return null;
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const beforeBirthday = today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate());
+      if (beforeBirthday) age -= 1;
+      return age;
+    }
+
+    function renderLessonSlots(prefix, selected) {
+      const count = registrationPlanLessonCount($(prefix + 'Plan').value);
+      const schedule = $(prefix + 'LessonSchedule');
+      const list = $(prefix + 'LessonSlots');
+      schedule.hidden = count === 0;
+      if (!count) {
+        list.innerHTML = '';
+        return;
+      }
+      const values = Array.isArray(selected) ? selected : [];
+      const days = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+      list.innerHTML = Array.from({ length: count }, function (_, index) {
+        const value = values[index] || {};
+        return '<div class="lesson-slot-row">' +
+          '<label>Dia ' + (index + 1) + '<select data-lesson-day required><option value="">Escolha o dia</option>' + days.map(function (day) {
+            return '<option value="' + day + '"' + (value.day === day ? ' selected' : '') + '>' + day + '</option>';
+          }).join('') + '</select></label>' +
+          '<label>Horário<input data-lesson-time type="time" value="' + escapeHtml(value.time || '') + '" required /></label>' +
+        '</div>';
+      }).join('');
+    }
+
+    function collectLessonSlots(prefix, planCode) {
+      const count = registrationPlanLessonCount(planCode);
+      if (!count) return [];
+      const rows = Array.from($(prefix + 'LessonSlots').querySelectorAll('.lesson-slot-row'));
+      if (rows.length !== count) throw new Error('Informe todos os dias e horários das suas aulas.');
+      const slots = rows.map(function (row) {
+        return { day: row.querySelector('[data-lesson-day]').value, time: row.querySelector('[data-lesson-time]').value };
+      });
+      if (slots.some(function (slot) { return !slot.day || !slot.time; })) throw new Error('Informe todos os dias e horários das suas aulas.');
+      const unique = new Set(slots.map(function (slot) { return slot.day + '|' + slot.time; }));
+      if (unique.size !== slots.length) throw new Error('Os horários das aulas não podem ser repetidos.');
+      return slots;
+    }
+
+    function updateGuardianFields(prefix) {
+      const age = birthAge($(prefix + 'BirthDate').value);
+      const box = $(prefix + 'GuardianFields');
+      const required = age !== null && age < 18;
+      box.hidden = !required;
+      $(prefix + 'Guardian').required = required;
+      $(prefix + 'GuardianPhone').required = required;
+    }
+
+    function updateRegistrationConditionalFields(prefix, selectedSlots) {
+      renderLessonSlots(prefix, selectedSlots);
+      updateGuardianFields(prefix);
+    }
+
     function registrationDetailsFromClient() {
       const user = currentUser();
       const meta = user.user_metadata || {};
@@ -4342,18 +4560,31 @@
         name: client && client.full_name || meta.full_name || '',
         phone: client && client.phone || meta.phone || '',
         cpf: client && client.cpf || meta.cpf || '',
-        planCode: client && client.declared_plan_code || meta.declared_plan_code || ''
+        birthDate: client && client.birth_date || meta.birth_date || '',
+        planCode: client && client.declared_plan_code || meta.declared_plan_code || '',
+        lessonSlots: client && client.declared_lesson_slots || meta.declared_lesson_slots || [],
+        guardianName: client && client.guardian_name || meta.guardian_name || '',
+        guardianPhone: client && client.guardian_phone || meta.guardian_phone || ''
       };
     }
 
     function needsRegistration(value) {
-      return !value || !value.registration_completed_at || !isCompleteName(value.full_name) || digitsOnly(value.phone).length < 10 || !isValidCpf(value.cpf);
+      if (!value || !value.registration_completed_at || !isCompleteName(value.full_name) || digitsOnly(value.phone).length < 10 || !isValidCpf(value.cpf) || !value.birth_date) return true;
+      const expected = registrationPlanLessonCount(value.declared_plan_code);
+      return expected > 0 && (!Array.isArray(value.declared_lesson_slots) || value.declared_lesson_slots.length !== expected);
     }
 
     function validateRegistrationDetails(details) {
       if (!isCompleteName(details.name)) throw new Error('Informe seu nome completo.');
       if (digitsOnly(details.phone).length < 10) throw new Error('Informe um telefone válido com DDD.');
       if (!isValidCpf(details.cpf)) throw new Error('Informe um CPF válido.');
+      const age = birthAge(details.birthDate);
+      if (age === null || age < 3 || age > 110) throw new Error('Informe uma data de nascimento válida.');
+      if (age < 18 && (!isCompleteName(details.guardianName) || digitsOnly(details.guardianPhone).length < 10)) {
+        throw new Error('Informe o nome e o telefone do responsável.');
+      }
+      const expected = registrationPlanLessonCount(details.planCode);
+      if (expected && (!Array.isArray(details.lessonSlots) || details.lessonSlots.length !== expected)) throw new Error('Informe os dias e horários das suas aulas.');
       return details;
     }
 
@@ -4362,7 +4593,11 @@
       $('completeName').value = details.name;
       $('completePhone').value = formatPhone(details.phone);
       $('completeCpf').value = formatCpf(details.cpf);
+      $('completeBirthDate').value = details.birthDate || '';
       $('completePlan').value = details.planCode || '';
+      $('completeGuardian').value = details.guardianName || '';
+      $('completeGuardianPhone').value = formatPhone(details.guardianPhone || '');
+      updateRegistrationConditionalFields('complete', details.lessonSlots);
       if (client && client.official_plan_name) {
         $('authPlanRecognition').textContent = 'Plano reconhecido pelo clube: ' + client.official_plan_name + '.';
       } else {
@@ -4379,7 +4614,11 @@
           p_full_name: details.name,
           p_phone: digitsOnly(details.phone),
           p_cpf: digitsOnly(details.cpf),
-          p_declared_plan_code: details.planCode || null
+          p_declared_plan_code: details.planCode || null,
+          p_birth_date: details.birthDate,
+          p_declared_lesson_slots: details.lessonSlots || [],
+          p_guardian_name: details.guardianName || null,
+          p_guardian_phone: digitsOnly(details.guardianPhone) || null
         },
         prefer: 'return=representation'
       });
@@ -4431,7 +4670,11 @@
           full_name: details.name,
           phone: digitsOnly(details.phone),
           cpf: digitsOnly(details.cpf),
+          birth_date: details.birthDate,
           declared_plan_code: details.planCode || '',
+          declared_lesson_slots: details.lessonSlots || [],
+          guardian_name: details.guardianName || '',
+          guardian_phone: digitsOnly(details.guardianPhone),
           client_type: 'cliente'
         }
       });
@@ -4471,6 +4714,7 @@
       if (!stored) {
         lock('');
         if (readPendingSignup()) showAuthStage('pending');
+        else showAuthTab('signup');
         return;
       }
       try {
@@ -4568,6 +4812,7 @@
       renderPayments();
       renderStore();
       renderClientCourts();
+      renderClientPushState();
     }
 
     function renderIdentity() {
@@ -5194,6 +5439,12 @@
     function init() {
       configurePreviewEnvironment();
       populateRegistrationPlans();
+      const today = new Date().toISOString().slice(0, 10);
+      $('signupBirthDate').max = today;
+      $('completeBirthDate').max = today;
+      updateRegistrationConditionalFields('signup');
+      updateRegistrationConditionalFields('complete');
+      ensureClientServiceWorker().catch(function () {});
       setupPullToRefresh();
       setupSwipeBack();
       $('showLoginBtn').addEventListener('click', function () { showAuthTab('login'); });
@@ -5368,8 +5619,12 @@
             name: $('signupName').value.trim(),
             phone: $('signupPhone').value.trim(),
             cpf: $('signupCpf').value.trim(),
+            birthDate: $('signupBirthDate').value,
             email: $('signupEmail').value.trim().toLowerCase(),
             planCode: $('signupPlan').value,
+            lessonSlots: collectLessonSlots('signup', $('signupPlan').value),
+            guardianName: $('signupGuardian').value.trim(),
+            guardianPhone: $('signupGuardianPhone').value.trim(),
             password: $('signupPassword').value
           });
           if (details.password.length < 8) throw new Error('Sua senha precisa ter pelo menos 8 caracteres.');
@@ -5395,7 +5650,11 @@
             name: $('completeName').value.trim(),
             phone: $('completePhone').value.trim(),
             cpf: $('completeCpf').value.trim(),
-            planCode: $('completePlan').value
+            birthDate: $('completeBirthDate').value,
+            planCode: $('completePlan').value,
+            lessonSlots: collectLessonSlots('complete', $('completePlan').value),
+            guardianName: $('completeGuardian').value.trim(),
+            guardianPhone: $('completeGuardianPhone').value.trim()
           });
           await completeRegistration(details);
           await loadClientData();
@@ -5405,6 +5664,20 @@
         } finally {
           setBusy(false);
         }
+      });
+      ['signup', 'complete'].forEach(function (prefix) {
+        $(prefix + 'Plan').addEventListener('change', function () { updateRegistrationConditionalFields(prefix); });
+        $(prefix + 'BirthDate').addEventListener('change', function () { updateGuardianFields(prefix); });
+        $(prefix + 'GuardianPhone').addEventListener('input', function () { this.value = formatPhone(this.value); });
+      });
+      $('clientEnableNotificationsBtn').addEventListener('click', function () {
+        ensureClientPushSubscription(true).then(function (enabled) {
+          renderClientPushState();
+          toast(enabled ? 'Notificações ativadas.' : 'Não foi possível ativar as notificações.');
+        }).catch(function (error) {
+          renderClientPushState();
+          toast(error.message || 'Não foi possível ativar as notificações.');
+        });
       });
       restore();
     }

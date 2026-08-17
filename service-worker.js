@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v176';
+const CACHE_NAME = 'ilha-play-v177';
 const ASSETS = [
   './',
   './index.html',
@@ -46,9 +46,17 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
+      .then(() => self.clients.claim())
+      .then(() => self.registration.showNotification('O novo Ilha Play chegou', {
+        body: 'O acesso antigo foi encerrado. Faça seu novo cadastro para reservar quadras e usar os serviços do clube.',
+        icon: '/icon.png',
+        badge: '/icon.png',
+        tag: 'ilha-play-novo-cadastro',
+        data: { url: '/clientes/' }
+      }).catch(() => {}))
   );
-  self.clients.claim();
 });
 
 self.addEventListener('message', event => {
@@ -62,15 +70,15 @@ self.addEventListener('push', event => {
   try {
     data = event.data ? event.data.json() : {};
   } catch (error) {
-    data = { title: 'NOVO PEDIDO NO BAR', body: event.data ? event.data.text() : 'Abra o app para conferir.' };
+    data = { title: 'Ilha Play', body: event.data ? event.data.text() : 'Abra o app para conferir.' };
   }
-  const title = data.title || 'NOVO PEDIDO NO BAR';
+  const title = data.title || 'Ilha Play';
   event.waitUntil(self.registration.showNotification(title, {
     body: data.body || 'Abra o app para conferir.',
-    icon: '/icons/ilha-bar-192.png',
-    badge: '/icons/ilha-bar-180.png',
-    tag: data.tag || 'ilha-bar-novo-pedido',
-    data: { url: data.url || '/admbar/?tab=kitchen', orderId: data.orderId || '' },
+    icon: data.icon || '/icon.png',
+    badge: data.badge || '/icon.png',
+    tag: data.tag || 'ilha-play-aviso',
+    data: { url: data.url || '/clientes/', orderId: data.orderId || '' },
     vibrate: [300, 120, 300, 120, 650],
     requireInteraction: true,
     renotify: true,
@@ -80,9 +88,9 @@ self.addEventListener('push', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const targetUrl = new URL(event.notification.data && event.notification.data.url || '/admbar/?tab=kitchen', self.location.origin).href;
+  const targetUrl = new URL(event.notification.data && event.notification.data.url || '/clientes/', self.location.origin).href;
   event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
-    const existing = clients.find(client => client.url.startsWith(self.location.origin + '/admbar'));
+    const existing = clients.find(client => client.url.startsWith(self.location.origin));
     if (existing) {
       existing.navigate(targetUrl);
       return existing.focus();

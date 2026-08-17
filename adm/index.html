@@ -17051,6 +17051,10 @@
                 <input id="clientEditAge" type="number" min="1" max="120" />
               </div>
               <div class="field">
+                <label for="clientEditBirthDate">Data de nascimento</label>
+                <input id="clientEditBirthDate" type="date" />
+              </div>
+              <div class="field">
                 <label for="clientEditGuardian">Responsável</label>
                 <input id="clientEditGuardian" />
               </div>
@@ -17099,6 +17103,10 @@
               <div class="field full">
                 <label>Dias preferidos / aula</label>
                 <div class="weekday-grid" id="clientEditDays"></div>
+              </div>
+              <div class="field full">
+                <label>Horários informados no cadastro</label>
+                <div class="weekday-grid" id="clientDeclaredLessonSlots"></div>
               </div>
               <div class="field full">
                 <label for="clientEditNotes">Observações internas</label>
@@ -23167,6 +23175,7 @@
         bio: row.bio || '',
         cpf: row.cpf || '',
         age: row.age || '',
+        birthDate: row.birth_date || '',
         guardian: row.guardian_name || '',
         guardianPhone: row.guardian_phone || '',
         photo: row.profile_photo || row.avatar_url || '',
@@ -23175,6 +23184,7 @@
         officialPlanName: row.official_plan_name || '',
         declaredPlanCode: row.declared_plan_code || '',
         declaredPlanName: row.declared_plan_name || '',
+        declaredLessonSlots: Array.isArray(row.declared_lesson_slots) ? row.declared_lesson_slots : [],
         registrationCompletedAt: row.registration_completed_at || '',
         emailVerifiedAt: row.email_verified_at || '',
         planAmount: row.plan_amount == null ? '' : Number(row.plan_amount || 0),
@@ -23987,6 +23997,7 @@
       $('clientEditPhone').value = client.phone || '';
       $('clientEditCpf').value = client.cpf || '';
       $('clientEditAge').value = client.age || '';
+      $('clientEditBirthDate').value = client.birthDate || '';
       $('clientEditGuardian').value = client.guardian || '';
       $('clientEditGuardianPhone').value = client.guardianPhone || '';
       $('clientEditType').value = client.type || 'aluno';
@@ -23998,6 +24009,9 @@
       $('clientEditAmount').value = client.planAmount ? String(client.planAmount).replace('.', ',') : '';
       $('clientEditNotes').value = client.notes || '';
       renderWeekdayInputs('clientEditDays', client.preferredDays && client.preferredDays.length ? client.preferredDays : request && request.requestedDays);
+      $('clientDeclaredLessonSlots').innerHTML = client.declaredLessonSlots && client.declaredLessonSlots.length
+        ? client.declaredLessonSlots.map(function (slot) { return '<span class="ops-pill">' + escapeHtml(slot.day || '') + ' · ' + escapeHtml(slot.time || '') + '</span>'; }).join('')
+        : '<span class="muted">Nenhum horário informado.</span>';
       $('clientRequestSummary').innerHTML = request
         ? '<article class="ops-list-card"><div class="ops-list-main"><div><strong>Pedido recebido no app</strong><div class="muted">' + escapeHtml(request.plan) + ' | ' + escapeHtml(request.membershipType || 'tipo não informado') + ' | ' + escapeHtml(formatDays(request.requestedDays) || 'sem dias') + '</div></div><div class="ops-meta">' + statusPill(request.status) + '<span class="ops-pill">' + money(request.amount) + '</span></div></div><div class="ops-meta"><button class="small-btn" type="button" data-plan-request-approve="' + escapeHtml(request.id) + '">Aprovar e vincular</button><button class="small-btn" type="button" data-plan-request-reject="' + escapeHtml(request.id) + '">Recusar</button></div></article>'
         : '<div class="lesson-empty-state">Sem pedido registrado pelo aluno. Defina o plano manualmente.</div>';
@@ -30709,6 +30723,22 @@
       });
     }
 
+    async function sendClientAnnouncementPush(payload) {
+      if (isAdminDemoMode() || !adminSession || !adminSession.access_token) return { sent: 0 };
+      const response = await fetch(supabaseBaseUrl() + '/functions/v1/client-broadcast-push', {
+        method: 'POST',
+        headers: {
+          apikey: LESSONS_SUPABASE_ANON_KEY,
+          Authorization: 'Bearer ' + adminSession.access_token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json().catch(function () { return {}; });
+      if (!response.ok) throw new Error(data.error || 'O comunicado foi salvo, mas o push não pôde ser enviado.');
+      return data;
+    }
+
     async function createAnnouncementAction(event) {
       event.preventDefault();
       try {
@@ -30728,12 +30758,16 @@
         };
         let saved = null;
         if (!isAdminDemoMode()) saved = await supabaseInsert('app_announcements', payload);
+        let pushResult = null;
+        if (payload.target_type === 'todos' && payload.body) {
+          pushResult = await sendClientAnnouncementPush({ title: payload.title, body: payload.body, url: payload.link_url || '/clientes/' }).catch(function () { return null; });
+        }
         opsData.announcements.unshift(saved ? mapAnnouncementRow(saved) : mapAnnouncementRow(Object.assign({ id: localId('announcement') }, payload)));
         $('announcementForm').reset();
         $('announcementImagePreview').classList.remove('show');
         $('announcementImagePreview').innerHTML = '';
         renderAnnouncementsModule();
-        toast('Comunicado publicado.');
+        toast(pushResult && pushResult.sent ? 'Comunicado e notificação enviados.' : 'Comunicado publicado.');
       } catch (error) {
         reportActionError(error);
       }
@@ -31536,6 +31570,7 @@
           phone: $('clientEditPhone').value.trim(),
           cpf: $('clientEditCpf').value.trim(),
           age: $('clientEditAge').value ? Number($('clientEditAge').value) : '',
+          birthDate: $('clientEditBirthDate').value,
           guardian: $('clientEditGuardian').value.trim(),
           guardianPhone: $('clientEditGuardianPhone').value.trim(),
           type: $('clientEditType').value,
@@ -31555,6 +31590,7 @@
             phone: localUpdate.phone,
             cpf: localUpdate.cpf,
             age: localUpdate.age || null,
+            birth_date: localUpdate.birthDate || null,
             guardian_name: localUpdate.guardian,
             guardian_phone: localUpdate.guardianPhone,
             status: localUpdate.status,
