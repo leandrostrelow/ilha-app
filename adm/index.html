@@ -32662,17 +32662,9 @@
       initBarPullToRefresh();
       initBarPwaInstall();
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
-        let reloadingForNewServiceWorker = false;
-        navigator.serviceWorker.addEventListener('controllerchange', function () {
-          if (reloadingForNewServiceWorker) return;
-          reloadingForNewServiceWorker = true;
-          window.location.reload();
-        });
         navigator.serviceWorker.register('/service-worker.js', { scope: '/' }).then(function (registration) {
-          return registration.update().then(function () {
-            if (opsState.barAlertsEnabled) ensureBarPushSubscription(false).catch(function (error) {
-              console.info('A notificação será renovada ao tocar em ativar.', error && error.message);
-            });
+          if (opsState.barAlertsEnabled) ensureBarPushSubscription(false).catch(function (error) {
+            console.info('A notificação será renovada ao tocar em ativar.', error && error.message);
           });
         }).catch(function (error) {
           console.warn('Não foi possível ativar o modo aplicativo.', error);
