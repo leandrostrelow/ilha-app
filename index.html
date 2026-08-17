@@ -3381,14 +3381,14 @@
       .dashboard-finance-icon { width: 42px; height: 42px; border-radius: 0; }
       .dashboard-finance-icon svg { width: 27px; height: 27px; }
       .mobile-bottom-nav {
-        min-height: 76px;
+        min-height: 60px;
         align-items: center;
-        padding: 8px 10px max(8px, env(safe-area-inset-bottom));
-        border-radius: 28px;
+        padding: 5px 8px max(5px, env(safe-area-inset-bottom));
+        border-radius: 22px;
         box-shadow: 0 16px 40px rgba(16, 39, 44, .16);
       }
       .mobile-bottom-nav button,
-      .mobile-bottom-nav a { min-height: 56px; }
+      .mobile-bottom-nav a { min-height: 46px; }
       .mobile-bottom-nav button::before { display: none; }
       .mobile-bottom-nav button.active { color: #123b44; }
       .mobile-bottom-nav button.active > span:not(.notice-count) { color: #123b44; }
@@ -3401,7 +3401,82 @@
         border-radius: 999px;
         background: var(--lime);
       }
-      .mobile-bottom-nav svg { width: 25px; height: 25px; }
+      .mobile-bottom-nav svg { width: 22px; height: 22px; }
+      .mobile-bottom-nav button > span:not(.notice-count) { font-size: 9px; }
+      .mobile-bottom-nav.has-lessons button > span:not(.notice-count) { font-size: 8px; }
+      .client-app { padding-bottom: 88px; }
+    }
+
+    .my-lessons-shell {
+      display: grid;
+      gap: 18px;
+    }
+    .side-nav [hidden],
+    .mobile-bottom-nav [hidden] { display: none !important; }
+    .my-lessons-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .my-lessons-head h2 { margin: 0; }
+    .my-lessons-head p { margin: 4px 0 0; color: var(--muted); }
+    .my-lessons-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .my-lesson-card {
+      display: grid;
+      grid-template-columns: 82px minmax(0, 1fr);
+      gap: 16px;
+      align-items: center;
+      min-height: 112px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--lime);
+      border-radius: 20px;
+      background: #fff;
+      box-shadow: 0 12px 28px rgba(16, 39, 44, .07);
+    }
+    .my-lesson-time {
+      display: grid;
+      place-items: center;
+      min-height: 72px;
+      border-radius: 16px;
+      background: #f2f8fa;
+      color: var(--teal);
+      font-size: 21px;
+      font-weight: 950;
+    }
+    .my-lesson-copy { min-width: 0; }
+    .my-lesson-copy span {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .my-lesson-copy strong { display: block; font-size: 20px; }
+    .my-lesson-copy small { display: block; margin-top: 7px; color: var(--muted); font-weight: 750; }
+    .my-lessons-empty {
+      padding: 28px;
+      border: 1px dashed var(--line);
+      border-radius: 20px;
+      background: #fff;
+      text-align: center;
+    }
+    .my-lessons-empty strong { display: block; margin-bottom: 6px; font-size: 19px; }
+
+    @media (max-width: 720px) {
+      .mobile-bottom-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .mobile-bottom-nav.has-lessons { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .my-lessons-grid { grid-template-columns: 1fr; }
+      .my-lessons-head { align-items: flex-start; flex-direction: column; }
+      .my-lesson-card { grid-template-columns: 72px minmax(0, 1fr); min-height: 98px; padding: 14px; }
+      .my-lesson-time { min-height: 64px; font-size: 19px; }
     }
   </style>
 </head>
@@ -3431,6 +3506,10 @@
     </symbol>
     <symbol id="client-icon-play" viewBox="0 0 24 24">
       <path d="M8 5.5v13l10-6.5Z" />
+    </symbol>
+    <symbol id="client-icon-lessons" viewBox="0 0 24 24">
+      <rect x="4" y="5.5" width="16" height="14" rx="2" />
+      <path d="M8 3.5v4M16 3.5v4M4 9.5h16M8 13h3M8 16h6" />
     </symbol>
     <symbol id="client-icon-bag" viewBox="0 0 24 24">
       <path d="M6 8h12l-1 12H7L6 8Z" />
@@ -3631,7 +3710,9 @@
       <nav class="side-nav">
         <button class="active" type="button" data-view="home"><span class="nav-icon"><svg><use href="#client-icon-home"></use></svg></span><span>Início</span></button>
         <button type="button" data-view="courts"><span class="nav-icon"><svg><use href="#client-icon-play"></use></svg></span><span>Jogar</span></button>
+        <button type="button" data-view="lessons" data-lesson-plan-only hidden><span class="nav-icon"><svg><use href="#client-icon-lessons"></use></svg></span><span>Minhas aulas</span></button>
         <button type="button" data-view="payments"><span class="nav-icon"><svg><use href="#client-icon-card"></use></svg></span><span>Financeiro</span></button>
+        <button type="button" data-view="profile"><span class="nav-icon"><svg><use href="#client-icon-user"></use></svg></span><span>Meu perfil</span></button>
       </nav>
     </aside>
 
@@ -3654,7 +3735,7 @@
 
           <article class="dashboard-plan-card">
             <div class="dashboard-plan-content">
-              <span class="dashboard-kicker">Seu plano</span>
+              <span class="dashboard-kicker">Meu plano</span>
               <h3 id="homePlanName">Plano ainda não vinculado</h3>
               <span class="dashboard-status" id="homePlanStatusLabel">Acesso limitado</span>
               <p id="homePlanMeta">Escolha um plano para liberar as reservas.</p>
@@ -3756,6 +3837,18 @@
         </div>
       </section>
 
+      <section class="view" id="view-lessons">
+        <div class="my-lessons-shell">
+          <header class="my-lessons-head">
+            <div>
+              <h2>Minhas aulas</h2>
+              <p>Seus dias e horários definidos pelo clube.</p>
+            </div>
+          </header>
+          <div class="my-lessons-grid" id="myLessonsList"></div>
+        </div>
+      </section>
+
       <section class="view" id="view-notifications">
         <div class="panel">
           <div class="panel-head">
@@ -3821,10 +3914,12 @@
         </div>
       </section>
     </section>
-    <nav class="mobile-bottom-nav" aria-label="Navegação inferior">
+    <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Navegação inferior">
       <button class="active" type="button" data-view="home" aria-label="Início"><svg><use href="#client-icon-home"></use></svg><span>Início</span></button>
       <button type="button" data-view="courts" aria-label="Jogar"><svg><use href="#client-icon-play"></use></svg><span>Jogar</span></button>
+      <button type="button" data-view="lessons" data-lesson-plan-only hidden aria-label="Minhas aulas"><svg><use href="#client-icon-lessons"></use></svg><span>Minhas aulas</span></button>
       <button type="button" data-view="payments" aria-label="Financeiro"><svg><use href="#client-icon-card"></use></svg><span>Financeiro</span></button>
+      <button type="button" data-view="profile" aria-label="Meu perfil"><svg><use href="#client-icon-user"></use></svg><span>Meu perfil</span></button>
     </nav>
   </main>
 
@@ -3943,8 +4038,8 @@
     const PIX_KEY = '54.969.790/0001-47';
     let deferredClientInstallPrompt = null;
     const officialPlanSeed = [
-      { code: 'aulas_mensal_1x', name: 'Aulas 1x por semana - Mensal', type: 'aluno', amount: 270, weekly_lessons: 1, default_due_day: 10, description: 'Plano mensal de aulas uma vez por semana.' },
-      { code: 'aulas_mensal_2x', name: 'Aulas 2x por semana - Mensal', type: 'aluno', amount: 390, weekly_lessons: 2, default_due_day: 10, description: 'Plano mensal de aulas duas vezes por semana.' },
+      { code: 'aulas_mensal_1x', name: '1x Aula por semana - Mensal', type: 'aluno', amount: 270, weekly_lessons: 1, default_due_day: 10, description: 'Plano mensal de aulas uma vez por semana.' },
+      { code: 'aulas_mensal_2x', name: '2x Aulas por semana - Mensal', type: 'aluno', amount: 390, weekly_lessons: 2, default_due_day: 10, description: 'Plano mensal de aulas duas vezes por semana.' },
       { code: 'jogar_mensal', name: 'Somente jogar - Mensal', type: 'mensalista', amount: 150, weekly_lessons: 0, default_due_day: 10, description: 'Acesso mensal às quadras conforme regras do clube.' },
       { code: 'personalizado', name: 'Plano personalizado', type: 'outro', amount: 0, weekly_lessons: 0, default_due_day: 10, description: 'Valor e frequência definidos individualmente pela equipe do clube.' },
       { code: 'isento', name: 'Plano isento', type: 'outro', amount: 0, weekly_lessons: 0, default_due_day: 10, description: 'Acesso liberado sem cobrança mensal, vinculado somente pela equipe do clube.' }
@@ -3983,6 +4078,7 @@
     let courtAvailability = [];
     let courtScheduleDays = [];
     let myCourtBookings = [];
+    let myLessons = [];
     let selectedCourtDate = '';
     let selectedCourtSlot = null;
     let courtDataLoading = false;
@@ -4991,6 +5087,47 @@
       };
     }
 
+    function hasLessonPlan() {
+      const code = String(client && client.official_plan_code || '').toLowerCase();
+      const name = String(client && client.official_plan_name || '').toLowerCase();
+      return Number(client && client.weekly_lessons || 0) > 0 || code.indexOf('aulas_') === 0 || name.indexOf('aula') >= 0;
+    }
+
+    function updateLessonNavigation() {
+      const enabled = hasLessonPlan();
+      document.querySelectorAll('[data-lesson-plan-only]').forEach(function (element) {
+        element.hidden = !enabled;
+      });
+      if ($('mobileBottomNav')) $('mobileBottomNav').classList.toggle('has-lessons', enabled);
+      return enabled;
+    }
+
+    async function loadMyLessons() {
+      myLessons = [];
+      if (!hasLessonPlan()) return;
+      if (demoMode || (session && session.demo)) {
+        const declared = Array.isArray(client && client.declared_lesson_slots) ? client.declared_lesson_slots : [];
+        myLessons = declared.map(function (item, index) {
+          return typeof item === 'string'
+            ? { id: 'demo-' + index, day: item, time: '', court_name: '', teacher_name: '', level: '' }
+            : Object.assign({ id: 'demo-' + index }, item);
+        });
+        return;
+      }
+      if (!databaseReady || !session || !session.user) return;
+      const students = await rest('students?select=id&app_client_id=eq.' + encodeURIComponent(session.user.id) + '&limit=1', { auth: true }).catch(function () { return []; });
+      if (!students || !students[0]) return;
+      const enrollments = await rest('lesson_enrollments?select=slot_id,type&student_id=eq.' + encodeURIComponent(students[0].id) + '&active=eq.true', { auth: true }).catch(function () { return []; });
+      const slotIds = Array.from(new Set((enrollments || []).map(function (item) { return item.slot_id; }).filter(Boolean)));
+      if (!slotIds.length) return;
+      const slots = await rest('lesson_slots?select=id,day,time,court_name,teacher_name,level&id=in.(' + slotIds.map(encodeURIComponent).join(',') + ')&active=eq.true', { auth: true }).catch(function () { return []; });
+      const enrollmentBySlot = {};
+      (enrollments || []).forEach(function (item) { enrollmentBySlot[item.slot_id] = item; });
+      myLessons = (slots || []).map(function (slot) {
+        return Object.assign({}, slot, { enrollment_type: enrollmentBySlot[slot.id] && enrollmentBySlot[slot.id].type || 'FIXO' });
+      });
+    }
+
     async function loadClientData() {
       if (!session || demoMode || (session && session.demo)) {
         appPlans = officialPlanSeed.map(mapPlanRow);
@@ -4998,6 +5135,7 @@
         storeRequests = readStored(storageKey('ilha-client-store-requests'), []);
         paymentInvoices = readStored(storageKey('ilha-client-payment-invoices'), []);
         announcements = [];
+        await loadMyLessons();
         return;
       }
       if (!databaseReady) return;
@@ -5014,8 +5152,10 @@
         storeRequests = (results[2] || []).map(mapStoreRequestRow);
         announcements = (results[3] || []).map(mapAnnouncementRow);
         paymentInvoices = (results[4] || []).map(mapPaymentInvoiceRow);
+        await loadMyLessons();
       } catch (error) {
         appPlans = officialPlanSeed.map(mapPlanRow);
+        myLessons = [];
       }
     }
 
@@ -5351,7 +5491,9 @@
       $('clientApp').setAttribute('aria-hidden', 'false');
       renderAll();
       const requestedView = new URLSearchParams(window.location.search).get('view');
-      showView(window.location.pathname.replace(/\/$/, '') === '/quadras' || requestedView === 'courts' ? 'courts' : (requestedView === 'payments' ? 'payments' : (requestedView === 'plans' ? 'plans' : 'home')));
+      showView(window.location.pathname.replace(/\/$/, '') === '/quadras' || requestedView === 'courts'
+        ? 'courts'
+        : (['payments', 'plans', 'lessons', 'profile'].includes(requestedView) ? requestedView : 'home'));
     }
 
     function logout() {
@@ -5369,8 +5511,9 @@
     }
 
     function showView(view) {
-      const allowedViews = ['home', 'plans', 'payments', 'courts', 'notifications'];
+      const allowedViews = ['home', 'plans', 'payments', 'courts', 'lessons', 'profile', 'notifications'];
       if (!allowedViews.includes(view)) view = 'home';
+      if (view === 'lessons' && !hasLessonPlan()) view = 'home';
       document.body.classList.toggle('client-home-view', view === 'home');
       const resetViewScroll = function () { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); };
       resetViewScroll();
@@ -5388,6 +5531,8 @@
         plans: 'Planos',
         payments: 'Financeiro',
         courts: 'Jogar',
+        lessons: 'Minhas aulas',
+        profile: 'Meu perfil',
         notifications: 'Notificações'
       };
       $('pageTitle').textContent = labels[view] || 'Ilha Play';
@@ -5409,12 +5554,14 @@
           renderClientCourts();
         });
       }
+      if (view === 'lessons') renderMyLessons();
     }
 
     function renderAll() {
       renderIdentity();
       renderHome();
       renderProfile();
+      renderMyLessons();
       renderAnnouncements();
       renderPlans();
       renderPayments();
@@ -5426,6 +5573,49 @@
     function renderIdentity() {
       const name = client && client.full_name ? client.full_name : (session && session.user && session.user.email) || 'Cliente Ilha';
       $('sideClientName').textContent = name;
+    }
+
+    function lessonDayLabel(value) {
+      const labels = {
+        segunda: 'Segunda-feira',
+        terca: 'Terça-feira',
+        quarta: 'Quarta-feira',
+        quinta: 'Quinta-feira',
+        sexta: 'Sexta-feira',
+        sabado: 'Sábado',
+        domingo: 'Domingo'
+      };
+      return labels[String(value || '').toLowerCase()] || String(value || 'Dia a definir');
+    }
+
+    function lessonDayIndex(value) {
+      return ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'].indexOf(String(value || '').toLowerCase());
+    }
+
+    function renderMyLessons() {
+      const enabled = updateLessonNavigation();
+      const target = $('myLessonsList');
+      if (!target) return;
+      if (!enabled) {
+        target.innerHTML = '<div class="my-lessons-empty"><strong>Área disponível para planos de aula</strong><span>Vincule um plano de aulas para visualizar seus horários.</span></div>';
+        return;
+      }
+      const lessons = myLessons.slice().sort(function (a, b) {
+        const byDay = lessonDayIndex(a.day) - lessonDayIndex(b.day);
+        return byDay || String(a.time || '').localeCompare(String(b.time || ''));
+      });
+      if (!lessons.length) {
+        target.innerHTML = '<div class="my-lessons-empty"><strong>Seus horários ainda serão definidos</strong><span>Assim que a equipe organizar suas aulas, os dias e horários aparecerão aqui.</span></div>';
+        return;
+      }
+      target.innerHTML = lessons.map(function (lesson) {
+        const details = [lesson.court_name, lesson.teacher_name ? 'Professor: ' + lesson.teacher_name : '', lesson.level].filter(Boolean).join(' · ');
+        return '<article class="my-lesson-card">' +
+          '<div class="my-lesson-time">' + escapeHtml(String(lesson.time || '').slice(0, 5) || 'A definir') + '</div>' +
+          '<div class="my-lesson-copy"><span>Aula semanal</span><strong>' + escapeHtml(lessonDayLabel(lesson.day)) + '</strong>' +
+          (details ? '<small>' + escapeHtml(details) + '</small>' : '') + '</div>' +
+        '</article>';
+      }).join('');
     }
 
     function announcementMatchesClient(item) {

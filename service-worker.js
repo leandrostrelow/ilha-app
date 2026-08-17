@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v183-no-reload';
+const CACHE_NAME = 'ilha-play-v184-client-lessons-profile';
 const ASSETS = [
   './',
   './index.html',

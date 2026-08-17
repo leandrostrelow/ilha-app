@@ -2197,10 +2197,10 @@ insert into public.app_plans (code, name, type, amount, weekly_lessons, default_
 values
   ('aulas_anual_1x', 'Aulas 1x por semana - Anual', 'aluno', 230, 1, 10, true, 'Ciclo de 12 meses. Pix 5% OFF no pagamento do ciclo.'),
   ('aulas_semestral_1x', 'Aulas 1x por semana - Semestral', 'aluno', 250, 1, 10, true, 'Ciclo de 6 meses. Pix 5% OFF no pagamento do ciclo.'),
-  ('aulas_mensal_1x', 'Aulas 1x por semana - Mensal', 'aluno', 270, 1, 10, true, 'Plano mensal de aulas uma vez por semana.'),
+  ('aulas_mensal_1x', '1x Aula por semana - Mensal', 'aluno', 270, 1, 10, true, 'Plano mensal de aulas uma vez por semana.'),
   ('aulas_anual_2x', 'Aulas 2x por semana - Anual', 'aluno', 350, 2, 10, true, 'Ciclo de 12 meses. Pix 5% OFF no pagamento do ciclo.'),
   ('aulas_semestral_2x', 'Aulas 2x por semana - Semestral', 'aluno', 370, 2, 10, true, 'Ciclo de 6 meses. Pix 5% OFF no pagamento do ciclo.'),
-  ('aulas_mensal_2x', 'Aulas 2x por semana - Mensal', 'aluno', 390, 2, 10, true, 'Plano mensal de aulas duas vezes por semana.'),
+  ('aulas_mensal_2x', '2x Aulas por semana - Mensal', 'aluno', 390, 2, 10, true, 'Plano mensal de aulas duas vezes por semana.'),
   ('jogar_anual', 'Somente jogar - Anual', 'mensalista', 130, 0, 10, true, 'Acesso mensal às quadras conforme regras do clube. Ciclo de 12 meses. Pix 5% OFF.'),
   ('jogar_semestral', 'Somente jogar - Semestral', 'mensalista', 140, 0, 10, true, 'Acesso mensal às quadras conforme regras do clube. Ciclo de 6 meses. Pix 5% OFF.'),
   ('jogar_mensal', 'Somente jogar - Mensal', 'mensalista', 150, 0, 10, true, 'Acesso mensal às quadras conforme regras do clube.'),
@@ -4399,3 +4399,105 @@ $$;
 
 revoke all on function public.bar_update_own_profile(text, text, text, text, text) from public;
 grant execute on function public.bar_update_own_profile(text, text, text, text, text) to authenticated;
+
+-- Liga o cadastro do cliente aos horários de aula mantidos pela equipe.
+alter table public.students
+  add column if not exists app_client_id uuid references public.app_clients(id) on delete set null;
+
+create unique index if not exists students_app_client_id_idx
+  on public.students(app_client_id);
+
+create or replace function public.sync_app_client_lesson_student()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  target_student_id uuid;
+begin
+  if coalesce(new.weekly_lessons, 0) <= 0
+     and coalesce(new.official_plan_code, '') not like 'aulas_%'
+  then
+    return new;
+  end if;
+
+  select s.id into target_student_id
+  from public.students s
+  where s.app_client_id = new.id
+     or (
+       s.app_client_id is null
+       and (
+         (nullif(trim(s.email), '') is not null and lower(trim(s.email)) = lower(trim(new.email)))
+         or (
+           nullif(regexp_replace(coalesce(s.phone, ''), '\D', '', 'g'), '') is not null
+           and regexp_replace(coalesce(s.phone, ''), '\D', '', 'g') = regexp_replace(coalesce(new.phone, ''), '\D', '', 'g')
+         )
+       )
+     )
+  order by (s.app_client_id = new.id) desc, s.created_at asc
+  limit 1;
+
+  if target_student_id is null then
+    insert into public.students (
+      app_client_id, name, phone, email, status, weekly_lessons,
+      monthly_value, plan_name, financial_status, relationship_status
+    ) values (
+      new.id, new.full_name, new.phone, new.email,
+      case when new.status = 'ATIVO' then 'ATIVO' else 'INATIVO' end,
+      new.weekly_lessons, new.plan_amount, new.official_plan_name, 'OK', 'ATIVO'
+    );
+  else
+    update public.students
+       set app_client_id = new.id,
+           name = new.full_name,
+           phone = new.phone,
+           email = new.email,
+           status = case when new.status = 'ATIVO' then 'ATIVO' else 'INATIVO' end,
+           weekly_lessons = new.weekly_lessons,
+           monthly_value = new.plan_amount,
+           plan_name = new.official_plan_name,
+           updated_at = now()
+     where id = target_student_id;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists sync_app_client_lesson_student on public.app_clients;
+create trigger sync_app_client_lesson_student
+  after update of official_plan_id, official_plan_code, official_plan_name, plan_amount, weekly_lessons, status
+  on public.app_clients
+  for each row execute function public.sync_app_client_lesson_student();
+
+drop policy if exists "clients read own student" on public.students;
+create policy "clients read own student"
+on public.students for select to authenticated
+using (app_client_id = (select auth.uid()));
+
+drop policy if exists "clients read own lesson enrollments" on public.lesson_enrollments;
+create policy "clients read own lesson enrollments"
+on public.lesson_enrollments for select to authenticated
+using (
+  exists (
+    select 1 from public.students s
+    where s.id = lesson_enrollments.student_id
+      and s.app_client_id = (select auth.uid())
+  )
+);
+
+drop policy if exists "clients read own lesson slots" on public.lesson_slots;
+create policy "clients read own lesson slots"
+on public.lesson_slots for select to authenticated
+using (
+  exists (
+    select 1
+    from public.lesson_enrollments e
+    join public.students s on s.id = e.student_id
+    where e.slot_id = lesson_slots.id
+      and e.active = true
+      and s.app_client_id = (select auth.uid())
+  )
+);
+
+grant select on public.students, public.lesson_enrollments, public.lesson_slots to authenticated;
