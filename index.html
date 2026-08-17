@@ -2162,6 +2162,35 @@
       cursor: pointer;
     }
 
+    .court-plan-gate {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px 18px;
+      border: 1px solid #d9e7ad;
+      border-radius: 16px;
+      background: #f7fce9;
+      color: var(--dark);
+    }
+
+    .court-plan-gate[hidden] { display: none; }
+
+    .court-plan-gate strong,
+    .court-plan-gate span { display: block; }
+
+    .court-plan-gate span {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .court-plan-gate button {
+      min-height: 42px;
+      flex: 0 0 auto;
+    }
+
     .client-court-days {
       display: flex;
       gap: 8px;
@@ -2234,6 +2263,7 @@
     .client-court-slot.free { border-left-color: var(--lime); background: #ffffff; }
     .client-court-slot.mine { border-left-color: var(--teal); background: #edfafa; }
     .client-court-slot.busy { color: var(--muted); background: #f3f6f7; }
+    .client-court-slot.plan-locked { border-left-color: #cbd9de; color: var(--muted); background: #f7f9fa; }
 
     .client-court-time {
       color: var(--teal);
@@ -2863,7 +2893,7 @@
         left: max(12px, env(safe-area-inset-left));
         z-index: 75;
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         align-items: end;
         min-height: 66px;
         padding: 8px;
@@ -2879,7 +2909,10 @@
         border-radius: 16px;
       }
       .mobile-bottom-nav button > span:not(.notice-count) {
-        display: none;
+        display: block;
+        position: relative;
+        z-index: 1;
+        font-size: 10px;
       }
       .mobile-bottom-nav button::before {
         content: "";
@@ -2947,6 +2980,13 @@
         transform: translateY(24px);
       }
       .court-page { gap: 11px; }
+      .court-plan-gate {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 10px;
+        padding: 14px;
+      }
+      .court-plan-gate button { width: 100%; }
       .court-hero {
         align-items: flex-start;
         padding: 16px;
@@ -3066,7 +3106,7 @@
         <div class="auth-welcome-copy">
           <span>Seu clube em um só lugar</span>
           <h1>O novo Ilha Play chegou</h1>
-          <p>Cadastre-se para acessar as informações do clube, reservar quadras, acompanhar planos, torneios e comunicados.</p>
+          <p>Cadastre-se para acompanhar seus planos, sua vida financeira e as reservas de quadra.</p>
         </div>
       </aside>
 
@@ -3135,7 +3175,7 @@
                 <input id="signupPasswordConfirm" type="password" autocomplete="new-password" minlength="8" placeholder="Repita a senha" required />
               </div>
             </div>
-            <div class="auth-note">Seu cadastro será revisado pela equipe do Ilha Tênis antes da liberação do acesso.</div>
+            <div class="auth-note">Sua conta será liberada na hora. As reservas de quadra ficam disponíveis quando um plano ou pacote ativo for vinculado.</div>
             <button class="primary-btn" type="submit" id="signupSubmit">Criar minha conta</button>
           </form>
         </div>
@@ -3144,8 +3184,8 @@
           <div class="auth-pending-card">
             <div class="auth-pending-icon" aria-hidden="true">✓</div>
             <h2>Cadastro recebido</h2>
-            <p>Agora é só aguardar a equipe do Ilha Tênis liberar seu acesso.</p>
-            <p class="auth-pending-tip">Ative as notificações e adicione o Ilha Play à tela inicial. Assim que seu cadastro for aprovado, você receberá um aviso no celular.</p>
+            <p>Fale com a equipe do Ilha Tênis para conferir sua conta.</p>
+            <p class="auth-pending-tip">O bloqueio da conta é separado do plano. Fale com a equipe do clube para regularizar o acesso.</p>
             <p id="pendingEmailLabel"></p>
             <div class="auth-pending-actions">
               <button class="primary-btn" type="button" id="pendingEnableNotificationsBtn">Ativar notificações</button>
@@ -3158,7 +3198,7 @@
         <div class="auth-stage" id="authCompleteStage" hidden>
           <div class="auth-panel-head">
             <h2>Complete seu cadastro</h2>
-            <p>Precisamos destes dados para identificar seu plano atual no clube.</p>
+            <p>Precisamos destes dados para concluir sua conta no Ilha Play.</p>
           </div>
           <form id="completeRegistrationForm">
             <div class="auth-fields">
@@ -3179,7 +3219,7 @@
                 </div>
               </div>
             </div>
-            <div class="auth-plan-recognition" id="authPlanRecognition">O clube confirmará seu plano. Isso evita que benefícios sejam ativados por engano.</div>
+            <div class="auth-plan-recognition" id="authPlanRecognition">Você já poderá entrar no aplicativo. A reserva de quadras será liberada quando um plano ativo for vinculado.</div>
             <button class="primary-btn" type="submit" id="completeRegistrationSubmit">Entrar no Ilha Play</button>
           </form>
         </div>
@@ -3207,24 +3247,19 @@
         </div>
       </div>
       <nav class="side-nav">
-        <button class="active" type="button" data-view="home"><span class="nav-icon"><svg><use href="#client-icon-home"></use></svg></span><span>Início</span></button>
-        <button type="button" data-view="profile"><span class="nav-icon"><svg><use href="#client-icon-user"></use></svg></span><span>Meus dados</span></button>
-        <button type="button" data-view="plans"><span class="nav-icon"><svg><use href="#client-icon-plan"></use></svg></span><span>Planos</span></button>
-        <button type="button" data-view="payments"><span class="nav-icon"><svg><use href="#client-icon-card"></use></svg></span><span>Pagamento</span></button>
-        <button type="button" data-view="courts"><span class="nav-icon"><svg><use href="#client-icon-play"></use></svg></span><span>Reservar quadra</span></button>
-        <button type="button" data-view="store"><span class="nav-icon"><svg><use href="#client-icon-bag"></use></svg></span><span>Loja</span></button>
-        <a href="https://duplafalta.com.br/ranking/finals-masculino.html" data-embed-url="https://duplafalta.com.br/ranking/finals-masculino.html" data-embed-title="Ranking" data-embed-subtitle="Circuito CINCATE"><span class="nav-icon"><svg><use href="#client-icon-ranking"></use></svg></span><span>Ranking</span></a>
-        <button type="button" data-open-tournaments><span class="nav-icon"><svg><use href="#client-icon-trophy"></use></svg></span><span>Torneios</span></button>
+        <button class="active" type="button" data-view="plans"><span class="nav-icon"><svg><use href="#client-icon-plan"></use></svg></span><span>Planos</span></button>
+        <button type="button" data-view="payments"><span class="nav-icon"><svg><use href="#client-icon-card"></use></svg></span><span>Financeiro</span></button>
+        <button type="button" data-view="courts"><span class="nav-icon"><svg><use href="#client-icon-play"></use></svg></span><span>Jogar</span></button>
       </nav>
     </aside>
 
     <section class="content">
       <header class="topbar">
         <div>
-          <h1 id="pageTitle">Início</h1>
+          <h1 id="pageTitle">Planos</h1>
         </div>
         <div class="top-actions">
-          <button class="ghost-btn back-btn" type="button" data-back-home>Voltar</button>
+          <button class="ghost-btn" type="button" data-logout>Sair</button>
         </div>
       </header>
 
@@ -3371,6 +3406,7 @@
             </div>
             <button class="court-rules-btn" type="button" id="clientCourtRulesBtn">Regras</button>
           </div>
+          <div class="court-plan-gate" id="clientCourtPlanGate" hidden></div>
           <div class="court-my-booking" id="clientCourtMyBooking"></div>
           <div class="client-court-days" id="clientCourtDays" aria-label="Dias disponíveis"></div>
           <div class="client-court-board" id="clientCourtBoard"></div>
@@ -3390,11 +3426,9 @@
       </section>
     </section>
     <nav class="mobile-bottom-nav" aria-label="Navegação inferior">
-      <button class="active" type="button" data-view="home" aria-label="Início"><svg><use href="#client-icon-home"></use></svg><span>Início</span></button>
-      <button type="button" data-view="payments" aria-label="Pagamento"><svg><use href="#client-icon-card"></use></svg><span>Pagamento</span></button>
-      <button class="bottom-play" type="button" data-view="courts" aria-label="Reservar quadra"><svg><use href="#client-icon-play"></use></svg><span>Jogar</span></button>
-      <button class="notification-nav" type="button" data-view="notifications" aria-label="Notificações"><span class="notice-count" data-notification-count hidden></span><svg><use href="#client-icon-bell"></use></svg><span class="nav-label">Notificação</span></button>
-      <button type="button" data-view="profile" aria-label="Perfil"><svg><use href="#client-icon-user"></use></svg><span>Perfil</span></button>
+      <button class="active" type="button" data-view="plans" aria-label="Planos"><svg><use href="#client-icon-plan"></use></svg><span>Planos</span></button>
+      <button type="button" data-view="payments" aria-label="Financeiro"><svg><use href="#client-icon-card"></use></svg><span>Financeiro</span></button>
+      <button type="button" data-view="courts" aria-label="Jogar"><svg><use href="#client-icon-play"></use></svg><span>Jogar</span></button>
     </nav>
   </main>
 
@@ -3970,6 +4004,23 @@
       });
     }
 
+    function activeClientPlan() {
+      if (!client) return null;
+      const planId = String(client.official_plan_id || '');
+      const planCode = String(client.official_plan_code || '');
+      if (!planId && !planCode) return null;
+      return appPlans.find(function (plan) {
+        return plan.active !== false && (
+          (planId && String(plan.id || '') === planId) ||
+          (planCode && String(plan.code || '') === planCode)
+        );
+      }) || null;
+    }
+
+    function canClientBookCourt() {
+      return Boolean(activeClientPlan());
+    }
+
     function myClientCourtBooking(dateValue) {
       return myCourtBookings.find(function (item) {
         return String(item.booking_date) === String(dateValue) && String(item.status).toUpperCase() !== 'CANCELADO';
@@ -4012,7 +4063,13 @@
       const dayList = $('clientCourtDays');
       const board = $('clientCourtBoard');
       const ownBox = $('clientCourtMyBooking');
+      const planGate = $('clientCourtPlanGate');
       if (!dayList || !board || !ownBox) return;
+      const canBook = canClientBookCourt();
+      if (planGate) {
+        planGate.hidden = canBook;
+        planGate.innerHTML = canBook ? '' : '<div><strong>Plano necessário para reservar</strong><span>Você pode consultar os horários. Para confirmar uma reserva, contrate um plano ou aguarde a equipe vincular seu pacote.</span></div><button class="primary-btn" type="button" data-court-open-plans>Ver planos</button>';
+      }
       const dates = clientCourtDates();
       if (!dates.length) {
         dayList.innerHTML = '';
@@ -4045,12 +4102,20 @@
             const mine = Boolean(booking.is_mine);
             return '<button class="client-court-slot ' + (mine ? 'mine' : 'busy') + '" type="button" disabled><span class="client-court-time">' + time + '</span><span><strong>' + (mine ? 'Sua reserva' : 'Ocupado') + '</strong><small>' + (mine ? 'Horário confirmado' : 'Escolha outro horário') + '</small></span><span class="client-court-badge">' + (mine ? 'Reservado' : 'Ocupado') + '</span></button>';
           }
+          if (!canBook) {
+            return '<button class="client-court-slot plan-locked" type="button" disabled><span class="client-court-time">' + time + '</span><span><strong>Livre</strong><small>Vincule um plano para reservar</small></span><span class="client-court-badge">Plano</span></button>';
+          }
           return '<button class="client-court-slot free" type="button" data-open-client-court="' + escapeHtml([selectedCourtDate, court, time].join('|')) + '"><span class="client-court-time">' + time + '</span><span><strong>Livre</strong><small>Toque para reservar</small></span><span class="client-court-badge">Livre</span></button>';
         }).join('') + '</section>';
       }).join('');
     }
 
     function openClientCourtBooking(slotKey) {
+      if (!canClientBookCourt()) {
+        toast('Vincule um plano ou pacote ativo para reservar.');
+        showView('plans');
+        return;
+      }
       const parts = String(slotKey || '').split('|');
       if (parts.length !== 3) return;
       selectedCourtSlot = { date: parts[0], court: parts[1], time: parts[2] };
@@ -4072,6 +4137,12 @@
     async function saveClientCourtBooking(event) {
       event.preventDefault();
       if (!selectedCourtSlot) return;
+      if (!canClientBookCourt()) {
+        closeClientCourtBooking();
+        showView('plans');
+        toast('Vincule um plano ou pacote ativo para reservar.');
+        return;
+      }
       const submit = $('clientCourtBookingSubmit');
       submit.disabled = true;
       try {
@@ -4310,7 +4381,7 @@
         full_name: fullName || stored.full_name || meta.full_name || user.email || 'Cliente Ilha',
         email: user.email || stored.email || '',
         phone: phone || stored.phone || meta.phone || '',
-        status: 'PENDENTE',
+        status: 'ATIVO',
         client_type: 'cliente',
         notes: stored.notes || '',
         cpf: stored.cpf || '',
@@ -4601,8 +4672,8 @@
       setAuthMessage('', false);
       if (stage === 'pending') {
         const email = pendingSignup && pendingSignup.email || currentUser().email || '';
-        $('authPendingStage').querySelector('h2').textContent = 'Cadastro recebido';
-        $('authPendingStage').querySelector('p').textContent = 'Agora é só aguardar a equipe do Ilha Tênis liberar seu acesso.';
+        $('authPendingStage').querySelector('h2').textContent = 'Acesso temporariamente bloqueado';
+        $('authPendingStage').querySelector('p').textContent = 'Fale com a equipe do Ilha Tênis para conferir sua conta.';
         $('pendingEmailLabel').innerHTML = email ? 'Cadastro: <strong>' + escapeHtml(email) + '</strong>' : '';
         syncPendingInstallButton();
       }
@@ -4732,7 +4803,7 @@
       if (client && client.official_plan_name) {
         $('authPlanRecognition').textContent = 'Plano reconhecido pelo clube: ' + client.official_plan_name + '.';
       } else {
-        $('authPlanRecognition').textContent = 'Informe o plano que você possui. O clube fará a confirmação antes de liberar os benefícios.';
+        $('authPlanRecognition').textContent = 'Sua conta será liberada agora. As reservas ficam disponíveis quando um plano ativo for vinculado.';
       }
       lock('');
       showAuthStage('complete');
@@ -4771,14 +4842,10 @@
         openRegistrationCompletion();
         return false;
       }
-      const status = String(client && client.status || 'PENDENTE').toUpperCase();
-      if (status !== 'ATIVO') {
+      const status = String(client && client.status || 'ATIVO').toUpperCase();
+      if (status === 'BLOQUEADO') {
         lock('');
         showAuthStage('pending');
-        if (status === 'BLOQUEADO') {
-          $('authPendingStage').querySelector('h2').textContent = 'Acesso temporariamente bloqueado';
-          $('authPendingStage').querySelector('p').textContent = 'Fale com a equipe do Ilha Tênis para conferir seu cadastro.';
-        }
         return false;
       }
       await loadClientData();
@@ -4883,11 +4950,10 @@
       document.body.classList.remove('client-locked');
       document.body.classList.remove('client-checking');
       document.body.classList.add('client-unlocked');
-      document.body.classList.add('client-home-view');
       $('clientApp').setAttribute('aria-hidden', 'false');
       renderAll();
       const requestedView = new URLSearchParams(window.location.search).get('view');
-      showView(window.location.pathname.replace(/\/$/, '') === '/quadras' || requestedView === 'courts' ? 'courts' : 'home');
+      showView(window.location.pathname.replace(/\/$/, '') === '/quadras' || requestedView === 'courts' ? 'courts' : (requestedView === 'payments' ? 'payments' : 'plans'));
     }
 
     function logout() {
@@ -4905,7 +4971,9 @@
     }
 
     function showView(view) {
-      document.body.classList.toggle('client-home-view', view === 'home');
+      const allowedViews = ['plans', 'payments', 'courts'];
+      if (!allowedViews.includes(view)) view = 'plans';
+      document.body.classList.remove('client-home-view');
       document.querySelectorAll('.view').forEach(function (el) {
         el.classList.toggle('active', el.id === 'view-' + view);
       });
@@ -4913,13 +4981,9 @@
         btn.classList.toggle('active', btn.dataset.view === view);
       });
       const labels = {
-        home: 'Início',
-        notifications: 'Notificações',
-        profile: 'Meus dados',
         plans: 'Planos',
-        payments: 'Pagamento',
-        courts: 'Reservar quadra',
-        store: 'Ilha Store'
+        payments: 'Financeiro',
+        courts: 'Jogar'
       };
       $('pageTitle').textContent = labels[view] || 'Ilha Play';
       if (view === 'notifications') {
@@ -4931,7 +4995,11 @@
         });
       }
       if (view === 'courts') {
-        loadClientCourtData(false);
+        refresh(true).then(function () {
+          return loadClientCourtData(false);
+        }).catch(function () {
+          renderClientCourts();
+        });
       }
     }
 
@@ -5631,6 +5699,9 @@
         const button = event.target.closest('[data-open-client-court]');
         if (button) openClientCourtBooking(button.dataset.openClientCourt);
       });
+      $('clientCourtPlanGate').addEventListener('click', function (event) {
+        if (event.target.closest('[data-court-open-plans]')) showView('plans');
+      });
       $('clientCourtMyBooking').addEventListener('click', function (event) {
         const button = event.target.closest('[data-cancel-client-court]');
         if (button) cancelClientCourtBooking(button.dataset.cancelClientCourt);
@@ -5777,7 +5848,7 @@
           if (enabled) {
             button.textContent = 'Notificações ativadas';
             button.disabled = true;
-            toast('Pronto. Você receberá um aviso quando seu cadastro for aprovado.');
+            toast('Pronto. Você receberá os avisos do Ilha Play no celular.');
           } else {
             button.textContent = 'Ativar notificações';
             toast('Libere as notificações nas configurações do navegador.');

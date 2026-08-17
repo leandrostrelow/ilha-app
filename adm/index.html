@@ -17078,7 +17078,6 @@
                 <label for="clientEditStatus">Status</label>
                 <select id="clientEditStatus">
                   <option value="ATIVO">Ativo</option>
-                  <option value="PENDENTE">Pendente</option>
                   <option value="BLOQUEADO">Bloqueado</option>
                 </select>
               </div>
@@ -24026,50 +24025,19 @@
         const key = client.id || client.email || client.name;
         const phone = String(client.phone || client.guardianPhone || '').replace(/\D/g, '');
         const contactButton = phone ? '<a class="small-btn" href="https://wa.me/' + phone + '" target="_blank" rel="noopener">Contato</a>' : '';
-        const approvalButton = String(client.status || '').toUpperCase() === 'PENDENTE'
-          ? '<button class="small-btn" type="button" data-client-approve="' + escapeHtml(key) + '">Aprovar acesso</button>'
-          : '';
         return '<article class="ops-list-card client-card">' +
           '<div class="client-card-name">' + clientAvatar(client) + '<strong>' + escapeHtml(client.name) + '</strong></div>' +
           '<div class="client-compact-field"><span>Plano</span><strong>' + escapeHtml(client.officialPlanName || client.declaredPlanName || summary.planName) + (client.officialPlanName ? '' : client.declaredPlanName ? ' · a confirmar' : '') + '</strong></div>' +
           '<div class="client-compact-field"><span>Valor</span><strong>' + money(summary.amount || 0) + '</strong></div>' +
           '<div class="client-compact-field"><span>Vencimento</span><strong>' + (summary.dueDay ? 'Dia ' + escapeHtml(summary.dueDay) : 'A definir') + '</strong></div>' +
           '<div class="client-card-actions">' +
-            statusPill(client.status || 'PENDENTE') +
+            statusPill(client.status || 'ATIVO') +
             contactButton +
-            approvalButton +
             '<button class="small-btn" type="button" data-client-open="' + escapeHtml(key) + '">Abrir</button>' +
           '</div>' +
           '</article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum cliente cadastrado ainda.</div>';
 
-    }
-
-    async function approveClientAccess(key) {
-      try {
-        requireAdminSession();
-        const client = findClientByKey(key);
-        if (!client || !client.id) throw new Error('Cliente não encontrado.');
-        const result = await supabaseRest('rpc/approve_app_client', {
-          method: 'POST',
-          body: { p_client_id: client.id },
-          prefer: 'return=representation'
-        });
-        const saved = Array.isArray(result) ? result[0] : result;
-        if (saved) Object.assign(client, mapClientRow(saved));
-        const pushResult = await sendClientAnnouncementPush({
-          user_id: client.id,
-          title: 'Seu acesso ao Ilha Play foi aprovado',
-          body: 'Seu cadastro foi aprovado pela equipe do Ilha Tênis. Você já pode entrar no aplicativo.',
-          url: '/',
-          tag: 'ilha-play-cadastro-aprovado'
-        }).catch(function () { return { sent: 0 }; });
-        renderClientsModule();
-        renderHomeDashboard();
-        toast('Acesso de ' + (client.name || 'cliente') + ' aprovado.' + (pushResult.sent ? ' Aviso enviado.' : ''));
-      } catch (error) {
-        reportActionError(error);
-      }
     }
 
     function renderStudentsModule() {
@@ -32783,11 +32751,6 @@
         loadOpsData(true).then(renderClientsModule).catch(reportActionError);
       });
       $('clientsModule').addEventListener('click', function (event) {
-        const approveBtn = event.target.closest('[data-client-approve]');
-        if (approveBtn) {
-          approveClientAccess(approveBtn.dataset.clientApprove);
-          return;
-        }
         const openBtn = event.target.closest('[data-client-open]');
         if (openBtn) {
           openClientModal(openBtn.dataset.clientOpen);
