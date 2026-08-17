@@ -3513,17 +3513,10 @@
     const PIX_KEY = '54.969.790/0001-47';
     let deferredClientInstallPrompt = null;
     const officialPlanSeed = [
-      { code: 'aulas_anual_1x', name: 'Aulas 1x por semana - Anual', type: 'aluno', amount: 230, weekly_lessons: 1, default_due_day: 10, description: 'Ciclo de 12 meses. Pix 5% OFF no pagamento do ciclo.' },
-      { code: 'aulas_semestral_1x', name: 'Aulas 1x por semana - Semestral', type: 'aluno', amount: 250, weekly_lessons: 1, default_due_day: 10, description: 'Ciclo de 6 meses. Pix 5% OFF no pagamento do ciclo.' },
       { code: 'aulas_mensal_1x', name: 'Aulas 1x por semana - Mensal', type: 'aluno', amount: 270, weekly_lessons: 1, default_due_day: 10, description: 'Plano mensal de aulas uma vez por semana.' },
-      { code: 'aulas_anual_2x', name: 'Aulas 2x por semana - Anual', type: 'aluno', amount: 350, weekly_lessons: 2, default_due_day: 10, description: 'Ciclo de 12 meses. Pix 5% OFF no pagamento do ciclo.' },
-      { code: 'aulas_semestral_2x', name: 'Aulas 2x por semana - Semestral', type: 'aluno', amount: 370, weekly_lessons: 2, default_due_day: 10, description: 'Ciclo de 6 meses. Pix 5% OFF no pagamento do ciclo.' },
       { code: 'aulas_mensal_2x', name: 'Aulas 2x por semana - Mensal', type: 'aluno', amount: 390, weekly_lessons: 2, default_due_day: 10, description: 'Plano mensal de aulas duas vezes por semana.' },
-      { code: 'jogar_anual', name: 'Somente jogar - Anual', type: 'mensalista', amount: 130, weekly_lessons: 0, default_due_day: 10, description: 'Acesso mensal às quadras conforme regras do clube. Ciclo de 12 meses. Pix 5% OFF.' },
-      { code: 'jogar_semestral', name: 'Somente jogar - Semestral', type: 'mensalista', amount: 140, weekly_lessons: 0, default_due_day: 10, description: 'Acesso mensal às quadras conforme regras do clube. Ciclo de 6 meses. Pix 5% OFF.' },
       { code: 'jogar_mensal', name: 'Somente jogar - Mensal', type: 'mensalista', amount: 150, weekly_lessons: 0, default_due_day: 10, description: 'Acesso mensal às quadras conforme regras do clube.' },
-      { code: 'aula_avulsa', name: 'Aula avulsa', type: 'avulso', amount: 80, weekly_lessons: 0, default_due_day: 10, description: 'Valor por aula avulsa.' },
-      { code: 'familia', name: 'Plano família', type: 'outro', amount: 0, weekly_lessons: 0, default_due_day: 10, description: 'Cálculo com a equipe conforme quantidade de pessoas da mesma família.' }
+      { code: 'personalizado', name: 'Plano personalizado', type: 'outro', amount: 0, weekly_lessons: 0, default_due_day: 10, description: 'Valor e frequência definidos individualmente pela equipe do clube.' }
     ];
     const storeProducts = [
       { code: 'camisa_preta', name: 'Camisa preta Ilha', image: '../camisapreta.png', amount: 0, description: 'Uniforme oficial do clube.' },
@@ -3543,8 +3536,7 @@
     const planTabs = [
       { key: 'aluno', label: 'Aulas' },
       { key: 'mensalista', label: 'Somente jogar' },
-      { key: 'avulso', label: 'Aula avulsa' },
-      { key: 'outro', label: 'Família' }
+      { key: 'outro', label: 'Personalizado' }
     ];
 
     let session = null;
@@ -4573,7 +4565,8 @@
       const registrationPlans = [
         { code: 'aulas_mensal_1x', name: 'Aula 1x na semana' },
         { code: 'aulas_mensal_2x', name: 'Aula 2x na semana' },
-        { code: 'jogar_mensal', name: 'Somente jogar' }
+        { code: 'jogar_mensal', name: 'Somente jogar' },
+        { code: 'personalizado', name: 'Personalizado / combinar com o clube' }
       ];
       return '<option value="">Ainda não sei / confirmar com o clube</option>' + registrationPlans.map(function (plan) {
         return '<option value="' + escapeHtml(plan.code) + '">' + escapeHtml(plan.name) + '</option>';
@@ -5141,15 +5134,13 @@
     function groupTitleForPlans(type, weeklyLessons) {
       if (type === 'aluno') return weeklyLessons === 2 ? 'Aulas 2x por semana' : 'Aulas 1x por semana';
       if (type === 'mensalista') return 'Somente jogar';
-      if (type === 'avulso') return 'Aula avulsa';
-      return 'Plano família';
+      return 'Plano personalizado';
     }
 
     function groupSubtitleForPlans(type, weeklyLessons) {
       if (type === 'aluno') return weeklyLessons + ' aula' + (weeklyLessons > 1 ? 's' : '') + ' por semana';
       if (type === 'mensalista') return 'Uso das quadras conforme regras do clube';
-      if (type === 'avulso') return 'Pagamento por aula';
-      return 'Valores combinados com a equipe';
+      return 'Valor, frequência e condições definidos pela equipe';
     }
 
     function renderPlanCatalog() {
