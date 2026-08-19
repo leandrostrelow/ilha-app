@@ -32003,32 +32003,24 @@
           description: $('planDescription').value.trim()
         };
         let savedPlan = null;
-        let savedLocally = false;
         if (!isAdminDemoMode()) {
           const payload = {
-            code: localPlan.code,
-            name: localPlan.name,
-            type: localPlan.type,
-            amount: localPlan.amount,
-            weekly_lessons: localPlan.weeklyLessons,
-            default_due_day: localPlan.dueDay || null,
-            active: localPlan.active,
-            description: localPlan.description
+            p_id: $('planEditId').value && String($('planEditId').value).startsWith('plan_') === false
+              ? $('planEditId').value
+              : null,
+            p_code: localPlan.code,
+            p_name: localPlan.name,
+            p_type: localPlan.type,
+            p_amount: localPlan.amount,
+            p_weekly_lessons: localPlan.weeklyLessons,
+            p_default_due_day: localPlan.dueDay || null,
+            p_active: localPlan.active,
+            p_description: localPlan.description
           };
-          try {
-            if ($('planEditId').value && String($('planEditId').value).startsWith('plan_') === false) {
-              const saved = await supabaseRest('app_plans?id=eq.' + encodeURIComponent($('planEditId').value), {
-                method: 'PATCH',
-                body: payload,
-                prefer: 'return=representation'
-              });
-              savedPlan = Array.isArray(saved) ? saved[0] : saved;
-            } else {
-              savedPlan = await supabaseInsert('app_plans', payload);
-            }
-          } catch (error) {
-            savedLocally = true;
-          }
+          savedPlan = await supabaseRest('rpc/admin_save_app_plan', {
+            method: 'POST',
+            body: payload
+          });
         }
         const finalPlan = savedPlan ? mapPlanRow(savedPlan) : localPlan;
         const index = opsData.plans.findIndex(function (plan) {
@@ -32061,7 +32053,7 @@
         renderPlansModule();
         renderClientsModule();
         renderHomeDashboard();
-        toast(savedLocally ? 'Plano salvo nesta tela. Aplique o SQL para gravar no Supabase.' : 'Plano salvo.');
+        toast(isAdminDemoMode() ? 'Plano atualizado na demonstração.' : 'Plano salvo e atualizado para os alunos.');
       } catch (error) {
         reportActionError(error);
       }

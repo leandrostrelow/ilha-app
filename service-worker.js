@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v192-plan-sync-and-centered-rules';
+const CACHE_NAME = 'ilha-play-v193-reliable-plan-sync';
 const ASSETS = [
   './',
   './index.html',
