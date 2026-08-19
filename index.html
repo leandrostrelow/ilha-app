@@ -2254,8 +2254,13 @@
 
     .client-court-column h3 {
       margin: 0 0 3px;
-      color: var(--dark);
-      font-size: 18px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: var(--dark);
+      color: #ffffff;
+      font-size: 17px;
+      font-weight: 950;
+      text-align: center;
     }
 
     .client-court-slot {
@@ -4638,7 +4643,8 @@
           }
           if (booking) {
             const mine = Boolean(booking.is_mine);
-            return '<button class="client-court-slot ' + (mine ? 'mine' : 'busy') + '" type="button" disabled><span class="client-court-time">' + time + '</span><span><strong>' + (mine ? 'Sua reserva' : 'Ocupado') + '</strong><small>' + (mine ? 'Horário confirmado' : 'Escolha outro horário') + '</small></span><span class="client-court-badge">' + (mine ? 'Reservado' : 'Ocupado') + '</span></button>';
+            const reservedBy = String(booking.client_name || '').trim() || (mine ? String(client && client.full_name || '').trim() : '') || 'Reservado';
+            return '<button class="client-court-slot ' + (mine ? 'mine' : 'busy') + '" type="button" disabled><span class="client-court-time">' + time + '</span><span><strong>' + escapeHtml(reservedBy) + '</strong><small>Horário reservado</small></span><span class="client-court-badge">' + (mine ? 'Sua' : 'Ocupado') + '</span></button>';
           }
           if (!canBook) {
             return '<button class="client-court-slot plan-locked" type="button" disabled><span class="client-court-time">' + time + '</span><span><strong>Livre</strong><small>Vincule um plano para reservar</small></span><span class="client-court-badge">Plano</span></button>';
