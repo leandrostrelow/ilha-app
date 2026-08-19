@@ -3032,12 +3032,17 @@
       .client-court-slot small { font-size: 10px; }
       .client-court-badge { padding: 4px 7px; font-size: 8px; }
       .court-my-booking { align-items: flex-start; padding: 12px; }
-      .court-booking-modal,
-      .court-rules-modal { align-items: end; padding: 0; }
+      .court-booking-modal { align-items: end; padding: 0; }
+      .court-rules-modal { align-items: center; padding: 16px; }
       .court-dialog {
         width: 100%;
         max-height: calc(100dvh - 24px);
         border-radius: 22px 22px 0 0;
+      }
+      .court-rules-modal .court-dialog {
+        width: min(540px, 100%);
+        max-height: calc(100dvh - 32px);
+        border-radius: 22px;
       }
       .court-dialog-head,
       .court-dialog-body { padding: 16px; }
@@ -3986,7 +3991,6 @@
           <li>A agenda abre para sábado e domingo, além dos dias extras liberados pelo clube.</li>
           <li>Cada aluno pode reservar somente um horário por dia.</li>
           <li>Informe o nome de quem vai jogar com você.</li>
-          <li>A Quadra 1 fica bloqueada às 17h nos fins de semana.</li>
           <li>Se não puder comparecer, cancele a reserva para liberar o horário.</li>
         </ul>
       </div>
@@ -4507,7 +4511,7 @@
     }
 
     function isClientCourtFixedBlock(dateValue, court, time) {
-      return isClientCourtWeekend(dateValue) && court === 'Quadra 1' && time === '17:00';
+      return false;
     }
 
     function clientCourtAvailabilityAt(dateValue, court, time) {
@@ -4521,15 +4525,31 @@
     function activeClientPlan() {
       if (!client) return null;
       if (isPlanCancellationEffective()) return null;
+      const plan = linkedClientPlan();
+      return plan && plan.active !== false ? plan : null;
+    }
+
+    function linkedClientPlan() {
+      if (!client) return null;
       const planId = String(client.official_plan_id || '');
       const planCode = String(client.official_plan_code || '');
       if (!planId && !planCode) return null;
       return appPlans.find(function (plan) {
-        return plan.active !== false && (
+        return (
           (planId && String(plan.id || '') === planId) ||
           (planCode && String(plan.code || '') === planCode)
         );
       }) || null;
+    }
+
+    function syncLinkedClientPlan() {
+      const plan = linkedClientPlan();
+      if (!client || !plan) return;
+      client.official_plan_id = plan.id || client.official_plan_id || null;
+      client.official_plan_code = plan.code || client.official_plan_code || '';
+      client.official_plan_name = plan.name || client.official_plan_name || '';
+      client.plan_amount = Number(plan.amount || 0);
+      client.weekly_lessons = Number(plan.weekly_lessons || 0);
     }
 
     function isPlanCancellationEffective() {
@@ -5204,6 +5224,8 @@
           rest('app_payment_invoices?select=*&client_id=eq.' + encodeURIComponent(session.user.id) + '&order=invoice_month.desc', { auth: true }).catch(function () { return []; })
         ]);
         appPlans = results[0] && results[0].length ? results[0].map(mapPlanRow) : officialPlanSeed.map(mapPlanRow);
+        syncLinkedClientPlan();
+        populateRegistrationPlans();
         planRequests = (results[1] || []).map(mapPlanRequestRow);
         storeRequests = (results[2] || []).map(mapStoreRequestRow);
         announcements = (results[3] || []).map(mapAnnouncementRow);
@@ -5211,6 +5233,8 @@
         await loadMyLessons();
       } catch (error) {
         appPlans = officialPlanSeed.map(mapPlanRow);
+        syncLinkedClientPlan();
+        populateRegistrationPlans();
         myLessons = [];
       }
     }
@@ -5227,12 +5251,16 @@
     }
 
     function planOptions() {
-      const registrationPlans = [
-        { code: 'aulas_mensal_1x', name: 'Aula 1x na semana' },
-        { code: 'aulas_mensal_2x', name: 'Aula 2x na semana' },
-        { code: 'jogar_mensal', name: 'Somente jogar' },
-        { code: 'personalizado', name: 'Personalizado / combinar com o clube' }
-      ];
+      const registrationPlanCodes = ['aulas_mensal_1x', 'aulas_mensal_2x', 'jogar_mensal', 'personalizado'];
+      const fallbackNames = {
+        aulas_mensal_1x: 'Aula 1x na semana',
+        aulas_mensal_2x: 'Aula 2x na semana',
+        jogar_mensal: 'Somente jogar',
+        personalizado: 'Personalizado / combinar com o clube'
+      };
+      const registrationPlans = registrationPlanCodes.map(function (code) {
+        return appPlans.find(function (plan) { return String(plan.code) === code; }) || { code: code, name: fallbackNames[code] };
+      });
       return '<option value="">Ainda não sei / confirmar com o clube</option>' + registrationPlans.map(function (plan) {
         return '<option value="' + escapeHtml(plan.code) + '">' + escapeHtml(plan.name) + '</option>';
       }).join('');

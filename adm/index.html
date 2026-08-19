@@ -18201,7 +18201,7 @@
               <button class="ghost-btn" type="button" id="courtResetWeekendBtn">Cancelar reservas do fim de semana</button>
             </div>
             <div class="field full">
-              <div class="empty">Cada aluno pode reservar um horário por dia. A Quadra 1 fica bloqueada às 17h nos fins de semana.</div>
+              <div class="empty">Cada aluno pode reservar um horário por dia.</div>
             </div>
           </div>
         </div>
@@ -25410,7 +25410,7 @@
     }
 
     function isFixedCourtBlock(dateValue, court, time) {
-      return isWeekendDate(dateValue) && court === 'Quadra 1' && time === '17:00';
+      return false;
     }
 
     function findCourtBooking(dateValue, court, time) {
@@ -32037,9 +32037,30 @@
         });
         if (index >= 0) opsData.plans.splice(index, 1, finalPlan);
         else opsData.plans.unshift(finalPlan);
+        opsData.clients.forEach(function (client) {
+          const linked = String(client.officialPlanId || '') === String(finalPlan.id || '') ||
+            String(client.officialPlanCode || '') === String(finalPlan.code || '');
+          if (!linked) return;
+          client.officialPlanId = finalPlan.id || client.officialPlanId || '';
+          client.officialPlanCode = finalPlan.code || client.officialPlanCode || '';
+          client.officialPlanName = finalPlan.name;
+          client.planAmount = Number(finalPlan.amount || 0);
+          client.weeklyLessons = Number(finalPlan.weeklyLessons || 0);
+        });
+        lessonState.students.forEach(function (student) {
+          const linkedClient = opsData.clients.find(function (client) {
+            return String(client.id || '') === String(student.appClientId || '');
+          });
+          if (!linkedClient || String(linkedClient.officialPlanCode || '') !== String(finalPlan.code || '')) return;
+          student.plan_name = finalPlan.name;
+          student.monthly_value = Number(finalPlan.amount || 0);
+          student.weekly_lessons = Number(finalPlan.weeklyLessons || 0);
+        });
         resetPlanForm();
         opsState.planTab = 'list';
         renderPlansModule();
+        renderClientsModule();
+        renderHomeDashboard();
         toast(savedLocally ? 'Plano salvo nesta tela. Aplique o SQL para gravar no Supabase.' : 'Plano salvo.');
       } catch (error) {
         reportActionError(error);
