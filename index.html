@@ -4063,9 +4063,9 @@
     const PIX_KEY = '54.969.790/0001-47';
     let deferredClientInstallPrompt = null;
     const officialPlanSeed = [
-      { code: 'aulas_mensal_1x', name: '1x Aula por semana - Mensal', type: 'aluno', amount: 270, weekly_lessons: 1, default_due_day: 10, description: 'Plano mensal de aulas uma vez por semana.' },
-      { code: 'aulas_mensal_2x', name: '2x Aulas por semana - Mensal', type: 'aluno', amount: 390, weekly_lessons: 2, default_due_day: 10, description: 'Plano mensal de aulas duas vezes por semana.' },
-      { code: 'jogar_mensal', name: 'Somente jogar - Mensal', type: 'mensalista', amount: 150, weekly_lessons: 0, default_due_day: 10, description: 'Acesso mensal às quadras conforme regras do clube.' },
+      { code: 'aulas_mensal_1x', name: '1x Aula por semana', type: 'aluno', amount: 270, weekly_lessons: 1, default_due_day: 10, description: 'Plano mensal de aulas uma vez por semana.' },
+      { code: 'aulas_mensal_2x', name: '2x Aulas por semana', type: 'aluno', amount: 390, weekly_lessons: 2, default_due_day: 10, description: 'Plano mensal de aulas duas vezes por semana.' },
+      { code: 'jogar_mensal', name: 'Somente jogar', type: 'mensalista', amount: 150, weekly_lessons: 0, default_due_day: 10, description: 'Acesso mensal às quadras conforme regras do clube.' },
       { code: 'personalizado', name: 'Plano personalizado', type: 'outro', amount: 0, weekly_lessons: 0, default_due_day: 10, description: 'Valor e frequência definidos individualmente pela equipe do clube.' },
       { code: 'isento', name: 'Plano isento', type: 'outro', amount: 0, weekly_lessons: 0, default_due_day: 10, description: 'Acesso liberado sem cobrança mensal, vinculado somente pela equipe do clube.' }
     ];
@@ -4542,6 +4542,11 @@
       }) || null;
     }
 
+    function currentClientPlanName() {
+      const plan = linkedClientPlan();
+      return plan && plan.name || client && client.official_plan_name || '';
+    }
+
     function syncLinkedClientPlan() {
       const plan = linkedClientPlan();
       if (!client || !plan) return;
@@ -4747,7 +4752,7 @@
 
     function whatsappPlanChangeUrl() {
       const name = client && client.full_name ? client.full_name : 'Aluno Ilha';
-      const planName = client && client.official_plan_name ? client.official_plan_name : 'sem plano definido';
+      const planName = currentClientPlanName() || 'sem plano definido';
       const message = 'Olá, sou ' + name + '. Quero conversar sobre alterar meu plano atual: ' + planName + '.';
       return 'https://wa.me/5527992963984?text=' + encodeURIComponent(message);
     }
@@ -5165,7 +5170,7 @@
 
     function hasLessonPlan() {
       const code = String(client && client.official_plan_code || '').toLowerCase();
-      const name = String(client && client.official_plan_name || '').toLowerCase();
+      const name = String(currentClientPlanName()).toLowerCase();
       return Number(client && client.weekly_lessons || 0) > 0 || code.indexOf('aulas_') === 0 || name.indexOf('aula') >= 0;
     }
 
@@ -5422,8 +5427,9 @@
       $('completeGuardian').value = details.guardianName || '';
       $('completeGuardianPhone').value = formatPhone(details.guardianPhone || '');
       updateRegistrationConditionalFields('complete', details.lessonSlots);
-      if (client && client.official_plan_name) {
-        $('authPlanRecognition').textContent = 'Plano reconhecido pelo clube: ' + client.official_plan_name + '.';
+      const planName = currentClientPlanName();
+      if (planName) {
+        $('authPlanRecognition').textContent = 'Plano reconhecido pelo clube: ' + planName + '.';
       } else {
         $('authPlanRecognition').textContent = 'Sua conta será liberada agora. As reservas ficam disponíveis quando um plano ativo for vinculado.';
       }
@@ -5709,7 +5715,7 @@
       if (target === 'plano') return String(item.target_plan_code || '') === String(client && client.official_plan_code || '');
       return String(target) === String(client && client.client_type || '') ||
         String(target) === String(client && client.official_plan_code || '') ||
-        String(target) === String(client && client.official_plan_name || '').toLowerCase();
+        String(target) === String(currentClientPlanName()).toLowerCase();
     }
 
     function announcementKey(item) {
@@ -5766,7 +5772,7 @@
 
     function renderHome() {
       $('homeWelcomeName').textContent = 'Bem-vindo';
-      const officialPlan = client && client.official_plan_name || '';
+      const officialPlan = currentClientPlanName();
       const declaredPlan = client && client.declared_plan_name || '';
       const exempt = isExemptClientPlan();
       const amount = Number(client && client.plan_amount || 0);
@@ -5806,7 +5812,7 @@
 
     function isExemptClientPlan() {
       const code = String(client && client.official_plan_code || '').toLowerCase();
-      const name = String(client && client.official_plan_name || '').toLowerCase();
+      const name = String(currentClientPlanName()).toLowerCase();
       return code === 'isento' || name.indexOf('isento') >= 0;
     }
 
@@ -5870,7 +5876,7 @@
       })[0];
       if (open && open.due_date) {
         target.textContent = 'Próximo vencimento · ' + formatShortDate(open.due_date);
-      } else if (client && client.official_plan_name) {
+      } else if (currentClientPlanName()) {
         target.textContent = 'Tudo em dia';
       } else {
         target.textContent = 'Plano ainda não vinculado';
@@ -5889,8 +5895,9 @@
       $('profileNotes').value = client && client.notes || '';
       $('profileAvatar').innerHTML = avatarMarkup(profilePhoto(), name);
       $('profileSideName').textContent = name || 'Aluno Ilha';
-      const displayedPlan = client && client.official_plan_name
-        ? client.official_plan_name
+      const currentPlanName = currentClientPlanName();
+      const displayedPlan = currentPlanName
+        ? currentPlanName
         : client && client.declared_plan_name
           ? client.declared_plan_name + ' · a confirmar'
           : 'A definir';
@@ -5902,7 +5909,7 @@
     }
 
     function renderPlans() {
-      const planName = client && client.official_plan_name || '';
+      const planName = currentClientPlanName();
       const declaredPlanName = client && client.declared_plan_name || '';
       const amount = Number(client && client.plan_amount || 0);
       const dueDay = client && client.due_day || '';
@@ -5976,7 +5983,7 @@
     }
 
     function planPeriod(plan) {
-      const text = String((plan && plan.name) || (plan && plan.code) || '').toLowerCase();
+      const text = String([plan && plan.name, plan && plan.code].filter(Boolean).join(' ')).toLowerCase();
       if (text.indexOf('anual') >= 0) return 'Anual';
       if (text.indexOf('semestral') >= 0) return 'Semestral';
       if (text.indexOf('mensal') >= 0) return 'Mensal';
@@ -6100,7 +6107,7 @@
     function buildMonthlyInvoices() {
       if (isExemptClientPlan()) return [];
       const amount = Number(client && client.plan_amount || 0);
-      const planName = client && client.official_plan_name || 'Plano a definir';
+      const planName = currentClientPlanName() || 'Plano a definir';
       const dueDay = client && client.due_day || '';
       const map = {};
       paymentInvoices.forEach(function (invoice) {
@@ -6313,7 +6320,7 @@
     }
 
     async function requestClientPlanCancellation() {
-      if (!client || !client.official_plan_name || hasPlanCancellationRequest()) return;
+      if (!client || !currentClientPlanName() || hasPlanCancellationRequest()) return;
       const cancelAt = nextPlanRenewalDate();
       const confirmed = confirm('Seu plano continuará ativo até ' + formatShortDate(cancelAt) + '. Ao contratar novamente, será cobrada uma taxa de matrícula de R$ 250,00. Deseja confirmar o cancelamento?');
       if (!confirmed) return;
