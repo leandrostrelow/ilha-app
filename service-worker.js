@@ -1,9 +1,10 @@
-const CACHE_NAME = 'ilha-play-v199-exempt-plan-fix';
+const CACHE_NAME = 'ilha-play-v200-separate-pwas-court-days';
 const ASSETS = [
   './',
   './index.html',
   './adm/',
   './adm/index.html',
+  './adm-manifest.json',
   './menu/',
   './menu/index.html',
   './assets/branding/ilha-bar-logo-dark.png',

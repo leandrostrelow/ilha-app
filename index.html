@@ -2235,6 +2235,12 @@
       box-shadow: inset 4px 0 0 var(--lime);
     }
 
+    .client-court-day.is-blocked {
+      border-color: #fecaca;
+      background: #fff1f2;
+      color: #b42318;
+    }
+
     .client-court-board {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3871,6 +3877,7 @@
               </div>
             </form>
             <div class="profile-exit">
+              <button class="ghost-btn" type="button" id="clientInstallBtn">Adicionar Ilha Play à tela inicial</button>
               <button class="ghost-btn" type="button" data-logout>Sair da conta</button>
             </div>
           </section>
@@ -4270,10 +4277,14 @@
     }
 
     function syncPendingInstallButton() {
-      const button = $('pendingInstallBtn');
-      if (!button) return;
-      button.hidden = clientAppIsInstalled();
-      button.textContent = deferredClientInstallPrompt ? 'Adicionar à tela inicial' : (clientUsesIos() ? 'Como adicionar à tela inicial' : 'Adicionar à tela inicial');
+      ['pendingInstallBtn', 'clientInstallBtn'].forEach(function (id) {
+        const button = $(id);
+        if (!button) return;
+        button.hidden = clientAppIsInstalled();
+        button.textContent = id === 'clientInstallBtn'
+          ? (clientUsesIos() && !deferredClientInstallPrompt ? 'Como adicionar Ilha Play à tela inicial' : 'Adicionar Ilha Play à tela inicial')
+          : (deferredClientInstallPrompt ? 'Adicionar à tela inicial' : (clientUsesIos() ? 'Como adicionar à tela inicial' : 'Adicionar à tela inicial'));
+      });
     }
 
     async function installClientApp() {
@@ -4538,7 +4549,7 @@
     function clientCourtDates() {
       const today = localDateString(new Date());
       const dates = nextClientCourtWeekend()
-        .concat(courtScheduleDays.filter(function (item) { return item.enabled !== false; }).map(function (item) { return item.schedule_date; }))
+        .concat(courtScheduleDays.map(function (item) { return item.schedule_date; }))
         .concat(myCourtBookings.map(function (item) { return item.booking_date; }))
         .filter(function (value) { return value && value >= today; });
       return Array.from(new Set(dates)).sort().slice(0, 12);
@@ -4558,6 +4569,22 @@
       });
       const configured = normalizeClientCourtTimes(schedule && schedule.slot_times);
       return configured.length ? configured : clientCourtDefaultTimes;
+    }
+
+    function clientCourtScheduleForDate(dateValue) {
+      return courtScheduleDays.find(function (item) {
+        return String(item.schedule_date) === String(dateValue);
+      }) || null;
+    }
+
+    function clientCourtDayIsEnabled(dateValue) {
+      const schedule = clientCourtScheduleForDate(dateValue);
+      return !schedule || schedule.enabled !== false;
+    }
+
+    function clientCourtDayBlockReason(dateValue) {
+      const schedule = clientCourtScheduleForDate(dateValue);
+      return String(schedule && schedule.notes || '').trim() || 'Evento do clube';
     }
 
     function isClientCourtWeekend(dateValue) {
@@ -4744,7 +4771,7 @@
       }
       if (!dates.includes(selectedCourtDate)) selectedCourtDate = dates[0];
       dayList.innerHTML = dates.map(function (dateValue) {
-        return '<button class="client-court-day' + (dateValue === selectedCourtDate ? ' active' : '') + '" type="button" data-client-court-date="' + escapeHtml(dateValue) + '">' + escapeHtml(clientCourtDayLabel(dateValue)) + '</button>';
+        return '<button class="client-court-day' + (dateValue === selectedCourtDate ? ' active' : '') + (clientCourtDayIsEnabled(dateValue) ? '' : ' is-blocked') + '" type="button" data-client-court-date="' + escapeHtml(dateValue) + '">' + escapeHtml(clientCourtDayLabel(dateValue)) + '</button>';
       }).join('');
 
       const own = myClientCourtBooking(selectedCourtDate);
@@ -4757,10 +4784,15 @@
       }
 
       const selectedTimes = clientCourtTimesForDate(selectedCourtDate);
+      const dayEnabled = clientCourtDayIsEnabled(selectedCourtDate);
+      const dayBlockReason = clientCourtDayBlockReason(selectedCourtDate);
       board.innerHTML = clientCourtNames.map(function (court) {
         return '<section class="client-court-column"><h3>' + escapeHtml(court) + '</h3>' + selectedTimes.map(function (time) {
           const fixed = isClientCourtFixedBlock(selectedCourtDate, court, time);
           const booking = clientCourtAvailabilityAt(selectedCourtDate, court, time);
+          if (!dayEnabled) {
+            return '<button class="client-court-slot busy" type="button" disabled><span class="client-court-time">' + time + '</span><span><strong>Dia bloqueado</strong><small>' + escapeHtml(dayBlockReason) + '</small></span><span class="client-court-badge">Bloqueado</span></button>';
+          }
           if (fixed && !booking) {
             return '<button class="client-court-slot busy" type="button" disabled><span class="client-court-time">' + time + '</span><span><strong>Bloqueado</strong><small>Horário fixo do clube</small></span><span class="client-court-badge">Bloqueado</span></button>';
           }
@@ -6829,6 +6861,7 @@
         });
       });
       $('pendingInstallBtn').addEventListener('click', installClientApp);
+      $('clientInstallBtn').addEventListener('click', installClientApp);
       $('completeRegistrationForm').addEventListener('submit', async function (event) {
         event.preventDefault();
         setBusy(true);

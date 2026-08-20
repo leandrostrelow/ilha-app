@@ -4,15 +4,32 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0b3138" />
-  <meta name="application-name" content="Ilha Bar" />
+  <meta id="adminApplicationName" name="application-name" content="Adm Ilha" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="Ilha Bar" />
-  <link rel="manifest" href="/admbar-manifest.json" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/icons/ilha-bar-180.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="/icons/ilha-bar-192.png" />
+  <meta id="adminAppleTitle" name="apple-mobile-web-app-title" content="Adm Ilha" />
+  <link id="adminAppManifest" rel="manifest" href="/adm-manifest.json" />
+  <link id="adminAppleIcon" rel="apple-touch-icon" sizes="180x180" href="/icon.png" />
+  <link id="adminFavicon" rel="icon" type="image/png" sizes="192x192" href="/icon.png" />
   <title>Gestão Clube Ilha</title>
+  <script>
+    (function () {
+      const bar = /^\/admbar(?:\/|$)/.test(window.location.pathname) || new URLSearchParams(window.location.search).get('surface') === 'bar';
+      const name = bar ? 'Adm Bar' : 'Adm Ilha';
+      const manifest = document.getElementById('adminAppManifest');
+      const applicationName = document.getElementById('adminApplicationName');
+      const appleTitle = document.getElementById('adminAppleTitle');
+      const appleIcon = document.getElementById('adminAppleIcon');
+      const favicon = document.getElementById('adminFavicon');
+      if (manifest) manifest.href = bar ? '/admbar-manifest.json' : '/adm-manifest.json';
+      if (applicationName) applicationName.content = name;
+      if (appleTitle) appleTitle.content = name;
+      if (appleIcon) appleIcon.href = bar ? '/icons/ilha-bar-180.png' : '/icon.png';
+      if (favicon) favicon.href = bar ? '/icons/ilha-bar-192.png' : '/icon.png';
+      document.title = bar ? 'Adm Bar' : 'Adm Ilha';
+    })();
+  </script>
   <style>
     :root {
       --bg: #eef3f5;
@@ -1511,6 +1528,25 @@
       box-shadow: inset 4px 0 0 var(--lime);
     }
 
+    .court-day-btn.is-blocked {
+      border-color: #fecaca;
+      background: #fff1f2;
+      color: #b42318;
+    }
+
+    .court-day-btn.is-blocked::after {
+      content: 'Dia bloqueado';
+      display: block;
+      margin-top: 2px;
+      font-size: 9px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .court-day-btn.is-blocked.active {
+      box-shadow: inset 4px 0 0 #ef4444;
+    }
+
     .court-day-board {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1601,6 +1637,18 @@
     }
 
     .court-rule-actions > button { flex: 1 1 220px; }
+
+    .court-day-config-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .court-time-config.is-disabled {
+      opacity: .45;
+      pointer-events: none;
+    }
 
     .announcement-upload-preview {
       display: none;
@@ -17987,7 +18035,7 @@
         </div>
       </div>
       <button class="adm-login-demo preview-only" type="button" id="adminDemoBtn">Entrar em modo demonstração</button>
-      <button class="bar-install-app-login" type="button" id="adminInstallBtn" hidden>Instalar Ilha Bar</button>
+      <button class="bar-install-app-login" type="button" id="adminInstallBtn" hidden>Instalar Adm Ilha</button>
       <div class="adm-login-note" id="adminSessionInfo">O primeiro e-mail cadastrado vira admin. Depois ele libera professores e secretaria.</div>
       <div class="adm-login-error" id="adminLoginError" aria-live="polite"></div>
     </form>
@@ -18023,6 +18071,7 @@
         <button class="admin-nav-btn" type="button" data-admin-nav="club-database"><span class="admin-nav-icon"><svg><use href="#admin-icon-database"></use></svg></span><span>Planos</span></button>
       </nav>
       <div class="admin-sidebar-footer">
+        <button type="button" id="sidebarInstallBtn" hidden>Instalar Adm Ilha</button>
         <button type="button" id="sidebarLogoutBtn">Sair</button>
       </div>
     </aside>
@@ -18602,15 +18651,27 @@
               <input id="courtExtraDate" type="date" />
             </div>
             <div class="field">
+              <label for="courtDayStatus">Disponibilidade do dia</label>
+              <select id="courtDayStatus">
+                <option value="ABERTO">Aberto para reservas</option>
+                <option value="BLOQUEADO">Bloquear o dia inteiro</option>
+              </select>
+            </div>
+            <div class="field full">
+              <label for="courtDayNotes">Motivo ou observação</label>
+              <input id="courtDayNotes" placeholder="Ex.: Evento do clube" />
+              <p class="court-day-config-note">O bloqueio aparece imediatamente para todos os alunos.</p>
+            </div>
+            <div class="field court-time-config">
               <label for="courtNewTime">Adicionar horário</label>
               <div class="court-time-add"><input id="courtNewTime" type="time" value="14:00" /><button class="ghost-btn" type="button" id="courtAddTimeBtn">Adicionar</button></div>
             </div>
-            <div class="field full">
+            <div class="field full court-time-config">
               <label>Horários disponíveis</label>
               <div class="court-time-choices" id="courtTimeChoices"></div>
             </div>
             <div class="field full court-rule-actions">
-              <button class="primary-btn" type="button" id="courtAddDayBtn">Salvar dia e horários</button>
+              <button class="primary-btn" type="button" id="courtAddDayBtn">Salvar configuração do dia</button>
               <button class="ghost-btn" type="button" id="courtClearDayBtn">Zerar reservas deste dia</button>
               <button class="ghost-btn" type="button" id="courtRefreshDatesBtn">Atualizar próximo fim de semana</button>
             </div>
@@ -18651,7 +18712,9 @@
               </div>
               <div class="field">
                 <label for="courtSlotOpponent">Adversário</label>
-                <input id="courtSlotOpponent" placeholder="Obrigatório para jogo" />
+                <input id="courtSlotOpponent" list="courtSlotOpponentList" placeholder="Selecione ou informe o nome" />
+                <datalist id="courtSlotOpponentList"></datalist>
+                <span class="muted">Nome sem cadastro continua liberado, mas pode gerar cobrança extra.</span>
               </div>
               <div class="field">
                 <label for="courtSlotNotes">Observações</label>
@@ -26461,10 +26524,24 @@
     }
 
     function courtAgendaDates() {
-      const dates = nextWeekendDates().concat((opsData.courtScheduleDays || []).filter(function (item) {
-        return item.enabled !== false;
-      }).map(function (item) { return item.date; }));
+      const dates = nextWeekendDates().concat((opsData.courtScheduleDays || []).map(function (item) { return item.date; }));
       return Array.from(new Set(dates)).sort();
+    }
+
+    function courtScheduleForDate(dateValue) {
+      return (opsData.courtScheduleDays || []).find(function (item) {
+        return String(item.date) === String(dateValue);
+      }) || null;
+    }
+
+    function courtDayIsEnabled(dateValue) {
+      const schedule = courtScheduleForDate(dateValue);
+      return !schedule || schedule.enabled !== false;
+    }
+
+    function courtDayBlockReason(dateValue) {
+      const schedule = courtScheduleForDate(dateValue);
+      return String(schedule && schedule.notes || '').trim() || 'Evento do clube';
     }
 
     function normalizeCourtTimes(values) {
@@ -26476,9 +26553,7 @@
     }
 
     function courtTimesForDate(dateValue) {
-      const schedule = (opsData.courtScheduleDays || []).find(function (item) {
-        return String(item.date) === String(dateValue);
-      });
+      const schedule = courtScheduleForDate(dateValue);
       const configured = normalizeCourtTimes(schedule && schedule.times);
       return configured.length ? configured : courtDefaultTimes.slice();
     }
@@ -26588,7 +26663,7 @@
       if (!dates.includes(opsState.courtDate)) opsState.courtDate = dates[0];
       const selectedDate = opsState.courtDate;
       $('courtDayTabs').innerHTML = dates.map(function (dateValue) {
-        return '<button class="court-day-btn' + (dateValue === selectedDate ? ' active' : '') + '" type="button" data-court-date="' + escapeHtml(dateValue) + '">' + escapeHtml(courtDayLabel(dateValue)) + '</button>';
+        return '<button class="court-day-btn' + (dateValue === selectedDate ? ' active' : '') + (courtDayIsEnabled(dateValue) ? '' : ' is-blocked') + '" type="button" data-court-date="' + escapeHtml(dateValue) + '">' + escapeHtml(courtDayLabel(dateValue)) + '</button>';
       }).join('');
       const selectedRows = opsData.courtBookings.filter(function (item) {
         return String(item.date) === String(selectedDate) && item.status !== 'CANCELADO';
@@ -26596,18 +26671,23 @@
       const occupied = selectedRows.filter(function (item) { return item.status !== 'BLOQUEADO'; });
       const manualBlocked = selectedRows.filter(function (item) { return item.status === 'BLOQUEADO'; });
       const selectedTimes = courtTimesForDate(selectedDate);
+      const dayEnabled = courtDayIsEnabled(selectedDate);
+      const dayReason = courtDayBlockReason(selectedDate);
       const fixedBlocks = courtNames.reduce(function (sum, court) {
         return sum + selectedTimes.filter(function (time) { return isFixedCourtBlock(selectedDate, court, time); }).length;
       }, 0);
       const totalSlots = courtNames.length * selectedTimes.length;
       $('courtDayMetric').textContent = selectedRows.length;
       $('courtBusyMetric').textContent = occupied.length;
-      $('courtBlockedMetric').textContent = manualBlocked.length + fixedBlocks;
-      $('courtFreeMetric').textContent = Math.max(0, totalSlots - occupied.length - manualBlocked.length - fixedBlocks);
+      $('courtBlockedMetric').textContent = dayEnabled ? manualBlocked.length + fixedBlocks : totalSlots;
+      $('courtFreeMetric').textContent = dayEnabled ? Math.max(0, totalSlots - occupied.length - manualBlocked.length - fixedBlocks) : 0;
       $('courtBoard').innerHTML = '<div class="court-day-board">' + courtNames.map(function (court) {
         return '<section class="court-column"><h3>' + escapeHtml(court) + '</h3><div class="court-grid">' + selectedTimes.map(function (time) {
           const booking = findCourtBooking(selectedDate, court, time);
           const fixed = isFixedCourtBlock(selectedDate, court, time);
+          if (!dayEnabled) {
+            return '<button class="court-slot-card is-blocked" type="button" disabled><div class="court-time">' + time + '</div><div><strong>Dia bloqueado</strong><div class="muted">' + escapeHtml(dayReason) + '</div></div><div class="ops-meta">' + statusPill('BLOQUEADO') + '</div></button>';
+          }
           if (fixed && !booking) {
             return '<button class="court-slot-card is-blocked" type="button" disabled><div class="court-time">' + time + '</div><div><strong>Bloqueado</strong><div class="muted">Bloqueio fixo da Quadra 1.</div></div><div class="ops-meta">' + statusPill('BLOQUEADO') + '</div></button>';
           }
@@ -26624,12 +26704,13 @@
     function renderCourtExtraDays() {
       const list = $('courtExtraDaysList');
       if (!list) return;
-      const rows = (opsData.courtScheduleDays || []).filter(function (item) {
-        return item.enabled !== false;
-      }).slice().sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
+      const rows = (opsData.courtScheduleDays || []).slice().sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
       list.innerHTML = rows.map(function (item) {
         const times = normalizeCourtTimes(item.times);
-        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(courtDayLabel(item.date)) + '</strong><div class="muted">' + escapeHtml((times.length ? times : courtDefaultTimes).join(' · ')) + '</div></div><div class="ops-actions"><button class="small-btn" type="button" data-edit-court-day="' + escapeHtml(item.date) + '">Editar</button><button class="small-btn" type="button" data-remove-court-day="' + escapeHtml(item.date) + '">Remover</button></div></div></article>';
+        const detail = item.enabled === false
+          ? 'Dia bloqueado · ' + courtDayBlockReason(item.date)
+          : (times.length ? times : courtDefaultTimes).join(' · ');
+        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(courtDayLabel(item.date)) + '</strong><div class="muted">' + escapeHtml(detail) + '</div></div><div class="ops-actions">' + statusPill(item.enabled === false ? 'BLOQUEADO' : 'ABERTO') + '<button class="small-btn" type="button" data-edit-court-day="' + escapeHtml(item.date) + '">Editar</button><button class="small-btn" type="button" data-remove-court-day="' + escapeHtml(item.date) + '">Remover</button></div></div></article>';
       }).join('') || '<div class="lesson-empty-state">O fim de semana usa os horários padrão. Escolha uma data para personalizar.</div>';
     }
 
@@ -26644,10 +26725,22 @@
     }
 
     function loadCourtDraftForDate(dateValue) {
-      const existing = (opsData.courtScheduleDays || []).find(function (item) { return item.date === dateValue; });
+      const existing = courtScheduleForDate(dateValue);
       courtDraftTimes = normalizeCourtTimes(existing && existing.times);
       if (!courtDraftTimes.length) courtDraftTimes = courtDefaultTimes.slice();
+      $('courtDayStatus').value = existing && existing.enabled === false ? 'BLOQUEADO' : 'ABERTO';
+      $('courtDayNotes').value = existing && existing.notes || '';
+      syncCourtDayStatusControls();
       renderCourtTimeChoices();
+    }
+
+    function syncCourtDayStatusControls() {
+      const blocked = $('courtDayStatus').value === 'BLOQUEADO';
+      document.querySelectorAll('.court-time-config').forEach(function (field) {
+        field.classList.toggle('is-disabled', blocked);
+      });
+      $('courtAddDayBtn').textContent = blocked ? 'Bloquear o dia inteiro' : 'Salvar configuração do dia';
+      if (blocked && !$('courtDayNotes').value.trim()) $('courtDayNotes').placeholder = 'Ex.: Evento do clube';
     }
 
     function addCourtDraftTime() {
@@ -26692,6 +26785,9 @@
         const value = client.id || client.email || client.name;
         const selected = booking && String(booking.clientId || booking.client) === String(client.id || client.name) ? ' selected' : '';
         return '<option value="' + escapeHtml(value) + '"' + selected + '>' + escapeHtml(client.name) + '</option>';
+      }).join('');
+      $('courtSlotOpponentList').innerHTML = eligibleClients.map(function (client) {
+        return '<option value="' + escapeHtml(client.name) + '"></option>';
       }).join('');
       $('courtSlotOpponent').value = booking && booking.opponent || '';
       $('courtSlotNotes').value = booking && booking.notes || '';
@@ -26777,35 +26873,50 @@
 
     async function addCourtExtraDate() {
       const value = $('courtExtraDate').value;
+      const blocked = $('courtDayStatus').value === 'BLOQUEADO';
+      const notes = $('courtDayNotes').value.trim() || (blocked ? 'Evento do clube' : '');
       if (!value) {
         toast('Escolha uma data.');
         return;
       }
-      if (!courtDraftTimes.length) {
+      if (!blocked && !courtDraftTimes.length) {
         toast('Adicione pelo menos um horário.');
         return;
       }
+      const activeBookings = (opsData.courtBookings || []).filter(function (booking) {
+        return booking.date === value && booking.status !== 'CANCELADO';
+      });
+      if (blocked && activeBookings.length && !window.confirm('Este dia possui ' + activeBookings.length + ' reserva(s). Bloquear o dia inteiro também cancelará essas reservas. Continuar?')) return;
       try {
         requireAdminSession();
         const databaseTimes = courtDraftTimes.map(function (time) { return time + ':00'; });
         if (!isAdminDemoMode()) {
           await supabaseRest('app_court_schedule_days?on_conflict=schedule_date', {
             method: 'POST',
-            body: { schedule_date: value, enabled: true, slot_times: databaseTimes },
+            body: { schedule_date: value, enabled: !blocked, notes: notes, slot_times: databaseTimes },
             prefer: 'resolution=merge-duplicates,return=representation'
           });
+          if (blocked && activeBookings.length) {
+            await supabaseRest('app_court_bookings?booking_date=eq.' + encodeURIComponent(value) + '&status=neq.CANCELADO', {
+              method: 'PATCH',
+              body: { status: 'CANCELADO' },
+              prefer: 'return=minimal'
+            });
+          }
         }
-        const existing = (opsData.courtScheduleDays || []).find(function (item) { return item.date === value; });
+        const existing = courtScheduleForDate(value);
         if (existing) {
-          existing.enabled = true;
+          existing.enabled = !blocked;
+          existing.notes = notes;
           existing.times = courtDraftTimes.slice();
         } else {
-          opsData.courtScheduleDays.push({ date: value, enabled: true, notes: '', times: courtDraftTimes.slice() });
+          opsData.courtScheduleDays.push({ date: value, enabled: !blocked, notes: notes, times: courtDraftTimes.slice() });
         }
+        if (blocked) activeBookings.forEach(function (booking) { booking.status = 'CANCELADO'; });
         opsState.courtDate = value;
         renderCourtBookingModule();
         renderCourtTimeChoices();
-        toast('Dia e horários atualizados para todos.');
+        toast(blocked ? 'Dia bloqueado para todos.' : 'Dia e horários atualizados para todos.');
       } catch (error) {
         reportActionError(error);
       }
@@ -33482,8 +33593,27 @@
 
     function configureAdminSurface() {
       document.body.classList.toggle('bar-admin-surface', IS_BAR_ADMIN_SURFACE);
-      if (!IS_BAR_ADMIN_SURFACE) return;
-      document.title = 'Gestão do Bar | Ilha Tênis';
+      const appName = IS_BAR_ADMIN_SURFACE ? 'Adm Bar' : 'Adm Ilha';
+      const manifest = document.getElementById('adminAppManifest');
+      const applicationName = document.getElementById('adminApplicationName');
+      const appleTitle = document.getElementById('adminAppleTitle');
+      const appleIcon = document.getElementById('adminAppleIcon');
+      const favicon = document.getElementById('adminFavicon');
+      document.title = IS_BAR_ADMIN_SURFACE ? 'Adm Bar' : 'Adm Ilha';
+      if (manifest) manifest.href = IS_BAR_ADMIN_SURFACE ? '/admbar-manifest.json' : '/adm-manifest.json';
+      if (applicationName) applicationName.content = appName;
+      if (appleTitle) appleTitle.content = appName;
+      if (appleIcon) appleIcon.href = IS_BAR_ADMIN_SURFACE ? '/icons/ilha-bar-180.png' : '/icon.png';
+      if (favicon) favicon.href = IS_BAR_ADMIN_SURFACE ? '/icons/ilha-bar-192.png' : '/icon.png';
+      ['adminInstallBtn', 'sidebarInstallBtn'].forEach(function (id) {
+        const button = $(id);
+        if (button) button.textContent = 'Instalar ' + appName;
+      });
+      if (!IS_BAR_ADMIN_SURFACE) {
+        $('adminLoginTitle').textContent = 'Gestão Clube Ilha';
+        $('adminLoginSubtitle').textContent = 'Acesse a gestão do clube com seu e-mail de equipe.';
+        return;
+      }
       $('adminLoginTitle').textContent = 'Gestão do Bar';
       $('adminLoginSubtitle').textContent = 'Entre com seu acesso da equipe do Bar.';
       $('adminSessionInfo').textContent = 'Os acessos do Bar são liberados pela administração do clube.';
@@ -35387,6 +35517,14 @@
 
     let deferredBarInstallPrompt = null;
 
+    function adminInstallAppName() {
+      return IS_BAR_ADMIN_SURFACE ? 'Adm Bar' : 'Adm Ilha';
+    }
+
+    function adminUsesIos() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
     function barAppIsInstalled() {
       return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     }
@@ -35396,28 +35534,33 @@
     }
 
     function updateBarInstallButtons() {
-      const canOffer = IS_BAR_ADMIN_SURFACE && !barAppIsInstalled() && (Boolean(deferredBarInstallPrompt) || /Android/i.test(navigator.userAgent));
-      ['adminInstallBtn', 'barInstallAppBtn'].forEach(function (id) {
+      const canOffer = !barAppIsInstalled();
+      ['adminInstallBtn', 'sidebarInstallBtn'].forEach(function (id) {
         const button = $(id);
-        if (button) button.hidden = !canOffer;
+        if (button) {
+          button.hidden = !canOffer;
+          button.textContent = 'Instalar ' + adminInstallAppName();
+        }
       });
     }
 
     async function installBarAppAction() {
       if (barAppIsInstalled()) {
         updateBarInstallButtons();
-        toast('O Ilha Bar já está instalado neste aparelho.');
+        toast('O ' + adminInstallAppName() + ' já está instalado neste aparelho.');
         return;
       }
       if (!deferredBarInstallPrompt) {
-        toast('No Chrome, toque em ⋮ e depois em “Instalar app”.');
+        toast(adminUsesIos()
+          ? 'No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.'
+          : 'Abra o menu do navegador e toque em “Instalar app” ou “Adicionar à tela inicial”.');
         return;
       }
       deferredBarInstallPrompt.prompt();
       const choice = await deferredBarInstallPrompt.userChoice;
       deferredBarInstallPrompt = null;
       updateBarInstallButtons();
-      if (choice && choice.outcome === 'accepted') toast('Instalação do Ilha Bar iniciada.');
+      if (choice && choice.outcome === 'accepted') toast('Instalação do ' + adminInstallAppName() + ' iniciada.');
     }
 
     function initBarPwaInstall() {
@@ -35431,14 +35574,14 @@
         deferredBarInstallPrompt = null;
         syncBarStandaloneMode();
         updateBarInstallButtons();
-        toast('Ilha Bar instalado com sucesso.');
+        toast(adminInstallAppName() + ' instalado com sucesso.');
       });
       const displayMode = window.matchMedia('(display-mode: standalone)');
       if (displayMode.addEventListener) displayMode.addEventListener('change', function () {
         syncBarStandaloneMode();
         updateBarInstallButtons();
       });
-      ['adminInstallBtn', 'barInstallAppBtn'].forEach(function (id) {
+      ['adminInstallBtn', 'sidebarInstallBtn'].forEach(function (id) {
         const button = $(id);
         if (button) button.addEventListener('click', installBarAppAction);
       });
@@ -35951,6 +36094,7 @@
         }
       });
       $('courtExtraDate').addEventListener('change', function () { loadCourtDraftForDate(this.value); });
+      $('courtDayStatus').addEventListener('change', syncCourtDayStatusControls);
       $('courtAddTimeBtn').addEventListener('click', addCourtDraftTime);
       $('courtAddDayBtn').addEventListener('click', addCourtExtraDate);
       $('courtClearDayBtn').addEventListener('click', function () { clearCourtDateBookings($('courtExtraDate').value); });
