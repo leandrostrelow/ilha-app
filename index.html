@@ -4141,6 +4141,7 @@
     let courtRealtimeClient = null;
     let courtRealtimeChannel = null;
     let courtRealtimeRefreshTimer = 0;
+    let clientNotificationRefreshTimer = 0;
     let activePlanTab = 'aluno';
     let paymentFilter = { month: 'all', year: 'all' };
     let activePixPayload = '';
@@ -4734,6 +4735,17 @@
       }, 120);
     }
 
+    function scheduleClientNotificationRefresh() {
+      clearTimeout(clientNotificationRefreshTimer);
+      clientNotificationRefreshTimer = setTimeout(function () {
+        if (!session || document.hidden) return;
+        loadClientData().then(function () {
+          renderAnnouncements();
+          renderHome();
+        }).catch(function () {});
+      }, 120);
+    }
+
     function initClientCourtRealtime() {
       if (!session || !session.access_token || !window.supabase || !window.supabase.createClient) return;
       if (!courtRealtimeClient) {
@@ -4747,7 +4759,14 @@
       if (courtRealtimeChannel) courtRealtimeClient.removeChannel(courtRealtimeChannel);
       courtRealtimeChannel = courtRealtimeClient.channel('client-court-schedule')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'app_court_slot_events' }, scheduleClientCourtRealtimeRefresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'app_court_bookings' }, scheduleClientCourtRealtimeRefresh)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'app_court_schedule_days' }, scheduleClientCourtRealtimeRefresh)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'app_client_notifications',
+          filter: 'user_id=eq.' + session.user.id
+        }, scheduleClientNotificationRefresh)
         .subscribe();
     }
 
@@ -5291,6 +5310,20 @@
       };
     }
 
+    function mapClientNotificationRow(row) {
+      return {
+        id: 'client-notification-' + (row.id || row.created_at || ''),
+        title: row.title || 'Ilha Play',
+        body: row.body || '',
+        image_url: '',
+        link_url: row.link_url || '',
+        target_type: 'todos',
+        target_plan_code: '',
+        active: true,
+        published_at: row.created_at || ''
+      };
+    }
+
     function mapPaymentInvoiceRow(row) {
       return {
         id: row.id || '',
@@ -5369,14 +5402,17 @@
           rest('app_plan_requests?select=*&client_id=eq.' + encodeURIComponent(session.user.id) + '&order=created_at.desc', { auth: true }).catch(function () { return []; }),
           rest('app_store_requests?select=*&client_id=eq.' + encodeURIComponent(session.user.id) + '&order=created_at.desc', { auth: true }).catch(function () { return []; }),
           rest('app_announcements?select=*&active=eq.true&order=published_at.desc', { auth: true }).catch(function () { return []; }),
-          rest('app_payment_invoices?select=*&client_id=eq.' + encodeURIComponent(session.user.id) + '&order=invoice_month.desc', { auth: true }).catch(function () { return []; })
+          rest('app_payment_invoices?select=*&client_id=eq.' + encodeURIComponent(session.user.id) + '&order=invoice_month.desc', { auth: true }).catch(function () { return []; }),
+          rest('app_client_notifications?select=*&user_id=eq.' + encodeURIComponent(session.user.id) + '&order=created_at.desc', { auth: true }).catch(function () { return []; })
         ]);
         appPlans = results[0] && results[0].length ? results[0].map(mapPlanRow) : officialPlanSeed.map(mapPlanRow);
         syncLinkedClientPlan();
         populateRegistrationPlans();
         planRequests = (results[1] || []).map(mapPlanRequestRow);
         storeRequests = (results[2] || []).map(mapStoreRequestRow);
-        announcements = (results[3] || []).map(mapAnnouncementRow);
+        announcements = (results[3] || []).map(mapAnnouncementRow)
+          .concat((results[5] || []).map(mapClientNotificationRow))
+          .sort(function (a, b) { return String(b.published_at || '').localeCompare(String(a.published_at || '')); });
         paymentInvoices = (results[4] || []).map(mapPaymentInvoiceRow);
         await loadMyLessons();
       } catch (error) {

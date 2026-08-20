@@ -1650,6 +1650,28 @@
       pointer-events: none;
     }
 
+    .court-day-editor-panel {
+      background: linear-gradient(180deg, #f8fbfc, #ffffff);
+      border-top: 4px solid var(--teal);
+    }
+
+    .court-day-editor-grid {
+      align-items: end;
+    }
+
+    .court-day-editor-grid .field {
+      margin: 0;
+    }
+
+    .court-configured-days {
+      max-height: 220px;
+      overflow: auto;
+    }
+
+    .court-configured-days:empty {
+      display: none;
+    }
+
     .announcement-upload-preview {
       display: none;
       overflow: hidden;
@@ -18607,7 +18629,6 @@
             <div class="muted">Reservas do Ilha Play e bloqueios das quadras.</div>
           </div>
           <div class="module-actions">
-            <button class="ghost-btn" type="button" id="courtRulesBtn">Dias e horários</button>
             <button class="ghost-btn" type="button" data-home-action>Início</button>
             <button class="ghost-btn" type="button" id="courtReloadBtn">Recarregar</button>
           </div>
@@ -18620,6 +18641,48 @@
             <div class="ops-card"><strong id="courtBlockedMetric">0</strong><span>bloqueios</span></div>
           </div>
           <div class="ops-grid">
+            <div class="ops-panel span-12 court-day-editor-panel">
+              <div class="ops-panel-head">
+                <div>
+                  <h2>Editar dia e horários</h2>
+                  <div class="muted">A alteração aparece imediatamente para todos.</div>
+                </div>
+              </div>
+              <div class="form-grid court-day-editor-grid" id="courtBookingTools">
+                <div class="field">
+                  <label for="courtExtraDate">Data</label>
+                  <input id="courtExtraDate" type="date" />
+                </div>
+                <div class="field">
+                  <label for="courtDayStatus">Disponibilidade</label>
+                  <select id="courtDayStatus">
+                    <option value="ABERTO">Aberto para reservas</option>
+                    <option value="BLOQUEADO">Bloquear o dia inteiro</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="courtDayNotes">Motivo</label>
+                  <input id="courtDayNotes" placeholder="Ex.: Evento do clube" />
+                </div>
+                <div class="field court-time-config">
+                  <label for="courtNewTime">Adicionar horário</label>
+                  <div class="court-time-add"><input id="courtNewTime" type="time" value="14:00" /><button class="ghost-btn" type="button" id="courtAddTimeBtn">Adicionar</button></div>
+                </div>
+                <div class="field full court-time-config">
+                  <label>Horários disponíveis</label>
+                  <div class="court-time-choices" id="courtTimeChoices"></div>
+                </div>
+                <div class="field full court-rule-actions">
+                  <button class="primary-btn" type="button" id="courtAddDayBtn">Salvar configuração do dia</button>
+                  <button class="ghost-btn" type="button" id="courtClearDayBtn">Zerar reservas deste dia</button>
+                  <button class="ghost-btn" type="button" id="courtRefreshDatesBtn">Atualizar próximo fim de semana</button>
+                  <button class="ghost-btn" type="button" id="courtResetWeekendBtn">Zerar próximo fim de semana</button>
+                </div>
+                <div class="field full">
+                  <div class="ops-list court-configured-days" id="courtExtraDaysList"></div>
+                </div>
+              </div>
+            </div>
             <div class="ops-panel span-12">
               <div class="ops-panel-head">
                 <div>
@@ -18634,58 +18697,6 @@
         </div>
       </div>
     </section>
-
-    <div class="admin-modal-overlay" id="courtRulesModal" aria-hidden="true">
-      <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="courtRulesModalTitle">
-        <div class="admin-modal-head">
-          <div>
-            <h2 id="courtRulesModalTitle">Dias e horários</h2>
-            <div class="muted">Escolha a data, defina os horários e publique para todos em tempo real.</div>
-          </div>
-          <button class="ghost-btn" type="button" id="courtRulesModalClose">Fechar</button>
-        </div>
-        <div class="admin-modal-body">
-          <div class="form-grid" id="courtBookingTools">
-            <div class="field">
-              <label for="courtExtraDate">Data</label>
-              <input id="courtExtraDate" type="date" />
-            </div>
-            <div class="field">
-              <label for="courtDayStatus">Disponibilidade do dia</label>
-              <select id="courtDayStatus">
-                <option value="ABERTO">Aberto para reservas</option>
-                <option value="BLOQUEADO">Bloquear o dia inteiro</option>
-              </select>
-            </div>
-            <div class="field full">
-              <label for="courtDayNotes">Motivo ou observação</label>
-              <input id="courtDayNotes" placeholder="Ex.: Evento do clube" />
-              <p class="court-day-config-note">O bloqueio aparece imediatamente para todos os alunos.</p>
-            </div>
-            <div class="field court-time-config">
-              <label for="courtNewTime">Adicionar horário</label>
-              <div class="court-time-add"><input id="courtNewTime" type="time" value="14:00" /><button class="ghost-btn" type="button" id="courtAddTimeBtn">Adicionar</button></div>
-            </div>
-            <div class="field full court-time-config">
-              <label>Horários disponíveis</label>
-              <div class="court-time-choices" id="courtTimeChoices"></div>
-            </div>
-            <div class="field full court-rule-actions">
-              <button class="primary-btn" type="button" id="courtAddDayBtn">Salvar configuração do dia</button>
-              <button class="ghost-btn" type="button" id="courtClearDayBtn">Zerar reservas deste dia</button>
-              <button class="ghost-btn" type="button" id="courtRefreshDatesBtn">Atualizar próximo fim de semana</button>
-            </div>
-            <div class="field full">
-              <label>Dias configurados</label>
-              <div class="ops-list" id="courtExtraDaysList"></div>
-            </div>
-            <div class="field full">
-              <button class="ghost-btn" type="button" id="courtResetWeekendBtn">Zerar reservas do próximo fim de semana</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <div class="admin-modal-overlay" id="courtSlotModal" aria-hidden="true">
       <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="courtSlotModalTitle">
@@ -26582,12 +26593,21 @@
     async function loadCourtBookingData(showFeedback) {
       if (!adminSession || !adminSession.access_token || isAdminDemoMode()) return;
       try {
-        const results = await Promise.all([
+        const results = await Promise.allSettled([
           supabaseRest('app_court_bookings?select=*,app_clients(full_name,email,phone)&order=booking_date.asc,starts_at.asc'),
           supabaseRest('app_court_schedule_days?select=*&order=schedule_date.asc')
         ]);
-        opsData.courtBookings = (results[0] || []).map(mapCourtBookingRow);
-        opsData.courtScheduleDays = (results[1] || []).map(mapCourtScheduleDayRow);
+        if (results[0].status === 'fulfilled') {
+          opsData.courtBookings = (results[0].value || []).map(mapCourtBookingRow);
+        }
+        if (results[1].status === 'fulfilled') {
+          opsData.courtScheduleDays = (results[1].value || []).map(mapCourtScheduleDayRow);
+        }
+        if (results[0].status === 'rejected' && results[1].status === 'rejected') {
+          throw results[0].reason || results[1].reason;
+        }
+        if (results[0].status === 'rejected') console.warn('Reservas indisponíveis na atualização.', results[0].reason);
+        if (results[1].status === 'rejected') console.warn('Dias configurados indisponíveis na atualização.', results[1].reason);
         if (document.body.classList.contains('club-courts')) renderCourtBookingModule();
         if (showFeedback) toast('Agenda atualizada.');
       } catch (error) {
@@ -26618,6 +26638,7 @@
       if (courtRealtimeChannel) courtRealtimeClient.removeChannel(courtRealtimeChannel);
       courtRealtimeChannel = courtRealtimeClient.channel('admin-court-schedule')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'app_court_slot_events' }, scheduleAdminCourtRealtimeRefresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'app_court_bookings' }, scheduleAdminCourtRealtimeRefresh)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'app_court_schedule_days' }, scheduleAdminCourtRealtimeRefresh)
         .subscribe();
     }
@@ -26756,6 +26777,9 @@
 
     function openCourtBookingModule() {
       setClubMode('club-courts');
+      const initialDate = opsState.courtDate || nextWeekendDates()[0];
+      $('courtExtraDate').value = initialDate;
+      loadCourtDraftForDate(initialDate);
       renderCourtBookingModule();
       initAdminCourtRealtime();
       loadCourtBookingData(false).catch(reportActionError);
@@ -26890,19 +26914,19 @@
       try {
         requireAdminSession();
         const databaseTimes = courtDraftTimes.map(function (time) { return time + ':00'; });
+        let cancellationNotices = [];
         if (!isAdminDemoMode()) {
-          await supabaseRest('app_court_schedule_days?on_conflict=schedule_date', {
+          const result = await supabaseRest('rpc/admin_configure_app_court_day', {
             method: 'POST',
-            body: { schedule_date: value, enabled: !blocked, notes: notes, slot_times: databaseTimes },
-            prefer: 'resolution=merge-duplicates,return=representation'
+            body: {
+              p_schedule_date: value,
+              p_enabled: !blocked,
+              p_notes: notes || null,
+              p_slot_times: databaseTimes
+            },
+            prefer: 'return=representation'
           });
-          if (blocked && activeBookings.length) {
-            await supabaseRest('app_court_bookings?booking_date=eq.' + encodeURIComponent(value) + '&status=neq.CANCELADO', {
-              method: 'PATCH',
-              body: { status: 'CANCELADO' },
-              prefer: 'return=minimal'
-            });
-          }
+          cancellationNotices = Array.isArray(result) ? result : [];
         }
         const existing = courtScheduleForDate(value);
         if (existing) {
@@ -26914,9 +26938,23 @@
         }
         if (blocked) activeBookings.forEach(function (booking) { booking.status = 'CANCELADO'; });
         opsState.courtDate = value;
+        if (!isAdminDemoMode()) await loadCourtBookingData(false);
         renderCourtBookingModule();
         renderCourtTimeChoices();
-        toast(blocked ? 'Dia bloqueado para todos.' : 'Dia e horários atualizados para todos.');
+        if (blocked && cancellationNotices.length) {
+          await Promise.all(cancellationNotices.map(function (notice) {
+            return sendClientAnnouncementPush({
+              title: notice.title,
+              body: notice.body,
+              url: '/?view=notifications',
+              user_id: notice.user_id,
+              tag: 'ilha-play-quadra-cancelada-' + value
+            }).catch(function () { return null; });
+          }));
+        }
+        toast(blocked
+          ? 'Dia bloqueado. ' + cancellationNotices.length + ' cliente(s) avisado(s).'
+          : 'Dia e horários atualizados para todos.');
       } catch (error) {
         reportActionError(error);
       }
@@ -36055,24 +36093,14 @@
       $('courtReloadBtn').addEventListener('click', function () {
         loadOpsData(true).then(renderCourtBookingModule).catch(reportActionError);
       });
-      $('courtRulesBtn').addEventListener('click', function () {
-        renderCourtExtraDays();
-        const dateValue = opsState.courtDate || nextWeekendDates()[0];
-        $('courtExtraDate').value = dateValue;
-        loadCourtDraftForDate(dateValue);
-        $('courtRulesModal').classList.add('show');
-        $('courtRulesModal').setAttribute('aria-hidden', 'false');
-      });
-      $('courtRulesModalClose').addEventListener('click', function () {
-        $('courtRulesModal').classList.remove('show');
-        $('courtRulesModal').setAttribute('aria-hidden', 'true');
-      });
-      $('courtRulesModal').addEventListener('click', function (event) {
-        if (event.target.id === 'courtRulesModal') {
-          $('courtRulesModal').classList.remove('show');
-          $('courtRulesModal').setAttribute('aria-hidden', 'true');
-          return;
-        }
+      $('courtExtraDate').addEventListener('change', function () { loadCourtDraftForDate(this.value); });
+      $('courtDayStatus').addEventListener('change', syncCourtDayStatusControls);
+      $('courtAddTimeBtn').addEventListener('click', addCourtDraftTime);
+      $('courtAddDayBtn').addEventListener('click', addCourtExtraDate);
+      $('courtClearDayBtn').addEventListener('click', function () { clearCourtDateBookings($('courtExtraDate').value); });
+      $('courtRefreshDatesBtn').addEventListener('click', refreshNextWeekendDates);
+      $('courtResetWeekendBtn').addEventListener('click', resetWeekendBookings);
+      $('courtBookingModule').addEventListener('click', function (event) {
         const removeBtn = event.target.closest('[data-remove-court-day]');
         if (removeBtn) {
           removeCourtExtraDate(removeBtn.dataset.removeCourtDay);
@@ -36080,8 +36108,10 @@
         }
         const editBtn = event.target.closest('[data-edit-court-day]');
         if (editBtn) {
+          opsState.courtDate = editBtn.dataset.editCourtDay;
           $('courtExtraDate').value = editBtn.dataset.editCourtDay;
           loadCourtDraftForDate(editBtn.dataset.editCourtDay);
+          renderCourtBookingModule();
           return;
         }
         const timeBtn = event.target.closest('[data-court-time-choice]');
@@ -36091,19 +36121,13 @@
             ? courtDraftTimes.filter(function (item) { return item !== time; })
             : courtDraftTimes.concat(time).sort();
           renderCourtTimeChoices();
+          return;
         }
-      });
-      $('courtExtraDate').addEventListener('change', function () { loadCourtDraftForDate(this.value); });
-      $('courtDayStatus').addEventListener('change', syncCourtDayStatusControls);
-      $('courtAddTimeBtn').addEventListener('click', addCourtDraftTime);
-      $('courtAddDayBtn').addEventListener('click', addCourtExtraDate);
-      $('courtClearDayBtn').addEventListener('click', function () { clearCourtDateBookings($('courtExtraDate').value); });
-      $('courtRefreshDatesBtn').addEventListener('click', refreshNextWeekendDates);
-      $('courtResetWeekendBtn').addEventListener('click', resetWeekendBookings);
-      $('courtBookingModule').addEventListener('click', function (event) {
         const dateBtn = event.target.closest('[data-court-date]');
         if (dateBtn) {
           opsState.courtDate = dateBtn.dataset.courtDate;
+          $('courtExtraDate').value = opsState.courtDate;
+          loadCourtDraftForDate(opsState.courtDate);
           renderCourtBookingModule();
           return;
         }
