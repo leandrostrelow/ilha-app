@@ -33358,7 +33358,7 @@
         return '<article class="announcement-card">' +
           (item.imageUrl ? '<img src="' + escapeHtml(item.imageUrl) + '" alt="" />' : '') +
           '<div><strong>' + escapeHtml(item.title) + '</strong><div class="muted">' + escapeHtml(item.body || 'Sem mensagem.') + '</div></div>' +
-          '<div class="ops-meta">' + statusPill(item.active ? 'ATIVO' : 'INATIVO') + '<span class="ops-pill">' + escapeHtml(item.targetType || 'todos') + '</span><button class="small-btn" type="button" data-announcement-toggle="' + escapeHtml(item.id) + '">' + (item.active ? 'Desativar' : 'Ativar') + '</button></div>' +
+          '<div class="ops-meta">' + statusPill(item.active ? 'ATIVO' : 'INATIVO') + '<span class="ops-pill">' + escapeHtml(item.targetType || 'todos') + '</span><button class="small-btn" type="button" data-announcement-toggle="' + escapeHtml(item.id) + '">' + (item.active ? 'Desativar' : 'Ativar') + '</button><button class="danger-btn" type="button" data-announcement-delete="' + escapeHtml(item.id) + '">Excluir</button></div>' +
         '</article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum comunicado cadastrado.</div>';
     }
@@ -33495,6 +33495,29 @@
         }
         renderAnnouncementsModule();
         toast('Comunicado atualizado.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function deleteAnnouncementAction(id) {
+      const item = opsData.announcements.find(function (announcement) { return String(announcement.id) === String(id); });
+      if (!item) return;
+      if (!window.confirm('Excluir o comunicado “' + item.title + '” para todos?')) return;
+      try {
+        requireAdminSession();
+        if (!isAdminDemoMode() && isUuid(item.id)) {
+          await supabaseRest('app_announcements?id=eq.' + encodeURIComponent(item.id), {
+            method: 'DELETE',
+            prefer: 'return=minimal'
+          });
+        }
+        opsData.announcements = opsData.announcements.filter(function (announcement) {
+          return String(announcement.id) !== String(id);
+        });
+        renderAnnouncementsModule();
+        renderHomeDashboard();
+        toast('Comunicado excluído para todos.');
       } catch (error) {
         reportActionError(error);
       }
@@ -37113,6 +37136,11 @@
       });
       $('announcementForm').addEventListener('submit', createAnnouncementAction);
       $('announcementsModule').addEventListener('click', function (event) {
+        const deleteBtn = event.target.closest('[data-announcement-delete]');
+        if (deleteBtn) {
+          deleteAnnouncementAction(deleteBtn.dataset.announcementDelete);
+          return;
+        }
         const toggleBtn = event.target.closest('[data-announcement-toggle]');
         if (toggleBtn) toggleAnnouncementAction(toggleBtn.dataset.announcementToggle);
       });

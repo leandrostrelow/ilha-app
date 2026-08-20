@@ -4819,6 +4819,7 @@
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'app_court_slot_events' }, scheduleClientCourtRealtimeRefresh)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'app_court_bookings' }, scheduleClientCourtRealtimeRefresh)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'app_court_schedule_days' }, scheduleClientCourtRealtimeRefresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'app_announcements' }, scheduleClientNotificationRefresh)
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
