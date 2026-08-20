@@ -33321,6 +33321,38 @@
       return data;
     }
 
+    async function notifyClientAccessReleased(client) {
+      if (isAdminDemoMode() || !client || !isUuid(client.id)) return { saved: false, sent: 0 };
+      const title = 'Acesso liberado';
+      const body = 'Seu acesso ao Ilha Play foi liberado. Você já pode entrar no aplicativo e usar os recursos disponíveis para o seu cadastro.';
+      let saved = false;
+      let pushResult = { sent: 0 };
+      try {
+        await supabaseInsert('app_client_notifications', {
+          user_id: client.id,
+          title: title,
+          body: body,
+          link_url: '/',
+          event_type: 'ACESSO_LIBERADO'
+        });
+        saved = true;
+      } catch (error) {
+        console.warn('Não foi possível registrar o aviso de acesso no aplicativo.', error);
+      }
+      try {
+        pushResult = await sendClientAnnouncementPush({
+          title: title,
+          body: body,
+          url: '/',
+          user_id: client.id,
+          tag: 'ilha-play-acesso-liberado-' + client.id
+        });
+      } catch (error) {
+        console.warn('Não foi possível enviar o push de acesso liberado.', error);
+      }
+      return { saved: saved, sent: Number(pushResult && pushResult.sent || 0) };
+    }
+
     async function createAnnouncementAction(event) {
       event.preventDefault();
       try {
@@ -34187,6 +34219,7 @@
         requireAdminSession();
         const client = findClientByKey(opsState.selectedClientId);
         if (!client) throw new Error('Aluno não encontrado.');
+        const wasActive = String(client.status || '').toUpperCase() === 'ATIVO';
         const plan = findPlanByValue($('clientEditPlan').value);
         const exempt = isExemptPlan(plan);
         const amount = exempt ? 0 : parseOptionalMoney($('clientEditAmount').value);
@@ -34241,10 +34274,12 @@
           if (savedClient) Object.assign(client, mapClientRow(savedClient));
         }
         if (isAdminDemoMode()) Object.assign(client, localUpdate);
+        const accessReleased = !wasActive && String(client.status || localUpdate.status || '').toUpperCase() === 'ATIVO';
+        if (accessReleased && !isAdminDemoMode()) await notifyClientAccessReleased(client);
         closeClientModal();
         renderClientsModule();
         renderHomeDashboard();
-        toast('Aluno atualizado.');
+        toast(accessReleased ? 'Aluno liberado e notificado.' : 'Aluno atualizado.');
       } catch (error) {
         reportActionError(error);
       }
