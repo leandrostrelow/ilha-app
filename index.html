@@ -5019,12 +5019,17 @@
       const data = text ? JSON.parse(text) : {};
       if (!response.ok) {
         const rawMessage = data.error_description || data.msg || data.message || 'Falha na autenticação.';
+        const errorCode = String(data.error_code || data.code || '').toLowerCase();
         const normalized = String(rawMessage).toLowerCase();
         const friendly = normalized.includes('invalid login credentials') ? 'E-mail ou senha incorretos.' :
           normalized.includes('email not confirmed') ? 'Seu cadastro ainda está aguardando a liberação da equipe do clube.' :
-          normalized.includes('already registered') ? 'Este e-mail já possui uma conta. Use a opção Entrar.' :
-          normalized.includes('rate limit') ? 'Muitas tentativas seguidas. Aguarde um pouco e tente novamente.' : rawMessage;
-        throw new Error(friendly);
+          (normalized.includes('already registered') || errorCode.includes('user_already_exists')) ? 'Este e-mail já possui uma conta. Use a opção Entrar.' :
+          (normalized.includes('database error saving new user') || errorCode.includes('unexpected_failure')) ? 'Não foi possível salvar o cadastro. Confira se o CPF ou o e-mail já possuem uma conta.' :
+          (normalized.includes('rate limit') || response.status === 429) ? 'O cadastro recebeu muitas solicitações neste momento. Aguarde 1 minuto e tente novamente.' : rawMessage;
+        const error = new Error(friendly);
+        error.status = response.status;
+        error.code = errorCode;
+        throw error;
       }
       return data;
     }
