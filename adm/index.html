@@ -18329,6 +18329,7 @@
               <div class="field">
                 <label for="clientEditStatus">Status</label>
                 <select id="clientEditStatus">
+                  <option value="PENDENTE">Pendente</option>
                   <option value="ATIVO">Ativo</option>
                   <option value="BLOQUEADO">Bloqueado</option>
                 </select>
@@ -26118,7 +26119,8 @@
       $('clientEditGuardianPhone').value = client.guardianPhone || '';
       $('clientEditMinor').checked = Boolean(client.guardian || client.guardianPhone || isMinorBirthDate(client.birthDate));
       updateClientMinorFields();
-      $('clientEditStatus').value = client.status || 'ATIVO';
+      const currentStatus = String(client.status || 'PENDENTE').trim().toUpperCase();
+      $('clientEditStatus').value = ['PENDENTE', 'ATIVO', 'BLOQUEADO'].includes(currentStatus) ? currentStatus : 'PENDENTE';
       renderClientPlanOptions(selectedPlanValue);
       $('clientEditDeclaredPlan').value = client.declaredPlanName || '';
       $('clientEditDueDay').value = isExemptPlan(selectedPlan) ? '' : (client.dueDay || (request && request.preferredDueDay) || '');
@@ -34250,7 +34252,9 @@
           guardian: guardian,
           guardianPhone: guardianPhone,
           type: plan ? clientTypeForPlan(plan, client.type) : normalizedClientType(client.type),
-          status: $('clientEditStatus').value,
+          status: ['PENDENTE', 'ATIVO', 'BLOQUEADO'].includes($('clientEditStatus').value)
+            ? $('clientEditStatus').value
+            : 'PENDENTE',
           officialPlanId: plan ? plan.id : '',
           officialPlanCode: plan ? plan.code : '',
           officialPlanName: plan ? plan.name : '',
