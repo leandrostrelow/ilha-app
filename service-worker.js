@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v200-separate-pwas-court-days';
+const CACHE_NAME = 'ilha-play-v201-tennis-serve-notifications';
 const ASSETS = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const ASSETS = [
   './assets/branding/ilha-bar-logo-dark.png',
   './assets/branding/ilha-bar-logo-light.png',
   './assets/ilha-bar-cardapio-qr.png',
+  './assets/audio/notification-tennis-serve.mp3',
   './admbar-manifest.json',
   './icons/ilha-bar-180.png',
   './icons/ilha-bar-192.png',

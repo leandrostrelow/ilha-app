@@ -4176,6 +4176,8 @@
     let courtRealtimeChannel = null;
     let courtRealtimeRefreshTimer = 0;
     let clientNotificationRefreshTimer = 0;
+    let clientNotificationAudio = null;
+    let clientNotificationSoundEnabled = localStorage.getItem('ilha-client-notification-sound') !== 'false';
     let activePlanTab = 'aluno';
     let paymentFilter = { month: 'all', year: 'all' };
     let activePixPayload = '';
@@ -4390,6 +4392,23 @@
       }
       if (session && currentUser().id) await saveClientPushSubscription(subscription);
       return true;
+    }
+
+    function playClientNotificationSound(force) {
+      if (!force && !clientNotificationSoundEnabled) return;
+      try {
+        clientNotificationAudio = clientNotificationAudio || new Audio('/assets/audio/notification-tennis-serve.mp3');
+        clientNotificationAudio.preload = 'auto';
+        clientNotificationAudio.currentTime = 0;
+        const playback = clientNotificationAudio.play();
+        if (playback && playback.catch) playback.catch(function () {});
+      } catch (error) {}
+    }
+
+    function enableClientNotificationSound() {
+      clientNotificationSoundEnabled = true;
+      localStorage.setItem('ilha-client-notification-sound', 'true');
+      playClientNotificationSound(true);
     }
 
     function closeWelcomeUpdateModal() {
@@ -4780,6 +4799,11 @@
       }, 120);
     }
 
+    function handleClientNotificationInsert() {
+      playClientNotificationSound(false);
+      scheduleClientNotificationRefresh();
+    }
+
     function initClientCourtRealtime() {
       if (!session || !session.access_token || !window.supabase || !window.supabase.createClient) return;
       if (!courtRealtimeClient) {
@@ -4800,7 +4824,7 @@
           schema: 'public',
           table: 'app_client_notifications',
           filter: 'user_id=eq.' + session.user.id
-        }, scheduleClientNotificationRefresh)
+        }, handleClientNotificationInsert)
         .subscribe();
     }
 
@@ -6995,6 +7019,7 @@
       });
       $('pendingEnableNotificationsBtn').addEventListener('click', function () {
         const button = this;
+        enableClientNotificationSound();
         ensureClientPushSubscription(true).then(function (enabled) {
           if (enabled) {
             button.textContent = 'Notificações ativadas';
@@ -7039,6 +7064,7 @@
         $(prefix + 'GuardianPhone').addEventListener('input', function () { this.value = formatPhone(this.value); });
       });
       $('clientEnableNotificationsBtn').addEventListener('click', function () {
+        enableClientNotificationSound();
         ensureClientPushSubscription(true).then(function (enabled) {
           renderClientPushState();
           toast(enabled ? 'Notificações ativadas.' : 'Não foi possível ativar as notificações.');
@@ -7050,6 +7076,7 @@
       $('welcomeContinueBtn').addEventListener('click', closeWelcomeUpdateModal);
       $('welcomeEnableNotificationsBtn').addEventListener('click', function () {
         const button = this;
+        enableClientNotificationSound();
         ensureClientPushSubscription(true).then(function (enabled) {
           if (enabled) {
             button.textContent = 'Notificações ativadas';

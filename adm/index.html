@@ -18093,6 +18093,7 @@
         <button class="admin-nav-btn" type="button" data-admin-nav="club-database"><span class="admin-nav-icon"><svg><use href="#admin-icon-database"></use></svg></span><span>Planos</span></button>
       </nav>
       <div class="admin-sidebar-footer">
+        <button type="button" data-admin-notifications>Ativar notificações</button>
         <button type="button" id="sidebarInstallBtn" hidden>Instalar Adm Ilha</button>
         <button type="button" id="sidebarLogoutBtn">Sair</button>
       </div>
@@ -18107,6 +18108,7 @@
         </div>
         <div class="club-home-actions">
           <a class="obs-link" href="/" target="_blank" rel="noopener">Ilha Play</a>
+          <button class="ghost-btn" type="button" data-admin-notifications>Ativar notificações</button>
           <button class="ghost-btn" type="button" id="homeLogoutBtn">Sair</button>
         </div>
       </div>
@@ -25103,7 +25105,11 @@
     let lessonRefreshTimer = null;
     let courtDraftTimes = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
     let barRefreshTimer = null;
-    let barAudioContext = null;
+    let barNotificationAudio = null;
+    let adminNotificationAudio = null;
+    let adminNotificationRealtimeClient = null;
+    let adminNotificationRealtimeChannel = null;
+    let adminNotificationSoundEnabled = localStorage.getItem('ilha-admin-notification-sound') !== 'false';
 
     function setClubMode(mode) {
       ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-courts', 'club-finance', 'club-bar', 'club-store', 'club-announcements', 'club-communication', 'club-clients', 'club-team', 'club-database'].forEach(function (className) {
@@ -27350,24 +27356,11 @@
     function playBarOrderSound() {
       if (!opsState.barAlertsEnabled) return;
       try {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextClass) return;
-        barAudioContext = barAudioContext || new AudioContextClass();
-        const now = barAudioContext.currentTime;
-        [0, .42, .84].forEach(function (offset) {
-          const oscillator = barAudioContext.createOscillator();
-          const gain = barAudioContext.createGain();
-          oscillator.type = 'square';
-          oscillator.frequency.setValueAtTime(760, now + offset);
-          oscillator.frequency.setValueAtTime(1040, now + offset + .16);
-          gain.gain.setValueAtTime(.0001, now + offset);
-          gain.gain.exponentialRampToValueAtTime(.42, now + offset + .025);
-          gain.gain.exponentialRampToValueAtTime(.0001, now + offset + .34);
-          oscillator.connect(gain);
-          gain.connect(barAudioContext.destination);
-          oscillator.start(now + offset);
-          oscillator.stop(now + offset + .36);
-        });
+        barNotificationAudio = barNotificationAudio || new Audio('/assets/audio/notification-tennis-serve.mp3');
+        barNotificationAudio.preload = 'auto';
+        barNotificationAudio.currentTime = 0;
+        const playback = barNotificationAudio.play();
+        if (playback && playback.catch) playback.catch(function () {});
       } catch (error) {
         console.info('Alerta sonoro indisponível.', error && error.message);
       }
@@ -27443,6 +27436,109 @@
       return true;
     }
 
+    function updateAdminNotificationsButtons() {
+      const permission = 'Notification' in window ? Notification.permission : 'unsupported';
+      const isActive = permission === 'granted' && adminNotificationSoundEnabled;
+      const label = permission === 'denied'
+        ? 'Notificações bloqueadas'
+        : (isActive ? 'Notificações ativas' : 'Ativar notificações');
+      document.querySelectorAll('[data-admin-notifications]').forEach(function (button) {
+        button.hidden = IS_BAR_ADMIN_SURFACE;
+        button.disabled = permission === 'unsupported';
+        button.textContent = label;
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+    }
+
+    function playAdminNotificationSound(force) {
+      if (!force && !adminNotificationSoundEnabled) return;
+      try {
+        adminNotificationAudio = adminNotificationAudio || new Audio('/assets/audio/notification-tennis-serve.mp3');
+        adminNotificationAudio.preload = 'auto';
+        adminNotificationAudio.currentTime = 0;
+        const playback = adminNotificationAudio.play();
+        if (playback && playback.catch) playback.catch(function () {});
+      } catch (error) {}
+    }
+
+    async function saveAdminPushSubscription(subscription) {
+      const json = subscription.toJSON();
+      const userId = adminSession && adminSession.user && adminSession.user.id;
+      if (!userId || !json.endpoint || !json.keys) throw new Error('Entre novamente para ativar as notificações.');
+      await supabaseRest('app_push_subscriptions?on_conflict=endpoint', {
+        method: 'POST',
+        body: {
+          user_id: userId,
+          endpoint: json.endpoint,
+          p256dh: json.keys.p256dh,
+          auth_key: json.keys.auth,
+          user_agent: navigator.userAgent.slice(0, 500),
+          enabled: true,
+          updated_at: new Date().toISOString()
+        },
+        prefer: 'resolution=merge-duplicates,return=representation'
+      });
+    }
+
+    async function ensureAdminPushSubscription(requestPermission) {
+      if (IS_BAR_ADMIN_SURFACE || !adminSession || adminSession.demo || !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return false;
+      if (requestPermission && Notification.permission === 'default') await Notification.requestPermission();
+      if (Notification.permission !== 'granted') return false;
+      const registration = await navigator.serviceWorker.ready;
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: barUrlBase64ToBytes(BAR_PUSH_PUBLIC_KEY)
+        });
+      }
+      await saveAdminPushSubscription(subscription);
+      return true;
+    }
+
+    async function enableAdminNotifications() {
+      adminNotificationSoundEnabled = true;
+      localStorage.setItem('ilha-admin-notification-sound', 'true');
+      playAdminNotificationSound(true);
+      let pushEnabled = false;
+      try { pushEnabled = await ensureAdminPushSubscription(true); } catch (error) { console.info('Push do ADM indisponível.', error && error.message); }
+      updateAdminNotificationsButtons();
+      toast(pushEnabled ? 'Notificações do ADM ativadas neste aparelho.' : 'Som ativado. Libere as notificações nas configurações do aparelho.');
+    }
+
+    function handleAdminNotificationInsert(payload) {
+      const notification = payload && payload.new || {};
+      playAdminNotificationSound(false);
+      toast([notification.title, notification.body].filter(Boolean).join(' — ') || 'Novo aviso no ADM.');
+      if (document.body.classList.contains('club-clients')) {
+        loadOpsData(true).then(renderClientsModule).catch(function () {});
+      } else if (document.body.classList.contains('club-home')) {
+        loadOpsData(true).then(renderHomeDashboard).catch(function () {});
+      }
+    }
+
+    function initAdminNotificationRealtime() {
+      if (IS_BAR_ADMIN_SURFACE || !adminSession || adminSession.demo || !adminSession.access_token || !window.supabase || !window.supabase.createClient) return;
+      if (!adminNotificationRealtimeClient) {
+        adminNotificationRealtimeClient = window.supabase.createClient(LESSONS_SUPABASE_URL, LESSONS_SUPABASE_ANON_KEY, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+        });
+      }
+      if (adminNotificationRealtimeClient.realtime && adminNotificationRealtimeClient.realtime.setAuth) {
+        adminNotificationRealtimeClient.realtime.setAuth(adminSession.access_token);
+      }
+      if (adminNotificationRealtimeChannel) adminNotificationRealtimeClient.removeChannel(adminNotificationRealtimeChannel);
+      adminNotificationRealtimeChannel = adminNotificationRealtimeClient
+        .channel('admin-notifications-' + adminSession.user.id)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'app_client_notifications',
+          filter: 'user_id=eq.' + adminSession.user.id
+        }, handleAdminNotificationInsert)
+        .subscribe();
+    }
+
     function handleBarIncomingChanges(items) {
       const publicItems = (items || []).filter(isPublicBarItem);
       const currentIds = new Set(publicItems.map(function (item) { return String(item.id); }));
@@ -27482,19 +27578,10 @@
     async function enableBarAlerts() {
       opsState.barAlertsEnabled = true;
       localStorage.setItem('ilha-bar-alerts-enabled', 'true');
+      playBarOrderSound();
       let pushEnabled = false;
       try { pushEnabled = await ensureBarPushSubscription(true); } catch (error) { console.info('Push indisponível.', error && error.message); }
-      try {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioContextClass) {
-          barAudioContext = barAudioContext || new AudioContextClass();
-          if (barAudioContext.state === 'suspended') await barAudioContext.resume();
-        }
-      } catch (error) {
-        console.info('Áudio do navegador indisponível.');
-      }
       updateBarAlertsButton();
-      playBarOrderSound();
       toast(pushEnabled ? 'Notificações de pedidos ativadas neste aparelho.' : 'Alerta sonoro ativado. Libere as notificações nas configurações do aparelho.');
     }
 
@@ -33686,6 +33773,7 @@
         const button = $(id);
         if (button) button.textContent = 'Instalar ' + appName;
       });
+      updateAdminNotificationsButtons();
       if (!IS_BAR_ADMIN_SURFACE) {
         $('adminLoginTitle').textContent = 'Gestão Clube Ilha';
         $('adminLoginSubtitle').textContent = 'Acesse a gestão do clube com seu e-mail de equipe.';
@@ -33818,6 +33906,10 @@
       adminSession = null;
       adminProfile = null;
       adminDemoMode = false;
+      if (adminNotificationRealtimeClient && adminNotificationRealtimeChannel) {
+        adminNotificationRealtimeClient.removeChannel(adminNotificationRealtimeChannel);
+      }
+      adminNotificationRealtimeChannel = null;
       localStorage.removeItem(ADMIN_SESSION_KEY);
       sessionStorage.removeItem('ilha-admin-authenticated');
       sessionStorage.removeItem(ADMIN_DEMO_SESSION_KEY);
@@ -34115,6 +34207,11 @@
       if (IS_BAR_ADMIN_SURFACE) openBarModule();
       else showClubHome();
       $('adminApp').setAttribute('aria-hidden', 'false');
+      if (!IS_BAR_ADMIN_SURFACE && !isAdminDemoMode()) {
+        initAdminNotificationRealtime();
+        if (adminNotificationSoundEnabled) ensureAdminPushSubscription(false).catch(function () {});
+      }
+      updateAdminNotificationsButtons();
     }
 
     function showClubHome() {
@@ -36339,6 +36436,11 @@
       });
       $('barEnableAlertsBtn').addEventListener('click', function () {
         enableBarAlerts().catch(reportActionError);
+      });
+      document.querySelectorAll('[data-admin-notifications]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          enableAdminNotifications().catch(reportActionError);
+        });
       });
       $('barOrderLoudAlert').addEventListener('click', function () {
         this.classList.remove('show');
