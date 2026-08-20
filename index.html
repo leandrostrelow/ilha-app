@@ -1329,6 +1329,92 @@
       font-weight: 800;
     }
 
+    .dashboard-notices {
+      display: grid;
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    .dashboard-notices[hidden] { display: none; }
+
+    .dashboard-notices-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 4px;
+    }
+
+    .dashboard-notices-head h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .dashboard-notices-head button {
+      border: 0;
+      background: transparent;
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .dashboard-notice-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .dashboard-notice-card {
+      width: 100%;
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 62px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #ffffff;
+      color: var(--ink);
+      font: inherit;
+      text-align: left;
+      box-shadow: 0 10px 24px rgba(16, 39, 44, .07);
+    }
+
+    .dashboard-notice-card.no-image {
+      grid-template-columns: minmax(0, 1fr) auto;
+      padding-left: 14px;
+    }
+
+    .dashboard-notice-card img {
+      width: 62px;
+      height: 62px;
+      border-radius: 13px;
+      background: #f2f7f8;
+      object-fit: cover;
+    }
+
+    .dashboard-notice-copy {
+      min-width: 0;
+      display: grid;
+      gap: 3px;
+    }
+
+    .dashboard-notice-copy strong,
+    .dashboard-notice-copy span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dashboard-notice-copy strong { font-size: 14px; }
+    .dashboard-notice-copy span { color: var(--muted); font-size: 12px; font-weight: 760; }
+
+    .dashboard-notice-arrow {
+      color: var(--teal);
+      font-size: 24px;
+      font-weight: 800;
+    }
+
     .plan-tabs {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2942,10 +3028,13 @@
       }
       .mobile-bottom-nav {
         position: fixed;
-        right: max(12px, env(safe-area-inset-right));
-        bottom: 10px;
-        left: max(12px, env(safe-area-inset-left));
+        right: max(10px, env(safe-area-inset-right));
+        bottom: max(8px, env(safe-area-inset-bottom));
+        left: max(10px, env(safe-area-inset-left));
         z-index: 75;
+        width: min(520px, calc(100vw - 20px));
+        margin-inline: auto;
+        box-sizing: border-box;
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         align-items: end;
@@ -3440,14 +3529,14 @@
       .dashboard-finance-icon { width: 42px; height: 42px; border-radius: 0; }
       .dashboard-finance-icon svg { width: 27px; height: 27px; }
       .mobile-bottom-nav {
-        min-height: 60px;
+        min-height: 56px;
         align-items: center;
-        padding: 5px 8px max(5px, env(safe-area-inset-bottom));
-        border-radius: 22px;
+        padding: 4px 6px;
+        border-radius: 20px;
         box-shadow: 0 16px 40px rgba(16, 39, 44, .16);
       }
       .mobile-bottom-nav button,
-      .mobile-bottom-nav a { min-height: 46px; }
+      .mobile-bottom-nav a { min-height: 44px; }
       .mobile-bottom-nav button::before { display: none; }
       .mobile-bottom-nav button.active { color: #123b44; }
       .mobile-bottom-nav button.active > span:not(.notice-count) { color: #123b44; }
@@ -3463,7 +3552,11 @@
       .mobile-bottom-nav svg { width: 22px; height: 22px; }
       .mobile-bottom-nav button > span:not(.notice-count) { font-size: 9px; }
       .mobile-bottom-nav.has-lessons button > span:not(.notice-count) { font-size: 8px; }
-      .client-app { padding-bottom: 88px; }
+      .client-app { padding-bottom: 0; }
+      .content { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+      .dashboard-notice-card { grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; border-radius: 16px; }
+      .dashboard-notice-card.no-image { grid-template-columns: minmax(0, 1fr) auto; }
+      .dashboard-notice-card img { width: 52px; height: 52px; border-radius: 11px; }
     }
 
     .my-lessons-shell {
@@ -3833,6 +3926,13 @@
               </button>
               <section class="dashboard-next-card" id="homeNextBooking" aria-live="polite"></section>
             </div>
+            <section class="dashboard-notices" id="homeNotices" hidden aria-live="polite">
+              <header class="dashboard-notices-head">
+                <h3>Avisos do clube</h3>
+                <button type="button" data-view="notifications">Ver todos</button>
+              </header>
+              <div class="dashboard-notice-list" id="homeAnnouncements"></div>
+            </section>
           </section>
 
           <button class="dashboard-finance-card" type="button" data-view="payments" disabled aria-disabled="true">
@@ -6044,14 +6144,19 @@
       }).join('') : '<div class="empty">Nenhuma notificação no momento.</div>';
       $('notificationsList').innerHTML = html;
       if ($('homeAnnouncements')) {
-        $('homeAnnouncements').innerHTML = list.length ? list.slice(0, 2).map(function (item) {
-          return '<article class="notice-card">' +
+        const homeItems = list.slice(0, 2);
+        $('homeNotices').hidden = homeItems.length === 0;
+        $('homeAnnouncements').innerHTML = homeItems.map(function (item) {
+          return '<button class="dashboard-notice-card' + (item.image_url ? '' : ' no-image') + '" type="button" data-open-notifications>' +
             (item.image_url ? '<img src="' + escapeHtml(item.image_url) + '" alt="" />' : '') +
-            '<div><h3>' + escapeHtml(item.title) + '</h3>' +
-            (item.body ? '<p>' + escapeHtml(item.body) + '</p>' : '') + '</div>' +
-            (item.link_url ? '<a class="ghost-btn" href="' + escapeHtml(item.link_url) + '" target="_blank" rel="noopener">Abrir comunicado</a>' : '') +
-          '</article>';
-        }).join('') : '<div class="empty">Nenhum comunicado no momento.</div>';
+            '<div class="dashboard-notice-copy"><strong>' + escapeHtml(item.title) + '</strong>' +
+            (item.body ? '<span>' + escapeHtml(item.body) + '</span>' : '<span>Novo aviso do Ilha Tênis</span>') + '</div>' +
+            '<span class="dashboard-notice-arrow" aria-hidden="true">›</span>' +
+          '</button>';
+        }).join('');
+        $('homeAnnouncements').querySelectorAll('[data-open-notifications]').forEach(function (button) {
+          button.addEventListener('click', function () { showView('notifications'); });
+        });
       }
       updateNotificationBadges(unreadCount);
     }

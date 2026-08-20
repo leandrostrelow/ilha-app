@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v202-announcement-delete';
+const CACHE_NAME = 'ilha-play-v203-mobile-menu-home-notices';
 const ASSETS = [
   './',
   './index.html',
