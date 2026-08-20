@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v195-exempt-lessons';
+const CACHE_NAME = 'ilha-play-v196-realtime-courts';
 const ASSETS = [
   './',
   './index.html',
@@ -45,13 +45,8 @@ self.addEventListener('activate', event => {
     caches.keys()
       .then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
       .then(() => self.clients.claim())
-      .then(() => self.registration.showNotification('O novo Ilha Play chegou', {
-        body: 'O acesso antigo foi encerrado. Faça seu novo cadastro para reservar quadras e usar os serviços do clube.',
-        icon: '/icon.png',
-        badge: '/icon.png',
-        tag: 'ilha-play-novo-cadastro',
-        data: { url: '/' }
-      }).catch(() => {}))
+      .then(() => self.clients.matchAll({ type: 'window', includeUncontrolled: true }))
+      .then(clients => clients.forEach(client => client.postMessage({ type: 'APP_UPDATED', cache: CACHE_NAME })))
   );
 });
 

@@ -2373,6 +2373,20 @@
     .court-dialog-actions { display: flex; gap: 9px; padding: 0 20px 20px; }
     .court-dialog-actions > * { flex: 1; }
 
+    .court-guest-warning {
+      display: block;
+      margin-top: 7px;
+      color: #9b5b00;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.4;
+    }
+
+    button[aria-disabled="true"] {
+      cursor: not-allowed;
+      opacity: .52;
+    }
+
     .court-rules-list {
       display: grid;
       gap: 10px;
@@ -3658,7 +3672,7 @@
                 <input id="signupPasswordConfirm" type="password" autocomplete="new-password" minlength="8" placeholder="Repita a senha" required />
               </div>
             </div>
-            <div class="auth-note">Sua conta será liberada na hora. As reservas de quadra ficam disponíveis quando um plano ou pacote ativo for vinculado.</div>
+            <div class="auth-note">Sua conta será liberada na hora. Por enquanto, todo cliente ativo pode reservar quadras; o plano pode ser vinculado depois.</div>
             <button class="primary-btn" type="submit" id="signupSubmit">Criar minha conta</button>
           </form>
         </div>
@@ -3737,7 +3751,7 @@
         <button class="active" type="button" data-view="home"><span class="nav-icon"><svg><use href="#client-icon-home"></use></svg></span><span>Início</span></button>
         <button type="button" data-view="courts"><span class="nav-icon"><svg><use href="#client-icon-play"></use></svg></span><span>Jogar</span></button>
         <button type="button" data-view="lessons" data-lesson-plan-only hidden><span class="nav-icon"><svg><use href="#client-icon-lessons"></use></svg></span><span>Minhas aulas</span></button>
-        <button type="button" data-view="payments"><span class="nav-icon"><svg><use href="#client-icon-card"></use></svg></span><span>Financeiro</span></button>
+        <button type="button" data-view="payments" disabled aria-disabled="true" title="Financeiro em breve"><span class="nav-icon"><svg><use href="#client-icon-card"></use></svg></span><span>Financeiro · em breve</span></button>
         <button type="button" data-view="profile"><span class="nav-icon"><svg><use href="#client-icon-user"></use></svg></span><span>Meu perfil</span></button>
       </nav>
     </aside>
@@ -3764,7 +3778,7 @@
               <span class="dashboard-kicker">Meu plano</span>
               <h3 id="homePlanName">Plano ainda não vinculado</h3>
               <span class="dashboard-status" id="homePlanStatusLabel">Acesso limitado</span>
-              <p id="homePlanMeta">Escolha um plano para liberar as reservas.</p>
+              <p id="homePlanMeta">Reservas liberadas · plano pode ser definido depois.</p>
               <button type="button" data-view="plans">Ver plano <span aria-hidden="true">›</span></button>
             </div>
           </article>
@@ -3781,9 +3795,9 @@
             </div>
           </section>
 
-          <button class="dashboard-finance-card" type="button" data-view="payments">
+          <button class="dashboard-finance-card" type="button" data-view="payments" disabled aria-disabled="true">
             <span class="dashboard-finance-icon"><svg><use href="#client-icon-card"></use></svg></span>
-            <span><strong>Financeiro</strong><small id="homeFinanceSummary">Tudo em dia</small></span>
+            <span><strong>Financeiro</strong><small id="homeFinanceSummary">Em breve</small></span>
             <span class="dashboard-finance-arrow" aria-hidden="true">›</span>
           </button>
 
@@ -3944,7 +3958,7 @@
       <button class="active" type="button" data-view="home" aria-label="Início"><svg><use href="#client-icon-home"></use></svg><span>Início</span></button>
       <button type="button" data-view="courts" aria-label="Jogar"><svg><use href="#client-icon-play"></use></svg><span>Jogar</span></button>
       <button type="button" data-view="lessons" data-lesson-plan-only hidden aria-label="Minhas aulas"><svg><use href="#client-icon-lessons"></use></svg><span>Minhas aulas</span></button>
-      <button type="button" data-view="payments" aria-label="Financeiro"><svg><use href="#client-icon-card"></use></svg><span>Financeiro</span></button>
+      <button type="button" data-view="payments" disabled aria-disabled="true" aria-label="Financeiro em breve"><svg><use href="#client-icon-card"></use></svg><span>Em breve</span></button>
       <button type="button" data-view="profile" aria-label="Meu perfil"><svg><use href="#client-icon-user"></use></svg><span>Meu perfil</span></button>
     </nav>
   </main>
@@ -3961,8 +3975,15 @@
       <form id="clientCourtBookingForm">
         <div class="court-dialog-body">
           <div class="field full">
-            <label for="clientCourtOpponent">Com quem você vai jogar?</label>
-            <input id="clientCourtOpponent" required minlength="2" placeholder="Nome do adversário" />
+            <label for="clientCourtOpponentSelect">Com quem você vai jogar?</label>
+            <select id="clientCourtOpponentSelect" required>
+              <option value="">Selecione um aluno ativo</option>
+            </select>
+          </div>
+          <div class="field full" id="clientCourtGuestField" hidden>
+            <label for="clientCourtOpponent">Nome do convidado</label>
+            <input id="clientCourtOpponent" minlength="2" placeholder="Nome completo" />
+            <small class="court-guest-warning">Um nome avulso pode gerar cobrança extra conforme as regras do seu plano.</small>
           </div>
           <div class="field full">
             <label for="clientCourtNotes">Observação (opcional)</label>
@@ -4052,6 +4073,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
   <script>
     const SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_zcX8te5g99p0bA12xy_E-A_MTyNpJNx';
@@ -4102,11 +4124,16 @@
     let announcements = [];
     let courtAvailability = [];
     let courtScheduleDays = [];
+    let courtOpponents = [];
     let myCourtBookings = [];
     let myLessons = [];
     let selectedCourtDate = '';
     let selectedCourtSlot = null;
     let courtDataLoading = false;
+    let courtDataReloadPending = false;
+    let courtRealtimeClient = null;
+    let courtRealtimeChannel = null;
+    let courtRealtimeRefreshTimer = 0;
     let activePlanTab = 'aluno';
     let paymentFilter = { month: 'all', year: 'all' };
     let activePixPayload = '';
@@ -4124,7 +4151,7 @@
     };
     const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     const clientCourtNames = ['Quadra 1', 'Quadra 2'];
-    const clientCourtTimes = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
+    const clientCourtDefaultTimes = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
 
     function $(id) {
       return document.getElementById(id);
@@ -4220,6 +4247,18 @@
       if (!('serviceWorker' in navigator) || window.location.protocol === 'file:') return null;
       await navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
       return navigator.serviceWorker.ready;
+    }
+
+    function listenForClientAppUpdates() {
+      if (!('serviceWorker' in navigator)) return;
+      navigator.serviceWorker.addEventListener('message', function (event) {
+        const data = event.data || {};
+        if (data.type !== 'APP_UPDATED' || !data.cache) return;
+        const key = 'ilha-app-reloaded-cache';
+        if (sessionStorage.getItem(key) === data.cache) return;
+        sessionStorage.setItem(key, data.cache);
+        window.location.reload();
+      });
     }
 
     function clientAppIsInstalled() {
@@ -4505,6 +4544,22 @@
       return Array.from(new Set(dates)).sort().slice(0, 12);
     }
 
+    function normalizeClientCourtTimes(values) {
+      return (Array.isArray(values) ? values : []).map(function (value) {
+        return String(value || '').slice(0, 5);
+      }).filter(function (value, index, rows) {
+        return /^\d{2}:\d{2}$/.test(value) && rows.indexOf(value) === index;
+      }).sort();
+    }
+
+    function clientCourtTimesForDate(dateValue) {
+      const schedule = courtScheduleDays.find(function (item) {
+        return String(item.schedule_date) === String(dateValue);
+      });
+      const configured = normalizeClientCourtTimes(schedule && schedule.slot_times);
+      return configured.length ? configured : clientCourtDefaultTimes;
+    }
+
     function isClientCourtWeekend(dateValue) {
       const day = new Date(dateValue + 'T12:00:00').getDay();
       return day === 0 || day === 6;
@@ -4588,7 +4643,9 @@
     }
 
     function canClientBookCourt() {
-      return Boolean(activeClientPlan());
+      return Boolean(client &&
+        String(client.status || 'ATIVO').toUpperCase() === 'ATIVO' &&
+        client.registration_completed_at);
     }
 
     function myClientCourtBooking(dateValue) {
@@ -4610,13 +4667,17 @@
         const endDate = localDateString(end);
         const userId = session.user && session.user.id;
         const results = await Promise.all([
-          rest('app_court_schedule_days?select=schedule_date,enabled,notes&schedule_date=gte.' + startDate + '&schedule_date=lte.' + endDate + '&order=schedule_date.asc', { auth: true }).catch(function () { return []; }),
+          rest('app_court_schedule_days?select=schedule_date,enabled,notes,slot_times&schedule_date=gte.' + startDate + '&schedule_date=lte.' + endDate + '&order=schedule_date.asc', { auth: true }).catch(function () { return []; }),
           rest('rpc/get_app_court_availability', { method: 'POST', body: { p_start_date: startDate, p_end_date: endDate }, prefer: 'return=representation' }),
-          rest('app_court_bookings?select=id,booking_date,starts_at,court_name,status,opponent_name,notes&client_id=eq.' + encodeURIComponent(userId) + '&status=neq.CANCELADO&booking_date=gte.' + startDate + '&order=booking_date.asc,starts_at.asc', { auth: true }).catch(function () { return []; })
+          rest('app_court_bookings?select=id,booking_date,starts_at,court_name,status,opponent_name,notes&client_id=eq.' + encodeURIComponent(userId) + '&status=neq.CANCELADO&booking_date=gte.' + startDate + '&order=booking_date.asc,starts_at.asc', { auth: true }).catch(function () { return []; }),
+          rest('rpc/get_active_court_opponents', { method: 'POST', body: {}, prefer: 'return=representation' }).catch(function () { return []; })
         ]);
         courtScheduleDays = results[0] || [];
         courtAvailability = Array.isArray(results[1]) ? results[1] : [];
         myCourtBookings = results[2] || [];
+        courtOpponents = (results[3] || []).slice().sort(function (a, b) {
+          return String(a.full_name || '').localeCompare(String(b.full_name || ''), 'pt-BR');
+        });
         const dates = clientCourtDates();
         if (!dates.includes(selectedCourtDate)) selectedCourtDate = dates[0] || '';
         renderHome();
@@ -4627,7 +4688,40 @@
         toast(error.message || 'Não consegui carregar a agenda agora.');
       } finally {
         courtDataLoading = false;
+        if (courtDataReloadPending) {
+          courtDataReloadPending = false;
+          scheduleClientCourtRealtimeRefresh();
+        }
       }
+    }
+
+    function scheduleClientCourtRealtimeRefresh() {
+      clearTimeout(courtRealtimeRefreshTimer);
+      courtRealtimeRefreshTimer = setTimeout(function () {
+        if (!session || document.hidden) return;
+        if (courtDataLoading) {
+          courtDataReloadPending = true;
+          return;
+        }
+        loadClientCourtData(false).catch(function () {});
+      }, 120);
+    }
+
+    function initClientCourtRealtime() {
+      if (!session || !session.access_token || !window.supabase || !window.supabase.createClient) return;
+      if (!courtRealtimeClient) {
+        courtRealtimeClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+        });
+      }
+      if (courtRealtimeClient.realtime && courtRealtimeClient.realtime.setAuth) {
+        courtRealtimeClient.realtime.setAuth(session.access_token);
+      }
+      if (courtRealtimeChannel) courtRealtimeClient.removeChannel(courtRealtimeChannel);
+      courtRealtimeChannel = courtRealtimeClient.channel('client-court-schedule')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'app_court_slot_events' }, scheduleClientCourtRealtimeRefresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'app_court_schedule_days' }, scheduleClientCourtRealtimeRefresh)
+        .subscribe();
     }
 
     function renderClientCourts() {
@@ -4639,7 +4733,7 @@
       const canBook = canClientBookCourt();
       if (planGate) {
         planGate.hidden = canBook;
-        planGate.innerHTML = canBook ? '' : '<div><strong>Plano necessário para reservar</strong><span>Você pode consultar os horários. Para confirmar uma reserva, contrate um plano ou aguarde a equipe vincular seu pacote.</span></div><button class="primary-btn" type="button" data-court-open-plans>Ver planos</button>';
+        planGate.innerHTML = canBook ? '' : '<div><strong>Cadastro ativo necessário</strong><span>Assim que seu cadastro estiver ativo, você poderá confirmar horários.</span></div>';
       }
       const dates = clientCourtDates();
       if (!dates.length) {
@@ -4662,8 +4756,9 @@
         ownBox.classList.remove('show');
       }
 
+      const selectedTimes = clientCourtTimesForDate(selectedCourtDate);
       board.innerHTML = clientCourtNames.map(function (court) {
-        return '<section class="client-court-column"><h3>' + escapeHtml(court) + '</h3>' + clientCourtTimes.map(function (time) {
+        return '<section class="client-court-column"><h3>' + escapeHtml(court) + '</h3>' + selectedTimes.map(function (time) {
           const fixed = isClientCourtFixedBlock(selectedCourtDate, court, time);
           const booking = clientCourtAvailabilityAt(selectedCourtDate, court, time);
           if (fixed && !booking) {
@@ -4675,7 +4770,7 @@
             return '<button class="client-court-slot ' + (mine ? 'mine' : 'busy') + '" type="button" disabled><span class="client-court-time">' + time + '</span><span><strong>' + escapeHtml(reservedBy) + '</strong><small>Horário reservado</small></span><span class="client-court-badge">' + (mine ? 'Sua' : 'Ocupado') + '</span></button>';
           }
           if (!canBook) {
-            return '<button class="client-court-slot plan-locked" type="button" disabled><span class="client-court-time">' + time + '</span><span><strong>Livre</strong><small>Vincule um plano para reservar</small></span><span class="client-court-badge">Plano</span></button>';
+            return '<button class="client-court-slot plan-locked" type="button" disabled><span class="client-court-time">' + time + '</span><span><strong>Livre</strong><small>Cadastro ainda não está ativo</small></span><span class="client-court-badge">Bloqueado</span></button>';
           }
           return '<button class="client-court-slot free" type="button" data-open-client-court="' + escapeHtml([selectedCourtDate, court, time].join('|')) + '"><span class="client-court-time">' + time + '</span><span><strong>Livre</strong><small>Toque para reservar</small></span><span class="client-court-badge">Livre</span></button>';
         }).join('') + '</section>';
@@ -4684,8 +4779,7 @@
 
     function openClientCourtBooking(slotKey) {
       if (!canClientBookCourt()) {
-        toast('Vincule um plano ou pacote ativo para reservar.');
-        showView('plans');
+        toast('Seu cadastro precisa estar ativo para reservar.');
         return;
       }
       const parts = String(slotKey || '').split('|');
@@ -4693,11 +4787,17 @@
       selectedCourtSlot = { date: parts[0], court: parts[1], time: parts[2] };
       $('clientCourtModalTitle').textContent = parts[1] + ' às ' + parts[2];
       $('clientCourtModalSubtitle').textContent = clientCourtDayLabel(parts[0]);
+      $('clientCourtOpponentSelect').innerHTML = '<option value="">Selecione um aluno ativo</option>' + courtOpponents.map(function (opponent) {
+        return '<option value="' + escapeHtml(opponent.full_name || '') + '">' + escapeHtml(opponent.full_name || '') + '</option>';
+      }).join('') + '<option value="__guest__">Convidado / nome avulso</option>';
+      $('clientCourtOpponentSelect').value = '';
+      $('clientCourtGuestField').hidden = true;
+      $('clientCourtOpponent').required = false;
       $('clientCourtOpponent').value = '';
       $('clientCourtNotes').value = '';
       $('clientCourtBookingModal').hidden = false;
       document.body.style.overflow = 'hidden';
-      setTimeout(function () { $('clientCourtOpponent').focus(); }, 50);
+      setTimeout(function () { $('clientCourtOpponentSelect').focus(); }, 50);
     }
 
     function closeClientCourtBooking() {
@@ -4711,8 +4811,15 @@
       if (!selectedCourtSlot) return;
       if (!canClientBookCourt()) {
         closeClientCourtBooking();
-        showView('plans');
-        toast('Vincule um plano ou pacote ativo para reservar.');
+        toast('Seu cadastro precisa estar ativo para reservar.');
+        return;
+      }
+      const opponentChoice = $('clientCourtOpponentSelect').value;
+      const opponentName = opponentChoice === '__guest__'
+        ? $('clientCourtOpponent').value.trim()
+        : opponentChoice;
+      if (!opponentName || opponentName.length < 2) {
+        toast('Selecione um aluno ativo ou informe o convidado.');
         return;
       }
       const submit = $('clientCourtBookingSubmit');
@@ -4724,7 +4831,7 @@
             p_booking_date: selectedCourtSlot.date,
             p_starts_at: selectedCourtSlot.time,
             p_court_name: selectedCourtSlot.court,
-            p_opponent_name: $('clientCourtOpponent').value.trim(),
+            p_opponent_name: opponentName,
             p_notes: $('clientCourtNotes').value.trim() || null
           },
           prefer: 'return=representation'
@@ -4733,6 +4840,7 @@
         await loadClientCourtData(false);
         toast('Quadra reservada.');
       } catch (error) {
+        await loadClientCourtData(false).catch(function () {});
         toast(error.message || 'Não consegui reservar este horário.');
       } finally {
         submit.disabled = false;
@@ -5606,6 +5714,10 @@
     function showView(view) {
       const allowedViews = ['home', 'plans', 'payments', 'courts', 'lessons', 'profile', 'notifications'];
       if (!allowedViews.includes(view)) view = 'home';
+      if (view === 'payments') {
+        toast('O Financeiro está temporariamente indisponível.');
+        view = 'home';
+      }
       if (view === 'lessons' && !hasLessonPlan()) view = 'home';
       document.body.classList.toggle('client-home-view', view === 'home');
       const resetViewScroll = function () { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); };
@@ -5800,14 +5912,14 @@
         }
       } else if (declaredPlan) {
         $('homePlanName').textContent = declaredPlan;
-        status.textContent = 'Acesso limitado';
-        status.classList.add('limited');
-        $('homePlanMeta').textContent = 'Vincule um plano para liberar as reservas.';
+        status.textContent = 'Cadastro ativo';
+        status.classList.remove('limited');
+        $('homePlanMeta').textContent = 'Reservas liberadas · plano aguardando vínculo';
       } else {
         $('homePlanName').textContent = 'Plano ainda não vinculado';
-        status.textContent = 'Acesso limitado';
-        status.classList.add('limited');
-        $('homePlanMeta').textContent = 'Escolha um plano para liberar as reservas.';
+        status.textContent = 'Cadastro ativo';
+        status.classList.remove('limited');
+        $('homePlanMeta').textContent = 'Reservas liberadas · plano pode ser definido depois';
       }
       renderHomeBooking();
       renderHomeFinance();
@@ -6469,6 +6581,7 @@
       if (!session) return;
       await ensureClient(null, null);
       await loadClientData();
+      initClientCourtRealtime();
       renderAll();
       if (!silent) toast('Área atualizada.');
     }
@@ -6482,6 +6595,7 @@
       updateRegistrationConditionalFields('signup');
       updateRegistrationConditionalFields('complete');
       ensureClientServiceWorker().catch(function () {});
+      listenForClientAppUpdates();
       setupPullToRefresh();
       setupSwipeBack();
       $('showLoginBtn').addEventListener('click', function () { showAuthTab('login'); });
@@ -6545,6 +6659,12 @@
         if (button) cancelClientCourtBooking(button.dataset.cancelClientCourt);
       });
       $('clientCourtBookingForm').addEventListener('submit', saveClientCourtBooking);
+      $('clientCourtOpponentSelect').addEventListener('change', function () {
+        const isGuest = this.value === '__guest__';
+        $('clientCourtGuestField').hidden = !isGuest;
+        $('clientCourtOpponent').required = isGuest;
+        if (isGuest) setTimeout(function () { $('clientCourtOpponent').focus(); }, 30);
+      });
       $('clientCourtBookingModal').addEventListener('click', function (event) {
         if (event.target === $('clientCourtBookingModal') || event.target.closest('[data-close-court-booking]')) closeClientCourtBooking();
       });
@@ -6558,6 +6678,15 @@
           document.body.style.overflow = '';
         }
       });
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden && session) scheduleClientCourtRealtimeRefresh();
+      });
+      setInterval(function () {
+        const courts = $('view-courts');
+        if (session && !document.hidden && courts && courts.classList.contains('active')) {
+          scheduleClientCourtRealtimeRefresh();
+        }
+      }, 10000);
       $('planGrid').addEventListener('click', function (event) {
         const tabBtn = event.target.closest('[data-plan-tab]');
         if (tabBtn) {

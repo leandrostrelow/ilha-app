@@ -1306,6 +1306,47 @@
       font-weight: 900;
     }
 
+    .court-time-add {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+    }
+
+    .court-time-choices {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8fbfc;
+    }
+
+    .court-time-choice {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 7px 13px;
+      background: #ffffff;
+      color: var(--ink);
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .court-time-choice.active {
+      border-color: var(--teal);
+      background: var(--teal);
+      color: #ffffff;
+    }
+
+    .court-rule-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .court-rule-actions > button { flex: 1 1 220px; }
+
     .announcement-upload-preview {
       display: none;
       overflow: hidden;
@@ -18159,7 +18200,7 @@
             <div class="muted">Reservas do Ilha Play e bloqueios das quadras.</div>
           </div>
           <div class="module-actions">
-            <button class="ghost-btn" type="button" id="courtRulesBtn">Dias e regras</button>
+            <button class="ghost-btn" type="button" id="courtRulesBtn">Dias e horários</button>
             <button class="ghost-btn" type="button" data-home-action>Início</button>
             <button class="ghost-btn" type="button" id="courtReloadBtn">Recarregar</button>
           </div>
@@ -18191,29 +18232,36 @@
       <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="courtRulesModalTitle">
         <div class="admin-modal-head">
           <div>
-            <h2 id="courtRulesModalTitle">Dias e regras</h2>
-            <div class="muted">Sábados e domingos abrem automaticamente. Libere outros dias quando precisar.</div>
+            <h2 id="courtRulesModalTitle">Dias e horários</h2>
+            <div class="muted">Escolha a data, defina os horários e publique para todos em tempo real.</div>
           </div>
           <button class="ghost-btn" type="button" id="courtRulesModalClose">Fechar</button>
         </div>
         <div class="admin-modal-body">
           <div class="form-grid" id="courtBookingTools">
             <div class="field">
-              <label for="courtExtraDate">Liberar outro dia</label>
+              <label for="courtExtraDate">Data</label>
               <input id="courtExtraDate" type="date" />
             </div>
-            <div class="field" style="align-self:end">
-              <button class="primary-btn" type="button" id="courtAddDayBtn">Adicionar dia</button>
+            <div class="field">
+              <label for="courtNewTime">Adicionar horário</label>
+              <div class="court-time-add"><input id="courtNewTime" type="time" value="14:00" /><button class="ghost-btn" type="button" id="courtAddTimeBtn">Adicionar</button></div>
             </div>
             <div class="field full">
-              <label>Dias extras liberados</label>
+              <label>Horários disponíveis</label>
+              <div class="court-time-choices" id="courtTimeChoices"></div>
+            </div>
+            <div class="field full court-rule-actions">
+              <button class="primary-btn" type="button" id="courtAddDayBtn">Salvar dia e horários</button>
+              <button class="ghost-btn" type="button" id="courtClearDayBtn">Zerar reservas deste dia</button>
+              <button class="ghost-btn" type="button" id="courtRefreshDatesBtn">Atualizar próximo fim de semana</button>
+            </div>
+            <div class="field full">
+              <label>Dias configurados</label>
               <div class="ops-list" id="courtExtraDaysList"></div>
             </div>
             <div class="field full">
-              <button class="ghost-btn" type="button" id="courtResetWeekendBtn">Cancelar reservas do fim de semana</button>
-            </div>
-            <div class="field full">
-              <div class="empty">Cada aluno pode reservar um horário por dia.</div>
+              <button class="ghost-btn" type="button" id="courtResetWeekendBtn">Zerar reservas do próximo fim de semana</button>
             </div>
           </div>
         </div>
@@ -20050,6 +20098,7 @@
   <div class="toast" id="toast"></div>
 
   <script src="../assets/vendor/qrcode-generator.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
   <script>
     window.addEventListener('error', function (event) {
       var status = document.getElementById('syncStatus');
@@ -24032,6 +24081,10 @@
     };
     const opsSeedData = JSON.parse(JSON.stringify(opsData));
     let courtRefreshTimer = null;
+    let courtRealtimeClient = null;
+    let courtRealtimeChannel = null;
+    let courtRealtimeRefreshTimer = 0;
+    let courtDraftTimes = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
     let barRefreshTimer = null;
     let barAudioContext = null;
 
@@ -24336,7 +24389,10 @@
       return {
         date: row.schedule_date || '',
         enabled: row.enabled !== false,
-        notes: row.notes || ''
+        notes: row.notes || '',
+        times: (Array.isArray(row.slot_times) ? row.slot_times : []).map(function (value) {
+          return String(value || '').slice(0, 5);
+        }).filter(Boolean).sort()
       };
     }
 
@@ -25446,7 +25502,7 @@
     }
 
     const courtNames = ['Quadra 1', 'Quadra 2'];
-    const courtTimes = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
+    const courtDefaultTimes = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
 
     function nextWeekendDates() {
       const today = new Date();
@@ -25462,6 +25518,22 @@
         return item.enabled !== false;
       }).map(function (item) { return item.date; }));
       return Array.from(new Set(dates)).sort();
+    }
+
+    function normalizeCourtTimes(values) {
+      return (Array.isArray(values) ? values : []).map(function (value) {
+        return String(value || '').slice(0, 5);
+      }).filter(function (value, index, rows) {
+        return /^\d{2}:\d{2}$/.test(value) && rows.indexOf(value) === index;
+      }).sort();
+    }
+
+    function courtTimesForDate(dateValue) {
+      const schedule = (opsData.courtScheduleDays || []).find(function (item) {
+        return String(item.date) === String(dateValue);
+      });
+      const configured = normalizeCourtTimes(schedule && schedule.times);
+      return configured.length ? configured : courtDefaultTimes.slice();
     }
 
     function courtDayLabel(dateValue) {
@@ -25503,6 +25575,31 @@
       }
     }
 
+    function scheduleAdminCourtRealtimeRefresh() {
+      clearTimeout(courtRealtimeRefreshTimer);
+      courtRealtimeRefreshTimer = setTimeout(function () {
+        if (!adminSession || document.hidden || !document.body.classList.contains('club-courts')) return;
+        loadCourtBookingData(false).catch(function () {});
+      }, 120);
+    }
+
+    function initAdminCourtRealtime() {
+      if (!adminSession || !adminSession.access_token || !window.supabase || !window.supabase.createClient) return;
+      if (!courtRealtimeClient) {
+        courtRealtimeClient = window.supabase.createClient(LESSONS_SUPABASE_URL, LESSONS_SUPABASE_ANON_KEY, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+        });
+      }
+      if (courtRealtimeClient.realtime && courtRealtimeClient.realtime.setAuth) {
+        courtRealtimeClient.realtime.setAuth(adminSession.access_token);
+      }
+      if (courtRealtimeChannel) courtRealtimeClient.removeChannel(courtRealtimeChannel);
+      courtRealtimeChannel = courtRealtimeClient.channel('admin-court-schedule')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'app_court_slot_events' }, scheduleAdminCourtRealtimeRefresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'app_court_schedule_days' }, scheduleAdminCourtRealtimeRefresh)
+        .subscribe();
+    }
+
     function renderCourtBookingModule() {
       const dates = courtAgendaDates();
       if (!dates.includes(opsState.courtDate)) opsState.courtDate = dates[0];
@@ -25515,16 +25612,17 @@
       });
       const occupied = selectedRows.filter(function (item) { return item.status !== 'BLOQUEADO'; });
       const manualBlocked = selectedRows.filter(function (item) { return item.status === 'BLOQUEADO'; });
+      const selectedTimes = courtTimesForDate(selectedDate);
       const fixedBlocks = courtNames.reduce(function (sum, court) {
-        return sum + courtTimes.filter(function (time) { return isFixedCourtBlock(selectedDate, court, time); }).length;
+        return sum + selectedTimes.filter(function (time) { return isFixedCourtBlock(selectedDate, court, time); }).length;
       }, 0);
-      const totalSlots = courtNames.length * courtTimes.length;
+      const totalSlots = courtNames.length * selectedTimes.length;
       $('courtDayMetric').textContent = selectedRows.length;
       $('courtBusyMetric').textContent = occupied.length;
       $('courtBlockedMetric').textContent = manualBlocked.length + fixedBlocks;
       $('courtFreeMetric').textContent = Math.max(0, totalSlots - occupied.length - manualBlocked.length - fixedBlocks);
       $('courtBoard').innerHTML = '<div class="court-day-board">' + courtNames.map(function (court) {
-        return '<section class="court-column"><h3>' + escapeHtml(court) + '</h3><div class="court-grid">' + courtTimes.map(function (time) {
+        return '<section class="court-column"><h3>' + escapeHtml(court) + '</h3><div class="court-grid">' + selectedTimes.map(function (time) {
           const booking = findCourtBooking(selectedDate, court, time);
           const fixed = isFixedCourtBlock(selectedDate, court, time);
           if (fixed && !booking) {
@@ -25543,25 +25641,54 @@
     function renderCourtExtraDays() {
       const list = $('courtExtraDaysList');
       if (!list) return;
-      const weekendDates = new Set(nextWeekendDates());
       const rows = (opsData.courtScheduleDays || []).filter(function (item) {
-        return item.enabled !== false && !weekendDates.has(item.date);
-      });
+        return item.enabled !== false;
+      }).slice().sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
       list.innerHTML = rows.map(function (item) {
-        return '<article class="ops-list-card"><div class="ops-list-main"><strong>' + escapeHtml(courtDayLabel(item.date)) + '</strong><button class="small-btn" type="button" data-remove-court-day="' + escapeHtml(item.date) + '">Remover</button></div></article>';
-      }).join('') || '<div class="lesson-empty-state">Nenhum dia extra liberado.</div>';
+        const times = normalizeCourtTimes(item.times);
+        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(courtDayLabel(item.date)) + '</strong><div class="muted">' + escapeHtml((times.length ? times : courtDefaultTimes).join(' · ')) + '</div></div><div class="ops-actions"><button class="small-btn" type="button" data-edit-court-day="' + escapeHtml(item.date) + '">Editar</button><button class="small-btn" type="button" data-remove-court-day="' + escapeHtml(item.date) + '">Remover</button></div></div></article>';
+      }).join('') || '<div class="lesson-empty-state">O fim de semana usa os horários padrão. Escolha uma data para personalizar.</div>';
+    }
+
+    function renderCourtTimeChoices() {
+      const container = $('courtTimeChoices');
+      if (!container) return;
+      const suggestions = Array.from(new Set(courtDefaultTimes.concat(courtDraftTimes))).sort();
+      container.innerHTML = suggestions.map(function (time) {
+        const active = courtDraftTimes.includes(time);
+        return '<button class="court-time-choice' + (active ? ' active' : '') + '" type="button" data-court-time-choice="' + escapeHtml(time) + '" aria-pressed="' + String(active) + '">' + escapeHtml(time) + '</button>';
+      }).join('');
+    }
+
+    function loadCourtDraftForDate(dateValue) {
+      const existing = (opsData.courtScheduleDays || []).find(function (item) { return item.date === dateValue; });
+      courtDraftTimes = normalizeCourtTimes(existing && existing.times);
+      if (!courtDraftTimes.length) courtDraftTimes = courtDefaultTimes.slice();
+      renderCourtTimeChoices();
+    }
+
+    function addCourtDraftTime() {
+      const value = String($('courtNewTime').value || '').slice(0, 5);
+      if (!/^\d{2}:\d{2}$/.test(value)) {
+        toast('Informe um horário válido.');
+        return;
+      }
+      if (!courtDraftTimes.includes(value)) courtDraftTimes.push(value);
+      courtDraftTimes.sort();
+      renderCourtTimeChoices();
     }
 
     function openCourtBookingModule() {
       setClubMode('club-courts');
       renderCourtBookingModule();
+      initAdminCourtRealtime();
       loadCourtBookingData(false).catch(reportActionError);
       if (!courtRefreshTimer) {
         courtRefreshTimer = setInterval(function () {
           if (document.body.classList.contains('club-courts') && document.visibilityState === 'visible') {
             loadCourtBookingData(false).catch(function () {});
           }
-        }, 5000);
+        }, 15000);
       }
     }
 
@@ -25575,7 +25702,10 @@
       $('courtSlotModalTitle').textContent = court + ' • ' + time;
       $('courtSlotModalSubtitle').textContent = courtDayLabel(date);
       $('courtSlotStatus').value = booking && booking.status === 'BLOQUEADO' ? 'BLOQUEADO' : 'CONFIRMADO';
-      $('courtSlotClient').innerHTML = '<option value="">Selecione</option>' + opsData.clients.map(function (client) {
+      const eligibleClients = opsData.clients.filter(function (client) {
+        return String(client.status || 'ATIVO').toUpperCase() === 'ATIVO' && client.registrationCompletedAt;
+      }).sort(function (a, b) { return a.name.localeCompare(b.name, 'pt-BR'); });
+      $('courtSlotClient').innerHTML = '<option value="">Selecione um aluno ativo</option>' + eligibleClients.map(function (client) {
         const value = client.id || client.email || client.name;
         const selected = booking && String(booking.clientId || booking.client) === String(client.id || client.name) ? ' selected' : '';
         return '<option value="' + escapeHtml(value) + '"' + selected + '>' + escapeHtml(client.name) + '</option>';
@@ -25668,22 +25798,87 @@
         toast('Escolha uma data.');
         return;
       }
+      if (!courtDraftTimes.length) {
+        toast('Adicione pelo menos um horário.');
+        return;
+      }
       try {
         requireAdminSession();
+        const databaseTimes = courtDraftTimes.map(function (time) { return time + ':00'; });
         if (!isAdminDemoMode()) {
           await supabaseRest('app_court_schedule_days?on_conflict=schedule_date', {
             method: 'POST',
-            body: { schedule_date: value, enabled: true },
+            body: { schedule_date: value, enabled: true, slot_times: databaseTimes },
             prefer: 'resolution=merge-duplicates,return=representation'
           });
         }
         const existing = (opsData.courtScheduleDays || []).find(function (item) { return item.date === value; });
-        if (existing) existing.enabled = true;
-        else opsData.courtScheduleDays.push({ date: value, enabled: true, notes: '' });
+        if (existing) {
+          existing.enabled = true;
+          existing.times = courtDraftTimes.slice();
+        } else {
+          opsData.courtScheduleDays.push({ date: value, enabled: true, notes: '', times: courtDraftTimes.slice() });
+        }
         opsState.courtDate = value;
-        $('courtExtraDate').value = '';
         renderCourtBookingModule();
-        toast('Dia liberado no Ilha Play.');
+        renderCourtTimeChoices();
+        toast('Dia e horários atualizados para todos.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function clearCourtDateBookings(dateValue) {
+      if (!dateValue) {
+        toast('Escolha a data que deseja zerar.');
+        return;
+      }
+      if (!window.confirm('Zerar todas as reservas de ' + courtDayLabel(dateValue) + '?')) return;
+      try {
+        requireAdminSession();
+        if (!isAdminDemoMode()) {
+          await supabaseRest('app_court_bookings?booking_date=eq.' + encodeURIComponent(dateValue) + '&status=neq.CANCELADO', {
+            method: 'PATCH',
+            body: { status: 'CANCELADO' },
+            prefer: 'return=minimal'
+          });
+        }
+        opsData.courtBookings.forEach(function (booking) {
+          if (booking.date === dateValue && booking.status !== 'CANCELADO') booking.status = 'CANCELADO';
+        });
+        renderCourtBookingModule();
+        toast('Horários do dia zerados e liberados.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function refreshNextWeekendDates() {
+      const dates = nextWeekendDates();
+      try {
+        requireAdminSession();
+        for (const dateValue of dates) {
+          const existing = (opsData.courtScheduleDays || []).find(function (item) { return item.date === dateValue; });
+          const times = existing && normalizeCourtTimes(existing.times).length ? normalizeCourtTimes(existing.times) : courtDefaultTimes.slice();
+          if (!isAdminDemoMode()) {
+            await supabaseRest('app_court_schedule_days?on_conflict=schedule_date', {
+              method: 'POST',
+              body: { schedule_date: dateValue, enabled: true, slot_times: times.map(function (time) { return time + ':00'; }) },
+              prefer: 'resolution=merge-duplicates,return=representation'
+            });
+          }
+          if (existing) {
+            existing.enabled = true;
+            existing.times = times;
+          } else {
+            opsData.courtScheduleDays.push({ date: dateValue, enabled: true, notes: '', times: times });
+          }
+        }
+        opsState.courtDate = dates[0];
+        $('courtExtraDate').value = dates[0];
+        loadCourtDraftForDate(dates[0]);
+        renderCourtBookingModule();
+        toast('Próximo fim de semana atualizado.');
       } catch (error) {
         reportActionError(error);
       }
@@ -34146,6 +34341,14 @@
       initBarPullToRefresh();
       initBarPwaInstall();
       if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+        navigator.serviceWorker.addEventListener('message', function (event) {
+          const data = event.data || {};
+          if (data.type !== 'APP_UPDATED' || !data.cache) return;
+          const key = 'ilha-app-reloaded-cache';
+          if (sessionStorage.getItem(key) === data.cache) return;
+          sessionStorage.setItem(key, data.cache);
+          window.location.reload();
+        });
         navigator.serviceWorker.register('/service-worker.js', { scope: '/' }).then(function (registration) {
           if (opsState.barAlertsEnabled) ensureBarPushSubscription(false).catch(function (error) {
             console.info('A notificação será renovada ao tocar em ativar.', error && error.message);
@@ -34530,6 +34733,9 @@
       });
       $('courtRulesBtn').addEventListener('click', function () {
         renderCourtExtraDays();
+        const dateValue = opsState.courtDate || nextWeekendDates()[0];
+        $('courtExtraDate').value = dateValue;
+        loadCourtDraftForDate(dateValue);
         $('courtRulesModal').classList.add('show');
         $('courtRulesModal').setAttribute('aria-hidden', 'false');
       });
@@ -34544,9 +34750,30 @@
           return;
         }
         const removeBtn = event.target.closest('[data-remove-court-day]');
-        if (removeBtn) removeCourtExtraDate(removeBtn.dataset.removeCourtDay);
+        if (removeBtn) {
+          removeCourtExtraDate(removeBtn.dataset.removeCourtDay);
+          return;
+        }
+        const editBtn = event.target.closest('[data-edit-court-day]');
+        if (editBtn) {
+          $('courtExtraDate').value = editBtn.dataset.editCourtDay;
+          loadCourtDraftForDate(editBtn.dataset.editCourtDay);
+          return;
+        }
+        const timeBtn = event.target.closest('[data-court-time-choice]');
+        if (timeBtn) {
+          const time = timeBtn.dataset.courtTimeChoice;
+          courtDraftTimes = courtDraftTimes.includes(time)
+            ? courtDraftTimes.filter(function (item) { return item !== time; })
+            : courtDraftTimes.concat(time).sort();
+          renderCourtTimeChoices();
+        }
       });
+      $('courtExtraDate').addEventListener('change', function () { loadCourtDraftForDate(this.value); });
+      $('courtAddTimeBtn').addEventListener('click', addCourtDraftTime);
       $('courtAddDayBtn').addEventListener('click', addCourtExtraDate);
+      $('courtClearDayBtn').addEventListener('click', function () { clearCourtDateBookings($('courtExtraDate').value); });
+      $('courtRefreshDatesBtn').addEventListener('click', refreshNextWeekendDates);
       $('courtResetWeekendBtn').addEventListener('click', resetWeekendBookings);
       $('courtBookingModule').addEventListener('click', function (event) {
         const dateBtn = event.target.closest('[data-court-date]');
@@ -34566,6 +34793,9 @@
       $('courtSlotCancelBtn').addEventListener('click', function () {
         const slot = opsState.selectedCourtSlot;
         if (slot && slot.bookingId) cancelCourtBookingAction(slot.bookingId).then(closeCourtSlotModal);
+      });
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden && document.body.classList.contains('club-courts')) scheduleAdminCourtRealtimeRefresh();
       });
       $('financeModule').addEventListener('click', function (event) {
         const viewBtn = event.target.closest('[data-finance-view]');
