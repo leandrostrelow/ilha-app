@@ -2089,6 +2089,35 @@
       font-size: 11px;
     }
 
+    .client-lesson-schedule-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .client-lesson-schedule-item.is-editing {
+      display: block;
+      padding: 11px;
+      background: #f8fcfd;
+    }
+
+    .client-lesson-edit-title {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--teal);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .client-lesson-edit-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
     .client-lesson-master-data {
       border-top: 1px solid #d7e5e8;
       padding-top: 10px;
@@ -2139,6 +2168,25 @@
       .client-lesson-schedule-item > .muted {
         grid-column: 1 / -1;
         grid-row: 2;
+      }
+
+      .client-lesson-schedule-actions {
+        grid-column: 2;
+        grid-row: 1;
+      }
+
+      .client-lesson-schedule-actions .small-btn {
+        min-height: 36px;
+        padding-inline: 10px;
+      }
+
+      .client-lesson-edit-actions {
+        grid-column: 1 / -1;
+      }
+
+      .client-lesson-edit-actions .small-btn,
+      .client-lesson-edit-actions .primary-btn {
+        flex: 1 1 0;
       }
 
       .client-lesson-master-grid {
@@ -23607,6 +23655,49 @@
         });
     }
 
+    let clientLessonEditEnrollmentId = '';
+
+    function clientLessonDayOptions(selectedDay) {
+      return [
+        ['segunda', 'Segunda'], ['terca', 'Terça'], ['quarta', 'Quarta'], ['quinta', 'Quinta'],
+        ['sexta', 'Sexta'], ['sabado', 'Sábado'], ['domingo', 'Domingo']
+      ].map(function (item) {
+        return '<option value="' + item[0] + '"' + (item[0] === selectedDay ? ' selected' : '') + '>' + item[1] + '</option>';
+      }).join('');
+    }
+
+    function clientLessonEntityOptions(items, emptyLabel, selectedId) {
+      const options = items.map(function (item) {
+        return '<option value="' + escapeHtml(item.id) + '"' + (String(item.id) === String(selectedId || '') ? ' selected' : '') + '>' + escapeHtml(item.name) + '</option>';
+      }).join('');
+      return options || '<option value="">' + escapeHtml(emptyLabel) + '</option>';
+    }
+
+    function renderClientLessonEditForm(entry) {
+      const slot = entry.slot;
+      const teachers = lessonState.teachers.filter(function (item) { return item.active !== false; }).sort(function (a, b) {
+        return String(a.name).localeCompare(String(b.name));
+      });
+      const courts = lessonState.courts.filter(function (item) { return item.active !== false; }).sort(function (a, b) {
+        return String(a.name).localeCompare(String(b.name), undefined, { numeric: true });
+      });
+      const teacherId = slot.teacherId || (teachers.find(function (item) { return String(item.name).trim().toLowerCase() === String(slot.teacher || '').trim().toLowerCase(); }) || {}).id || '';
+      const courtId = slot.courtId || (courts.find(function (item) { return String(item.name).trim().toLowerCase() === String(slot.court || '').trim().toLowerCase(); }) || {}).id || '';
+      return '<article class="client-lesson-schedule-item is-editing" data-client-lesson-edit-form="' + escapeHtml(entry.enrollment.id) + '">' +
+        '<span class="client-lesson-edit-title">Editar aula</span>' +
+        '<div class="client-lesson-add-grid">' +
+          '<div class="field"><label>Dia</label><select data-lesson-day>' + clientLessonDayOptions(slot.day) + '</select></div>' +
+          '<div class="field"><label>Horário</label><input data-lesson-time type="time" value="' + escapeHtml(slot.time) + '" /></div>' +
+          '<div class="field"><label>Professor</label><select data-lesson-teacher>' + clientLessonEntityOptions(teachers, 'Cadastre um professor', teacherId) + '</select></div>' +
+          '<div class="field"><label>Quadra</label><select data-lesson-court>' + clientLessonEntityOptions(courts, 'Cadastre uma quadra', courtId) + '</select></div>' +
+          '<div class="client-lesson-edit-actions">' +
+            '<button class="small-btn" type="button" data-client-lesson-edit-cancel>Cancelar</button>' +
+            '<button class="primary-btn" type="button" data-client-lesson-edit-save>Salvar</button>' +
+          '</div>' +
+        '</div>' +
+      '</article>';
+    }
+
     function renderClientLessonSchedule(client) {
       if (!$('clientLessonScheduleList')) return;
       if (lessonState.source === 'demo-fallback' && !isAdminDemoMode()) {
@@ -23615,12 +23706,16 @@
       }
       const schedule = clientLessonSchedule(client);
       $('clientLessonScheduleList').innerHTML = schedule.map(function (entry) {
+        if (String(entry.enrollment.id) === String(clientLessonEditEnrollmentId)) return renderClientLessonEditForm(entry);
         const slot = entry.slot;
         const details = [slot.teacher || 'Professor a definir', slot.court || 'Quadra a definir'].join(' · ');
         return '<article class="client-lesson-schedule-item">' +
           '<strong>' + escapeHtml(lessonDayName(slot.day)) + ' · ' + escapeHtml(slot.time) + '</strong>' +
           '<span class="muted">' + escapeHtml(details) + '</span>' +
-          '<button class="small-btn danger" type="button" data-client-lesson-remove="' + escapeHtml(entry.enrollment.id) + '">Remover</button>' +
+          '<div class="client-lesson-schedule-actions">' +
+            '<button class="small-btn" type="button" data-client-lesson-edit="' + escapeHtml(entry.enrollment.id) + '">Editar</button>' +
+            '<button class="small-btn danger" type="button" data-client-lesson-remove="' + escapeHtml(entry.enrollment.id) + '">Remover</button>' +
+          '</div>' +
         '</article>';
       }).join('') || '<div class="lesson-empty-state">Nenhuma aula cadastrada.</div>';
       renderClientLessonDrafts(client);
@@ -23657,10 +23752,7 @@
       });
       const teacherOptions = lessonDraftOptions(teachers, 'Cadastre um professor');
       const courtOptions = lessonDraftOptions(courts, 'Cadastre uma quadra');
-      const dayOptions = [
-        ['segunda', 'Segunda'], ['terca', 'Terça'], ['quarta', 'Quarta'], ['quinta', 'Quinta'],
-        ['sexta', 'Sexta'], ['sabado', 'Sábado'], ['domingo', 'Domingo']
-      ].map(function (item) { return '<option value="' + item[0] + '">' + item[1] + '</option>'; }).join('');
+      const dayOptions = clientLessonDayOptions('segunda');
       box.innerHTML = Array.from({ length: remaining }, function (_, index) {
         return '<div class="client-lesson-draft" data-client-lesson-draft>' +
           '<span class="client-lesson-draft-title">Aula ' + (registered + index + 1) + '</span>' +
@@ -25076,6 +25168,7 @@
     function openClientModal(key) {
       const client = findClientByKey(key);
       if (!client) return;
+      clientLessonEditEnrollmentId = '';
       opsState.selectedClientId = client.id || client.email || client.name;
       const selectedPlan = findClientPlan(client);
       const selectedPlanValue = selectedPlan ? (selectedPlan.id || selectedPlan.code || selectedPlan.name) : (client.officialPlanId || client.officialPlanCode || '');
@@ -25128,6 +25221,7 @@
     }
 
     function closeClientModal() {
+      clientLessonEditEnrollmentId = '';
       $('clientModal').classList.remove('show');
       $('clientModal').setAttribute('aria-hidden', 'true');
     }
@@ -33283,6 +33377,120 @@
       }
     }
 
+    function startClientLessonEdit(enrollmentId) {
+      const client = findClientByKey(opsState.selectedClientId);
+      const exists = client && clientLessonSchedule(client).some(function (entry) {
+        return String(entry.enrollment.id) === String(enrollmentId);
+      });
+      if (!exists) {
+        toast('Aula não encontrada.');
+        return;
+      }
+      clientLessonEditEnrollmentId = enrollmentId;
+      renderClientLessonSchedule(client);
+      const form = $('clientLessonScheduleList').querySelector('[data-client-lesson-edit-form]');
+      if (form) form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function cancelClientLessonEdit() {
+      const client = findClientByKey(opsState.selectedClientId);
+      clientLessonEditEnrollmentId = '';
+      if (client) renderClientLessonSchedule(client);
+    }
+
+    async function saveClientLessonEditAction(form) {
+      const button = form && form.querySelector('[data-client-lesson-edit-save]');
+      try {
+        requireAdminSession();
+        const client = findClientByKey(opsState.selectedClientId);
+        const enrollmentId = form && form.dataset.clientLessonEditForm;
+        const enrollment = lessonState.enrollments.find(function (item) { return String(item.id) === String(enrollmentId); });
+        if (!client || !form || !enrollment || !button) throw new Error('Aula não encontrada.');
+        const day = form.querySelector('[data-lesson-day]').value;
+        const time = String(form.querySelector('[data-lesson-time]').value || '').slice(0, 5);
+        const teacherId = form.querySelector('[data-lesson-teacher]').value;
+        const courtId = form.querySelector('[data-lesson-court]').value;
+        const teacherRecord = lessonState.teachers.find(function (item) { return String(item.id) === String(teacherId); });
+        const courtRecord = lessonState.courts.find(function (item) { return String(item.id) === String(courtId); });
+        const teacher = teacherRecord && teacherRecord.name;
+        const court = courtRecord && courtRecord.name;
+        if (!day || !/^\d{2}:\d{2}$/.test(time)) throw new Error('Escolha o dia e o horário da aula.');
+        if (!teacher || !court) throw new Error('Escolha o professor e a quadra.');
+        button.disabled = true;
+        button.textContent = 'Salvando...';
+        let slot = lessonState.slots.find(function (item) {
+          return item.active !== false && item.day === day && item.time === time &&
+            (String(item.teacherId || '') === String(teacherId) || String(item.teacher || '').trim().toLowerCase() === teacher.toLowerCase()) &&
+            (String(item.courtId || '') === String(courtId) || String(item.court || '').trim().toLowerCase() === court.toLowerCase());
+        });
+        if (!slot) {
+          if (isAdminDemoMode()) {
+            slot = {
+              id: localId('slot'), courtId: courtId, teacherId: teacherId, day: day, time: time,
+              period: periodFromTime(time), court: court, teacher: teacher, level: 'A definir', capacity: 4, active: true
+            };
+          } else {
+            const insertedSlot = await supabaseInsert('lesson_slots', {
+              day: day,
+              time: time,
+              period: periodFromTime(time),
+              teacher_id: teacherId,
+              teacher_name: teacher,
+              court_id: courtId,
+              court_name: court,
+              level: 'A definir',
+              capacity: 4,
+              active: true
+            });
+            slot = {
+              id: insertedSlot.id,
+              courtId: insertedSlot.court_id || courtId,
+              teacherId: insertedSlot.teacher_id || teacherId,
+              day: insertedSlot.day,
+              time: String(insertedSlot.time || time).slice(0, 5),
+              period: insertedSlot.period,
+              court: insertedSlot.court_name || court,
+              teacher: insertedSlot.teacher_name || teacher,
+              level: insertedSlot.level || 'A definir',
+              capacity: Number(insertedSlot.capacity || 4),
+              active: true
+            };
+          }
+          lessonState.slots.push(slot);
+        }
+        const duplicated = lessonState.enrollments.some(function (item) {
+          return item.active !== false && String(item.id) !== String(enrollment.id) &&
+            String(item.student_id) === String(enrollment.student_id) && String(item.slot_id) === String(slot.id);
+        });
+        if (duplicated) throw new Error('Esta aula já está na grade do aluno.');
+        if (String(enrollment.slot_id) !== String(slot.id) && lessonStudentsForSlot(slot.id).length >= Number(slot.capacity || 4)) {
+          throw new Error('Este horário já atingiu a capacidade.');
+        }
+        if (!isAdminDemoMode()) {
+          const updated = await supabaseRest('lesson_enrollments?id=eq.' + encodeURIComponent(enrollment.id), {
+            method: 'PATCH',
+            body: { slot_id: slot.id, type: 'FIXO', active: true, updated_at: new Date().toISOString() },
+            prefer: 'return=representation'
+          });
+          if (!Array.isArray(updated) || !updated[0]) throw new Error('Não foi possível atualizar esta aula.');
+        }
+        enrollment.slot_id = slot.id;
+        enrollment.type = 'FIXO';
+        enrollment.active = true;
+        clientLessonEditEnrollmentId = '';
+        renderClientLessonSchedule(client);
+        renderLessons();
+        toast('Aula atualizada.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        if (button && button.isConnected) {
+          button.disabled = false;
+          button.textContent = 'Salvar';
+        }
+      }
+    }
+
     async function removeClientLessonAction(enrollmentId) {
       try {
         requireAdminSession();
@@ -33297,6 +33505,7 @@
           });
         }
         enrollment.active = false;
+        if (String(clientLessonEditEnrollmentId) === String(enrollment.id)) clientLessonEditEnrollmentId = '';
         renderClientLessonSchedule(client);
         renderLessons();
         toast('Aula removida da grade do aluno.');
@@ -34565,6 +34774,21 @@
         const rejectBtn = event.target.closest('[data-plan-request-reject]');
         if (rejectBtn) {
           rejectPlanRequestAction(rejectBtn.dataset.planRequestReject);
+          return;
+        }
+        const editLessonBtn = event.target.closest('[data-client-lesson-edit]');
+        if (editLessonBtn) {
+          startClientLessonEdit(editLessonBtn.dataset.clientLessonEdit);
+          return;
+        }
+        const saveLessonEditBtn = event.target.closest('[data-client-lesson-edit-save]');
+        if (saveLessonEditBtn) {
+          saveClientLessonEditAction(saveLessonEditBtn.closest('[data-client-lesson-edit-form]'));
+          return;
+        }
+        const cancelLessonEditBtn = event.target.closest('[data-client-lesson-edit-cancel]');
+        if (cancelLessonEditBtn) {
+          cancelClientLessonEdit();
           return;
         }
         const removeLessonBtn = event.target.closest('[data-client-lesson-remove]');

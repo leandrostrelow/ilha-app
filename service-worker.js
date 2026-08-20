@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v196-realtime-courts';
+const CACHE_NAME = 'ilha-play-v197-edit-student-lessons';
 const ASSETS = [
   './',
   './index.html',
