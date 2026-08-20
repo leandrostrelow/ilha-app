@@ -17875,10 +17875,22 @@
                 <label for="clientEditDueDay">Dia de vencimento</label>
                 <input id="clientEditDueDay" type="number" min="1" max="31" inputmode="numeric" placeholder="10" />
               </div>
-              <input id="clientEditFrequency" type="hidden" value="0" />
               <div class="field">
                 <label for="clientEditAmount">Valor mensal</label>
                 <input id="clientEditAmount" inputmode="decimal" placeholder="220,00" />
+              </div>
+              <div class="field">
+                <label for="clientEditFrequency">Aulas por semana</label>
+                <select id="clientEditFrequency">
+                  <option value="0">Sem aulas</option>
+                  <option value="1">1 aula por semana</option>
+                  <option value="2">2 aulas por semana</option>
+                  <option value="3">3 aulas por semana</option>
+                  <option value="4">4 aulas por semana</option>
+                  <option value="5">5 aulas por semana</option>
+                  <option value="6">6 aulas por semana</option>
+                  <option value="7">7 aulas por semana</option>
+                </select>
               </div>
               <div class="field full">
                 <div class="client-lesson-editor">
@@ -23575,10 +23587,11 @@
       const box = $('clientLessonDraftList');
       if (!box) return;
       const activeClient = client || findClientByKey(opsState.selectedClientId);
-      const required = Math.max(0, Number($('clientEditFrequency').value || activeClient && activeClient.weeklyLessons || 0));
+      const selectedFrequency = $('clientEditFrequency').value;
+      const required = Math.max(0, Number(selectedFrequency === '' ? activeClient && activeClient.weeklyLessons || 0 : selectedFrequency));
       const registered = activeClient ? clientLessonSchedule(activeClient).length : 0;
       const remaining = Math.max(0, required - registered);
-      $('clientLessonRequirement').textContent = required ? registered + ' de ' + required + ' aulas' : 'Sem aulas no plano';
+      $('clientLessonRequirement').textContent = required ? registered + ' de ' + required + ' aulas' : 'Sem aulas';
       if (!required) {
         box.innerHTML = '';
         return;
@@ -24824,6 +24837,22 @@
       return findPlanByValue(client.officialPlanId || client.officialPlanCode || client.officialPlanName || '');
     }
 
+    function planAllowsClientOverrides(plan) {
+      const code = String(plan && plan.code || '').toLowerCase();
+      return code === 'isento' || code === 'personalizado';
+    }
+
+    function isExemptPlan(plan) {
+      return String(plan && plan.code || '').toLowerCase() === 'isento';
+    }
+
+    function declaredWeeklyLessons(client) {
+      const source = normalizeMatchText((client && client.declaredPlanCode || '') + ' ' + (client && client.declaredPlanName || ''));
+      if (source.includes('2x') || source.includes('2 aulas')) return 2;
+      if (source.includes('1x') || source.includes('1 aula')) return 1;
+      return 0;
+    }
+
     function syncClientsWithPlanCatalog() {
       opsData.clients.forEach(function (client) {
         const plan = findClientPlan(client);
@@ -24831,8 +24860,13 @@
         client.officialPlanId = plan.id || client.officialPlanId || '';
         client.officialPlanCode = plan.code || client.officialPlanCode || '';
         client.officialPlanName = plan.name || '';
-        client.planAmount = Number(plan.amount || 0);
-        client.weeklyLessons = Number(plan.weeklyLessons || 0);
+        if (isExemptPlan(plan)) client.planAmount = 0;
+        else if (!planAllowsClientOverrides(plan)) client.planAmount = Number(plan.amount || 0);
+        if (planAllowsClientOverrides(plan)) {
+          client.weeklyLessons = Number(client.weeklyLessons || declaredWeeklyLessons(client) || 0);
+        } else {
+          client.weeklyLessons = Number(plan.weeklyLessons || 0);
+        }
       });
     }
 
@@ -24946,9 +24980,23 @@
 
     function applyPlanToClientForm() {
       const plan = findPlanByValue($('clientEditPlan').value);
-      $('clientEditAmount').value = plan && plan.amount ? String(plan.amount).replace('.', ',') : '';
-      $('clientEditFrequency').value = plan ? plan.weeklyLessons || 0 : 0;
-      if (plan && plan.dueDay && !$('clientEditDueDay').value) $('clientEditDueDay').value = plan.dueDay;
+      const client = findClientByKey(opsState.selectedClientId);
+      const allowsOverrides = planAllowsClientOverrides(plan);
+      if (isExemptPlan(plan)) {
+        $('clientEditAmount').value = '';
+        $('clientEditDueDay').value = '';
+      } else if (!allowsOverrides) {
+        $('clientEditAmount').value = plan && plan.amount ? String(plan.amount).replace('.', ',') : '';
+      }
+      if (allowsOverrides) {
+        $('clientEditFrequency').value = Number($('clientEditFrequency').value || client && client.weeklyLessons || declaredWeeklyLessons(client) || 0);
+      } else {
+        $('clientEditFrequency').value = plan ? Number(plan.weeklyLessons || 0) : 0;
+      }
+      if (plan && plan.dueDay && !isExemptPlan(plan) && !$('clientEditDueDay').value) $('clientEditDueDay').value = plan.dueDay;
+      $('clientEditFrequency').disabled = Boolean(plan && !allowsOverrides);
+      $('clientEditAmount').disabled = isExemptPlan(plan);
+      $('clientEditDueDay').disabled = isExemptPlan(plan);
       renderClientLessonDrafts();
     }
 
@@ -24994,14 +25042,18 @@
       $('clientEditStatus').value = client.status || 'ATIVO';
       renderClientPlanOptions(selectedPlanValue);
       $('clientEditDeclaredPlan').value = client.declaredPlanName || '';
-      $('clientEditDueDay').value = client.dueDay || (request && request.preferredDueDay) || '';
-      $('clientEditFrequency').value = client.weeklyLessons || (request && request.weeklyLessons) || '';
-      $('clientEditAmount').value = client.planAmount ? String(client.planAmount).replace('.', ',') : '';
+      $('clientEditDueDay').value = isExemptPlan(selectedPlan) ? '' : (client.dueDay || (request && request.preferredDueDay) || '');
+      $('clientEditFrequency').value = Number(client.weeklyLessons || (request && request.weeklyLessons) || declaredWeeklyLessons(client) || selectedPlan && selectedPlan.weeklyLessons || 0);
+      $('clientEditAmount').value = isExemptPlan(selectedPlan) ? '' : (client.planAmount ? String(client.planAmount).replace('.', ',') : '');
+      $('clientEditFrequency').disabled = Boolean(selectedPlan && !planAllowsClientOverrides(selectedPlan));
+      $('clientEditAmount').disabled = isExemptPlan(selectedPlan);
+      $('clientEditDueDay').disabled = isExemptPlan(selectedPlan);
       $('clientEditNotes').value = client.notes || '';
       $('clientLessonMasterList').innerHTML = '';
       $('clientLessonScheduleList').innerHTML = '<div class="lesson-empty-state">Carregando grade oficial...</div>';
       $('clientLessonDraftList').innerHTML = '';
-      $('clientLessonRequirement').textContent = client.weeklyLessons ? '0 de ' + client.weeklyLessons + ' aulas' : 'Sem aulas no plano';
+      const configuredLessons = Number($('clientEditFrequency').value || 0);
+      $('clientLessonRequirement').textContent = configuredLessons ? '0 de ' + configuredLessons + ' aulas' : 'Sem aulas';
       $('clientRequestSummary').innerHTML = request
         ? '<article class="ops-list-card"><div class="ops-list-main"><div><strong>Pedido recebido no app</strong><div class="muted">' + escapeHtml(request.plan) + ' | ' + escapeHtml(request.membershipType || 'tipo não informado') + ' | ' + escapeHtml(formatDays(request.requestedDays) || 'sem dias') + '</div></div><div class="ops-meta">' + statusPill(request.status) + '<span class="ops-pill">' + money(request.amount) + '</span></div></div><div class="ops-meta"><button class="small-btn" type="button" data-plan-request-approve="' + escapeHtml(request.id) + '">Aprovar e vincular</button><button class="small-btn" type="button" data-plan-request-reject="' + escapeHtml(request.id) + '">Recusar</button></div></article>'
         : '<div class="lesson-empty-state">Sem pedido registrado pelo aluno. Defina o plano manualmente.</div>';
@@ -32050,8 +32102,9 @@
           client.officialPlanId = finalPlan.id || client.officialPlanId || '';
           client.officialPlanCode = finalPlan.code || client.officialPlanCode || '';
           client.officialPlanName = finalPlan.name;
-          client.planAmount = Number(finalPlan.amount || 0);
-          client.weeklyLessons = Number(finalPlan.weeklyLessons || 0);
+          if (isExemptPlan(finalPlan)) client.planAmount = 0;
+          else if (!planAllowsClientOverrides(finalPlan)) client.planAmount = Number(finalPlan.amount || 0);
+          if (!planAllowsClientOverrides(finalPlan)) client.weeklyLessons = Number(finalPlan.weeklyLessons || 0);
         });
         lessonState.students.forEach(function (student) {
           const linkedClient = opsData.clients.find(function (client) {
@@ -32059,8 +32112,8 @@
           });
           if (!linkedClient || String(linkedClient.officialPlanCode || '') !== String(finalPlan.code || '')) return;
           student.plan_name = finalPlan.name;
-          student.monthly_value = Number(finalPlan.amount || 0);
-          student.weekly_lessons = Number(finalPlan.weeklyLessons || 0);
+          student.monthly_value = Number(linkedClient.planAmount || 0);
+          student.weekly_lessons = Number(linkedClient.weeklyLessons || 0);
         });
         resetPlanForm();
         opsState.planTab = 'list';
@@ -32774,10 +32827,14 @@
         const client = findClientByKey(opsState.selectedClientId);
         if (!client) throw new Error('Aluno não encontrado.');
         const plan = findPlanByValue($('clientEditPlan').value);
-        const amount = parseOptionalMoney($('clientEditAmount').value);
-        const dueDay = $('clientEditDueDay').value ? Number($('clientEditDueDay').value) : null;
+        const exempt = isExemptPlan(plan);
+        const amount = exempt ? 0 : parseOptionalMoney($('clientEditAmount').value);
+        const dueDay = exempt ? null : ($('clientEditDueDay').value ? Number($('clientEditDueDay').value) : null);
         if (dueDay && (dueDay < 1 || dueDay > 31)) throw new Error('Dia de vencimento deve ser entre 1 e 31.');
         const weeklyLessons = $('clientEditFrequency').value ? Number($('clientEditFrequency').value) : 0;
+        if (!Number.isInteger(weeklyLessons) || weeklyLessons < 0 || weeklyLessons > 7) throw new Error('Escolha de 0 a 7 aulas por semana.');
+        const scheduledLessons = clientLessonSchedule(client).length;
+        if (weeklyLessons < scheduledLessons) throw new Error('Remova aulas da grade antes de reduzir a quantidade semanal.');
         const minor = $('clientEditMinor').checked;
         const guardian = minor ? $('clientEditGuardian').value.trim() : '';
         const guardianPhone = minor ? $('clientEditGuardianPhone').value.trim() : '';
@@ -34284,6 +34341,7 @@
       $('clientModalCancel').addEventListener('click', closeClientModal);
       $('clientInvoiceSaveBtn').addEventListener('click', saveClientInvoiceAction);
       $('clientEditPlan').addEventListener('change', applyPlanToClientForm);
+      $('clientEditFrequency').addEventListener('change', function () { renderClientLessonDrafts(); });
       $('clientEditMinor').addEventListener('change', updateClientMinorFields);
       $('clientLessonDraftList').addEventListener('click', function (event) {
         const button = event.target.closest('[data-client-lesson-add]');

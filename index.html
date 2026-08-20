@@ -4550,11 +4550,14 @@
     function syncLinkedClientPlan() {
       const plan = linkedClientPlan();
       if (!client || !plan) return;
+      const code = String(plan.code || '').toLowerCase();
+      const allowsOverrides = code === 'isento' || code === 'personalizado';
       client.official_plan_id = plan.id || client.official_plan_id || null;
       client.official_plan_code = plan.code || client.official_plan_code || '';
       client.official_plan_name = plan.name || client.official_plan_name || '';
-      client.plan_amount = Number(plan.amount || 0);
-      client.weekly_lessons = Number(plan.weekly_lessons || 0);
+      if (code === 'isento') client.plan_amount = 0;
+      else if (!allowsOverrides) client.plan_amount = Number(plan.amount || 0);
+      if (!allowsOverrides) client.weekly_lessons = Number(plan.weekly_lessons || 0);
     }
 
     function isPlanCancellationEffective() {
