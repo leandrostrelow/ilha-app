@@ -841,6 +841,23 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #ffffff;
+      color: var(--text);
+      text-align: left;
+    }
+
+    button.lesson-summary-card {
+      cursor: pointer;
+    }
+
+    button.lesson-summary-card:hover {
+      border-color: var(--teal);
+      background: #f4fbfc;
+    }
+
+    button.lesson-summary-card.active {
+      border-color: var(--teal);
+      box-shadow: inset 0 0 0 1px var(--teal);
+      background: #edf9fa;
     }
 
     .lesson-summary-card strong {
@@ -859,7 +876,7 @@
 
     .lesson-toolbar {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
       gap: 10px;
       align-items: center;
       margin-bottom: 12px;
@@ -867,6 +884,57 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #f8fbfc;
+    }
+
+    .lesson-day-strip {
+      justify-content: flex-start;
+    }
+
+    .lesson-search-field input,
+    .lesson-picker-search input {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 12px;
+      background: #ffffff;
+      color: var(--text);
+      font: inherit;
+      font-weight: 800;
+    }
+
+    .lesson-quick-controls {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 8px;
+      align-items: end;
+      flex-wrap: wrap;
+    }
+
+    .lesson-filter-select {
+      display: grid;
+      gap: 4px;
+      min-width: 150px;
+    }
+
+    .lesson-filter-select span {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .lesson-filter-select select {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 7px 32px 7px 10px;
+      background: #ffffff;
+      color: var(--text);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 900;
     }
 
     .lesson-filter-btn {
@@ -887,7 +955,47 @@
     .lesson-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      align-items: start;
+    }
+
+    .lesson-court-column {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f6fafb;
+    }
+
+    .lesson-court-head {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       gap: 10px;
+      padding: 12px 14px;
+      background: var(--dark);
+      color: #ffffff;
+    }
+
+    .lesson-court-head h2 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 17px;
+    }
+
+    .lesson-court-head span {
+      color: #c9d5df;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .lesson-court-slots {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
     }
 
     .lesson-period {
@@ -899,15 +1007,21 @@
     }
 
     .lesson-slot {
-      min-height: 176px;
       display: grid;
-      grid-template-rows: auto 1fr auto;
-      gap: 10px;
+      gap: 8px;
       padding: 12px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #ffffff;
-      box-shadow: 0 8px 22px rgba(16, 39, 44, .08);
+      box-shadow: 0 5px 16px rgba(16, 39, 44, .06);
+    }
+
+    .lesson-slot.is-full {
+      border-left: 4px solid #ef4444;
+    }
+
+    .lesson-slot.has-vacancies {
+      border-left: 4px solid var(--lime);
     }
 
     .lesson-slot-top {
@@ -918,8 +1032,8 @@
     }
 
     .lesson-time {
-      min-width: 62px;
-      min-height: 54px;
+      min-width: 58px;
+      min-height: 46px;
       display: grid;
       place-items: center;
       border-radius: 8px;
@@ -927,6 +1041,28 @@
       color: #ffffff;
       font-size: 18px;
       font-weight: 900;
+    }
+
+    .lesson-slot-summary {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .lesson-occupancy {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      padding: 5px 8px;
+      background: #eef4f6;
+      color: var(--teal);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .lesson-slot.is-full .lesson-occupancy {
+      background: #fff0f0;
+      color: #b4232f;
     }
 
     .lesson-slot h3 {
@@ -973,9 +1109,38 @@
       color: var(--text);
     }
 
+    .lesson-student-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .lesson-student-actions {
+      display: flex;
+      gap: 4px;
+      flex: 0 0 auto;
+    }
+
+    .lesson-student-action {
+      min-height: 30px;
+      border: 1px solid #d6e2e6;
+      border-radius: 7px;
+      padding: 5px 8px;
+      background: #ffffff;
+      color: var(--teal);
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .lesson-student-action.danger {
+      color: #b4232f;
+    }
+
     .lesson-empty-seat {
       border: 1px dashed #c9d8de;
       color: var(--muted);
+      justify-content: center;
     }
 
     .lesson-student a {
@@ -995,6 +1160,96 @@
       height: 100%;
       border-radius: inherit;
       background: var(--lime);
+    }
+
+    .lesson-slot-footer {
+      display: grid;
+      gap: 8px;
+    }
+
+    .lesson-slot-actions {
+      justify-content: flex-end;
+    }
+
+    .lesson-court-empty {
+      min-height: 120px;
+      display: grid;
+      place-items: center;
+      gap: 8px;
+      padding: 16px;
+      border: 1px dashed #c9d8de;
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .lesson-editor-modal.show {
+      place-items: center;
+    }
+
+    .lesson-editor-dialog {
+      width: min(720px, 100%);
+    }
+
+    .lesson-capacity-note,
+    .lesson-move-student {
+      margin-top: 12px;
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: #edf7f8;
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .lesson-editor-actions {
+      align-items: center;
+    }
+
+    .lesson-editor-action-spacer {
+      flex: 1 1 auto;
+    }
+
+    .lesson-picker-search {
+      margin-bottom: 10px;
+    }
+
+    .lesson-student-picker-list {
+      display: grid;
+      gap: 7px;
+      max-height: min(52vh, 480px);
+      overflow: auto;
+    }
+
+    .lesson-student-picker-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .lesson-student-picker-card strong,
+    .lesson-student-picker-card span {
+      display: block;
+    }
+
+    .lesson-student-picker-card span {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .lesson-move-actions {
+      padding-inline: 0;
+      padding-bottom: 0;
     }
 
     .lesson-empty-state {
@@ -8640,10 +8895,64 @@
         padding: 10px;
       }
       .lesson-summary {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px;
+      }
+      .lesson-summary-card {
+        min-height: 66px;
+        padding: 10px;
+      }
+      .lesson-summary-card strong {
+        font-size: 21px;
+      }
+      .lesson-toolbar {
+        padding: 8px;
+      }
+      .lesson-day-strip {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        width: 100%;
       }
       .lesson-filter-btn {
-        flex: 1 1 auto;
+        width: 100%;
+        min-width: 0;
+        padding-inline: 5px;
+      }
+      .lesson-quick-controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+      }
+      .lesson-filter-select {
+        min-width: 0;
+      }
+      .lesson-filter-select:last-child {
+        grid-column: 1 / -1;
+      }
+      .lesson-slot {
+        padding: 10px;
+      }
+      .lesson-student {
+        align-items: flex-start;
+      }
+      .lesson-student-actions {
+        flex-direction: column;
+      }
+      .lesson-student-action {
+        min-height: 28px;
+        padding: 4px 7px;
+      }
+      .lesson-editor-modal {
+        padding: 10px;
+      }
+      .lesson-editor-actions {
+        flex-wrap: wrap;
+      }
+      .lesson-editor-action-spacer {
+        display: none;
+      }
+      .lesson-editor-actions > * {
+        flex: 1 1 42%;
       }
       .ops-content {
         padding: 10px;
@@ -17694,6 +18003,7 @@
       <nav class="admin-sidebar-nav">
         <button class="admin-nav-btn active" type="button" data-admin-nav="club-home"><span class="admin-nav-icon"><svg><use href="#admin-icon-home"></use></svg></span><span>Início</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-clients"><span class="admin-nav-icon"><svg><use href="#admin-icon-users"></use></svg></span><span>Alunos</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-lessons"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Aulas</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-courts"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Quadras</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-tournament"><span class="admin-nav-icon"><svg><use href="#admin-icon-trophy"></use></svg></span><span>Torneios</span></button>
@@ -19363,8 +19673,8 @@
       <div class="module-shell">
         <div class="module-head">
           <div>
-            <h1>Aulas e professores</h1>
-            <div class="muted" id="lessonsSubtitle">Agenda semanal, turmas, alunos e professores.</div>
+            <h1>Aulas</h1>
+            <div class="muted" id="lessonsSubtitle">Grade semanal sincronizada com a ficha dos alunos.</div>
           </div>
           <div class="module-actions">
             <button class="ghost-btn" type="button" id="lessonsBackBtn">Início</button>
@@ -19375,22 +19685,102 @@
 
         <div class="lesson-content">
           <div class="lesson-summary">
-            <div class="lesson-summary-card"><strong id="lessonVacancies">0</strong><span>vagas disponiveis</span></div>
-            <div class="lesson-summary-card"><strong id="lessonActiveStudents">0</strong><span>alunos ativos</span></div>
-            <div class="lesson-summary-card"><strong id="lessonSlots">0</strong><span>horários ativos</span></div>
+            <button class="lesson-summary-card" type="button" data-lesson-summary-filter="all"><strong id="lessonActiveStudents">0</strong><span>alunos na grade</span></button>
+            <button class="lesson-summary-card" type="button" data-lesson-summary-filter="vacancies"><strong id="lessonVacancies">0</strong><span>vagas disponíveis</span></button>
+            <button class="lesson-summary-card" type="button" data-lesson-summary-filter="full"><strong id="lessonSlots">0</strong><span>horários lotados</span></button>
             <div class="lesson-summary-card"><strong id="lessonTeachers">0</strong><span>professores</span></div>
-            <div class="lesson-summary-card"><strong id="lessonCourts">0</strong><span>quadras em uso</span></div>
+            <div class="lesson-summary-card"><strong id="lessonCourts">0</strong><span>quadras</span></div>
           </div>
 
           <div class="lesson-toolbar">
-            <div class="lesson-filters" id="lessonDayFilters"></div>
-            <div class="lesson-filters" id="lessonQuickFilters"></div>
+            <div class="lesson-day-strip lesson-filters" id="lessonDayFilters"></div>
+            <div class="lesson-search-field">
+              <input id="lessonStudentSearch" type="search" placeholder="Buscar aluno" autocomplete="off" />
+            </div>
+            <div class="lesson-quick-controls" id="lessonQuickFilters"></div>
           </div>
 
           <div class="lesson-grid" id="lessonSchedule"></div>
         </div>
       </div>
     </section>
+
+    <div class="admin-modal-overlay lesson-editor-modal" id="lessonSlotEditorModal" aria-hidden="true">
+      <div class="admin-modal lesson-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="lessonSlotEditorTitle">
+        <div class="admin-modal-head">
+          <div>
+            <h2 id="lessonSlotEditorTitle">Novo horário</h2>
+            <div class="muted">Defina a quadra, o professor e o horário da turma.</div>
+          </div>
+          <button class="ghost-btn" type="button" id="lessonSlotEditorClose">Fechar</button>
+        </div>
+        <form id="lessonSlotEditorForm">
+          <div class="admin-modal-body">
+            <input id="lessonSlotEditorId" type="hidden" />
+            <div class="form-grid lesson-slot-editor-grid">
+              <div class="field">
+                <label for="lessonSlotEditorDay">Dia</label>
+                <select id="lessonSlotEditorDay"></select>
+              </div>
+              <div class="field">
+                <label for="lessonSlotEditorTime">Horário</label>
+                <input id="lessonSlotEditorTime" type="time" required />
+              </div>
+              <div class="field">
+                <label for="lessonSlotEditorTeacher">Professor</label>
+                <select id="lessonSlotEditorTeacher" required></select>
+              </div>
+              <div class="field">
+                <label for="lessonSlotEditorCourt">Quadra</label>
+                <select id="lessonSlotEditorCourt" required></select>
+              </div>
+              <div class="field full">
+                <label for="lessonSlotEditorLevel">Turma / observação</label>
+                <input id="lessonSlotEditorLevel" placeholder="Ex.: Iniciante, Kids ou A definir" />
+              </div>
+            </div>
+            <div class="lesson-capacity-note">Cada horário comporta até <strong>4 alunos</strong>.</div>
+          </div>
+          <div class="modal-actions lesson-editor-actions">
+            <button class="small-btn danger" type="button" id="lessonSlotDeleteBtn" hidden>Excluir horário</button>
+            <span class="lesson-editor-action-spacer"></span>
+            <button class="ghost-btn" type="button" id="lessonSlotEditorCancel">Cancelar</button>
+            <button class="primary-btn" type="submit" id="lessonSlotEditorSave">Salvar horário</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="admin-modal-overlay lesson-editor-modal" id="lessonStudentEditorModal" aria-hidden="true">
+      <div class="admin-modal lesson-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="lessonStudentEditorTitle">
+        <div class="admin-modal-head">
+          <div>
+            <h2 id="lessonStudentEditorTitle">Adicionar aluno</h2>
+            <div class="muted" id="lessonStudentEditorSubtitle">Selecione um aluno ativo do clube.</div>
+          </div>
+          <button class="ghost-btn" type="button" id="lessonStudentEditorClose">Fechar</button>
+        </div>
+        <div class="admin-modal-body">
+          <div id="lessonStudentAddPanel">
+            <div class="lesson-picker-search">
+              <input id="lessonStudentPickerSearch" type="search" placeholder="Buscar por nome, telefone ou e-mail" autocomplete="off" />
+            </div>
+            <div class="lesson-student-picker-list" id="lessonStudentPickerList"></div>
+          </div>
+          <form id="lessonStudentMoveForm" hidden>
+            <div class="lesson-move-student" id="lessonMoveStudentName"></div>
+            <div class="field">
+              <label for="lessonMoveTargetSlot">Mover para</label>
+              <select id="lessonMoveTargetSlot" required></select>
+            </div>
+            <div class="modal-actions lesson-move-actions">
+              <button class="ghost-btn" type="button" id="lessonStudentMoveCancel">Cancelar</button>
+              <button class="primary-btn" type="submit" id="lessonStudentMoveSave">Mover aluno</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
 
     <section class="ops-module student-center-module" id="studentCenterModule">
       <div class="module-shell">
@@ -23416,6 +23806,20 @@
       clearTimeout(appSyncRefreshTimer);
       appSyncRefreshTimer = setTimeout(function () {
         if (document.hidden || document.body.classList.contains('adm-locked') || isAdminDemoMode()) return;
+        const resourceName = String(resource || '').split('?')[0];
+        const lessonResources = ['students', 'lesson_slots', 'lesson_enrollments', 'teachers', 'courts'];
+        if (document.body.classList.contains('club-lessons') && (!resourceName || lessonResources.includes(resourceName))) {
+          loadLessonsData().catch(reportActionError);
+          return;
+        }
+        const clientLessonModalOpen = $('clientModal') && $('clientModal').classList.contains('show');
+        if (clientLessonModalOpen && (!resourceName || lessonResources.includes(resourceName))) {
+          loadLessonsData().then(function () {
+            const client = findClientByKey(opsState.selectedClientId);
+            if (client) renderClientLessonSchedule(client);
+          }).catch(reportActionError);
+          return;
+        }
         if (document.body.classList.contains('club-courts')) {
           loadCourtBookingData(false).catch(reportActionError);
           return;
@@ -23462,7 +23866,9 @@
     const lessonState = {
       activeDay: 'segunda',
       teacher: 'todos',
-      onlyVacancies: false,
+      court: 'todos',
+      occupancy: 'todos',
+      studentSearch: '',
       source: 'demo',
       slots: [],
       students: [],
@@ -23520,7 +23926,7 @@
     }
 
     async function loadLessonsData() {
-      if (!isLessonsSupabaseConfigured()) {
+      if (isAdminDemoMode() || !isLessonsSupabaseConfigured()) {
         lessonState.source = 'demo';
         lessonState.students = lessonMockData.students.slice();
         lessonState.slots = lessonMockData.slots.slice();
@@ -23542,16 +23948,20 @@
           lessonSupabaseFetch('courts?select=*&active=eq.true&order=name.asc')
         ]);
       } catch (error) {
-        lessonState.source = 'demo-fallback';
-        lessonState.students = lessonMockData.students.slice();
-        lessonState.slots = lessonMockData.slots.slice();
-        lessonState.enrollments = lessonMockData.enrollments.slice();
-        lessonState.teachers = lessonMockData.teachers.slice();
-        lessonState.courts = lessonMockData.courts.slice();
+        lessonState.source = 'error';
+        lessonState.students = [];
+        lessonState.slots = [];
+        lessonState.enrollments = [];
+        lessonState.teachers = [];
+        lessonState.courts = [];
         renderLessons();
-        console.info('Supabase indisponivel para aulas; usando demo local.', error && error.message);
+        console.warn('Não foi possível sincronizar a grade de aulas.', error && error.message);
         return;
       }
+      const teacherNameById = {};
+      const courtNameById = {};
+      results[3].forEach(function (teacher) { teacherNameById[String(teacher.id)] = teacher.name; });
+      results[4].forEach(function (court) { courtNameById[String(court.id)] = court.name; });
       lessonState.students = results[0].map(function (student) {
         return {
           id: student.id,
@@ -23560,6 +23970,8 @@
           email: student.email || '',
           phone: student.phone,
           status: student.status,
+          planName: student.plan_name || '',
+          relationshipStatus: student.relationship_status || '',
           weekly_lessons: student.weekly_lessons,
           monthly_value: student.monthly_value
         };
@@ -23572,8 +23984,8 @@
           day: slot.day,
           time: String(slot.time || '').slice(0, 5),
           period: slot.period,
-          court: slot.court_name || slot.court,
-          teacher: slot.teacher_name || slot.teacher,
+          court: courtNameById[String(slot.court_id)] || slot.court_name || slot.court,
+          teacher: teacherNameById[String(slot.teacher_id)] || slot.teacher_name || slot.teacher,
           level: slot.level,
           capacity: Number(slot.capacity || 4),
           active: slot.active !== false
@@ -23595,6 +24007,13 @@
         return { id: court.id, name: court.name, active: court.active !== false };
       });
       renderLessons();
+    }
+
+    function requireLessonWriteAccess() {
+      requireAdminSession();
+      if (!isAdminDemoMode() && lessonState.source !== 'supabase') {
+        throw new Error('A grade não está sincronizada. Recarregue os dados antes de alterar.');
+      }
     }
 
     function lessonStudentsForSlot(slotId) {
@@ -23783,15 +24202,33 @@
     }
 
     function lessonFilteredSlots() {
+      const search = normalizedClientText(lessonState.studentSearch);
       return lessonState.slots
         .filter(function (slot) { return slot.active !== false && slot.day === lessonState.activeDay; })
         .filter(function (slot) { return lessonState.teacher === 'todos' || slot.teacher === lessonState.teacher; })
-        .filter(function (slot) { return !lessonState.onlyVacancies || lessonStudentsForSlot(slot.id).length < Number(slot.capacity || 0); })
+        .filter(function (slot) {
+          if (lessonState.court === 'todos') return true;
+          return String(slot.courtId || slot.court) === String(lessonState.court);
+        })
+        .filter(function (slot) {
+          const count = lessonStudentsForSlot(slot.id).length;
+          const capacity = Math.min(4, Number(slot.capacity || 4));
+          if (lessonState.occupancy === 'vacancies') return count < capacity;
+          if (lessonState.occupancy === 'full') return count >= capacity;
+          return true;
+        })
+        .filter(function (slot) {
+          if (!search) return true;
+          const slotText = normalizedClientText([slot.time, slot.teacher, slot.court, slot.level].join(' '));
+          if (slotText.includes(search)) return true;
+          return lessonStudentsForSlot(slot.id).some(function (student) {
+            return normalizedClientText([student.name, student.phone, student.email, student.planName].join(' ')).includes(search);
+          });
+        })
         .sort(function (a, b) {
-          const periodDiff = lessonPeriodOrder.indexOf(a.period) - lessonPeriodOrder.indexOf(b.period);
-          if (periodDiff) return periodDiff;
-          if (a.court !== b.court) return String(a.court).localeCompare(String(b.court));
-          return String(a.time).localeCompare(String(b.time));
+          const timeDiff = String(a.time).localeCompare(String(b.time));
+          if (timeDiff) return timeDiff;
+          return String(a.teacher).localeCompare(String(b.teacher), 'pt-BR');
         });
     }
 
@@ -23800,75 +24237,482 @@
         return '<button class="lesson-filter-btn' + (lessonState.activeDay === day.key ? ' active' : '') + '" type="button" data-lesson-day="' + day.key + '">' + day.label + '</button>';
       }).join('');
 
-      const teachers = Array.from(new Set(lessonState.slots.map(function (slot) { return slot.teacher; }).filter(Boolean))).sort();
+      const teachers = lessonState.teachers.filter(function (teacher) { return teacher.active !== false; }).slice().sort(function (a, b) {
+        return String(a.name).localeCompare(String(b.name), 'pt-BR');
+      });
+      const courts = lessonState.courts.filter(function (court) { return court.active !== false; }).slice().sort(function (a, b) {
+        return String(a.name).localeCompare(String(b.name), 'pt-BR', { numeric: true });
+      });
       $('lessonQuickFilters').innerHTML =
-        '<button class="lesson-filter-btn' + (lessonState.teacher === 'todos' ? ' active' : '') + '" type="button" data-lesson-teacher="todos">Todos</button>' +
-        teachers.map(function (teacher) {
-          return '<button class="lesson-filter-btn' + (lessonState.teacher === teacher ? ' active' : '') + '" type="button" data-lesson-teacher="' + escapeHtml(teacher) + '">' + escapeHtml(teacher) + '</button>';
-        }).join('') +
-        '<button class="lesson-filter-btn' + (lessonState.onlyVacancies ? ' active' : '') + '" type="button" data-lesson-vacancies="1">So vagas</button>';
+        '<label class="lesson-filter-select"><span>Professor</span><select data-lesson-teacher-select><option value="todos">Todos</option>' +
+          teachers.map(function (teacher) { return '<option value="' + escapeHtml(teacher.name) + '"' + (lessonState.teacher === teacher.name ? ' selected' : '') + '>' + escapeHtml(teacher.name) + '</option>'; }).join('') +
+        '</select></label>' +
+        '<label class="lesson-filter-select"><span>Quadra</span><select data-lesson-court-select><option value="todos">Todas</option>' +
+          courts.map(function (court) { return '<option value="' + escapeHtml(court.id || court.name) + '"' + (String(lessonState.court) === String(court.id || court.name) ? ' selected' : '') + '>' + escapeHtml(court.name) + '</option>'; }).join('') +
+        '</select></label>' +
+        '<label class="lesson-filter-select"><span>Ocupação</span><select data-lesson-occupancy-select>' +
+          '<option value="todos"' + (lessonState.occupancy === 'todos' ? ' selected' : '') + '>Todos</option>' +
+          '<option value="vacancies"' + (lessonState.occupancy === 'vacancies' ? ' selected' : '') + '>Com vagas</option>' +
+          '<option value="full"' + (lessonState.occupancy === 'full' ? ' selected' : '') + '>Lotados</option>' +
+        '</select></label>';
+      if ($('lessonStudentSearch') && $('lessonStudentSearch').value !== lessonState.studentSearch) $('lessonStudentSearch').value = lessonState.studentSearch;
     }
 
     function renderLessonSummary() {
       const activeSlots = lessonState.slots.filter(function (slot) { return slot.active !== false; });
       const activeEnrollments = lessonState.enrollments.filter(function (enrollment) { return enrollment.active !== false; });
-      const totalCapacity = activeSlots.reduce(function (sum, slot) { return sum + Number(slot.capacity || 0); }, 0);
-      $('lessonVacancies').textContent = Math.max(0, totalCapacity - activeEnrollments.length);
-      $('lessonActiveStudents').textContent = lessonState.students.filter(function (student) { return String(student.status || 'ATIVO') === 'ATIVO'; }).length;
-      $('lessonSlots').textContent = activeSlots.length;
-      $('lessonTeachers').textContent = new Set(activeSlots.map(function (slot) { return slot.teacher; }).filter(Boolean)).size;
-      $('lessonCourts').textContent = new Set(activeSlots.map(function (slot) { return slot.court; }).filter(Boolean)).size;
-      $('lessonsSubtitle').textContent = lessonState.source === 'supabase'
-        ? 'Conectado ao Supabase.'
-        : (lessonState.source === 'demo-fallback' ? 'Supabase indisponivel agora. Exibindo demo local.' : 'Modo demo local. Pronto para conectar no Supabase.');
+      const totalVacancies = activeSlots.reduce(function (sum, slot) {
+        const capacity = Math.min(4, Math.max(1, Number(slot.capacity || 4)));
+        return sum + Math.max(0, capacity - lessonStudentsForSlot(slot.id).length);
+      }, 0);
+      $('lessonVacancies').textContent = totalVacancies;
+      $('lessonActiveStudents').textContent = new Set(activeEnrollments.map(function (enrollment) { return String(enrollment.student_id); })).size;
+      $('lessonSlots').textContent = activeSlots.filter(function (slot) {
+        return lessonStudentsForSlot(slot.id).length >= Math.min(4, Math.max(1, Number(slot.capacity || 4)));
+      }).length;
+      $('lessonTeachers').textContent = lessonState.teachers.filter(function (teacher) { return teacher.active !== false; }).length;
+      $('lessonCourts').textContent = lessonState.courts.filter(function (court) { return court.active !== false; }).length;
+      document.querySelectorAll('[data-lesson-summary-filter]').forEach(function (button) {
+        const value = button.dataset.lessonSummaryFilter === 'all' ? 'todos' : button.dataset.lessonSummaryFilter;
+        button.classList.toggle('active', lessonState.occupancy === value);
+      });
+      $('lessonsSubtitle').textContent = lessonState.source === 'error'
+        ? 'Não foi possível sincronizar a grade agora'
+        : lessonDayName(lessonState.activeDay) + (lessonState.source === 'supabase' ? ' · atualização em tempo real' : ' · demonstração local');
     }
 
     function renderLessons() {
       renderLessonSummary();
       renderLessonFilters();
+      if (lessonState.source === 'error') {
+        $('lessonSchedule').innerHTML = '<div class="lesson-empty-state"><strong>Grade indisponível.</strong><span>Confira sua conexão e recarregue antes de fazer alterações.</span><button class="small-btn" type="button" data-lesson-retry>Recarregar grade</button></div>';
+        return;
+      }
       const slots = lessonFilteredSlots();
-      let currentPeriod = '';
-      let html = '';
-      slots.forEach(function (slot) {
+      const configuredCourts = lessonState.courts.filter(function (court) { return court.active !== false; }).slice().sort(function (a, b) {
+        return String(a.name).localeCompare(String(b.name), 'pt-BR', { numeric: true });
+      });
+      const fallbackCourts = Array.from(new Set(lessonState.slots.map(function (slot) { return slot.court; }).filter(Boolean))).map(function (name) {
+        return { id: name, name: name, active: true };
+      });
+      const courts = (configuredCourts.length ? configuredCourts : fallbackCourts).filter(function (court) {
+        return lessonState.court === 'todos' || String(lessonState.court) === String(court.id || court.name);
+      });
+
+      function renderSlot(slot) {
         const students = lessonStudentsForSlot(slot.id);
-        if (slot.period !== currentPeriod) {
-          currentPeriod = slot.period;
-          html += '<h2 class="lesson-period">' + escapeHtml(lessonPeriodNames[currentPeriod] || currentPeriod) + '</h2>';
-        }
-        const emptySeats = Math.max(0, Number(slot.capacity || 0) - students.length);
-        const capacityPercent = Math.min(100, Math.round((students.length / Math.max(1, Number(slot.capacity || 0))) * 100));
-        html += '<article class="lesson-slot">' +
+        const enrollmentByStudentId = {};
+        lessonState.enrollments.filter(function (enrollment) {
+          return enrollment.active !== false && String(enrollment.slot_id) === String(slot.id);
+        }).forEach(function (enrollment) { enrollmentByStudentId[String(enrollment.student_id)] = enrollment; });
+        const capacity = Math.min(4, Number(slot.capacity || 4));
+        const emptySeats = Math.max(0, capacity - students.length);
+        const capacityPercent = Math.min(100, Math.round((students.length / Math.max(1, capacity)) * 100));
+        return '<article class="lesson-slot ' + (emptySeats ? 'has-vacancies' : 'is-full') + '">' +
           '<div class="lesson-slot-top">' +
-            '<div class="lesson-time">' + escapeHtml(slot.time.replace(':00', 'H')) + '</div>' +
-            '<div><h3>' + escapeHtml(slot.court) + '</h3><div class="lesson-tags">' +
-              '<span class="lesson-tag">' + escapeHtml(slot.teacher) + '</span>' +
-              '<span class="lesson-tag">' + escapeHtml(slot.level) + '</span>' +
-              '<span class="lesson-tag">' + students.length + '/' + Number(slot.capacity || 0) + '</span>' +
-            '</div></div>' +
+            '<div class="lesson-time">' + escapeHtml(slot.time) + '</div>' +
+            '<div class="lesson-slot-summary"><div><h3>' + escapeHtml(slot.teacher || 'Professor a definir') + '</h3><div class="lesson-tags">' +
+              (slot.level ? '<span class="lesson-tag">' + escapeHtml(slot.level) + '</span>' : '') +
+            '</div></div><span class="lesson-occupancy">' + students.length + '/' + capacity + '</span></div>' +
           '</div>' +
           '<div class="lesson-students">' +
             students.map(function (student) {
-              const phone = String(student.phone || '').replace(/\D/g, '');
-              const whats = phone ? '<a href="https://wa.me/' + phone + '" target="_blank" rel="noopener">WhatsApp</a>' : '';
-              return '<div class="lesson-student"><span>' + escapeHtml(student.name || 'Aluno') + '</span>' + whats + '</div>';
+              const enrollment = enrollmentByStudentId[String(student.id)];
+              return '<div class="lesson-student"><span class="lesson-student-name" title="' + escapeHtml(student.name || 'Aluno') + '">' + escapeHtml(student.name || 'Aluno') + '</span>' +
+                '<span class="lesson-student-actions">' +
+                  '<button class="lesson-student-action" type="button" data-lesson-enrollment-move="' + escapeHtml(enrollment && enrollment.id || '') + '">Mover</button>' +
+                  '<button class="lesson-student-action danger" type="button" data-lesson-enrollment-remove="' + escapeHtml(enrollment && enrollment.id || '') + '">Remover</button>' +
+                '</span></div>';
             }).join('') +
-            Array.from({ length: emptySeats }).map(function () {
-              return '<button class="lesson-empty-seat" type="button" data-add-student-slot="' + escapeHtml(slot.id) + '">+ adicionar aluno</button>';
-            }).join('') +
+            (emptySeats ? '<button class="lesson-empty-seat" type="button" data-add-student-slot="' + escapeHtml(slot.id) + '">+ adicionar aluno · ' + emptySeats + ' vaga' + (emptySeats > 1 ? 's' : '') + '</button>' : '') +
           '</div>' +
-          '<div><div class="lesson-capacity"><div class="lesson-capacity-fill" style="width:' + capacityPercent + '%"></div></div>' +
-          '<div class="lesson-slot-actions"><button class="small-btn" type="button">Editar horário</button></div></div>' +
+          '<div class="lesson-slot-footer"><div class="lesson-capacity"><div class="lesson-capacity-fill" style="width:' + capacityPercent + '%"></div></div>' +
+          '<div class="lesson-slot-actions"><button class="small-btn" type="button" data-lesson-slot-edit="' + escapeHtml(slot.id) + '">Editar horário</button></div></div>' +
         '</article>';
+      }
+
+      const html = courts.map(function (court) {
+        const courtSlots = slots.filter(function (slot) {
+          return String(slot.courtId || slot.court) === String(court.id || court.name) || normalizedClientText(slot.court) === normalizedClientText(court.name);
+        });
+        const enrolled = courtSlots.reduce(function (sum, slot) { return sum + lessonStudentsForSlot(slot.id).length; }, 0);
+        return '<section class="lesson-court-column">' +
+          '<div class="lesson-court-head"><div><h2>' + escapeHtml(court.name) + '</h2><span>' + courtSlots.length + ' horário' + (courtSlots.length === 1 ? '' : 's') + ' · ' + enrolled + ' aluno' + (enrolled === 1 ? '' : 's') + '</span></div>' +
+            '<button class="small-btn" type="button" data-lesson-new-for-court="' + escapeHtml(court.id || court.name) + '">+ horário</button></div>' +
+          '<div class="lesson-court-slots">' + (courtSlots.map(renderSlot).join('') || '<div class="lesson-court-empty"><span>Nenhum horário neste dia.</span><button class="small-btn" type="button" data-lesson-new-for-court="' + escapeHtml(court.id || court.name) + '">Criar horário</button></div>') + '</div>' +
+        '</section>';
       });
-      $('lessonSchedule').innerHTML = html || '<div class="lesson-empty-state">Nenhum horário encontrado para os filtros atuais.</div>';
+      $('lessonSchedule').innerHTML = html.join('') || '<div class="lesson-empty-state">Nenhum horário encontrado para os filtros atuais.</div>';
     }
 
     function openLessonsModule() {
       setClubMode('club-lessons');
+      initAdminLessonRealtime();
       loadLessonsData().catch(function (error) {
         $('lessonSchedule').innerHTML = '<div class="lesson-empty-state">Erro ao carregar aulas.</div>';
         console.error(error);
       });
+      if (!lessonRefreshTimer) {
+        lessonRefreshTimer = setInterval(function () {
+          if (!document.hidden && document.body.classList.contains('club-lessons')) loadLessonsData().catch(function () {});
+        }, 15000);
+      }
+    }
+
+    const lessonPlacementState = {
+      mode: 'add',
+      slotId: '',
+      enrollmentId: '',
+      studentId: ''
+    };
+
+    function lessonSlotById(slotId) {
+      return lessonState.slots.find(function (slot) { return String(slot.id) === String(slotId); }) || null;
+    }
+
+    function lessonStudentById(studentId) {
+      return lessonState.students.find(function (student) { return String(student.id) === String(studentId); }) || null;
+    }
+
+    function lessonEnrollmentById(enrollmentId) {
+      return lessonState.enrollments.find(function (enrollment) { return String(enrollment.id) === String(enrollmentId); }) || null;
+    }
+
+    function lessonEntityByValue(items, value, fallbackName) {
+      return items.find(function (item) {
+        return String(item.id) === String(value) || normalizedClientText(item.name) === normalizedClientText(fallbackName || value);
+      }) || null;
+    }
+
+    function lessonSlotLabel(slot) {
+      return lessonDayName(slot.day) + ' · ' + slot.time + ' · ' + (slot.court || 'Quadra') + ' · ' + (slot.teacher || 'Professor');
+    }
+
+    function lessonSelectOptions(items, selectedValue) {
+      return items.filter(function (item) { return item.active !== false; }).slice().sort(function (a, b) {
+        return String(a.name).localeCompare(String(b.name), 'pt-BR', { numeric: true });
+      }).map(function (item) {
+        return '<option value="' + escapeHtml(item.id || item.name) + '"' + (String(item.id || item.name) === String(selectedValue || '') ? ' selected' : '') + '>' + escapeHtml(item.name) + '</option>';
+      }).join('');
+    }
+
+    function openLessonSlotEditor(slotId, preferredCourt) {
+      const slot = lessonSlotById(slotId);
+      const selectedCourt = slot
+        ? lessonEntityByValue(lessonState.courts, slot.courtId, slot.court)
+        : lessonEntityByValue(lessonState.courts, preferredCourt, preferredCourt);
+      const selectedTeacher = slot ? lessonEntityByValue(lessonState.teachers, slot.teacherId, slot.teacher) : lessonState.teachers[0];
+      $('lessonSlotEditorTitle').textContent = slot ? 'Editar horário' : 'Novo horário';
+      $('lessonSlotEditorId').value = slot && slot.id || '';
+      $('lessonSlotEditorDay').innerHTML = lessonDays.map(function (day) {
+        const selectedDay = slot && slot.day || lessonState.activeDay;
+        return '<option value="' + day.key + '"' + (selectedDay === day.key ? ' selected' : '') + '>' + lessonDayName(day.key) + '</option>';
+      }).join('');
+      $('lessonSlotEditorTime').value = slot && slot.time || '08:00';
+      $('lessonSlotEditorTeacher').innerHTML = lessonSelectOptions(lessonState.teachers, selectedTeacher && (selectedTeacher.id || selectedTeacher.name));
+      $('lessonSlotEditorCourt').innerHTML = lessonSelectOptions(lessonState.courts, selectedCourt && (selectedCourt.id || selectedCourt.name));
+      $('lessonSlotEditorLevel').value = slot && slot.level || '';
+      $('lessonSlotDeleteBtn').hidden = !slot;
+      $('lessonSlotEditorModal').classList.add('show');
+      $('lessonSlotEditorModal').setAttribute('aria-hidden', 'false');
+      setTimeout(function () { $('lessonSlotEditorTime').focus(); }, 0);
+    }
+
+    function closeLessonSlotEditor() {
+      $('lessonSlotEditorModal').classList.remove('show');
+      $('lessonSlotEditorModal').setAttribute('aria-hidden', 'true');
+      $('lessonSlotEditorForm').reset();
+      $('lessonSlotEditorId').value = '';
+    }
+
+    function lessonSlotHasConflict(payload, ignoredSlotId) {
+      return lessonState.slots.find(function (slot) {
+        if (slot.active === false || String(slot.id) === String(ignoredSlotId || '')) return false;
+        if (slot.day !== payload.day || String(slot.time) !== String(payload.time)) return false;
+        const sameCourt = String(slot.courtId || slot.court) === String(payload.court_id || payload.court_name) || normalizedClientText(slot.court) === normalizedClientText(payload.court_name);
+        const sameTeacher = String(slot.teacherId || slot.teacher) === String(payload.teacher_id || payload.teacher_name) || normalizedClientText(slot.teacher) === normalizedClientText(payload.teacher_name);
+        return sameCourt || sameTeacher;
+      }) || null;
+    }
+
+    async function saveLessonSlotEditorAction(event) {
+      event.preventDefault();
+      try {
+        requireLessonWriteAccess();
+        const slotId = $('lessonSlotEditorId').value;
+        const teacher = lessonEntityByValue(lessonState.teachers, $('lessonSlotEditorTeacher').value);
+        const court = lessonEntityByValue(lessonState.courts, $('lessonSlotEditorCourt').value);
+        const day = $('lessonSlotEditorDay').value;
+        const time = $('lessonSlotEditorTime').value;
+        if (!teacher || !court || !day || !time) throw new Error('Preencha dia, horário, professor e quadra.');
+        const payload = {
+          day: day,
+          time: time,
+          period: periodFromTime(time),
+          teacher_id: teacher.id || null,
+          teacher_name: teacher.name,
+          court_id: court.id || null,
+          court_name: court.name,
+          level: $('lessonSlotEditorLevel').value.trim() || 'A definir',
+          capacity: 4,
+          active: true
+        };
+        const conflict = lessonSlotHasConflict(payload, slotId);
+        if (conflict) throw new Error('Já existe uma aula nessa quadra ou com esse professor no mesmo horário.');
+        const currentSlot = slotId ? lessonSlotById(slotId) : null;
+        if (currentSlot && (currentSlot.day !== day || String(currentSlot.time) !== String(time))) {
+          const conflictingEnrollment = lessonState.enrollments.find(function (enrollment) {
+            return enrollment.active !== false && String(enrollment.slot_id) === String(slotId) &&
+              lessonStudentHasTimeConflict(enrollment.student_id, payload, enrollment.id);
+          });
+          if (conflictingEnrollment) {
+            const conflictingStudent = lessonStudentById(conflictingEnrollment.student_id);
+            throw new Error((conflictingStudent && conflictingStudent.name || 'Um aluno') + ' já tem outra aula nesse dia e horário.');
+          }
+        }
+        let saved;
+        if (isAdminDemoMode()) {
+          saved = Object.assign({ id: slotId || localId('slot') }, payload);
+        } else if (slotId) {
+          const updated = await supabaseRest('lesson_slots?id=eq.' + encodeURIComponent(slotId), {
+            method: 'PATCH',
+            body: payload,
+            prefer: 'return=representation'
+          });
+          saved = Array.isArray(updated) ? updated[0] : updated;
+        } else {
+          saved = await supabaseInsert('lesson_slots', payload);
+        }
+        const mapped = {
+          id: saved.id,
+          courtId: saved.court_id || payload.court_id || '',
+          teacherId: saved.teacher_id || payload.teacher_id || '',
+          day: saved.day || payload.day,
+          time: String(saved.time || payload.time).slice(0, 5),
+          period: saved.period || payload.period,
+          court: saved.court_name || payload.court_name,
+          teacher: saved.teacher_name || payload.teacher_name,
+          level: saved.level || payload.level,
+          capacity: 4,
+          active: true
+        };
+        const existingIndex = lessonState.slots.findIndex(function (slot) { return String(slot.id) === String(mapped.id); });
+        if (existingIndex >= 0) lessonState.slots.splice(existingIndex, 1, mapped);
+        else lessonState.slots.push(mapped);
+        lessonState.activeDay = mapped.day;
+        closeLessonSlotEditor();
+        renderLessons();
+        toast(slotId ? 'Horário atualizado.' : 'Horário criado.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function deleteLessonSlotAction() {
+      try {
+        requireLessonWriteAccess();
+        const slotId = $('lessonSlotEditorId').value;
+        const slot = lessonSlotById(slotId);
+        if (!slot) return;
+        if (lessonStudentsForSlot(slotId).length) throw new Error('Mova ou remova os alunos antes de excluir este horário.');
+        if (!confirm('Excluir ' + lessonSlotLabel(slot) + '?')) return;
+        if (!isAdminDemoMode()) {
+          await supabaseRest('lesson_slots?id=eq.' + encodeURIComponent(slotId), {
+            method: 'PATCH',
+            body: { active: false },
+            prefer: 'return=minimal'
+          });
+        }
+        slot.active = false;
+        closeLessonSlotEditor();
+        renderLessons();
+        toast('Horário excluído.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    function closeLessonStudentEditor() {
+      $('lessonStudentEditorModal').classList.remove('show');
+      $('lessonStudentEditorModal').setAttribute('aria-hidden', 'true');
+      $('lessonStudentAddPanel').hidden = false;
+      $('lessonStudentMoveForm').hidden = true;
+      $('lessonStudentPickerSearch').value = '';
+      lessonPlacementState.mode = 'add';
+      lessonPlacementState.slotId = '';
+      lessonPlacementState.enrollmentId = '';
+      lessonPlacementState.studentId = '';
+    }
+
+    function eligibleLessonStudentsForSlot(slot) {
+      const currentIds = new Set(lessonStudentsForSlot(slot.id).map(function (student) { return String(student.id); }));
+      const search = normalizedClientText($('lessonStudentPickerSearch').value);
+      return lessonState.students.filter(function (student) {
+        const active = String(student.status || 'ATIVO').toUpperCase() === 'ATIVO' && String(student.relationshipStatus || 'ATIVO').toUpperCase() !== 'INATIVO';
+        if (!active || currentIds.has(String(student.id))) return false;
+        if (!search) return true;
+        return normalizedClientText([student.name, student.phone, student.email, student.planName].join(' ')).includes(search);
+      }).sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'pt-BR'); });
+    }
+
+    function renderLessonStudentPicker() {
+      const slot = lessonSlotById(lessonPlacementState.slotId);
+      if (!slot) return;
+      const rows = eligibleLessonStudentsForSlot(slot);
+      $('lessonStudentPickerList').innerHTML = rows.map(function (student) {
+        const lessons = lessonState.enrollments.filter(function (enrollment) {
+          return enrollment.active !== false && String(enrollment.student_id) === String(student.id);
+        }).length;
+        return '<button class="lesson-student-picker-card" type="button" data-lesson-picker-student="' + escapeHtml(student.id) + '">' +
+          '<span><strong>' + escapeHtml(student.name) + '</strong><small>' + escapeHtml(student.planName || 'Plano a definir') + '</small></span>' +
+          '<span class="ops-pill">' + lessons + ' aula' + (lessons === 1 ? '' : 's') + '</span>' +
+        '</button>';
+      }).join('') || '<div class="lesson-empty-state">Nenhum aluno ativo encontrado.</div>';
+    }
+
+    function openLessonStudentPicker(slotId) {
+      const slot = lessonSlotById(slotId);
+      if (!slot) return;
+      if (lessonStudentsForSlot(slotId).length >= 4) {
+        toast('Este horário já tem 4 alunos.');
+        return;
+      }
+      lessonPlacementState.mode = 'add';
+      lessonPlacementState.slotId = slotId;
+      $('lessonStudentEditorTitle').textContent = 'Adicionar aluno';
+      $('lessonStudentEditorSubtitle').textContent = lessonSlotLabel(slot) + ' · ' + lessonStudentsForSlot(slotId).length + '/4 alunos';
+      $('lessonStudentAddPanel').hidden = false;
+      $('lessonStudentMoveForm').hidden = true;
+      renderLessonStudentPicker();
+      $('lessonStudentEditorModal').classList.add('show');
+      $('lessonStudentEditorModal').setAttribute('aria-hidden', 'false');
+      setTimeout(function () { $('lessonStudentPickerSearch').focus(); }, 0);
+    }
+
+    function lessonStudentHasTimeConflict(studentId, targetSlot, ignoredEnrollmentId) {
+      return lessonState.enrollments.some(function (enrollment) {
+        if (enrollment.active === false || String(enrollment.id) === String(ignoredEnrollmentId || '') || String(enrollment.student_id) !== String(studentId)) return false;
+        const enrolledSlot = lessonSlotById(enrollment.slot_id);
+        return enrolledSlot && enrolledSlot.active !== false && enrolledSlot.day === targetSlot.day && String(enrolledSlot.time) === String(targetSlot.time);
+      });
+    }
+
+    async function addExistingStudentToLessonSlotAction(studentId) {
+      try {
+        requireLessonWriteAccess();
+        const slot = lessonSlotById(lessonPlacementState.slotId);
+        const student = lessonStudentById(studentId);
+        if (!slot || !student) throw new Error('Aluno ou horário não encontrado.');
+        if (lessonStudentsForSlot(slot.id).length >= 4) throw new Error('Este horário acabou de atingir o limite de 4 alunos.');
+        if (lessonStudentHasTimeConflict(student.id, slot, '')) throw new Error('Este aluno já tem outra aula no mesmo dia e horário.');
+        let inserted;
+        if (isAdminDemoMode()) {
+          inserted = { id: localId('enrollment'), student_id: student.id, slot_id: slot.id, type: 'FIXO', active: true };
+        } else {
+          const existing = await supabaseRest('lesson_enrollments?student_id=eq.' + encodeURIComponent(student.id) + '&slot_id=eq.' + encodeURIComponent(slot.id) + '&select=*');
+          if (existing && existing[0]) {
+            const updated = await supabaseRest('lesson_enrollments?id=eq.' + encodeURIComponent(existing[0].id), {
+              method: 'PATCH',
+              body: { active: true, type: 'FIXO' },
+              prefer: 'return=representation'
+            });
+            inserted = Array.isArray(updated) ? updated[0] : updated;
+          } else {
+            inserted = await supabaseInsert('lesson_enrollments', { student_id: student.id, slot_id: slot.id, type: 'FIXO', active: true });
+          }
+        }
+        lessonState.enrollments = lessonState.enrollments.filter(function (enrollment) { return String(enrollment.id) !== String(inserted.id); });
+        lessonState.enrollments.push({ id: inserted.id, student_id: student.id, slot_id: slot.id, type: 'FIXO', active: true });
+        closeLessonStudentEditor();
+        renderLessons();
+        toast(student.name + ' adicionado ao horário.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    function lessonMoveTargets(enrollment) {
+      const studentId = enrollment && enrollment.student_id;
+      return lessonState.slots.filter(function (slot) {
+        if (slot.active === false || String(slot.id) === String(enrollment.slot_id)) return false;
+        if (lessonStudentsForSlot(slot.id).length >= 4) return false;
+        const duplicate = lessonState.enrollments.some(function (item) {
+          return item.active !== false && String(item.slot_id) === String(slot.id) && String(item.student_id) === String(studentId);
+        });
+        return !duplicate && !lessonStudentHasTimeConflict(studentId, slot, enrollment.id);
+      }).sort(function (a, b) {
+        const days = lessonDays.map(function (day) { return day.key; });
+        return days.indexOf(a.day) - days.indexOf(b.day) || String(a.time).localeCompare(String(b.time)) || String(a.court).localeCompare(String(b.court), 'pt-BR', { numeric: true });
+      });
+    }
+
+    function openLessonMoveEnrollment(enrollmentId) {
+      const enrollment = lessonEnrollmentById(enrollmentId);
+      const student = enrollment && lessonStudentById(enrollment.student_id);
+      if (!enrollment || !student) return;
+      const targets = lessonMoveTargets(enrollment);
+      lessonPlacementState.mode = 'move';
+      lessonPlacementState.enrollmentId = enrollment.id;
+      lessonPlacementState.studentId = student.id;
+      $('lessonStudentEditorTitle').textContent = 'Mover aluno';
+      $('lessonStudentEditorSubtitle').textContent = 'Escolha o novo horário. A ficha do aluno será atualizada junto.';
+      $('lessonStudentAddPanel').hidden = true;
+      $('lessonStudentMoveForm').hidden = false;
+      $('lessonMoveStudentName').innerHTML = '<strong>' + escapeHtml(student.name) + '</strong><span class="muted">Atual: ' + escapeHtml(lessonSlotLabel(lessonSlotById(enrollment.slot_id))) + '</span>';
+      $('lessonMoveTargetSlot').innerHTML = targets.map(function (slot) {
+        return '<option value="' + escapeHtml(slot.id) + '">' + escapeHtml(lessonSlotLabel(slot)) + ' · ' + lessonStudentsForSlot(slot.id).length + '/4</option>';
+      }).join('') || '<option value="">Nenhum horário compatível com vaga</option>';
+      $('lessonStudentMoveSave').disabled = !targets.length;
+      $('lessonStudentEditorModal').classList.add('show');
+      $('lessonStudentEditorModal').setAttribute('aria-hidden', 'false');
+    }
+
+    async function moveLessonEnrollmentAction(event) {
+      event.preventDefault();
+      try {
+        requireLessonWriteAccess();
+        const enrollment = lessonEnrollmentById(lessonPlacementState.enrollmentId);
+        const targetSlot = lessonSlotById($('lessonMoveTargetSlot').value);
+        if (!enrollment || !targetSlot) throw new Error('Selecione um horário disponível.');
+        if (lessonStudentsForSlot(targetSlot.id).length >= 4) throw new Error('Este horário acabou de atingir o limite de 4 alunos.');
+        if (lessonStudentHasTimeConflict(enrollment.student_id, targetSlot, enrollment.id)) throw new Error('O aluno já tem outra aula nesse dia e horário.');
+        if (!isAdminDemoMode()) {
+          await supabaseRest('lesson_enrollments?id=eq.' + encodeURIComponent(enrollment.id), {
+            method: 'PATCH',
+            body: { slot_id: targetSlot.id, active: true },
+            prefer: 'return=minimal'
+          });
+        }
+        enrollment.slot_id = targetSlot.id;
+        const student = lessonStudentById(enrollment.student_id);
+        closeLessonStudentEditor();
+        renderLessons();
+        toast((student && student.name || 'Aluno') + ' movido para ' + lessonDayName(targetSlot.day) + ' às ' + targetSlot.time + '.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function removeLessonEnrollmentFromGridAction(enrollmentId) {
+      try {
+        requireLessonWriteAccess();
+        const enrollment = lessonEnrollmentById(enrollmentId);
+        const student = enrollment && lessonStudentById(enrollment.student_id);
+        if (!enrollment) return;
+        if (!confirm('Remover ' + (student && student.name || 'este aluno') + ' deste horário?')) return;
+        if (!isAdminDemoMode()) {
+          await supabaseRest('lesson_enrollments?id=eq.' + encodeURIComponent(enrollment.id), {
+            method: 'PATCH',
+            body: { active: false },
+            prefer: 'return=minimal'
+          });
+        }
+        enrollment.active = false;
+        renderLessons();
+        toast('Aluno removido do horário.');
+      } catch (error) {
+        reportActionError(error);
+      }
     }
 
     const BAR_VIEW_STATE_KEY = 'ilha-bar-view-state-v1';
@@ -24176,6 +25020,10 @@
     let courtRealtimeClient = null;
     let courtRealtimeChannel = null;
     let courtRealtimeRefreshTimer = 0;
+    let lessonRealtimeClient = null;
+    let lessonRealtimeChannel = null;
+    let lessonRealtimeRefreshTimer = 0;
+    let lessonRefreshTimer = null;
     let courtDraftTimes = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
     let barRefreshTimer = null;
     let barAudioContext = null;
@@ -24189,6 +25037,10 @@
       if (mode !== 'club-courts' && courtRefreshTimer) {
         clearInterval(courtRefreshTimer);
         courtRefreshTimer = null;
+      }
+      if (mode !== 'club-lessons' && lessonRefreshTimer) {
+        clearInterval(lessonRefreshTimer);
+        lessonRefreshTimer = null;
       }
       if (mode !== 'club-bar' && barRefreshTimer) {
         clearInterval(barRefreshTimer);
@@ -25168,6 +26020,7 @@
     function openClientModal(key) {
       const client = findClientByKey(key);
       if (!client) return;
+      initAdminLessonRealtime();
       clientLessonEditEnrollmentId = '';
       opsState.selectedClientId = client.id || client.email || client.name;
       const selectedPlan = findClientPlan(client);
@@ -25691,6 +26544,42 @@
       courtRealtimeChannel = courtRealtimeClient.channel('admin-court-schedule')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'app_court_slot_events' }, scheduleAdminCourtRealtimeRefresh)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'app_court_schedule_days' }, scheduleAdminCourtRealtimeRefresh)
+        .subscribe();
+    }
+
+    function scheduleAdminLessonRealtimeRefresh() {
+      clearTimeout(lessonRealtimeRefreshTimer);
+      lessonRealtimeRefreshTimer = setTimeout(function () {
+        if (!adminSession || document.hidden) return;
+        const lessonsOpen = document.body.classList.contains('club-lessons');
+        const clientOpen = $('clientModal') && $('clientModal').classList.contains('show');
+        if (!lessonsOpen && !clientOpen) return;
+        loadLessonsData().then(function () {
+          if (clientOpen) {
+            const client = findClientByKey(opsState.selectedClientId);
+            if (client) renderClientLessonSchedule(client);
+          }
+        }).catch(function () {});
+      }, 120);
+    }
+
+    function initAdminLessonRealtime() {
+      if (!adminSession || !adminSession.access_token || !window.supabase || !window.supabase.createClient) return;
+      if (!lessonRealtimeClient) {
+        lessonRealtimeClient = window.supabase.createClient(LESSONS_SUPABASE_URL, LESSONS_SUPABASE_ANON_KEY, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+        });
+      }
+      if (lessonRealtimeClient.realtime && lessonRealtimeClient.realtime.setAuth) {
+        lessonRealtimeClient.realtime.setAuth(adminSession.access_token);
+      }
+      if (lessonRealtimeChannel) lessonRealtimeClient.removeChannel(lessonRealtimeChannel);
+      lessonRealtimeChannel = lessonRealtimeClient.channel('admin-lesson-schedule')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'lesson_slots' }, scheduleAdminLessonRealtimeRefresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'lesson_enrollments' }, scheduleAdminLessonRealtimeRefresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, scheduleAdminLessonRealtimeRefresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'teachers' }, scheduleAdminLessonRealtimeRefresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'courts' }, scheduleAdminLessonRealtimeRefresh)
         .subscribe();
     }
 
@@ -33223,7 +34112,7 @@
 
     async function addLessonMasterDataAction(kind) {
       try {
-        requireAdminSession();
+        requireLessonWriteAccess();
         const isTeacher = kind === 'teacher';
         const input = $(isTeacher ? 'clientNewTeacher' : 'clientNewCourt');
         const button = $(isTeacher ? 'clientNewTeacherBtn' : 'clientNewCourtBtn');
@@ -33262,7 +34151,7 @@
     async function addClientLessonAction(draft) {
       const button = draft && draft.querySelector('[data-client-lesson-add]');
       try {
-        requireAdminSession();
+        requireLessonWriteAccess();
         const client = findClientByKey(opsState.selectedClientId);
         if (!client) throw new Error('Aluno não encontrado.');
         if (!draft || !button) throw new Error('Preencha os dados da aula.');
@@ -33332,6 +34221,7 @@
           return enrollment.active !== false && String(enrollment.student_id) === String(student.id) && String(enrollment.slot_id) === String(slot.id);
         });
         if (alreadyActive) throw new Error('Esta aula já está na grade do aluno.');
+        if (lessonStudentHasTimeConflict(student.id, slot, '')) throw new Error('Este aluno já tem outra aula no mesmo dia e horário.');
         if (lessonStudentsForSlot(slot.id).length >= Number(slot.capacity || 4)) throw new Error('Este horário já atingiu a capacidade.');
         let enrollment;
         if (isAdminDemoMode()) {
@@ -33401,7 +34291,7 @@
     async function saveClientLessonEditAction(form) {
       const button = form && form.querySelector('[data-client-lesson-edit-save]');
       try {
-        requireAdminSession();
+        requireLessonWriteAccess();
         const client = findClientByKey(opsState.selectedClientId);
         const enrollmentId = form && form.dataset.clientLessonEditForm;
         const enrollment = lessonState.enrollments.find(function (item) { return String(item.id) === String(enrollmentId); });
@@ -33463,6 +34353,9 @@
             String(item.student_id) === String(enrollment.student_id) && String(item.slot_id) === String(slot.id);
         });
         if (duplicated) throw new Error('Esta aula já está na grade do aluno.');
+        if (lessonStudentHasTimeConflict(enrollment.student_id, slot, enrollment.id)) {
+          throw new Error('O aluno já tem outra aula nesse dia e horário.');
+        }
         if (String(enrollment.slot_id) !== String(slot.id) && lessonStudentsForSlot(slot.id).length >= Number(slot.capacity || 4)) {
           throw new Error('Este horário já atingiu a capacidade.');
         }
@@ -33493,7 +34386,7 @@
 
     async function removeClientLessonAction(enrollmentId) {
       try {
-        requireAdminSession();
+        requireLessonWriteAccess();
         const client = findClientByKey(opsState.selectedClientId);
         const enrollment = lessonState.enrollments.find(function (item) { return String(item.id) === String(enrollmentId); });
         if (!client || !enrollment) throw new Error('Aula não encontrada.');
@@ -34202,7 +35095,7 @@
 
     async function createLessonSlotAction() {
       try {
-        requireAdminSession();
+        requireLessonWriteAccess();
         if (isAdminDemoMode()) {
           const number = lessonState.slots.length + 1;
           const time = String(8 + (number % 10)).padStart(2, '0') + ':00';
@@ -34281,10 +35174,7 @@
 
     async function addStudentToLessonSlot(slotId) {
       try {
-        requireAdminSession();
-        if (lessonState.source !== 'supabase' && !isAdminDemoMode()) {
-          throw new Error('Carregue ou crie horários do Supabase antes de agendar alunos.');
-        }
+        requireLessonWriteAccess();
         const slot = lessonState.slots.find(function (item) { return String(item.id) === String(slotId); });
         if (!slot) throw new Error('Horário não encontrado.');
         if (isAdminDemoMode()) {
@@ -34910,11 +35800,42 @@
       $('lessonsReloadBtn').addEventListener('click', function () {
         loadLessonsData().catch(reportActionError);
       });
-      $('lessonsNewSlotBtn').addEventListener('click', createLessonSlotAction);
+      $('lessonsNewSlotBtn').addEventListener('click', function () { openLessonSlotEditor('', ''); });
       $('lessonsModule').addEventListener('click', function (event) {
+        const retryBtn = event.target.closest('[data-lesson-retry]');
+        if (retryBtn) {
+          retryBtn.disabled = true;
+          loadLessonsData().catch(reportActionError);
+          return;
+        }
+
         const addStudentBtn = event.target.closest('[data-add-student-slot]');
         if (addStudentBtn) {
-          addStudentToLessonSlot(addStudentBtn.dataset.addStudentSlot);
+          openLessonStudentPicker(addStudentBtn.dataset.addStudentSlot);
+          return;
+        }
+
+        const editSlotBtn = event.target.closest('[data-lesson-slot-edit]');
+        if (editSlotBtn) {
+          openLessonSlotEditor(editSlotBtn.dataset.lessonSlotEdit, '');
+          return;
+        }
+
+        const newCourtSlotBtn = event.target.closest('[data-lesson-new-for-court]');
+        if (newCourtSlotBtn) {
+          openLessonSlotEditor('', newCourtSlotBtn.dataset.lessonNewForCourt);
+          return;
+        }
+
+        const moveEnrollmentBtn = event.target.closest('[data-lesson-enrollment-move]');
+        if (moveEnrollmentBtn) {
+          openLessonMoveEnrollment(moveEnrollmentBtn.dataset.lessonEnrollmentMove);
+          return;
+        }
+
+        const removeEnrollmentBtn = event.target.closest('[data-lesson-enrollment-remove]');
+        if (removeEnrollmentBtn) {
+          removeLessonEnrollmentFromGridAction(removeEnrollmentBtn.dataset.lessonEnrollmentRemove);
           return;
         }
 
@@ -34925,18 +35846,42 @@
           return;
         }
 
-        const teacherBtn = event.target.closest('[data-lesson-teacher]');
-        if (teacherBtn) {
-          lessonState.teacher = teacherBtn.dataset.lessonTeacher;
+        const summaryBtn = event.target.closest('[data-lesson-summary-filter]');
+        if (summaryBtn) {
+          const filter = summaryBtn.dataset.lessonSummaryFilter;
+          lessonState.occupancy = filter === 'all' ? 'todos' : filter;
           renderLessons();
+        }
+      });
+      $('lessonsModule').addEventListener('change', function (event) {
+        if (event.target.matches('[data-lesson-teacher-select]')) lessonState.teacher = event.target.value;
+        else if (event.target.matches('[data-lesson-court-select]')) lessonState.court = event.target.value;
+        else if (event.target.matches('[data-lesson-occupancy-select]')) lessonState.occupancy = event.target.value;
+        else return;
+        renderLessons();
+      });
+      $('lessonStudentSearch').addEventListener('input', function (event) {
+        lessonState.studentSearch = event.target.value;
+        renderLessons();
+      });
+      $('lessonSlotEditorForm').addEventListener('submit', saveLessonSlotEditorAction);
+      $('lessonSlotDeleteBtn').addEventListener('click', deleteLessonSlotAction);
+      $('lessonSlotEditorClose').addEventListener('click', closeLessonSlotEditor);
+      $('lessonSlotEditorCancel').addEventListener('click', closeLessonSlotEditor);
+      $('lessonSlotEditorModal').addEventListener('click', function (event) {
+        if (event.target === $('lessonSlotEditorModal')) closeLessonSlotEditor();
+      });
+      $('lessonStudentEditorClose').addEventListener('click', closeLessonStudentEditor);
+      $('lessonStudentMoveCancel').addEventListener('click', closeLessonStudentEditor);
+      $('lessonStudentPickerSearch').addEventListener('input', renderLessonStudentPicker);
+      $('lessonStudentMoveForm').addEventListener('submit', moveLessonEnrollmentAction);
+      $('lessonStudentEditorModal').addEventListener('click', function (event) {
+        if (event.target === $('lessonStudentEditorModal')) {
+          closeLessonStudentEditor();
           return;
         }
-
-        const vacanciesBtn = event.target.closest('[data-lesson-vacancies]');
-        if (vacanciesBtn) {
-          lessonState.onlyVacancies = !lessonState.onlyVacancies;
-          renderLessons();
-        }
+        const pickerStudent = event.target.closest('[data-lesson-picker-student]');
+        if (pickerStudent) addExistingStudentToLessonSlotAction(pickerStudent.dataset.lessonPickerStudent);
       });
       $('studentCenterModule').addEventListener('click', function (event) {
         const statusBtn = event.target.closest('[data-student-status]');
