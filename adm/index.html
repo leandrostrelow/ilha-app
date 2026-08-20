@@ -18437,6 +18437,8 @@
             </div>
           </div>
           <div class="modal-actions">
+            <button class="danger-btn" type="button" id="clientDeleteBtn">Excluir aluno</button>
+            <button class="ghost-btn" type="button" id="clientPasswordRecoveryBtn">Enviar recuperação de senha</button>
             <button class="ghost-btn" type="button" id="clientModalCancel">Cancelar</button>
             <button class="primary-btn" type="submit">Salvar aluno</button>
           </div>
@@ -34224,6 +34226,29 @@
       return Array.isArray(approved) ? approved[0] : approved;
     }
 
+    async function sendClientPasswordRecovery() {
+      const client = findClientByKey(opsState.selectedClientId);
+      if (!client || !client.email) throw new Error('Este aluno não possui e-mail cadastrado.');
+      await supabaseAuthRequest('recover?redirect_to=' + encodeURIComponent(window.location.origin + '/'), { email: client.email }, false);
+      toast('E-mail de recuperação enviado para ' + client.email + '.');
+    }
+
+    async function deleteClientFromAdmin() {
+      const client = findClientByKey(opsState.selectedClientId);
+      if (!client || !isUuid(client.id)) throw new Error('Aluno inválido para exclusão.');
+      const confirmed = window.confirm('Excluir o cadastro de "' + (client.name || client.email || 'este aluno') + '"?\n\nO acesso será removido e esta ação não pode ser desfeita. Reservas antigas permanecem no histórico sem vínculo.');
+      if (!confirmed) return;
+      await supabaseRest('rpc/delete_app_client_account', {
+        method: 'POST',
+        body: { p_client_id: client.id }
+      });
+      closeClientModal();
+      await loadOpsData(true);
+      renderClientsModule();
+      renderHomeDashboard();
+      toast('Aluno excluído.');
+    }
+
     async function saveClientModal(event) {
       event.preventDefault();
       try {
@@ -35890,6 +35915,12 @@
       });
       $('clientModalClose').addEventListener('click', closeClientModal);
       $('clientModalCancel').addEventListener('click', closeClientModal);
+      $('clientPasswordRecoveryBtn').addEventListener('click', function () {
+        sendClientPasswordRecovery().catch(reportActionError);
+      });
+      $('clientDeleteBtn').addEventListener('click', function () {
+        deleteClientFromAdmin().catch(reportActionError);
+      });
       $('clientInvoiceSaveBtn').addEventListener('click', saveClientInvoiceAction);
       $('clientEditPlan').addEventListener('change', applyPlanToClientForm);
       $('clientEditFrequency').addEventListener('change', function () { renderClientLessonDrafts(); });

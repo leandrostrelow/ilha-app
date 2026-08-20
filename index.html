@@ -412,6 +412,19 @@
     .auth-form { display: none; }
     .auth-form.active { display: block; }
 
+    .auth-inline-action {
+      display: block;
+      width: max-content;
+      margin: 10px 0 0 auto;
+      border: 0;
+      background: transparent;
+      color: var(--teal);
+      font-size: 13px;
+      font-weight: 900;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
     label {
       display: block;
       margin: 14px 0 7px;
@@ -3629,6 +3642,7 @@
             <input id="loginEmail" type="email" autocomplete="username" inputmode="email" autocapitalize="none" placeholder="seu@email.com" required />
             <label for="loginPassword">Senha</label>
             <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Sua senha" required />
+            <button class="auth-inline-action" type="button" id="forgotPasswordBtn">Esqueci minha senha</button>
             <button class="primary-btn" type="submit" id="loginSubmit">Entrar no Ilha Play</button>
           </form>
 
@@ -3724,6 +3738,26 @@
             </div>
             <div class="auth-plan-recognition" id="authPlanRecognition">Você já poderá entrar no aplicativo. A reserva de quadras será liberada quando um plano ativo for vinculado.</div>
             <button class="primary-btn" type="submit" id="completeRegistrationSubmit">Entrar no Ilha Play</button>
+          </form>
+        </div>
+
+        <div class="auth-stage" id="authResetStage" hidden>
+          <div class="auth-panel-head">
+            <h2 id="authResetTitle">Recuperar senha</h2>
+            <p id="authResetDescription">Informe o e-mail da sua conta. Você receberá um link seguro do Ilha Play.</p>
+          </div>
+          <form id="passwordRecoveryForm">
+            <label for="recoveryEmail">E-mail</label>
+            <input id="recoveryEmail" type="email" autocomplete="email" inputmode="email" autocapitalize="none" placeholder="seu@email.com" required />
+            <button class="primary-btn" type="submit" id="recoverySubmit">Enviar link de recuperação</button>
+            <button class="ghost-btn" type="button" id="recoveryBackBtn" style="width:100%;margin-top:10px">Voltar para entrar</button>
+          </form>
+          <form id="newPasswordForm" hidden>
+            <label for="newPassword">Nova senha</label>
+            <input id="newPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo 8 caracteres" required />
+            <label for="newPasswordConfirm">Confirme a nova senha</label>
+            <input id="newPasswordConfirm" type="password" autocomplete="new-password" minlength="8" placeholder="Repita a nova senha" required />
+            <button class="primary-btn" type="submit" id="newPasswordSubmit">Salvar nova senha</button>
           </form>
         </div>
 
@@ -5007,11 +5041,13 @@
       return '<span class="pill' + kind + '">' + escapeHtml(value) + '</span>';
     }
 
-    async function authRequest(path, body) {
+    async function authRequest(path, body, options) {
+      options = options || {};
       const h = headers(false);
+      if (options.accessToken) h.Authorization = 'Bearer ' + options.accessToken;
       h['Content-Type'] = 'application/json';
       const response = await fetch(baseUrl() + '/auth/v1/' + path, {
-        method: 'POST',
+        method: options.method || 'POST',
         headers: h,
         body: JSON.stringify(body || {})
       });
@@ -5190,6 +5226,7 @@
           }
         } : {}
       };
+      nextSession.flow_type = params.get('type') || '';
       window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
       return nextSession;
     }
@@ -5436,7 +5473,7 @@
     }
 
     function setBusy(isBusy) {
-      ['loginSubmit', 'signupSubmit', 'completeRegistrationSubmit', 'pendingLoginBtn'].forEach(function (id) {
+      ['loginSubmit', 'signupSubmit', 'completeRegistrationSubmit', 'pendingLoginBtn', 'recoverySubmit', 'newPasswordSubmit'].forEach(function (id) {
         if ($(id)) $(id).disabled = isBusy;
       });
     }
@@ -5482,6 +5519,7 @@
       $('authMainStage').hidden = stage !== 'main';
       $('authPendingStage').hidden = stage !== 'pending';
       $('authCompleteStage').hidden = stage !== 'complete';
+      $('authResetStage').hidden = stage !== 'reset';
       setAuthMessage('', false);
       if (stage === 'pending') {
         const email = pendingSignup && pendingSignup.email || currentUser().email || '';
@@ -5673,6 +5711,35 @@
       await finishAuthenticatedAccess();
     }
 
+    function openPasswordRecovery(email) {
+      showAuthStage('reset');
+      $('passwordRecoveryForm').hidden = false;
+      $('newPasswordForm').hidden = true;
+      $('authResetTitle').textContent = 'Recuperar senha';
+      $('authResetDescription').textContent = 'Informe o e-mail da sua conta. Você receberá um link seguro do Ilha Play.';
+      $('recoveryEmail').value = email || $('loginEmail').value.trim();
+      setTimeout(function () { $('recoveryEmail').focus(); }, 30);
+    }
+
+    function openNewPassword() {
+      showAuthStage('reset');
+      $('passwordRecoveryForm').hidden = true;
+      $('newPasswordForm').hidden = false;
+      $('authResetTitle').textContent = 'Crie uma nova senha';
+      $('authResetDescription').textContent = 'Escolha uma senha com pelo menos 8 caracteres para voltar a acessar o Ilha Play.';
+      setTimeout(function () { $('newPassword').focus(); }, 30);
+    }
+
+    async function requestPasswordRecovery(email) {
+      const redirectUrl = window.location.origin + '/';
+      await authRequest('recover?redirect_to=' + encodeURIComponent(redirectUrl), { email: email });
+    }
+
+    async function updateRecoveredPassword(password) {
+      if (!session || !session.access_token) throw new Error('Este link expirou. Solicite uma nova recuperação.');
+      await authRequest('user', { password: password }, { method: 'PUT', accessToken: session.access_token });
+    }
+
     async function signup(details) {
       const redirectUrl = window.location.origin + window.location.pathname;
       const result = await authRequest('signup?redirect_to=' + encodeURIComponent(redirectUrl), {
@@ -5713,6 +5780,10 @@
       if (linkedSession) {
         try {
           storeSession(linkedSession);
+          if (linkedSession.flow_type === 'recovery') {
+            openNewPassword();
+            return;
+          }
           if (pendingSignup) await completeRegistration(pendingSignup);
           savePendingSignup(null);
           await finishAuthenticatedAccess();
@@ -6675,6 +6746,8 @@
       setupSwipeBack();
       $('showLoginBtn').addEventListener('click', function () { showAuthTab('login'); });
       $('showSignupBtn').addEventListener('click', function () { showAuthTab('signup'); });
+      $('forgotPasswordBtn').addEventListener('click', function () { openPasswordRecovery(); });
+      $('recoveryBackBtn').addEventListener('click', function () { showAuthTab('login'); });
       $('demoBtn').addEventListener('click', function () { enterDemo(true); });
       ['signupPhone', 'completePhone'].forEach(function (id) {
         $(id).addEventListener('input', function () { this.value = formatPhone(this.value); });
@@ -6853,6 +6926,38 @@
           await login($('loginEmail').value.trim(), $('loginPassword').value);
         } catch (error) {
           setAuthMessage(error.message || 'Não consegui entrar agora.', true);
+        } finally {
+          setBusy(false);
+        }
+      });
+      $('passwordRecoveryForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        setBusy(true);
+        setAuthMessage('', false);
+        try {
+          const email = $('recoveryEmail').value.trim().toLowerCase();
+          await requestPasswordRecovery(email);
+          setAuthMessage('Enviamos o link para ' + email + '. Confira também a caixa de spam.', false);
+        } catch (error) {
+          setAuthMessage(error.message || 'Não foi possível enviar o link agora.', true);
+        } finally {
+          setBusy(false);
+        }
+      });
+      $('newPasswordForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        setBusy(true);
+        setAuthMessage('', false);
+        try {
+          const password = $('newPassword').value;
+          if (password.length < 8) throw new Error('A nova senha precisa ter pelo menos 8 caracteres.');
+          if (password !== $('newPasswordConfirm').value) throw new Error('As senhas não são iguais.');
+          await updateRecoveredPassword(password);
+          clearSession();
+          showAuthTab('login');
+          setAuthMessage('Senha alterada. Entre com sua nova senha.', false);
+        } catch (error) {
+          setAuthMessage(error.message || 'Não foi possível alterar a senha.', true);
         } finally {
           setBusy(false);
         }
