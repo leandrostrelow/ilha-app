@@ -4697,7 +4697,7 @@
         const results = await Promise.all([
           rest('app_court_schedule_days?select=schedule_date,enabled,notes,slot_times&schedule_date=gte.' + startDate + '&schedule_date=lte.' + endDate + '&order=schedule_date.asc', { auth: true }).catch(function () { return []; }),
           rest('rpc/get_app_court_availability', { method: 'POST', body: { p_start_date: startDate, p_end_date: endDate }, prefer: 'return=representation' }),
-          rest('app_court_bookings?select=id,booking_date,starts_at,court_name,status,opponent_name,notes&client_id=eq.' + encodeURIComponent(userId) + '&status=neq.CANCELADO&booking_date=gte.' + startDate + '&order=booking_date.asc,starts_at.asc', { auth: true }).catch(function () { return []; }),
+          rest('app_court_bookings?select=id,client_id,client_name,opponent_client_id,opponent_name,booking_date,starts_at,court_name,status,notes&or=(client_id.eq.' + encodeURIComponent(userId) + ',opponent_client_id.eq.' + encodeURIComponent(userId) + ')&status=neq.CANCELADO&booking_date=gte.' + startDate + '&order=booking_date.asc,starts_at.asc', { auth: true }).catch(function () { return []; }),
           rest('rpc/get_active_court_opponents', { method: 'POST', body: {}, prefer: 'return=representation' }).catch(function () { return []; })
         ]);
         courtScheduleDays = results[0] || [];
@@ -4795,7 +4795,9 @@
 
       const own = myClientCourtBooking(selectedCourtDate);
       if (own) {
-        ownBox.innerHTML = '<div><strong>Sua reserva: ' + escapeHtml(own.court_name) + ' às ' + escapeHtml(String(own.starts_at || '').slice(0, 5)) + '</strong><span>Adversário: ' + escapeHtml(own.opponent_name || 'A definir') + '</span></div><button class="court-inline-btn" type="button" data-cancel-client-court="' + escapeHtml(own.id) + '">Cancelar reserva</button>';
+        const createdByMe = String(own.client_id || '') === String(session && session.user && session.user.id || '');
+        const otherPlayer = createdByMe ? own.opponent_name : own.client_name;
+        ownBox.innerHTML = '<div><strong>Sua reserva: ' + escapeHtml(own.court_name) + ' às ' + escapeHtml(String(own.starts_at || '').slice(0, 5)) + '</strong><span>Com: ' + escapeHtml(otherPlayer || 'A definir') + '</span></div>' + (createdByMe ? '<button class="court-inline-btn" type="button" data-cancel-client-court="' + escapeHtml(own.id) + '">Cancelar reserva</button>' : '');
         ownBox.classList.add('show');
       } else {
         ownBox.innerHTML = '';
