@@ -13618,7 +13618,7 @@
         overscroll-behavior-y: contain;
       }
 
-      body.bar-admin-surface .bar-pull-refresh {
+      .bar-pull-refresh {
         display: flex;
       }
 
@@ -35690,11 +35690,16 @@
       indicator.classList.remove('is-ready');
       label.textContent = 'Atualizando...';
       try {
-        await loadBarData(true);
-        renderBarModule();
-        if (opsState.selectedBarOrderId && !barCommandModalHasActiveEditor()) renderBarCommandModal();
-        label.textContent = 'Atualizado';
+        if ('serviceWorker' in navigator) {
+          const registration = await navigator.serviceWorker.getRegistration('/');
+          if (registration) {
+            await registration.update();
+            if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+        }
+        label.textContent = 'Página atualizada';
         if (navigator.vibrate) navigator.vibrate(30);
+        window.setTimeout(function () { window.location.reload(); }, 180);
       } catch (error) {
         label.textContent = 'Não foi possível atualizar';
         reportActionError(error);
@@ -35706,7 +35711,7 @@
 
     function initBarPullToRefresh() {
       const indicator = $('barPullRefresh');
-      if (!indicator || !IS_BAR_ADMIN_SURFACE) return;
+      if (!indicator) return;
 
       document.addEventListener('touchstart', function (event) {
         if (barPullRefreshing || window.innerWidth > 700 || document.body.classList.contains('adm-locked')) return;
@@ -37354,5 +37359,6 @@
     window.addEventListener('pagehide', rememberBarScrollPosition);
     initAdminLogin();
   </script>
+  <script src="/auto-update.js?v=204"></script>
 </body>
 </html>

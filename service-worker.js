@@ -1,7 +1,8 @@
-const CACHE_NAME = 'ilha-play-v203-mobile-menu-home-notices';
+const CACHE_NAME = 'ilha-play-v204-global-refresh-pull-admin';
 const ASSETS = [
   './',
   './index.html',
+  './auto-update.js',
   './adm/',
   './adm/index.html',
   './adm-manifest.json',
