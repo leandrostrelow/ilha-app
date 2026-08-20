@@ -25808,7 +25808,10 @@
           supabaseRest('app_plans?select=*&order=created_at.desc').catch(function () { return []; }),
           supabaseRest('app_store_requests?select=*,app_clients(full_name,email,phone)&order=created_at.desc').catch(function () { return []; }),
           supabaseRest('app_announcements?select=*&order=published_at.desc').catch(function () { return []; }),
-          supabaseRest('app_court_bookings?select=*,app_clients(full_name,email,phone)&order=booking_date.asc,starts_at.asc').catch(function () { return []; }),
+          supabaseRest('app_court_bookings?select=*,app_clients:app_clients!app_court_bookings_client_id_fkey(full_name,email,phone)&order=booking_date.asc,starts_at.asc').catch(function (error) {
+            console.warn('Não foi possível carregar as reservas das quadras.', error);
+            return [];
+          }),
           supabaseRest('app_payment_invoices?select=*,app_clients(full_name,email)&order=invoice_month.desc').catch(function () { return []; }),
           supabaseRest('app_court_schedule_days?select=*&order=schedule_date.asc').catch(function () { return []; })
         ]);
@@ -26594,7 +26597,7 @@
       if (!adminSession || !adminSession.access_token || isAdminDemoMode()) return;
       try {
         const results = await Promise.allSettled([
-          supabaseRest('app_court_bookings?select=*,app_clients(full_name,email,phone)&order=booking_date.asc,starts_at.asc'),
+          supabaseRest('app_court_bookings?select=*,app_clients:app_clients!app_court_bookings_client_id_fkey(full_name,email,phone)&order=booking_date.asc,starts_at.asc'),
           supabaseRest('app_court_schedule_days?select=*&order=schedule_date.asc')
         ]);
         if (results[0].status === 'fulfilled') {
