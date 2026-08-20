@@ -33988,6 +33988,18 @@
       return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
     }
 
+    function normalizedClientType(value, fallback) {
+      const allowed = ['cliente', 'aluno', 'mensalista', 'responsavel', 'socio'];
+      const candidate = String(value || '').trim().toLowerCase();
+      if (allowed.includes(candidate)) return candidate;
+      const safeFallback = String(fallback || '').trim().toLowerCase();
+      return allowed.includes(safeFallback) ? safeFallback : 'cliente';
+    }
+
+    function clientTypeForPlan(plan, currentType) {
+      return normalizedClientType(plan && plan.type, currentType);
+    }
+
     async function patchClientFromAdmin(client, payload) {
       if (!client || !client.id) return null;
       const saved = await supabaseRest('app_clients?id=eq.' + encodeURIComponent(client.id), {
@@ -34024,7 +34036,7 @@
           birthDate: $('clientEditBirthDate').value,
           guardian: guardian,
           guardianPhone: guardianPhone,
-          type: plan ? plan.type || client.type : client.type,
+          type: plan ? clientTypeForPlan(plan, client.type) : normalizedClientType(client.type),
           status: $('clientEditStatus').value,
           officialPlanId: plan ? plan.id : '',
           officialPlanCode: plan ? plan.code : '',
@@ -34504,7 +34516,7 @@
       };
       try {
         const payload = {
-          client_type: plan.type || request.membershipType || targetClient.type || 'aluno',
+          client_type: clientTypeForPlan(plan, request.membershipType || targetClient.type || 'aluno'),
           official_plan_id: isUuid(plan.id) ? plan.id : null,
           official_plan_code: plan.code || request.planCode || '',
           official_plan_name: plan.name || request.plan,
