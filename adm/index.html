@@ -34213,6 +34213,15 @@
       return Array.isArray(saved) ? saved[0] : saved;
     }
 
+    async function approveClientAccessFromAdmin(client) {
+      if (!client || !isUuid(client.id)) throw new Error('Aluno inválido para liberação.');
+      const approved = await supabaseRest('rpc/approve_app_client', {
+        method: 'POST',
+        body: { p_client_id: client.id }
+      });
+      return Array.isArray(approved) ? approved[0] : approved;
+    }
+
     async function saveClientModal(event) {
       event.preventDefault();
       try {
@@ -34251,6 +34260,7 @@
           dueDay: dueDay || '',
           notes: $('clientEditNotes').value.trim()
         };
+        const accessReleaseRequested = !wasActive && String(localUpdate.status || '').toUpperCase() === 'ATIVO';
         if (!isAdminDemoMode()) {
           const payload = {
             full_name: localUpdate.name,
@@ -34270,7 +34280,11 @@
             due_day: localUpdate.dueDay || null,
             notes: localUpdate.notes
           };
-          const savedClient = await patchClientFromAdmin(client, payload);
+          if (accessReleaseRequested) payload.status = client.status || 'PENDENTE';
+          let savedClient = await patchClientFromAdmin(client, payload);
+          if (accessReleaseRequested) {
+            savedClient = await approveClientAccessFromAdmin(client);
+          }
           if (savedClient) Object.assign(client, mapClientRow(savedClient));
         }
         if (isAdminDemoMode()) Object.assign(client, localUpdate);
