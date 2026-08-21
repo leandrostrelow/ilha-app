@@ -23,6 +23,18 @@ const allowedPermissions = new Set([
   "team",
 ]);
 
+const preservedBarPermissions = [
+  "bar.overview",
+  "bar.orders",
+  "bar.kitchen",
+  "bar.customers",
+  "bar.products",
+  "bar.menu",
+  "bar.finance",
+  "bar.qrcodes",
+  "bar.events",
+];
+
 function corsHeaders(request: Request) {
   const origin = request.headers.get("origin") || "";
   return {
@@ -73,6 +85,29 @@ function normalizeText(value: unknown, maxLength: number) {
 function normalizePermissions(value: unknown) {
   if (!Array.isArray(value)) return [];
   return Array.from(new Set(value.map(String).filter((permission) => allowedPermissions.has(permission))));
+}
+
+async function findAuthUserByEmail(adminClient: ReturnType<typeof createClient>, email: string) {
+  const normalizedEmail = email.toLowerCase();
+  for (let page = 1; page <= 20; page += 1) {
+    const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw error;
+    const users = data?.users || [];
+    const found = users.find((user) => String(user.email || "").toLowerCase() === normalizedEmail);
+    if (found) return found;
+    if (users.length < 1000) break;
+  }
+  return null;
+}
+
+function permissionsForLinkedAccount(existingProfile: Record<string, unknown> | null, clubPermissions: string[]) {
+  const currentPermissions = Array.isArray(existingProfile?.permissions)
+    ? existingProfile.permissions.map(String)
+    : [];
+  const barPermissions = String(existingProfile?.role || "") === "bar"
+    ? preservedBarPermissions
+    : currentPermissions.filter((permission) => permission === "bar" || permission.startsWith("bar."));
+  return Array.from(new Set([...clubPermissions, ...barPermissions]));
 }
 
 function publicProfile(profile: Record<string, unknown>) {
@@ -150,7 +185,7 @@ Deno.serve(async (request: Request) => {
       if (targetId === caller.id) return json(request, { error: "Você não pode excluir o próprio acesso." }, 400);
       const { data: target, error: targetError } = await adminClient
         .from("profiles")
-        .select("id, email, role")
+        .select("id, email, role, permissions")
         .eq("id", targetId)
         .maybeSingle();
       if (targetError) throw targetError;
@@ -164,6 +199,29 @@ Deno.serve(async (request: Request) => {
           .eq("active", true);
         if (countError) throw countError;
         if ((count || 0) <= 1) return json(request, { error: "O último administrador ativo não pode ser excluído." }, 400);
+      }
+      const currentPermissions = Array.isArray(target.permissions) ? target.permissions.map(String) : [];
+      const barPermissions = currentPermissions.filter((permission) => permission === "bar" || permission.startsWith("bar."));
+      const { data: clientAccount, error: clientLookupError } = await adminClient
+        .from("app_clients")
+        .select("id")
+        .eq("id", targetId)
+        .maybeSingle();
+      if (clientLookupError) throw clientLookupError;
+      if (barPermissions.length) {
+        failureStage = "restore_bar_access";
+        const { error: restoreError } = await adminClient
+          .from("profiles")
+          .update({ role: "bar", permissions: barPermissions, active: true, updated_at: new Date().toISOString() })
+          .eq("id", targetId);
+        if (restoreError) throw restoreError;
+        return json(request, { deleted: true, user_id: targetId, preserved_access: "bar" });
+      }
+      if (clientAccount) {
+        failureStage = "remove_club_profile";
+        const { error: profileDeleteError } = await adminClient.from("profiles").delete().eq("id", targetId);
+        if (profileDeleteError) throw profileDeleteError;
+        return json(request, { deleted: true, user_id: targetId, preserved_access: "client" });
       }
       failureStage = "delete_user";
       const { error: deleteError } = await adminClient.auth.admin.deleteUser(targetId);
@@ -189,34 +247,52 @@ Deno.serve(async (request: Request) => {
       const password = String(payload.password || "");
       if (!/^\S+@\S+\.\S+$/.test(email)) return json(request, { error: "Informe um e-mail válido." }, 400);
       if (password.length < 8) return json(request, { error: "A senha provisória deve ter pelo menos 8 caracteres." }, 400);
-      const { data: created, error: createError } = await adminClient.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: { full_name: fullName, phone, app_context: "admin" },
-      });
-      if (createError || !created.user) {
-        const message = String(createError?.message || "Não foi possível criar o usuário.");
-        return json(request, { error: message.toLowerCase().includes("registered") ? "Este e-mail já possui um acesso." : message }, 400);
+      let authUser = await findAuthUserByEmail(adminClient, email);
+      const linkedExisting = Boolean(authUser);
+      if (!authUser) {
+        const { data: created, error: createError } = await adminClient.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: { full_name: fullName, phone, app_context: "admin" },
+        });
+        if (createError || !created.user) {
+          const message = String(createError?.message || "Não foi possível criar o usuário.");
+          return json(request, { error: message }, 400);
+        }
+        authUser = created.user;
       }
+      failureStage = "existing_profile";
+      const { data: existingProfile, error: existingProfileError } = await adminClient
+        .from("profiles")
+        .select("id, role, permissions")
+        .eq("id", authUser.id)
+        .maybeSingle();
+      if (existingProfileError) throw existingProfileError;
       failureStage = "create_profile";
       const profile = {
-        id: created.user.id,
+        id: authUser.id,
         full_name: fullName,
         email,
         phone,
         role,
         active,
-        permissions,
+        permissions: permissionsForLinkedAccount(existingProfile, permissions),
         notes,
         updated_at: new Date().toISOString(),
       };
       const { data: saved, error: saveError } = await adminClient.from("profiles").upsert(profile).select().single();
       if (saveError) {
-        await adminClient.auth.admin.deleteUser(created.user.id);
+        if (!linkedExisting) await adminClient.auth.admin.deleteUser(authUser.id);
         throw saveError;
       }
-      return json(request, { user: publicProfile(saved) }, 201);
+      return json(request, {
+        user: publicProfile(saved),
+        linked_existing: linkedExisting,
+        message: linkedExisting
+          ? "Conta existente vinculada ao Clube. A senha atual foi mantida."
+          : "Acesso do Clube criado.",
+      }, linkedExisting ? 200 : 201);
     }
 
     if (action === "update") {
@@ -225,7 +301,7 @@ Deno.serve(async (request: Request) => {
       if (!targetId) return json(request, { error: "Usuário não encontrado." }, 400);
       const { data: target, error: targetError } = await adminClient
         .from("profiles")
-        .select("id, role, active")
+        .select("id, role, active, permissions")
         .eq("id", targetId)
         .maybeSingle();
       if (targetError) throw targetError;
@@ -253,7 +329,15 @@ Deno.serve(async (request: Request) => {
       failureStage = "update_profile";
       const { data: saved, error: saveError } = await adminClient
         .from("profiles")
-        .update({ full_name: fullName, phone, role, active, permissions, notes, updated_at: new Date().toISOString() })
+        .update({
+          full_name: fullName,
+          phone,
+          role,
+          active,
+          permissions: permissionsForLinkedAccount(target, permissions),
+          notes,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", targetId)
         .select()
         .single();

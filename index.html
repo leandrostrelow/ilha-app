@@ -6134,26 +6134,54 @@
 
     async function signup(details) {
       const redirectUrl = window.location.origin + window.location.pathname;
-      const result = await authRequest('signup?redirect_to=' + encodeURIComponent(redirectUrl), {
-        email: details.email,
-        password: details.password,
-        data: {
-          app_context: 'public',
-          full_name: details.name,
-          phone: digitsOnly(details.phone),
-          cpf: digitsOnly(details.cpf),
-          birth_date: details.birthDate,
-          declared_plan_code: details.planCode || '',
-          declared_lesson_slots: details.lessonSlots || [],
-          guardian_name: details.guardianName || '',
-          guardian_phone: digitsOnly(details.guardianPhone),
-          client_type: 'cliente'
+      let result;
+      try {
+        result = await authRequest('signup?redirect_to=' + encodeURIComponent(redirectUrl), {
+          email: details.email,
+          password: details.password,
+          data: {
+            app_context: 'public',
+            full_name: details.name,
+            phone: digitsOnly(details.phone),
+            cpf: digitsOnly(details.cpf),
+            birth_date: details.birthDate,
+            declared_plan_code: details.planCode || '',
+            declared_lesson_slots: details.lessonSlots || [],
+            guardian_name: details.guardianName || '',
+            guardian_phone: digitsOnly(details.guardianPhone),
+            client_type: 'cliente'
+          }
+        });
+      } catch (error) {
+        const duplicate = String(error && error.code || '').includes('user_already_exists') ||
+          String(error && error.message || '').includes('já possui uma conta');
+        if (!duplicate) throw error;
+        try {
+          const existingSession = await authRequest('token?grant_type=password', { email: details.email, password: details.password });
+          storeSession(existingSession);
+          await completeRegistration(details);
+          await finishAuthenticatedAccess();
+          return;
+        } catch (_loginError) {
+          showAuthTab('login');
+          $('loginEmail').value = details.email;
+          throw new Error('Este e-mail já possui uma conta. Entre com a senha atual ou use “Esqueci minha senha”.');
         }
-      });
+      }
       const nextSession = result.session || (result.access_token ? result : null);
       if (!nextSession || !nextSession.access_token) {
-        savePendingSignup(null);
-        throw new Error('Este e-mail já possui uma conta. Use a opção Entrar com sua senha para completar o cadastro.');
+        try {
+          const existingSession = await authRequest('token?grant_type=password', { email: details.email, password: details.password });
+          storeSession(existingSession);
+          await completeRegistration(details);
+          await finishAuthenticatedAccess();
+          return;
+        } catch (_loginError) {
+          savePendingSignup(null);
+          showAuthTab('login');
+          $('loginEmail').value = details.email;
+          throw new Error('Este e-mail já possui uma conta. Entre com a senha atual ou use “Esqueci minha senha”.');
+        }
       }
       savePendingSignup(details);
       storeSession(nextSession);
