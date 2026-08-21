@@ -1292,6 +1292,14 @@
       margin-top: 4px;
     }
 
+    .notice-toolbar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .notice-toolbar[hidden] { display: none; }
+
     .notice-card,
     .store-card,
     .payment-card {
@@ -1305,14 +1313,44 @@
       padding: 13px;
       display: grid;
       gap: 8px;
+      position: relative;
     }
 
-    .notice-card img {
+    .notice-image-button {
       width: 100%;
-      max-height: 220px;
-      object-fit: cover;
+      padding: 0;
+      border: 0;
       border-radius: 8px;
+      overflow: hidden;
       background: #f4f9fa;
+      cursor: zoom-in;
+    }
+
+    .notice-image-button img {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      display: block;
+    }
+
+    .notice-card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .notice-clear-btn {
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 1px solid #f2c6ca;
+      border-radius: 10px;
+      background: #fff7f7;
+      color: #a52d35;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 900;
     }
 
     .notice-card h3,
@@ -1413,6 +1451,83 @@
       color: var(--teal);
       font-size: 24px;
       font-weight: 800;
+    }
+
+    .notification-photo-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 260;
+      display: grid;
+      place-items: center;
+      padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+      background: rgba(3, 18, 22, .88);
+      backdrop-filter: blur(8px);
+    }
+
+    .notification-photo-modal[hidden] { display: none; }
+
+    .notification-photo-dialog {
+      width: min(960px, 100%);
+      max-height: calc(100dvh - 36px);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 20px;
+      background: #071f25;
+      color: #fff;
+      box-shadow: 0 28px 80px rgba(0,0,0,.42);
+    }
+
+    .notification-photo-head,
+    .notification-photo-copy {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 16px;
+    }
+
+    .notification-photo-head strong { font-size: 17px; }
+
+    .notification-photo-close {
+      min-width: 42px;
+      min-height: 42px;
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 12px;
+      background: rgba(255,255,255,.08);
+      color: #fff;
+      font: inherit;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .notification-photo-stage {
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      overflow: auto;
+      background: #000;
+    }
+
+    .notification-photo-stage img {
+      display: block;
+      max-width: 100%;
+      max-height: calc(100dvh - 170px);
+      object-fit: contain;
+    }
+
+    .notification-photo-copy {
+      align-items: flex-start;
+      display: grid;
+      gap: 4px;
+    }
+
+    .notification-photo-copy p {
+      margin: 0;
+      color: rgba(255,255,255,.78);
+      line-height: 1.45;
+      font-weight: 700;
     }
 
     .plan-tabs {
@@ -4120,6 +4235,9 @@
             <div>
               <h2>Notificações</h2>
             </div>
+            <div class="notice-toolbar" id="notificationToolbar" hidden>
+              <button class="notice-clear-btn" id="clearAllNotificationsBtn" type="button">Limpar todas</button>
+            </div>
           </div>
           <div class="notice-list" id="notificationsList"></div>
         </div>
@@ -4200,6 +4318,21 @@
       <button type="button" data-view="profile" aria-label="Meu perfil"><svg><use href="#client-icon-user"></use></svg><span>Meu perfil</span></button>
     </nav>
   </main>
+
+  <div class="notification-photo-modal" id="notificationPhotoModal" hidden role="dialog" aria-modal="true" aria-labelledby="notificationPhotoTitle">
+    <div class="notification-photo-dialog">
+      <div class="notification-photo-head">
+        <strong id="notificationPhotoTitle">Comunicado</strong>
+        <button class="notification-photo-close" id="notificationPhotoClose" type="button" aria-label="Fechar imagem">×</button>
+      </div>
+      <div class="notification-photo-stage">
+        <img id="notificationPhotoImage" src="" alt="" />
+      </div>
+      <div class="notification-photo-copy" id="notificationPhotoCopy" hidden>
+        <p id="notificationPhotoBody"></p>
+      </div>
+    </div>
+  </div>
 
   <div class="court-booking-modal" id="clientCourtBookingModal" hidden role="dialog" aria-modal="true" aria-labelledby="clientCourtModalTitle">
     <div class="court-dialog">
@@ -4360,6 +4493,7 @@
     let storeRequests = [];
     let paymentInvoices = [];
     let announcements = [];
+    let dismissedNotificationKeys = new Set();
     let courtAvailability = [];
     let courtScheduleDays = [];
     let courtOpponents = [];
@@ -5029,6 +5163,12 @@
           table: 'app_client_notifications',
           filter: 'user_id=eq.' + session.user.id
         }, handleClientNotificationInsert)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'app_notification_dismissals',
+          filter: 'user_id=eq.' + session.user.id
+        }, scheduleClientNotificationRefresh)
         .subscribe();
     }
 
@@ -5419,6 +5559,10 @@
         closeTournamentModal();
         closed = true;
       }
+      if (!$('notificationPhotoModal').hidden) {
+        closeNotificationPhoto();
+        closed = true;
+      }
       return closed;
     }
 
@@ -5735,6 +5879,8 @@
     function mapAnnouncementRow(row) {
       return {
         id: row.id || '',
+        source_type: 'announcement',
+        source_id: row.id || '',
         title: row.title || 'Comunicado',
         body: row.body || '',
         image_url: row.image_url || '',
@@ -5749,6 +5895,8 @@
     function mapClientNotificationRow(row) {
       return {
         id: 'client-notification-' + (row.id || row.created_at || ''),
+        source_type: 'client',
+        source_id: row.id || '',
         title: row.title || 'Ilha Play',
         body: row.body || '',
         image_url: '',
@@ -5828,6 +5976,7 @@
         storeRequests = readStored(storageKey('ilha-client-store-requests'), []);
         paymentInvoices = readStored(storageKey('ilha-client-payment-invoices'), []);
         announcements = [];
+        dismissedNotificationKeys = new Set(readStored(storageKey('ilha-client-dismissed-notifications'), []).map(String));
         await loadMyLessons();
         return;
       }
@@ -5839,7 +5988,8 @@
           rest('app_store_requests?select=*&client_id=eq.' + encodeURIComponent(session.user.id) + '&order=created_at.desc', { auth: true }).catch(function () { return []; }),
           rest('app_announcements?select=*&active=eq.true&order=published_at.desc', { auth: true }).catch(function () { return []; }),
           rest('app_payment_invoices?select=*&client_id=eq.' + encodeURIComponent(session.user.id) + '&order=invoice_month.desc', { auth: true }).catch(function () { return []; }),
-          rest('app_client_notifications?select=*&user_id=eq.' + encodeURIComponent(session.user.id) + '&order=created_at.desc', { auth: true }).catch(function () { return []; })
+          rest('app_client_notifications?select=*&user_id=eq.' + encodeURIComponent(session.user.id) + '&order=created_at.desc', { auth: true }).catch(function () { return []; }),
+          rest('app_notification_dismissals?select=source_type,source_id&user_id=eq.' + encodeURIComponent(session.user.id), { auth: true }).catch(function () { return []; })
         ]);
         appPlans = results[0] && results[0].length ? results[0].map(mapPlanRow) : officialPlanSeed.map(mapPlanRow);
         syncLinkedClientPlan();
@@ -5849,6 +5999,9 @@
         announcements = (results[3] || []).map(mapAnnouncementRow)
           .concat((results[5] || []).map(mapClientNotificationRow))
           .sort(function (a, b) { return String(b.published_at || '').localeCompare(String(a.published_at || '')); });
+        dismissedNotificationKeys = new Set((results[6] || []).map(function (row) {
+          return String(row.source_type || '') + ':' + String(row.source_id || '');
+        }));
         paymentInvoices = (results[4] || []).map(mapPaymentInvoiceRow);
         await loadMyLessons();
       } catch (error) {
@@ -6403,6 +6556,18 @@
       return String(item && (item.id || item.created_at || item.updated_at || item.title) || '');
     }
 
+    function notificationSourceKey(item) {
+      const type = String(item && item.source_type || 'announcement');
+      const id = String(item && (item.source_id || item.id) || '');
+      return type + ':' + id;
+    }
+
+    function visibleAnnouncements() {
+      return announcements.filter(function (item) {
+        return announcementMatchesClient(item) && !dismissedNotificationKeys.has(notificationSourceKey(item));
+      });
+    }
+
     function readAnnouncementKeys() {
       return readStored(storageKey('ilha-client-read-announcements'), []).map(String);
     }
@@ -6415,42 +6580,117 @@
     }
 
     function markCurrentAnnouncementsRead() {
-      const current = announcements.filter(announcementMatchesClient).map(announcementKey).filter(Boolean);
+      const current = visibleAnnouncements().map(announcementKey).filter(Boolean);
       const read = new Set(readAnnouncementKeys());
       current.forEach(function (key) { read.add(key); });
       writeStored(storageKey('ilha-client-read-announcements'), Array.from(read));
       updateNotificationBadges(0);
     }
 
+    function closeNotificationPhoto() {
+      const modal = $('notificationPhotoModal');
+      if (!modal) return;
+      modal.hidden = true;
+      $('notificationPhotoImage').src = '';
+      document.body.style.overflow = '';
+    }
+
+    function openNotificationPhoto(item) {
+      if (!item || !item.image_url) return;
+      $('notificationPhotoTitle').textContent = item.title || 'Comunicado';
+      $('notificationPhotoImage').src = item.image_url;
+      $('notificationPhotoImage').alt = item.title || 'Imagem do comunicado';
+      $('notificationPhotoBody').textContent = item.body || '';
+      $('notificationPhotoCopy').hidden = !item.body;
+      $('notificationPhotoModal').hidden = false;
+      document.body.style.overflow = 'hidden';
+    }
+
+    async function dismissNotifications(items) {
+      const dismissible = (items || []).filter(Boolean);
+      if (!dismissible.length) return;
+      const keys = dismissible.map(notificationSourceKey);
+      keys.forEach(function (key) { dismissedNotificationKeys.add(key); });
+      renderAnnouncements();
+      if (demoMode || !session || !session.user) {
+        writeStored(storageKey('ilha-client-dismissed-notifications'), Array.from(dismissedNotificationKeys));
+        toast(dismissible.length > 1 ? 'Notificações limpas.' : 'Notificação limpa.');
+        return;
+      }
+      const rows = dismissible.filter(function (item) {
+        return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(item.source_id || '')) &&
+          (item.source_type === 'announcement' || item.source_type === 'client');
+      }).map(function (item) {
+        return {
+          user_id: session.user.id,
+          source_type: item.source_type,
+          source_id: item.source_id
+        };
+      });
+      try {
+        if (rows.length) {
+          await rest('app_notification_dismissals?on_conflict=user_id,source_type,source_id', {
+            method: 'POST',
+            body: rows,
+            prefer: 'resolution=merge-duplicates,return=minimal'
+          });
+        }
+        toast(dismissible.length > 1 ? 'Notificações limpas.' : 'Notificação limpa.');
+      } catch (error) {
+        keys.forEach(function (key) { dismissedNotificationKeys.delete(key); });
+        renderAnnouncements();
+        toast('Não consegui limpar a notificação agora.');
+      }
+    }
+
     function renderAnnouncements() {
-      const list = announcements.filter(announcementMatchesClient);
+      const list = visibleAnnouncements();
       const read = new Set(readAnnouncementKeys());
       const unreadCount = list.filter(function (item) {
         const key = announcementKey(item);
         return key && !read.has(key);
       }).length;
       const html = list.length ? list.map(function (item) {
+        const sourceKey = notificationSourceKey(item);
         return '<article class="notice-card">' +
-          (item.image_url ? '<img src="' + escapeHtml(item.image_url) + '" alt="" />' : '') +
+          (item.image_url ? '<button class="notice-image-button" type="button" data-notice-photo="' + escapeHtml(sourceKey) + '" aria-label="Abrir imagem inteira"><img src="' + escapeHtml(item.image_url) + '" alt="' + escapeHtml(item.title || 'Comunicado') + '" /></button>' : '') +
           '<div><h3>' + escapeHtml(item.title) + '</h3>' +
           (item.body ? '<p>' + escapeHtml(item.body) + '</p>' : '') + '</div>' +
-          (item.link_url ? '<a class="ghost-btn" href="' + escapeHtml(item.link_url) + '" target="_blank" rel="noopener">Abrir comunicado</a>' : '') +
+          '<div class="notice-card-actions">' +
+            (item.link_url ? '<a class="ghost-btn" href="' + escapeHtml(item.link_url) + '" target="_blank" rel="noopener">Abrir comunicado</a>' : '') +
+            '<button class="notice-clear-btn" type="button" data-notice-dismiss="' + escapeHtml(sourceKey) + '">Limpar</button>' +
+          '</div>' +
         '</article>';
       }).join('') : '<div class="empty">Nenhuma notificação no momento.</div>';
       $('notificationsList').innerHTML = html;
+      $('notificationToolbar').hidden = list.length === 0;
+      $('notificationsList').querySelectorAll('[data-notice-photo]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          openNotificationPhoto(list.find(function (item) { return notificationSourceKey(item) === button.dataset.noticePhoto; }));
+        });
+      });
+      $('notificationsList').querySelectorAll('[data-notice-dismiss]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          dismissNotifications([list.find(function (item) { return notificationSourceKey(item) === button.dataset.noticeDismiss; })]);
+        });
+      });
       if ($('homeAnnouncements')) {
         const homeItems = list.slice(0, 2);
         $('homeNotices').hidden = homeItems.length === 0;
         $('homeAnnouncements').innerHTML = homeItems.map(function (item) {
-          return '<button class="dashboard-notice-card' + (item.image_url ? '' : ' no-image') + '" type="button" data-open-notifications>' +
+          return '<button class="dashboard-notice-card' + (item.image_url ? '' : ' no-image') + '" type="button" data-home-notification="' + escapeHtml(notificationSourceKey(item)) + '">' +
             (item.image_url ? '<img src="' + escapeHtml(item.image_url) + '" alt="" />' : '') +
             '<div class="dashboard-notice-copy"><strong>' + escapeHtml(item.title) + '</strong>' +
             (item.body ? '<span>' + escapeHtml(item.body) + '</span>' : '<span>Novo aviso do Ilha Tênis</span>') + '</div>' +
             '<span class="dashboard-notice-arrow" aria-hidden="true">›</span>' +
           '</button>';
         }).join('');
-        $('homeAnnouncements').querySelectorAll('[data-open-notifications]').forEach(function (button) {
-          button.addEventListener('click', function () { showView('notifications'); });
+        $('homeAnnouncements').querySelectorAll('[data-home-notification]').forEach(function (button) {
+          button.addEventListener('click', function () {
+            const item = homeItems.find(function (entry) { return notificationSourceKey(entry) === button.dataset.homeNotification; });
+            if (item && item.image_url) openNotificationPhoto(item);
+            else showView('notifications');
+          });
         });
       }
       updateNotificationBadges(unreadCount);
@@ -7201,6 +7441,12 @@
         }
       });
       $('profileForm').addEventListener('submit', saveProfile);
+      $('clearAllNotificationsBtn').addEventListener('click', function () {
+        dismissNotifications(visibleAnnouncements());
+      });
+      $('notificationPhotoModal').addEventListener('click', function (event) {
+        if (event.target === $('notificationPhotoModal') || event.target === $('notificationPhotoClose')) closeNotificationPhoto();
+      });
       $('profilePhoto').addEventListener('change', async function () {
         try {
           const photo = await resizeProfilePhoto(this.files && this.files[0]);

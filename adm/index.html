@@ -1691,7 +1691,7 @@
 
     .announcement-upload-preview img {
       width: 100%;
-      max-height: 220px;
+      aspect-ratio: 16 / 9;
       object-fit: cover;
       display: block;
     }
@@ -1702,10 +1702,104 @@
 
     .announcement-card img {
       width: 100%;
-      max-height: 160px;
+      aspect-ratio: 16 / 9;
       object-fit: cover;
       border-radius: 8px;
       background: #eef4f6;
+    }
+
+    .announcement-cover-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .announcement-replace-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .announcement-crop-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 420;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(4, 19, 29, .78);
+      backdrop-filter: blur(8px);
+    }
+
+    .announcement-crop-modal[hidden] { display: none; }
+
+    .announcement-crop-dialog {
+      width: min(920px, 100%);
+      max-height: calc(100dvh - 36px);
+      overflow: auto;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 28px 80px rgba(0,0,0,.35);
+    }
+
+    .announcement-crop-head,
+    .announcement-crop-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+    }
+
+    .announcement-crop-head h2 { margin: 0; }
+
+    .announcement-crop-body {
+      display: grid;
+      gap: 14px;
+      padding: 0 16px 16px;
+    }
+
+    .announcement-crop-stage {
+      overflow: hidden;
+      border-radius: 12px;
+      background: #081d25;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .announcement-crop-stage:active { cursor: grabbing; }
+
+    .announcement-crop-stage canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .announcement-crop-controls {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .announcement-crop-controls label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .announcement-crop-controls input { width: 100%; }
+
+    @media (max-width: 680px) {
+      .announcement-crop-modal { padding: 10px; }
+      .announcement-crop-controls { grid-template-columns: 1fr; }
+      .announcement-crop-actions { align-items: stretch; flex-direction: column-reverse; }
+      .announcement-crop-actions button { width: 100%; }
     }
 
     .ops-list-main {
@@ -19768,6 +19862,29 @@
       </div>
     </section>
 
+    <div class="announcement-crop-modal" id="announcementCropModal" hidden role="dialog" aria-modal="true" aria-labelledby="announcementCropTitle">
+      <div class="announcement-crop-dialog">
+        <div class="announcement-crop-head">
+          <div><h2 id="announcementCropTitle">Ajustar capa</h2><div class="muted">Arraste a imagem ou use os controles. A capa será salva em 16:9.</div></div>
+          <button class="icon-btn" id="announcementCropClose" type="button" aria-label="Fechar">×</button>
+        </div>
+        <div class="announcement-crop-body">
+          <div class="announcement-crop-stage" id="announcementCropStage">
+            <canvas id="announcementCropCanvas" width="1200" height="675"></canvas>
+          </div>
+          <div class="announcement-crop-controls">
+            <label>Zoom<input id="announcementCropZoom" type="range" min="1" max="3" step="0.01" value="1" /></label>
+            <label>Horizontal<input id="announcementCropX" type="range" min="-100" max="100" step="1" value="0" /></label>
+            <label>Vertical<input id="announcementCropY" type="range" min="-100" max="100" step="1" value="0" /></label>
+          </div>
+        </div>
+        <div class="announcement-crop-actions">
+          <button class="ghost-btn" id="announcementCropCancel" type="button">Cancelar</button>
+          <button class="primary-btn" id="announcementCropApply" type="button">Aplicar recorte</button>
+        </div>
+      </div>
+    </div>
+
     <section class="lessons-module" id="lessonsModule">
       <div class="module-shell">
         <div class="module-head">
@@ -24836,6 +24953,10 @@
     const storedBarViewState = readBarViewState();
     let barLastScrollY = barAppIsInstalled() ? 0 : storedBarViewState.scrollY;
     let barViewRestoreComplete = false;
+    let announcementCroppedImage = '';
+    let announcementCropTargetId = '';
+    let announcementCropImage = null;
+    let announcementCropDrag = null;
 
     const opsState = {
       studentStatus: 'todos',
@@ -33432,6 +33553,11 @@
         return '<article class="announcement-card">' +
           (item.imageUrl ? '<img src="' + escapeHtml(item.imageUrl) + '" alt="" />' : '') +
           '<div><strong>' + escapeHtml(item.title) + '</strong><div class="muted">' + escapeHtml(item.body || 'Sem mensagem.') + '</div></div>' +
+          '<div class="announcement-cover-actions">' +
+            (item.imageUrl ? '<button class="small-btn" type="button" data-announcement-crop="' + escapeHtml(item.id) + '">Ajustar capa</button>' : '') +
+            '<label class="small-btn" for="announcementReplace-' + escapeHtml(item.id) + '">Trocar capa</label>' +
+            '<input class="announcement-replace-input" id="announcementReplace-' + escapeHtml(item.id) + '" type="file" accept="image/*" data-announcement-replace="' + escapeHtml(item.id) + '" />' +
+          '</div>' +
           '<div class="ops-meta">' + statusPill(item.active ? 'ATIVO' : 'INATIVO') + '<span class="ops-pill">' + escapeHtml(item.targetType || 'todos') + '</span><button class="small-btn" type="button" data-announcement-toggle="' + escapeHtml(item.id) + '">' + (item.active ? 'Desativar' : 'Ativar') + '</button><button class="danger-btn" type="button" data-announcement-delete="' + escapeHtml(item.id) + '">Excluir</button></div>' +
         '</article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum comunicado cadastrado.</div>';
@@ -33468,6 +33594,94 @@
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
+    }
+
+    function renderAnnouncementCropCanvas() {
+      const image = announcementCropImage;
+      const canvas = $('announcementCropCanvas');
+      if (!image || !canvas) return;
+      const ctx = canvas.getContext('2d');
+      const zoom = Number($('announcementCropZoom').value || 1);
+      const horizontal = Number($('announcementCropX').value || 0) / 100;
+      const vertical = Number($('announcementCropY').value || 0) / 100;
+      const baseScale = Math.max(canvas.width / image.naturalWidth, canvas.height / image.naturalHeight);
+      const scale = baseScale * zoom;
+      const width = image.naturalWidth * scale;
+      const height = image.naturalHeight * scale;
+      const maxX = Math.max(0, (width - canvas.width) / 2);
+      const maxY = Math.max(0, (height - canvas.height) / 2);
+      const x = (canvas.width - width) / 2 + horizontal * maxX;
+      const y = (canvas.height - height) / 2 + vertical * maxY;
+      ctx.fillStyle = '#081d25';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, x, y, width, height);
+    }
+
+    function closeAnnouncementCropper() {
+      $('announcementCropModal').hidden = true;
+      document.body.style.overflow = '';
+      announcementCropImage = null;
+      announcementCropDrag = null;
+    }
+
+    function openAnnouncementCropper(source, targetId) {
+      if (!source) return;
+      announcementCropTargetId = targetId || '';
+      $('announcementCropZoom').value = '1';
+      $('announcementCropX').value = '0';
+      $('announcementCropY').value = '0';
+      const image = new Image();
+      if (!String(source).startsWith('data:')) image.crossOrigin = 'anonymous';
+      image.onload = function () {
+        announcementCropImage = image;
+        $('announcementCropModal').hidden = false;
+        document.body.style.overflow = 'hidden';
+        renderAnnouncementCropCanvas();
+      };
+      image.onerror = function () {
+        reportActionError(new Error('Não consegui abrir esta capa. Use “Trocar capa” para enviar a imagem novamente.'));
+      };
+      image.src = source;
+    }
+
+    function openAnnouncementFileCropper(file, targetId) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function () { openAnnouncementCropper(String(reader.result || ''), targetId); };
+      reader.onerror = function () { reportActionError(new Error('Não consegui carregar essa imagem.')); };
+      reader.readAsDataURL(file);
+    }
+
+    async function applyAnnouncementCrop() {
+      if (!announcementCropImage) return;
+      try {
+        const cropped = $('announcementCropCanvas').toDataURL('image/jpeg', .86);
+        const targetId = announcementCropTargetId;
+        if (targetId) {
+          const item = opsData.announcements.find(function (entry) { return String(entry.id) === String(targetId); });
+          if (!item) throw new Error('Comunicado não encontrado.');
+          if (!isAdminDemoMode() && isUuid(item.id)) {
+            const saved = await supabaseRest('app_announcements?id=eq.' + encodeURIComponent(item.id), {
+              method: 'PATCH',
+              body: { image_url: cropped, updated_at: new Date().toISOString() },
+              prefer: 'return=representation'
+            });
+            Object.assign(item, mapAnnouncementRow(Array.isArray(saved) ? saved[0] : saved));
+          } else {
+            item.imageUrl = cropped;
+          }
+          renderAnnouncementsModule();
+          toast('Capa atualizada para todos.');
+        } else {
+          announcementCroppedImage = cropped;
+          $('announcementImagePreview').innerHTML = '<img src="' + cropped + '" alt="Prévia do comunicado" /><div class="announcement-cover-actions" style="padding:10px"><button class="small-btn" type="button" id="announcementPreviewCropBtn">Ajustar recorte</button></div>';
+          $('announcementImagePreview').classList.add('show');
+          $('announcementPreviewCropBtn').addEventListener('click', function () { openAnnouncementCropper(announcementCroppedImage, ''); });
+        }
+        closeAnnouncementCropper();
+      } catch (error) {
+        reportActionError(new Error('Não consegui salvar o recorte. Tente enviar a imagem novamente.'));
+      }
     }
 
     async function sendClientAnnouncementPush(payload) {
@@ -33524,7 +33738,7 @@
         requireAdminSession();
         const title = $('announcementTitle').value.trim();
         if (!title) throw new Error('Informe o titulo do comunicado.');
-        const importedImage = await resizeAnnouncementImage($('announcementImageFile').files && $('announcementImageFile').files[0]);
+        const importedImage = announcementCroppedImage || await resizeAnnouncementImage($('announcementImageFile').files && $('announcementImageFile').files[0]);
         const payload = {
           title: title,
           body: $('announcementBody').value.trim(),
@@ -33543,6 +33757,7 @@
         }
         opsData.announcements.unshift(saved ? mapAnnouncementRow(saved) : mapAnnouncementRow(Object.assign({ id: localId('announcement') }, payload)));
         $('announcementForm').reset();
+        announcementCroppedImage = '';
         $('announcementImagePreview').classList.remove('show');
         $('announcementImagePreview').innerHTML = '';
         renderAnnouncementsModule();
@@ -37265,19 +37480,9 @@
       $('announcementsReloadBtn').addEventListener('click', function () {
         loadOpsData(true).then(renderAnnouncementsModule).catch(reportActionError);
       });
-      $('announcementImageFile').addEventListener('change', async function () {
-        try {
-          const image = await resizeAnnouncementImage(this.files && this.files[0]);
-          if (image) {
-            $('announcementImagePreview').innerHTML = '<img src="' + image + '" alt="Prévia do comunicado" />';
-            $('announcementImagePreview').classList.add('show');
-          } else {
-            $('announcementImagePreview').classList.remove('show');
-            $('announcementImagePreview').innerHTML = '';
-          }
-        } catch (error) {
-          reportActionError(new Error('Não consegui carregar essa imagem.'));
-        }
+      $('announcementImageFile').addEventListener('change', function () {
+        announcementCroppedImage = '';
+        openAnnouncementFileCropper(this.files && this.files[0], '');
       });
       $('announcementForm').addEventListener('submit', createAnnouncementAction);
       $('announcementsModule').addEventListener('click', function (event) {
@@ -37286,8 +37491,48 @@
           deleteAnnouncementAction(deleteBtn.dataset.announcementDelete);
           return;
         }
+        const cropBtn = event.target.closest('[data-announcement-crop]');
+        if (cropBtn) {
+          const item = opsData.announcements.find(function (entry) { return String(entry.id) === String(cropBtn.dataset.announcementCrop); });
+          if (item && item.imageUrl) openAnnouncementCropper(item.imageUrl, item.id);
+          return;
+        }
         const toggleBtn = event.target.closest('[data-announcement-toggle]');
         if (toggleBtn) toggleAnnouncementAction(toggleBtn.dataset.announcementToggle);
+      });
+      $('announcementsModule').addEventListener('change', function (event) {
+        const input = event.target.closest('[data-announcement-replace]');
+        if (input) openAnnouncementFileCropper(input.files && input.files[0], input.dataset.announcementReplace);
+      });
+      ['announcementCropZoom', 'announcementCropX', 'announcementCropY'].forEach(function (id) {
+        $(id).addEventListener('input', renderAnnouncementCropCanvas);
+      });
+      $('announcementCropClose').addEventListener('click', closeAnnouncementCropper);
+      $('announcementCropCancel').addEventListener('click', closeAnnouncementCropper);
+      $('announcementCropApply').addEventListener('click', applyAnnouncementCrop);
+      $('announcementCropModal').addEventListener('click', function (event) {
+        if (event.target === $('announcementCropModal')) closeAnnouncementCropper();
+      });
+      $('announcementCropStage').addEventListener('pointerdown', function (event) {
+        announcementCropDrag = {
+          x: event.clientX,
+          y: event.clientY,
+          horizontal: Number($('announcementCropX').value || 0),
+          vertical: Number($('announcementCropY').value || 0)
+        };
+        this.setPointerCapture(event.pointerId);
+      });
+      $('announcementCropStage').addEventListener('pointermove', function (event) {
+        if (!announcementCropDrag) return;
+        const rect = this.getBoundingClientRect();
+        const horizontal = Math.max(-100, Math.min(100, announcementCropDrag.horizontal + ((event.clientX - announcementCropDrag.x) / Math.max(1, rect.width)) * 200));
+        const vertical = Math.max(-100, Math.min(100, announcementCropDrag.vertical + ((event.clientY - announcementCropDrag.y) / Math.max(1, rect.height)) * 200));
+        $('announcementCropX').value = String(Math.round(horizontal));
+        $('announcementCropY').value = String(Math.round(vertical));
+        renderAnnouncementCropCanvas();
+      });
+      ['pointerup', 'pointercancel'].forEach(function (name) {
+        $('announcementCropStage').addEventListener(name, function () { announcementCropDrag = null; });
       });
       $('studentImportBtn').addEventListener('click', importSeedBaseAction);
       $('studentNewBtn').addEventListener('click', createStudentAction);
