@@ -1,8 +1,9 @@
-const CACHE_NAME = 'ilha-play-v205-court-challenges';
+const CACHE_NAME = 'ilha-play-v206-full-notifications';
 const ASSETS = [
   './',
   './index.html',
   './auto-update.js',
+  './app-version.json',
   './adm/',
   './adm/index.html',
   './adm-manifest.json',
@@ -96,6 +97,14 @@ self.addEventListener('notificationclick', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
+  const isUpdateResource = url.origin === self.location.origin && (
+    url.pathname === '/auto-update.js' ||
+    url.pathname === '/app-version.json'
+  );
+  if (isUpdateResource) {
+    event.respondWith(fetch(event.request, { cache: 'no-store' }));
+    return;
+  }
   const isBarProductImage = url.origin === self.location.origin && url.pathname.startsWith('/assets/bar-products/');
   if (isBarProductImage) {
     event.respondWith(

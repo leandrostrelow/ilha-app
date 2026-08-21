@@ -24978,6 +24978,8 @@
     let barLastScrollY = barAppIsInstalled() ? 0 : storedBarViewState.scrollY;
     let barViewRestoreComplete = false;
     let announcementCroppedImage = '';
+    let announcementFullImage = '';
+    let announcementReplacementFullImage = '';
     let announcementCropTargetId = '';
     let announcementCropImage = null;
     let announcementCropDrag = null;
@@ -25572,6 +25574,7 @@
         title: row.title || 'Comunicado',
         body: row.body || '',
         imageUrl: row.image_url || '',
+        fullImageUrl: row.image_full_url || row.image_url || '',
         linkUrl: row.link_url || '',
         targetType: row.target_type || 'todos',
         targetPlanCode: row.target_plan_code || '',
@@ -33679,6 +33682,8 @@
       document.body.style.overflow = '';
       announcementCropImage = null;
       announcementCropDrag = null;
+      announcementCropTargetId = '';
+      announcementReplacementFullImage = '';
     }
 
     function openAnnouncementCropper(source, targetId) {
@@ -33701,8 +33706,16 @@
       image.src = source;
     }
 
-    function openAnnouncementFileCropper(file, targetId) {
+    async function openAnnouncementFileCropper(file, targetId) {
       if (!file) return;
+      try {
+        const fullImage = await resizeAnnouncementImage(file);
+        if (targetId) announcementReplacementFullImage = fullImage;
+        else announcementFullImage = fullImage;
+      } catch (error) {
+        reportActionError(new Error('Não consegui preparar essa imagem.'));
+        return;
+      }
       const reader = new FileReader();
       reader.onload = function () { openAnnouncementCropper(String(reader.result || ''), targetId); };
       reader.onerror = function () { reportActionError(new Error('Não consegui carregar essa imagem.')); };
@@ -33718,15 +33731,19 @@
           const item = opsData.announcements.find(function (entry) { return String(entry.id) === String(targetId); });
           if (!item) throw new Error('Comunicado não encontrado.');
           if (!isAdminDemoMode() && isUuid(item.id)) {
+            const patch = { image_url: cropped, updated_at: new Date().toISOString() };
+            if (announcementReplacementFullImage) patch.image_full_url = announcementReplacementFullImage;
             const saved = await supabaseRest('app_announcements?id=eq.' + encodeURIComponent(item.id), {
               method: 'PATCH',
-              body: { image_url: cropped, updated_at: new Date().toISOString() },
+              body: patch,
               prefer: 'return=representation'
             });
             Object.assign(item, mapAnnouncementRow(Array.isArray(saved) ? saved[0] : saved));
           } else {
             item.imageUrl = cropped;
+            if (announcementReplacementFullImage) item.fullImageUrl = announcementReplacementFullImage;
           }
+          announcementReplacementFullImage = '';
           renderAnnouncementsModule();
           toast('Capa atualizada para todos.');
         } else {
@@ -33795,11 +33812,12 @@
         requireAdminSession();
         const title = $('announcementTitle').value.trim();
         if (!title) throw new Error('Informe o titulo do comunicado.');
-        const importedImage = announcementCroppedImage || await resizeAnnouncementImage($('announcementImageFile').files && $('announcementImageFile').files[0]);
+        const importedImage = announcementCroppedImage || announcementFullImage || $('announcementImage').value.trim();
         const payload = {
           title: title,
           body: $('announcementBody').value.trim(),
-          image_url: importedImage || $('announcementImage').value.trim(),
+          image_url: importedImage,
+          image_full_url: announcementFullImage || $('announcementImage').value.trim() || importedImage,
           link_url: $('announcementLink').value.trim(),
           target_type: $('announcementTarget').value,
           target_plan_code: $('announcementTarget').value === 'plano' ? $('announcementPlan').value : null,
@@ -33815,6 +33833,7 @@
         opsData.announcements.unshift(saved ? mapAnnouncementRow(saved) : mapAnnouncementRow(Object.assign({ id: localId('announcement') }, payload)));
         $('announcementForm').reset();
         announcementCroppedImage = '';
+        announcementFullImage = '';
         $('announcementImagePreview').classList.remove('show');
         $('announcementImagePreview').innerHTML = '';
         renderAnnouncementsModule();
@@ -37551,6 +37570,7 @@
       });
       $('announcementImageFile').addEventListener('change', function () {
         announcementCroppedImage = '';
+        announcementFullImage = '';
         openAnnouncementFileCropper(this.files && this.files[0], '');
       });
       $('announcementForm').addEventListener('submit', createAnnouncementAction);
@@ -37563,7 +37583,7 @@
         const cropBtn = event.target.closest('[data-announcement-crop]');
         if (cropBtn) {
           const item = opsData.announcements.find(function (entry) { return String(entry.id) === String(cropBtn.dataset.announcementCrop); });
-          if (item && item.imageUrl) openAnnouncementCropper(item.imageUrl, item.id);
+          if (item && item.imageUrl) openAnnouncementCropper(item.fullImageUrl || item.imageUrl, item.id);
           return;
         }
         const toggleBtn = event.target.closest('[data-announcement-toggle]');
@@ -37813,6 +37833,6 @@
     window.addEventListener('pagehide', rememberBarScrollPosition);
     initAdminLogin();
   </script>
-  <script src="/auto-update.js?v=204"></script>
+  <script src="/auto-update.js?v=206"></script>
 </body>
 </html>

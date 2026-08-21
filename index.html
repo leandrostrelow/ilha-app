@@ -1468,6 +1468,7 @@
 
     .notification-photo-dialog {
       width: min(960px, 100%);
+      height: min(900px, calc(100dvh - 36px));
       max-height: calc(100dvh - 36px);
       display: grid;
       grid-template-rows: auto minmax(0, 1fr) auto;
@@ -1512,9 +1513,23 @@
 
     .notification-photo-stage img {
       display: block;
-      max-width: 100%;
-      max-height: calc(100dvh - 170px);
+      width: 100%;
+      height: 100%;
+      min-height: 0;
       object-fit: contain;
+    }
+
+    @media (max-width: 640px) {
+      .notification-photo-modal { padding: 0; }
+      .notification-photo-dialog {
+        width: 100%;
+        height: 100dvh;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+      }
+      .notification-photo-head { padding-top: max(12px, env(safe-area-inset-top)); }
+      .notification-photo-copy { padding-bottom: max(14px, env(safe-area-inset-bottom)); }
     }
 
     .notification-photo-copy {
@@ -5884,6 +5899,7 @@
         title: row.title || 'Comunicado',
         body: row.body || '',
         image_url: row.image_url || '',
+        full_image_url: row.image_full_url || row.image_url || '',
         link_url: row.link_url || '',
         target_type: row.target_type || 'todos',
         target_plan_code: row.target_plan_code || '',
@@ -5996,8 +6012,11 @@
         populateRegistrationPlans();
         planRequests = (results[1] || []).map(mapPlanRequestRow);
         storeRequests = (results[2] || []).map(mapStoreRequestRow);
+        const clientNotifications = (results[5] || []).filter(function (row) {
+          return String(row.event_type || '').toUpperCase() !== 'NOVO_ALUNO';
+        });
         announcements = (results[3] || []).map(mapAnnouncementRow)
-          .concat((results[5] || []).map(mapClientNotificationRow))
+          .concat(clientNotifications.map(mapClientNotificationRow))
           .sort(function (a, b) { return String(b.published_at || '').localeCompare(String(a.published_at || '')); });
         dismissedNotificationKeys = new Set((results[6] || []).map(function (row) {
           return String(row.source_type || '') + ':' + String(row.source_id || '');
@@ -6596,9 +6615,9 @@
     }
 
     function openNotificationPhoto(item) {
-      if (!item || !item.image_url) return;
+      if (!item || (!item.full_image_url && !item.image_url)) return;
       $('notificationPhotoTitle').textContent = item.title || 'Comunicado';
-      $('notificationPhotoImage').src = item.image_url;
+      $('notificationPhotoImage').src = item.full_image_url || item.image_url;
       $('notificationPhotoImage').alt = item.title || 'Imagem do comunicado';
       $('notificationPhotoBody').textContent = item.body || '';
       $('notificationPhotoCopy').hidden = !item.body;
@@ -7766,6 +7785,6 @@
 
     init();
   </script>
-  <script src="/auto-update.js?v=204"></script>
+  <script src="/auto-update.js?v=206"></script>
 </body>
 </html>
