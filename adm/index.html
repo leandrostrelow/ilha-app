@@ -18405,7 +18405,7 @@
               </div>
               <div class="field">
                 <label for="clientEditCpf">CPF</label>
-                <input id="clientEditCpf" />
+                <input id="clientEditCpf" inputmode="numeric" autocomplete="off" required />
               </div>
               <div class="field">
                 <label for="clientEditBirthDate">Data de nascimento</label>
@@ -20806,6 +20806,29 @@
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/\s+/g, ' ')
         .trim();
+    }
+
+    function adminCpfDigits(value) {
+      return String(value || '').replace(/\D/g, '');
+    }
+
+    function formatAdminCpf(value) {
+      return adminCpfDigits(value).slice(0, 11)
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    }
+
+    function isValidAdminCpf(value) {
+      const digits = adminCpfDigits(value);
+      if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) return false;
+      const check = function (length) {
+        let total = 0;
+        for (let index = 0; index < length; index += 1) total += Number(digits[index]) * (length + 1 - index);
+        const result = (total * 10) % 11;
+        return (result === 10 ? 0 : result) === Number(digits[length]);
+      };
+      return check(9) && check(10);
     }
 
     function normalizeAgendaTime(value) {
@@ -34678,10 +34701,12 @@
         const guardian = minor ? $('clientEditGuardian').value.trim() : '';
         const guardianPhone = minor ? $('clientEditGuardianPhone').value.trim() : '';
         if (minor && (!guardian || !guardianPhone)) throw new Error('Informe o responsável e o telefone do menor.');
+        const cpf = $('clientEditCpf').value.trim();
+        if (!isValidAdminCpf(cpf)) throw new Error('Informe um CPF válido para salvar o aluno.');
         const localUpdate = {
           name: $('clientEditName').value.trim() || client.name,
           phone: $('clientEditPhone').value.trim(),
-          cpf: $('clientEditCpf').value.trim(),
+          cpf: cpf,
           birthDate: $('clientEditBirthDate').value,
           guardian: guardian,
           guardianPhone: guardianPhone,
@@ -36428,6 +36453,9 @@
         if (event.target.id === 'clientModal') closeClientModal();
       });
       $('clientModalForm').addEventListener('submit', saveClientModal);
+      $('clientEditCpf').addEventListener('input', function () {
+        this.value = formatAdminCpf(this.value);
+      });
       $('teamRole').addEventListener('change', function () {
         renderTeamPermissions(this.value);
       });
