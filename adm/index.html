@@ -18457,8 +18457,8 @@
       <div class="module-shell">
         <div class="module-head">
           <div>
-            <h1>Equipe</h1>
-            <div class="muted">Acessos e permissões.</div>
+            <h1>Acessos do Clube</h1>
+            <div class="muted">Usuários do Adm Clube e suas permissões.</div>
           </div>
           <div class="module-actions">
             <button class="ghost-btn" type="button" data-home-action>Início</button>
@@ -18468,7 +18468,7 @@
         </div>
         <div class="ops-content">
           <div class="ops-summary">
-            <div class="ops-card"><strong id="teamTotalMetric">0</strong><span>pessoas na equipe</span></div>
+            <div class="ops-card"><strong id="teamTotalMetric">0</strong><span>usuários do Clube</span></div>
             <div class="ops-card"><strong id="teamAdminMetric">0</strong><span>admins</span></div>
             <div class="ops-card"><strong id="teamTeacherMetric">0</strong><span>professores</span></div>
             <div class="ops-card"><strong id="teamActiveMetric">0</strong><span>ativos</span></div>
@@ -18486,33 +18486,48 @@
                 </div>
               </div>
               <form class="form-grid" id="teamForm">
+                <input id="teamEditId" type="hidden" />
                 <div class="field full">
                   <label for="teamName">Nome</label>
                   <input id="teamName" placeholder="Nome da pessoa" />
                 </div>
-                <div class="field full">
+                <div class="field">
                   <label for="teamEmail">E-mail</label>
                   <input id="teamEmail" type="email" inputmode="email" autocomplete="off" placeholder="equipe@ilhatenis.com" />
                 </div>
                 <div class="field">
-                  <label for="teamPassword">Senha provisoria</label>
-                  <input id="teamPassword" type="password" autocomplete="new-password" placeholder="minimo 6 caracteres" />
+                  <label for="teamPhone">Telefone / WhatsApp</label>
+                  <input id="teamPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(27) 99999-9999" />
                 </div>
                 <div class="field">
                   <label for="teamRole">Funcao</label>
                   <select id="teamRole">
                     <option value="secretaria">Secretaria</option>
                     <option value="professor">Professor</option>
-                    <option value="bar">Bar / Garçom</option>
                     <option value="admin">Admin</option>
                   </select>
+                </div>
+                <div class="field">
+                  <label for="teamStatus">Status</label>
+                  <select id="teamStatus">
+                    <option value="true">Ativo</option>
+                    <option value="false">Bloqueado</option>
+                  </select>
+                </div>
+                <div class="field full bar-access-password-wrap">
+                  <label for="teamPassword">Senha provisória</label>
+                  <input id="teamPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo 8 caracteres" />
+                  <button class="bar-access-password-toggle" type="button" id="teamPasswordToggle" aria-label="Mostrar senha" title="Mostrar senha"><svg><use id="teamPasswordToggleIcon" href="#bar-icon-eye"></use></svg></button>
                 </div>
                 <div class="field full">
                   <label for="teamNotes">Observações</label>
                   <textarea id="teamNotes" placeholder="Ex.: horários, escopo de trabalho, limite de acesso."></textarea>
                 </div>
                 <div class="field full">
-                  <button class="primary-btn" type="submit">Salvar acesso</button>
+                  <div class="module-actions">
+                    <button class="ghost-btn" type="button" id="teamCancelEditBtn" hidden>Cancelar edição</button>
+                    <button class="primary-btn" type="submit" id="teamSubmitBtn">Criar usuário</button>
+                  </div>
                 </div>
               </form>
             </div>
@@ -18528,8 +18543,8 @@
             <div class="ops-panel span-12 active-tab-panel" data-team-panel="list">
               <div class="ops-panel-head">
                 <div>
-                  <h2>Acessos cadastrados</h2>
-                  <div class="muted">Equipe liberada no painel.</div>
+                  <h2>Usuários do Adm Clube</h2>
+                  <div class="muted">Os acessos do Bar são gerenciados somente no Adm Bar.</div>
                 </div>
               </div>
               <div class="ops-list" id="teamList"></div>
@@ -24962,7 +24977,6 @@
       { key: 'finance.write', label: 'Gerenciar financeiro', detail: 'Criar contas a pagar, receber e baixar pagamentos.' },
       { key: 'classes', label: 'Aulas e agenda', detail: 'Gerenciar horários, presença e agenda de quadras.' },
       { key: 'store', label: 'Ilha Store', detail: 'Acompanhar pedidos de produtos e serviços.' },
-      { key: 'bar', label: 'Bar', detail: 'Gerenciar mesas, comandas, estoque e financeiro do bar.' },
       { key: 'announcements', label: 'Comunicados', detail: 'Publicar avisos no app do aluno.' },
       { key: 'tournaments', label: 'Torneios', detail: 'Organizar inscricoes, chaves, agenda e resultados.' },
       { key: 'communication', label: 'Comunicacao', detail: 'Enviar avisos, campanhas e mensagens.' },
@@ -24971,9 +24985,9 @@
 
     const roleDefaultPermissions = {
       admin: teamPermissionCatalog.map(function (item) { return item.key; }),
-      secretaria: ['dashboard', 'clients.read', 'clients.write', 'plans', 'finance.read', 'finance.write', 'classes', 'bar', 'communication'],
+      secretaria: ['dashboard', 'clients.read', 'clients.write', 'plans', 'finance.read', 'finance.write', 'classes', 'communication'],
       professor: ['dashboard', 'clients.read', 'classes', 'communication'],
-      bar: ['dashboard', 'bar']
+      bar: []
     };
 
     const barAccessPermissionCatalog = [
@@ -25314,6 +25328,10 @@
         permissions: permissions,
         notes: row.notes || ''
       };
+    }
+
+    function isClubTeamProfile(row) {
+      return ['admin', 'secretaria', 'professor'].includes(String(row && row.role || '').toLowerCase());
     }
 
     function mapAudienceRow(row) {
@@ -25834,7 +25852,7 @@
         opsData.clients = results[0].map(mapClientRow);
         opsData.finance = results[1].map(mapFinanceRow);
         opsData.planRequests = results[2].map(mapPlanRequestRow);
-        opsData.team = results[3].map(mapProfileRow);
+        opsData.team = results[3].filter(isClubTeamProfile).map(mapProfileRow);
         if (results[4] && results[4].length) opsData.plans = results[4].map(mapPlanRow);
         syncClientsWithPlanCatalog();
         opsData.storeRequests = (results[5] || []).map(mapStoreRequestRow);
@@ -26470,8 +26488,10 @@
       });
     }
 
-    function renderTeamPermissions(role) {
-      const defaults = roleDefaultPermissions[role || 'secretaria'] || roleDefaultPermissions.secretaria;
+    function renderTeamPermissions(role, selectedPermissions) {
+      const defaults = Array.isArray(selectedPermissions)
+        ? selectedPermissions
+        : (roleDefaultPermissions[role || 'secretaria'] || roleDefaultPermissions.secretaria);
       $('teamPermissionGrid').innerHTML = teamPermissionCatalog.map(function (permission) {
         const checked = defaults.includes(permission.key) ? ' checked' : '';
         return '<article class="permission-card"><label><input type="checkbox" data-team-permission value="' + escapeHtml(permission.key) + '"' + checked + ' /> <span>' + escapeHtml(permission.label) + '</span></label><small>' + escapeHtml(permission.detail) + '</small></article>';
@@ -26479,7 +26499,7 @@
     }
 
     function renderTeamModule() {
-      renderTeamPermissions($('teamRole') ? $('teamRole').value : 'secretaria');
+      if (!$('teamPermissionGrid').children.length) renderTeamPermissions($('teamRole') ? $('teamRole').value : 'secretaria');
       setPanelTabs('[data-team-tab]', '[data-team-panel]', opsState.teamTab, 'data-team-panel');
       $('teamTotalMetric').textContent = opsData.team.length;
       $('teamAdminMetric').textContent = opsData.team.filter(function (member) { return member.role === 'admin'; }).length;
@@ -26490,8 +26510,58 @@
           const item = teamPermissionCatalog.find(function (permission) { return permission.key === key; });
           return item ? item.label : key;
         });
-        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(member.name) + '</strong><div class="muted">' + escapeHtml(member.email || 'Sem e-mail') + ' | ' + escapeHtml(roleLabel(member.role)) + '</div></div><div class="ops-meta">' + statusPill(member.active === false ? 'BLOQUEADO' : 'ATIVO') + '<span class="ops-pill">' + permissions.length + ' permissões</span></div></div><div class="ops-meta">' + permissions.slice(0, 8).map(function (label) { return '<span class="ops-pill">' + escapeHtml(label) + '</span>'; }).join('') + '</div></article>';
+        const isCurrentUser = Boolean(adminSession && adminSession.user && String(adminSession.user.id) === String(member.id));
+        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(member.name) + '</strong><div class="muted">' + escapeHtml(member.email || 'Sem e-mail') + ' | ' + escapeHtml(roleLabel(member.role)) + '</div></div><div class="ops-meta">' + statusPill(member.active === false ? 'BLOQUEADO' : 'ATIVO') + '<span class="ops-pill">' + permissions.length + ' permissões</span></div></div><div class="ops-meta">' + permissions.slice(0, 8).map(function (label) { return '<span class="ops-pill">' + escapeHtml(label) + '</span>'; }).join('') + '<button class="small-btn" type="button" data-team-edit="' + escapeHtml(member.id) + '">Editar</button>' + (isCurrentUser ? '<span class="ops-pill">Seu acesso</span>' : '<button class="danger-btn" type="button" data-team-delete="' + escapeHtml(member.id) + '">Excluir</button>') + '</div></article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum acesso cadastrado ainda.</div>';
+    }
+
+    function setTeamPasswordVisible(visible) {
+      const input = $('teamPassword');
+      if (!input) return;
+      input.type = visible ? 'text' : 'password';
+      $('teamPasswordToggleIcon').setAttribute('href', visible ? '#bar-icon-eye-off' : '#bar-icon-eye');
+      $('teamPasswordToggle').setAttribute('aria-label', visible ? 'Ocultar senha' : 'Mostrar senha');
+      $('teamPasswordToggle').title = visible ? 'Ocultar senha' : 'Mostrar senha';
+    }
+
+    function resetTeamForm() {
+      $('teamForm').reset();
+      $('teamEditId').value = '';
+      $('teamEmail').disabled = false;
+      $('teamPassword').disabled = false;
+      $('teamPassword').required = true;
+      $('teamPassword').placeholder = 'Mínimo 8 caracteres';
+      $('teamStatus').value = 'true';
+      $('teamSubmitBtn').textContent = 'Criar usuário';
+      $('teamCancelEditBtn').hidden = true;
+      setTeamPasswordVisible(false);
+      renderTeamPermissions('secretaria');
+    }
+
+    function openTeamEditor(member) {
+      if (!member) {
+        resetTeamForm();
+      } else {
+        $('teamEditId').value = member.id || '';
+        $('teamName').value = member.name || '';
+        $('teamEmail').value = member.email || '';
+        $('teamEmail').disabled = true;
+        $('teamPhone').value = member.phone ? barPhoneInputLabel(member.phone) : '';
+        $('teamRole').value = isClubTeamProfile(member) ? member.role : 'secretaria';
+        $('teamStatus').value = String(member.active !== false);
+        $('teamPassword').value = '';
+        $('teamPassword').disabled = false;
+        $('teamPassword').required = false;
+        $('teamPassword').placeholder = 'Deixe em branco para manter a senha';
+        $('teamNotes').value = member.notes || '';
+        $('teamSubmitBtn').textContent = 'Salvar alterações';
+        $('teamCancelEditBtn').hidden = false;
+        setTeamPasswordVisible(false);
+        renderTeamPermissions(member.role, member.permissions || []);
+      }
+      opsState.teamTab = 'form';
+      renderTeamModule();
+      window.setTimeout(function () { $('teamName').focus(); }, 50);
     }
 
     async function openTeamModule() {
@@ -34959,59 +35029,104 @@
       }
     }
 
-    async function createTeamAction(event) {
+    async function clubAccessFunctionRequest(payload) {
+      requireAdminSession();
+      const response = await fetch(supabaseBaseUrl() + '/functions/v1/club-user-access', {
+        method: 'POST',
+        headers: {
+          apikey: LESSONS_SUPABASE_ANON_KEY,
+          Authorization: 'Bearer ' + adminSession.access_token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload || {})
+      });
+      const data = await response.json().catch(function () { return {}; });
+      if (!response.ok) throw new Error(data.error || 'Não foi possível atualizar os acessos do Clube.');
+      return data;
+    }
+
+    async function saveTeamAction(event) {
       if (event) event.preventDefault();
       try {
         requireAdminSession();
+        const editingId = $('teamEditId').value;
         const name = $('teamName').value.trim();
-        const email = $('teamEmail').value.trim();
+        const email = $('teamEmail').value.trim().toLowerCase();
+        const phone = barPhoneDigits($('teamPhone').value);
         const password = $('teamPassword').value;
         const role = $('teamRole').value || 'secretaria';
         const permissions = selectedTeamPermissions();
         const notes = $('teamNotes').value.trim();
-        if (!name || !email || password.length < 6) {
-          toast('Informe nome, e-mail e senha provisoria com 6 caracteres.');
+        const active = $('teamStatus').value === 'true';
+        if (!name || !email || (!editingId && password.length < 8) || (password && password.length < 8)) {
+          toast('Informe nome, e-mail e uma senha provisória com 8 caracteres.');
+          return;
+        }
+        if (!permissions.length) {
+          toast('Selecione pelo menos uma permissão.');
           return;
         }
         const localMember = {
-          id: localId('team'),
+          id: editingId || localId('team'),
           name: name,
           email: email,
+          phone: phone,
           role: role,
-          active: true,
+          active: active,
           permissions: permissions,
           notes: notes
         };
         if (isAdminDemoMode()) {
-          opsData.team.unshift(localMember);
-          $('teamForm').reset();
+          const index = opsData.team.findIndex(function (member) { return member.id === localMember.id; });
+          if (index >= 0) opsData.team.splice(index, 1, localMember);
+          else opsData.team.unshift(localMember);
+          resetTeamForm();
           opsState.teamTab = 'list';
           renderTeamModule();
-          toast('Acesso demo criado.');
+          toast(editingId ? 'Acesso demo atualizado.' : 'Acesso demo criado.');
           return;
         }
-        const result = await supabaseAuthRequest('signup', {
+        $('teamSubmitBtn').disabled = true;
+        const result = await clubAccessFunctionRequest({
+          action: editingId ? 'update' : 'create',
+          user_id: editingId || undefined,
+          full_name: name,
           email: email,
-          password: password,
-          data: { full_name: name, app_context: 'admin' }
-        }, false);
-        const userId = result.user && result.user.id || result.id || (result.session && result.session.user && result.session.user.id);
-        let savedProfile = null;
-        if (userId) {
-          savedProfile = await patchTeamProfile(userId, {
-            full_name: name,
-            email: email,
-            role: role,
-            active: true,
-            permissions: permissions,
-            notes: notes
-          });
-        }
-        opsData.team.unshift(savedProfile ? mapProfileRow(savedProfile) : localMember);
-        $('teamForm').reset();
+          phone: phone,
+          password: password || undefined,
+          role: role,
+          active: active,
+          permissions: permissions,
+          notes: notes
+        });
+        const savedMember = mapProfileRow(result.user || Object.assign({}, localMember, { full_name: name }));
+        const index = opsData.team.findIndex(function (member) { return String(member.id) === String(savedMember.id); });
+        if (index >= 0) opsData.team.splice(index, 1, savedMember);
+        else opsData.team.unshift(savedMember);
+        resetTeamForm();
         opsState.teamTab = 'list';
         renderTeamModule();
-        toast('Acesso criado para a equipe.');
+        toast(editingId ? 'Acesso atualizado.' : 'Usuário do Clube criado.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        $('teamSubmitBtn').disabled = false;
+      }
+    }
+
+    async function deleteTeamAction(memberId) {
+      const member = opsData.team.find(function (item) { return String(item.id) === String(memberId); });
+      if (!member) return;
+      if (adminSession && adminSession.user && String(adminSession.user.id) === String(member.id)) {
+        toast('Você não pode excluir o próprio acesso.');
+        return;
+      }
+      if (!window.confirm('Excluir o acesso de ' + member.name + '? Essa pessoa não conseguirá mais entrar no Adm Clube.')) return;
+      try {
+        if (!isAdminDemoMode()) await clubAccessFunctionRequest({ action: 'delete', user_id: member.id });
+        opsData.team = opsData.team.filter(function (item) { return String(item.id) !== String(member.id); });
+        renderTeamModule();
+        toast('Usuário excluído do Clube.');
       } catch (error) {
         reportActionError(error);
       }
@@ -36101,19 +36216,40 @@
       $('teamRole').addEventListener('change', function () {
         renderTeamPermissions(this.value);
       });
-      $('teamForm').addEventListener('submit', createTeamAction);
-      $('teamCreateBtn').addEventListener('click', function () {
-        opsState.teamTab = 'form';
+      $('teamForm').addEventListener('submit', saveTeamAction);
+      $('teamPhone').addEventListener('input', function () {
+        this.value = barPhoneInputLabel(this.value);
+      });
+      $('teamPasswordToggle').addEventListener('click', function () {
+        setTeamPasswordVisible($('teamPassword').type === 'password');
+      });
+      $('teamCancelEditBtn').addEventListener('click', function () {
+        resetTeamForm();
+        opsState.teamTab = 'list';
         renderTeamModule();
-        $('teamName').focus();
+      });
+      $('teamCreateBtn').addEventListener('click', function () {
+        openTeamEditor(null);
       });
       $('teamReloadBtn').addEventListener('click', function () {
         loadOpsData(true).then(renderTeamModule).catch(reportActionError);
       });
       $('teamModule').addEventListener('click', function (event) {
+        const editBtn = event.target.closest('[data-team-edit]');
+        if (editBtn) {
+          const member = opsData.team.find(function (item) { return String(item.id) === String(editBtn.dataset.teamEdit); });
+          if (member) openTeamEditor(member);
+          return;
+        }
+        const deleteBtn = event.target.closest('[data-team-delete]');
+        if (deleteBtn) {
+          deleteTeamAction(deleteBtn.dataset.teamDelete);
+          return;
+        }
         const tabBtn = event.target.closest('[data-team-tab]');
         if (!tabBtn) return;
         opsState.teamTab = tabBtn.dataset.teamTab;
+        if (opsState.teamTab === 'form' && !$('teamEditId').value) resetTeamForm();
         renderTeamModule();
       });
       $('barAccessCreateBtn').addEventListener('click', function () { openBarAccessModal(null); });
