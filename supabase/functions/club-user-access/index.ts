@@ -158,9 +158,11 @@ Deno.serve(async (request: Request) => {
       .maybeSingle();
     if (callerError) throw callerError;
     const callerPermissions = Array.isArray(caller?.permissions) ? caller.permissions : [];
+    const callerIsClubAdmin = caller?.role === "admin" ||
+      Array.from(allowedPermissions).every((permission) => callerPermissions.includes(permission));
     const canManage = caller?.active !== false &&
-      allowedRoles.has(String(caller?.role || "")) &&
-      (caller?.role === "admin" || callerPermissions.includes("team"));
+      (allowedRoles.has(String(caller?.role || "")) || callerPermissions.some((permission) => allowedPermissions.has(String(permission)))) &&
+      (callerIsClubAdmin || callerPermissions.includes("team"));
     if (!canManage) return json(request, { error: "Você não tem permissão para gerenciar acessos do Clube." }, 403);
 
     failureStage = "payload";
@@ -172,10 +174,13 @@ Deno.serve(async (request: Request) => {
       const { data: profiles, error } = await adminClient
         .from("profiles")
         .select("id, full_name, email, phone, role, active, permissions, notes, created_at")
-        .in("role", Array.from(allowedRoles))
         .order("full_name", { ascending: true });
       if (error) throw error;
-      return json(request, { users: (profiles || []).map(publicProfile) });
+      const clubProfiles = (profiles || []).filter((profile) => {
+        const profilePermissions = Array.isArray(profile.permissions) ? profile.permissions.map(String) : [];
+        return allowedRoles.has(String(profile.role || "")) || profilePermissions.some((permission) => allowedPermissions.has(permission));
+      });
+      return json(request, { users: clubProfiles.map(publicProfile) });
     }
 
     if (action === "delete") {
@@ -189,8 +194,10 @@ Deno.serve(async (request: Request) => {
         .eq("id", targetId)
         .maybeSingle();
       if (targetError) throw targetError;
-      if (!target || !allowedRoles.has(String(target.role))) return json(request, { error: "Usuário do Clube não encontrado." }, 404);
-      if (target.role === "admin" && caller.role !== "admin") return json(request, { error: "Somente um administrador pode excluir outro administrador." }, 403);
+      const deletePermissions = Array.isArray(target?.permissions) ? target.permissions.map(String) : [];
+      const targetHasClubAccess = allowedRoles.has(String(target?.role || "")) || deletePermissions.some((permission) => allowedPermissions.has(permission));
+      if (!target || !targetHasClubAccess) return json(request, { error: "Usuário do Clube não encontrado." }, 404);
+      if (target.role === "admin" && !callerIsClubAdmin) return json(request, { error: "Somente um administrador pode excluir outro administrador." }, 403);
       if (target.role === "admin") {
         const { count, error: countError } = await adminClient
           .from("profiles")
@@ -239,7 +246,7 @@ Deno.serve(async (request: Request) => {
     if (fullName.length < 2) return json(request, { error: "Informe o nome da pessoa." }, 400);
     if (!allowedRoles.has(role)) return json(request, { error: "Escolha uma função válida do Clube." }, 400);
     if (!permissions.length) return json(request, { error: "Selecione pelo menos uma permissão." }, 400);
-    if (role === "admin" && caller.role !== "admin") return json(request, { error: "Somente um administrador pode liberar outro administrador." }, 403);
+    if (role === "admin" && !callerIsClubAdmin) return json(request, { error: "Somente um administrador pode liberar outro administrador." }, 403);
 
     if (action === "create") {
       failureStage = "create_user";
@@ -275,7 +282,7 @@ Deno.serve(async (request: Request) => {
         full_name: fullName,
         email,
         phone,
-        role,
+        role: existingProfile?.role === "bar" ? "bar" : role,
         active,
         permissions: permissionsForLinkedAccount(existingProfile, permissions),
         notes,
@@ -305,8 +312,10 @@ Deno.serve(async (request: Request) => {
         .eq("id", targetId)
         .maybeSingle();
       if (targetError) throw targetError;
-      if (!target || !allowedRoles.has(String(target.role))) return json(request, { error: "Usuário do Clube não encontrado." }, 404);
-      if (target.role === "admin" && caller.role !== "admin") return json(request, { error: "Somente um administrador pode alterar outro administrador." }, 403);
+      const targetPermissions = Array.isArray(target?.permissions) ? target.permissions.map(String) : [];
+      const targetHasClubAccess = allowedRoles.has(String(target?.role || "")) || targetPermissions.some((permission) => allowedPermissions.has(permission));
+      if (!target || !targetHasClubAccess) return json(request, { error: "Usuário do Clube não encontrado." }, 404);
+      if (target.role === "admin" && !callerIsClubAdmin) return json(request, { error: "Somente um administrador pode alterar outro administrador." }, 403);
       if (targetId === caller.id && (!active || !permissions.includes("team") || role !== "admin")) {
         return json(request, { error: "Você não pode remover o próprio acesso de administração." }, 400);
       }
@@ -332,7 +341,7 @@ Deno.serve(async (request: Request) => {
         .update({
           full_name: fullName,
           phone,
-          role,
+          role: target.role === "bar" ? "bar" : role,
           active,
           permissions: permissionsForLinkedAccount(target, permissions),
           notes,

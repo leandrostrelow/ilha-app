@@ -18620,6 +18620,7 @@
                 <div class="field full">
                   <div class="module-actions">
                     <button class="ghost-btn" type="button" id="teamCancelEditBtn" hidden>Cancelar edição</button>
+                    <button class="ghost-btn bar-access-whatsapp-btn" type="submit" id="teamWhatsAppBtn">Criar e enviar no WhatsApp</button>
                     <button class="primary-btn" type="submit" id="teamSubmitBtn">Criar usuário</button>
                   </div>
                 </div>
@@ -25459,8 +25460,24 @@
       };
     }
 
+    function hasClubTeamPermissions(row) {
+      const permissions = Array.isArray(row && row.permissions) ? row.permissions : [];
+      return permissions.some(function (permission) {
+        return teamPermissionCatalog.some(function (item) { return item.key === permission; });
+      });
+    }
+
+    function inferredClubRole(row) {
+      const role = String(row && row.role || '').toLowerCase();
+      if (['admin', 'secretaria', 'professor'].includes(role)) return role;
+      const permissions = Array.isArray(row && row.permissions) ? row.permissions : [];
+      if (teamPermissionCatalog.every(function (item) { return permissions.includes(item.key); })) return 'admin';
+      if (permissions.includes('classes') && !permissions.includes('clients.write') && !permissions.includes('finance.write')) return 'professor';
+      return 'secretaria';
+    }
+
     function mapProfileRow(row) {
-      const role = row.role || 'secretaria';
+      const role = inferredClubRole(row);
       const permissions = Array.isArray(row.permissions) ? row.permissions : (roleDefaultPermissions[role] || roleDefaultPermissions.secretaria);
       return {
         id: row.id,
@@ -25475,7 +25492,7 @@
     }
 
     function isClubTeamProfile(row) {
-      return ['admin', 'secretaria', 'professor'].includes(String(row && row.role || '').toLowerCase());
+      return ['admin', 'secretaria', 'professor'].includes(String(row && row.role || '').toLowerCase()) || hasClubTeamPermissions(row);
     }
 
     function mapAudienceRow(row) {
@@ -26677,6 +26694,7 @@
       $('teamPassword').placeholder = 'Mínimo 8 caracteres';
       $('teamStatus').value = 'true';
       $('teamSubmitBtn').textContent = 'Criar usuário';
+      $('teamWhatsAppBtn').hidden = false;
       $('teamCancelEditBtn').hidden = true;
       setTeamPasswordVisible(false);
       renderTeamPermissions('secretaria');
@@ -26699,6 +26717,7 @@
         $('teamPassword').placeholder = 'Deixe em branco para manter a senha';
         $('teamNotes').value = member.notes || '';
         $('teamSubmitBtn').textContent = 'Salvar alterações';
+        $('teamWhatsAppBtn').hidden = true;
         $('teamCancelEditBtn').hidden = false;
         setTeamPasswordVisible(false);
         renderTeamPermissions(member.role, member.permissions || []);
@@ -28458,6 +28477,21 @@
         'Olá, ' + name + '! Seu acesso ao sistema do Ilha Bar foi criado.',
         '',
         'Acesse: https://app.ilhatenis.com/admbar',
+        'E-mail: ' + email,
+        'Senha provisória: ' + password,
+        '',
+        'Por segurança, não compartilhe estes dados.'
+      ].join('\n');
+      return 'https://wa.me/' + whatsapp + '?text=' + encodeURIComponent(message);
+    }
+
+    function clubAccessInvitationUrl(phone, name, email, password) {
+      const whatsapp = barPhoneWhatsApp(phone);
+      if (!whatsapp) return '';
+      const message = [
+        'Olá, ' + name + '! Seu acesso ao Adm do Clube Ilha foi criado.',
+        '',
+        'Acesse: https://app.ilhatenis.com/adm',
         'E-mail: ' + email,
         'Senha provisória: ' + password,
         '',
@@ -34179,7 +34213,7 @@
         window.location.replace('/adm');
         return false;
       }
-      if (!IS_BAR_ADMIN_SURFACE && adminProfile.role === 'bar') {
+      if (!IS_BAR_ADMIN_SURFACE && adminProfile.role === 'bar' && !hasClubTeamPermissions(adminProfile)) {
         window.location.replace('/admbar');
         return false;
       }
@@ -35298,6 +35332,7 @@
         const permissions = selectedTeamPermissions();
         const notes = $('teamNotes').value.trim();
         const active = $('teamStatus').value === 'true';
+        const sendWhatsApp = Boolean(event && event.submitter && event.submitter.id === 'teamWhatsAppBtn');
         if (!name || !email || (!editingId && password.length < 8) || (password && password.length < 8)) {
           toast('Informe nome, e-mail e uma senha provisória com 8 caracteres.');
           return;
@@ -35327,6 +35362,7 @@
           return;
         }
         $('teamSubmitBtn').disabled = true;
+        $('teamWhatsAppBtn').disabled = true;
         const result = await clubAccessFunctionRequest({
           action: editingId ? 'update' : 'create',
           user_id: editingId || undefined,
@@ -35347,10 +35383,15 @@
         opsState.teamTab = 'list';
         renderTeamModule();
         toast(result.message || (editingId ? 'Acesso atualizado.' : 'Usuário do Clube criado.'));
+        if (!editingId && sendWhatsApp) {
+          const invitationUrl = clubAccessInvitationUrl(phone, name, email, password);
+          if (invitationUrl) window.open(invitationUrl, '_blank', 'noopener');
+        }
       } catch (error) {
         reportActionError(error);
       } finally {
         $('teamSubmitBtn').disabled = false;
+        $('teamWhatsAppBtn').disabled = false;
       }
     }
 
