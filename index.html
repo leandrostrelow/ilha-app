@@ -5156,6 +5156,12 @@
       scheduleClientNotificationRefresh();
     }
 
+    function handleClientAnnouncementInsert(payload) {
+      const item = mapAnnouncementRow(payload && payload.new || {});
+      if (announcementMatchesClient(item)) playClientNotificationSound(false);
+      scheduleClientNotificationRefresh();
+    }
+
     function initClientCourtRealtime() {
       if (!session || !session.access_token || !window.supabase || !window.supabase.createClient) return;
       if (!courtRealtimeClient) {
@@ -5171,7 +5177,9 @@
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'app_court_slot_events' }, scheduleClientCourtRealtimeRefresh)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'app_court_bookings' }, scheduleClientCourtRealtimeRefresh)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'app_court_schedule_days' }, scheduleClientCourtRealtimeRefresh)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'app_announcements' }, scheduleClientNotificationRefresh)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'app_announcements' }, handleClientAnnouncementInsert)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_announcements' }, scheduleClientNotificationRefresh)
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'app_announcements' }, scheduleClientNotificationRefresh)
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
@@ -6018,9 +6026,10 @@
         announcements = (results[3] || []).map(mapAnnouncementRow)
           .concat(clientNotifications.map(mapClientNotificationRow))
           .sort(function (a, b) { return String(b.published_at || '').localeCompare(String(a.published_at || '')); });
-        dismissedNotificationKeys = new Set((results[6] || []).map(function (row) {
+        const localDismissed = readStored(storageKey('ilha-client-dismissed-notifications'), []).map(String);
+        dismissedNotificationKeys = new Set(localDismissed.concat((results[6] || []).map(function (row) {
           return String(row.source_type || '') + ':' + String(row.source_id || '');
-        }));
+        })));
         paymentInvoices = (results[4] || []).map(mapPaymentInvoiceRow);
         await loadMyLessons();
       } catch (error) {
@@ -6566,6 +6575,12 @@
       const target = item.target_type || 'todos';
       if (target === 'todos') return true;
       if (target === 'plano') return String(item.target_plan_code || '') === String(client && client.official_plan_code || '');
+      if (target === 'aluno') return hasLessonPlan();
+      if (target === 'mensalista') {
+        const code = String(client && client.official_plan_code || '').toLowerCase();
+        return !hasLessonPlan() && (code.indexOf('jogar') >= 0 || String(client && client.client_type || '').toLowerCase() === 'mensalista');
+      }
+      if (target === 'avulso') return String(client && client.client_type || '').toLowerCase() === 'avulso';
       return String(target) === String(client && client.client_type || '') ||
         String(target) === String(client && client.official_plan_code || '') ||
         String(target) === String(currentClientPlanName()).toLowerCase();
@@ -6630,6 +6645,7 @@
       if (!dismissible.length) return;
       const keys = dismissible.map(notificationSourceKey);
       keys.forEach(function (key) { dismissedNotificationKeys.add(key); });
+      writeStored(storageKey('ilha-client-dismissed-notifications'), Array.from(dismissedNotificationKeys));
       renderAnnouncements();
       if (demoMode || !session || !session.user) {
         writeStored(storageKey('ilha-client-dismissed-notifications'), Array.from(dismissedNotificationKeys));
@@ -6651,14 +6667,12 @@
           await rest('app_notification_dismissals?on_conflict=user_id,source_type,source_id', {
             method: 'POST',
             body: rows,
-            prefer: 'resolution=merge-duplicates,return=minimal'
+            prefer: 'resolution=ignore-duplicates,return=minimal'
           });
         }
         toast(dismissible.length > 1 ? 'Notificações limpas.' : 'Notificação limpa.');
       } catch (error) {
-        keys.forEach(function (key) { dismissedNotificationKeys.delete(key); });
-        renderAnnouncements();
-        toast('Não consegui limpar a notificação agora.');
+        toast('Notificação limpa neste aparelho.');
       }
     }
 

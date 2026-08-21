@@ -19838,6 +19838,7 @@
                 <div class="field">
                   <label for="announcementTarget">Público</label>
                   <select id="announcementTarget">
+                    <option value="">Escolha quem vai receber</option>
                     <option value="todos">Todos</option>
                     <option value="aluno">Alunos de aula</option>
                     <option value="mensalista">Mensalistas / jogar</option>
@@ -33812,6 +33813,9 @@
         requireAdminSession();
         const title = $('announcementTitle').value.trim();
         if (!title) throw new Error('Informe o titulo do comunicado.');
+        const targetType = $('announcementTarget').value;
+        if (!targetType) throw new Error('Escolha quem deve receber o comunicado.');
+        if (targetType === 'todos' && !window.confirm('Enviar este comunicado para todos os clientes?')) return;
         const importedImage = announcementCroppedImage || announcementFullImage || $('announcementImage').value.trim();
         const payload = {
           title: title,
@@ -33819,16 +33823,22 @@
           image_url: importedImage,
           image_full_url: announcementFullImage || $('announcementImage').value.trim() || importedImage,
           link_url: $('announcementLink').value.trim(),
-          target_type: $('announcementTarget').value,
-          target_plan_code: $('announcementTarget').value === 'plano' ? $('announcementPlan').value : null,
+          target_type: targetType,
+          target_plan_code: targetType === 'plano' ? $('announcementPlan').value : null,
           active: true,
           published_at: new Date().toISOString()
         };
         let saved = null;
         if (!isAdminDemoMode()) saved = await supabaseInsert('app_announcements', payload);
         let pushResult = null;
-        if (payload.target_type === 'todos' && payload.body) {
-          pushResult = await sendClientAnnouncementPush({ title: payload.title, body: payload.body, url: payload.link_url || '/' }).catch(function () { return null; });
+        if (payload.body) {
+          pushResult = await sendClientAnnouncementPush({
+            title: payload.title,
+            body: payload.body,
+            url: payload.link_url || '/',
+            target_type: payload.target_type,
+            target_plan_code: payload.target_plan_code || ''
+          }).catch(function () { return null; });
         }
         opsData.announcements.unshift(saved ? mapAnnouncementRow(saved) : mapAnnouncementRow(Object.assign({ id: localId('announcement') }, payload)));
         $('announcementForm').reset();

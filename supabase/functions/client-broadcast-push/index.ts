@@ -47,17 +47,39 @@ Deno.serve(async (request) => {
     const body = String(input.body || "").trim().slice(0, 280);
     const url = String(input.url || "/");
     const userId = String(input.user_id || "").trim();
+    const targetType = String(input.target_type || "todos").trim().toLowerCase();
+    const targetPlanCode = String(input.target_plan_code || "").trim();
     if (!title || !body) return json({ error: "Informe título e mensagem." }, 400);
     if (userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) {
       return json({ error: "Cliente inválido." }, 400);
     }
 
     const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+    let recipientIds: string[] = [];
+    if (!userId) {
+      const { data: clients, error: clientsError } = await supabase
+        .from("app_clients")
+        .select("id, status, client_type, official_plan_code, weekly_lessons");
+      if (clientsError) throw clientsError;
+      recipientIds = (clients || []).filter((client) => {
+        if (String(client.status || "").toUpperCase() === "BLOQUEADO") return false;
+        const code = String(client.official_plan_code || "").toLowerCase();
+        const type = String(client.client_type || "").toLowerCase();
+        if (targetType === "todos") return true;
+        if (targetType === "plano") return String(client.official_plan_code || "") === targetPlanCode;
+        if (targetType === "aluno") return Number(client.weekly_lessons || 0) > 0 || code.startsWith("aulas_");
+        if (targetType === "mensalista") return type === "mensalista" || code.includes("jogar");
+        if (targetType === "avulso") return type === "avulso";
+        return false;
+      }).map((client) => String(client.id));
+      if (!recipientIds.length) return json({ sent: 0, reason: "no_recipients" });
+    }
     let subscriptionsQuery = supabase
       .from("app_push_subscriptions")
       .select("id, endpoint, p256dh, auth_key")
       .eq("enabled", true);
     if (userId) subscriptionsQuery = subscriptionsQuery.eq("user_id", userId);
+    else subscriptionsQuery = subscriptionsQuery.in("user_id", recipientIds);
     const [{ data: config, error: configError }, { data: subscriptions, error: subscriptionsError }] = await Promise.all([
       supabase.from("bar_push_config").select("vapid_public_key, vapid_private_key, subject").eq("id", true).maybeSingle(),
       subscriptionsQuery,
