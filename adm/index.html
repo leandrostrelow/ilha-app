@@ -1587,6 +1587,11 @@
       border-left: 5px solid var(--teal);
     }
 
+    .court-slot-card.is-pending {
+      border-left: 5px solid #e3a52f;
+      background: #fffaf0;
+    }
+
     .court-slot-card.is-free {
       border-left: 5px solid var(--lime);
     }
@@ -25408,6 +25413,8 @@
         court: row.court_name || 'Quadra 1',
         status: row.status || 'CONFIRMADO',
         notes: row.notes || '',
+        challengeKind: row.challenge_kind || '',
+        challengeExpiresAt: row.challenge_expires_at || '',
         created: row.created_at || ''
       };
     }
@@ -26729,7 +26736,15 @@
             return '<button class="court-slot-card is-free" type="button" data-court-slot="' + escapeHtml([selectedDate, court, time].join('|')) + '"><div class="court-time">' + time + '</div><div><strong>Livre</strong><div class="muted">Clique para reservar ou bloquear.</div></div><div class="ops-meta"><span class="ops-pill good">Livre</span></div></button>';
           }
           const blocked = booking.status === 'BLOQUEADO';
-          return '<button class="court-slot-card ' + (blocked ? 'is-blocked' : 'is-busy') + '" type="button" data-court-slot="' + escapeHtml([selectedDate, court, time].join('|')) + '"><div class="court-time">' + time + '</div><div><strong>' + escapeHtml(blocked ? 'Bloqueado' : booking.client) + '</strong><div class="muted">' + escapeHtml(blocked ? (booking.notes || 'Bloqueio manual') : 'Adversário: ' + (booking.opponent || 'A definir')) + '</div></div><div class="ops-meta">' + statusPill(booking.status) + '</div></button>';
+          const pending = booking.status === 'PENDENTE';
+          const expires = booking.challengeExpiresAt ? new Date(booking.challengeExpiresAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+          const detail = blocked
+            ? (booking.notes || 'Bloqueio manual')
+            : (pending
+              ? (booking.challengeKind === 'ABERTO' ? 'Procurando adversário' : 'Convite para ' + (booking.opponent || 'aluno')) + (expires ? ' · libera ' + expires : '')
+              : 'Adversário: ' + (booking.opponent || 'A definir'));
+          const pill = pending ? '<span class="ops-pill warn">Aguardando</span>' : statusPill(booking.status);
+          return '<button class="court-slot-card ' + (blocked ? 'is-blocked' : (pending ? 'is-pending' : 'is-busy')) + '" type="button" data-court-slot="' + escapeHtml([selectedDate, court, time].join('|')) + '"><div class="court-time">' + time + '</div><div><strong>' + escapeHtml(blocked ? 'Bloqueado' : booking.client) + '</strong><div class="muted">' + escapeHtml(detail) + '</div></div><div class="ops-meta">' + pill + '</div></button>';
         }).join('') + '</div></section>';
       }).join('') + '</div>';
       renderCourtExtraDays();
@@ -26954,17 +26969,6 @@
         if (!isAdminDemoMode()) await loadCourtBookingData(false);
         renderCourtBookingModule();
         renderCourtTimeChoices();
-        if (blocked && cancellationNotices.length) {
-          await Promise.all(cancellationNotices.map(function (notice) {
-            return sendClientAnnouncementPush({
-              title: notice.title,
-              body: notice.body,
-              url: '/?view=notifications',
-              user_id: notice.user_id,
-              tag: 'ilha-play-quadra-cancelada-' + value
-            }).catch(function () { return null; });
-          }));
-        }
         toast(blocked
           ? 'Dia bloqueado. ' + cancellationNotices.length + ' cliente(s) avisado(s).'
           : 'Dia e horários atualizados para todos.');

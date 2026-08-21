@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilha-play-v204-global-refresh-pull-admin';
+const CACHE_NAME = 'ilha-play-v205-court-challenges';
 const ASSETS = [
   './',
   './index.html',

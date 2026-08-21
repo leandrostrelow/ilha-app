@@ -2265,6 +2265,43 @@
       font-weight: 750;
     }
 
+    .court-hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex: 0 0 auto;
+    }
+
+    .court-challenge-btn {
+      min-height: 46px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid rgba(255, 255, 255, .45);
+      border-radius: 13px;
+      padding: 0 16px;
+      background: #ffffff;
+      color: var(--teal);
+      font-weight: 950;
+      cursor: pointer;
+    }
+
+    .court-challenge-btn svg {
+      width: 19px;
+      height: 19px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
+    .court-challenge-btn.active {
+      border-color: var(--lime);
+      background: var(--lime);
+      color: var(--dark);
+      box-shadow: 0 0 0 4px rgba(181, 239, 0, .18);
+    }
+
     .court-rules-btn {
       min-height: 46px;
       flex: 0 0 auto;
@@ -2388,6 +2425,8 @@
     button.client-court-slot:disabled { cursor: default; opacity: 1; }
     .client-court-slot.free { border-left-color: var(--lime); background: #ffffff; }
     .client-court-slot.mine { border-left-color: var(--teal); background: #edfafa; }
+    .client-court-slot.pending { border-left-color: #f59e0b; background: #fffaf0; }
+    .client-court-slot.challenge-choice { border-color: var(--lime); background: #f7ffdf; }
     .client-court-slot.busy { color: var(--muted); background: #f3f6f7; }
     .client-court-slot.plan-locked { border-left-color: #cbd9de; color: var(--muted); background: #f7f9fa; }
 
@@ -2412,6 +2451,45 @@
 
     .client-court-slot.free .client-court-badge { background: #effbd1; color: #577700; }
     .client-court-slot.mine .client-court-badge { background: #d8f4f4; color: var(--teal); }
+    .client-court-slot.pending .client-court-badge { background: #ffedbd; color: #955500; }
+
+    .court-challenges {
+      display: grid;
+      gap: 10px;
+      padding: 15px;
+      border: 1px solid #c8dde1;
+      border-radius: 17px;
+      background: #ffffff;
+      box-shadow: 0 10px 28px rgba(16, 39, 44, .05);
+    }
+
+    .court-challenges[hidden] { display: none; }
+    .court-challenges-head { display: flex; align-items: center; gap: 9px; }
+    .court-challenges-head svg { width: 22px; height: 22px; fill: none; stroke: var(--teal); stroke-width: 2; }
+    .court-challenges-head h3 { margin: 0; font-size: 17px; }
+    .court-challenge-list { display: grid; gap: 9px; }
+
+    .court-challenge-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-left: 5px solid #f59e0b;
+      border-radius: 14px;
+      background: #fffaf0;
+    }
+
+    .court-challenge-card.invited { border-left-color: var(--teal); background: #effbfb; }
+    .court-challenge-card.open { border-left-color: var(--lime); background: #f8ffe8; }
+    .court-challenge-title { display: flex; align-items: center; gap: 8px; font-weight: 950; }
+    .court-challenge-title svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
+    .court-challenge-card p { margin: 4px 0 0; color: var(--muted); font-size: 12px; font-weight: 750; line-height: 1.4; }
+    .court-challenge-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+    .court-challenge-actions button { min-height: 36px; padding: 0 11px; }
+    .court-challenge-actions .accept { border-color: var(--teal); background: var(--teal); color: #ffffff; }
+    .court-challenge-actions .reject { color: #b42318; }
 
     .court-my-booking {
       display: none;
@@ -3136,9 +3214,15 @@
         border-radius: 16px;
         box-shadow: none;
       }
+      .court-hero-actions { align-items: stretch; flex-direction: column; gap: 7px; }
+      .court-challenge-btn { min-height: 40px; padding: 0 11px; font-size: 11px; }
       .court-hero h2 { font-size: 21px; }
       .court-hero p { max-width: 220px; font-size: 12px; line-height: 1.35; }
       .court-rules-btn { min-height: 40px; padding: 0 12px; font-size: 12px; }
+      .court-challenges { padding: 12px; border-radius: 15px; box-shadow: none; }
+      .court-challenge-card { grid-template-columns: 1fr; gap: 10px; padding: 12px; }
+      .court-challenge-actions { justify-content: stretch; }
+      .court-challenge-actions button { flex: 1; }
       .client-court-day { min-height: 46px; padding: 7px 12px; font-size: 12px; }
       .client-court-column { gap: 7px; padding: 11px; border-radius: 15px; box-shadow: none; }
       .client-court-column h3 { font-size: 16px; }
@@ -4074,9 +4158,22 @@
               <h2>Reserve sua quadra</h2>
               <p>Escolha um horário livre. Cada aluno pode ter uma reserva por dia.</p>
             </div>
-            <button class="court-rules-btn" type="button" id="clientCourtRulesBtn">Regras</button>
+            <div class="court-hero-actions">
+              <button class="court-challenge-btn" type="button" id="clientCourtChallengeBtn" aria-pressed="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path><path d="M8 9h8M8 13h5"></path></svg>
+                <span>Chamar adversário</span>
+              </button>
+              <button class="court-rules-btn" type="button" id="clientCourtRulesBtn">Regras</button>
+            </div>
           </div>
           <div class="court-plan-gate" id="clientCourtPlanGate" hidden></div>
+          <section class="court-challenges" id="clientCourtChallenges" hidden>
+            <div class="court-challenges-head">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path><path d="M8 9h8M8 13h5"></path></svg>
+              <h3>Convites para jogar</h3>
+            </div>
+            <div class="court-challenge-list" id="clientCourtChallengeList"></div>
+          </section>
           <div class="court-my-booking" id="clientCourtMyBooking"></div>
           <div class="client-court-days" id="clientCourtDays" aria-label="Dias disponíveis"></div>
           <div class="client-court-board" id="clientCourtBoard"></div>
@@ -4116,7 +4213,7 @@
       <form id="clientCourtBookingForm">
         <div class="court-dialog-body">
           <div class="field full">
-            <label for="clientCourtOpponentSelect">Com quem você vai jogar?</label>
+            <label for="clientCourtOpponentSelect" id="clientCourtOpponentLabel">Com quem você vai jogar?</label>
             <select id="clientCourtOpponentSelect" required>
               <option value="">Selecione um aluno ativo</option>
             </select>
@@ -4126,7 +4223,7 @@
             <input id="clientCourtOpponent" minlength="2" placeholder="Nome completo" />
             <small class="court-guest-warning">Um nome avulso pode gerar cobrança extra conforme as regras do seu plano.</small>
           </div>
-          <div class="field full">
+          <div class="field full" id="clientCourtNotesField">
             <label for="clientCourtNotes">Observação (opcional)</label>
             <input id="clientCourtNotes" placeholder="Ex.: jogo em dupla" />
           </div>
@@ -4267,9 +4364,12 @@
     let courtScheduleDays = [];
     let courtOpponents = [];
     let myCourtBookings = [];
+    let courtChallenges = [];
     let myLessons = [];
     let selectedCourtDate = '';
     let selectedCourtSlot = null;
+    let courtChallengeSelecting = false;
+    let courtBookingMode = 'booking';
     let courtDataLoading = false;
     let courtDataReloadPending = false;
     let courtRealtimeClient = null;
@@ -4705,6 +4805,7 @@
       const dates = nextClientCourtWeekend()
         .concat(courtScheduleDays.map(function (item) { return item.schedule_date; }))
         .concat(myCourtBookings.map(function (item) { return item.booking_date; }))
+        .concat(courtChallenges.map(function (item) { return item.booking_date; }))
         .filter(function (value) { return value && value >= today; });
       return Array.from(new Set(dates)).sort().slice(0, 12);
     }
@@ -4850,8 +4951,9 @@
         const results = await Promise.all([
           rest('app_court_schedule_days?select=schedule_date,enabled,notes,slot_times&schedule_date=gte.' + startDate + '&schedule_date=lte.' + endDate + '&order=schedule_date.asc', { auth: true }).catch(function () { return []; }),
           rest('rpc/get_app_court_availability', { method: 'POST', body: { p_start_date: startDate, p_end_date: endDate }, prefer: 'return=representation' }),
-          rest('app_court_bookings?select=id,client_id,client_name,opponent_client_id,opponent_name,booking_date,starts_at,court_name,status,notes&or=(client_id.eq.' + encodeURIComponent(userId) + ',opponent_client_id.eq.' + encodeURIComponent(userId) + ')&status=neq.CANCELADO&booking_date=gte.' + startDate + '&order=booking_date.asc,starts_at.asc', { auth: true }).catch(function () { return []; }),
-          rest('rpc/get_active_court_opponents', { method: 'POST', body: {}, prefer: 'return=representation' }).catch(function () { return []; })
+          rest('app_court_bookings?select=id,client_id,client_name,opponent_client_id,opponent_name,booking_date,starts_at,court_name,status,notes,challenge_kind,challenge_expires_at,challenge_invited_at,challenge_responded_at&or=(client_id.eq.' + encodeURIComponent(userId) + ',opponent_client_id.eq.' + encodeURIComponent(userId) + ')&status=neq.CANCELADO&booking_date=gte.' + startDate + '&order=booking_date.asc,starts_at.asc', { auth: true }).catch(function () { return []; }),
+          rest('rpc/get_active_court_opponents', { method: 'POST', body: {}, prefer: 'return=representation' }).catch(function () { return []; }),
+          rest('rpc/get_app_court_challenges', { method: 'POST', body: { p_start_date: startDate, p_end_date: endDate }, prefer: 'return=representation' }).catch(function () { return []; })
         ]);
         courtScheduleDays = results[0] || [];
         courtAvailability = Array.isArray(results[1]) ? results[1] : [];
@@ -4859,6 +4961,7 @@
         courtOpponents = (results[3] || []).slice().sort(function (a, b) {
           return String(a.full_name || '').localeCompare(String(b.full_name || ''), 'pt-BR');
         });
+        courtChallenges = Array.isArray(results[4]) ? results[4] : [];
         const dates = clientCourtDates();
         if (!dates.includes(selectedCourtDate)) selectedCourtDate = dates[0] || '';
         renderHome();
@@ -4929,12 +5032,66 @@
         .subscribe();
     }
 
+    function courtChallengeExpiryLabel(value) {
+      const date = new Date(value || '');
+      if (Number.isNaN(date.getTime())) return 'por até 12 horas';
+      return 'até ' + pad2(date.getHours()) + ':' + pad2(date.getMinutes()) + ' de ' + pad2(date.getDate()) + '/' + pad2(date.getMonth() + 1);
+    }
+
+    function courtChallengeById(id) {
+      return courtChallenges.find(function (item) { return String(item.id) === String(id); }) || null;
+    }
+
+    function setCourtChallengeSelecting(active) {
+      courtChallengeSelecting = Boolean(active);
+      const button = $('clientCourtChallengeBtn');
+      if (button) {
+        button.classList.toggle('active', courtChallengeSelecting);
+        button.setAttribute('aria-pressed', courtChallengeSelecting ? 'true' : 'false');
+        const label = button.querySelector('span');
+        if (label) label.textContent = courtChallengeSelecting ? 'Cancelar chamada' : 'Chamar adversário';
+      }
+      renderClientCourts();
+    }
+
+    function renderCourtChallenges() {
+      const section = $('clientCourtChallenges');
+      const list = $('clientCourtChallengeList');
+      if (!section || !list) return;
+      section.hidden = !courtChallenges.length;
+      if (!courtChallenges.length) {
+        list.innerHTML = '';
+        return;
+      }
+      list.innerHTML = courtChallenges.map(function (challenge) {
+        const isOwner = Boolean(challenge.is_owner);
+        const isInvited = Boolean(challenge.is_invited);
+        const isOpen = String(challenge.challenge_kind || '').toUpperCase() === 'ABERTO';
+        const dateAndCourt = clientCourtDayLabel(challenge.booking_date) + ' · ' + challenge.court_name + ' às ' + String(challenge.starts_at || '').slice(0, 5);
+        const target = isOpen ? 'Convite aberto para alunos ativos' : 'Convite para ' + (challenge.opponent_name || 'adversário');
+        const title = isOwner ? target : (challenge.client_name || 'Aluno Ilha') + ' quer jogar com você';
+        let actions = '';
+        if (isOwner) {
+          actions = '<button class="court-inline-btn" type="button" data-reinvite-court-challenge="' + escapeHtml(challenge.id) + '">Trocar convite</button>' +
+            '<button class="court-inline-btn reject" type="button" data-cancel-client-court="' + escapeHtml(challenge.id) + '">Cancelar</button>';
+        } else if (isInvited) {
+          actions = '<button class="court-inline-btn reject" type="button" data-respond-court-challenge="RECUSAR" data-court-challenge-id="' + escapeHtml(challenge.id) + '">Recusar</button>' +
+            '<button class="court-inline-btn accept" type="button" data-respond-court-challenge="ACEITAR" data-court-challenge-id="' + escapeHtml(challenge.id) + '">Aceitar</button>';
+        } else if (challenge.can_accept) {
+          actions = '<button class="court-inline-btn accept" type="button" data-respond-court-challenge="ACEITAR" data-court-challenge-id="' + escapeHtml(challenge.id) + '">Quero jogar</button>';
+        }
+        const message = String(challenge.notes || '').trim();
+        return '<article class="court-challenge-card ' + (isInvited ? 'invited' : (isOpen ? 'open' : '')) + '"><div><div class="court-challenge-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path></svg><span>' + escapeHtml(title) + '</span></div><p>' + escapeHtml(dateAndCourt) + (message ? '<br>Mensagem: ' + escapeHtml(message) : '') + '<br>O horário fica reservado ' + escapeHtml(courtChallengeExpiryLabel(challenge.challenge_expires_at)) + '.</p></div><div class="court-challenge-actions">' + actions + '</div></article>';
+      }).join('');
+    }
+
     function renderClientCourts() {
       const dayList = $('clientCourtDays');
       const board = $('clientCourtBoard');
       const ownBox = $('clientCourtMyBooking');
       const planGate = $('clientCourtPlanGate');
       if (!dayList || !board || !ownBox) return;
+      renderCourtChallenges();
       const canBook = canClientBookCourt();
       if (planGate) {
         planGate.hidden = canBook;
@@ -4953,10 +5110,10 @@
       }).join('');
 
       const own = myClientCourtBooking(selectedCourtDate);
-      if (own) {
+      if (own && String(own.status || '').toUpperCase() !== 'PENDENTE') {
         const createdByMe = String(own.client_id || '') === String(session && session.user && session.user.id || '');
         const otherPlayer = createdByMe ? own.opponent_name : own.client_name;
-        ownBox.innerHTML = '<div><strong>Sua reserva: ' + escapeHtml(own.court_name) + ' às ' + escapeHtml(String(own.starts_at || '').slice(0, 5)) + '</strong><span>Com: ' + escapeHtml(otherPlayer || 'A definir') + '</span></div>' + (createdByMe ? '<button class="court-inline-btn" type="button" data-cancel-client-court="' + escapeHtml(own.id) + '">Cancelar reserva</button>' : '');
+        ownBox.innerHTML = '<div><strong>Sua reserva: ' + escapeHtml(own.court_name) + ' às ' + escapeHtml(String(own.starts_at || '').slice(0, 5)) + '</strong><span>Com: ' + escapeHtml(otherPlayer || 'A definir') + '</span></div><button class="court-inline-btn" type="button" data-cancel-client-court="' + escapeHtml(own.id) + '">Cancelar reserva</button>';
         ownBox.classList.add('show');
       } else {
         ownBox.innerHTML = '';
@@ -4979,12 +5136,14 @@
           if (booking) {
             const mine = Boolean(booking.is_mine);
             const reservedBy = String(booking.client_name || '').trim() || (mine ? String(client && client.full_name || '').trim() : '') || 'Reservado';
-            return '<button class="client-court-slot ' + (mine ? 'mine' : 'busy') + '" type="button" disabled><span class="client-court-time">' + time + '</span><span><strong>' + escapeHtml(reservedBy) + '</strong><small>Horário reservado</small></span><span class="client-court-badge">' + (mine ? 'Sua' : 'Ocupado') + '</span></button>';
+            const pending = String(booking.status || '').toUpperCase() === 'PENDENTE';
+            const slotClass = pending ? 'pending' : (mine ? 'mine' : 'busy');
+            return '<button class="client-court-slot ' + slotClass + '" type="button" disabled><span class="client-court-time">' + time + '</span><span><strong>' + escapeHtml(reservedBy) + '</strong><small>' + (pending ? 'Aguardando adversário' : 'Horário reservado') + '</small></span><span class="client-court-badge">' + (pending ? 'Convite' : (mine ? 'Sua' : 'Ocupado')) + '</span></button>';
           }
           if (!canBook) {
             return '<button class="client-court-slot plan-locked" type="button" disabled><span class="client-court-time">' + time + '</span><span><strong>Livre</strong><small>Cadastro ainda não está ativo</small></span><span class="client-court-badge">Bloqueado</span></button>';
           }
-          return '<button class="client-court-slot free" type="button" data-open-client-court="' + escapeHtml([selectedCourtDate, court, time].join('|')) + '"><span class="client-court-time">' + time + '</span><span><strong>Livre</strong><small>Toque para reservar</small></span><span class="client-court-badge">Livre</span></button>';
+          return '<button class="client-court-slot free' + (courtChallengeSelecting ? ' challenge-choice' : '') + '" type="button" data-open-client-court="' + escapeHtml([selectedCourtDate, court, time].join('|')) + '"><span class="client-court-time">' + time + '</span><span><strong>' + (courtChallengeSelecting ? 'Chamar adversário' : 'Livre') + '</strong><small>' + (courtChallengeSelecting ? 'Toque para escolher este horário' : 'Toque para reservar') + '</small></span><span class="client-court-badge">' + (courtChallengeSelecting ? 'Escolher' : 'Livre') + '</span></button>';
         }).join('') + '</section>';
       }).join('');
     }
@@ -4997,16 +5156,25 @@
       const parts = String(slotKey || '').split('|');
       if (parts.length !== 3) return;
       selectedCourtSlot = { date: parts[0], court: parts[1], time: parts[2] };
-      $('clientCourtModalTitle').textContent = parts[1] + ' às ' + parts[2];
-      $('clientCourtModalSubtitle').textContent = clientCourtDayLabel(parts[0]);
-      $('clientCourtOpponentSelect').innerHTML = '<option value="">Selecione um aluno ativo</option>' + courtOpponents.map(function (opponent) {
-        return '<option value="' + escapeHtml(opponent.full_name || '') + '">' + escapeHtml(opponent.full_name || '') + '</option>';
-      }).join('') + '<option value="__guest__">Convidado / nome avulso</option>';
+      courtBookingMode = courtChallengeSelecting ? 'challenge' : 'booking';
+      $('clientCourtModalTitle').textContent = courtBookingMode === 'challenge' ? 'Chamar adversário' : parts[1] + ' às ' + parts[2];
+      $('clientCourtModalSubtitle').textContent = clientCourtDayLabel(parts[0]) + (courtBookingMode === 'challenge' ? ' · ' + parts[1] + ' às ' + parts[2] : '');
+      $('clientCourtOpponentLabel').textContent = courtBookingMode === 'challenge' ? 'Quem você quer chamar?' : 'Com quem você vai jogar?';
+      $('clientCourtOpponentSelect').innerHTML = courtBookingMode === 'challenge'
+        ? '<option value="__open__">Deixar aberto para qualquer aluno</option>' + courtOpponents.map(function (opponent) {
+            return '<option value="' + escapeHtml(opponent.id || '') + '">' + escapeHtml(opponent.full_name || '') + '</option>';
+          }).join('')
+        : '<option value="">Selecione um aluno ativo</option>' + courtOpponents.map(function (opponent) {
+            return '<option value="' + escapeHtml(opponent.id || '') + '">' + escapeHtml(opponent.full_name || '') + '</option>';
+          }).join('') + '<option value="__guest__">Convidado / nome avulso</option>';
       $('clientCourtOpponentSelect').value = '';
+      if (courtBookingMode === 'challenge') $('clientCourtOpponentSelect').value = '__open__';
       $('clientCourtGuestField').hidden = true;
+      $('clientCourtNotesField').hidden = false;
       $('clientCourtOpponent').required = false;
       $('clientCourtOpponent').value = '';
       $('clientCourtNotes').value = '';
+      $('clientCourtBookingSubmit').textContent = courtBookingMode === 'challenge' ? 'Enviar convite' : 'Confirmar reserva';
       $('clientCourtBookingModal').hidden = false;
       document.body.style.overflow = 'hidden';
       setTimeout(function () { $('clientCourtOpponentSelect').focus(); }, 50);
@@ -5015,7 +5183,38 @@
     function closeClientCourtBooking() {
       $('clientCourtBookingModal').hidden = true;
       selectedCourtSlot = null;
+      courtBookingMode = 'booking';
+      $('clientCourtOpponentLabel').textContent = 'Com quem você vai jogar?';
+      $('clientCourtBookingSubmit').textContent = 'Confirmar reserva';
+      $('clientCourtNotesField').hidden = false;
       document.body.style.overflow = '';
+    }
+
+    function openReinviteCourtChallenge(id) {
+      const challenge = courtChallengeById(id);
+      if (!challenge || !challenge.is_owner) return;
+      selectedCourtSlot = {
+        date: challenge.booking_date,
+        court: challenge.court_name,
+        time: String(challenge.starts_at || '').slice(0, 5),
+        challengeId: challenge.id
+      };
+      courtBookingMode = 'reinvite';
+      $('clientCourtModalTitle').textContent = 'Trocar adversário';
+      $('clientCourtModalSubtitle').textContent = clientCourtDayLabel(challenge.booking_date) + ' · ' + challenge.court_name + ' às ' + String(challenge.starts_at || '').slice(0, 5);
+      $('clientCourtOpponentLabel').textContent = 'Escolha outro adversário';
+      $('clientCourtOpponentSelect').innerHTML = '<option value="__open__">Deixar aberto para qualquer aluno</option>' + courtOpponents.map(function (opponent) {
+        return '<option value="' + escapeHtml(opponent.id || '') + '">' + escapeHtml(opponent.full_name || '') + '</option>';
+      }).join('');
+      $('clientCourtOpponentSelect').value = challenge.opponent_client_id || '__open__';
+      $('clientCourtGuestField').hidden = true;
+      $('clientCourtNotesField').hidden = true;
+      $('clientCourtOpponent').required = false;
+      $('clientCourtNotes').value = challenge.notes || '';
+      $('clientCourtBookingSubmit').textContent = 'Atualizar convite';
+      $('clientCourtBookingModal').hidden = false;
+      document.body.style.overflow = 'hidden';
+      setTimeout(function () { $('clientCourtOpponentSelect').focus(); }, 50);
     }
 
     async function saveClientCourtBooking(event) {
@@ -5027,9 +5226,54 @@
         return;
       }
       const opponentChoice = $('clientCourtOpponentSelect').value;
+      if (courtBookingMode === 'challenge' || courtBookingMode === 'reinvite') {
+        const submit = $('clientCourtBookingSubmit');
+        submit.disabled = true;
+        try {
+          if (courtBookingMode === 'reinvite') {
+            await rest('rpc/reinvite_my_court_challenge', {
+              method: 'POST',
+              body: {
+                p_booking_id: selectedCourtSlot.challengeId,
+                p_opponent_client_id: opponentChoice === '__open__' ? null : opponentChoice
+              },
+              prefer: 'return=representation'
+            });
+            closeClientCourtBooking();
+            await loadClientCourtData(false);
+            toast(opponentChoice === '__open__' ? 'Convite aberto para os alunos.' : 'Novo convite enviado.');
+          } else {
+            await rest('rpc/create_my_court_challenge', {
+              method: 'POST',
+              body: {
+                p_booking_date: selectedCourtSlot.date,
+                p_starts_at: selectedCourtSlot.time,
+                p_court_name: selectedCourtSlot.court,
+                p_opponent_client_id: opponentChoice === '__open__' ? null : opponentChoice,
+                p_notes: $('clientCourtNotes').value.trim() || null
+              },
+              prefer: 'return=representation'
+            });
+            closeClientCourtBooking();
+            courtChallengeSelecting = false;
+            await loadClientCourtData(false);
+            setCourtChallengeSelecting(false);
+            toast('Convite criado. O horário fica reservado por até 12 horas.');
+          }
+        } catch (error) {
+          await loadClientCourtData(false).catch(function () {});
+          toast(error.message || 'Não consegui salvar este convite.');
+        } finally {
+          submit.disabled = false;
+        }
+        return;
+      }
+      const selectedOpponent = courtOpponents.find(function (opponent) {
+        return String(opponent.id || '') === String(opponentChoice || '');
+      });
       const opponentName = opponentChoice === '__guest__'
         ? $('clientCourtOpponent').value.trim()
-        : opponentChoice;
+        : String(selectedOpponent && selectedOpponent.full_name || '').trim();
       if (!opponentName || opponentName.length < 2) {
         toast('Selecione um aluno ativo ou informe o convidado.');
         return;
@@ -5044,7 +5288,8 @@
             p_starts_at: selectedCourtSlot.time,
             p_court_name: selectedCourtSlot.court,
             p_opponent_name: opponentName,
-            p_notes: $('clientCourtNotes').value.trim() || null
+            p_notes: $('clientCourtNotes').value.trim() || null,
+            p_opponent_client_id: opponentChoice === '__guest__' ? null : opponentChoice
           },
           prefer: 'return=representation'
         });
@@ -5060,6 +5305,8 @@
     }
 
     async function cancelClientCourtBooking(id) {
+      const booking = myCourtBookings.find(function (item) { return String(item.id) === String(id); });
+      const pending = Boolean(booking && String(booking.status || '').toUpperCase() === 'PENDENTE');
       try {
         await rest('rpc/cancel_my_app_court_booking', {
           method: 'POST',
@@ -5067,9 +5314,29 @@
           prefer: 'return=representation'
         });
         await loadClientCourtData(false);
-        toast('Reserva cancelada e horário liberado.');
+        toast(pending ? 'Convite cancelado e horário liberado.' : 'Reserva cancelada e horário liberado.');
       } catch (error) {
-        toast(error.message || 'Não consegui cancelar a reserva.');
+        toast(error.message || (pending ? 'Não consegui cancelar o convite.' : 'Não consegui cancelar a reserva.'));
+      }
+    }
+
+    async function respondToCourtChallenge(id, response) {
+      try {
+        const result = await rest('rpc/respond_to_court_challenge', {
+          method: 'POST',
+          body: { p_booking_id: id, p_response: response },
+          prefer: 'return=representation'
+        });
+        const row = Array.isArray(result) ? result[0] : result;
+        await loadClientCourtData(false);
+        if (row && String(row.status || '').toUpperCase() === 'CANCELADO') {
+          toast('O prazo terminou e o horário já foi liberado.');
+        } else {
+          toast(response === 'ACEITAR' ? 'Convite aceito. A reserva está confirmada.' : 'Convite recusado. O horário segue aberto para outro adversário.');
+        }
+      } catch (error) {
+        await loadClientCourtData(false).catch(function () {});
+        toast(error.message || 'Não consegui responder a este convite.');
       }
     }
 
@@ -6936,9 +7203,31 @@
         const button = event.target.closest('[data-cancel-client-court]');
         if (button) cancelClientCourtBooking(button.dataset.cancelClientCourt);
       });
+      $('clientCourtChallengeBtn').addEventListener('click', function () {
+        if (!canClientBookCourt()) {
+          toast('Seu cadastro precisa estar ativo para chamar um adversário.');
+          return;
+        }
+        setCourtChallengeSelecting(!courtChallengeSelecting);
+        if (courtChallengeSelecting) toast('Agora escolha um horário livre.');
+      });
+      $('clientCourtChallengeList').addEventListener('click', function (event) {
+        const respond = event.target.closest('[data-respond-court-challenge]');
+        if (respond) {
+          respondToCourtChallenge(respond.dataset.courtChallengeId, respond.dataset.respondCourtChallenge);
+          return;
+        }
+        const reinvite = event.target.closest('[data-reinvite-court-challenge]');
+        if (reinvite) {
+          openReinviteCourtChallenge(reinvite.dataset.reinviteCourtChallenge);
+          return;
+        }
+        const cancel = event.target.closest('[data-cancel-client-court]');
+        if (cancel) cancelClientCourtBooking(cancel.dataset.cancelClientCourt);
+      });
       $('clientCourtBookingForm').addEventListener('submit', saveClientCourtBooking);
       $('clientCourtOpponentSelect').addEventListener('change', function () {
-        const isGuest = this.value === '__guest__';
+        const isGuest = courtBookingMode === 'booking' && this.value === '__guest__';
         $('clientCourtGuestField').hidden = !isGuest;
         $('clientCourtOpponent').required = isGuest;
         if (isGuest) setTimeout(function () { $('clientCourtOpponent').focus(); }, 30);
