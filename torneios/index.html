@@ -1315,6 +1315,7 @@
       const invoiceUrl = field(payment,'invoice_url','payment_url','checkout_url');
       const pix = field(payment,'pix_payload','pix_copy_paste','payload');
       const pixImage = field(payment,'pix_encoded_image','pix_image','encoded_image');
+      const reservationExpiresAt = field(payment,'expires_at');
       const status = field(payment,'status') || field(result.registration,'payment_status','status_pagamento') || 'PENDENTE';
       const normalizedStatus = clean(status).toUpperCase();
       const retryable = result.retryable === true || normalizedStatus === 'FAILED';
@@ -1333,12 +1334,17 @@
         categoryName(field(result.registration,'category_id')),
         categoryName(field(result.additional_registration,'category_id'))
       ].filter(Boolean);
+      const reservationDeadline = reservationExpiresAt
+        ? new Date(reservationExpiresAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+        : '';
       $('registrationForm').hidden = true;
       $('registrationFoot').hidden = true;
       $('registrationSuccess').hidden = false;
       $('registrationSuccess').innerHTML = '<div class="success-icon">✓</div><div><h3>' + escapeHtml(successTitle) + '</h3><p>' + escapeHtml(successCopy) + '</p></div>' +
         '<div class="payment-box"><strong>Status: ' + escapeHtml(statusLabel) + '</strong>' +
         (selectedClassNames.length ? '<span>Classes: ' + escapeHtml(selectedClassNames.join(' + ')) + '</span>' : '') +
+        (!confirmed && !noPayment && !waitlist ? '<span><strong>Sua vaga fica reservada por 2 horas e só é confirmada após o pagamento.</strong></span>' : '') +
+        (reservationDeadline && !confirmed ? '<span>Prazo para pagar: ' + escapeHtml(reservationDeadline) + '</span>' : '') +
         (invoiceUrl ? '<a class="button lime full" href="' + escapeHtml(safeHref(invoiceUrl)) + '" target="_blank" rel="noopener">Pagar inscrição</a>' : '') +
         (pixImage ? '<img class="payment-qr" src="data:image/png;base64,' + escapeHtml(pixImage) + '" alt="QR Code Pix" />' : '') +
         (pix ? '<div class="pix-copy" id="pixPayload">' + escapeHtml(pix) + '</div><button class="button full" type="button" id="copyPixBtn">Copiar Pix</button>' : '') + '</div>' +

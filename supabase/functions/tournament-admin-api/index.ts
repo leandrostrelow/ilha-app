@@ -536,6 +536,22 @@ function mapRegistration(row: Row, includeCapabilities = false, registrationOrde
   return registration;
 }
 
+function mapOnlinePayment(row: Row) {
+  return {
+    id: row.id,
+    torneio_id: row.tournament_id,
+    inscricao_id: row.registration_id,
+    status: row.status || "CREATED",
+    forma_pagamento: row.billing_type || "",
+    valor: Number(row.amount || 0),
+    link_cobranca: row.invoice_url || "",
+    pix_copia_cola: row.pix_payload || "",
+    pix_expira_em: row.pix_expires_at || "",
+    reserva_expira_em: row.expires_at || "",
+    pago_em: row.paid_at || "",
+  };
+}
+
 function mapMatch(row: Row, athletes: Map<string, Row>) {
   const metadata = firstObject(row.metadata);
   return {
@@ -621,22 +637,25 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", incl
 
   const empty = {
     torneio: {}, categorias: [], jogadores: [], inscricoes: [], jogos: [], quadras: [], agenda: [],
-    config: [], live: {}, torneios: tournaments.map((row) => mapTournament(row, includeCapabilities)),
+    config: [], live: {}, pagamentos_online: [], torneios: tournaments.map((row) => mapTournament(row, includeCapabilities)),
   };
   if (!tournament) return empty;
 
   const id = tournament.id;
-  const [categoriesResult, athletesResult, registrationsResult, ordersResult, matchesResult, courtsResult, eventsResult, liveResult] = await Promise.all([
+  const [categoriesResult, athletesResult, registrationsResult, ordersResult, paymentsResult, matchesResult, courtsResult, eventsResult, liveResult] = await Promise.all([
     client.from("tournament_categories").select("*").eq("tournament_id", id).order("sort_order").order("name"),
     client.from("tournament_athletes").select("*").order("full_name"),
     client.from("tournament_registrations").select("*").eq("tournament_id", id).order("created_at"),
     client.from("tournament_registration_orders").select("*").eq("tournament_id", id).order("created_at"),
+    includeCapabilities
+      ? client.from("tournament_payments").select("id,tournament_id,registration_id,status,billing_type,amount,invoice_url,pix_payload,pix_expires_at,expires_at,paid_at").eq("tournament_id", id).order("created_at")
+      : Promise.resolve({ data: [], error: null }),
     client.from("tournament_matches").select("*").eq("tournament_id", id).order("category_id").order("round_no").order("match_no"),
     client.from("tournament_courts").select("*").eq("tournament_id", id).order("sort_order").order("name"),
     client.from("tournament_schedule_events").select("*").eq("tournament_id", id).order("event_date").order("event_time"),
     client.from("tournament_live_state").select("*").eq("tournament_id", id).maybeSingle(),
   ]);
-  [categoriesResult, athletesResult, registrationsResult, ordersResult, matchesResult, courtsResult, eventsResult, liveResult].forEach((result) => assertNoError(result.error));
+  [categoriesResult, athletesResult, registrationsResult, ordersResult, paymentsResult, matchesResult, courtsResult, eventsResult, liveResult].forEach((result) => assertNoError(result.error));
 
   const categories = ((categoriesResult.data || []) as Row[]).filter((row) => row.active !== false);
   const visibleCategoryIds = new Set(categories.map((row) => String(row.id)));
@@ -676,6 +695,7 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", incl
     categorias: categories.map(mapCategory),
     jogadores: athletes.map((row) => mapAthlete(row, includeCapabilities, activeOrderByAthlete.get(String(row.id)) || {})),
     inscricoes: registrations.map((row) => mapRegistration(row, includeCapabilities, orderMap.get(String(row.registration_order_id)) || {})),
+    pagamentos_online: includeCapabilities ? ((paymentsResult.data || []) as Row[]).map(mapOnlinePayment) : [],
     cobrancas_inscricoes: includeCapabilities ? registrationOrders.map((row) => ({
       id: row.id,
       jogador_id: row.athlete_id,

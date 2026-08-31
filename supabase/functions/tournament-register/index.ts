@@ -256,6 +256,7 @@ function safePayment(row: JsonRecord | null) {
     pix_payload: row.pix_payload || null,
     pix_encoded_image: row.pix_encoded_image || null,
     pix_expires_at: row.pix_expires_at || null,
+    expires_at: row.expires_at || null,
   };
 }
 

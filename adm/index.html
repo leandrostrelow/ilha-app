@@ -3549,6 +3549,19 @@
       font-weight: 800;
     }
 
+    .tournament-payment-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+      max-width: 360px;
+    }
+
+    .tournament-payment-actions .charge-btn {
+      background: #dcfce7;
+      color: #166534;
+    }
+
     .player-filters {
       display: grid;
       grid-template-columns: minmax(160px, 1.6fr) repeat(3, minmax(120px, 1fr));
@@ -22556,6 +22569,9 @@
         .map(function (player) {
           const regs = registrations
             .filter(function (r) { return String(r.jogador_id) === String(player.jogador_id) && String(r.status_pagamento) !== 'CANCELADO'; });
+          const onlinePayment = (state.data.pagamentos_online || []).find(function (entry) {
+            return regs.some(function (registration) { return String(registration.inscricao_id) === String(entry.inscricao_id); });
+          });
           const cats = regs.map(function (r) {
             return '<span class="mini-tag cat-chip ' + categoryColorClass(r.categoria_id) + '">' + escapeHtml(getCategoryName(r.categoria_id)) + '</span>';
           }).join('');
@@ -22570,6 +22586,12 @@
             CANCELLED: 'CANCELADO'
           };
           const payment = billingLabels[billingStatus] || (regs[0] ? regs[0].status_pagamento : '');
+          const onlineStatus = String(onlinePayment && onlinePayment.status || '').toUpperCase();
+          const onlinePending = ['CREATED', 'PENDING', 'FAILED', 'OVERDUE'].includes(onlineStatus);
+          const onlinePaid = ['RECEIVED', 'CONFIRMED'].includes(onlineStatus);
+          const onlineExpiry = onlinePayment && onlinePayment.reserva_expira_em
+            ? new Date(onlinePayment.reserva_expira_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+            : '';
           const courtesy = regs.some(function (r) {
             return normalizeSearch(r.observacoes || '').indexOf('tipo de inscricao: cortesia') !== -1;
           });
@@ -22583,8 +22605,20 @@
             '<span class="mini-tag' + statusClass + '">' + escapeHtml(player.status || 'ATIVO') + '</span>' +
             (courtesy ? '<span class="mini-tag">CORTESIA</span>' : '') +
             (payment ? '<span class="mini-tag warn">' + escapeHtml(payment) + '</span>' : '') +
+            (onlinePending ? '<span class="mini-tag warn">PAGAMENTO ONLINE · ' + escapeHtml(money(onlinePayment.valor)) + '</span>' : '') +
+            (onlinePaid ? '<span class="mini-tag">PAGO ONLINE · ' + escapeHtml(money(onlinePayment.valor)) + '</span>' : '') +
             '</div></div>' +
-            '<div class="actions" style="margin:0">' +
+            '<div class="actions tournament-payment-actions" style="margin:0">' +
+            (onlinePending && onlinePayment.link_cobranca && whatsappNumber(player.whatsapp)
+              ? '<button class="small-btn charge-btn" type="button" data-tournament-payment-whatsapp="' + escapeHtml(onlinePayment.id) + '" data-payment-player="' + escapeHtml(player.jogador_id) + '">Enviar cobrança no WhatsApp</button>'
+              : '') +
+            (onlinePending && onlinePayment.link_cobranca
+              ? '<button class="small-btn" type="button" data-tournament-payment-copy="' + escapeHtml(onlinePayment.id) + '">Copiar link</button>'
+              : '') +
+            (onlinePending && onlinePayment.pix_copia_cola
+              ? '<button class="small-btn" type="button" data-tournament-payment-pix="' + escapeHtml(onlinePayment.id) + '">Copiar Pix</button>'
+              : '') +
+            (onlinePending && onlineExpiry ? '<small>Reserva até ' + escapeHtml(onlineExpiry) + '</small>' : '') +
             '<button class="small-btn" type="button" data-edit-player="' + escapeHtml(player.jogador_id) + '">Editar</button>' +
             '</div></div>';
         }).join('') || '<div class="empty">Nenhum jogador cadastrado.</div>';
@@ -23777,6 +23811,42 @@
       if (digits.length <= 9) return '5527' + digits;
       if (digits.length <= 11) return '55' + digits;
       return digits;
+    }
+
+    function tournamentOnlinePayment(paymentId) {
+      return (state.data.pagamentos_online || []).find(function (item) {
+        return String(item.id) === String(paymentId);
+      }) || null;
+    }
+
+    function copyTournamentPaymentValue(value, successMessage) {
+      if (!value) return toast('A cobrança ainda não possui este dado.');
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(value).then(function () { toast(successMessage); }).catch(function () { toast(value); });
+      } else {
+        toast(value);
+      }
+    }
+
+    function sendTournamentPaymentWhatsapp(paymentId, playerId) {
+      const payment = tournamentOnlinePayment(paymentId);
+      const player = state.data.jogadores.find(function (item) { return String(item.jogador_id) === String(playerId); });
+      const phone = whatsappNumber(player && player.whatsapp);
+      if (!payment || !payment.link_cobranca) return toast('A cobrança ainda não possui link de pagamento.');
+      if (!phone) return toast('Cadastre um WhatsApp válido para este jogador.');
+      const registration = state.data.inscricoes.find(function (item) { return String(item.inscricao_id) === String(payment.inscricao_id); });
+      const classes = playerRegistrations(playerId).map(function (item) { return getCategoryName(item.categoria_id); }).filter(Boolean).join(' + ');
+      const expiry = payment.reserva_expira_em
+        ? new Date(payment.reserva_expira_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+        : '';
+      const message = [
+        'Olá, ' + (player && player.nome || registration && registration.nome_publico || 'atleta') + '!',
+        'Sua inscrição no ' + ((state.data.torneio || {}).nome || 'Ilha Open') + (classes ? ' (' + classes + ')' : '') + ' aguarda pagamento.',
+        'Valor: ' + money(payment.valor) + '.',
+        expiry ? 'A vaga fica reservada até ' + expiry + '.' : 'A vaga só é confirmada após o pagamento.',
+        'Pague por aqui: ' + payment.link_cobranca
+      ].filter(Boolean).join('\n\n');
+      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
     }
 
     function getCategoryName(id) {
@@ -42593,6 +42663,26 @@
       const editPlayerBtn = event.target.closest('[data-edit-player]');
       if (editPlayerBtn) {
         editPlayer(editPlayerBtn.dataset.editPlayer);
+        return;
+      }
+
+      const paymentWhatsappBtn = event.target.closest('[data-tournament-payment-whatsapp]');
+      if (paymentWhatsappBtn) {
+        sendTournamentPaymentWhatsapp(paymentWhatsappBtn.dataset.tournamentPaymentWhatsapp, paymentWhatsappBtn.dataset.paymentPlayer);
+        return;
+      }
+
+      const paymentLinkBtn = event.target.closest('[data-tournament-payment-copy]');
+      if (paymentLinkBtn) {
+        const payment = tournamentOnlinePayment(paymentLinkBtn.dataset.tournamentPaymentCopy);
+        copyTournamentPaymentValue(payment && payment.link_cobranca, 'Link de pagamento copiado.');
+        return;
+      }
+
+      const paymentPixBtn = event.target.closest('[data-tournament-payment-pix]');
+      if (paymentPixBtn) {
+        const payment = tournamentOnlinePayment(paymentPixBtn.dataset.tournamentPaymentPix);
+        copyTournamentPaymentValue(payment && payment.pix_copia_cola, 'Código Pix copiado.');
         return;
       }
 

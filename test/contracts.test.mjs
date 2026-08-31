@@ -14,6 +14,7 @@ const tournamentSource = await readFile(path.join(projectRoot, 'torneios', 'inde
 const tournamentRegisterSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'tournament-register', 'index.ts'), 'utf8');
 const tournamentInternalRegisterSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'tournament-internal-register', 'index.ts'), 'utf8');
 const tournamentAdminSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'tournament-admin-api', 'index.ts'), 'utf8');
+const tournamentPaymentExpirySource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'tournament-payment-expiry', 'index.ts'), 'utf8');
 const protectedRecoverySource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'protected-access-recovery', 'index.ts'), 'utf8');
 const clubUserAccessSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'club-user-access', 'index.ts'), 'utf8');
 const barUserAccessSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'bar-user-access', 'index.ts'), 'utf8');
@@ -80,6 +81,14 @@ const ilhaOpenServiceRoleAuthFixSource = await readFile(
 );
 const asaasWebhookEventPrivilegesSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260831132000_restore_asaas_webhook_event_service_role_crud.sql'),
+  'utf8'
+);
+const tournamentPaymentExpiryMigrationSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260831162642_tournament_payment_expiry.sql'),
+  'utf8'
+);
+const tournamentPaymentExpiryAuthFixSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260831163730_repair_tournament_payment_expiry_service_role_auth.sql'),
   'utf8'
 );
 const internalTournamentSource = await readFile(
@@ -540,6 +549,25 @@ test('valores por perfil e adicional espacial do Ilha Open são editáveis no AD
   assert.match(tournamentSource, /participantPriceCincate/);
   assert.match(tournamentSource, /participantPriceStudent/);
   assert.match(tournamentSource, /participantPriceNonMember/);
+});
+
+test('inscrição online reserva a vaga por duas horas e o ADM permite reenviar a cobrança', () => {
+  assert.match(tournamentPaymentExpiryMigrationSource, /expires_at[\s\S]*interval '2 hours'/);
+  assert.match(tournamentPaymentExpiryMigrationSource, /archive_expired_tournament_payment/);
+  assert.match(tournamentPaymentExpiryMigrationSource, /private\.tournament_expired_registration_attempts/);
+  assert.match(tournamentPaymentExpiryMigrationSource, /ilha-open-expire-unpaid-registrations/);
+  assert.match(tournamentPaymentExpiryMigrationSource, /tournament_payment_expiry_publishable_key/);
+  assert.match(tournamentPaymentExpiryAuthFixSource, /auth\.jwt\(\) ->> ''role''/);
+  assert.match(tournamentPaymentExpirySource, /payments\/\$\{encodeURIComponent\(providerPaymentId\)\}/);
+  assert.match(tournamentPaymentExpirySource, /method: "DELETE"/);
+  assert.match(tournamentPaymentExpirySource, /status === "RECEIVED" \|\| status === "CONFIRMED"/);
+  assert.match(tournamentPaymentExpirySource, /archive_expired_tournament_payment/);
+  assert.match(tournamentRegisterSource, /expires_at: row\.expires_at \|\| null/);
+  assert.match(tournamentSource, /Sua vaga fica reservada por 2 horas e só é confirmada após o pagamento/);
+  assert.match(tournamentAdminSource, /pagamentos_online/);
+  assert.match(adminSource, /Enviar cobrança no WhatsApp/);
+  assert.match(adminSource, /data-tournament-payment-copy/);
+  assert.match(adminSource, /data-tournament-payment-pix/);
 });
 
 test('Ilha Open interno usa cadastro simples e cobrança futura sem Asaas', () => {
