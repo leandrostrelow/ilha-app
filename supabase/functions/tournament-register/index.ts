@@ -352,14 +352,23 @@ async function saveProviderPayment(
   if (String(localPayment.billing_type) === "PIX") {
     pix = await asaasRequest(`/payments/${encodeURIComponent(providerPaymentId)}/pixQrCode`);
   }
+  const providerStatus = mapAsaasPaymentStatus(providerPayment.status);
+  const localStatus = String(localPayment.status || "");
+  const status = ["RECEIVED", "CONFIRMED"].includes(localStatus) &&
+      !["RECEIVED", "CONFIRMED"].includes(providerStatus)
+    ? localStatus
+    : providerStatus;
   const update = {
     provider_payment_id: providerPaymentId,
-    provider_customer_id: nullableText(providerPayment.customer, 100),
-    status: mapAsaasPaymentStatus(providerPayment.status),
-    invoice_url: nullableText(providerPayment.invoiceUrl || providerPayment.bankSlipUrl, 1000),
-    pix_payload: nullableText(pix.payload, 4000),
-    pix_encoded_image: nullableText(pix.encodedImage, 500000),
-    pix_expires_at: nullableText(pix.expirationDate, 80),
+    provider_customer_id: nullableText(providerPayment.customer || localPayment.provider_customer_id, 100),
+    status,
+    invoice_url: nullableText(
+      providerPayment.invoiceUrl || providerPayment.bankSlipUrl || localPayment.invoice_url,
+      1000,
+    ),
+    pix_payload: nullableText(pix.payload || localPayment.pix_payload, 4000),
+    pix_encoded_image: nullableText(pix.encodedImage || localPayment.pix_encoded_image, 500000),
+    pix_expires_at: nullableText(pix.expirationDate || localPayment.pix_expires_at, 80),
     raw_response: {
       payment: {
         id: providerPaymentId,
@@ -379,6 +388,14 @@ async function saveProviderPayment(
     .single();
   if (error) throw error;
   return data as JsonRecord;
+}
+
+async function repairExistingPixPayment(supabase: DbClient, localPayment: JsonRecord) {
+  const providerPaymentId = text(localPayment.provider_payment_id, 100);
+  if (!providerPaymentId || String(localPayment.billing_type) !== "PIX") return localPayment;
+  if (localPayment.pix_payload && localPayment.pix_encoded_image) return localPayment;
+  const providerPayment = await asaasRequest(`/payments/${encodeURIComponent(providerPaymentId)}`);
+  return await saveProviderPayment(supabase, localPayment, providerPayment);
 }
 
 async function createOrRecoverPayment(
@@ -842,7 +859,23 @@ Deno.serve(async (request) => {
     }
     if (!localPayment) throw new Error("Não foi possível preparar a cobrança.");
 
-    if (localPayment.provider_payment_id || !retryablePaymentStatuses.has(String(localPayment.status))) {
+    if (localPayment.provider_payment_id) {
+      try {
+        localPayment = await repairExistingPixPayment(supabase, localPayment);
+      } catch (error) {
+        console.warn("tournament-register PIX repair deferred", {
+          payment_id: localPayment.id,
+          error: error instanceof Error ? error.message : "unknown",
+        });
+      }
+      return json(request, {
+        registration: safeRegistration(registration),
+        additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
+        payment: safePayment(localPayment),
+        tracking_token: registration.public_token,
+      });
+    }
+    if (!retryablePaymentStatuses.has(String(localPayment.status))) {
       return json(request, {
         registration: safeRegistration(registration),
         additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
