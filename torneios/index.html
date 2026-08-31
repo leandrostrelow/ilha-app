@@ -216,6 +216,7 @@
     .meta-pill small, .meta-pill strong { display: block; }
     .meta-pill small { color: rgba(255,255,255,.65); font-size: 9px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
     .meta-pill strong { margin-top: 2px; color: #fff; font-size: 12px; line-height: 1.2; }
+    .meta-pill.status-pill strong { margin-top: 0; }
     .meta-pill.status-open { background: rgba(37,211,102,.22); border-color: rgba(37,211,102,.72); box-shadow: inset 0 0 0 1px rgba(37,211,102,.12); }
     .meta-pill.status-open .meta-pill-icon { color: #63f49b; }
     .meta-pill.status-open small { color: rgba(210,255,225,.78); }
@@ -771,7 +772,7 @@
       return '<div class="hero-meta">' +
         '<span class="meta-pill meta-date"><span class="meta-pill-icon" aria-hidden="true">📅</span><span><small>Data do evento</small><strong>' + escapeHtml(formatHeroRange(item)) + '</strong></span></span>' +
         '<span class="meta-pill"><span class="meta-pill-icon" aria-hidden="true">📍</span><span><small>Local</small><strong>' + escapeHtml(field(item,'location','venue','club_name','local') || 'Ilha Tênis') + '</strong></span></span>' +
-        '<span class="meta-pill ' + (open ? 'status-open' : '') + '"><span class="meta-pill-icon" aria-hidden="true">' + (open ? '●' : 'ℹ️') + '</span><span><small>Inscrições</small><strong>' + escapeHtml(statusLabel(item)) + '</strong></span></span></div>';
+        '<span class="meta-pill status-pill ' + (open ? 'status-open' : '') + '"><span class="meta-pill-icon" aria-hidden="true">' + (open ? '●' : 'ℹ️') + '</span><strong>' + escapeHtml(statusLabel(item)) + '</strong></span></div>';
     }
     function money(value) { const number = Number(value || 0); return number ? number.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'Grátis'; }
     function initials(name) { return clean(name).split(/\s+/).slice(0,2).map((part) => part[0]).join('').toUpperCase() || 'IT'; }
