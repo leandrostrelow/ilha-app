@@ -1,0 +1,73 @@
+name: E2E de staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_staging_e2e:
+        description: Executar somente contra o ambiente protegido de staging e contas sintéticas
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ilha-staging-e2e
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    name: ADM e Ilha Play com integrações de staging
+    if: ${{ inputs.run_staging_e2e == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: staging
+    env:
+      # Variáveis públicas devem existir no GitHub Environment `staging`.
+      # Proteja esse Environment com aprovação e nunca reutilize valores de produção.
+      STAGING_BASE_URL: ${{ vars.STAGING_BASE_URL }}
+      STAGING_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+      STAGING_SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+      STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ vars.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+      STAGING_VAPID_PUBLIC_KEY: ${{ vars.STAGING_VAPID_PUBLIC_KEY }}
+      E2E_ASAAS_MODE: ${{ vars.STAGING_ASAAS_MODE }}
+      E2E_PUSH_MODE: REAL_STAGING_DELIVERY
+      STAGING_ASAAS_DOCUMENT_CONFIRMATION: SYNTHETIC_SANDBOX_FIXTURE
+      # Somente logins e fixtures dedicados, sem telefone/CPF real, reservas ou cobranças reais.
+      STAGING_E2E_CLIENT_EMAIL: ${{ secrets.STAGING_E2E_CLIENT_EMAIL }}
+      STAGING_E2E_CLIENT_PASSWORD: ${{ secrets.STAGING_E2E_CLIENT_PASSWORD }}
+      STAGING_E2E_ADMIN_EMAIL: ${{ secrets.STAGING_E2E_ADMIN_EMAIL }}
+      STAGING_E2E_ADMIN_PASSWORD: ${{ secrets.STAGING_E2E_ADMIN_PASSWORD }}
+      STAGING_E2E_BAR_EMAIL: ${{ secrets.STAGING_E2E_BAR_EMAIL }}
+      STAGING_E2E_BAR_PASSWORD: ${{ secrets.STAGING_E2E_BAR_PASSWORD }}
+      STAGING_ASAAS_SANDBOX_API_KEY: ${{ secrets.STAGING_ASAAS_SANDBOX_API_KEY }}
+      STAGING_ASAAS_E2E_DOCUMENT: ${{ secrets.STAGING_ASAAS_E2E_DOCUMENT }}
+      E2E_REMOTE_CONFIRMATION: STAGING_ONLY_NO_REAL_DATA
+      AGENT_BROWSER_DEFAULT_TIMEOUT: '30000'
+    steps:
+      - name: Checkout sem credencial persistente
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Node.js 22
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Ativar pnpm fixado no package.json
+        run: corepack enable
+
+      - name: Instalar dependências reproduzíveis
+        run: pnpm install --frozen-lockfile
+
+      - name: Revalidar aplicação antes do E2E remoto
+        run: pnpm run verify
+
+      - name: Instalar Chromium isolado da automação
+        run: pnpm exec agent-browser install --with-deps
+
+      - name: Testar staging com travas contra produção
+        run: node scripts/e2e/staging.mjs

@@ -1,0 +1,53 @@
+project_id = "ilha-app"
+
+[auth]
+site_url = "http://127.0.0.1:8769"
+additional_redirect_urls = [
+  "http://127.0.0.1:8769/**",
+  "http://localhost:8769/**",
+  "https://ilha-app-staging.vercel.app/**",
+  "https://app.ilhatenis.com/**"
+]
+
+[auth.email]
+enable_signup = true
+# A aprovação é responsabilidade do status PENDENTE/ATIVO em app_clients.
+# Assim o cliente autentica e mantém a sessão antes da liberação do clube.
+enable_confirmations = false
+
+# Provider/public callbacks authenticate themselves inside the function. They
+# must reach the handler without an end-user JWT.
+[functions.asaas-payment-webhook]
+verify_jwt = false
+
+[functions.bar-order-push]
+verify_jwt = false
+
+[functions.client-notification-dispatch]
+verify_jwt = false
+
+[functions.protected-access-recovery]
+verify_jwt = false
+
+[functions.tournament-register]
+verify_jwt = false
+
+[functions.tournament-internal-register]
+verify_jwt = false
+
+# Management endpoints require a valid user JWT at the gateway and repeat the
+# permission check in the handler before constructing a service-role client.
+[functions.bar-user-access]
+verify_jwt = true
+
+[functions.client-broadcast-push]
+verify_jwt = true
+
+[functions.club-user-access]
+verify_jwt = true
+
+[functions.family-member-access]
+verify_jwt = true
+
+[functions.tournament-admin-api]
+verify_jwt = true

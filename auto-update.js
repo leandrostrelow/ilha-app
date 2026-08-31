@@ -9,18 +9,42 @@
   var currentVersion = '';
   var checking = false;
   var reloading = false;
+  var deferredReloadTimer = null;
+  var workerUpdatePromise = null;
+  var versionPollInterval = 60000;
+  var serviceWorkerPollInterval = 300000;
 
+  function storageGet(storageName, key) {
+    try { return window[storageName].getItem(key); } catch (error) { return null; }
+  }
+  function storageSet(storageName, key, value) {
+    try { window[storageName].setItem(key, value); return true; } catch (error) { return false; }
+  }
+
+  function sensitiveAuthFlowActive() {
+    if (document.body && document.body.classList.contains('admin-recovery-active')) return true;
+    var clientRecovery = document.getElementById('newPasswordForm');
+    return Boolean(clientRecovery && !clientRecovery.hidden);
+  }
   function reloadForVersion(version) {
     var next = String(version || 'app-update');
-    if (reloading || sessionStorage.getItem(reloadVersionKey) === next) return;
+    if (reloading || storageGet('sessionStorage', reloadVersionKey) === next) return;
+    if (sensitiveAuthFlowActive()) {
+      if (deferredReloadTimer) window.clearTimeout(deferredReloadTimer);
+      deferredReloadTimer = window.setTimeout(function () {
+        deferredReloadTimer = null;
+        reloadForVersion(next);
+      }, 15000);
+      return;
+    }
     reloading = true;
-    sessionStorage.setItem(reloadVersionKey, next);
+    storageSet('sessionStorage', reloadVersionKey, next);
     window.location.reload();
   }
   function broadcast(version) {
     var message = { type: 'APP_UPDATED', version: String(version), at: Date.now() };
     if (updateChannel) try { updateChannel.postMessage(message); } catch (error) {}
-    try { localStorage.setItem(updateStorageKey, JSON.stringify(message)); } catch (error) {}
+    storageSet('localStorage', updateStorageKey, JSON.stringify(message));
   }
   async function fetchAppVersion() {
     var response = await fetch('/app-version.json?ts=' + Date.now(), {
@@ -32,11 +56,17 @@
   }
   async function updateServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
-    try {
-      var registration = await navigator.serviceWorker.register('/service-worker.js', { scope: '/', updateViaCache: 'none' });
-      await registration.update();
-      if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-    } catch (error) {}
+    if (workerUpdatePromise) return workerUpdatePromise;
+    workerUpdatePromise = (async function () {
+      try {
+        var registration = await navigator.serviceWorker.register('/service-worker.js', { scope: '/', updateViaCache: 'none' });
+        await registration.update();
+        if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      } catch (error) {
+        // O aplicativo continua funcional e tenta atualizar novamente no próximo ciclo.
+      }
+    })().finally(function () { workerUpdatePromise = null; });
+    return workerUpdatePromise;
   }
   async function checkForUpdate() {
     if (checking || reloading || document.hidden) return;
@@ -44,12 +74,12 @@
     try {
       var nextVersion = await fetchAppVersion();
       if (!nextVersion) return;
-      var storedVersion = localStorage.getItem(appVersionKey) || '';
+      var storedVersion = storageGet('localStorage', appVersionKey) || '';
       if (!currentVersion) currentVersion = storedVersion || nextVersion;
-      if (!storedVersion) localStorage.setItem(appVersionKey, nextVersion);
+      if (!storedVersion) storageSet('localStorage', appVersionKey, nextVersion);
       if (nextVersion !== currentVersion || (storedVersion && nextVersion !== storedVersion)) {
         currentVersion = nextVersion;
-        localStorage.setItem(appVersionKey, nextVersion);
+        storageSet('localStorage', appVersionKey, nextVersion);
         broadcast('release:' + nextVersion);
         await updateServiceWorker();
         reloadForVersion('release:' + nextVersion);
@@ -60,13 +90,16 @@
   }
   function receive(message) {
     if (!message || message.type !== 'APP_UPDATED') return;
-    var version = String(message.version || 'app-update');
-    if (version.indexOf('ilha-play-') === 0) { updateServiceWorker(); return; }
+    var version = String(message.version || message.cache || 'app-update');
     reloadForVersion(version);
   }
   if ('BroadcastChannel' in window) {
-    updateChannel = new BroadcastChannel(updateChannelName);
-    updateChannel.addEventListener('message', function (event) { receive(event.data); });
+    try {
+      updateChannel = new BroadcastChannel(updateChannelName);
+      updateChannel.addEventListener('message', function (event) { receive(event.data); });
+    } catch (error) {
+      updateChannel = null;
+    }
   }
   window.addEventListener('storage', function (event) {
     if (event.key !== updateStorageKey || !event.newValue) return;
@@ -75,11 +108,14 @@
   if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', function (event) { receive(event.data); });
   checkForUpdate();
   updateServiceWorker();
-  setInterval(checkForUpdate, 20000);
-  setInterval(updateServiceWorker, 60000);
+  setInterval(checkForUpdate, versionPollInterval);
+  setInterval(updateServiceWorker, serviceWorkerPollInterval);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) { checkForUpdate(); updateServiceWorker(); } });
   ['focus', 'online', 'pageshow'].forEach(function (name) {
     window.addEventListener(name, function () { checkForUpdate(); updateServiceWorker(); });
   });
-  window.addEventListener('beforeunload', function () { if (updateChannel) updateChannel.close(); });
+  window.addEventListener('beforeunload', function () {
+    if (deferredReloadTimer) window.clearTimeout(deferredReloadTimer);
+    if (updateChannel) updateChannel.close();
+  });
 })();

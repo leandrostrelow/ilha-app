@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#0a3440" />
   <meta name="description" content="Torneios, inscrições, chaves, horários e resultados do Ilha Tênis." />
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon.png" />
   <title>Torneios | Ilha Tênis</title>
   <style>
     :root {
       --ink: #102b32;
-      --muted: #687b82;
+      --muted: #5c7077;
       --navy: #0a3440;
       --teal: #078a94;
       --lime: #a8e900;
@@ -338,6 +339,7 @@
     .category-check input { width: 19px; height: 19px; accent-color: var(--teal); }
     .category-check strong { display: block; font-size: 13px; }
     .category-check small { display: block; margin-top: 4px; color: var(--teal); font-size: 11px; font-weight: 850; }
+    .spatial-addon-copy { margin: 0 0 8px; color: var(--muted); font-size: 12px; font-weight: 750; line-height: 1.45; }
     .choice-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
     .choice-grid.pricing { grid-template-columns: repeat(3,minmax(0,1fr)); }
     .choice-grid.days { grid-template-columns: repeat(4,minmax(0,1fr)); }
@@ -352,6 +354,10 @@
     .field-hint { margin: 0; color: var(--muted); font-size: 11px; font-weight: 700; }
     .consent { margin-top: 16px; display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 9px; color: var(--muted); font-size: 12px; line-height: 1.45; }
     .consent input { width: 18px; height: 18px; accent-color: var(--teal); }
+    .captcha-shell { margin-top: 14px; min-height: 70px; display: grid; justify-items: start; gap: 7px; }
+    .captcha-status { margin: 0; color: var(--muted); font-size: 12px; font-weight: 750; }
+    .captcha-status.error { color: #a62e36; }
+    .bot-field { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
     .form-error { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: #fff0f1; color: #a62e36; font-size: 12px; font-weight: 800; }
     .modal-foot { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 16px 24px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: #fff; }
 
@@ -374,6 +380,31 @@
       background: radial-gradient(circle at 92% 10%, rgba(168,233,0,.28), transparent 14rem), linear-gradient(135deg,#082c36,#067986);
       box-shadow: var(--shadow);
     }
+    body.internal-registration {
+      --navy: #06265d;
+      --teal: #123f78;
+      --lime: #b6ef00;
+      --lime-soft: #f2ffd0;
+      --bg: #fff7ee;
+    }
+    body.internal-registration .registration-intro {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) 190px;
+      align-items: center;
+      gap: 22px;
+      background: linear-gradient(135deg,#051e4c,#0d3f7a);
+    }
+    .registration-poster {
+      width: 190px;
+      max-height: 260px;
+      justify-self: end;
+      border-radius: 15px;
+      object-fit: cover;
+      object-position: top;
+      box-shadow: 0 14px 32px rgba(0,0,0,.24);
+    }
+    .minor-toggle { min-height: 54px; }
+    .billing-consent { padding: 13px; border: 1px solid #dbe8b4; border-radius: 14px; background: #fbffe9; color: #344a1c; }
     body.registration-only .registration-intro h1 { margin: 0; font-size: clamp(28px,5vw,40px); line-height: 1.05; letter-spacing: -.045em; }
     body.registration-only .registration-intro p { margin: 8px 0 0; color: rgba(255,255,255,.78); font-size: 13px; line-height: 1.4; }
     body.registration-only .registration-intro .hero-meta { margin-top: 12px; }
@@ -448,6 +479,8 @@
       body.registration-only .registration-intro p { font-size: 12px; }
       body.registration-only .registration-intro .hero-meta { gap: 6px; }
       body.registration-only .registration-intro .meta-pill { padding: 7px 9px; font-size: 10px; }
+      body.internal-registration .registration-intro { grid-template-columns: 1fr; }
+      .registration-poster { width: 100%; max-height: 250px; justify-self: stretch; object-position: center 21%; }
       body.registration-only .modal { max-height: none; border-radius: 18px; }
       body.registration-only .modal-head,
       body.registration-only .modal-body { padding-left: 14px; padding-right: 14px; }
@@ -481,19 +514,28 @@
         <form id="registrationForm">
           <div class="form-grid">
             <div class="form-field full"><label for="athleteName">Nome completo</label><input id="athleteName" name="name" autocomplete="name" required /></div>
-            <div class="form-field"><label for="athletePhone">WhatsApp</label><input id="athletePhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(27) 99999-9999" required /></div>
-            <div class="form-field"><label for="athleteEmail">E-mail</label><input id="athleteEmail" name="email" type="email" autocomplete="email" required /></div>
+            <div class="form-field" id="cpfField"><label for="athleteCpf">CPF</label><input id="athleteCpf" name="cpf" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00" required /></div>
+            <div class="form-field"><label for="athletePhone">WhatsApp</label><input id="athletePhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="15" placeholder="(27) 99999-9999" required /></div>
+            <div class="form-field full" id="emailField"><label for="athleteEmail">E-mail</label><input id="athleteEmail" name="email" type="email" autocomplete="email" required /></div>
+            <div class="form-field full" id="minorField" hidden><label>Participante menor de idade?</label><div class="choice-grid minor-toggle"><label class="choice-card"><input type="radio" name="is_minor" value="false" checked /><span>Não</span></label><label class="choice-card"><input type="radio" name="is_minor" value="true" /><span>Sim</span></label></div></div>
+            <div class="form-field full" id="guardianFields" hidden><div class="form-grid"><div class="form-field"><label for="guardianName">Nome do responsável</label><input id="guardianName" name="guardian_name" maxlength="120" autocomplete="name" /></div><div class="form-field"><label for="guardianPhone">Telefone do responsável</label><input id="guardianPhone" name="guardian_phone" type="tel" inputmode="tel" maxlength="15" autocomplete="tel" placeholder="(27) 99999-9999" /></div></div></div>
             <div class="form-field full" id="participantTypeField"><label>Tipo de inscrição</label><div class="choice-grid pricing" id="registrationParticipantType"><label class="choice-card"><input type="radio" name="participant_type" value="CINCATE" required /><span><strong>CINCATE</strong></span></label><label class="choice-card"><input type="radio" name="participant_type" value="ILHA_STUDENT" required /><span><strong>Aluno Ilha Tênis</strong></span></label><label class="choice-card"><input type="radio" name="participant_type" value="NON_MEMBER" required /><span><strong>Não associado</strong></span></label></div></div>
             <div class="form-field full" id="registrationPriceField" hidden><div class="registration-price"><span>Valor da inscrição</span><strong id="registrationPrice">R$ 0,00</strong></div></div>
-            <div class="form-field full"><label>Sexo</label><div class="choice-grid" id="registrationGender"><label class="choice-card"><input type="radio" name="gender" value="MALE" required /><span>Masculino</span></label><label class="choice-card"><input type="radio" name="gender" value="FEMALE" required /><span>Feminino</span></label></div></div>
+            <div class="form-field full" id="genderField"><label>Sexo</label><div class="choice-grid" id="registrationGender"><label class="choice-card"><input type="radio" name="gender" value="MALE" required /><span>Masculino</span></label><label class="choice-card"><input type="radio" name="gender" value="FEMALE" required /><span>Feminino</span></label></div></div>
             <div class="form-field full" id="categoryField" hidden><label>Classes disponíveis</label><div class="category-checks" id="registrationCategories"></div></div>
-            <div class="form-field full"><label>Dias em que posso jogar</label><div class="choice-grid days"><label class="choice-card"><input type="checkbox" name="availability_days" value="MONDAY" /><span>Segunda</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="TUESDAY" /><span>Terça</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="WEDNESDAY" /><span>Quarta</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="THURSDAY" /><span>Quinta</span></label></div><p class="field-hint">Marque todos os dias em que você tem disponibilidade.</p></div>
-            <div class="form-field"><label for="athleteCity">Cidade</label><input id="athleteCity" name="city" autocomplete="address-level2" value="Colatina" /></div>
+            <div class="form-field full" id="spatialAddonField" hidden><p class="spatial-addon-copy">Você pode jogar também em uma Classe Espacial com a mesma inscrição.</p><label class="category-check"><input id="spatialAddon" name="spatial_addon" type="checkbox" value="" /><span><strong id="spatialAddonTitle">Deseja participar também da Classe Espacial?</strong><small id="spatialAddonDescription">Adicione por mais R$ 80,00.</small></span></label></div>
+            <div class="form-field full" id="availabilityField"><label>Dias em que posso jogar</label><div class="choice-grid days"><label class="choice-card"><input type="checkbox" name="availability_days" value="MONDAY" /><span>Segunda</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="TUESDAY" /><span>Terça</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="WEDNESDAY" /><span>Quarta</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="THURSDAY" /><span>Quinta</span></label></div><p class="field-hint">Marque todos os dias em que você tem disponibilidade.</p></div>
+            <div class="form-field" id="cityField"><label for="athleteCity">Cidade</label><input id="athleteCity" name="city" autocomplete="address-level2" value="Colatina" /></div>
             <div class="form-field" id="paymentMethodField"><label for="paymentMethod">Pagamento</label><select id="paymentMethod" name="payment_method"></select></div>
             <div class="form-field full" id="partnerField" hidden><label for="partnerName">Nome da dupla</label><input id="partnerName" name="partner_name" placeholder="Nome completo do parceiro ou parceira" /></div>
-            <div class="form-field full"><label for="athleteNotes">Observação</label><textarea id="athleteNotes" name="notes" placeholder="Restrição de horário ou informação importante"></textarea></div>
+            <div class="form-field full" id="notesField"><label for="athleteNotes">Observação</label><textarea id="athleteNotes" name="notes" placeholder="Restrição de horário ou informação importante"></textarea></div>
+            <div class="bot-field" aria-hidden="true" inert><label for="registrationWebsite">Não preencha este campo</label><input id="registrationWebsite" name="website" tabindex="-1" autocomplete="off" /></div>
           </div>
-          <label class="consent"><input id="registrationConsent" type="checkbox" required /><span>Confirmo que os dados estão corretos e autorizo seu uso pela organização para realizar o torneio e entrar em contato comigo.</span></label>
+          <label class="consent" id="registrationConsentLabel"><input id="registrationConsent" type="checkbox" required /><span id="registrationConsentText">Confirmo que os dados estão corretos e autorizo seu uso pela organização para realizar o torneio e entrar em contato comigo.</span></label>
+          <div class="captcha-shell" id="registrationCaptchaShell">
+            <div id="registrationCaptchaWidget"></div>
+            <p class="captcha-status" id="registrationCaptchaStatus" role="status">Carregando proteção anti-robô…</p>
+          </div>
           <div class="form-error" id="registrationError" role="alert" hidden></div>
         </form>
         <div class="success-box" id="registrationSuccess" hidden></div>
@@ -510,12 +552,6 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_zcX8te5g99p0bA12xy_E-A_MTyNpJNx';
     const PUBLIC_SNAPSHOT_RPC = 'tournament_public_snapshot';
     const REGISTRATION_FUNCTION = 'tournament-register';
-    const REGISTRATION_PRICE_OPTIONS = [
-      { key: 'CINCATE', label: 'CINCATE', amount: 100 },
-      { key: 'ILHA_STUDENT', label: 'Aluno Ilha Tênis', amount: 130 },
-      { key: 'NON_MEMBER', label: 'Não associado', amount: 180 }
-    ];
-
     const routeParts = location.pathname.split('/').filter(Boolean);
     const courtesySegmentIndex = routeParts.indexOf('cortesia');
     const state = {
@@ -529,13 +565,33 @@
       agendaCategory: '',
       registrationSearch: '',
       submitting: false,
-      lastRegistrationPayload: null
+      lastRegistrationPayload: null,
+      captchaConfig: null,
+      captchaToken: '',
+      captchaWidgetId: null
     };
+    let turnstileScriptPromise = null;
 
     const $ = (id) => document.getElementById(id);
     const list = (value) => Array.isArray(value) ? value : [];
     const text = (value, fallback) => value === null || value === undefined || value === '' ? (fallback || '') : String(value);
     const clean = (value) => text(value).trim();
+    const digitsOnly = (value) => text(value).replace(/\D/g, '');
+    const formatCpf = (value) => digitsOnly(value).slice(0, 11)
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    const isValidCpf = (value) => {
+      const digits = digitsOnly(value);
+      if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) return false;
+      const check = (length) => {
+        let total = 0;
+        for (let index = 0; index < length; index += 1) total += Number(digits[index]) * (length + 1 - index);
+        const result = (total * 10) % 11;
+        return (result === 10 ? 0 : result) === Number(digits[length]);
+      };
+      return check(9) && check(10);
+    };
     const normalize = (value) => clean(value).toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const escapeHtml = (value) => text(value).replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
     const safeHref = (value, fallback) => {
@@ -664,6 +720,13 @@
     }
 
     function tournament() { return state.snapshot && (state.snapshot.tournament || state.snapshot.torneio) || {}; }
+    function tournamentSettings() { const value = field(tournament(),'settings'); return value && typeof value === 'object' ? value : {}; }
+    function isInternalRegistration() { return clean(tournamentSettings().registration_mode).toUpperCase() === 'MONTHLY_BILLING_SIMPLE'; }
+    function currentRegistrationFunction() { return clean(tournamentSettings().registration_function) || REGISTRATION_FUNCTION; }
+    function internalRegistrationAmount(count) {
+      const settings = tournamentSettings();
+      return Number(count > 1 ? settings.double_registration_fee : settings.single_registration_fee) || (count > 1 ? 80 : 50);
+    }
     function categories() { return list(state.snapshot && (state.snapshot.categories || state.snapshot.categorias)); }
     function registrations() { return list(state.snapshot && (state.snapshot.registrations || state.snapshot.inscricoes)); }
     function matches() { return list(state.snapshot && (state.snapshot.matches || state.snapshot.jogos)); }
@@ -671,7 +734,40 @@
     function events() { return list(state.snapshot && (state.snapshot.events || state.snapshot.agenda)); }
     function sponsors() { return list(state.snapshot && (state.snapshot.sponsors || state.snapshot.patrocinadores)); }
     function categoryId(row) { return String(field(row,'id','category_id','categoria_id')); }
+    function categoryCode(row) { return clean(field(row,'code','codigo')).toUpperCase(); }
     function categoryName(id) { const row = categories().find((item) => categoryId(item) === String(id)); return row ? field(row,'name','nome') : ''; }
+    function categoryRegistrationAmount(row) {
+      const configured = Number(field(row || {},'registration_fee','valor','amount'));
+      if (Number.isFinite(configured) && configured >= 0) return configured;
+      const fallback = Number(field(tournament(),'default_fee','valor_padrao'));
+      return Number.isFinite(fallback) && fallback >= 0 ? fallback : 0;
+    }
+    function spatialAddonMap() {
+      const value = tournamentSettings().spatial_addons;
+      return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    }
+    function spatialAddonCodes() {
+      return new Set(Object.values(spatialAddonMap()).map((rule) => clean(rule && rule.category_code).toUpperCase()).filter(Boolean));
+    }
+    function spatialAddonRule(row) {
+      return row ? spatialAddonMap()[categoryCode(row)] || null : null;
+    }
+    function updateSpatialAddonField() {
+      const selected = categories().find((row) => categoryId(row) === selectedCategoryId());
+      const rule = !isInternalRegistration() ? spatialAddonRule(selected) : null;
+      const additional = rule && categories().find((row) => categoryCode(row) === clean(rule.category_code).toUpperCase());
+      const available = Boolean(rule && additional);
+      $('spatialAddonField').hidden = !available;
+      if (!available) {
+        $('spatialAddon').checked = false;
+        $('spatialAddon').value = '';
+        return;
+      }
+      const fee = Number(rule.fee ?? categoryRegistrationAmount(additional));
+      $('spatialAddon').value = categoryId(additional);
+      $('spatialAddonTitle').textContent = 'Deseja participar também da ' + clean(rule.label || field(additional,'name','nome')) + '?';
+      $('spatialAddonDescription').textContent = 'Adicione por mais ' + money(fee) + ' no mesmo pagamento.';
+    }
     function playerName(match, slot) { return field(match, 'side' + slot + '_name', 'player' + slot + '_name', 'jogador' + slot + '_nome') || field(match['player' + slot],'name','nome') || 'A definir'; }
     function matchCategoryId(row) { return String(field(row,'category_id','categoria_id')); }
 
@@ -682,6 +778,7 @@
       document.title = name + ' | Ilha Tênis';
       state.activeTab = 'overview';
       const open = isRegistrationOpen(item);
+      document.body.classList.toggle('internal-registration', isInternalRegistration());
       $('headRegisterBtn').hidden = !open;
       $('headRegisterBtn').onclick = openRegistration;
       const cover = field(item,'cover_url','banner_url','image_url');
@@ -710,8 +807,14 @@
       const name = field(item,'name','nome') || 'Torneio Ilha';
       document.title = 'Inscrição · ' + name;
       document.body.classList.add('registration-only');
+      document.body.classList.toggle('internal-registration', isInternalRegistration());
       $('headRegisterBtn').hidden = true;
-      $('appMain').innerHTML = '<section class="registration-intro"><p class="eyebrow">' + (state.courtesyMode ? 'Inscrição isenta' : 'Inscrições') + '</p><h1>' + escapeHtml(name) + '</h1><p>' + (state.courtesyMode ? 'Link reservado para professores e parceiros. Escolha sua classe e confirme a inscrição sem pagamento.' : 'Escolha sua classe, preencha seus dados e conclua o pagamento para confirmar a inscrição.') + '</p><div class="hero-meta"><span class="meta-pill">' + escapeHtml(formatRange(item)) + '</span><span class="meta-pill">' + escapeHtml(field(item,'location','venue','local') || 'Ilha Tênis') + '</span><span class="meta-pill">' + escapeHtml(statusLabel(item)) + '</span></div></section>';
+      const internal = isInternalRegistration();
+      const cover = field(item,'cover_url','banner_url','image_url');
+      const introCopy = internal
+        ? 'Inscrição rápida para atletas do clube. Escolha uma ou duas classes; o valor será cobrado na próxima mensalidade.'
+        : (state.courtesyMode ? 'Link reservado para professores e parceiros. Escolha sua classe e confirme a inscrição sem pagamento.' : 'Escolha sua classe, preencha seus dados e conclua o pagamento para confirmar a inscrição.');
+      $('appMain').innerHTML = '<section class="registration-intro"><div><p class="eyebrow">' + (state.courtesyMode ? 'Inscrição isenta' : 'Inscrições') + '</p><h1>' + escapeHtml(name) + '</h1><p>' + escapeHtml(introCopy) + '</p><div class="hero-meta"><span class="meta-pill">' + escapeHtml(formatRange(item)) + '</span><span class="meta-pill">' + escapeHtml(field(item,'location','venue','local') || 'Ilha Tênis') + '</span><span class="meta-pill">' + escapeHtml(statusLabel(item)) + '</span></div></div>' + (internal && cover ? '<img class="registration-poster" src="' + escapeHtml(cover) + '" alt="Cartaz do ' + escapeHtml(name) + '" />' : '') + '</section>';
       if (isRegistrationOpen(item)) openRegistration();
       else $('appMain').innerHTML += '<div class="error-card"><h2>Inscrições encerradas</h2><p>A organização informará quando houver uma nova oportunidade.</p><a class="button primary" href="' + publicUrl(state.slug) + '">Ver página do torneio</a></div>';
     }
@@ -729,9 +832,8 @@
     function infoRow(label,value) { return '<div class="registration-row" style="grid-template-columns:minmax(0,1fr) auto"><div><strong>' + escapeHtml(label) + '</strong></div><span class="mini-chip">' + escapeHtml(value) + '</span></div>'; }
 
     function registrationPricesHtml() {
-      return '<div class="public-price-grid" aria-label="Valores da inscrição">' + REGISTRATION_PRICE_OPTIONS.map((option) =>
-        '<div class="public-price-card"><span>' + escapeHtml(option.label) + '</span><strong>' + escapeHtml(money(option.amount)) + '</strong></div>'
-      ).join('') + '</div>';
+      if (isInternalRegistration()) return '<div class="public-price-grid" aria-label="Valores da inscrição"><div class="public-price-card"><span>1 classe</span><strong>' + escapeHtml(money(internalRegistrationAmount(1))) + '</strong></div><div class="public-price-card"><span>2 classes</span><strong>' + escapeHtml(money(internalRegistrationAmount(2))) + '</strong></div><div class="public-price-card"><span>Cobrança</span><strong>Próxima mensalidade</strong></div></div>';
+      return '<div class="public-price-grid" aria-label="Valores da inscrição"><div class="public-price-card"><span>Valor</span><strong>Definido por classe</strong></div><div class="public-price-card"><span>Perfil</span><strong>Não altera o preço automaticamente</strong></div></div>';
     }
 
     function categoriesHtml() {
@@ -740,7 +842,7 @@
         const rawStoredCount = field(row,'registration_count','quantidade_inscritos');
         const storedCount = rawStoredCount === '' ? NaN : Number(rawStoredCount);
         const count = Number.isFinite(storedCount) && storedCount >= 0 ? storedCount : registrations().filter((reg) => String(field(reg,'category_id','categoria_id')) === id && !['CANCELLED','CANCELADO'].includes(clean(field(reg,'status','registration_status')).toUpperCase())).length;
-        return '<article class="category-card"><div><h3>' + escapeHtml(field(row,'name','nome') || 'Classe') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || field(row,'gender','genero') || 'Categoria do torneio') + '</p></div><div class="category-card-foot"><span class="mini-chip">' + count + ' inscritos</span><span class="mini-chip">' + escapeHtml(field(row,'draw_size','tamanho_chave') || 'Chave auto') + '</span></div></article>';
+        return '<article class="category-card"><div><h3>' + escapeHtml(field(row,'name','nome') || 'Classe') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || field(row,'gender','genero') || 'Categoria do torneio') + '</p></div><div class="category-card-foot"><span class="mini-chip">' + count + ' inscritos</span>' + (isInternalRegistration() ? '' : '<span class="mini-chip">' + escapeHtml(money(categoryRegistrationAmount(row))) + '</span>') + '<span class="mini-chip">' + escapeHtml(field(row,'draw_size','tamanho_chave') || 'Chave auto') + '</span></div></article>';
       }).join('') || '<div class="empty-state" style="grid-column:1/-1">As classes serão publicadas em breve.</div>') + '</div></div>';
     }
 
@@ -860,6 +962,77 @@
         search.addEventListener('input', update); category.addEventListener('change',update);
       }
     }
+
+    function loadTurnstileScript() {
+      if (window.turnstile) return Promise.resolve(window.turnstile);
+      if (turnstileScriptPromise) return turnstileScriptPromise;
+      turnstileScriptPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.async = true;
+        script.defer = true;
+        script.onload = () => window.turnstile ? resolve(window.turnstile) : reject(new Error('Proteção anti-robô indisponível.'));
+        script.onerror = () => reject(new Error('Não foi possível carregar a proteção anti-robô.'));
+        document.head.appendChild(script);
+      }).catch((error) => {
+        turnstileScriptPromise = null;
+        throw error;
+      });
+      return turnstileScriptPromise;
+    }
+
+    function setCaptchaStatus(message, error) {
+      $('registrationCaptchaStatus').textContent = message;
+      $('registrationCaptchaStatus').classList.toggle('error', Boolean(error));
+    }
+
+    function clearRegistrationCaptcha() {
+      state.captchaToken = '';
+      if (state.captchaWidgetId !== null && window.turnstile) {
+        try { window.turnstile.remove(state.captchaWidgetId); } catch (error) {}
+      }
+      state.captchaWidgetId = null;
+      $('registrationCaptchaWidget').replaceChildren();
+    }
+
+    function resetRegistrationCaptcha(message) {
+      state.captchaToken = '';
+      $('submitRegistrationBtn').disabled = true;
+      setCaptchaStatus(message || 'Confirme novamente para continuar.', false);
+      if (state.captchaWidgetId !== null && window.turnstile) {
+        try { window.turnstile.reset(state.captchaWidgetId); } catch (error) {}
+      }
+    }
+
+    async function initializeRegistrationCaptcha() {
+      clearRegistrationCaptcha();
+      $('submitRegistrationBtn').disabled = true;
+      setCaptchaStatus('Carregando proteção anti-robô…', false);
+      if (!state.captchaConfig) {
+        state.captchaConfig = await requestJson(SUPABASE_URL + '/functions/v1/' + currentRegistrationFunction(), {
+          method: 'GET', headers: headers()
+        });
+      }
+      const siteKey = clean(state.captchaConfig && state.captchaConfig.captcha_site_key);
+      if (!siteKey) throw new Error('Proteção anti-robô não configurada.');
+      const turnstile = await loadTurnstileScript();
+      state.captchaWidgetId = turnstile.render('#registrationCaptchaWidget', {
+        sitekey: siteKey,
+        action: 'tournament_registration',
+        callback: (token) => {
+          state.captchaToken = clean(token);
+          setCaptchaStatus('Validação concluída.', false);
+          if (!state.submitting) $('submitRegistrationBtn').disabled = false;
+        },
+        'expired-callback': () => resetRegistrationCaptcha('A validação expirou. Confirme novamente.'),
+        'timeout-callback': () => resetRegistrationCaptcha('A validação expirou. Confirme novamente.'),
+        'error-callback': () => {
+          state.captchaToken = '';
+          $('submitRegistrationBtn').disabled = true;
+          setCaptchaStatus('Não foi possível validar agora. Recarregue a página e tente novamente.', true);
+        }
+      });
+    }
     function showTab(tab) {
       state.activeTab = tab;
       document.querySelectorAll('[data-tab]').forEach((button) => button.classList.toggle('active',button.dataset.tab===tab));
@@ -870,28 +1043,52 @@
     function openRegistration() {
       const item = tournament();
       if (!isRegistrationOpen(item)) return;
+      const internal = isInternalRegistration();
       $('registrationForm').reset();
       $('registrationTitle').textContent = 'Inscrição · ' + (field(item,'name','nome') || 'Torneio');
-      $('registrationSubtitle').textContent = state.courtesyMode ? 'Inscrição isenta para professor ou parceiro.' : 'Escolha seu tipo de inscrição e a classe.';
+      $('registrationSubtitle').textContent = internal ? 'Informe nome e telefone e escolha até duas classes.' : (state.courtesyMode ? 'Inscrição isenta para professor ou parceiro.' : 'Escolha seu perfil e a classe. O valor é definido pela classe selecionada.');
       state.registrationCategories = categories().filter((row) => {
         const status = clean(field(row,'status')).toUpperCase();
         const open = field(row,'registration_open','inscricoes_abertas');
         return !['CLOSED','ENCERRADA','INATIVA'].includes(status) && open !== false && String(open).toLowerCase() !== 'false';
       });
-      $('categoryField').hidden = true;
+      $('categoryField').hidden = !internal;
       $('registrationCategories').innerHTML = '';
-      $('registrationPriceField').hidden = true;
-      $('participantTypeField').hidden = state.courtesyMode;
-      $('paymentMethodField').hidden = state.courtesyMode;
+      $('spatialAddonField').hidden = true;
+      $('spatialAddon').checked = false;
+      $('spatialAddon').value = '';
+      $('registrationPriceField').hidden = !internal;
+      $('participantTypeField').hidden = internal || state.courtesyMode;
+      $('paymentMethodField').hidden = internal || state.courtesyMode;
+      $('cpfField').hidden = internal;
+      $('emailField').hidden = internal;
+      $('genderField').hidden = false;
+      $('availabilityField').hidden = internal;
+      $('cityField').hidden = internal;
+      $('notesField').hidden = internal;
+      $('minorField').hidden = !internal;
+      $('guardianFields').hidden = true;
+      $('athleteCpf').required = !internal && !state.courtesyMode;
+      $('athleteEmail').required = !internal;
+      $('registrationGender').querySelectorAll('input[name="gender"]').forEach((input) => { input.required = true; });
+      document.querySelector('label[for="athleteCpf"]').textContent = state.courtesyMode ? 'CPF (opcional)' : 'CPF';
       const allowedPayments = list(field(item,'allowed_payment_methods','formas_pagamento'));
       const paymentMethods = allowedPayments.length ? allowedPayments : ['PIX','CREDIT_CARD'];
       const paymentLabels = {PIX:'Pix',CREDIT_CARD:'Cartão de crédito',BOLETO:'Boleto',UNDEFINED:'Escolher no checkout'};
       $('paymentMethod').innerHTML = paymentMethods.map((method) => '<option value="' + escapeHtml(clean(method).toUpperCase()) + '">' + escapeHtml(paymentLabels[clean(method).toUpperCase()] || method) + '</option>').join('');
       $('registrationParticipantType').querySelectorAll('input[name="participant_type"]').forEach((input) => {
-        input.required = !state.courtesyMode;
+        input.required = !internal && !state.courtesyMode;
         input.onchange = updateRegistrationPrice;
       });
       $('registrationGender').querySelectorAll('input[name="gender"]').forEach((input) => input.onchange = renderRegistrationCategories);
+      $('spatialAddon').onchange = updateRegistrationPrice;
+      document.querySelectorAll('input[name="is_minor"]').forEach((input) => input.onchange = updateGuardianFields);
+      $('registrationConsentLabel').classList.toggle('billing-consent', internal);
+      $('registrationCaptchaShell').hidden = internal;
+      $('registrationConsentText').textContent = internal
+        ? 'Confirmo a inscrição e autorizo a cobrança de ' + money(internalRegistrationAmount(1)) + ' para uma classe ou ' + money(internalRegistrationAmount(2)) + ' para duas classes na próxima mensalidade do clube.'
+        : 'Confirmo que os dados estão corretos e autorizo seu uso pela organização para realizar o torneio e entrar em contato comigo.';
+      if (internal) renderRegistrationCategories();
       updatePartnerField();
       $('registrationForm').hidden = false;
       $('registrationSuccess').hidden = true;
@@ -901,29 +1098,82 @@
       $('registrationModal').hidden = false;
       $('registrationModal').setAttribute('aria-hidden','false');
       document.body.classList.add('modal-open');
-      $('submitRegistrationBtn').textContent = state.courtesyMode ? 'Confirmar inscrição isenta' : 'Continuar para pagamento';
+      $('submitRegistrationBtn').textContent = internal ? 'Confirmar inscrição' : (state.courtesyMode ? 'Confirmar inscrição isenta' : 'Continuar para pagamento');
+      if (internal) {
+        clearRegistrationCaptcha();
+        $('submitRegistrationBtn').disabled = false;
+      } else {
+        initializeRegistrationCaptcha().catch((error) => {
+          setCaptchaStatus(error && error.message || 'Proteção anti-robô indisponível.', true);
+          $('submitRegistrationBtn').disabled = true;
+        });
+      }
       setTimeout(() => $('athleteName').focus(),50);
     }
     function updateRegistrationPrice() {
-      const type = document.querySelector('input[name="participant_type"]:checked')?.value || '';
-      const option = REGISTRATION_PRICE_OPTIONS.find((item) => item.key === type);
-      $('registrationPriceField').hidden = !option;
-      if (option) $('registrationPrice').textContent = money(option.amount);
+      if (isInternalRegistration()) {
+        const count = selectedCategoryIds().length;
+        $('registrationPriceField').hidden = false;
+        $('registrationPrice').textContent = count ? money(internalRegistrationAmount(count)) : 'Escolha 1 ou 2 classes';
+        $('registrationConsentText').textContent = count
+          ? 'Confirmo a inscrição e autorizo a cobrança de ' + money(internalRegistrationAmount(count)) + ' na próxima mensalidade do clube.'
+          : 'Confirmo a inscrição e autorizo a cobrança do valor correspondente na próxima mensalidade do clube.';
+        return;
+      }
+      const selectedId = selectedCategoryId();
+      const selected = categories().find((item) => categoryId(item) === String(selectedId));
+      $('registrationPriceField').hidden = state.courtesyMode || !selected;
+      if (selected) {
+        const rule = spatialAddonRule(selected);
+        const addonFee = $('spatialAddon').checked && rule ? Number(rule.fee || 0) : 0;
+        $('registrationPrice').textContent = money(categoryRegistrationAmount(selected) + addonFee);
+      }
     }
     function renderRegistrationCategories() {
+      if (isInternalRegistration()) {
+        const gender = document.querySelector('input[name="gender"]:checked')?.value || '';
+        $('categoryField').hidden = !gender;
+        if (!gender) { $('registrationCategories').innerHTML = ''; updateRegistrationPrice(); return; }
+        const filtered = (state.registrationCategories || []).filter((row) => {
+          const categoryGender = clean(field(row,'gender','genero')).toUpperCase();
+          return categoryGender === gender || ['MIXED','OPEN','MISTO','LIVRE',''].includes(categoryGender);
+        });
+        $('registrationCategories').innerHTML = filtered.map((row) => '<label class="category-check"><input type="checkbox" name="category_id" value="' + escapeHtml(categoryId(row)) + '" data-event-type="' + escapeHtml(field(row,'event_type','tipo')) + '" /><span><strong>' + escapeHtml(field(row,'name','nome')) + '</strong><small>' + escapeHtml(field(row,'description','descricao') || '') + '</small></span></label>').join('') || '<div class="empty-state">Nenhuma classe disponível para esta opção.</div>';
+        $('registrationCategories').querySelectorAll('input[name="category_id"]').forEach((input) => input.addEventListener('change',() => {
+          const selected = selectedCategoryIds();
+          if (selected.length > 2) {
+            input.checked = false;
+            showRegistrationError('Cada atleta pode escolher no máximo duas classes.');
+          } else {
+            $('registrationError').hidden = true;
+          }
+          updateRegistrationPrice();
+        }));
+        updateRegistrationPrice();
+        return;
+      }
       const gender = document.querySelector('input[name="gender"]:checked')?.value || '';
       $('categoryField').hidden = !gender;
       if (!gender) { $('registrationCategories').innerHTML = ''; return; }
       const filtered = (state.registrationCategories || []).filter((row) => {
         const categoryGender = clean(field(row,'gender','genero')).toUpperCase();
-        return categoryGender === gender || ['MIXED','OPEN','MISTO','LIVRE',''].includes(categoryGender);
+        return !spatialAddonCodes().has(categoryCode(row)) && (categoryGender === gender || ['MIXED','OPEN','MISTO','LIVRE',''].includes(categoryGender));
       });
       $('registrationCategories').innerHTML = filtered.map((row) => '<label class="category-check"><input type="radio" name="category_id" value="' + escapeHtml(categoryId(row)) + '" data-event-type="' + escapeHtml(field(row,'event_type','tipo')) + '" /><span><strong>' + escapeHtml(field(row,'name','nome')) + '</strong><small>' + escapeHtml(field(row,'description','descricao') || '') + '</small></span></label>').join('') || '<div class="empty-state">Nenhuma classe disponível para esta opção.</div>';
-      $('registrationCategories').querySelectorAll('input[name="category_id"]').forEach((input) => input.addEventListener('change',updatePartnerField));
+      $('registrationCategories').querySelectorAll('input[name="category_id"]').forEach((input) => input.addEventListener('change',() => { updatePartnerField(); updateSpatialAddonField(); updateRegistrationPrice(); }));
+      updateSpatialAddonField();
       updatePartnerField();
     }
-    function closeRegistration() { if (state.submitting || state.registrationOnly) return; $('registrationModal').hidden = true; $('registrationModal').setAttribute('aria-hidden','true'); document.body.classList.remove('modal-open'); }
+    function closeRegistration() { if (state.submitting || state.registrationOnly) return; clearRegistrationCaptcha(); $('registrationModal').hidden = true; $('registrationModal').setAttribute('aria-hidden','true'); document.body.classList.remove('modal-open'); }
     function selectedCategoryId() { return document.querySelector('input[name="category_id"]:checked')?.value || ''; }
+    function selectedCategoryIds() { return Array.from(document.querySelectorAll('input[name="category_id"]:checked')).map((input) => input.value); }
+    function updateGuardianFields() {
+      const minor = document.querySelector('input[name="is_minor"]:checked')?.value === 'true';
+      $('guardianFields').hidden = !minor;
+      $('guardianName').required = minor;
+      $('guardianPhone').required = minor;
+      if (!minor) { $('guardianName').value = ''; $('guardianPhone').value = ''; }
+    }
     function updatePartnerField() {
       const selected = document.querySelector('input[name="category_id"]:checked');
       const doubles = clean(selected && selected.dataset.eventType).toUpperCase() === 'DOUBLES';
@@ -935,14 +1185,20 @@
     async function submitRegistration(event) {
       event.preventDefault();
       if (state.submitting) return;
-      const categoryIdValue = selectedCategoryId();
-      if (!categoryIdValue) return showRegistrationError('Escolha uma classe.');
+      const internal = isInternalRegistration();
+      if (!internal && !state.captchaToken) return showRegistrationError('Confirme que você não é um robô.');
+      const selectedIds = selectedCategoryIds();
+      const categoryIdValue = selectedIds[0] || '';
+      if (!categoryIdValue) return showRegistrationError('Escolha pelo menos uma classe.');
+      if (internal && selectedIds.length > 2) return showRegistrationError('Escolha no máximo duas classes.');
       const form = new FormData($('registrationForm'));
       const availabilityDays = form.getAll('availability_days').map(clean).filter(Boolean);
       const payload = {
         tournament_slug: state.slug,
         category_id: categoryIdValue,
+        additional_category_id: $('spatialAddon').checked ? $('spatialAddon').value : undefined,
         full_name: clean(form.get('name')),
+        cpf: digitsOnly(form.get('cpf')),
         phone: clean(form.get('phone')),
         email: clean(form.get('email')).toLowerCase(),
         participant_type: state.courtesyMode ? 'COURTESY' : clean(form.get('participant_type')),
@@ -953,29 +1209,77 @@
         partner_name: clean(form.get('partner_name')) || null,
         payment_method: clean(form.get('payment_method')) || 'PIX',
         notes: clean(form.get('notes')) || null,
-        terms_accepted: $('registrationConsent').checked
+        terms_accepted: $('registrationConsent').checked,
+        captcha_token: state.captchaToken
       };
+      if (internal) {
+        const internalPayload = {
+          tournament_slug: state.slug,
+          category_ids: selectedIds,
+          full_name: clean(form.get('name')),
+          phone: clean(form.get('phone')),
+          is_minor: clean(form.get('is_minor')) === 'true',
+          guardian_name: clean(form.get('guardian_name')),
+          guardian_phone: clean(form.get('guardian_phone')),
+          gender: clean(form.get('gender')),
+          website: clean(form.get('website')),
+          terms_accepted: $('registrationConsent').checked,
+        };
+        if (internalPayload.full_name.length < 2) return showRegistrationError('Informe o nome completo do atleta.');
+        if (digitsOnly(internalPayload.phone).length < 10) return showRegistrationError('Informe um telefone válido com DDD.');
+        if (!['MALE','FEMALE'].includes(internalPayload.gender)) return showRegistrationError('Escolha o sexo.');
+        if (internalPayload.is_minor && (internalPayload.guardian_name.length < 2 || digitsOnly(internalPayload.guardian_phone).length < 10)) return showRegistrationError('Informe o nome e o telefone do responsável.');
+        if (!internalPayload.terms_accepted) return showRegistrationError('Confirme a autorização de cobrança na próxima mensalidade.');
+        state.lastRegistrationPayload = internalPayload;
+        return submitRegistrationPayload(internalPayload, currentRegistrationFunction(), 'Confirmar inscrição');
+      }
+      if ((!state.courtesyMode || payload.cpf) && !isValidCpf(payload.cpf)) return showRegistrationError('Informe um CPF válido.');
       if (!['CINCATE','ILHA_STUDENT','NON_MEMBER','COURTESY'].includes(payload.participant_type)) return showRegistrationError('Escolha o tipo de inscrição.');
       if (!['MALE','FEMALE'].includes(payload.gender)) return showRegistrationError('Escolha o sexo.');
       if (!payload.availability_days.length) return showRegistrationError('Marque pelo menos um dia em que você pode jogar.');
       const trackingKey = ['ilha_torneio',state.slug,payload.category_id,payload.phone.replace(/\D/g,'')].join(':');
       try { payload.tracking_token = localStorage.getItem(trackingKey) || undefined; } catch (error) {}
       state.lastRegistrationPayload = payload;
+      return submitRegistrationPayload(payload, REGISTRATION_FUNCTION, state.courtesyMode ? 'Confirmar inscrição isenta' : 'Continuar para pagamento', trackingKey);
+    }
+
+    async function submitRegistrationPayload(payload, functionName, idleLabel, trackingKey) {
       state.submitting = true;
       $('submitRegistrationBtn').disabled = true;
       $('submitRegistrationBtn').textContent = 'Criando inscrição…';
       $('registrationError').hidden = true;
+      let succeeded = false;
       try {
-        const result = await requestJson(SUPABASE_URL + '/functions/v1/' + REGISTRATION_FUNCTION, {method:'POST',headers:headers(),body:JSON.stringify(payload)});
-        if (result && result.tracking_token) {
+        const result = await requestJson(SUPABASE_URL + '/functions/v1/' + functionName, {method:'POST',headers:headers(),body:JSON.stringify(payload)});
+        if (trackingKey && result && result.tracking_token) {
           try { localStorage.setItem(trackingKey,result.tracking_token); } catch (error) {}
         }
         renderRegistrationSuccess(result || {});
-      } catch (error) { showRegistrationError(error && error.message || 'Não foi possível realizar a inscrição.'); }
-      finally { state.submitting = false; $('submitRegistrationBtn').disabled = false; $('submitRegistrationBtn').textContent = state.courtesyMode ? 'Confirmar inscrição isenta' : 'Continuar para pagamento'; }
+        succeeded = true;
+        clearRegistrationCaptcha();
+      } catch (error) {
+        showRegistrationError(error && error.message || 'Não foi possível realizar a inscrição.');
+        if (!isInternalRegistration()) resetRegistrationCaptcha('Confirme novamente para tentar a inscrição.');
+      }
+      finally {
+        state.submitting = false;
+        $('submitRegistrationBtn').disabled = succeeded || (!isInternalRegistration() && !state.captchaToken);
+        $('submitRegistrationBtn').textContent = idleLabel;
+      }
     }
     function showRegistrationError(message) { $('registrationError').textContent = message; $('registrationError').hidden = false; $('registrationError').scrollIntoView({behavior:'smooth',block:'nearest'}); }
     function renderRegistrationSuccess(result) {
+      if (isInternalRegistration()) {
+        const order = result.order || {};
+        const selectedNames = list(result.registrations).map((row) => categoryName(field(row,'category_id'))).filter(Boolean);
+        const duplicateCopy = result.duplicate === true ? 'Esta inscrição já estava registrada e não foi duplicada.' : 'Sua inscrição foi registrada com sucesso.';
+        $('registrationForm').hidden = true;
+        $('registrationFoot').hidden = true;
+        $('registrationSuccess').hidden = false;
+        $('registrationSuccess').innerHTML = '<div class="success-icon">✓</div><div><h3>Inscrição confirmada!</h3><p>' + escapeHtml(duplicateCopy) + '</p></div><div class="payment-box"><strong>' + escapeHtml(selectedNames.join(' · ') || 'Classe confirmada') + '</strong><span>Valor autorizado: ' + escapeHtml(money(field(order,'amount'))) + '</span><span>A cobrança será incluída na próxima mensalidade do clube.</span><small>Código: ' + escapeHtml(field(order,'public_code') || 'confirmado') + '</small></div><button class="button primary full" type="button" id="finishRegistrationBtn">Ver página do torneio</button>';
+        $('finishRegistrationBtn').addEventListener('click',() => { location.href = publicUrl(state.slug); });
+        return;
+      }
       const payment = result.payment || {};
       const registrationStatus = clean(field(result.registration,'status','registration_status')).toUpperCase();
       const invoiceUrl = field(payment,'invoice_url','payment_url','checkout_url');
@@ -995,11 +1299,16 @@
           : 'Conclua o pagamento abaixo para confirmar sua vaga.'));
       const statusLabels = { PENDING:'Pendente', PENDENTE:'Pendente', PAID:'Pago', PAGO:'Pago', CONFIRMED:'Confirmado', CONFIRMADO:'Confirmado', NOT_REQUIRED:'Sem pagamento', WAITLIST:'Lista de espera' };
       const statusLabel = waitlist ? 'Lista de espera' : (statusLabels[normalizedStatus] || status);
+      const selectedClassNames = [
+        categoryName(field(result.registration,'category_id')),
+        categoryName(field(result.additional_registration,'category_id'))
+      ].filter(Boolean);
       $('registrationForm').hidden = true;
       $('registrationFoot').hidden = true;
       $('registrationSuccess').hidden = false;
       $('registrationSuccess').innerHTML = '<div class="success-icon">✓</div><div><h3>' + escapeHtml(successTitle) + '</h3><p>' + escapeHtml(successCopy) + '</p></div>' +
         '<div class="payment-box"><strong>Status: ' + escapeHtml(statusLabel) + '</strong>' +
+        (selectedClassNames.length ? '<span>Classes: ' + escapeHtml(selectedClassNames.join(' + ')) + '</span>' : '') +
         (invoiceUrl ? '<a class="button lime full" href="' + escapeHtml(safeHref(invoiceUrl)) + '" target="_blank" rel="noopener">Pagar inscrição</a>' : '') +
         (pixImage ? '<img class="payment-qr" src="data:image/png;base64,' + escapeHtml(pixImage) + '" alt="QR Code Pix" />' : '') +
         (pix ? '<div class="pix-copy" id="pixPayload">' + escapeHtml(pix) + '</div><button class="button full" type="button" id="copyPixBtn">Copiar Pix</button>' : '') + '</div>' +
@@ -1017,12 +1326,13 @@
 
     $('closeRegistrationBtn').addEventListener('click',closeRegistration);
     $('cancelRegistrationBtn').addEventListener('click',closeRegistration);
+    $('athleteCpf').addEventListener('input',(event) => { event.currentTarget.value = formatCpf(event.currentTarget.value); });
     $('registrationModal').addEventListener('click',(event) => { if (event.target === $('registrationModal')) closeRegistration(); });
     $('registrationForm').addEventListener('submit',submitRegistration);
     document.addEventListener('keydown',(event) => { if (event.key === 'Escape' && !$('registrationModal').hidden) closeRegistration(); });
 
     loadPage();
   </script>
-  <script src="/auto-update.js?v=206"></script>
+  <script src="/auto-update.js?v=210"></script>
 </body>
 </html>

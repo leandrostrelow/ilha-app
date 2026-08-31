@@ -1,9 +1,18 @@
-const CACHE_NAME = 'ilha-play-v208-notification-fixes';
-const ASSETS = [
-  './',
-  './index.html',
-  './auto-update.js',
-  './app-version.json',
+const CACHE_PREFIX = 'ilha-play-v';
+const CACHE_NAME = 'ilha-play-v234-announcement-redelivery';
+const CORE_ASSETS = [
+  '/',
+  '/index.html',
+  '/auto-update.js',
+  '/app-version.json',
+  '/manifest.json',
+  '/icon.png',
+  '/logo.png',
+  '/assets/branding/ilha-tenis-logo-light.png',
+  '/assets/audio/notification-tennis-serve.mp3',
+  '/assets/vendor/qrcode-generator.js'
+];
+const OPTIONAL_ASSETS = [
   './adm/',
   './adm/index.html',
   './adm-manifest.json',
@@ -12,19 +21,21 @@ const ASSETS = [
   './assets/branding/ilha-bar-logo-dark.png',
   './assets/branding/ilha-bar-logo-light.png',
   './assets/ilha-bar-cardapio-qr.png',
-  './assets/audio/notification-tennis-serve.mp3',
   './admbar-manifest.json',
   './icons/ilha-bar-180.png',
   './icons/ilha-bar-192.png',
   './icons/ilha-bar-512.png',
   './icons/ilha-bar-maskable-512.png',
+  './icons/ilha-bar-app-180.png',
+  './icons/ilha-bar-app-192.png',
+  './icons/ilha-bar-app-512.png',
+  './icons/ilha-bar-app-maskable-512.png',
   './bar/',
   './bar/index.html',
   './bar/manifest.json',
+  './torneios/',
+  './torneios/index.html',
   './publico.html',
-  './manifest.json',
-  './icon.png',
-  './logo.png',
   './bannerviafor.jpg',
   './cincate.png',
   './camisapreta.png',
@@ -40,17 +51,22 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', event => {
-  self.skipWaiting();
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(CORE_ASSETS).then(() => Promise.all(
+        OPTIONAL_ASSETS.map(asset => cache.add(asset).catch(() => null))
+      )))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
+      .then(keys => Promise.all(keys.filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME).map(key => caches.delete(key))))
       .then(() => self.clients.claim())
       .then(() => self.clients.matchAll({ type: 'window', includeUncontrolled: true }))
-      .then(clients => clients.forEach(client => client.postMessage({ type: 'APP_UPDATED', cache: CACHE_NAME })))
+      .then(clients => clients.forEach(client => client.postMessage({ type: 'APP_UPDATED', version: CACHE_NAME, cache: CACHE_NAME })))
   );
 });
 
@@ -83,26 +99,41 @@ self.addEventListener('push', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const targetUrl = new URL(event.notification.data && event.notification.data.url || '/', self.location.origin).href;
+  let targetUrl = self.location.origin + '/';
+  try {
+    const requestedUrl = new URL(event.notification.data && event.notification.data.url || '/', self.location.origin);
+    if (requestedUrl.origin === self.location.origin) targetUrl = requestedUrl.href;
+  } catch (error) {}
   event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
     const existing = clients.find(client => client.url.startsWith(self.location.origin));
     if (existing) {
-      existing.navigate(targetUrl);
-      return existing.focus();
+      return existing.navigate(targetUrl)
+        .then(client => (client || existing).focus())
+        .catch(() => self.clients.openWindow(targetUrl));
     }
     return self.clients.openWindow(targetUrl);
   }));
 });
 
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
+  if (event.request.method !== 'GET' || event.request.headers.has('range')) return;
   const url = new URL(event.request.url);
-  const isUpdateResource = url.origin === self.location.origin && (
-    url.pathname === '/auto-update.js' ||
-    url.pathname === '/app-version.json'
-  );
-  if (isUpdateResource) {
+  const isVersionResource = url.origin === self.location.origin && url.pathname === '/app-version.json';
+  if (isVersionResource) {
     event.respondWith(fetch(event.request, { cache: 'no-store' }));
+    return;
+  }
+  const isUpdaterResource = url.origin === self.location.origin && url.pathname === '/auto-update.js';
+  if (isUpdaterResource) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then(response => {
+          if (!response.ok) return response;
+          const copy = response.clone();
+          return caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)).then(() => response);
+        })
+        .catch(() => caches.match(event.request).then(cached => cached || caches.match('/auto-update.js')))
+    );
     return;
   }
   const isBarProductImage = url.origin === self.location.origin && url.pathname.startsWith('/assets/bar-products/');
@@ -110,8 +141,9 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       caches.open(CACHE_NAME).then(cache => cache.match(event.request).then(cached => {
         const network = fetch(event.request).then(response => {
-          if (response.ok) cache.put(event.request, response.clone());
-          return response;
+          if (!response.ok) return response;
+          const copy = response.clone();
+          return cache.put(event.request, copy).then(() => response);
         }).catch(error => {
           if (cached) return cached;
           throw error;
@@ -131,9 +163,10 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(event.request)
         .then(response => {
+          if (response.status >= 500) throw new Error('App shell unavailable');
+          if (!response.ok) return response;
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-          return response;
+          return caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)).then(() => response);
         })
         .catch(() => caches.match(event.request).then(cached => {
           if (cached) return cached;
@@ -143,7 +176,13 @@ self.addEventListener('fetch', event => {
           if (url.pathname === '/menu' || url.pathname.startsWith('/menu/')) {
             return caches.match('./menu/index.html');
           }
-          return caches.match('./');
+          if (url.pathname === '/bar' || url.pathname.startsWith('/bar/')) {
+            return caches.match('./bar/index.html');
+          }
+          if (url.pathname === '/torneios' || url.pathname.startsWith('/torneios/') || url.pathname === '/inscricoes' || url.pathname.startsWith('/inscricoes/')) {
+            return caches.match('./torneios/index.html');
+          }
+          return caches.match('/');
         }))
     );
     return;

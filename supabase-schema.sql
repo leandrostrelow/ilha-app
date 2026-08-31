@@ -97,8 +97,91 @@ alter table public.app_clients add column if not exists plan_amount numeric(10, 
 alter table public.app_clients add column if not exists weekly_lessons integer not null default 0;
 alter table public.app_clients add column if not exists preferred_days jsonb not null default '[]'::jsonb;
 alter table public.app_clients add column if not exists due_day integer;
+alter table public.app_clients add column if not exists declared_plan_code text;
+alter table public.app_clients add column if not exists declared_plan_name text;
+alter table public.app_clients add column if not exists registration_completed_at timestamptz;
+alter table public.app_clients add column if not exists email_verified_at timestamptz;
+alter table public.app_clients add column if not exists birth_date date;
+alter table public.app_clients add column if not exists declared_lesson_slots jsonb not null default '[]'::jsonb;
 alter table public.app_clients drop constraint if exists app_clients_client_type_check;
 alter table public.app_clients add constraint app_clients_client_type_check check (client_type in ('cliente', 'aluno', 'mensalista', 'responsavel', 'socio'));
+
+create or replace function public.is_valid_cpf(p_cpf text)
+returns boolean
+language plpgsql
+immutable
+set search_path = ''
+as $$
+declare
+  digits text := pg_catalog.regexp_replace(coalesce(p_cpf, ''), '\D', '', 'g');
+  total integer := 0;
+  first_digit integer;
+  second_digit integer;
+  digit_position integer;
+begin
+  if pg_catalog.length(digits) <> 11 or digits ~ '^(\d)\1{10}$' then
+    return false;
+  end if;
+
+  for digit_position in 1..9 loop
+    total := total + pg_catalog.substr(digits, digit_position, 1)::integer * (11 - digit_position);
+  end loop;
+  first_digit := (total * 10) % 11;
+  if first_digit = 10 then first_digit := 0; end if;
+  if first_digit <> pg_catalog.substr(digits, 10, 1)::integer then return false; end if;
+
+  total := 0;
+  for digit_position in 1..10 loop
+    total := total + pg_catalog.substr(digits, digit_position, 1)::integer * (12 - digit_position);
+  end loop;
+  second_digit := (total * 10) % 11;
+  if second_digit = 10 then second_digit := 0; end if;
+
+  return second_digit = pg_catalog.substr(digits, 11, 1)::integer;
+end;
+$$;
+
+alter table public.app_clients drop constraint if exists app_clients_cpf_valid_check;
+alter table public.app_clients
+  add constraint app_clients_cpf_valid_check
+  check (cpf is null or public.is_valid_cpf(cpf)) not valid;
+
+alter table public.app_clients drop constraint if exists app_clients_birth_date_check;
+alter table public.app_clients
+  add constraint app_clients_birth_date_check
+  check (birth_date is null or birth_date >= date '1900-01-01') not valid;
+
+alter table public.app_clients drop constraint if exists app_clients_declared_lesson_slots_check;
+alter table public.app_clients
+  add constraint app_clients_declared_lesson_slots_check
+  check (jsonb_typeof(declared_lesson_slots) = 'array') not valid;
+
+create table if not exists public.app_push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth_key text not null,
+  user_agent text,
+  enabled boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists app_push_subscriptions_user_idx
+  on public.app_push_subscriptions(user_id, enabled);
+
+alter table public.app_push_subscriptions enable row level security;
+grant select, insert, update, delete on table public.app_push_subscriptions to authenticated, service_role;
+revoke all on table public.app_push_subscriptions from anon;
+
+drop policy if exists "clients manage own push subscriptions" on public.app_push_subscriptions;
+create policy "clients manage own push subscriptions"
+  on public.app_push_subscriptions
+  for all
+  to authenticated
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()));
 
 create table if not exists public.app_plan_requests (
   id uuid primary key default gen_random_uuid(),
@@ -116,9 +199,27 @@ create table if not exists public.app_plan_requests (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.app_store_products (
+  id uuid primary key default gen_random_uuid(),
+  code text not null unique,
+  name text not null,
+  description text,
+  sale_price numeric(10, 2) not null default 0 check (sale_price >= 0),
+  stock_quantity integer not null default 0 check (stock_quantity >= 0),
+  track_stock boolean not null default true,
+  image_url text,
+  active boolean not null default true,
+  display_order integer not null default 1000,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint app_store_products_code_format check (code ~ '^[a-z0-9][a-z0-9_-]{1,63}$'),
+  constraint app_store_products_name_length check (char_length(trim(name)) between 2 and 120)
+);
+
 create table if not exists public.app_store_requests (
   id uuid primary key default gen_random_uuid(),
   client_id uuid not null references public.app_clients(id) on delete cascade,
+  product_id uuid references public.app_store_products(id) on delete set null,
   product_code text not null,
   product_name text not null,
   quantity integer not null default 1 check (quantity > 0),
@@ -462,6 +563,8 @@ create index if not exists app_plan_requests_status_idx on public.app_plan_reque
 create index if not exists app_plans_active_idx on public.app_plans(active, type);
 create index if not exists app_store_requests_client_idx on public.app_store_requests(client_id, created_at desc);
 create index if not exists app_store_requests_status_idx on public.app_store_requests(status, created_at desc);
+create index if not exists app_store_requests_product_idx on public.app_store_requests(product_id, created_at desc);
+create index if not exists app_store_products_catalog_idx on public.app_store_products(active, display_order, name);
 create index if not exists app_announcements_active_idx on public.app_announcements(active, published_at desc);
 create index if not exists app_court_bookings_day_idx on public.app_court_bookings(booking_date, court_name, starts_at);
 create index if not exists app_payment_invoices_client_idx on public.app_payment_invoices(client_id, invoice_month desc);
@@ -2880,6 +2983,13 @@ begin
     raise exception 'Nao foi possivel abrir a comanda.';
   end if;
 
+  update public.bar_orders
+     set customer_name = coalesce(nullif(trim(customer_name), ''), customer_value),
+         customer_phone = phone_value,
+         updated_at = now()
+   where id = order_row.id
+   returning * into order_row;
+
   return jsonb_build_object(
     'command_number', order_row.command_number,
     'status', order_row.status,
@@ -3554,6 +3664,7 @@ alter table public.bar_user_tasks enable row level security;
 alter table public.app_plans enable row level security;
 alter table public.app_clients enable row level security;
 alter table public.app_plan_requests enable row level security;
+alter table public.app_store_products enable row level security;
 alter table public.app_store_requests enable row level security;
 alter table public.app_announcements enable row level security;
 alter table public.app_court_bookings enable row level security;
@@ -3593,6 +3704,7 @@ grant select, insert, update, delete on
   public.app_plans,
   public.app_clients,
   public.app_plan_requests,
+  public.app_store_products,
   public.app_store_requests,
   public.app_announcements,
   public.app_court_bookings,
@@ -3866,6 +3978,32 @@ on public.app_plan_requests for all
 to authenticated
 using (public.is_club_office())
 with check (public.is_club_office());
+
+drop policy if exists "store products read active or staff" on public.app_store_products;
+drop policy if exists "store products staff insert" on public.app_store_products;
+drop policy if exists "store products staff update" on public.app_store_products;
+drop policy if exists "store products staff delete" on public.app_store_products;
+
+create policy "store products read active or staff"
+on public.app_store_products for select
+to authenticated
+using (active is true or (select public.is_club_office()));
+
+create policy "store products staff insert"
+on public.app_store_products for insert
+to authenticated
+with check ((select public.is_club_office()));
+
+create policy "store products staff update"
+on public.app_store_products for update
+to authenticated
+using ((select public.is_club_office()))
+with check ((select public.is_club_office()));
+
+create policy "store products staff delete"
+on public.app_store_products for delete
+to authenticated
+using ((select public.is_club_office()));
 
 create policy "store requests read own or staff"
 on public.app_store_requests for select
@@ -4501,3 +4639,145 @@ using (
 );
 
 grant select on public.students, public.lesson_enrollments, public.lesson_slots to authenticated;
+
+insert into public.app_store_products (
+  code, name, description, sale_price, stock_quantity, track_stock, image_url, active, display_order
+)
+values
+  ('camisa_preta', 'Camisa preta Ilha', 'Uniforme oficial do clube.', 0, 0, false, '/camisapreta.png', true, 10),
+  ('camisa_roxa', 'Camisa roxa Ilha', 'Uniforme oficial do clube.', 0, 0, false, '/camisaroxa.png', true, 20),
+  ('camisa_verde', 'Camisa verde Ilha', 'Uniforme oficial do clube.', 0, 0, false, '/camisaverde.png', true, 30),
+  ('bolinhas', 'Bolinhas de tênis', 'Compra de bolas na secretaria.', 0, 0, false, '/bolas.png', true, 40),
+  ('encordoamento', 'Encordoamento', 'Serviço de corda para raquete.', 0, 0, false, '/cordas.png', true, 50)
+on conflict (code) do nothing;
+
+create or replace function public.touch_app_store_product_updated_at()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+revoke all on function public.touch_app_store_product_updated_at() from public, anon, authenticated;
+
+drop trigger if exists touch_app_store_product_updated_at_trigger on public.app_store_products;
+create trigger touch_app_store_product_updated_at_trigger
+before update on public.app_store_products
+for each row execute function public.touch_app_store_product_updated_at();
+
+create or replace function public.validate_app_store_request_product()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  product_row public.app_store_products%rowtype;
+begin
+  select product.* into product_row
+    from public.app_store_products as product
+   where (product.id = new.product_id or (new.product_id is null and product.code = new.product_code))
+     and product.active is true
+     and (product.track_stock is false or product.stock_quantity >= new.quantity)
+   order by (product.id = new.product_id) desc
+   limit 1;
+  if product_row.id is null then
+    raise exception 'Este produto está indisponível no momento.' using errcode = '23514';
+  end if;
+  new.product_id := product_row.id;
+  new.product_code := product_row.code;
+  new.product_name := product_row.name;
+  new.amount := product_row.sale_price * new.quantity;
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+revoke all on function public.validate_app_store_request_product() from public, anon, authenticated;
+
+drop trigger if exists validate_app_store_request_product_trigger on public.app_store_requests;
+create trigger validate_app_store_request_product_trigger
+before insert or update of product_id, product_code, product_name, amount, quantity
+on public.app_store_requests
+for each row execute function public.validate_app_store_request_product();
+
+create or replace function public.sync_app_store_request_inventory()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  target_id uuid;
+  tracked_product boolean := false;
+begin
+  if tg_op = 'UPDATE'
+     and old.status is distinct from 'ENTREGUE'
+     and new.status = 'ENTREGUE' then
+    select product.id, product.track_stock
+      into target_id, tracked_product
+      from public.app_store_products as product
+     where product.id = new.product_id or (new.product_id is null and product.code = new.product_code)
+     order by (product.id = new.product_id) desc
+     limit 1;
+
+    if target_id is not null and tracked_product then
+      update public.app_store_products
+         set stock_quantity = stock_quantity - new.quantity
+       where id = target_id
+         and stock_quantity >= new.quantity;
+      if not found then
+        raise exception 'Estoque insuficiente para concluir a entrega.' using errcode = '23514';
+      end if;
+    end if;
+  elsif (tg_op = 'UPDATE' and old.status = 'ENTREGUE' and new.status is distinct from 'ENTREGUE')
+     or (tg_op = 'DELETE' and old.status = 'ENTREGUE') then
+    select product.id, product.track_stock
+      into target_id, tracked_product
+      from public.app_store_products as product
+     where product.id = old.product_id or (old.product_id is null and product.code = old.product_code)
+     order by (product.id = old.product_id) desc
+     limit 1;
+    if target_id is not null and tracked_product then
+      update public.app_store_products
+         set stock_quantity = stock_quantity + old.quantity
+       where id = target_id;
+    end if;
+  end if;
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end;
+$$;
+
+revoke all on function public.sync_app_store_request_inventory() from public, anon, authenticated;
+
+drop trigger if exists sync_app_store_request_inventory_trigger on public.app_store_requests;
+create trigger sync_app_store_request_inventory_trigger
+after update of status or delete on public.app_store_requests
+for each row execute function public.sync_app_store_request_inventory();
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('ilha-store-products', 'ilha-store-products', true, 8388608, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update
+set public = excluded.public,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "ilha store product images insert" on storage.objects;
+drop policy if exists "ilha store product images update" on storage.objects;
+drop policy if exists "ilha store product images delete" on storage.objects;
+
+create policy "ilha store product images insert"
+on storage.objects for insert to authenticated
+with check (bucket_id = 'ilha-store-products' and (select public.is_club_office()));
+
+create policy "ilha store product images update"
+on storage.objects for update to authenticated
+using (bucket_id = 'ilha-store-products' and (select public.is_club_office()))
+with check (bucket_id = 'ilha-store-products' and (select public.is_club_office()));
+
+create policy "ilha store product images delete"
+on storage.objects for delete to authenticated
+using (bucket_id = 'ilha-store-products' and (select public.is_club_office()));

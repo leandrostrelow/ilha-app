@@ -3,13 +3,11 @@ begin;
 create extension if not exists pg_net;
 create extension if not exists pg_cron;
 
-select vault.create_secret(
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrcXRncHRlYmtnZndndXlreGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMzEyNjAsImV4cCI6MjA5NzcwNzI2MH0.S-dopp-fbBgq8_YclyiAheOdK-QhXt92RYLu8JKmKCg',
-  'court_dispatch_anon_key'
-)
-where not exists (
-  select 1 from vault.decrypted_secrets where name = 'court_dispatch_anon_key'
-);
+-- The dispatcher target belongs to the deployment environment, not to schema
+-- history. Provision `court_dispatch_url` and
+-- `court_dispatch_publishable_key` in Vault during environment bootstrap. The
+-- invocation function below deliberately does nothing until both values pass
+-- strict validation, so a local reset can never call another project.
 
 alter table public.app_client_notifications
   add column if not exists dedupe_key text;
@@ -53,32 +51,70 @@ alter table public.app_notification_dispatch_config enable row level security;
 revoke all on table public.app_notification_dispatch_config from public, anon, authenticated;
 grant all on table public.app_notification_dispatch_config to service_role;
 
+create or replace function public.invoke_app_client_notification_dispatch()
+returns bigint
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_dispatch_url text;
+  v_publishable_key text;
+  v_dispatch_secret text;
+begin
+  select secret.decrypted_secret
+    into v_dispatch_url
+  from vault.decrypted_secrets secret
+  where secret.name = 'court_dispatch_url'
+  limit 1;
+
+  select secret.decrypted_secret
+    into v_publishable_key
+  from vault.decrypted_secrets secret
+  where secret.name = 'court_dispatch_publishable_key'
+  limit 1;
+
+  select config.dispatch_secret
+    into v_dispatch_secret
+  from public.app_notification_dispatch_config config
+  where config.id = true;
+
+  if v_dispatch_url is null
+     or v_dispatch_url !~ '^https://[A-Za-z0-9][A-Za-z0-9.-]*(:[0-9]{1,5})?/functions/v1/client-notification-dispatch$'
+     or v_publishable_key is null
+     or v_publishable_key !~ '^sb_publishable_[A-Za-z0-9_-]{20,}$'
+     or length(coalesce(v_dispatch_secret, '')) < 32 then
+    return null;
+  end if;
+
+  return net.http_post(
+    url := v_dispatch_url,
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'apikey', v_publishable_key,
+      'x-dispatch-token', v_dispatch_secret
+    ),
+    body := '{}'::jsonb,
+    timeout_milliseconds := 5000
+  );
+end;
+$$;
+
+revoke all on function public.invoke_app_client_notification_dispatch() from public, anon, authenticated;
+grant execute on function public.invoke_app_client_notification_dispatch() to service_role;
+
 create or replace function public.queue_app_client_notification_push()
 returns trigger
 language plpgsql
 security definer
-set search_path = public, net
+set search_path = ''
 as $$
 begin
   insert into public.app_client_notification_dispatches (notification_id)
   values (new.id)
   on conflict (notification_id) do nothing;
 
-  perform net.http_post(
-    url := 'https://lkqtgptebkgfwguykxhv.supabase.co/functions/v1/client-notification-dispatch',
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'apikey', (select decrypted_secret from vault.decrypted_secrets where name = 'court_dispatch_anon_key'),
-      'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'court_dispatch_anon_key'),
-      'x-dispatch-token', (
-        select config.dispatch_secret
-        from public.app_notification_dispatch_config config
-        where config.id = true
-      )
-    ),
-    body := '{}'::jsonb,
-    timeout_milliseconds := 5000
-  );
+  perform public.invoke_app_client_notification_dispatch();
   return new;
 end;
 $$;
@@ -320,21 +356,7 @@ select cron.schedule(
   '* * * * *',
   $cron$
     select public.enqueue_due_court_reminders();
-    select net.http_post(
-      url := 'https://lkqtgptebkgfwguykxhv.supabase.co/functions/v1/client-notification-dispatch',
-      headers := jsonb_build_object(
-        'Content-Type', 'application/json',
-        'apikey', (select decrypted_secret from vault.decrypted_secrets where name = 'court_dispatch_anon_key'),
-        'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'court_dispatch_anon_key'),
-        'x-dispatch-token', (
-          select config.dispatch_secret
-          from public.app_notification_dispatch_config config
-          where config.id = true
-        )
-      ),
-      body := '{}'::jsonb,
-      timeout_milliseconds := 5000
-    );
+    select public.invoke_app_client_notification_dispatch();
   $cron$
 );
 

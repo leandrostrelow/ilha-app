@@ -243,6 +243,10 @@
       cursor: pointer;
     }
 
+    .menu-view-btn[hidden] {
+      display: none !important;
+    }
+
     .menu-view-btn:hover,
     .menu-view-btn.active {
       background: var(--lime);
@@ -864,6 +868,7 @@
     html[data-menu-display="mobile"] .menu-clock,
     html[data-menu-display="mobile"] .menu-view-btn[data-menu-layout],
     html[data-menu-display="mobile"] #menuFullscreenBtn,
+    html[data-menu-display="mobile"] #menuEventArtBtn,
     html[data-menu-display="mobile"] .menu-control-clock {
       display: none;
     }
@@ -1035,11 +1040,12 @@
       backdrop-filter: none;
     }
 
-    body.is-menu-fullscreen .menu-view-controls > :not(#menuFullscreenBtn) {
+    body.is-menu-fullscreen .menu-view-controls > :not(#menuFullscreenBtn):not(#menuEventArtBtn) {
       display: none !important;
     }
 
-    body.is-menu-fullscreen #menuFullscreenBtn {
+    body.is-menu-fullscreen #menuFullscreenBtn,
+    body.is-menu-fullscreen #menuEventArtBtn {
       width: 34px;
       min-width: 34px;
       min-height: 34px;
@@ -1049,18 +1055,79 @@
       color: #ffffff;
     }
 
-    body.is-menu-fullscreen #menuFullscreenBtn:hover {
+    body.is-menu-fullscreen #menuFullscreenBtn:hover,
+    body.is-menu-fullscreen #menuEventArtBtn:hover {
       border-color: var(--lime);
       background: var(--lime);
       color: #29420b;
     }
 
-    body.is-menu-fullscreen #menuFullscreenBtn .menu-view-label {
+    body.is-menu-fullscreen #menuFullscreenBtn .menu-view-label,
+    body.is-menu-fullscreen #menuEventArtBtn .menu-view-label {
       display: none;
     }
 
-    body.is-menu-fullscreen #menuFullscreenBtn .menu-view-icon {
+    body.is-menu-fullscreen #menuFullscreenBtn .menu-view-icon,
+    body.is-menu-fullscreen #menuEventArtBtn .menu-view-icon {
       font-size: 16px;
+    }
+
+    .menu-event-art {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: #000000;
+    }
+
+    .menu-event-art[hidden] {
+      display: none;
+    }
+
+    .menu-event-art img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      display: block;
+      object-fit: contain;
+      background: #000000;
+    }
+
+    @media (min-width: 720px) and (orientation: landscape) {
+      body[data-menu-layout="vertical"] .menu-event-art img {
+        inset: auto;
+        top: 50%;
+        left: 50%;
+        width: 100vh;
+        height: 100vw;
+        transform: translate(-50%, -50%) rotate(-90deg);
+      }
+    }
+
+    .menu-event-art-close {
+      position: fixed;
+      top: max(14px, env(safe-area-inset-top));
+      right: max(14px, env(safe-area-inset-right));
+      z-index: 1001;
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, .28);
+      border-radius: 999px;
+      background: rgba(5, 12, 20, .68);
+      color: #ffffff;
+      font-size: 25px;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+      backdrop-filter: blur(10px);
     }
 
     body.is-menu-fullscreen .menu-clock {
@@ -1116,6 +1183,7 @@
           <button class="menu-view-btn" type="button" data-menu-layout="horizontal" aria-label="Visualização horizontal" title="Horizontal" aria-pressed="false"><span class="menu-view-icon" aria-hidden="true">▭</span><span class="menu-view-label">Horizontal</span></button>
           <button class="menu-view-btn" type="button" data-menu-theme="light" aria-label="Tema claro" title="Tema claro" aria-pressed="false"><span class="menu-view-icon" aria-hidden="true">☀</span><span class="menu-view-label">Claro</span></button>
           <button class="menu-view-btn" type="button" data-menu-theme="dark" aria-label="Tema escuro" title="Tema escuro" aria-pressed="false"><span class="menu-view-icon" aria-hidden="true">◐</span><span class="menu-view-label">Escuro</span></button>
+          <button class="menu-view-btn" type="button" id="menuEventArtBtn" aria-label="Abrir arte do evento" title="Arte do evento" hidden><span class="menu-view-icon" aria-hidden="true">▣</span><span class="menu-view-label">Arte</span></button>
           <button class="menu-view-btn" type="button" id="menuFullscreenBtn" aria-label="Ativar tela cheia" title="Tela cheia" aria-pressed="false"><span class="menu-view-icon" aria-hidden="true">⛶</span><span class="menu-view-label" id="menuFullscreenLabel">Tela cheia</span></button>
           <span class="menu-control-clock" aria-label="Hora atual"><span class="menu-control-clock-icon" aria-hidden="true">◷</span><strong id="menuControlClock">--:--</strong></span>
         </div>
@@ -1133,6 +1201,12 @@
       <span class="menu-live">Cardápio atualizado automaticamente</span>
       <span id="menuUpdatedAt">Conectando...</span>
     </footer>
+
+  </div>
+
+  <div class="menu-event-art" id="menuEventArt" role="dialog" aria-modal="true" aria-label="Arte vertical do evento" hidden>
+    <img id="menuEventArtImage" alt="Arte do evento no Ilha Bar" />
+    <button class="menu-event-art-close" type="button" id="menuEventArtClose" aria-label="Fechar arte do evento" title="Voltar ao cardápio">×</button>
   </div>
 
   <script>
@@ -1144,7 +1218,9 @@
       const MOBILE_MENU_VIEW = new URLSearchParams(window.location.search).get('view') === 'mobile' || /^\/cardapio\/?$/.test(window.location.pathname);
       const MENU_VISIBILITY_FIELD = MOBILE_MENU_VIEW ? 'menu_visible' : 'menu_tv_visible';
       const MENU_QUERY = 'bar_products?select=id,name,category,sale_price,image_url,notes,menu_featured,menu_sort_order,updated_at&active=eq.true&' + MENU_VISIBILITY_FIELD + '=eq.true&order=category.asc,menu_sort_order.asc,name.asc';
-      const MENU_REFRESH_INTERVAL = 3000;
+      const EVENT_ART_QUERY = 'bar_tv_event_art?select=image_url,updated_at&id=eq.true&active=eq.true&limit=1';
+      const MENU_REFRESH_INTERVAL = 15000;
+      const MENU_REQUEST_TIMEOUT_MS = 12000;
       const APP_SYNC_CHANNEL = 'ilha-app-sync-v1';
       const APP_SYNC_STORAGE_KEY = 'ilha-app:last-change';
       const appSyncSource = Math.random().toString(36).slice(2);
@@ -1159,6 +1235,8 @@
       let currentProducts = [];
       let activeCategoryFilter = 'all';
       let resizeTimer = 0;
+      let currentEventArtUrl = '';
+      let eventArtOpenedFullscreen = false;
 
       function escapeHtml(value) {
         return String(value == null ? '' : value).replace(/[&<>'"]/g, function (char) {
@@ -1172,6 +1250,18 @@
 
       function money(value) {
         return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      }
+
+      async function fetchMenuRequest(url, options, readBody) {
+        const controller = new AbortController();
+        const timeout = setTimeout(function () { controller.abort(); }, MENU_REQUEST_TIMEOUT_MS);
+        try {
+          const response = await fetch(url, Object.assign({}, options || {}, { signal: controller.signal }));
+          const body = readBody ? await readBody(response) : null;
+          return { response, body };
+        } finally {
+          clearTimeout(timeout);
+        }
       }
 
       function imageSource(value) {
@@ -1405,14 +1495,15 @@
         if (refreshInFlight) return;
         refreshInFlight = true;
         try {
-          const response = await fetch(SUPABASE_URL + '/rest/v1/' + MENU_QUERY, {
+          const result = await fetchMenuRequest(SUPABASE_URL + '/rest/v1/' + MENU_QUERY, {
             headers: {
               apikey: SUPABASE_ANON_KEY
             },
             cache: 'no-store'
-          });
+          }, response => response.json());
+          const response = result.response;
           if (!response.ok) throw new Error('Não foi possível carregar o cardápio.');
-          const products = await response.json();
+          const products = result.body;
           const payload = JSON.stringify(products);
           if (payload !== lastPayload) {
             lastPayload = payload;
@@ -1459,6 +1550,50 @@
         });
       }
 
+      async function loadEventArt() {
+        if (MOBILE_MENU_VIEW) return;
+        try {
+          const result = await fetchMenuRequest(SUPABASE_URL + '/rest/v1/' + EVENT_ART_QUERY, {
+            headers: { apikey: SUPABASE_ANON_KEY },
+            cache: 'no-store'
+          }, function (response) { return response.json(); });
+          if (!result.response.ok) throw new Error('Arte indisponível.');
+          const row = Array.isArray(result.body) ? result.body[0] : null;
+          currentEventArtUrl = row && String(row.image_url || '').trim() || '';
+        } catch (error) {
+          currentEventArtUrl = '';
+        }
+        document.getElementById('menuEventArtBtn').hidden = !currentEventArtUrl;
+        if (!currentEventArtUrl && !document.getElementById('menuEventArt').hidden) closeEventArt();
+      }
+
+      async function openEventArt() {
+        if (!currentEventArtUrl) return;
+        const overlay = document.getElementById('menuEventArt');
+        document.getElementById('menuEventArtImage').src = currentEventArtUrl;
+        overlay.hidden = false;
+        document.body.classList.add('is-event-art-open');
+        eventArtOpenedFullscreen = false;
+        try {
+          if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+            await document.documentElement.requestFullscreen();
+            eventArtOpenedFullscreen = Boolean(document.fullscreenElement);
+          }
+        } catch (error) {}
+      }
+
+      async function closeEventArt(exitFullscreen) {
+        const overlay = document.getElementById('menuEventArt');
+        overlay.hidden = true;
+        document.body.classList.remove('is-event-art-open');
+        document.getElementById('menuEventArtImage').removeAttribute('src');
+        const shouldExitFullscreen = exitFullscreen !== false && eventArtOpenedFullscreen && document.fullscreenElement;
+        eventArtOpenedFullscreen = false;
+        if (shouldExitFullscreen) {
+          try { await document.exitFullscreen(); } catch (error) {}
+        }
+      }
+
       function updateClock() {
         const now = new Date();
         const timeLabel = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -1496,6 +1631,13 @@
       document.querySelectorAll('button[data-menu-theme]').forEach(function (button) {
         button.addEventListener('click', function () { setMenuTheme(button.dataset.menuTheme); });
       });
+      document.getElementById('menuEventArtBtn').addEventListener('click', openEventArt);
+      document.getElementById('menuEventArtClose').addEventListener('click', function () { closeEventArt(); });
+      document.getElementById('menuEventArtImage').addEventListener('error', function () {
+        currentEventArtUrl = '';
+        document.getElementById('menuEventArtBtn').hidden = true;
+        closeEventArt();
+      });
       document.getElementById('menuFullscreenBtn').addEventListener('click', toggleFullscreen);
       document.getElementById('menuMobileCategories').addEventListener('click', function (event) {
         const button = event.target.closest('[data-menu-category-filter]');
@@ -1505,8 +1647,14 @@
         document.getElementById('menuBoard').scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
       document.addEventListener('fullscreenchange', function () {
+        if (!document.fullscreenElement && eventArtOpenedFullscreen && !document.getElementById('menuEventArt').hidden) {
+          closeEventArt(false);
+        }
         syncFullscreenButton();
         requestAnimationFrame(fitMenuToViewport);
+      });
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && !document.getElementById('menuEventArt').hidden) closeEventArt();
       });
       window.addEventListener('resize', function () {
         clearTimeout(resizeTimer);
@@ -1517,10 +1665,14 @@
       updateClock();
       initAppSync();
       loadMenu();
+      loadEventArt();
       setInterval(updateClock, 1000);
       setInterval(function () {
         if (!document.hidden) loadMenu();
       }, MENU_REFRESH_INTERVAL);
+      setInterval(function () {
+        if (!document.hidden) loadEventArt();
+      }, 30000);
       document.addEventListener('visibilitychange', function () {
         if (!document.hidden) loadMenu();
       });
@@ -1528,6 +1680,6 @@
       window.addEventListener('online', loadMenu);
     })();
   </script>
-  <script src="/auto-update.js?v=206"></script>
+  <script src="/auto-update.js?v=210"></script>
 </body>
 </html>

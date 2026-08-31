@@ -538,7 +538,7 @@ values (
   'Uma base completa de demonstração. Nenhum atleta ou resultado desta página é real.',
   'Colatina', 'Ilha Tênis', 'Ilha Tênis', 'REGISTRATION_OPEN', true,
   '2026-08-01 08:00:00-03', '2026-09-13 23:59:00-03', '2026-09-18', '2026-09-20',
-  89.90, true, now(), '@ilhatenis', '5527999805814',
+  89.90, true, now(), '@ilhatenis', null,
   'DEMO — dados integralmente fictícios.',
   '{"demo":true,"public_notice":"Ambiente de teste: inscrições e resultados fictícios.","show_participants":true}'::jsonb,
   '{"primary":"#063f46","accent":"#9ce900","surface":"#ffffff"}'::jsonb

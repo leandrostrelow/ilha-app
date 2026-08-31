@@ -1,4 +1,4 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import "jsr:@supabase/functions-js@2.112.3/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import webpush from "npm:web-push@3.6.7";
 
@@ -9,8 +9,28 @@ type Dispatch = {
   title: string;
   body: string;
   link_url: string;
+  event_type: string;
   attempts: number;
 };
+
+function notificationTtlSeconds(eventType: string) {
+  const normalized = String(eventType || "").toUpperCase();
+  if (normalized === "LEMBRETE_QUADRA") return 2 * 60 * 60;
+  if (normalized === "CONVITE_QUADRA" || normalized === "CONVITE_QUADRA_ABERTO") {
+    return 12 * 60 * 60;
+  }
+  return 24 * 60 * 60;
+}
+
+function deliveryErrorCode(error: unknown) {
+  if (error && typeof error === "object" && "statusCode" in error) {
+    return String((error as { statusCode?: unknown }).statusCode || "delivery_error").slice(0, 40);
+  }
+  if (error && typeof error === "object" && "code" in error) {
+    return String((error as { code?: unknown }).code || "delivery_error").slice(0, 40);
+  }
+  return "delivery_error";
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -70,18 +90,35 @@ Deno.serve(async (request) => {
     const { data, error } = await supabase.rpc("claim_app_client_push_dispatches", { p_limit: 100 });
     if (error) throw error;
     const dispatches = (data || []) as Dispatch[];
-    if (!dispatches.length) return json({ processed: 0, sent: 0 });
+    if (!dispatches.length) {
+      return json({ processed: 0, sent: 0, partial: 0, without_subscription: 0, failed: 0 });
+    }
 
-    const { data: config, error: configError } = await supabase
-      .from("bar_push_config")
-      .select("vapid_public_key, vapid_private_key, subject")
-      .eq("id", true)
-      .maybeSingle();
-    if (configError) throw configError;
-    if (!config) throw new Error("Configuração de push não encontrada.");
-
-    webpush.setVapidDetails(config.subject, config.vapid_public_key, config.vapid_private_key);
+    // Fetch VAPID only when a claimed recipient actually has a browser
+    // subscription. In-app notifications must still be finalized truthfully
+    // when Push has not been configured in an environment (for example a
+    // freshly-created staging branch), instead of remaining stuck in
+    // PROCESSANDO until the retry limit.
+    let pushConfiguration: Promise<void> | null = null;
+    const ensurePushConfiguration = () => {
+      if (!pushConfiguration) {
+        pushConfiguration = (async () => {
+          const { data: config, error: configError } = await supabase
+            .from("bar_push_config")
+            .select("vapid_public_key, vapid_private_key, subject")
+            .eq("id", true)
+            .maybeSingle();
+          if (configError) throw configError;
+          if (!config) throw new Error("Configuração de push não encontrada.");
+          webpush.setVapidDetails(config.subject, config.vapid_public_key, config.vapid_private_key);
+        })();
+      }
+      return pushConfiguration;
+    };
     let sent = 0;
+    let partial = 0;
+    let withoutSubscription = 0;
+    let failed = 0;
 
     for (const dispatch of dispatches) {
       try {
@@ -92,9 +129,13 @@ Deno.serve(async (request) => {
           .eq("enabled", true);
         if (subscriptionsError) throw subscriptionsError;
 
-        const invalidIds: string[] = [];
+        if ((subscriptions || []).length) await ensurePushConfiguration();
+
         let delivered = 0;
-        await Promise.all((subscriptions || []).map(async (subscription) => {
+        let transientFailures = 0;
+        let transientErrorCode = "delivery_error";
+        const invalidIds: string[] = [];
+        const outcomes = await Promise.allSettled((subscriptions || []).map(async (subscription) => {
           try {
             await webpush.sendNotification({
               endpoint: subscription.endpoint,
@@ -106,38 +147,104 @@ Deno.serve(async (request) => {
               tag: `ilha-play-${dispatch.notification_id}`,
               icon: "/icon.png",
               badge: "/icon.png",
-            }), { TTL: 7200, urgency: "high" });
-            delivered += 1;
+            }), {
+              TTL: notificationTtlSeconds(dispatch.event_type),
+              urgency: "high",
+            });
+            return { kind: "delivered" as const, subscriptionId: subscription.id };
           } catch (pushError) {
-            const statusCode = Number(pushError?.statusCode || 0);
-            if (statusCode === 404 || statusCode === 410) invalidIds.push(subscription.id);
-            else throw pushError;
+            const deliveryError = pushError as { statusCode?: number; message?: string };
+            const statusCode = Number(deliveryError?.statusCode || 0);
+            if (statusCode === 404 || statusCode === 410) {
+              return { kind: "invalid" as const, subscriptionId: subscription.id };
+            }
+            throw pushError;
           }
         }));
 
-        if (invalidIds.length) {
-          await supabase.from("app_push_subscriptions").delete().in("id", invalidIds);
+        for (const outcome of outcomes) {
+          if (outcome.status === "fulfilled") {
+            if (outcome.value.kind === "delivered") delivered += 1;
+            else invalidIds.push(outcome.value.subscriptionId);
+          } else {
+            transientFailures += 1;
+            transientErrorCode = deliveryErrorCode(outcome.reason);
+          }
         }
-        await supabase.from("app_client_notification_dispatches").update({
-          status: "ENVIADO",
-          sent_at: new Date().toISOString(),
-          last_error: delivered ? null : "Nenhum aparelho com notificações ativas.",
-          updated_at: new Date().toISOString(),
+
+        if (invalidIds.length) {
+          const invalidDelete = await supabase.from("app_push_subscriptions").delete().in("id", invalidIds);
+          if (invalidDelete.error) {
+            console.error("client-notification-dispatch subscription cleanup failure", {
+              stage: "remove_invalid_subscription",
+              code: String(invalidDelete.error.code || "database_error").slice(0, 40),
+            });
+          }
+        }
+
+        const now = new Date().toISOString();
+        const reachedAttemptLimit = Number(dispatch.attempts || 0) >= 5;
+        let status = "ENVIADO";
+        let sentAt: string | null = now;
+        let lastError: string | null = null;
+
+        if (delivered > 0 && transientFailures > 0) {
+          status = "PARCIAL";
+          lastError = `Entrega parcial: ${delivered} aparelho(s) confirmado(s) e ${transientFailures} com falha (${transientErrorCode}).`;
+          partial += 1;
+        } else if (delivered === 0 && transientFailures > 0) {
+          status = reachedAttemptLimit ? "FALHOU" : "PENDENTE";
+          sentAt = null;
+          lastError = `Falha de entrega em ${transientFailures} aparelho(s) (${transientErrorCode}).`;
+          if (reachedAttemptLimit) failed += 1;
+        } else if (delivered === 0) {
+          status = "SEM_ASSINATURA";
+          sentAt = null;
+          lastError = invalidIds.length
+            ? "Nenhum aparelho válido permaneceu após remover assinaturas expiradas."
+            : "Nenhum aparelho com notificações ativas.";
+          withoutSubscription += 1;
+        }
+
+        const completed = await supabase.from("app_client_notification_dispatches").update({
+          status,
+          sent_at: sentAt,
+          last_error: lastError,
+          updated_at: now,
         }).eq("id", dispatch.dispatch_id);
+        if (completed.error) throw completed.error;
         sent += delivered;
       } catch (dispatchError) {
-        const failed = Number(dispatch.attempts || 0) >= 5;
-        await supabase.from("app_client_notification_dispatches").update({
-          status: failed ? "FALHOU" : "PENDENTE",
-          last_error: String(dispatchError?.message || dispatchError).slice(0, 500),
+        const reachedAttemptLimit = Number(dispatch.attempts || 0) >= 5;
+        const deliveryCode = deliveryErrorCode(dispatchError);
+        const failedUpdate = await supabase.from("app_client_notification_dispatches").update({
+          status: reachedAttemptLimit ? "FALHOU" : "PENDENTE",
+          sent_at: null,
+          last_error: `Falha de entrega (${deliveryCode}).`,
           updated_at: new Date().toISOString(),
         }).eq("id", dispatch.dispatch_id);
+        if (failedUpdate.error) {
+          console.error("client-notification-dispatch state failure", {
+            stage: "persist_failure",
+            code: String(failedUpdate.error.code || "database_error"),
+          });
+        }
+        if (reachedAttemptLimit) failed += 1;
       }
     }
 
-    return json({ processed: dispatches.length, sent });
+    return json({
+      processed: dispatches.length,
+      sent,
+      partial,
+      without_subscription: withoutSubscription,
+      failed,
+    });
   } catch (error) {
-    console.error(error);
+    const code = error && typeof error === "object" && "code" in error
+      ? String((error as { code?: unknown }).code || "internal_error").slice(0, 40)
+      : "internal_error";
+    console.error("client-notification-dispatch failure", { code });
     return json({ error: "Não foi possível processar as notificações." }, 500);
   }
 });

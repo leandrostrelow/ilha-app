@@ -1,0 +1,25 @@
+{
+  "name": "ilha-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ilha Play, ADM e funcoes Supabase do Ilha Tenis Colatina",
+  "type": "module",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "deps:check": "node scripts/check-dependencies.mjs",
+    "lint": "node scripts/lint.mjs && deno lint --no-config --rules-exclude=no-import-prefix,no-explicit-any supabase/functions/*/index.ts",
+    "typecheck": "node scripts/typecheck.mjs",
+    "test": "node --test --test-reporter=spec",
+    "build": "node scripts/build.mjs",
+    "verify": "pnpm run deps:check && pnpm run lint && pnpm run typecheck && pnpm test && pnpm run build",
+    "serve": "node scripts/serve.mjs"
+  },
+  "devDependencies": {
+    "agent-browser": "0.34.0",
+    "deno": "2.9.5",
+    "supabase": "2.111.0"
+  }
+}

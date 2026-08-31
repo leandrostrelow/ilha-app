@@ -630,6 +630,9 @@
   <script>
     const SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_zcX8te5g99p0bA12xy_E-A_MTyNpJNx';
+    const BAR_REQUEST_TIMEOUT_MS = 12000;
+    const BAR_ORDER_REFRESH_INTERVAL_MS = 5000;
+    const BAR_MENU_REFRESH_INTERVAL_MS = 15000;
     const APP_SYNC_CHANNEL = 'ilha-app-sync-v1';
     const APP_SYNC_STORAGE_KEY = 'ilha-app:last-change';
     const appSyncSource = Math.random().toString(36).slice(2);
@@ -652,6 +655,8 @@
       menuPolling: null,
       menuPayload: '',
       menuRefreshInFlight: false,
+      menuRequestPromise: null,
+      orderRefreshPromise: null,
       sessionKey: 'ilha-bar:' + (qrToken ? qrToken.slice(0, 18) : 'sem-token')
     };
     const $ = id => document.getElementById(id);
@@ -673,8 +678,29 @@
       return String(value == null ? '' : value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
     }
 
+    async function fetchBarRequest(url, options, readBody) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), BAR_REQUEST_TIMEOUT_MS);
+      try {
+        const response = await fetch(url, Object.assign({}, options || {}, { signal: controller.signal }));
+        const body = readBody ? await readBody(response) : null;
+        return { response, body };
+      } catch (error) {
+        if (error && error.name === 'AbortError') {
+          throw new Error('A conexão demorou mais do que o esperado. Tente novamente.');
+        }
+        if (error instanceof TypeError) {
+          if (!navigator.onLine) throw new Error('Você está sem internet. Reconecte e tente novamente.');
+          throw new Error('Não foi possível se conectar ao Ilha Bar. Tente novamente.');
+        }
+        throw error;
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+
     async function rpc(name, body) {
-      const response = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + name, {
+      const result = await fetchBarRequest(SUPABASE_URL + '/rest/v1/rpc/' + name, {
         method: 'POST',
         headers: {
           apikey: SUPABASE_KEY,
@@ -682,13 +708,23 @@
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(body || {})
-      });
-      const text = await response.text();
+      }, response => response.text());
+      const response = result.response;
+      const text = result.body;
       let data = null;
       try { data = text ? JSON.parse(text) : null; } catch (error) { data = null; }
       if (!response.ok) throw new Error(data && (data.message || data.error_description || data.hint) || 'Não foi possível concluir agora.');
-      if (!['bar_public_menu', 'bar_public_order_status'].includes(name)) broadcastAppChange(name);
+      if (!['bar_public_menu', 'bar_public_order_status', 'bar_public_card_order_status'].includes(name)) broadcastAppChange(name);
       return data;
+    }
+
+    function requestPublicMenu() {
+      if (state.menuRequestPromise) return state.menuRequestPromise;
+      const request = rpc('bar_public_menu', { p_token: qrToken }).finally(() => {
+        if (state.menuRequestPromise === request) state.menuRequestPromise = null;
+      });
+      state.menuRequestPromise = request;
+      return request;
     }
 
     function broadcastAppChange(resource) {
@@ -724,11 +760,10 @@
 
     async function notifyBarTeamAboutOrder(order) {
       if (!order || !order.order_id || (!order.tracking_token && !(state.identity && state.identity.cardLinked && qrToken))) return;
-      const response = await fetch(SUPABASE_URL + '/functions/v1/bar-order-push', {
+      const result = await fetchBarRequest(SUPABASE_URL + '/functions/v1/bar-order-push', {
         method: 'POST',
         headers: {
           apikey: SUPABASE_KEY,
-          Authorization: 'Bearer ' + SUPABASE_KEY,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -737,6 +772,7 @@
           card_token: state.identity && state.identity.cardLinked ? qrToken : null
         })
       });
+      const response = result.response;
       if (!response.ok) throw new Error('A equipe verá o pedido na tela, mas o aviso do celular pode atrasar.');
     }
 
@@ -1024,8 +1060,7 @@
       renderActiveOrderStrip();
     }
 
-    async function loadOrderStatus(showErrors) {
-      if (!state.identity || (!state.identity.trackingToken && !state.identity.cardLinked)) return null;
+    async function refreshOrderStatus() {
       try {
         const order = state.identity.cardLinked ? await rpc('bar_public_card_order_status', {
           p_token: qrToken
@@ -1048,6 +1083,25 @@
           clearSessionAfterOrderEnd('EXCLUIDA');
           return null;
         }
+        throw error;
+      }
+    }
+
+    async function loadOrderStatus(showErrors, forceRefresh) {
+      if (!state.identity || (!state.identity.trackingToken && !state.identity.cardLinked)) return null;
+      if (forceRefresh && state.orderRefreshPromise) {
+        try { await state.orderRefreshPromise; } catch (error) {}
+        if (!state.identity || (!state.identity.trackingToken && !state.identity.cardLinked)) return null;
+      }
+      if (!state.orderRefreshPromise) {
+        const request = refreshOrderStatus().finally(() => {
+          if (state.orderRefreshPromise === request) state.orderRefreshPromise = null;
+        });
+        state.orderRefreshPromise = request;
+      }
+      try {
+        return await state.orderRefreshPromise;
+      } catch (error) {
         if (showErrors) showToast(error.message, true);
         return null;
       }
@@ -1056,14 +1110,14 @@
     function startPolling() {
       clearInterval(state.polling);
       if (!state.identity || (!state.identity.trackingToken && !state.identity.cardLinked)) return;
-      state.polling = setInterval(() => loadOrderStatus(false), 3000);
+      state.polling = setInterval(() => loadOrderStatus(false), BAR_ORDER_REFRESH_INTERVAL_MS);
     }
 
     async function syncOpenBarPage() {
       if (!qrToken || document.hidden || state.menuRefreshInFlight) return;
       state.menuRefreshInFlight = true;
       try {
-        const data = await rpc('bar_public_menu', { p_token: qrToken });
+        const data = await requestPublicMenu();
         const availability = data.availability || { enabled: true, message: '' };
         const wasClosed = state.availability && state.availability.enabled === false;
         state.availability = availability;
@@ -1108,7 +1162,7 @@
 
     function startMenuPolling() {
       clearInterval(state.menuPolling);
-      state.menuPolling = setInterval(syncOpenBarPage, 3000);
+      state.menuPolling = setInterval(syncOpenBarPage, BAR_MENU_REFRESH_INTERVAL_MS);
     }
 
     function enterMenu() {
@@ -1127,7 +1181,7 @@
         showToast('Faça seu primeiro pedido para acompanhar a comanda.', true);
         return;
       }
-      const order = await loadOrderStatus(true);
+      const order = await loadOrderStatus(true, true);
       if (order) showView('orderView');
     }
 
@@ -1135,7 +1189,10 @@
       if (!state.access || !['CARTAO', 'MESA'].includes(state.access.kind)) return null;
       const name = String(state.access.linked_customer_name || '').trim();
       if (!state.access.linked || name.length < 2) return null;
-      return { name, phone: '', tableId: state.access.fixed_table_id || '', trackingToken: '', cardLinked: true };
+      const saved = readSession();
+      const sameCustomer = saved && String(saved.name || '').trim().toLocaleLowerCase('pt-BR') === name.toLocaleLowerCase('pt-BR');
+      if (!sameCustomer || !validPhone(saved.phone)) return null;
+      return { name, phone: normalizePhone(saved.phone), tableId: state.access.fixed_table_id || '', trackingToken: '', cardLinked: true };
     }
 
     async function requestService() {
@@ -1160,7 +1217,7 @@
           p_customer_phone: state.identity.phone,
           p_message: null
         });
-        await loadOrderStatus(false);
+        await loadOrderStatus(false, true);
         showToast('Atendimento solicitado. O garçom já foi avisado.');
       } catch (error) {
         showToast(error.message, true);
@@ -1202,13 +1259,13 @@
           p_notes: notesPayload
         });
         if (result.tracking_token) state.identity.trackingToken = result.tracking_token;
-      notifyBarTeamAboutOrder(result).catch(error => console.warn(error.message));
+        notifyBarTeamAboutOrder(result).catch(error => console.warn(error.message));
         saveSession();
         state.cart = {};
         $('orderNotes').value = '';
         $('deliveryLocation').value = '';
         closeCart();
-        await loadOrderStatus(true);
+        await loadOrderStatus(true, true);
         renderProducts();
         showView('orderView');
         startPolling();
@@ -1230,7 +1287,8 @@
       }
       try {
         resetErrorView();
-        const data = await rpc('bar_public_menu', { p_token: qrToken });
+        const data = await requestPublicMenu();
+        startMenuPolling();
         state.availability = data.availability || { enabled: true, message: '' };
         if (state.availability.enabled === false) {
           showClosedView(state.availability);
@@ -1259,6 +1317,8 @@
           showView('accessView');
         }
       } catch (error) {
+        clearInterval(state.menuPolling);
+        state.menuPolling = null;
         resetErrorView();
         $('errorMessage').textContent = error.message;
         showView('errorView');
@@ -1278,7 +1338,7 @@
         const fixedTableId = state.access.fixed_table_id || '';
         const isQrAccess = ['MESA', 'CARTAO'].includes(state.access.kind);
         let linkedName = name;
-        if (isQrAccess && !state.access.linked) {
+        if (isQrAccess) {
           const claim = await rpc('bar_public_claim_access', {
             p_token: qrToken,
             p_customer_name: name,
@@ -1332,7 +1392,7 @@
       const decrease = event.target.closest('[data-product-dec]');
       if (increase) setQuantity(increase.dataset.productInc, 1);
       if (decrease) setQuantity(decrease.dataset.productDec, -1);
-      if (event.target.closest('[data-order-refresh]')) loadOrderStatus(true);
+      if (event.target.closest('[data-order-refresh]')) loadOrderStatus(true, true);
       if (event.target.closest('[data-order-more]')) enterMenu();
     });
 
@@ -1354,18 +1414,17 @@
 
     document.addEventListener('visibilitychange', () => { if (!document.hidden) syncOpenBarPage(); });
     window.addEventListener('focus', syncOpenBarPage);
-    window.addEventListener('online', syncOpenBarPage);
+    window.addEventListener('online', () => $('errorView').classList.contains('active') ? loadMenu() : syncOpenBarPage());
     window.addEventListener('beforeunload', () => {
       clearInterval(state.polling);
       clearInterval(state.menuPolling);
       if (appSyncBroadcastChannel) appSyncBroadcastChannel.close();
     });
     initAppSync();
-    startMenuPolling();
     loadMenu();
 
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('../service-worker.js').catch(() => {});
   </script>
-  <script src="/auto-update.js?v=206"></script>
+  <script src="/auto-update.js?v=210"></script>
 </body>
 </html>

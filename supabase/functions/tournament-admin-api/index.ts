@@ -1,14 +1,19 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import "jsr:@supabase/functions-js@2.112.3/edge-runtime.d.ts";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
+import { appCorsHeaders } from "../_shared/cors.ts";
 
 type Row = Record<string, any>;
-type DbClient = ReturnType<typeof createClient>;
+type DbClient = SupabaseClient<any, "public", "public", any>;
 
-const allowedOrigins = new Set([
-  "https://app.ilhatenis.com",
-  "http://localhost:8769",
-  "http://127.0.0.1:8769",
-]);
+class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status = 400) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
 
 const readPermissions = new Set(["tournaments", "tournaments.read", "tournaments.write"]);
 const writePermissions = new Set(["tournaments", "tournaments.write"]);
@@ -31,13 +36,7 @@ const writeActions = new Set([
 ]);
 
 function corsHeaders(request: Request) {
-  const origin = request.headers.get("origin") || "";
-  return {
-    "Access-Control-Allow-Origin": allowedOrigins.has(origin) ? origin : "https://app.ilhatenis.com",
-    "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Vary": "Origin",
-  };
+  return appCorsHeaders(request, "GET, POST, OPTIONS");
 }
 
 function json(request: Request, body: unknown, status = 200) {
@@ -60,12 +59,40 @@ function publicApiKey() {
   }
 }
 
+function serviceRoleKey() {
+  const legacyKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (legacyKey) return legacyKey;
+  const currentKeys = Deno.env.get("SUPABASE_SECRET_KEYS");
+  if (!currentKeys) return "";
+  try {
+    const parsed = JSON.parse(currentKeys);
+    return parsed.default || "";
+  } catch (_error) {
+    return currentKeys.startsWith("sb_secret_") ? currentKeys : "";
+  }
+}
+
 function text(value: unknown, max = 500) {
   return String(value ?? "").trim().slice(0, max);
 }
 
 function nullableText(value: unknown, max = 500) {
   return text(value, max) || null;
+}
+
+function digits(value: unknown) {
+  return String(value ?? "").replace(/\D/g, "");
+}
+
+function isValidCpf(value: string) {
+  if (!/^\d{11}$/.test(value) || /^(\d)\1{10}$/.test(value)) return false;
+  const digit = (length: number) => {
+    let sum = 0;
+    for (let index = 0; index < length; index += 1) sum += Number(value[index]) * (length + 1 - index);
+    const remainder = (sum * 10) % 11;
+    return remainder === 10 ? 0 : remainder;
+  };
+  return digit(9) === Number(value[9]) && digit(10) === Number(value[10]);
 }
 
 function numberValue(value: unknown, fallback = 0) {
@@ -114,8 +141,9 @@ function codeFromName(value: unknown) {
     .slice(0, 24) || `CLASSE-${Date.now().toString().slice(-5)}`;
 }
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error || "Erro desconhecido.");
+function errorCode(error: unknown) {
+  if (!error || typeof error !== "object") return "";
+  return text((error as Row).code, 30).toUpperCase();
 }
 
 function assertNoError(error: any) {
@@ -149,6 +177,16 @@ function can(profile: Row, permissions: Set<string>) {
   if (!profile || profile.active === false) return false;
   if (profile.role === "admin") return true;
   return permissionsOf(profile).some((permission) => permissions.has(permission));
+}
+
+function protectedCan(profile: Row, protectedAccount: Row, permissions: Set<string>) {
+  if (!profile || profile.active === false || !protectedAccount || protectedAccount.active === false) return false;
+  if (profile.role !== protectedAccount.role) return false;
+  if (profile.role === "admin") return true;
+  const profilePermissions = permissionsOf(profile);
+  const protectedPermissions = permissionsOf(protectedAccount);
+  return profilePermissions.some((permission) => permissions.has(permission)) &&
+    protectedPermissions.some((permission) => permissions.has(permission));
 }
 
 function legacyTournamentStatus(value: unknown) {
@@ -217,6 +255,15 @@ function databasePaymentStatus(value: unknown) {
   return "PENDING";
 }
 
+function legacyOrderPaymentStatus(order: Row, fallback: unknown) {
+  if (!order.id) return legacyPaymentStatus(fallback);
+  const status = text(order.billing_status, 30).toUpperCase();
+  if (status === "PAID") return "PAGO";
+  if (status === "WAIVED") return "ISENTO";
+  if (status === "CANCELLED") return "CANCELADO";
+  return "PENDENTE";
+}
+
 function databaseRegistrationStatus(
   value: unknown,
   current: unknown,
@@ -265,17 +312,45 @@ function databaseMatchStatus(value: unknown, hasWinner = false) {
 
 function validDate(value: unknown) {
   const candidate = text(value, 20);
-  return /^\d{4}-\d{2}-\d{2}$/.test(candidate) ? candidate : "";
+  const match = candidate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return "";
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1) return "";
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return day <= daysInMonth[month - 1] ? candidate : "";
+}
+
+function optionalDateField(input: Row, keys: string[], current: unknown, label: string) {
+  const field = ownField(input, ...keys);
+  if (!field.present) return validDate(current) || null;
+  const raw = text(field.value, 20);
+  if (!raw) return null;
+  const date = validDate(raw);
+  if (!date) throw new ApiError(`${label} inválida.`);
+  return date;
 }
 
 function validTime(value: unknown) {
   const candidate = text(value, 20);
-  const match = candidate.match(/^(\d{1,2}):(\d{2})/);
+  const match = candidate.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
   if (!match) return "";
   const hour = Number(match[1]);
   const minute = Number(match[2]);
-  if (hour > 23 || minute > 59) return "";
+  const second = Number(match[3] || 0);
+  if (hour > 23 || minute > 59 || second > 59) return "";
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`;
+}
+
+function saoPauloToday() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 }
 
 const weekDayIndexes: Record<string, number> = {
@@ -296,12 +371,12 @@ function normalizeKey(value: unknown) {
 
 function resolveLegacyDate(value: unknown, tournament: Row) {
   const raw = text(value, 20);
-  if (!raw) throw new Error("Informe a data.");
+  if (!raw) throw new ApiError("Informe a data.");
   const direct = validDate(value);
   if (direct) return direct;
   const desired = weekDayIndexes[normalizeKey(value)];
-  if (desired === undefined) throw new Error("Data inválida.");
-  const baseText = validDate(tournament.starts_on) || new Date().toISOString().slice(0, 10);
+  if (desired === undefined) throw new ApiError("Data inválida.");
+  const baseText = validDate(tournament.starts_on) || saoPauloToday();
   const base = new Date(`${baseText}T12:00:00Z`);
   const distance = (desired - base.getUTCDay() + 7) % 7;
   base.setUTCDate(base.getUTCDate() + distance);
@@ -341,8 +416,13 @@ function seedOrder(size: number): number[] {
   return result;
 }
 
-function mapTournament(row: Row) {
+function mapTournament(row: Row, includeCapabilities = false) {
   const publicUrl = row.slug ? `https://app.ilhatenis.com/torneios/${encodeURIComponent(row.slug)}` : "";
+  const settings = { ...firstObject(row.settings) };
+  delete settings.courtesy_registration_token;
+  if (includeCapabilities && row.courtesy_registration_token) {
+    settings.courtesy_registration_token = row.courtesy_registration_token;
+  }
   return {
     torneio_id: row.id,
     id: row.id,
@@ -367,14 +447,15 @@ function mapTournament(row: Row) {
     whatsapp: row.whatsapp || "",
     observacoes: row.notes || "",
     notes: row.notes || "",
+    descricao: row.description || row.short_description || "",
+    description: row.description || row.short_description || "",
+    capa_url: row.cover_url || "",
+    cover_url: row.cover_url || "",
     inscricoes_abertas: row.registration_open === true,
     registration_open: row.registration_open === true,
     publicado: row.is_published === true,
     is_published: row.is_published === true,
-    settings: {
-      ...firstObject(row.settings),
-      courtesy_registration_token: row.courtesy_registration_token || "",
-    },
+    settings,
   };
 }
 
@@ -402,28 +483,38 @@ function mapCategory(row: Row) {
   };
 }
 
-function mapAthlete(row: Row) {
+function mapAthlete(row: Row, includePrivate = false, registrationOrder: Row = {}) {
   return {
     jogador_id: row.id,
     id: row.id,
     nome: row.full_name || "",
     full_name: row.full_name || "",
     apelido: row.nickname || "",
-    email: row.email || "",
-    whatsapp: row.phone || "",
-    phone: row.phone || "",
+    email: includePrivate ? row.email || "" : "",
+    whatsapp: includePrivate ? row.phone || "" : "",
+    phone: includePrivate ? row.phone || "" : "",
     cidade: row.city || "",
     clube: row.club_name || "",
     genero: legacyGender(row.gender),
     ranking: row.ranking || "",
     seed: row.seed || "",
     status: legacyAthleteStatus(row),
-    observacoes: row.notes || "",
+    observacoes: includePrivate ? row.notes || "" : "",
+    menor_de_idade: includePrivate ? row.is_minor === true : false,
+    is_minor: includePrivate ? row.is_minor === true : false,
+    responsavel_nome: includePrivate ? row.guardian_name || "" : "",
+    guardian_name: includePrivate ? row.guardian_name || "" : "",
+    responsavel_telefone: includePrivate ? row.guardian_phone || "" : "",
+    guardian_phone: includePrivate ? row.guardian_phone || "" : "",
+    cobranca_inscricao_status: includePrivate ? registrationOrder.billing_status || "" : "",
+    cobranca_inscricao_valor: includePrivate ? Number(registrationOrder.amount || 0) : 0,
+    cobranca_inscricao_mes: includePrivate ? registrationOrder.billing_month || "" : "",
+    cliente_vinculado: includePrivate ? Boolean(registrationOrder.app_client_id) : false,
   };
 }
 
-function mapRegistration(row: Row) {
-  return {
+function mapRegistration(row: Row, includeCapabilities = false, registrationOrder: Row = {}) {
+  const registration: Row = {
     inscricao_id: row.id,
     id: row.id,
     torneio_id: row.tournament_id,
@@ -431,14 +522,18 @@ function mapRegistration(row: Row) {
     jogador_id: row.athlete_id,
     nome_publico: row.public_name || "",
     parceiro: row.partner_name || "",
-    status_pagamento: legacyPaymentStatus(row.payment_status),
+    status_pagamento: legacyOrderPaymentStatus(registrationOrder, row.payment_status),
     status: row.status || "PENDING",
     valor: Number(row.total_amount || 0),
     data_inscricao: row.created_at ? String(row.created_at).slice(0, 10) : "",
     confirmado: row.status === "CONFIRMED",
-    observacoes: row.notes || "",
-    public_token: row.public_token,
+    observacoes: includeCapabilities ? row.notes || "" : "",
+    cobranca_status: includeCapabilities ? registrationOrder.billing_status || "" : "",
+    cobranca_valor: includeCapabilities ? Number(registrationOrder.amount || 0) : 0,
+    cobranca_mes: includeCapabilities ? registrationOrder.billing_month || "" : "",
   };
+  if (includeCapabilities) registration.public_token = row.public_token;
+  return registration;
 }
 
 function mapMatch(row: Row, athletes: Map<string, Row>) {
@@ -511,7 +606,7 @@ async function selectTournament(client: DbClient, id: string, slug: string) {
   return data as Row | null;
 }
 
-async function loadSnapshot(client: DbClient, tournamentId = "", slug = "") {
+async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", includeCapabilities = false) {
   const { data: tournamentRows, error: tournamentListError } = await client
     .from("tournaments")
     .select("*")
@@ -526,30 +621,46 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "") {
 
   const empty = {
     torneio: {}, categorias: [], jogadores: [], inscricoes: [], jogos: [], quadras: [], agenda: [],
-    config: [], live: {}, torneios: tournaments.map(mapTournament),
+    config: [], live: {}, torneios: tournaments.map((row) => mapTournament(row, includeCapabilities)),
   };
   if (!tournament) return empty;
 
   const id = tournament.id;
-  const [categoriesResult, athletesResult, registrationsResult, matchesResult, courtsResult, eventsResult, liveResult] = await Promise.all([
+  const [categoriesResult, athletesResult, registrationsResult, ordersResult, matchesResult, courtsResult, eventsResult, liveResult] = await Promise.all([
     client.from("tournament_categories").select("*").eq("tournament_id", id).order("sort_order").order("name"),
     client.from("tournament_athletes").select("*").order("full_name"),
     client.from("tournament_registrations").select("*").eq("tournament_id", id).order("created_at"),
+    client.from("tournament_registration_orders").select("*").eq("tournament_id", id).order("created_at"),
     client.from("tournament_matches").select("*").eq("tournament_id", id).order("category_id").order("round_no").order("match_no"),
     client.from("tournament_courts").select("*").eq("tournament_id", id).order("sort_order").order("name"),
     client.from("tournament_schedule_events").select("*").eq("tournament_id", id).order("event_date").order("event_time"),
     client.from("tournament_live_state").select("*").eq("tournament_id", id).maybeSingle(),
   ]);
-  [categoriesResult, athletesResult, registrationsResult, matchesResult, courtsResult, eventsResult, liveResult].forEach((result) => assertNoError(result.error));
+  [categoriesResult, athletesResult, registrationsResult, ordersResult, matchesResult, courtsResult, eventsResult, liveResult].forEach((result) => assertNoError(result.error));
 
   const categories = ((categoriesResult.data || []) as Row[]).filter((row) => row.active !== false);
   const visibleCategoryIds = new Set(categories.map((row) => String(row.id)));
   const registrations = ((registrationsResult.data || []) as Row[]).filter((row) => visibleCategoryIds.has(String(row.category_id)));
   const matches = ((matchesResult.data || []) as Row[]).filter((row) => visibleCategoryIds.has(String(row.category_id)));
-  // Atletas são um cadastro global e precisam continuar disponíveis para novas inscrições.
-  // Esta rota é autenticada e protegida pela permissão administrativa de torneios/RLS.
-  const athletes = (athletesResult.data || []) as Row[];
+  const relevantAthleteIds = new Set<string>();
+  registrations.forEach((row) => relevantAthleteIds.add(String(row.athlete_id || "")));
+  ((ordersResult.data || []) as Row[]).forEach((row) => relevantAthleteIds.add(String(row.athlete_id || "")));
+  matches.forEach((row) => {
+    relevantAthleteIds.add(String(row.side1_athlete_id || ""));
+    relevantAthleteIds.add(String(row.side2_athlete_id || ""));
+    relevantAthleteIds.add(String(row.winner_athlete_id || ""));
+  });
+  relevantAthleteIds.delete("");
+  const athletes = ((athletesResult.data || []) as Row[])
+    .filter((row) => relevantAthleteIds.has(String(row.id)));
   const athleteMap = new Map(athletes.map((row) => [String(row.id), row]));
+  const registrationOrders = (ordersResult.data || []) as Row[];
+  const orderMap = new Map(registrationOrders.map((row) => [String(row.id), row]));
+  const activeOrderByAthlete = new Map(
+    registrationOrders
+      .filter((row) => row.status !== "CANCELLED")
+      .map((row) => [String(row.athlete_id), row]),
+  );
   const liveRow = (liveResult.data || {}) as Row;
   const livePayload = Object.assign({}, firstObject(liveRow.payload), {
     status: liveRow.status || firstObject(liveRow.payload).status || "IDLE",
@@ -561,16 +672,27 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "") {
   });
 
   return {
-    torneio: mapTournament(tournament),
+    torneio: mapTournament(tournament, includeCapabilities),
     categorias: categories.map(mapCategory),
-    jogadores: athletes.map(mapAthlete),
-    inscricoes: registrations.map(mapRegistration),
+    jogadores: athletes.map((row) => mapAthlete(row, includeCapabilities, activeOrderByAthlete.get(String(row.id)) || {})),
+    inscricoes: registrations.map((row) => mapRegistration(row, includeCapabilities, orderMap.get(String(row.registration_order_id)) || {})),
+    cobrancas_inscricoes: includeCapabilities ? registrationOrders.map((row) => ({
+      id: row.id,
+      jogador_id: row.athlete_id,
+      cliente_id: row.app_client_id || "",
+      quantidade_classes: row.category_count,
+      valor: Number(row.amount || 0),
+      mes_cobranca: row.billing_month,
+      status: row.billing_status,
+      pago_em: row.paid_at || "",
+      aceite_em: row.terms_accepted_at,
+    })) : [],
     jogos: matches.map((row) => mapMatch(row, athleteMap)),
     quadras: ((courtsResult.data || []) as Row[]).map(mapCourt),
     agenda: ((eventsResult.data || []) as Row[]).map(mapEvent),
     config: [{ chave: "LIVE_STATE", valor: JSON.stringify(livePayload) }],
     live: livePayload,
-    torneios: tournaments.map(mapTournament),
+    torneios: tournaments.map((row) => mapTournament(row, includeCapabilities)),
   };
 }
 
@@ -578,7 +700,7 @@ async function currentTournament(client: DbClient, payload: Row, nested: Row = {
   const id = uuid(payload.tournament_id || payload.torneio_id || nested.tournament_id || nested.torneio_id);
   const slug = text(payload.slug || nested.slug, 100);
   const tournament = await selectTournament(client, id, slug);
-  if (!tournament) throw new Error("Torneio não encontrado.");
+  if (!tournament) throw new ApiError("Torneio não encontrado.", 404);
   return tournament;
 }
 
@@ -592,7 +714,7 @@ async function audit(client: DbClient, actorId: string, tournamentId: string, en
     old_data: oldData || null,
     new_data: newData || null,
   });
-  if (error) console.error("tournament audit failure", { action, message: error.message });
+  if (error) console.error("tournament audit failure", { action, code: String(error.code || "database_error") });
 }
 
 async function uniqueSlug(client: DbClient, desired: string, ignoredId = "") {
@@ -611,7 +733,7 @@ async function uniqueSlug(client: DbClient, desired: string, ignoredId = "") {
 
 function tournamentPayload(input: Row, current: Row = {}) {
   const name = text(input.nome || input.name || current.name, 140);
-  if (name.length < 3) throw new Error("Informe o nome do torneio.");
+  if (name.length < 3) throw new ApiError("Informe o nome do torneio.");
   const rawStatus = input.status || current.status || "DRAFT";
   const registrationOpen = booleanValue(input.inscricoes_abertas ?? input.registration_open, current.registration_open === true);
   return {
@@ -619,8 +741,8 @@ function tournamentPayload(input: Row, current: Row = {}) {
     year: integerValue(input.ano ?? input.year, current.year || new Date().getFullYear()),
     city: nullableText(input.cidade ?? input.city ?? current.city, 100),
     club_name: nullableText(input.clube ?? input.club_name ?? current.club_name, 120),
-    starts_on: validDate(input.data_inicio ?? input.starts_on) || current.starts_on || null,
-    ends_on: validDate(input.data_fim ?? input.ends_on) || current.ends_on || null,
+    starts_on: optionalDateField(input, ["data_inicio", "starts_on"], current.starts_on, "Data inicial"),
+    ends_on: optionalDateField(input, ["data_fim", "ends_on"], current.ends_on, "Data final"),
     status: databaseTournamentStatus(rawStatus, current.status || "", registrationOpen),
     registration_open: registrationOpen,
     is_published: booleanValue(input.publicado ?? input.is_published, current.is_published === true),
@@ -641,7 +763,7 @@ async function saveTournament(client: DbClient, actorId: string, payload: Row, c
     assertNoError(result.error);
     current = result.data || {};
   }
-  if (!create && !current.id) throw new Error("Torneio não encontrado.");
+  if (!create && !current.id) throw new ApiError("Torneio não encontrado.", 404);
   const data = tournamentPayload(input, current);
   const desiredSlug = text(input.slug, 100) || current.slug || data.name;
   const slug = await uniqueSlug(client, desiredSlug, current.id || "");
@@ -670,7 +792,7 @@ async function saveCategory(client: DbClient, actorId: string, payload: Row) {
     current = result.data || {};
   }
   const name = text(input.nome || input.name || current.name, 100);
-  if (name.length < 2) throw new Error("Informe o nome da classe.");
+  if (name.length < 2) throw new ApiError("Informe o nome da classe.");
   const data = {
     tournament_id: tournament.id,
     code: text(input.codigo || input.code || current.code, 30) || codeFromName(name),
@@ -699,17 +821,17 @@ async function saveCategory(client: DbClient, actorId: string, payload: Row) {
 
 async function deleteCategory(client: DbClient, actorId: string, payload: Row) {
   const categoryId = uuid(payload.categoria_id || payload.category_id || payload.id);
-  if (!categoryId) throw new Error("Classe inválida.");
+  if (!categoryId) throw new ApiError("Classe inválida.");
   const lookup = await client.from("tournament_categories").select("*").eq("id", categoryId).maybeSingle();
   assertNoError(lookup.error);
-  if (!lookup.data) throw new Error("Classe não encontrada.");
+  if (!lookup.data) throw new ApiError("Classe não encontrada.", 404);
   const counts = await Promise.all([
     client.from("tournament_registrations").select("id", { count: "exact", head: true }).eq("category_id", categoryId),
     client.from("tournament_matches").select("id", { count: "exact", head: true }).eq("category_id", categoryId),
   ]);
   counts.forEach((result) => assertNoError(result.error));
   if ((counts[0].count || 0) + (counts[1].count || 0) > 0) {
-    throw new Error("Esta classe possui inscrições ou jogos. Desative-a em vez de excluir.");
+    throw new ApiError("Esta classe possui inscrições ou jogos. Desative-a em vez de excluir.", 409);
   }
   const result = await client.from("tournament_categories").delete().eq("id", categoryId);
   assertNoError(result.error);
@@ -727,15 +849,19 @@ async function savePlayer(client: DbClient, actorId: string, payload: Row) {
     current = lookup.data || {};
   }
   const fullName = text(input.nome || input.full_name || current.full_name, 120);
-  if (fullName.length < 2) throw new Error("Informe o nome do atleta.");
+  if (fullName.length < 2) throw new ApiError("Informe o nome do atleta.");
   const status = databaseAthleteStatus(input.status || current.status);
+  const email = nullableText(input.email ?? current.email, 180)?.toLowerCase() || null;
+  if (email && !/^\S+@\S+\.\S+$/.test(email)) throw new ApiError("Informe um e-mail válido.");
+  const cpf = digits(input.cpf ?? current.cpf) || null;
+  if (cpf && !isValidCpf(cpf)) throw new ApiError("Informe um CPF válido.");
   const data = {
     full_name: fullName,
     nickname: nullableText(input.apelido ?? input.nickname ?? current.nickname, 80),
-    email: nullableText(input.email ?? current.email, 180)?.toLowerCase() || null,
+    email,
     phone: nullableText(input.whatsapp ?? input.phone ?? current.phone, 30),
-    cpf: nullableText(input.cpf ?? current.cpf, 20),
-    birth_date: validDate(input.data_nascimento ?? input.birth_date) || current.birth_date || null,
+    cpf,
+    birth_date: optionalDateField(input, ["data_nascimento", "birth_date"], current.birth_date, "Data de nascimento"),
     gender: databaseGender(input.genero || input.gender || current.gender),
     city: nullableText(input.cidade ?? input.city ?? current.city, 100),
     club_name: nullableText(input.clube ?? input.club_name ?? current.club_name, 120),
@@ -744,16 +870,26 @@ async function savePlayer(client: DbClient, actorId: string, payload: Row) {
     status,
     active: status === "ACTIVE",
     notes: nullableText(input.observacoes ?? input.notes ?? current.notes, 2000),
+    is_minor: booleanValue(input.menor_de_idade ?? input.is_minor, current.is_minor === true),
+    guardian_name: nullableText(input.responsavel_nome ?? input.guardian_name ?? current.guardian_name, 120),
+    guardian_phone: nullableText(input.responsavel_telefone ?? input.guardian_phone ?? current.guardian_phone, 30),
     updated_by: actorId,
     updated_at: new Date().toISOString(),
   };
+  if (data.is_minor && (!data.guardian_name || digits(data.guardian_phone).length < 10)) {
+    throw new ApiError("Informe o nome e o telefone do responsável.");
+  }
+  if (!data.is_minor) {
+    data.guardian_name = null;
+    data.guardian_phone = null;
+  }
   const result = current.id
     ? await client.from("tournament_athletes").update(data).eq("id", current.id).select().single()
     : await client.from("tournament_athletes").insert({ ...data, created_by: actorId }).select().single();
   assertNoError(result.error);
   const tournament = await currentTournament(client, payload).catch(() => null);
   await audit(client, actorId, tournament?.id || "", "athlete", result.data.id, current.id ? "UPDATE" : "CREATE", current.id ? current : null, result.data);
-  return mapAthlete(result.data as Row);
+  return mapAthlete(result.data as Row, true);
 }
 
 async function saveRegistration(client: DbClient, actorId: string, payload: Row) {
@@ -762,14 +898,14 @@ async function saveRegistration(client: DbClient, actorId: string, payload: Row)
   const registrationId = uuid(input.inscricao_id || input.id);
   const categoryId = uuid(input.categoria_id || input.category_id);
   const athleteId = uuid(input.jogador_id || input.athlete_id);
-  if (!categoryId || !athleteId) throw new Error("Escolha atleta e classe.");
+  if (!categoryId || !athleteId) throw new ApiError("Escolha atleta e classe.");
   const [categoryResult, athleteResult] = await Promise.all([
     client.from("tournament_categories").select("*").eq("id", categoryId).eq("tournament_id", tournament.id).maybeSingle(),
     client.from("tournament_athletes").select("*").eq("id", athleteId).maybeSingle(),
   ]);
   assertNoError(categoryResult.error);
   assertNoError(athleteResult.error);
-  if (!categoryResult.data || !athleteResult.data) throw new Error("Atleta ou classe não encontrado.");
+  if (!categoryResult.data || !athleteResult.data) throw new ApiError("Atleta ou classe não encontrado.", 404);
   let current: Row = {};
   let lookup = client.from("tournament_registrations").select("*");
   if (registrationId) lookup = lookup.eq("id", registrationId);
@@ -806,16 +942,58 @@ async function saveRegistration(client: DbClient, actorId: string, payload: Row)
     ? await client.from("tournament_registrations").update(data).eq("id", current.id).select().single()
     : await client.from("tournament_registrations").insert(data).select().single();
   assertNoError(result.error);
+  const savedRegistration = result.data as Row;
+  const orderId = uuid(savedRegistration.registration_order_id || current.registration_order_id);
+  if (orderId) {
+    const orderLookup = await client.from("tournament_registration_orders").select("*")
+      .eq("id", orderId).eq("tournament_id", tournament.id).maybeSingle();
+    assertNoError(orderLookup.error);
+    if (orderLookup.data) {
+      const currentOrder = orderLookup.data as Row;
+      const currentBillingStatus = text(currentOrder.billing_status, 30).toUpperCase();
+      const billingStatus = paymentStatus === "PAID"
+        ? "PAID"
+        : paymentStatus === "NOT_REQUIRED"
+        ? "WAIVED"
+        : paymentStatus === "CANCELLED"
+        ? "CANCELLED"
+        : currentBillingStatus === "INVOICED"
+        ? "INVOICED"
+        : currentOrder.app_client_id
+        ? "READY_FOR_INVOICE"
+        : "PENDING_CLIENT_LINK";
+      const orderData = {
+        billing_status: billingStatus,
+        paid_at: billingStatus === "PAID" ? (currentOrder.paid_at || new Date().toISOString()) : null,
+        updated_at: new Date().toISOString(),
+      };
+      const orderUpdate = await client.from("tournament_registration_orders").update(orderData)
+        .eq("id", orderId).select().single();
+      assertNoError(orderUpdate.error);
+      const relatedPaymentStatus = billingStatus === "PAID"
+        ? "PAID"
+        : billingStatus === "WAIVED"
+        ? "NOT_REQUIRED"
+        : billingStatus === "CANCELLED"
+        ? "CANCELLED"
+        : "PENDING";
+      const relatedUpdate = await client.from("tournament_registrations")
+        .update({ payment_status: relatedPaymentStatus, updated_at: new Date().toISOString() })
+        .eq("registration_order_id", orderId);
+      assertNoError(relatedUpdate.error);
+      await audit(client, actorId, tournament.id, "registration_order", orderId, "UPDATE", currentOrder, orderUpdate.data);
+    }
+  }
   await audit(client, actorId, tournament.id, "registration", result.data.id, current.id ? "UPDATE" : "CREATE", current.id ? current : null, result.data);
-  return result.data as Row;
+  return savedRegistration;
 }
 
 async function deleteRegistration(client: DbClient, actorId: string, payload: Row) {
   const id = uuid(payload.inscricao_id || payload.registration_id || payload.id);
-  if (!id) throw new Error("Inscrição inválida.");
+  if (!id) throw new ApiError("Inscrição inválida.");
   const lookup = await client.from("tournament_registrations").select("*").eq("id", id).maybeSingle();
   assertNoError(lookup.error);
-  if (!lookup.data) throw new Error("Inscrição não encontrada.");
+  if (!lookup.data) throw new ApiError("Inscrição não encontrada.", 404);
   const result = await client.from("tournament_registrations").delete().eq("id", id);
   assertNoError(result.error);
   await audit(client, actorId, lookup.data.tournament_id, "registration", id, "DELETE", lookup.data, null);
@@ -844,7 +1022,7 @@ function matchPayload(input: Row, tournament: Row, current: Row = {}) {
     if (!rawTime) time = null;
     else {
       time = validTime(rawTime);
-      if (!time) throw new Error("Horário inválido.");
+      if (!time) throw new ApiError("Horário inválido.");
     }
   }
   const winnerField = ownField(input, "vencedor_id", "winner_athlete_id");
@@ -889,6 +1067,24 @@ function matchPayload(input: Row, tournament: Row, current: Row = {}) {
     metadata,
     updated_at: new Date().toISOString(),
   };
+}
+
+async function validateMatchSources(client: DbClient, match: Row, currentId = "") {
+  const sourceIds = [uuid(match.source1_match_id), uuid(match.source2_match_id)].filter(Boolean);
+  if (!sourceIds.length) return;
+  if (new Set(sourceIds).size !== sourceIds.length || (currentId && sourceIds.includes(currentId))) {
+    throw new ApiError("As origens da chave precisam apontar para jogos anteriores distintos.");
+  }
+  const sources = await client.from("tournament_matches")
+    .select("id,tournament_id,category_id")
+    .in("id", sourceIds);
+  assertNoError(sources.error);
+  const rows = (sources.data || []) as Row[];
+  if (rows.length !== sourceIds.length || rows.some((source) =>
+    source.tournament_id !== match.tournament_id || source.category_id !== match.category_id
+  )) {
+    throw new ApiError("A origem do jogo deve pertencer ao mesmo torneio e à mesma classe.");
+  }
 }
 
 async function syncWinnerPropagation(client: DbClient, match: Row, previousWinnerId = "", visited = new Set<string>()) {
@@ -940,10 +1136,18 @@ async function saveOneMatch(client: DbClient, actorId: string, payload: Row, inp
   }
   const tournament = await currentTournament(client, payload, Object.assign({}, current, input));
   const data = matchPayload(input, tournament, current);
-  if (!data.category_id) throw new Error("A classe do jogo é obrigatória.");
+  if (!data.category_id) throw new ApiError("A classe do jogo é obrigatória.");
+  const category = await client.from("tournament_categories")
+    .select("id")
+    .eq("id", data.category_id)
+    .eq("tournament_id", tournament.id)
+    .maybeSingle();
+  assertNoError(category.error);
+  if (!category.data) throw new ApiError("A classe do jogo não pertence a este torneio.");
   if (data.winner_athlete_id && ![data.side1_athlete_id, data.side2_athlete_id].includes(data.winner_athlete_id)) {
-    throw new Error("O vencedor precisa ser um dos atletas deste jogo.");
+    throw new ApiError("O vencedor precisa ser um dos atletas deste jogo.");
   }
+  await validateMatchSources(client, data, current.id || "");
   const result = current.id
     ? await client.from("tournament_matches").update(data).eq("id", current.id).select().single()
     : await client.from("tournament_matches").insert(data).select().single();
@@ -955,7 +1159,8 @@ async function saveOneMatch(client: DbClient, actorId: string, payload: Row, inp
 
 async function saveMatches(client: DbClient, actorId: string, payload: Row) {
   const matches = Array.isArray(payload.jogos) ? payload.jogos : Array.isArray(payload.matches) ? payload.matches : [];
-  if (!matches.length) throw new Error("Nenhum jogo informado.");
+  if (!matches.length) throw new ApiError("Nenhum jogo informado.");
+  if (matches.length > 200) throw new ApiError("Envie no máximo 200 jogos por alteração.");
   const saved: Row[] = [];
   for (const match of matches) saved.push(await saveOneMatch(client, actorId, payload, firstObject(match)));
   return saved;
@@ -963,10 +1168,10 @@ async function saveMatches(client: DbClient, actorId: string, payload: Row) {
 
 async function updateMatchFields(client: DbClient, actorId: string, payload: Row, mode: "schedule" | "score") {
   const matchId = uuid(payload.jogo_id || payload.match_id || firstObject(payload.jogo).jogo_id);
-  if (!matchId) throw new Error("Jogo inválido.");
+  if (!matchId) throw new ApiError("Jogo inválido.");
   const lookup = await client.from("tournament_matches").select("*").eq("id", matchId).maybeSingle();
   assertNoError(lookup.error);
-  if (!lookup.data) throw new Error("Jogo não encontrado.");
+  if (!lookup.data) throw new ApiError("Jogo não encontrado.", 404);
   const tournament = await currentTournament(client, payload, lookup.data);
   const input = firstObject(payload.jogo, payload);
   let update: Row;
@@ -993,7 +1198,7 @@ async function updateMatchFields(client: DbClient, actorId: string, payload: Row
       if (!rawTime) matchTime = null;
       else {
         matchTime = validTime(rawTime);
-        if (!matchTime) throw new Error("Horário inválido.");
+        if (!matchTime) throw new ApiError("Horário inválido.");
       }
     }
     const courtName = courtField.present ? nullableText(courtField.value, 100) : (lookup.data.court_name || null);
@@ -1015,7 +1220,7 @@ async function updateMatchFields(client: DbClient, actorId: string, payload: Row
     const winnerField = ownField(input, "vencedor_id", "winner_athlete_id");
     const winner = winnerField.present ? uuid(winnerField.value) : uuid(lookup.data.winner_athlete_id);
     if (winner && ![lookup.data.side1_athlete_id, lookup.data.side2_athlete_id].includes(winner)) {
-      throw new Error("O vencedor precisa ser um dos atletas deste jogo.");
+      throw new ApiError("O vencedor precisa ser um dos atletas deste jogo.");
     }
     let requestedStatus = input.status || (winner ? "FINISHED" : "PENDING");
     if (winnerField.present && !winner && ["FINISHED", "FINALIZADO", "WALKOVER"].includes(text(requestedStatus, 30).toUpperCase())) {
@@ -1049,7 +1254,7 @@ async function saveAgendaEvent(client: DbClient, actorId: string, payload: Row) 
     current = lookup.data || {};
   }
   const title = text(input.titulo || input.title || current.title, 160);
-  if (title.length < 2) throw new Error("Informe o nome do evento.");
+  if (title.length < 2) throw new ApiError("Informe o nome do evento.");
   const statusValue = text(input.status || current.status || "SCHEDULED", 30).toUpperCase();
   const allowedStatuses = ["SCHEDULED", "CONFIRMED", "FINISHED", "CANCELLED"];
   const data = {
@@ -1074,10 +1279,10 @@ async function saveAgendaEvent(client: DbClient, actorId: string, payload: Row) 
 
 async function deleteAgendaEvent(client: DbClient, actorId: string, payload: Row) {
   const id = uuid(payload.agenda_id || payload.event_id || payload.id);
-  if (!id) throw new Error("Evento inválido.");
+  if (!id) throw new ApiError("Evento inválido.");
   const lookup = await client.from("tournament_schedule_events").select("*").eq("id", id).maybeSingle();
   assertNoError(lookup.error);
-  if (!lookup.data) throw new Error("Evento não encontrado.");
+  if (!lookup.data) throw new ApiError("Evento não encontrado.", 404);
   const result = await client.from("tournament_schedule_events").delete().eq("id", id);
   assertNoError(result.error);
   await audit(client, actorId, lookup.data.tournament_id, "schedule_event", id, "DELETE", lookup.data, null);
@@ -1088,9 +1293,12 @@ async function setLiveState(client: DbClient, actorId: string, payload: Row) {
   const input = firstObject(payload.live, payload);
   const tournament = await currentTournament(client, payload, input);
   const matchId = uuid(input.match_id);
+  const requestedStatus = text(input.status || "IDLE", 30).toUpperCase();
+  const allowedStatuses = new Set(["IDLE", "PROXIMO", "AO_VIVO", "PAUSADO", "INTERVALO", "FINALIZADO"]);
+  if (!allowedStatuses.has(requestedStatus)) throw new ApiError("Estado da transmissão inválido.");
   const data = {
     tournament_id: tournament.id,
-    status: text(input.status || "IDLE", 30).toUpperCase(),
+    status: requestedStatus,
     match_id: matchId || null,
     game1: nullableText(input.game1 ?? input.set1p1, 12),
     game2: nullableText(input.game2 ?? input.set1p2, 12),
@@ -1105,7 +1313,31 @@ async function setLiveState(client: DbClient, actorId: string, payload: Row) {
     ad_title: nullableText(input.ad_title, 160),
     ad_source: nullableText(input.ad_source, 40),
     ad_id: nullableText(input.ad_id, 120),
-    payload: input,
+    payload: {
+      status: requestedStatus,
+      match_id: matchId || "",
+      set1p1: text(input.set1p1 ?? input.game1, 12),
+      set1p2: text(input.set1p2 ?? input.game2, 12),
+      set2p1: text(input.set2p1, 12),
+      set2p2: text(input.set2p2, 12),
+      st1: text(input.st1 ?? input.tie1, 12),
+      st2: text(input.st2 ?? input.tie2, 12),
+      game1: text(input.game1 ?? input.set1p1, 12),
+      game2: text(input.game2 ?? input.set1p2, 12),
+      tie1: text(input.tie1 ?? input.st1, 12),
+      tie2: text(input.tie2 ?? input.st2, 12),
+      jogador1_id: uuid(input.jogador1_id || input.side1_athlete_id),
+      jogador2_id: uuid(input.jogador2_id || input.side2_athlete_id),
+      vencedor_id: uuid(input.vencedor_id || input.winner_athlete_id),
+      vencedor_nome: text(input.vencedor_nome, 120),
+      categoria_id: uuid(input.categoria_id || input.category_id),
+      fase: text(input.fase ?? input.phase, 20),
+      ad_url: text(input.ad_url, 1000),
+      ad_title: text(input.ad_title, 160),
+      ad_source: text(input.ad_source, 40),
+      ad_id: text(input.ad_id, 120),
+      updated_client_at: text(input.updated_client_at, 50),
+    },
     updated_at: new Date().toISOString(),
   };
   const previous = await client.from("tournament_live_state").select("*").eq("tournament_id", tournament.id).maybeSingle();
@@ -1118,13 +1350,13 @@ async function setLiveState(client: DbClient, actorId: string, payload: Row) {
 
 async function generateBracket(client: DbClient, actorId: string, payload: Row) {
   const categoryId = uuid(payload.categoria_id || payload.category_id);
-  if (!categoryId) throw new Error("Escolha uma classe.");
+  if (!categoryId) throw new ApiError("Escolha uma classe.");
   const categoryResult = await client.from("tournament_categories").select("*").eq("id", categoryId).maybeSingle();
   assertNoError(categoryResult.error);
   const category = categoryResult.data as Row | null;
-  if (!category) throw new Error("Classe não encontrada.");
+  if (!category) throw new ApiError("Classe não encontrada.", 404);
   const tournament = await selectTournament(client, category.tournament_id, "");
-  if (!tournament) throw new Error("Torneio não encontrado.");
+  if (!tournament) throw new ApiError("Torneio não encontrado.", 404);
   const registrationsResult = await client
     .from("tournament_registrations")
     .select("*, tournament_athletes(ranking, seed)")
@@ -1139,14 +1371,14 @@ async function generateBracket(client: DbClient, actorId: string, payload: Row) 
     const bRank = integerValue(b.tournament_athletes?.ranking, 99999);
     return aRank - bRank;
   });
-  if (registrations.length < 2) throw new Error("São necessárias pelo menos duas inscrições confirmadas para gerar a chave.");
+  if (registrations.length < 2) throw new ApiError("São necessárias pelo menos duas inscrições confirmadas para gerar a chave.");
   const automaticSize = nextPowerOfTwo(registrations.length);
   const requestedSize = integerValue(payload.tamanho_chave || payload.draw_size, 0);
   const size = requestedSize && [2, 4, 8, 16, 32, 64, 128].includes(requestedSize)
     ? Math.max(requestedSize, automaticSize)
     : Math.max(integerValue(category.draw_size, 0), automaticSize);
-  if (size > 128) throw new Error("A chave permite no máximo 128 participantes.");
-  if (registrations.length > size) throw new Error("A quantidade de inscritos é maior que o tamanho da chave.");
+  if (size > 128) throw new ApiError("A chave permite no máximo 128 participantes.");
+  if (registrations.length > size) throw new ApiError("A quantidade de inscritos é maior que o tamanho da chave.");
 
   const order = seedOrder(size);
   const slots = order.map((seed) => registrations[seed - 1] || null);
@@ -1235,12 +1467,17 @@ async function generateBracket(client: DbClient, actorId: string, payload: Row) 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(request) });
   if (!["GET", "POST"].includes(request.method)) return json(request, { ok: false, error: "Método inválido." }, 405);
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (!Number.isFinite(contentLength) || contentLength > 1000000) {
+    return json(request, { ok: false, error: "Dados enviados são muito grandes." }, 413);
+  }
 
   let failureStage = "setup";
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const anonKey = publicApiKey();
-    if (!supabaseUrl || !anonKey) throw new Error("Configuração do Supabase ausente.");
+    const serviceKey = serviceRoleKey();
+    if (!supabaseUrl || !anonKey || !serviceKey) throw new Error("Configuração do Supabase ausente.");
     const authorization = request.headers.get("authorization") || "";
     const token = authorization.replace(/^Bearer\s+/i, "");
     if (!token) return json(request, { ok: false, error: "Sessão inválida." }, 401);
@@ -1248,29 +1485,65 @@ Deno.serve(async (request) => {
       auth: { persistSession: false, autoRefreshToken: false },
       global: { headers: { Authorization: authorization } },
     });
+    // Raw tournament tables contain CPF, provider identifiers and bearer
+    // capabilities. They are no longer readable through REST by read-only
+    // staff; this trusted client is used only after the caller has passed the
+    // profile + allowlist permission checks below, and the mapper redacts
+    // private fields unless the caller also has tournaments.write.
+    const trustedClient = createClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
     failureStage = "session";
     const userResult = await client.auth.getUser(token);
     if (userResult.error || !userResult.data.user) return json(request, { ok: false, error: "Sessão inválida." }, 401);
     failureStage = "profile";
-    const profileResult = await client.from("profiles").select("id, role, active, permissions").eq("id", userResult.data.user.id).maybeSingle();
+    const profileResult = await trustedClient.from("profiles").select("id, role, active, permissions").eq("id", userResult.data.user.id).maybeSingle();
     assertNoError(profileResult.error);
     const profile = (profileResult.data || {}) as Row;
-    if (!can(profile, readPermissions)) return json(request, { ok: false, error: "Você não tem permissão para acessar torneios." }, 403);
+    const normalizedEmail = text(userResult.data.user.email, 320).toLowerCase();
+    const protectedResult = await trustedClient.from("protected_access_accounts")
+      .select("role, active, permissions")
+      .eq("email", normalizedEmail)
+      .eq("role", profile.role || "")
+      .eq("active", true)
+      .maybeSingle();
+    assertNoError(protectedResult.error);
+    const protectedAccount = (protectedResult.data || {}) as Row;
+    if (!can(profile, readPermissions) || !protectedCan(profile, protectedAccount, readPermissions)) {
+      return json(request, { ok: false, error: "Você não tem permissão para acessar torneios." }, 403);
+    }
+
+    const canWrite = can(profile, writePermissions) && protectedCan(profile, protectedAccount, writePermissions);
 
     if (request.method === "GET") {
       failureStage = "snapshot";
       const url = new URL(request.url);
       const tournamentId = uuid(url.searchParams.get("tournament_id"));
       const slug = text(url.searchParams.get("slug"), 100);
-      const data = await loadSnapshot(client, tournamentId, slug);
+      const data = await loadSnapshot(trustedClient, tournamentId, slug, canWrite);
       return json(request, { ok: true, data });
     }
 
     failureStage = "payload";
-    const payload = await request.json().catch(() => ({})) as Row;
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 1000000) {
+      return json(request, { ok: false, error: "Dados enviados são muito grandes." }, 413);
+    }
+    let payload: Row;
+    try {
+      const parsed = JSON.parse(rawBody);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return json(request, { ok: false, error: "Dados inválidos." }, 400);
+      }
+      payload = parsed as Row;
+    } catch (_error) {
+      return json(request, { ok: false, error: "Dados inválidos." }, 400);
+    }
     const action = text(payload.action, 50);
     if (!writeActions.has(action)) return json(request, { ok: false, error: "Ação inválida." }, 400);
-    if (!can(profile, writePermissions)) return json(request, { ok: false, error: "Você não tem permissão para alterar torneios." }, 403);
+    if (!canWrite) {
+      return json(request, { ok: false, error: "Você não tem permissão para alterar torneios." }, 403);
+    }
 
     failureStage = action;
     let result: unknown;
@@ -1305,14 +1578,27 @@ Deno.serve(async (request) => {
         const tournament = await currentTournament(client, payload).catch(() => null);
         responseTournamentId = tournament?.id || "";
       }
-      response.data = await loadSnapshot(client, responseTournamentId, "");
+      response.data = await loadSnapshot(client, responseTournamentId, "", true);
     }
     return json(request, response);
   } catch (error) {
-    const message = errorMessage(error);
-    console.error("tournament-admin-api failure", { stage: failureStage, message });
-    const normalized = message.toLowerCase();
-    const status = normalized.includes("não encontr") ? 404 : normalized.includes("já possui") || normalized.includes("obrigat") || normalized.includes("informe") || normalized.includes("escolha") || normalized.includes("necessária") ? 400 : 500;
-    return json(request, { ok: false, error: message, code: failureStage }, status);
+    const code = errorCode(error);
+    console.error("tournament-admin-api failure", { stage: failureStage, code: code || "internal_error" });
+    if (error instanceof ApiError) {
+      return json(request, { ok: false, error: error.message, code: failureStage }, error.status);
+    }
+    if (code === "23505") {
+      return json(request, { ok: false, error: "Já existe um registro com esses dados.", code: failureStage }, 409);
+    }
+    if (["23503", "23514"].includes(code)) {
+      return json(request, { ok: false, error: "A alteração conflita com dados já vinculados.", code: failureStage }, 409);
+    }
+    if (["22007", "22008", "22023", "22P02"].includes(code)) {
+      return json(request, { ok: false, error: "Os dados enviados são inválidos.", code: failureStage }, 400);
+    }
+    if (code === "42501") {
+      return json(request, { ok: false, error: "Você não tem permissão para concluir esta alteração.", code: failureStage }, 403);
+    }
+    return json(request, { ok: false, error: "Não foi possível concluir a alteração do torneio.", code: failureStage }, 500);
   }
 });

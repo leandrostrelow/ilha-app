@@ -1,35 +1,77 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import "jsr:@supabase/functions-js@2.112.3/edge-runtime.d.ts";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 
-const allowedOrigins = new Set([
+const defaultAllowedOrigins = new Set([
   "https://app.ilhatenis.com",
   "http://localhost:8769",
   "http://127.0.0.1:8769",
 ]);
 
+function publicRegistrationAllowedOrigins() {
+  const origins = new Set(defaultAllowedOrigins);
+  const configured = (Deno.env.get("PUBLIC_REGISTRATION_ALLOWED_ORIGINS") || "").trim();
+  if (!configured) return origins;
+  for (const value of configured.split(",")) {
+    const candidate = value.trim();
+    if (!candidate || candidate === "*") return null;
+    try {
+      const url = new URL(candidate);
+      const localHttp = url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname);
+      if ((url.protocol !== "https:" && !localHttp) || url.username || url.password ||
+        url.pathname !== "/" || url.search || url.hash) return null;
+      origins.add(url.origin);
+    } catch (_error) {
+      return null;
+    }
+  }
+  return origins;
+}
+
+const configuredAllowedOrigins = publicRegistrationAllowedOrigins();
+
 const allowedBillingTypes = new Set(["PIX", "BOLETO", "CREDIT_CARD", "UNDEFINED"]);
 const allowedGenders = new Set(["MALE", "FEMALE"]);
 const allowedAvailabilityDays = new Set(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY"]);
-const participantPrices: Record<string, number> = { CINCATE: 100, ILHA_STUDENT: 130, NON_MEMBER: 180, COURTESY: 0 };
+const allowedParticipantTypes = new Set(["CINCATE", "ILHA_STUDENT", "NON_MEMBER", "COURTESY"]);
 const participantLabels: Record<string, string> = { CINCATE: "CINCATE", ILHA_STUDENT: "Aluno Ilha Tênis", NON_MEMBER: "Não associado", COURTESY: "Cortesia (isento)" };
 const retryablePaymentStatuses = new Set(["CREATED", "FAILED"]);
+const publicRegistrationRuleErrors = new Set([
+  "A Espacial A e a Espacial B são exclusivas para quem já está inscrito da 2ª à 6ª Classe Masculina.",
+  "Este atleta já atingiu o limite de duas inscrições neste torneio.",
+  "Somente atletas da 2ª à 6ª Classe Masculina podem fazer uma segunda inscrição, exclusivamente na Espacial A ou B.",
+  "Escolha primeiro sua classe principal e use a opção de Classe Espacial.",
+  "Esta classe não permite inscrição adicional na Classe Espacial.",
+  "A Classe Espacial selecionada não corresponde à sua classe principal.",
+  "A Classe Espacial selecionada atingiu o limite de vagas.",
+]);
 
 type JsonRecord = Record<string, unknown>;
+type DbClient = SupabaseClient<any, "public", "public", any>;
 
 function corsHeaders(request: Request) {
   const origin = request.headers.get("origin") || "";
+  const responseOrigin = configuredAllowedOrigins?.has(origin)
+    ? origin
+    : origin
+    ? "null"
+    : "https://app.ilhatenis.com";
   return {
-    "Access-Control-Allow-Origin": allowedOrigins.has(origin) ? origin : "https://app.ilhatenis.com",
+    "Access-Control-Allow-Origin": responseOrigin,
     "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Vary": "Origin",
   };
 }
 
-function json(request: Request, body: unknown, status = 200) {
+function json(request: Request, body: unknown, status = 200, extraHeaders: Record<string, string> = {}) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders(request), "Content-Type": "application/json", "Cache-Control": "no-store" },
+    headers: {
+      ...corsHeaders(request),
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      ...extraHeaders,
+    },
   });
 }
 
@@ -58,8 +100,96 @@ function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
+type PublicRegistrationSecurityConfig = {
+  turnstileSiteKey: string;
+  turnstileSecretKey: string;
+  turnstileAllowedHostnames: Set<string>;
+  rateLimitSalt: string;
+};
+
+function publicRegistrationSecurityConfig(): PublicRegistrationSecurityConfig | null {
+  const turnstileSiteKey = (Deno.env.get("TURNSTILE_SITE_KEY") || "").trim();
+  const turnstileSecretKey = (Deno.env.get("TURNSTILE_SECRET_KEY") || "").trim();
+  const rateLimitSalt = Deno.env.get("PUBLIC_REGISTRATION_RATE_LIMIT_SALT") || "";
+  const turnstileAllowedHostnames = new Set(
+    (Deno.env.get("TURNSTILE_ALLOWED_HOSTNAMES") || "")
+      .split(",")
+      .map((hostname) => hostname.trim().toLowerCase())
+      .filter((hostname) => /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/.test(hostname)),
+  );
+  if (!configuredAllowedOrigins || !/^[A-Za-z0-9_-]{10,100}$/.test(turnstileSiteKey) ||
+    !/^[A-Za-z0-9_-]{10,100}$/.test(turnstileSecretKey) ||
+    rateLimitSalt.length < 32 ||
+    turnstileAllowedHostnames.size === 0) return null;
+  return { turnstileSiteKey, turnstileSecretKey, turnstileAllowedHostnames, rateLimitSalt };
+}
+
+function trustedClientIp(request: Request) {
+  // This header must be overwritten by the trusted edge gateway. Do not fall
+  // back to client-controlled forwarding headers; when it is absent or invalid
+  // the database applies only the global pre-CAPTCHA bucket.
+  const candidate = text(request.headers.get("cf-connecting-ip"), 64).toLowerCase();
+  if (!candidate || (!candidate.includes(".") && !candidate.includes(":"))) return null;
+  return /^[0-9a-f:.]+$/i.test(candidate) ? candidate : null;
+}
+
+async function hmacSha256(secret: string, value: string) {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(value));
+  return Array.from(new Uint8Array(signature))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function verifyTurnstile(
+  request: Request,
+  token: string,
+  config: PublicRegistrationSecurityConfig,
+) {
+  const form = new FormData();
+  form.set("secret", config.turnstileSecretKey);
+  form.set("response", token);
+  const ip = trustedClientIp(request);
+  if (ip) form.set("remoteip", ip);
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      body: form,
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error("turnstile_unavailable");
+    const outcome = await response.json() as { success?: boolean; hostname?: string; action?: string };
+    return outcome.success === true &&
+      outcome.action === "tournament_registration" &&
+      config.turnstileAllowedHostnames.has(String(outcome.hostname || "").toLowerCase());
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function digits(value: unknown) {
   return String(value || "").replace(/\D/g, "");
+}
+
+function isValidCpf(value: string) {
+  if (!/^\d{11}$/.test(value) || /^(\d)\1{10}$/.test(value)) return false;
+  const calculateDigit = (length: number) => {
+    let sum = 0;
+    for (let index = 0; index < length; index += 1) sum += Number(value[index]) * (length + 1 - index);
+    const remainder = (sum * 10) % 11;
+    return remainder === 10 ? 0 : remainder;
+  };
+  return calculateDigit(9) === Number(value[9]) && calculateDigit(10) === Number(value[10]);
 }
 
 async function publicAthleteSourceKey(email: string, phone: string) {
@@ -166,7 +296,7 @@ async function findAsaasPayment(externalReference: string) {
   return (rows[0] || null) as JsonRecord | null;
 }
 
-async function ensureAsaasCustomer(supabase: ReturnType<typeof createClient>, athlete: JsonRecord) {
+async function ensureAsaasCustomer(supabase: DbClient, athlete: JsonRecord) {
   if (athlete.asaas_customer_id) return String(athlete.asaas_customer_id);
   const cpf = String(athlete.cpf || "");
   if (!cpf) throw new Error("O pagamento online ainda precisa ser concluído pela organização.");
@@ -206,7 +336,7 @@ function mapAsaasPaymentStatus(value: unknown) {
 }
 
 async function saveProviderPayment(
-  supabase: ReturnType<typeof createClient>,
+  supabase: DbClient,
   localPayment: JsonRecord,
   providerPayment: JsonRecord,
 ) {
@@ -224,7 +354,16 @@ async function saveProviderPayment(
     pix_payload: nullableText(pix.payload, 4000),
     pix_encoded_image: nullableText(pix.encodedImage, 500000),
     pix_expires_at: nullableText(pix.expirationDate, 80),
-    raw_response: { payment: providerPayment, pix },
+    raw_response: {
+      payment: {
+        id: providerPaymentId,
+        status: text(providerPayment.status, 40),
+        billing_type: text(providerPayment.billingType, 40),
+        due_date: text(providerPayment.dueDate, 20),
+        external_reference: text(providerPayment.externalReference, 160),
+      },
+      pix: { expiration_date: text(pix.expirationDate, 80) },
+    },
     updated_at: new Date().toISOString(),
   };
   const { data, error } = await supabase.from("tournament_payments")
@@ -237,11 +376,12 @@ async function saveProviderPayment(
 }
 
 async function createOrRecoverPayment(
-  supabase: ReturnType<typeof createClient>,
+  supabase: DbClient,
   localPayment: JsonRecord,
   athlete: JsonRecord,
   tournament: JsonRecord,
   category: JsonRecord,
+  additionalCategory: JsonRecord | null,
 ) {
   const externalReference = String(localPayment.external_reference);
   const recovered = await findAsaasPayment(externalReference);
@@ -255,7 +395,7 @@ async function createOrRecoverPayment(
       billingType: localPayment.billing_type,
       value: Number(localPayment.amount),
       dueDate: saoPauloDate(),
-      description: `Inscrição ${tournament.name} · ${category.name}`.slice(0, 500),
+      description: `Inscrição ${tournament.name} · ${category.name}${additionalCategory ? ` + ${additionalCategory.name}` : ""}`.slice(0, 500),
       externalReference,
     }),
   });
@@ -264,20 +404,47 @@ async function createOrRecoverPayment(
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(request) });
+  const securityConfig = publicRegistrationSecurityConfig();
+  if (request.method === "GET") {
+    if (!securityConfig) {
+      return json(request, { error: "As inscrições estão temporariamente indisponíveis." }, 503);
+    }
+    return json(request, {
+      captcha_provider: "turnstile",
+      captcha_site_key: securityConfig.turnstileSiteKey,
+    });
+  }
   if (request.method !== "POST") return json(request, { error: "Método inválido." }, 405);
+  if (!securityConfig) {
+    return json(request, { error: "As inscrições estão temporariamente indisponíveis." }, 503);
+  }
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (contentLength > 25000) return json(request, { error: "Dados da inscrição muito grandes." }, 413);
 
   let failureStage = "payload";
   try {
-    const payload = await request.json().catch(() => null) as JsonRecord | null;
-    if (!payload) return json(request, { error: "Dados da inscrição inválidos." }, 400);
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 25000) {
+      return json(request, { error: "Dados da inscrição muito grandes." }, 413);
+    }
+    let payload: JsonRecord;
+    try {
+      const parsed = JSON.parse(rawBody);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return json(request, { error: "Dados da inscrição inválidos." }, 400);
+      }
+      payload = parsed as JsonRecord;
+    } catch (_error) {
+      return json(request, { error: "Dados da inscrição inválidos." }, 400);
+    }
 
     const tournamentSlug = text(payload.tournament_slug, 100).toLowerCase();
     const categoryId = text(payload.category_id, 80);
+    const additionalCategoryId = text(payload.additional_category_id, 80);
     const fullName = text(payload.full_name, 120);
     const email = text(payload.email, 180).toLowerCase();
     const phone = digits(payload.phone);
+    const submittedCpf = digits(payload.cpf);
     const participantType = text(payload.participant_type, 30).toUpperCase();
     const courtesyToken = text(payload.courtesy_token, 100);
     const gender = text(payload.gender, 20).toUpperCase();
@@ -289,6 +456,7 @@ Deno.serve(async (request) => {
     const notes = nullableText(payload.notes, 500);
     const billingType = normalizeBillingType(payload.payment_method);
     const trackingToken = text(payload.tracking_token, 80);
+    const captchaToken = text(payload.captcha_token, 2048);
     const termsAccepted = payload.terms_accepted === true;
 
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tournamentSlug) || !isUuid(categoryId)) {
@@ -297,13 +465,18 @@ Deno.serve(async (request) => {
     if (fullName.length < 2) return json(request, { error: "Informe seu nome completo." }, 400);
     if (!/^\S+@\S+\.\S+$/.test(email)) return json(request, { error: "Informe um e-mail válido." }, 400);
     if (phone.length < 10 || phone.length > 13) return json(request, { error: "Informe um telefone válido com DDD." }, 400);
-    if (!(participantType in participantPrices)) return json(request, { error: "Escolha um tipo de inscrição válido." }, 400);
+    if (submittedCpf && !isValidCpf(submittedCpf)) return json(request, { error: "Informe um CPF válido." }, 400);
+    if (!allowedParticipantTypes.has(participantType)) return json(request, { error: "Escolha um tipo de inscrição válido." }, 400);
+    if (participantType !== "COURTESY" && !isValidCpf(submittedCpf)) {
+      return json(request, { error: "Informe seu CPF para gerar a cobrança da inscrição." }, 400);
+    }
     if (!allowedGenders.has(gender)) return json(request, { error: "Escolha o sexo." }, 400);
     if (!availabilityDays.length || availabilityDays.some((day) => !allowedAvailabilityDays.has(day))) {
       return json(request, { error: "Marque pelo menos um dia disponível entre segunda e quinta." }, 400);
     }
     if (!termsAccepted) return json(request, { error: "Confirme os dados e a autorização para realizar a inscrição." }, 400);
     if (!allowedBillingTypes.has(billingType)) return json(request, { error: "Forma de pagamento inválida." }, 400);
+    if (!captchaToken) return json(request, { error: "Confirme que você não é um robô." }, 400);
 
     failureStage = "database_setup";
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
@@ -313,9 +486,59 @@ Deno.serve(async (request) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
+    failureStage = "network_rate_limit";
+    const clientIp = trustedClientIp(request);
+    const ipHash = clientIp ? await hmacSha256(securityConfig.rateLimitSalt, `ip:${clientIp}`) : null;
+    const rateLimitResult = await supabase.rpc("consume_tournament_registration_network_rate_limits", {
+      p_ip_hash: ipHash,
+    });
+    if (rateLimitResult.error) throw rateLimitResult.error;
+    const rateLimit = (Array.isArray(rateLimitResult.data) ? rateLimitResult.data[0] : rateLimitResult.data) as
+      | { allowed?: boolean; retry_after_seconds?: number }
+      | null;
+    if (!rateLimit?.allowed) {
+      const retryAfter = Math.max(1, Math.min(1800, Number(rateLimit?.retry_after_seconds || 60)));
+      return json(
+        request,
+        { error: "Muitas tentativas de inscrição. Aguarde um pouco e tente novamente." },
+        429,
+        { "Retry-After": String(retryAfter) },
+      );
+    }
+
+    failureStage = "captcha_verification";
+    let captchaAccepted = false;
+    try {
+      captchaAccepted = await verifyTurnstile(request, captchaToken, securityConfig);
+    } catch (_error) {
+      return json(request, { error: "Não foi possível validar a proteção anti-robô agora. Tente novamente." }, 503);
+    }
+    if (!captchaAccepted) {
+      return json(request, { error: "A validação anti-robô expirou ou não foi aceita. Tente novamente." }, 400);
+    }
+
+    failureStage = "identity_rate_limit";
+    const identityHash = await hmacSha256(securityConfig.rateLimitSalt, `identity:${email}|${phone}`);
+    const identityRateLimitResult = await supabase.rpc("consume_tournament_registration_identity_rate_limit", {
+      p_identity_hash: identityHash,
+    });
+    if (identityRateLimitResult.error) throw identityRateLimitResult.error;
+    const identityRateLimit = (
+      Array.isArray(identityRateLimitResult.data) ? identityRateLimitResult.data[0] : identityRateLimitResult.data
+    ) as { allowed?: boolean; retry_after_seconds?: number } | null;
+    if (!identityRateLimit?.allowed) {
+      const retryAfter = Math.max(1, Math.min(1800, Number(identityRateLimit?.retry_after_seconds || 60)));
+      return json(
+        request,
+        { error: "Muitas tentativas para estes dados. Aguarde um pouco e tente novamente." },
+        429,
+        { "Retry-After": String(retryAfter) },
+      );
+    }
+
     failureStage = "tournament_lookup";
     const { data: tournament, error: tournamentError } = await supabase.from("tournaments")
-      .select("id,name,slug,status,registration_open,registration_opens_at,registration_closes_at,default_fee,allowed_payment_methods,is_published,courtesy_registration_token")
+      .select("id,name,slug,status,registration_open,registration_opens_at,registration_closes_at,default_fee,allowed_payment_methods,is_published,courtesy_registration_token,settings")
       .eq("slug", tournamentSlug)
       .maybeSingle();
     if (tournamentError) throw tournamentError;
@@ -333,7 +556,7 @@ Deno.serve(async (request) => {
 
     failureStage = "category_lookup";
     const { data: category, error: categoryError } = await supabase.from("tournament_categories")
-      .select("id,tournament_id,name,event_type,gender,registration_fee,registration_open,max_entries,active")
+      .select("id,tournament_id,code,name,event_type,gender,registration_fee,registration_open,max_entries,active")
       .eq("id", categoryId)
       .eq("tournament_id", tournament.id)
       .maybeSingle();
@@ -347,6 +570,47 @@ Deno.serve(async (request) => {
     if (category.event_type === "DOUBLES" && !partnerName) {
       return json(request, { error: "Informe o nome da dupla para esta categoria." }, 400);
     }
+    const spatialAddons = tournament.settings && typeof tournament.settings === "object" && !Array.isArray(tournament.settings)
+      ? (tournament.settings as JsonRecord).spatial_addons
+      : null;
+    const spatialAddonMap = spatialAddons && typeof spatialAddons === "object" && !Array.isArray(spatialAddons)
+      ? spatialAddons as JsonRecord
+      : {};
+    const spatialCategoryCodes = new Set(
+      Object.values(spatialAddonMap)
+        .map((rule) => rule && typeof rule === "object" && !Array.isArray(rule) ? text((rule as JsonRecord).category_code, 40) : "")
+        .filter(Boolean),
+    );
+    if (spatialCategoryCodes.has(String(category.code))) {
+      return json(request, { error: "Escolha primeiro sua classe principal e use a opção de Classe Espacial." }, 400);
+    }
+    let additionalCategory: JsonRecord | null = null;
+    let additionalFee = 0;
+    const addonRuleValue = spatialAddonMap[String(category.code)] as unknown;
+    const addonRule = addonRuleValue && typeof addonRuleValue === "object" && !Array.isArray(addonRuleValue)
+      ? addonRuleValue as JsonRecord
+      : null;
+    if (additionalCategoryId) {
+      if (!isUuid(additionalCategoryId) || !addonRule) {
+        return json(request, { error: "Esta classe não permite inscrição adicional na Classe Espacial." }, 400);
+      }
+      const expectedAdditionalCode = text(addonRule.category_code, 40);
+      const additionalResult = await supabase.from("tournament_categories")
+        .select("id,tournament_id,code,name,event_type,gender,registration_fee,registration_open,max_entries,active")
+        .eq("id", additionalCategoryId)
+        .eq("tournament_id", tournament.id)
+        .eq("code", expectedAdditionalCode)
+        .maybeSingle();
+      if (additionalResult.error) throw additionalResult.error;
+      additionalCategory = additionalResult.data as JsonRecord | null;
+      if (!additionalCategory || !additionalCategory.active || !additionalCategory.registration_open) {
+        return json(request, { error: "A Classe Espacial selecionada não corresponde à sua classe principal." }, 400);
+      }
+      additionalFee = Number(addonRule.fee ?? additionalCategory.registration_fee);
+      if (!Number.isFinite(additionalFee) || additionalFee < 0) {
+        return json(request, { error: "O valor da Classe Espacial ainda não foi configurado." }, 409);
+      }
+    }
     const allowedMethods = Array.isArray(tournament.allowed_payment_methods)
       ? tournament.allowed_payment_methods.map((item: unknown) => String(item).toUpperCase())
       : ["PIX", "BOLETO", "CREDIT_CARD"];
@@ -358,7 +622,15 @@ Deno.serve(async (request) => {
     if (participantType !== "COURTESY" && !allowedMethods.includes(billingType)) {
       return json(request, { error: "Esta forma de pagamento não está disponível no torneio." }, 400);
     }
-    const amount = participantPrices[participantType];
+    const configuredBaseAmount = Number(category.registration_fee ?? tournament.default_fee);
+    if (!Number.isFinite(configuredBaseAmount) || configuredBaseAmount < 0) {
+      return json(request, { error: "O valor desta categoria ainda não foi configurado." }, 409);
+    }
+    // CINCATE/Aluno Ilha are self-declared in the public form and therefore do
+    // not authorize a discount. Only the server-held courtesy capability can
+    // reduce the catalog/category price.
+    const baseAmount = participantType === "COURTESY" ? 0 : configuredBaseAmount;
+    const amount = participantType === "COURTESY" ? 0 : baseAmount + additionalFee;
 
     failureStage = "athlete_upsert";
     const sourceKey = await publicAthleteSourceKey(email, phone);
@@ -367,11 +639,68 @@ Deno.serve(async (request) => {
       .eq("source_key", sourceKey)
       .maybeSingle();
     if (athleteError) throw athleteError;
+    let registration: JsonRecord | null = null;
+    let additionalRegistration: JsonRecord | null = null;
+    let registrationChecked = false;
+    if (athlete) {
+      failureStage = "registration_authorization";
+      const existingRegistration = await supabase.from("tournament_registrations")
+        .select("*")
+        .eq("tournament_id", tournament.id)
+        .eq("category_id", category.id)
+        .eq("athlete_id", athlete.id)
+        .maybeSingle();
+      if (existingRegistration.error) throw existingRegistration.error;
+      registration = existingRegistration.data as JsonRecord | null;
+      registrationChecked = true;
+      if (registration && (!trackingToken || trackingToken !== String(registration.public_token))) {
+        return json(request, { error: "Já existe uma inscrição deste atleta nesta classe. Use o acompanhamento da primeira inscrição." }, 409);
+      }
+      if (registration) {
+        const childResult = await supabase.from("tournament_registrations")
+          .select("*")
+          .eq("parent_registration_id", registration.id)
+          .maybeSingle();
+        if (childResult.error) throw childResult.error;
+        additionalRegistration = childResult.data as JsonRecord | null;
+      }
+    }
+
+    const storedCpf = digits(athlete?.cpf);
+    if (athlete && storedCpf && submittedCpf && storedCpf !== submittedCpf) {
+      return json(request, { error: "Os dados não correspondem ao participante já cadastrado. Fale com a organização." }, 409);
+    }
+    if (participantType !== "COURTESY" && athlete && !registration) {
+      if (!isValidCpf(storedCpf) || storedCpf !== submittedCpf) {
+        return json(request, { error: "Confirme o CPF já cadastrado ou fale com a organização." }, 409);
+      }
+    }
+    // The tournament-wide courtesy link proves fee exemption, not ownership
+    // of an athlete record. Reusing an existing athlete in a new category also
+    // requires the stored CPF; an existing category is already protected by
+    // its per-registration tracking token above.
+    if (participantType === "COURTESY" && athlete && !registration) {
+      if (!isValidCpf(storedCpf) || storedCpf !== submittedCpf) {
+        return json(request, { error: "Confirme o CPF já cadastrado ou fale com a organização." }, 409);
+      }
+    }
+    if (submittedCpf) {
+      const cpfLookup = await supabase.from("tournament_athletes")
+        .select("*")
+        .eq("cpf", submittedCpf)
+        .maybeSingle();
+      if (cpfLookup.error) throw cpfLookup.error;
+      if (cpfLookup.data && (!athlete || cpfLookup.data.id !== athlete.id)) {
+        return json(request, { error: "Este CPF já está vinculado a outro participante. Fale com a organização." }, 409);
+      }
+    }
+    const effectiveCpf = participantType === "COURTESY" ? submittedCpf || storedCpf : submittedCpf;
     const athleteValues = {
       full_name: fullName,
       source_key: sourceKey,
       email,
       phone,
+      cpf: effectiveCpf || null,
       gender,
       city,
       active: true,
@@ -385,24 +714,24 @@ Deno.serve(async (request) => {
     } else {
       const result = await supabase.from("tournament_athletes").insert(athleteValues).select("*").single();
       if (result.error?.code === "23505") {
-        const retry = await supabase.from("tournament_athletes").select("*").eq("source_key", sourceKey).single();
-        if (retry.error) throw retry.error;
-        athlete = retry.data;
+        return json(request, { error: "Já existe um cadastro com estes dados. Confira o CPF ou tente novamente." }, 409);
       } else if (result.error) throw result.error;
       else athlete = result.data;
     }
 
-    failureStage = "registration_lookup";
-    let registrationResult = await supabase.from("tournament_registrations")
-      .select("*")
-      .eq("tournament_id", tournament.id)
-      .eq("category_id", category.id)
-      .eq("athlete_id", athlete.id)
-      .maybeSingle();
-    if (registrationResult.error) throw registrationResult.error;
-    let registration = registrationResult.data as JsonRecord | null;
-    if (registration && (!trackingToken || trackingToken !== String(registration.public_token))) {
-      return json(request, { error: "Já existe uma inscrição deste atleta nesta classe. Use o acompanhamento da primeira inscrição." }, 409);
+    if (!registrationChecked) {
+      failureStage = "registration_lookup";
+      const registrationResult = await supabase.from("tournament_registrations")
+        .select("*")
+        .eq("tournament_id", tournament.id)
+        .eq("category_id", category.id)
+        .eq("athlete_id", athlete.id)
+        .maybeSingle();
+      if (registrationResult.error) throw registrationResult.error;
+      registration = registrationResult.data as JsonRecord | null;
+      if (registration && (!trackingToken || trackingToken !== String(registration.public_token))) {
+        return json(request, { error: "Já existe uma inscrição deste atleta nesta classe. Use o acompanhamento da primeira inscrição." }, 409);
+      }
     }
 
     if (registration) {
@@ -415,36 +744,53 @@ Deno.serve(async (request) => {
         registration.payment_status === "PAID") {
         return json(request, {
           registration: safeRegistration(registration),
+          additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
           payment: safePayment(existingPayment.data as JsonRecord | null),
           tracking_token: registration.public_token,
         });
       }
     } else {
       failureStage = "registration_capacity";
-      const result = await supabase.rpc("tournament_claim_public_registration", {
+      const result = await supabase.rpc("claim_public_tournament_registration_bundle", {
         p_tournament_id: tournament.id,
-        p_category_id: category.id,
+        p_primary_category_id: category.id,
+        p_additional_category_id: additionalCategory?.id || null,
         p_athlete_id: athlete.id,
         p_public_name: fullName,
         p_public_city: city,
         p_public_club: null,
         p_partner_name: partnerName,
         p_shirt_size: null,
-        p_total_amount: amount,
+        p_primary_amount: baseAmount,
         p_notes: registrationNotes(participantType, availabilityDays, notes),
       });
       if (result.error?.code === "23505") {
         return json(request, { error: "Esta inscrição já está sendo processada. Aguarde alguns segundos e use o acompanhamento da primeira solicitação." }, 409);
       }
+      if (result.error?.code === "P0001" && publicRegistrationRuleErrors.has(result.error.message)) {
+        return json(request, { error: result.error.message }, 409);
+      }
       if (result.error) throw result.error;
-      registration = (Array.isArray(result.data) ? result.data[0] : result.data) as JsonRecord | null;
+      const bundle = (Array.isArray(result.data) ? result.data[0] : result.data) as JsonRecord | null;
+      registration = bundle?.registration as JsonRecord | null;
+      additionalRegistration = bundle?.additional_registration as JsonRecord | null;
     }
     if (!registration) throw new Error("Não foi possível preparar a inscrição.");
+    if (!additionalRegistration) {
+      const childResult = await supabase.from("tournament_registrations")
+        .select("*")
+        .eq("parent_registration_id", registration.id)
+        .limit(1)
+        .maybeSingle();
+      if (childResult.error) throw childResult.error;
+      additionalRegistration = childResult.data as JsonRecord | null;
+    }
     const registrationStatus = String(registration.status);
 
     if (registrationStatus === "WAITLIST" || amount === 0) {
       return json(request, {
         registration: safeRegistration(registration),
+        additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
         payment: null,
         tracking_token: registration.public_token,
       }, 201);
@@ -452,7 +798,7 @@ Deno.serve(async (request) => {
 
     failureStage = "payment_claim";
     const externalReference = `tournament-registration:${registration.id}`;
-    let paymentResult = await supabase.from("tournament_payments").select("*").eq("registration_id", registration.id).maybeSingle();
+    const paymentResult = await supabase.from("tournament_payments").select("*").eq("registration_id", registration.id).maybeSingle();
     if (paymentResult.error) throw paymentResult.error;
     let localPayment = paymentResult.data as JsonRecord | null;
     let ownsPaymentCreation = false;
@@ -481,6 +827,7 @@ Deno.serve(async (request) => {
     if (localPayment.provider_payment_id || !retryablePaymentStatuses.has(String(localPayment.status))) {
       return json(request, {
         registration: safeRegistration(registration),
+        additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
         payment: safePayment(localPayment),
         tracking_token: registration.public_token,
       });
@@ -506,24 +853,27 @@ Deno.serve(async (request) => {
       return json(request, {
         error: "A cobrança desta inscrição ainda está sendo preparada. Tente novamente em alguns segundos.",
         registration: safeRegistration(registration),
+        additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
         payment: safePayment(localPayment),
         tracking_token: registration.public_token,
       }, 409);
     }
 
+    if (!localPayment) throw new Error("Não foi possível assumir a cobrança.");
+    const claimedPayment: JsonRecord = localPayment;
     failureStage = "asaas_payment";
     try {
-      localPayment = await createOrRecoverPayment(supabase, localPayment, athlete, tournament, category);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Falha ao criar cobrança.";
+      localPayment = await createOrRecoverPayment(supabase, claimedPayment, athlete, tournament, category, additionalCategory);
+    } catch (_error) {
       const failedPayment = await supabase.from("tournament_payments").update({
         status: "FAILED",
-        raw_response: { error: message.slice(0, 500), stage: failureStage },
+        raw_response: { error_code: "provider_request_failed", stage: failureStage },
         updated_at: new Date().toISOString(),
-      }).eq("id", localPayment.id).select("*").single();
+      }).eq("id", claimedPayment.id).select("*").single();
       if (failedPayment.error) throw failedPayment.error;
       return json(request, {
         registration: safeRegistration(registration),
+        additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
         payment: safePayment(failedPayment.data as JsonRecord),
         tracking_token: registration.public_token,
         retryable: true,
@@ -533,12 +883,15 @@ Deno.serve(async (request) => {
 
     return json(request, {
       registration: safeRegistration(registration),
+      additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
       payment: safePayment(localPayment),
       tracking_token: registration.public_token,
     }, 201);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("tournament-register failure", { stage: failureStage, message });
+    const code = error && typeof error === "object" && "code" in error
+      ? text((error as JsonRecord).code, 40)
+      : "internal_error";
+    console.error("tournament-register failure", { stage: failureStage, code });
     const publicMessage = failureStage === "asaas_payment"
       ? "A inscrição foi salva, mas não foi possível gerar a cobrança agora. Tente novamente."
       : "Não foi possível concluir a inscrição.";

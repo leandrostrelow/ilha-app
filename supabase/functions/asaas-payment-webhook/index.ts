@@ -1,7 +1,8 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import "jsr:@supabase/functions-js@2.112.3/edge-runtime.d.ts";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 
 type JsonRecord = Record<string, unknown>;
+type DbClient = SupabaseClient<any, "public", "public", any>;
 
 const paymentEventStatuses: Record<string, string> = {
   PAYMENT_CREATED: "PENDING",
@@ -85,11 +86,51 @@ function refundedAmount(payment: JsonRecord) {
   }, 0);
 }
 
+function finiteNumber(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function safeProviderPaymentSnapshot(payment: JsonRecord) {
+  const refunds = Array.isArray(payment.refunds)
+    ? payment.refunds
+      .filter((refund): refund is JsonRecord => Boolean(refund) && typeof refund === "object" && !Array.isArray(refund))
+      .slice(0, 50)
+      .map((refund) => ({
+        status: text(refund.status, 30),
+        value: finiteNumber(refund.value),
+        date_created: text(refund.dateCreated, 40),
+      }))
+    : [];
+  return {
+    id: text(payment.id, 120),
+    status: text(payment.status, 40),
+    value: finiteNumber(payment.value),
+    net_value: finiteNumber(payment.netValue),
+    billing_type: text(payment.billingType, 30),
+    external_reference: text(payment.externalReference, 180),
+    date_created: text(payment.dateCreated, 40),
+    due_date: text(payment.dueDate, 40),
+    payment_date: text(payment.paymentDate, 40),
+    client_payment_date: text(payment.clientPaymentDate, 40),
+    confirmed_date: text(payment.confirmedDate, 40),
+    credit_date: text(payment.creditDate, 40),
+    original_due_date: text(payment.originalDueDate, 40),
+    deleted: payment.deleted === true,
+    anticipated: payment.anticipated === true,
+    refunds,
+  };
+}
+
 function preservesStrongerPaymentState(currentStatus: string, nextStatus: string, eventType: string) {
   if (currentStatus === "REFUNDED") return nextStatus !== "REFUNDED";
   if (currentStatus === "CHARGEBACK") {
+    // DISPUTED is persisted locally as CHARGEBACK. It is therefore an
+    // equivalent/retryable state, not a regression: a previous attempt may
+    // have updated the payment and failed before reconciling the registration.
+    if (["DISPUTED", "CHARGEBACK"].includes(nextStatus)) return false;
     const chargebackResolved = ["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED", "PAYMENT_RECEIVED_IN_CASH"].includes(eventType);
-    return !["REFUNDED", "CHARGEBACK"].includes(nextStatus) && !chargebackResolved;
+    return nextStatus !== "REFUNDED" && !chargebackResolved;
   }
   if (currentStatus === "RECEIVED") {
     return ["CREATED", "PENDING", "OVERDUE", "FAILED", "CANCELLED"].includes(nextStatus);
@@ -105,12 +146,14 @@ function preservesStrongerPaymentState(currentStatus: string, nextStatus: string
 Deno.serve(async (request) => {
   if (request.method !== "POST") return json({ error: "Método inválido." }, 405);
   const contentLength = Number(request.headers.get("content-length") || 0);
-  if (contentLength > 1000000) return json({ error: "Payload muito grande." }, 413);
+  if (!Number.isFinite(contentLength) || contentLength > 1000000) {
+    return json({ error: "Payload muito grande." }, 413);
+  }
 
   let failureStage = "authentication";
   let eventId = "";
   let processingToken = "";
-  let supabase: ReturnType<typeof createClient> | null = null;
+  let supabase: DbClient | null = null;
   try {
     const configuredToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN") || "";
     const receivedToken = request.headers.get("asaas-access-token") || "";
@@ -120,8 +163,17 @@ Deno.serve(async (request) => {
 
     failureStage = "payload";
     const rawBody = await request.text();
-    if (rawBody.length > 1000000) return json({ error: "Payload muito grande." }, 413);
-    const payload = JSON.parse(rawBody) as JsonRecord;
+    if (new TextEncoder().encode(rawBody).byteLength > 1000000) return json({ error: "Payload muito grande." }, 413);
+    let parsedPayload: unknown;
+    try {
+      parsedPayload = JSON.parse(rawBody) as unknown;
+    } catch (_error) {
+      return json({ error: "Evento inválido." }, 400);
+    }
+    if (!parsedPayload || typeof parsedPayload !== "object" || Array.isArray(parsedPayload)) {
+      return json({ error: "Evento inválido." }, 400);
+    }
+    const payload = parsedPayload as JsonRecord;
     eventId = text(payload.id, 160);
     const eventType = text(payload.event, 100).toUpperCase();
     const providerPayment = payload.payment as JsonRecord | undefined;
@@ -129,6 +181,13 @@ Deno.serve(async (request) => {
     if (!eventId || !eventType || !providerPayment || !providerPaymentId) {
       return json({ error: "Evento inválido." }, 400);
     }
+    const safePaymentSnapshot = safeProviderPaymentSnapshot(providerPayment);
+    const safeEventSnapshot = {
+      id: eventId,
+      event: eventType,
+      date_created: text(payload.dateCreated, 40),
+      payment: safePaymentSnapshot,
+    };
 
     failureStage = "database_setup";
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
@@ -144,7 +203,7 @@ Deno.serve(async (request) => {
       p_event_id: eventId,
       p_event_type: eventType,
       p_provider_payment_id: providerPaymentId,
-      p_payload: payload,
+      p_payload: safeEventSnapshot,
       p_processing_token: processingToken,
     });
     if (claim.error) throw claim.error;
@@ -247,7 +306,9 @@ Deno.serve(async (request) => {
       billing_type: text(providerPayment.billingType, 30) || localPayment.billing_type,
       status: persistedPaymentStatus,
       invoice_url: text(providerPayment.invoiceUrl || providerPayment.bankSlipUrl, 1000) || localPayment.invoice_url,
-      raw_response: providerPayment,
+      // Provider responses can contain customer documents, e-mail and bearer
+      // links. Persist only the fields required for reconciliation/auditing.
+      raw_response: safePaymentSnapshot,
       paid_at: settled ? paidAt(providerPayment) : (reversed || disputed ? null : localPayment.paid_at),
       updated_at: new Date().toISOString(),
     };
@@ -309,10 +370,18 @@ Deno.serve(async (request) => {
       registrationUpdate = { payment_status: "PENDING", updated_at: new Date().toISOString() };
     }
     if (registrationUpdate) {
-      const registrationResult = await supabase.from("tournament_registrations")
-        .update(registrationUpdate)
-        .eq("id", localPayment.registration_id);
+      const registrationResult = await supabase.rpc("sync_tournament_registration_payment_group", {
+        p_primary_registration_id: localPayment.registration_id,
+        p_registration_status: registrationUpdate.status || null,
+        p_payment_status: registrationUpdate.payment_status || null,
+        p_paid_amount: Object.prototype.hasOwnProperty.call(registrationUpdate, "paid_amount")
+          ? registrationUpdate.paid_amount
+          : null,
+        p_confirmed_at: registrationUpdate.confirmed_at || null,
+        p_cancelled_at: registrationUpdate.cancelled_at || null,
+      });
       if (registrationResult.error) throw registrationResult.error;
+      if (Number(registrationResult.data || 0) < 1) throw new Error("Nenhuma inscrição foi reconciliada.");
     }
 
     failureStage = "event_complete";
@@ -327,13 +396,15 @@ Deno.serve(async (request) => {
     if (!completed.data) throw new Error("A posse do processamento do evento foi perdida.");
     return json({ received: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("asaas-payment-webhook failure", { stage: failureStage, eventId, message });
+    const code = error && typeof error === "object" && "code" in error
+      ? String((error as JsonRecord).code || "internal_error").slice(0, 40)
+      : "internal_error";
+    console.error("asaas-payment-webhook failure", { stage: failureStage, code });
     if (supabase && eventId && processingToken) {
       await supabase.from("asaas_webhook_events").update({
         status: "FAILED",
         processed_at: new Date().toISOString(),
-        error: `${failureStage}: ${message}`.slice(0, 900),
+        error: `${failureStage}:${code}`.slice(0, 120),
         processing_token: null,
         processing_started_at: null,
       }).eq("event_id", eventId).eq("processing_token", processingToken);
