@@ -21896,6 +21896,10 @@
                 <label>Data fim</label>
                 <input id="tournamentEnd" type="date" />
               </div>
+              <div class="field full">
+                <label>Local exibido na página pública</label>
+                <input id="tournamentLocation" maxlength="120" placeholder="Ex.: Ilha Tênis" />
+              </div>
               <div class="field">
                 <label>Instagram</label>
                 <input id="tournamentInstagram" />
@@ -22586,6 +22590,7 @@
       $('tournamentRegistrationOpen').value = String(t.inscricoes_abertas === true);
       $('tournamentStart').value = t.data_inicio || '';
       $('tournamentEnd').value = t.data_fim || '';
+      $('tournamentLocation').value = t.clube || t.club_name || '';
       $('tournamentInstagram').value = t.instagram || '';
       $('tournamentWhatsapp').value = t.whatsapp || '';
       const settings = t.settings || {};
@@ -24564,7 +24569,7 @@
             nome: $('tournamentName').value,
             ano: $('tournamentYear').value,
             cidade: state.data.torneio.cidade || 'Colatina',
-            clube: state.data.torneio.clube || 'Ilha Tenis',
+            clube: $('tournamentLocation').value.trim() || 'Ilha Tênis',
             data_inicio: $('tournamentStart').value,
             data_fim: $('tournamentEnd').value,
             status: status,

@@ -555,6 +555,7 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(tournamentSource, /registrations:\s*false[\s\S]*about:\s*true/);
   assert.match(tournamentSource, /Sobre o evento/);
   assert.match(functionSource(tournamentSource, 'heroMetaHtml'), /Data do evento[\s\S]*Local[\s\S]*Inscrições/);
+  assert.match(tournamentSource, /\.meta-pill\.status-open[^}]*rgba\(37,211,102/);
   assert.match(functionSource(tournamentSource, 'aboutHtml'), /about-image[\s\S]*sponsorsHtml\(true\)/);
   assert.match(adminSource, /id="tournamentLogoFile"[^>]*accept="image\/png/);
   assert.match(adminSource, /1600 × 600 px/);
@@ -565,6 +566,9 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   for (const id of ['publicTabCategories', 'publicTabRegistrations', 'publicTabBrackets', 'publicTabSchedule', 'publicTabResults', 'publicTabAbout', 'tournamentAboutTitle', 'tournamentAboutText', 'tournamentAboutImageFile', 'aboutSponsorList']) {
     assert.match(adminSource, new RegExp(`id="${id}"`));
   }
+  assert.match(adminSource, /id="tournamentLocation"/);
+  assert.match(functionSource(adminSource, 'renderTournament'), /tournamentLocation'[\s\S]*t\.clube \|\| t\.club_name/);
+  assert.match(functionSource(adminSource, 'saveTournament'), /clube:\s*\$\('tournamentLocation'\)\.value\.trim\(\)/);
   assert.match(functionSource(adminSource, 'saveTournament'), /public_tabs:\s*publicTabs[\s\S]*about_event:\s*aboutEvent/);
   assert.match(functionSource(adminSource, 'uploadTournamentBrandingImage'), /2 \* 1024 \* 1024[\s\S]*tournament-branding/);
   assert.match(tournamentAdminSource, /const publicTabs = \{[\s\S]*registrations:[\s\S]*const aboutEvent = \{/);
