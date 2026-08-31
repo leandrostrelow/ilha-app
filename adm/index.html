@@ -3404,6 +3404,45 @@
 
     .field.full { grid-column: 1 / -1; }
 
+    .public-tab-controls {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .public-tab-toggle {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #f8fbfc;
+      color: var(--text);
+      text-transform: none;
+    }
+
+    .public-tab-toggle input { width: 18px; min-height: 18px; accent-color: var(--lime); }
+    .public-tab-toggle span { display: grid; gap: 2px; }
+    .public-tab-toggle small { color: var(--muted); font-size: 10px; font-weight: 750; }
+    .public-about-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(260px,.7fr); gap: 12px; margin-top: 16px; }
+    .public-about-image-preview { display: none; margin-top: 10px; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: #eef4f5; }
+    .public-about-image-preview img { display: block; width: 100%; max-height: 220px; object-fit: cover; }
+    .about-sponsor-list { display: grid; gap: 8px; margin-top: 10px; }
+    .about-sponsor-row { display: grid; grid-template-columns: minmax(130px,.7fr) minmax(180px,1fr) minmax(180px,1fr) auto; gap: 8px; align-items: end; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: #f8fbfc; }
+    .about-sponsor-row label { margin: 0; }
+    .about-sponsor-row input { margin-top: 5px; }
+    .about-sponsor-row .sponsor-upload { min-width: 170px; }
+
+    @media (max-width: 760px) {
+      .public-tab-controls { grid-template-columns: 1fr 1fr; }
+      .public-about-grid { grid-template-columns: 1fr; }
+      .about-sponsor-row { grid-template-columns: 1fr; }
+    }
+
     label {
       display: block;
       margin-bottom: 5px;
@@ -21903,6 +21942,39 @@
           </div>
           <div class="list" id="categoryList" style="margin-top:12px"></div>
         </div>
+        <div class="card span-12">
+          <div class="card-title">
+            <div><h2>Página pública</h2><div class="muted">Escolha o que aparece para o público e edite a apresentação do evento.</div></div>
+            <button class="primary-btn" type="submit" form="tournamentForm">Salvar página pública</button>
+          </div>
+          <h3>Abas visíveis</h3>
+          <div class="public-tab-controls">
+            <label class="public-tab-toggle"><input id="publicTabCategories" type="checkbox" /><span>Classes<small>Modalidades e vagas</small></span></label>
+            <label class="public-tab-toggle"><input id="publicTabRegistrations" type="checkbox" /><span>Inscritos<small>Lista pública de atletas</small></span></label>
+            <label class="public-tab-toggle"><input id="publicTabBrackets" type="checkbox" /><span>Chaves<small>Confrontos do torneio</small></span></label>
+            <label class="public-tab-toggle"><input id="publicTabSchedule" type="checkbox" /><span>Agenda<small>Dias e horários</small></span></label>
+            <label class="public-tab-toggle"><input id="publicTabResults" type="checkbox" /><span>Resultados<small>Placares finalizados</small></span></label>
+            <label class="public-tab-toggle"><input id="publicTabAbout" type="checkbox" /><span>Sobre o evento<small>Texto, imagem e parceiros</small></span></label>
+          </div>
+          <div class="public-about-grid">
+            <div>
+              <div class="field"><label>Título da aba Sobre</label><input id="tournamentAboutTitle" maxlength="120" placeholder="Sobre o Ilha Open 2026" /></div>
+              <div class="field" style="margin-top:10px"><label>Pequeno texto sobre o evento</label><textarea id="tournamentAboutText" maxlength="4000" rows="6" placeholder="Conte a proposta do torneio, o clima do evento e as principais informações para atletas e público."></textarea></div>
+            </div>
+            <div class="field">
+              <label>Imagem da aba Sobre (PNG)</label>
+              <input id="tournamentAboutImageUrl" type="hidden" />
+              <input id="tournamentAboutImageFile" type="file" accept="image/png,.png" />
+              <div class="muted">Use uma foto horizontal em PNG, de preferência 1200 × 700 px e até 2 MB.</div>
+              <div class="public-about-image-preview" id="tournamentAboutImagePreview"><img alt="Prévia da imagem sobre o evento" /></div>
+            </div>
+          </div>
+          <div class="card-title" style="margin-top:18px">
+            <div><h3>Patrocinadores</h3><div class="muted">Adicione nome, logo PNG e link. Você pode deixar o link em branco.</div></div>
+            <button class="ghost-btn" type="button" id="addAboutSponsorBtn">Adicionar patrocinador</button>
+          </div>
+          <div class="about-sponsor-list" id="aboutSponsorList"></div>
+        </div>
       </div>
     </section>
   </div>
@@ -22106,7 +22178,8 @@
       saving: false,
       dirtyMatches: {},
       selectedResultMatches: new Set(),
-      liveScoreSaveTimer: null
+      liveScoreSaveTimer: null,
+      aboutSponsors: []
     };
 
     function tournamentDemoSnapshot() {
@@ -22496,16 +22569,33 @@
       $('tournamentEnd').value = t.data_fim || '';
       $('tournamentInstagram').value = t.instagram || '';
       $('tournamentWhatsapp').value = t.whatsapp || '';
-      const pricing = t.settings && t.settings.registration_pricing || {};
+      const settings = t.settings || {};
+      const pricing = settings.registration_pricing || {};
       $('tournamentPriceCincate').value = Number.isFinite(Number(pricing.CINCATE)) ? Number(pricing.CINCATE).toFixed(2) : '';
       $('tournamentPriceStudent').value = Number.isFinite(Number(pricing.ILHA_STUDENT)) ? Number(pricing.ILHA_STUDENT).toFixed(2) : '';
       $('tournamentPriceNonMember').value = Number.isFinite(Number(pricing.NON_MEMBER)) ? Number(pricing.NON_MEMBER).toFixed(2) : '';
-      const spatialRules = t.settings && t.settings.spatial_addons || {};
+      const spatialRules = settings.spatial_addons || {};
       const spatialRule = Object.values(spatialRules).find(function (rule) { return Number.isFinite(Number(rule && rule.fee)); });
-      const storedSpatialFee = t.settings && t.settings.spatial_addon_fee;
+      const storedSpatialFee = settings.spatial_addon_fee;
       const spatialFee = Number(storedSpatialFee ?? (spatialRule && spatialRule.fee));
       $('tournamentPriceSpatialAddon').value = Number.isFinite(spatialFee) ? spatialFee.toFixed(2) : '';
       $('tournamentNotes').value = t.observacoes || '';
+      const tabs = Object.assign({ categories: true, registrations: false, brackets: true, schedule: true, results: true, about: true }, settings.public_tabs || {});
+      $('publicTabCategories').checked = tabs.categories !== false;
+      $('publicTabRegistrations').checked = tabs.registrations !== false;
+      $('publicTabBrackets').checked = tabs.brackets !== false;
+      $('publicTabSchedule').checked = tabs.schedule !== false;
+      $('publicTabResults').checked = tabs.results !== false;
+      $('publicTabAbout').checked = tabs.about !== false;
+      const about = settings.about_event || {};
+      $('tournamentAboutTitle').value = about.title || '';
+      $('tournamentAboutText').value = about.text || '';
+      $('tournamentAboutImageUrl').value = about.image_url || '';
+      renderTournamentAboutImagePreview(about.image_url || '');
+      state.aboutSponsors = Array.isArray(about.sponsors) ? about.sponsors.map(function (sponsor) {
+        return { name: sponsor.name || '', logo_url: sponsor.logo_url || '', link_url: sponsor.link_url || '' };
+      }) : [];
+      renderAboutSponsorsEditor();
     }
 
     function renderCategoryOptions() {
@@ -24423,6 +24513,21 @@
         const spatialAddons = Object.fromEntries(Object.entries(currentSettings.spatial_addons || {}).map(function (entry) {
           return [entry[0], Object.assign({}, entry[1] || {}, { fee: spatialAddonFee })];
         }));
+        syncAboutSponsorsFromEditor();
+        const publicTabs = {
+          categories: $('publicTabCategories').checked,
+          registrations: $('publicTabRegistrations').checked,
+          brackets: $('publicTabBrackets').checked,
+          schedule: $('publicTabSchedule').checked,
+          results: $('publicTabResults').checked,
+          about: $('publicTabAbout').checked
+        };
+        const aboutEvent = {
+          title: $('tournamentAboutTitle').value.trim(),
+          text: $('tournamentAboutText').value.trim(),
+          image_url: $('tournamentAboutImageUrl').value.trim(),
+          sponsors: state.aboutSponsors.filter(function (sponsor) { return sponsor.name || sponsor.logo_url; })
+        };
         const requestedStatus = $('tournamentStatus').value;
         let registrationsOpen = $('tournamentRegistrationOpen').value === 'true';
         let status = requestedStatus;
@@ -24452,7 +24557,9 @@
             settings: Object.assign({}, currentSettings, {
               registration_pricing: pricing,
               spatial_addon_fee: spatialAddonFee,
-              spatial_addons: spatialAddons
+              spatial_addons: spatialAddons,
+              public_tabs: publicTabs,
+              about_event: aboutEvent
             }),
             observacoes: $('tournamentNotes').value
           }
@@ -24490,6 +24597,71 @@
       $('tournamentLogoUrl').value = url;
       renderTournamentLogoPreview(url);
       toast('Logo enviada. Clique em Salvar torneio para publicar.');
+    }
+
+    function renderTournamentAboutImagePreview(url) {
+      const preview = $('tournamentAboutImagePreview');
+      const image = preview && preview.querySelector('img');
+      if (!preview || !image) return;
+      preview.style.display = url ? 'block' : 'none';
+      image.src = url || '';
+    }
+
+    async function uploadTournamentBrandingImage(file, prefix) {
+      if (!file || file.type !== 'image/png') throw new Error('Escolha uma imagem PNG.');
+      if (file.size > 2 * 1024 * 1024) throw new Error('A imagem deve ter no máximo 2 MB.');
+      if (!state.selectedTournamentId) throw new Error('Selecione um torneio antes de enviar a imagem.');
+      const safePrefix = String(prefix || 'imagem').replace(/[^a-z0-9-]/gi, '-').slice(0, 40);
+      const objectPath = String(state.selectedTournamentId) + '/' + safePrefix + '-' + Date.now() + '.png';
+      const headers = supabaseHeaders(true);
+      headers['Content-Type'] = 'image/png';
+      const response = await fetchWithAdminTimeout(supabaseBaseUrl() + '/storage/v1/object/tournament-branding/' + encodeStoragePath(objectPath), {
+        method: 'POST', headers: headers, body: file
+      }, 60000);
+      if (!response.ok) {
+        const body = await response.json().catch(function () { return {}; });
+        throw new Error(body.message || body.error || 'Não foi possível enviar a imagem.');
+      }
+      return supabaseBaseUrl() + '/storage/v1/object/public/tournament-branding/' + encodeStoragePath(objectPath);
+    }
+
+    async function uploadTournamentAboutImage(file) {
+      const url = await uploadTournamentBrandingImage(file, 'sobre-evento');
+      $('tournamentAboutImageUrl').value = url;
+      renderTournamentAboutImagePreview(url);
+      toast('Imagem enviada. Clique em Salvar página pública para publicar.');
+    }
+
+    function syncAboutSponsorsFromEditor() {
+      const rows = Array.from(document.querySelectorAll('[data-about-sponsor-row]'));
+      state.aboutSponsors = rows.map(function (row) {
+        return {
+          name: row.querySelector('[data-sponsor-field="name"]').value.trim(),
+          logo_url: row.querySelector('[data-sponsor-field="logo_url"]').value.trim(),
+          link_url: row.querySelector('[data-sponsor-field="link_url"]').value.trim()
+        };
+      });
+    }
+
+    function renderAboutSponsorsEditor() {
+      const list = $('aboutSponsorList');
+      if (!list) return;
+      list.innerHTML = state.aboutSponsors.map(function (sponsor, index) {
+        return '<div class="about-sponsor-row" data-about-sponsor-row data-index="' + index + '">' +
+          '<label>Nome<input data-sponsor-field="name" maxlength="100" value="' + escapeHtml(sponsor.name || '') + '" placeholder="Nome da marca" /></label>' +
+          '<label>Link<input data-sponsor-field="link_url" maxlength="1000" value="' + escapeHtml(sponsor.link_url || '') + '" placeholder="https://..." /></label>' +
+          '<label>Logo PNG<input data-sponsor-field="logo_url" type="hidden" value="' + escapeHtml(sponsor.logo_url || '') + '" /><input class="sponsor-upload" data-sponsor-upload="' + index + '" type="file" accept="image/png,.png" />' + (sponsor.logo_url ? '<small class="muted">✓ Logo enviada</small>' : '<small class="muted">Até 2 MB</small>') + '</label>' +
+          '<button class="danger-btn" type="button" data-remove-about-sponsor="' + index + '">Remover</button></div>';
+      }).join('') || '<div class="muted">Nenhum patrocinador adicionado ainda.</div>';
+    }
+
+    async function uploadAboutSponsorLogo(file, index) {
+      syncAboutSponsorsFromEditor();
+      const url = await uploadTournamentBrandingImage(file, 'patrocinador-' + (index + 1));
+      if (!state.aboutSponsors[index]) return;
+      state.aboutSponsors[index].logo_url = url;
+      renderAboutSponsorsEditor();
+      toast('Logo do patrocinador enviada. Salve a página pública para publicar.');
     }
 
     function setTournamentModal(id, open) {
@@ -42839,6 +43011,36 @@
       if (!file) return;
       uploadTournamentLogo(file).catch(function (error) {
         $('tournamentLogoFile').value = '';
+        toast(error.message);
+      });
+    });
+    $('tournamentAboutImageFile').addEventListener('change', function (event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      uploadTournamentAboutImage(file).catch(function (error) {
+        $('tournamentAboutImageFile').value = '';
+        toast(error.message);
+      });
+    });
+    $('addAboutSponsorBtn').addEventListener('click', function () {
+      syncAboutSponsorsFromEditor();
+      state.aboutSponsors.push({ name: '', logo_url: '', link_url: '' });
+      renderAboutSponsorsEditor();
+    });
+    $('aboutSponsorList').addEventListener('click', function (event) {
+      const removeButton = event.target.closest('[data-remove-about-sponsor]');
+      if (!removeButton) return;
+      syncAboutSponsorsFromEditor();
+      state.aboutSponsors.splice(Number(removeButton.dataset.removeAboutSponsor), 1);
+      renderAboutSponsorsEditor();
+    });
+    $('aboutSponsorList').addEventListener('change', function (event) {
+      const input = event.target.closest('[data-sponsor-upload]');
+      if (!input) return;
+      const file = input.files && input.files[0];
+      if (!file) return;
+      uploadAboutSponsorLogo(file, Number(input.dataset.sponsorUpload)).catch(function (error) {
+        input.value = '';
         toast(error.message);
       });
     });

@@ -547,16 +547,28 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.doesNotMatch(functionSource(tournamentSource, 'renderTournament'), /short_description|Acompanhe todas as informações do torneio/);
   assert.match(tournamentSource, /id="tournamentHeadActions" hidden/);
   assert.match(tournamentSource, /id="headRegisterBtn"[\s\S]*Fazer inscrição/);
+  assert.match(tournamentSource, /class="mobile-label">Inscreva-se/);
   assert.match(tournamentSource, /Seja um patrocinador/);
-  assert.match(functionSource(tournamentSource, 'renderTournament'), /state\.activeTab = 'categories'/);
+  assert.match(functionSource(tournamentSource, 'renderTournament'), /state\.activeTab = visibleTabs\.includes\('categories'\)/);
   assert.doesNotMatch(functionSource(tournamentSource, 'renderTournament'), /tabButton\('overview','Visão geral'\)|data-panel="overview"|hero-actions/);
   assert.doesNotMatch(functionSource(tournamentSource, 'overviewHtml'), /summary-grid|<h3>Informações<\/h3>/);
+  assert.match(tournamentSource, /registrations:\s*false[\s\S]*about:\s*true/);
+  assert.match(tournamentSource, /Sobre o evento/);
+  assert.match(functionSource(tournamentSource, 'heroMetaHtml'), /Data do evento[\s\S]*Local[\s\S]*Inscrições/);
+  assert.match(functionSource(tournamentSource, 'aboutHtml'), /about-image[\s\S]*sponsorsHtml\(true\)/);
   assert.match(adminSource, /id="tournamentLogoFile"[^>]*accept="image\/png/);
   assert.match(adminSource, /1600 × 600 px/);
   assert.match(functionSource(adminSource, 'uploadTournamentLogo'), /file\.size > 2 \* 1024 \* 1024/);
   assert.match(tournamentAdminSource, /logo_url: nullableText\(input\.logo_url/);
   assert.match(tournamentLogoStorageSource, /'tournament-branding'[\s\S]*2097152[\s\S]*'image\/png'/);
   assert.match(tournamentLogoStorageSource, /has_tournament_permission\('tournaments\.write'\)/);
+  for (const id of ['publicTabCategories', 'publicTabRegistrations', 'publicTabBrackets', 'publicTabSchedule', 'publicTabResults', 'publicTabAbout', 'tournamentAboutTitle', 'tournamentAboutText', 'tournamentAboutImageFile', 'aboutSponsorList']) {
+    assert.match(adminSource, new RegExp(`id="${id}"`));
+  }
+  assert.match(functionSource(adminSource, 'saveTournament'), /public_tabs:\s*publicTabs[\s\S]*about_event:\s*aboutEvent/);
+  assert.match(functionSource(adminSource, 'uploadTournamentBrandingImage'), /2 \* 1024 \* 1024[\s\S]*tournament-branding/);
+  assert.match(tournamentAdminSource, /const publicTabs = \{[\s\S]*registrations:[\s\S]*const aboutEvent = \{/);
+  assert.match(tournamentAdminSource, /public_tabs:\s*publicTabs[\s\S]*about_event:\s*aboutEvent/);
   const retryPayment = sourceSection(tournamentSource, "const retry = $('retryPaymentBtn')", 'if (state.registrationOnly)');
   assert.match(retryPayment, /initializeRegistrationCaptcha\(\)/);
   assert.match(retryPayment, /registrationFoot'\)\.hidden = false/);

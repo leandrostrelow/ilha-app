@@ -779,6 +779,33 @@ function tournamentPayload(input: Row, current: Row = {}) {
     code,
     { ...firstObject(rule), fee: spatialAddonFee },
   ]));
+  const currentPublicTabs = firstObject(currentSettings.public_tabs);
+  const requestedPublicTabs = firstObject(requestedSettings.public_tabs, currentPublicTabs);
+  const publicTabs = {
+    categories: booleanValue(requestedPublicTabs.categories, currentPublicTabs.categories !== false),
+    registrations: booleanValue(requestedPublicTabs.registrations, currentPublicTabs.registrations === true),
+    brackets: booleanValue(requestedPublicTabs.brackets, currentPublicTabs.brackets !== false),
+    schedule: booleanValue(requestedPublicTabs.schedule, currentPublicTabs.schedule !== false),
+    results: booleanValue(requestedPublicTabs.results, currentPublicTabs.results !== false),
+    about: booleanValue(requestedPublicTabs.about, currentPublicTabs.about !== false),
+  };
+  const currentAboutEvent = firstObject(currentSettings.about_event);
+  const requestedAboutEvent = firstObject(requestedSettings.about_event, currentAboutEvent);
+  const requestedAboutSponsors = Array.isArray(requestedAboutEvent.sponsors) ? requestedAboutEvent.sponsors : [];
+  const aboutSponsors = requestedAboutSponsors.slice(0, 20).map((value) => {
+    const sponsor = firstObject(value);
+    return {
+      name: text(sponsor.name, 100),
+      logo_url: nullableText(sponsor.logo_url, 1000),
+      link_url: nullableText(sponsor.link_url, 1000),
+    };
+  }).filter((sponsor) => sponsor.name || sponsor.logo_url);
+  const aboutEvent = {
+    title: text(requestedAboutEvent.title, 120),
+    text: text(requestedAboutEvent.text, 4000),
+    image_url: nullableText(requestedAboutEvent.image_url, 1000),
+    sponsors: aboutSponsors,
+  };
   return {
     name,
     year: integerValue(input.ano ?? input.year, current.year || new Date().getFullYear()),
@@ -798,6 +825,8 @@ function tournamentPayload(input: Row, current: Row = {}) {
       registration_pricing: registrationPricing,
       spatial_addon_fee: spatialAddonFee,
       spatial_addons: spatialAddons,
+      public_tabs: publicTabs,
+      about_event: aboutEvent,
     },
     updated_at: new Date().toISOString(),
   };
