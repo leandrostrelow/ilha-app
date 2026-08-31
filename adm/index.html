@@ -21632,7 +21632,7 @@
             <button class="primary-btn" type="button" data-tab-go="players">Cadastrar jogador</button>
             <button class="ghost-btn" type="button" data-tab-go="brackets">Montar chave</button>
             <button class="ghost-btn" type="button" data-tab-go="schedule">Montar agenda</button>
-            <button class="ghost-btn" type="button" onclick="loadData(true)">Recarregar torneio</button>
+            <button class="ghost-btn" type="button" onclick="reloadTournamentManually()">Recarregar torneio</button>
           </div>
         </div>
         <div class="card span-4">
@@ -22179,7 +22179,8 @@
       dirtyMatches: {},
       selectedResultMatches: new Set(),
       liveScoreSaveTimer: null,
-      aboutSponsors: []
+      aboutSponsors: [],
+      tournamentDraftDirty: false
     };
 
     function tournamentDemoSnapshot() {
@@ -22288,6 +22289,24 @@
 
     function dirtyMatchCount() {
       return Object.keys(state.dirtyMatches || {}).length;
+    }
+
+    function hasUnsavedTournamentDraft() {
+      return state.tournamentDraftDirty || dirtyMatchCount() > 0 ||
+        document.body.classList.contains('player-editing') ||
+        Boolean(document.querySelector('.tournament-modal-backdrop.open, .match-modal-backdrop.open'));
+    }
+
+    function markTournamentDraftDirty() {
+      state.tournamentDraftDirty = true;
+      setStatus('Edição não salva · atualização automática pausada');
+    }
+
+    async function reloadTournamentManually() {
+      if (hasUnsavedTournamentDraft() && !confirm('Há alterações não salvas. Deseja descartá-las e recarregar o torneio?')) return;
+      state.tournamentDraftDirty = false;
+      clearDirtyMatches();
+      await loadData(true);
     }
 
     function updateSaveBracketButton() {
@@ -24564,6 +24583,7 @@
             observacoes: $('tournamentNotes').value
           }
         });
+        state.tournamentDraftDirty = false;
         await loadData(false);
         toast('Torneio salvo.');
       } catch (error) {
@@ -39464,11 +39484,21 @@
 
     function openTournamentModule() {
       if (!setClubMode('club-tournament')) return;
-      showTab('dashboard');
-      loadData(false);
+      if (state.tournamentDraftDirty && state.data) {
+        showTab('settings');
+        toast('Seu rascunho foi preservado. Salve quando terminar.');
+      } else {
+        showTab('dashboard');
+        loadData(false);
+      }
       if (!window.__adminRefreshTimer) {
         window.__adminRefreshTimer = setInterval(function () {
-          if (!state.saving && document.body.classList.contains('club-tournament')) loadData(false);
+          if (state.saving || !document.body.classList.contains('club-tournament')) return;
+          if (hasUnsavedTournamentDraft()) {
+            if (state.tournamentDraftDirty) setStatus('Edição não salva · atualização automática pausada');
+            return;
+          }
+          loadData(false);
         }, 25000);
       }
     }
@@ -43006,6 +43036,12 @@
       if (event.key === 'Escape' && document.body.classList.contains('player-editing')) clearPlayerForm();
     });
     $('tournamentForm').addEventListener('submit', saveTournament);
+    $('settings').addEventListener('input', function (event) {
+      if (event.isTrusted && event.target.matches('input, select, textarea')) markTournamentDraftDirty();
+    });
+    $('settings').addEventListener('change', function (event) {
+      if (event.isTrusted && event.target.matches('input, select, textarea')) markTournamentDraftDirty();
+    });
     $('tournamentLogoFile').addEventListener('change', function (event) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
@@ -43025,6 +43061,7 @@
     $('addAboutSponsorBtn').addEventListener('click', function () {
       syncAboutSponsorsFromEditor();
       state.aboutSponsors.push({ name: '', logo_url: '', link_url: '' });
+      markTournamentDraftDirty();
       renderAboutSponsorsEditor();
     });
     $('aboutSponsorList').addEventListener('click', function (event) {
@@ -43032,6 +43069,7 @@
       if (!removeButton) return;
       syncAboutSponsorsFromEditor();
       state.aboutSponsors.splice(Number(removeButton.dataset.removeAboutSponsor), 1);
+      markTournamentDraftDirty();
       renderAboutSponsorsEditor();
     });
     $('aboutSponsorList').addEventListener('change', function (event) {
@@ -43052,11 +43090,12 @@
       const previousTournamentId = state.selectedTournamentId;
       const nextTournamentId = this.value;
       if (nextTournamentId === previousTournamentId) return;
-      if (dirtyMatchCount() && !confirm('Há alterações não salvas na chave atual. Deseja descartá-las e trocar de torneio?')) {
+      if (hasUnsavedTournamentDraft() && !confirm('Há alterações não salvas. Deseja descartá-las e trocar de torneio?')) {
         this.value = previousTournamentId;
         return;
       }
       clearDirtyMatches();
+      state.tournamentDraftDirty = false;
       state.selectedResultMatches.clear();
       state.selectedTournamentId = nextTournamentId;
       state.selectedCategory = '';
@@ -43072,6 +43111,11 @@
       });
     });
 
+    window.addEventListener('beforeunload', function (event) {
+      if (!hasUnsavedTournamentDraft()) return;
+      event.preventDefault();
+      event.returnValue = '';
+    });
     window.addEventListener('pagehide', rememberBarScrollPosition);
     initAdminLogin();
   </script>

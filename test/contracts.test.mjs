@@ -1470,6 +1470,18 @@ test('alterações do torneio recarregam a agenda pelo cliente administrativo j�
   assert.doesNotMatch(tournamentAdminSource, /response\.data = await loadSnapshot\(client, responseTournamentId, "", true\)/);
 });
 
+test('ADM preserva o rascunho do torneio durante a atualização automática', () => {
+  const openTournament = functionSource(adminSource, 'openTournamentModule');
+  assert.match(openTournament, /hasUnsavedTournamentDraft\(\)/);
+  assert.match(openTournament, /atualização automática pausada/);
+  assert.doesNotMatch(openTournament, /if \(!state\.saving && document\.body\.classList\.contains\('club-tournament'\)\) loadData\(false\)/);
+  assert.match(functionSource(adminSource, 'markTournamentDraftDirty'), /state\.tournamentDraftDirty = true/);
+  assert.match(functionSource(adminSource, 'reloadTournamentManually'), /Há alterações não salvas[\s\S]*loadData\(true\)/);
+  assert.match(functionSource(adminSource, 'saveTournament'), /state\.tournamentDraftDirty = false[\s\S]*loadData\(false\)/);
+  assert.match(adminSource, /\$\('settings'\)\.addEventListener\('input'[\s\S]*markTournamentDraftDirty\(\)/);
+  assert.match(adminSource, /beforeunload[\s\S]*hasUnsavedTournamentDraft\(\)/);
+});
+
 test('tabelas sensiveis de torneio reservam leitura REST para escritores', () => {
   const policies = sourceSection(
     securityMigrationSource,
