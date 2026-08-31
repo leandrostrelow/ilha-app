@@ -745,6 +745,19 @@ function tournamentPayload(input: Row, current: Row = {}) {
     ILHA_STUDENT: Math.min(99999.99, Math.max(0, numberValue(requestedPricing.ILHA_STUDENT, numberValue(currentPricing.ILHA_STUDENT, 0)))),
     NON_MEMBER: Math.min(99999.99, Math.max(0, numberValue(requestedPricing.NON_MEMBER, numberValue(currentPricing.NON_MEMBER, 0)))),
   };
+  const currentSpatialAddons = firstObject(currentSettings.spatial_addons);
+  const requestedSpatialAddons = firstObject(requestedSettings.spatial_addons, currentSpatialAddons);
+  const firstCurrentSpatialRule = Object.values(currentSpatialAddons)
+    .map((value) => firstObject(value))
+    .find((value) => Number.isFinite(Number(value.fee)));
+  const spatialAddonFee = Math.min(99999.99, Math.max(0, numberValue(
+    requestedSettings.spatial_addon_fee,
+    numberValue(firstCurrentSpatialRule?.fee, 0),
+  )));
+  const spatialAddons = Object.fromEntries(Object.entries(requestedSpatialAddons).map(([code, rule]) => [
+    code,
+    { ...firstObject(rule), fee: spatialAddonFee },
+  ]));
   return {
     name,
     year: integerValue(input.ano ?? input.year, current.year || new Date().getFullYear()),
@@ -758,7 +771,12 @@ function tournamentPayload(input: Row, current: Row = {}) {
     instagram: nullableText(input.instagram ?? current.instagram, 120),
     whatsapp: nullableText(input.whatsapp ?? current.whatsapp, 30),
     notes: nullableText(input.observacoes ?? input.notes ?? current.notes, 4000),
-    settings: { ...requestedSettings, registration_pricing: registrationPricing },
+    settings: {
+      ...requestedSettings,
+      registration_pricing: registrationPricing,
+      spatial_addon_fee: spatialAddonFee,
+      spatial_addons: spatialAddons,
+    },
     updated_at: new Date().toISOString(),
   };
 }

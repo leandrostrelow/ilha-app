@@ -492,15 +492,19 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(asaasWebhookSource, /sync_tournament_registration_payment_group/);
 });
 
-test('valores por perfil do Ilha Open são editáveis no ADM e validados no backend', () => {
-  for (const id of ['tournamentPriceCincate', 'tournamentPriceStudent', 'tournamentPriceNonMember']) {
+test('valores por perfil e adicional espacial do Ilha Open são editáveis no ADM e validados no backend', () => {
+  for (const id of ['tournamentPriceCincate', 'tournamentPriceStudent', 'tournamentPriceNonMember', 'tournamentPriceSpatialAddon']) {
     assert.match(adminSource, new RegExp(`id="${id}"`));
   }
   assert.match(adminSource, /registration_pricing:\s*pricing/);
+  assert.match(adminSource, /spatial_addon_fee:\s*spatialAddonFee/);
   assert.match(tournamentAdminSource, /registrationPricing/);
+  assert.match(tournamentAdminSource, /spatialAddonFee/);
   assert.match(tournamentAdminSource, /99999\.99/);
   assert.match(tournamentRegisterSource, /registrationPricing\[participantType\]/);
+  assert.doesNotMatch(tournamentRegisterSource, /const configuredBaseAmount/);
   assert.match(tournamentSource, /function participantRegistrationAmount/);
+  assert.match(tournamentSource, /function spatialAddonFee/);
   assert.match(tournamentSource, /participantPriceCincate/);
   assert.match(tournamentSource, /participantPriceStudent/);
   assert.match(tournamentSource, /participantPriceNonMember/);

@@ -725,7 +725,7 @@
     function participantRegistrationAmount(row) {
       const selectedType = document.querySelector('input[name="participant_type"]:checked')?.value || '';
       const configured = Number(registrationPricing()[selectedType]);
-      return Number.isFinite(configured) && configured >= 0 ? configured : categoryRegistrationAmount(row);
+      return Number.isFinite(configured) && configured >= 0 ? configured : 0;
     }
     function renderParticipantPrices() {
       const pricing = registrationPricing();
@@ -770,6 +770,13 @@
     function spatialAddonRule(row) {
       return row ? spatialAddonMap()[categoryCode(row)] || null : null;
     }
+    function spatialAddonFee() {
+      const configured = Number(tournamentSettings().spatial_addon_fee);
+      if (Number.isFinite(configured) && configured >= 0) return configured;
+      const rule = Object.values(spatialAddonMap()).find((item) => Number.isFinite(Number(item && item.fee)));
+      const fallback = Number(rule && rule.fee);
+      return Number.isFinite(fallback) && fallback >= 0 ? fallback : 0;
+    }
     function updateSpatialAddonField() {
       const selected = categories().find((row) => categoryId(row) === selectedCategoryId());
       const rule = !isInternalRegistration() ? spatialAddonRule(selected) : null;
@@ -781,7 +788,7 @@
         $('spatialAddon').value = '';
         return;
       }
-      const fee = Number(rule.fee ?? categoryRegistrationAmount(additional));
+      const fee = spatialAddonFee();
       $('spatialAddon').value = categoryId(additional);
       $('spatialAddonTitle').textContent = 'Deseja participar também da ' + clean(rule.label || field(additional,'name','nome')) + '?';
       $('spatialAddonDescription').textContent = 'Adicione por mais ' + money(fee) + ' no mesmo pagamento.';
@@ -851,7 +858,8 @@
 
     function registrationPricesHtml() {
       if (isInternalRegistration()) return '<div class="public-price-grid" aria-label="Valores da inscrição"><div class="public-price-card"><span>1 classe</span><strong>' + escapeHtml(money(internalRegistrationAmount(1))) + '</strong></div><div class="public-price-card"><span>2 classes</span><strong>' + escapeHtml(money(internalRegistrationAmount(2))) + '</strong></div><div class="public-price-card"><span>Cobrança</span><strong>Próxima mensalidade</strong></div></div>';
-      return '<div class="public-price-grid" aria-label="Valores da inscrição"><div class="public-price-card"><span>Valor</span><strong>Definido por classe</strong></div><div class="public-price-card"><span>Perfil</span><strong>Não altera o preço automaticamente</strong></div></div>';
+      const pricing = registrationPricing();
+      return '<div class="public-price-grid" aria-label="Valores da inscrição"><div class="public-price-card"><span>CINCATE</span><strong>' + escapeHtml(money(pricing.CINCATE || 0)) + '</strong></div><div class="public-price-card"><span>Aluno Ilha Tênis</span><strong>' + escapeHtml(money(pricing.ILHA_STUDENT || 0)) + '</strong></div><div class="public-price-card"><span>Não associado</span><strong>' + escapeHtml(money(pricing.NON_MEMBER || 0)) + '</strong></div></div>';
     }
 
     function categoriesHtml() {
@@ -860,7 +868,10 @@
         const rawStoredCount = field(row,'registration_count','quantidade_inscritos');
         const storedCount = rawStoredCount === '' ? NaN : Number(rawStoredCount);
         const count = Number.isFinite(storedCount) && storedCount >= 0 ? storedCount : registrations().filter((reg) => String(field(reg,'category_id','categoria_id')) === id && !['CANCELLED','CANCELADO'].includes(clean(field(reg,'status','registration_status')).toUpperCase())).length;
-        return '<article class="category-card"><div><h3>' + escapeHtml(field(row,'name','nome') || 'Classe') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || field(row,'gender','genero') || 'Categoria do torneio') + '</p></div><div class="category-card-foot"><span class="mini-chip">' + count + ' inscritos</span>' + (isInternalRegistration() ? '' : '<span class="mini-chip">' + escapeHtml(money(categoryRegistrationAmount(row))) + '</span>') + '<span class="mini-chip">' + escapeHtml(field(row,'draw_size','tamanho_chave') || 'Chave auto') + '</span></div></article>';
+        const spatialPrice = spatialAddonCodes().has(categoryCode(row))
+          ? '<span class="mini-chip">Adicional ' + escapeHtml(money(spatialAddonFee())) + '</span>'
+          : '';
+        return '<article class="category-card"><div><h3>' + escapeHtml(field(row,'name','nome') || 'Classe') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || field(row,'gender','genero') || 'Categoria do torneio') + '</p></div><div class="category-card-foot"><span class="mini-chip">' + count + ' inscritos</span>' + spatialPrice + '<span class="mini-chip">' + escapeHtml(field(row,'draw_size','tamanho_chave') || 'Chave auto') + '</span></div></article>';
       }).join('') || '<div class="empty-state" style="grid-column:1/-1">As classes serão publicadas em breve.</div>') + '</div></div>';
     }
 
@@ -1144,7 +1155,7 @@
       $('registrationPriceField').hidden = state.courtesyMode || !selected;
       if (selected) {
         const rule = spatialAddonRule(selected);
-        const addonFee = $('spatialAddon').checked && rule ? Number(rule.fee || 0) : 0;
+        const addonFee = $('spatialAddon').checked && rule ? spatialAddonFee() : 0;
         $('registrationPrice').textContent = money(participantRegistrationAmount(selected) + addonFee);
       }
     }

@@ -606,7 +606,14 @@ Deno.serve(async (request) => {
       if (!additionalCategory || !additionalCategory.active || !additionalCategory.registration_open) {
         return json(request, { error: "A Classe Espacial selecionada não corresponde à sua classe principal." }, 400);
       }
-      additionalFee = Number(addonRule.fee ?? additionalCategory.registration_fee);
+      const configuredSpatialFee = Number(
+        tournament.settings && typeof tournament.settings === "object" && !Array.isArray(tournament.settings)
+          ? (tournament.settings as JsonRecord).spatial_addon_fee
+          : undefined,
+      );
+      additionalFee = Number.isFinite(configuredSpatialFee)
+        ? configuredSpatialFee
+        : Number(addonRule.fee ?? additionalCategory.registration_fee);
       if (!Number.isFinite(additionalFee) || additionalFee < 0) {
         return json(request, { error: "O valor da Classe Espacial ainda não foi configurado." }, 409);
       }
@@ -622,10 +629,6 @@ Deno.serve(async (request) => {
     if (participantType !== "COURTESY" && !allowedMethods.includes(billingType)) {
       return json(request, { error: "Esta forma de pagamento não está disponível no torneio." }, 400);
     }
-    const configuredBaseAmount = Number(category.registration_fee ?? tournament.default_fee);
-    if (!Number.isFinite(configuredBaseAmount) || configuredBaseAmount < 0) {
-      return json(request, { error: "O valor desta categoria ainda não foi configurado." }, 409);
-    }
     const tournamentSettings = tournament.settings && typeof tournament.settings === "object" && !Array.isArray(tournament.settings)
       ? tournament.settings as JsonRecord
       : {};
@@ -633,11 +636,12 @@ Deno.serve(async (request) => {
       ? tournamentSettings.registration_pricing as JsonRecord
       : {};
     const participantAmount = Number(registrationPricing[participantType]);
+    if (participantType !== "COURTESY" && (!Number.isFinite(participantAmount) || participantAmount < 0)) {
+      return json(request, { error: "O valor deste tipo de inscrição ainda não foi configurado." }, 409);
+    }
     const baseAmount = participantType === "COURTESY"
       ? 0
-      : Number.isFinite(participantAmount) && participantAmount >= 0
-      ? participantAmount
-      : configuredBaseAmount;
+      : participantAmount;
     const amount = participantType === "COURTESY" ? 0 : baseAmount + additionalFee;
 
     failureStage = "athlete_upsert";
