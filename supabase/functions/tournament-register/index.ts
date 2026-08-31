@@ -234,6 +234,17 @@ function saoPauloDate() {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
+function asaasSafeDescription(value: unknown) {
+  const normalized = String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 500);
+  return normalized || "Inscricao em torneio";
+}
+
 function safeRegistration(row: JsonRecord) {
   return {
     id: row.id,
@@ -452,7 +463,9 @@ async function createOrRecoverPayment(
       billingType: localPayment.billing_type,
       value: Number(localPayment.amount),
       dueDate: saoPauloDate(),
-      description: `Inscrição ${tournament.name} · ${category.name}${additionalCategory ? ` + ${additionalCategory.name}` : ""}`.slice(0, 500),
+      description: asaasSafeDescription(
+        `Inscrição ${tournament.name} ${category.name}${additionalCategory ? ` ${additionalCategory.name}` : ""}`,
+      ),
       externalReference,
     }),
   });

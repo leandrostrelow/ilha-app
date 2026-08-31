@@ -559,6 +559,14 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(tournamentRegisterSource, /providerErrorSnapshot\(error\)/);
   assert.match(tournamentRegisterSource, /provider_status/);
   assert.match(tournamentRegisterSource, /provider_codes/);
+  const safeDescription = vm.runInNewContext(
+    `(${functionSource(tournamentRegisterSource, 'asaasSafeDescription').replace('value: unknown', 'value')})`,
+  );
+  assert.equal(
+    safeDescription('Inscrição Ilha Open 2026 · 2ª Classe Masculina + Espacial A Masculino 🚀'),
+    'Inscricao Ilha Open 2026 2a Classe Masculina Espacial A Masculino',
+  );
+  assert.match(functionSource(tournamentRegisterSource, 'createOrRecoverPayment'), /description:\s*asaasSafeDescription/);
   const billingDate = functionSource(tournamentRegisterSource, 'saoPauloDate');
   assert.match(billingDate, /timeZone: "America\/Sao_Paulo"/);
   assert.match(billingDate, /formatToParts/);
