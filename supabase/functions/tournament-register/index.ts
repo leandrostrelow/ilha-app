@@ -678,6 +678,7 @@ Deno.serve(async (request) => {
     let registration: JsonRecord | null = null;
     let additionalRegistration: JsonRecord | null = null;
     let registrationChecked = false;
+    let athleteHasAnyRegistration = false;
     if (athlete) {
       failureStage = "registration_authorization";
       const existingRegistration = await supabase.from("tournament_registrations")
@@ -688,6 +689,7 @@ Deno.serve(async (request) => {
         .maybeSingle();
       if (existingRegistration.error) throw existingRegistration.error;
       registration = existingRegistration.data as JsonRecord | null;
+      athleteHasAnyRegistration = Boolean(registration);
       registrationChecked = true;
       if (registration && (!trackingToken || trackingToken !== String(registration.public_token))) {
         return json(request, { error: "Já existe uma inscrição deste atleta nesta classe. Use o acompanhamento da primeira inscrição." }, 409);
@@ -700,13 +702,25 @@ Deno.serve(async (request) => {
         if (childResult.error) throw childResult.error;
         additionalRegistration = childResult.data as JsonRecord | null;
       }
+      if (!registration) {
+        const anyRegistration = await supabase.from("tournament_registrations")
+          .select("id")
+          .eq("athlete_id", athlete.id)
+          .limit(1)
+          .maybeSingle();
+        if (anyRegistration.error) throw anyRegistration.error;
+        athleteHasAnyRegistration = Boolean(anyRegistration.data);
+      }
     }
 
     const storedCpf = digits(athlete?.cpf);
     if (athlete && storedCpf && submittedCpf && storedCpf !== submittedCpf) {
       return json(request, { error: "Os dados não correspondem ao participante já cadastrado. Fale com a organização." }, 409);
     }
-    if (participantType !== "COURTESY" && athlete && !registration) {
+    // A failed attempt can leave an athlete row before a registration is
+    // created. With no registration to protect, completing that orphan with a
+    // valid CPF is safe and prevents a false "CPF já cadastrado" response.
+    if (participantType !== "COURTESY" && athlete && !registration && athleteHasAnyRegistration) {
       if (!isValidCpf(storedCpf) || storedCpf !== submittedCpf) {
         return json(request, { error: "Confirme o CPF já cadastrado ou fale com a organização." }, 409);
       }
@@ -715,7 +729,7 @@ Deno.serve(async (request) => {
     // of an athlete record. Reusing an existing athlete in a new category also
     // requires the stored CPF; an existing category is already protected by
     // its per-registration tracking token above.
-    if (participantType === "COURTESY" && athlete && !registration) {
+    if (participantType === "COURTESY" && athlete && !registration && athleteHasAnyRegistration) {
       if (!isValidCpf(storedCpf) || storedCpf !== submittedCpf) {
         return json(request, { error: "Confirme o CPF já cadastrado ou fale com a organização." }, 409);
       }

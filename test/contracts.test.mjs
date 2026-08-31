@@ -1384,6 +1384,9 @@ test('reinscricao publica exige prova antes de alterar atleta existente', () => 
   assert.match(tournamentRegisterSource, /submittedCpf/);
   assert.match(tournamentRegisterSource, /athlete\?\.cpf/);
   assert.match(tournamentRegisterSource, /CPF[^\n]*(?:não corresponde|diverge|vinculado)/i);
+  assert.match(tournamentRegisterSource, /athleteHasAnyRegistration/);
+  assert.match(tournamentRegisterSource, /!registration && athleteHasAnyRegistration/);
+  assert.doesNotMatch(tournamentRegisterSource, /\.from\(["']app_clients["']\)/);
   const authorization = tournamentRegisterSource.indexOf('registration_authorization');
   const athleteMutation = tournamentRegisterSource.indexOf('.from("tournament_athletes").update');
   assert.ok(authorization !== -1 && authorization < athleteMutation);
