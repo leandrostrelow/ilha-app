@@ -327,7 +327,7 @@
     .close-btn { width: 42px; height: 42px; flex: 0 0 auto; border-radius: 13px; background: #edf3f4; color: var(--ink); font-size: 23px; }
     .modal-body { overflow-y: auto; padding: 22px 24px; }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .form-field { display: grid; gap: 6px; }
+    .form-field { display: grid; align-content: start; gap: 6px; }
     .form-field.full { grid-column: 1 / -1; }
     .form-field label { color: #53686e; font-size: 11px; font-weight: 950; letter-spacing: .05em; text-transform: uppercase; }
     .form-field input, .form-field select, .form-field textarea { width: 100%; min-height: 49px; border: 1px solid var(--line); border-radius: 14px; padding: 11px 13px; outline: none; background: #fff; color: var(--ink); }
@@ -530,7 +530,7 @@
             <div class="form-field full" id="registrationPriceField" hidden><div class="registration-price"><span>Valor da inscrição</span><strong id="registrationPrice">R$ 0,00</strong></div></div>
             <div class="form-field full" id="genderField"><label>Sexo</label><div class="choice-grid" id="registrationGender"><label class="choice-card"><input type="radio" name="gender" value="MALE" required /><span>Masculino</span></label><label class="choice-card"><input type="radio" name="gender" value="FEMALE" required /><span>Feminino</span></label></div></div>
             <div class="form-field full" id="categoryField" hidden><label>Classes disponíveis</label><div class="category-checks" id="registrationCategories"></div></div>
-            <div class="form-field full" id="spatialAddonField" hidden><div class="spatial-addon-copy"><strong>🎾 Você pode jogar também na Classe Espacial 🚀</strong><span id="spatialAddonPeriod">Essa classe acontece de 21 a 27 de setembro.</span><span>Essa classe não conta pontos para o CINCATE; é apenas uma classe interna do Ilha.</span></div><label class="category-check spatial-addon-option"><input id="spatialAddon" name="spatial_addon" type="checkbox" value="" /><span><strong id="spatialAddonTitle">Quero participar da Classe Espacial</strong><small id="spatialAddonDescription">Adicione por mais R$ 80,00 no mesmo pagamento.</small></span></label></div>
+            <div class="form-field full" id="spatialAddonField" hidden><div class="spatial-addon-copy"><strong>🎾 Você pode jogar também na Classe Espacial 🚀</strong><strong id="spatialAddonPeriod">Essa classe acontece de 21 a 27 de setembro.</strong><strong>⚠️ não conta pontos para o CINCATE; é apenas uma classe interna do Ilha.</strong></div><label class="category-check spatial-addon-option"><input id="spatialAddon" name="spatial_addon" type="checkbox" value="" /><span><strong id="spatialAddonTitle">SIM, quero participar da Classe Espacial</strong><small id="spatialAddonDescription">Adicione por mais R$ 80,00 no mesmo pagamento.</small></span></label></div>
             <div class="form-field full" id="availabilityField"><label>Dias em que posso jogar</label><div class="choice-grid days"><label class="choice-card"><input type="checkbox" name="availability_days" value="MONDAY" /><span>Segunda</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="TUESDAY" /><span>Terça</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="WEDNESDAY" /><span>Quarta</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="THURSDAY" /><span>Quinta</span></label></div><p class="field-hint">Marque todos os dias em que você tem disponibilidade.</p></div>
             <div class="form-field" id="cityField"><label for="athleteCity">Cidade</label><input id="athleteCity" name="city" autocomplete="address-level2" value="Colatina" /></div>
             <div class="form-field" id="paymentMethodField"><label for="paymentMethod" id="paymentMethodLabel">Forma de pagamento</label><select id="paymentMethod" name="payment_method"></select><p class="field-hint" id="paymentMethodHint" hidden>Pagamento disponível somente via Pix.</p></div>
@@ -801,7 +801,7 @@
       const fee = spatialAddonFee();
       $('spatialAddon').value = categoryId(additional);
       $('spatialAddonPeriod').textContent = 'Essa classe acontece de ' + spatialAddonPeriodLabel() + '.';
-      $('spatialAddonTitle').textContent = 'Quero participar da ' + clean(rule.label || field(additional,'name','nome'));
+      $('spatialAddonTitle').textContent = 'SIM, quero participar da ' + clean(rule.label || field(additional,'name','nome'));
       $('spatialAddonDescription').textContent = 'Adicione por mais ' + money(fee) + ' no mesmo pagamento.';
     }
     function playerName(match, slot) { return field(match, 'side' + slot + '_name', 'player' + slot + '_name', 'jogador' + slot + '_nome') || field(match['player' + slot],'name','nome') || 'A definir'; }

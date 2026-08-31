@@ -510,8 +510,8 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(ilhaOpenServiceRoleAuthFixSource, /corrected_count <> 2/);
   assert.match(tournamentSource, /id="spatialAddonField"/);
   assert.match(tournamentSource, /Você pode jogar também na Classe Espacial/);
-  assert.match(tournamentSource, /Essa classe não conta pontos para o CINCATE/);
-  assert.match(tournamentSource, /Quero participar da/);
+  assert.match(tournamentSource, /⚠️ não conta pontos para o CINCATE/);
+  assert.match(tournamentSource, /SIM, quero participar da/);
   assert.doesNotMatch(tournamentSource, /SIM, quero participar também da/);
   assert.doesNotMatch(tournamentSource, /identificada pela cor amarela/);
   assert.match(tournamentSource, /spatial-addon-option/);
