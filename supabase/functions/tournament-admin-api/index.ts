@@ -1627,7 +1627,11 @@ Deno.serve(async (request) => {
         const tournament = await currentTournament(client, payload).catch(() => null);
         responseTournamentId = tournament?.id || "";
       }
-      response.data = await loadSnapshot(client, responseTournamentId, "", true);
+      // The caller has already passed both the profile and protected-account
+      // write checks. Reload through the trusted client just like GET does;
+      // using the caller client here can make a successful mutation look like
+      // a 403 when raw tournament tables are intentionally hidden by RLS.
+      response.data = await loadSnapshot(trustedClient, responseTournamentId, "", true);
     }
     return json(request, response);
   } catch (error) {

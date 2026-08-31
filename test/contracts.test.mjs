@@ -1446,6 +1446,11 @@ test('snapshot administrativo nao entrega bearer tokens a permissao somente leit
   assert.match(tournamentAdminSource, /loadSnapshot\(trustedClient, tournamentId, slug, canWrite\)/);
 });
 
+test('alterações do torneio recarregam a agenda pelo cliente administrativo já autorizado', () => {
+  assert.match(tournamentAdminSource, /response\.data = await loadSnapshot\(trustedClient, responseTournamentId, "", true\)/);
+  assert.doesNotMatch(tournamentAdminSource, /response\.data = await loadSnapshot\(client, responseTournamentId, "", true\)/);
+});
+
 test('tabelas sensiveis de torneio reservam leitura REST para escritores', () => {
   const policies = sourceSection(
     securityMigrationSource,
