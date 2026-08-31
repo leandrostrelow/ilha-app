@@ -514,7 +514,7 @@
   <div class="modal-backdrop" id="registrationModal" aria-hidden="true" hidden>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="registrationTitle">
       <div class="modal-head">
-        <div><h2 id="registrationTitle">Inscrição</h2><p id="registrationSubtitle">Preencha os dados para participar.</p></div>
+        <div><h2 id="registrationTitle">Inscrição</h2><p id="registrationSubtitle" hidden></p></div>
         <button class="close-btn" id="closeRegistrationBtn" type="button" aria-label="Fechar">×</button>
       </div>
       <div class="modal-body" id="registrationBody">
@@ -531,11 +531,11 @@
             <div class="form-field full" id="genderField"><label>Sexo</label><div class="choice-grid" id="registrationGender"><label class="choice-card"><input type="radio" name="gender" value="MALE" required /><span>Masculino</span></label><label class="choice-card"><input type="radio" name="gender" value="FEMALE" required /><span>Feminino</span></label></div></div>
             <div class="form-field full" id="categoryField" hidden><label>Classes disponíveis</label><div class="category-checks" id="registrationCategories"></div></div>
             <div class="form-field full" id="spatialAddonField" hidden><div class="spatial-addon-copy"><strong>🎾 Você pode jogar também na Classe Espacial 🚀</strong><strong id="spatialAddonPeriod">Essa classe acontece de 21 a 27 de setembro.</strong><strong>⚠️ não conta pontos para o CINCATE; é apenas uma classe interna do Ilha.</strong></div><label class="category-check spatial-addon-option"><input id="spatialAddon" name="spatial_addon" type="checkbox" value="" /><span><strong id="spatialAddonTitle">SIM, quero participar da Classe Espacial</strong><small id="spatialAddonDescription">Adicione por mais R$ 80,00 no mesmo pagamento.</small></span></label></div>
-            <div class="form-field full" id="availabilityField"><label>Dias em que posso jogar</label><div class="choice-grid days"><label class="choice-card"><input type="checkbox" name="availability_days" value="MONDAY" /><span>Segunda</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="TUESDAY" /><span>Terça</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="WEDNESDAY" /><span>Quarta</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="THURSDAY" /><span>Quinta</span></label></div><p class="field-hint">Marque todos os dias em que você tem disponibilidade.</p></div>
+            <div class="form-field full" id="availabilityField"><label>Dias em que posso jogar</label><div class="choice-grid days"><label class="choice-card"><input type="checkbox" name="availability_days" value="MONDAY" /><span>Segunda</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="TUESDAY" /><span>Terça</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="WEDNESDAY" /><span>Quarta</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="THURSDAY" /><span>Quinta</span></label></div><p class="field-hint">Marque todos os dias em que você tem disponibilidade. Sexta-feira e sábado são dias obrigatórios de jogo e não permitem restrição de horário. As finais serão disputadas no domingo.</p></div>
             <div class="form-field" id="cityField"><label for="athleteCity">Cidade</label><input id="athleteCity" name="city" autocomplete="address-level2" value="Colatina" /></div>
-            <div class="form-field" id="paymentMethodField"><label for="paymentMethod" id="paymentMethodLabel">Forma de pagamento</label><select id="paymentMethod" name="payment_method"></select><p class="field-hint" id="paymentMethodHint" hidden>Pagamento disponível somente via Pix.</p></div>
+            <div class="form-field" id="paymentMethodField"><label for="paymentMethod" id="paymentMethodLabel">Forma de pagamento</label><select id="paymentMethod" name="payment_method"></select></div>
             <div class="form-field full" id="partnerField" hidden><label for="partnerName">Nome da dupla</label><input id="partnerName" name="partner_name" placeholder="Nome completo do parceiro ou parceira" /></div>
-            <div class="form-field full" id="notesField"><label for="athleteNotes">Observação</label><textarea id="athleteNotes" name="notes" placeholder="Restrição de horário ou informação importante"></textarea></div>
+            <div class="form-field full" id="notesField"><label for="athleteNotes">Observação</label><textarea id="athleteNotes" name="notes"></textarea></div>
             <div class="bot-field" aria-hidden="true" inert><label for="registrationWebsite">Não preencha este campo</label><input id="registrationWebsite" name="website" tabindex="-1" autocomplete="off" /></div>
           </div>
           <label class="consent" id="registrationConsentLabel"><input id="registrationConsent" type="checkbox" required /><span id="registrationConsentText">Confirmo que os dados estão corretos e autorizo seu uso pela organização para realizar o torneio e entrar em contato comigo.</span></label>
@@ -1086,7 +1086,9 @@
       const internal = isInternalRegistration();
       $('registrationForm').reset();
       $('registrationTitle').textContent = 'Inscrição · ' + (field(item,'name','nome') || 'Torneio');
-      $('registrationSubtitle').textContent = internal ? 'Informe nome e telefone e escolha até duas classes.' : (state.courtesyMode ? 'Inscrição isenta para professor ou parceiro.' : 'Escolha seu perfil e a classe. O valor é definido pela classe selecionada.');
+      const registrationSubtitle = internal ? 'Informe nome e telefone e escolha até duas classes.' : (state.courtesyMode ? 'Inscrição isenta para professor ou parceiro.' : '');
+      $('registrationSubtitle').textContent = registrationSubtitle;
+      $('registrationSubtitle').hidden = !registrationSubtitle;
       state.registrationCategories = categories().filter((row) => {
         const status = clean(field(row,'status')).toUpperCase();
         const open = field(row,'registration_open','inscricoes_abertas');
@@ -1117,7 +1119,6 @@
       const paymentLabels = {PIX:'Pix',CREDIT_CARD:'Cartão de crédito',BOLETO:'Boleto',UNDEFINED:'Escolher no checkout'};
       const pixOnly = paymentMethods.length === 1 && paymentMethods[0] === 'PIX';
       $('paymentMethodLabel').textContent = pixOnly ? 'Forma de pagamento — somente Pix' : 'Forma de pagamento';
-      $('paymentMethodHint').hidden = !pixOnly;
       $('paymentMethod').innerHTML = paymentMethods.map((method) => '<option value="' + escapeHtml(method) + '">' + escapeHtml(paymentLabels[method] || method) + '</option>').join('');
       $('registrationParticipantType').querySelectorAll('input[name="participant_type"]').forEach((input) => {
         input.required = !internal && !state.courtesyMode;

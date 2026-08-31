@@ -512,6 +512,10 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(tournamentSource, /Você pode jogar também na Classe Espacial/);
   assert.match(tournamentSource, /⚠️ não conta pontos para o CINCATE/);
   assert.match(tournamentSource, /SIM, quero participar da/);
+  assert.match(tournamentSource, /Sexta-feira e sábado são dias obrigatórios de jogo e não permitem restrição de horário\. As finais serão disputadas no domingo\./);
+  assert.doesNotMatch(tournamentSource, /Escolha seu perfil e a classe\. O valor é definido pela classe selecionada\./);
+  assert.doesNotMatch(tournamentSource, /Restrição de horário ou informação importante/);
+  assert.doesNotMatch(tournamentSource, /Pagamento disponível somente via Pix\./);
   assert.doesNotMatch(tournamentSource, /SIM, quero participar também da/);
   assert.doesNotMatch(tournamentSource, /identificada pela cor amarela/);
   assert.match(tournamentSource, /spatial-addon-option/);
