@@ -78,6 +78,10 @@ const ilhaOpenServiceRoleAuthFixSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260831123000_fix_spatial_bundle_service_role_auth.sql'),
   'utf8'
 );
+const asaasWebhookEventPrivilegesSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260831132000_restore_asaas_webhook_event_service_role_crud.sql'),
+  'utf8'
+);
 const internalTournamentSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260824170451_add_internal_tournament_registration.sql'),
   'utf8'
@@ -1100,6 +1104,9 @@ test('webhook Asaas trata chargeback repetido como idempotente', () => {
   assert.match(asaasWebhookSource, /disputed\s*\?\s*"CHARGEBACK"/);
   assert.match(asaasWebhookSource, /processing_token/);
   assert.match(asaasWebhookSource, /A posse do processamento do evento foi perdida/);
+  assert.match(asaasWebhookEventPrivilegesSource, /revoke all on table public\.asaas_webhook_events from anon, authenticated/);
+  assert.match(asaasWebhookEventPrivilegesSource, /grant select, insert, update, delete on table public\.asaas_webhook_events to service_role/);
+  assert.match(asaasWebhookEventPrivilegesSource, /has_table_privilege\('service_role'/);
 });
 
 test('onboarding e cancelamento usam RPCs validadas sem fallback local de producao', () => {
