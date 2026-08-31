@@ -506,10 +506,6 @@
   <header class="site-head">
     <div class="site-head-inner">
       <a class="brand-link" href="/torneios" aria-label="Torneios Ilha Tênis"><img src="/logo.png" alt="Ilha Tênis" /></a>
-      <div class="head-actions">
-        <a class="head-link" href="/">Ilha Play</a>
-        <button class="button primary" id="headRegisterBtn" type="button" hidden>Inscrever-se</button>
-      </div>
     </div>
   </header>
 
@@ -713,7 +709,6 @@
     function renderLanding() {
       document.title = 'Torneios | Ilha Tênis';
       state.activeTab = 'overview';
-      $('headRegisterBtn').hidden = true;
       const tournaments = tournamentsFromSnapshot();
       $('appMain').innerHTML =
         '<section class="landing-hero"><div><p class="eyebrow">Ilha Tênis</p><h1>Viva cada ponto do torneio.</h1><p>Inscrições, atletas, chaves, horários e resultados reunidos em um só lugar.</p></div>' +
@@ -821,8 +816,6 @@
       state.activeTab = 'overview';
       const open = isRegistrationOpen(item);
       document.body.classList.toggle('internal-registration', isInternalRegistration());
-      $('headRegisterBtn').hidden = !open;
-      $('headRegisterBtn').onclick = openRegistration;
       const cover = field(item,'cover_url','banner_url','image_url');
       if (!state.bracketCategory || !categories().some((row) => categoryId(row) === String(state.bracketCategory))) {
         const categoryWithDraw = categories().find((row) => matches().some((match) => matchCategoryId(match) === categoryId(row)));
@@ -830,7 +823,7 @@
       }
       $('appMain').innerHTML =
         '<section class="event-hero">' + (cover ? '<img class="event-hero-bg" src="' + escapeHtml(cover) + '" alt="" />' : '') + '<div class="event-hero-shade"></div><div class="event-hero-body">' +
-        '<p class="eyebrow">' + escapeHtml(field(item,'club_name','clube') || 'Ilha Tênis') + '</p>' + tournamentTitleHtml(item, name) + '<p>' + escapeHtml(field(item,'short_description','description','descricao') || 'Acompanhe todas as informações do torneio.') + '</p>' +
+        tournamentTitleHtml(item, name) +
         '<div class="hero-meta"><span class="meta-pill">' + escapeHtml(formatRange(item)) + '</span><span class="meta-pill">' + escapeHtml(field(item,'location','venue','local') || 'Ilha Tênis') + '</span><span class="meta-pill">' + escapeHtml(statusLabel(item)) + '</span></div>' +
         (open ? '<div class="hero-actions"><button class="button lime" type="button" data-open-registration>Fazer inscrição</button></div>' : '') + '</div></section>' +
         '<nav class="event-nav" aria-label="Seções do torneio">' + tabButton('overview','Visão geral') + tabButton('categories','Classes') + tabButton('registrations','Inscritos') + tabButton('brackets','Chaves') + tabButton('schedule','Agenda') + tabButton('results','Resultados') + '</nav>' +
@@ -850,7 +843,6 @@
       document.title = 'Inscrição · ' + name;
       document.body.classList.add('registration-only');
       document.body.classList.toggle('internal-registration', isInternalRegistration());
-      $('headRegisterBtn').hidden = true;
       const internal = isInternalRegistration();
       const cover = field(item,'cover_url','banner_url','image_url');
       const introCopy = internal
