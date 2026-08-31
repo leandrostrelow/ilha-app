@@ -78,6 +78,9 @@
     .brand-link { display: inline-flex; align-items: center; text-decoration: none; }
     .brand-link img { width: 132px; height: 58px; object-fit: contain; object-position: left center; }
     .head-actions { display: flex; align-items: center; gap: 10px; }
+    .head-actions .button { white-space: nowrap; }
+    .head-sponsor { background: #25d366; border-color: #25d366; color: #092d17; }
+    .mobile-label { display: none; }
     .head-link, .button {
       min-height: 44px;
       display: inline-flex;
@@ -450,6 +453,10 @@
       .site-head-inner { min-height: 66px; }
       .brand-link img { width: 108px; height: 48px; }
       .head-link { min-height: 40px; padding: 8px 11px; font-size: 12px; }
+      .head-actions { gap: 6px; }
+      .head-actions .button { min-height: 38px; padding: 7px 9px; border-radius: 11px; font-size: 11px; }
+      .desktop-label { display: none; }
+      .mobile-label { display: inline; }
       .page { padding-top: 12px; }
       .landing-hero, .event-hero { border-radius: 22px; }
       .landing-hero { min-height: 310px; padding: 25px 21px; }
@@ -506,6 +513,10 @@
   <header class="site-head">
     <div class="site-head-inner">
       <a class="brand-link" href="/torneios" aria-label="Torneios Ilha Tênis"><img src="/logo.png" alt="Ilha Tênis" /></a>
+      <div class="head-actions" id="tournamentHeadActions" hidden>
+        <a class="button head-sponsor" href="https://wa.me/5527999805814?text=Ol%C3%A1%21%20Quero%20saber%20mais%20sobre%20as%20oportunidades%20de%20patroc%C3%ADnio%20do%20torneio%20Ilha%20Open%202026." target="_blank" rel="noopener" aria-label="Falar pelo WhatsApp para patrocinar o torneio"><span class="desktop-label">Seja um patrocinador</span><span class="mobile-label">Patrocinar</span></a>
+        <button class="button lime" id="headRegisterBtn" type="button"><span class="desktop-label">Fazer inscrição</span><span class="mobile-label">Inscrição</span></button>
+      </div>
     </div>
   </header>
 
@@ -569,7 +580,7 @@
       courtesyMode: courtesySegmentIndex >= 0,
       courtesyToken: courtesySegmentIndex >= 0 ? decodeURIComponent(routeParts[courtesySegmentIndex + 1] || '') : '',
       snapshot: null,
-      activeTab: 'overview',
+      activeTab: 'categories',
       bracketCategory: '',
       agendaCategory: '',
       registrationSearch: '',
@@ -708,7 +719,8 @@
 
     function renderLanding() {
       document.title = 'Torneios | Ilha Tênis';
-      state.activeTab = 'overview';
+      state.activeTab = 'categories';
+      $('tournamentHeadActions').hidden = true;
       const tournaments = tournamentsFromSnapshot();
       $('appMain').innerHTML =
         '<section class="landing-hero"><div><p class="eyebrow">Ilha Tênis</p><h1>Viva cada ponto do torneio.</h1><p>Inscrições, atletas, chaves, horários e resultados reunidos em um só lugar.</p></div>' +
@@ -813,8 +825,11 @@
       if (!item || !Object.keys(item).length) return renderError(new Error('Torneio não encontrado.'));
       const name = field(item,'name','nome') || 'Torneio Ilha';
       document.title = name + ' | Ilha Tênis';
-      state.activeTab = 'overview';
+      state.activeTab = 'categories';
       const open = isRegistrationOpen(item);
+      $('tournamentHeadActions').hidden = false;
+      $('headRegisterBtn').hidden = !open;
+      $('headRegisterBtn').onclick = openRegistration;
       document.body.classList.toggle('internal-registration', isInternalRegistration());
       const cover = field(item,'cover_url','banner_url','image_url');
       if (!state.bracketCategory || !categories().some((row) => categoryId(row) === String(state.bracketCategory))) {
@@ -824,11 +839,9 @@
       $('appMain').innerHTML =
         '<section class="event-hero">' + (cover ? '<img class="event-hero-bg" src="' + escapeHtml(cover) + '" alt="" />' : '') + '<div class="event-hero-shade"></div><div class="event-hero-body">' +
         tournamentTitleHtml(item, name) +
-        '<div class="hero-meta"><span class="meta-pill">' + escapeHtml(formatRange(item)) + '</span><span class="meta-pill">' + escapeHtml(field(item,'location','venue','local') || 'Ilha Tênis') + '</span><span class="meta-pill">' + escapeHtml(statusLabel(item)) + '</span></div>' +
-        (open ? '<div class="hero-actions"><button class="button lime" type="button" data-open-registration>Fazer inscrição</button></div>' : '') + '</div></section>' +
-        '<nav class="event-nav" aria-label="Seções do torneio">' + tabButton('overview','Visão geral') + tabButton('categories','Classes') + tabButton('registrations','Inscritos') + tabButton('brackets','Chaves') + tabButton('schedule','Agenda') + tabButton('results','Resultados') + '</nav>' +
-        '<section class="tab-panel active" data-panel="overview">' + overviewHtml(item) + '</section>' +
-        '<section class="tab-panel" data-panel="categories">' + categoriesHtml() + '</section>' +
+        '<div class="hero-meta"><span class="meta-pill">' + escapeHtml(formatRange(item)) + '</span><span class="meta-pill">' + escapeHtml(field(item,'location','venue','local') || 'Ilha Tênis') + '</span><span class="meta-pill">' + escapeHtml(statusLabel(item)) + '</span></div></div></section>' +
+        '<nav class="event-nav" aria-label="Seções do torneio">' + tabButton('categories','Classes') + tabButton('registrations','Inscritos') + tabButton('brackets','Chaves') + tabButton('schedule','Agenda') + tabButton('results','Resultados') + '</nav>' +
+        '<section class="tab-panel active" data-panel="categories">' + categoriesHtml() + '</section>' +
         '<section class="tab-panel" data-panel="registrations">' + registrationsHtml() + '</section>' +
         '<section class="tab-panel" data-panel="brackets">' + bracketsHtml() + '</section>' +
         '<section class="tab-panel" data-panel="schedule">' + scheduleHtml() + '</section>' +
@@ -842,6 +855,7 @@
       const name = field(item,'name','nome') || 'Torneio Ilha';
       document.title = 'Inscrição · ' + name;
       document.body.classList.add('registration-only');
+      $('tournamentHeadActions').hidden = true;
       document.body.classList.toggle('internal-registration', isInternalRegistration());
       const internal = isInternalRegistration();
       const cover = field(item,'cover_url','banner_url','image_url');

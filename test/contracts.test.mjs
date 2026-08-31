@@ -543,8 +543,13 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(tournamentSource, /Seja um patrocinador do torneio/);
   assert.match(tournamentSource, /wa\.me\/5527999805814/);
   assert.match(tournamentSource, /function tournamentTitleHtml/);
-  assert.doesNotMatch(tournamentSource, /id="headRegisterBtn"|>Ilha Play<|<p class="eyebrow">' \+ escapeHtml\(field\(item,'club_name'/);
+  assert.doesNotMatch(tournamentSource, />Ilha Play<|<p class="eyebrow">' \+ escapeHtml\(field\(item,'club_name'/);
   assert.doesNotMatch(functionSource(tournamentSource, 'renderTournament'), /short_description|Acompanhe todas as informações do torneio/);
+  assert.match(tournamentSource, /id="tournamentHeadActions" hidden/);
+  assert.match(tournamentSource, /id="headRegisterBtn"[\s\S]*Fazer inscrição/);
+  assert.match(tournamentSource, /Seja um patrocinador/);
+  assert.match(functionSource(tournamentSource, 'renderTournament'), /state\.activeTab = 'categories'/);
+  assert.doesNotMatch(functionSource(tournamentSource, 'renderTournament'), /tabButton\('overview','Visão geral'\)|data-panel="overview"|hero-actions/);
   assert.doesNotMatch(functionSource(tournamentSource, 'overviewHtml'), /summary-grid|<h3>Informações<\/h3>/);
   assert.match(adminSource, /id="tournamentLogoFile"[^>]*accept="image\/png/);
   assert.match(adminSource, /1600 × 600 px/);
