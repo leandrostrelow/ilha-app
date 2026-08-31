@@ -534,6 +534,8 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(tournamentRegisterSource, /A segunda inscrição só é permitida na Espacial A para atletas da 2ª, 3ª e 4ª Classe Masculina ou na Espacial B para atletas da 5ª, 6ª e 7ª Classe Masculina\./);
   assert.match(tournamentSource, /additional_category_id:\s*\$\('spatialAddon'\)\.checked/);
   assert.match(tournamentSource, /participantRegistrationAmount\(selected\) \+ addonFee/);
+  assert.match(tournamentSource, /class="reservation-warning" role="alert"/);
+  assert.match(tournamentSource, /⚠️<\/span><strong>Sua vaga fica reservada por 2 horas e só é confirmada após o pagamento\./);
   const retryPayment = sourceSection(tournamentSource, "const retry = $('retryPaymentBtn')", 'if (state.registrationOnly)');
   assert.match(retryPayment, /initializeRegistrationCaptcha\(\)/);
   assert.match(retryPayment, /registrationFoot'\)\.hidden = false/);

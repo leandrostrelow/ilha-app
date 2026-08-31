@@ -373,6 +373,8 @@
     .success-box h3 { margin: 0; font-size: 25px; }
     .success-box p { margin: 0; color: var(--muted); line-height: 1.5; }
     .payment-box { display: grid; gap: 9px; padding: 15px; border: 1px solid var(--line); border-radius: 16px; background: #f7fafb; }
+    .reservation-warning { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 12px; border: 1px solid #efb1b5; border-radius: 12px; background: #fff0f1; color: #a62e36; font-weight: 900; line-height: 1.4; }
+    .reservation-warning strong { color: inherit; }
     .payment-qr { width: min(230px, 100%); margin: 2px auto; border: 10px solid #fff; border-radius: 14px; }
     .pix-copy { word-break: break-all; color: var(--teal); font-size: 12px; font-weight: 800; }
 
@@ -1358,7 +1360,7 @@
       $('registrationSuccess').innerHTML = '<div class="success-icon">✓</div><div><h3>' + escapeHtml(successTitle) + '</h3><p>' + escapeHtml(successCopy) + '</p></div>' +
         '<div class="payment-box"><strong>Status: ' + escapeHtml(statusLabel) + '</strong>' +
         (selectedClassNames.length ? '<span>Classes: ' + escapeHtml(selectedClassNames.join(' + ')) + '</span>' : '') +
-        (!confirmed && !noPayment && !waitlist ? '<span><strong>Sua vaga fica reservada por 2 horas e só é confirmada após o pagamento.</strong></span>' : '') +
+        (!confirmed && !noPayment && !waitlist ? '<span class="reservation-warning" role="alert"><span aria-hidden="true">⚠️</span><strong>Sua vaga fica reservada por 2 horas e só é confirmada após o pagamento.</strong></span>' : '') +
         (reservationDeadline && !confirmed ? '<span>Prazo para pagar: ' + escapeHtml(reservationDeadline) + '</span>' : '') +
         (invoiceUrl ? '<a class="button lime full" href="' + escapeHtml(safeHref(invoiceUrl)) + '" target="_blank" rel="noopener">Pagar inscrição</a>' : '') +
         (pixImage ? '<img class="payment-qr" src="data:image/png;base64,' + escapeHtml(pixImage) + '" alt="QR Code Pix" />' : '') +
