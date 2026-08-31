@@ -37,8 +37,11 @@ const participantLabels: Record<string, string> = { CINCATE: "CINCATE", ILHA_STU
 const retryablePaymentStatuses = new Set(["CREATED", "FAILED"]);
 const publicRegistrationRuleErrors = new Set([
   "A Espacial A e a Espacial B são exclusivas para quem já está inscrito da 2ª à 6ª Classe Masculina.",
+  "A Espacial A é exclusiva para atletas inscritos na 2ª, 3ª ou 4ª Classe Masculina.",
+  "A Espacial B é exclusiva para atletas inscritos na 5ª, 6ª ou 7ª Classe Masculina.",
   "Este atleta já atingiu o limite de duas inscrições neste torneio.",
   "Somente atletas da 2ª à 6ª Classe Masculina podem fazer uma segunda inscrição, exclusivamente na Espacial A ou B.",
+  "A segunda inscrição só é permitida na Espacial A para atletas da 2ª, 3ª e 4ª Classe Masculina ou na Espacial B para atletas da 5ª, 6ª e 7ª Classe Masculina.",
   "Escolha primeiro sua classe principal e use a opção de Classe Espacial.",
   "Esta classe não permite inscrição adicional na Classe Espacial.",
   "A Classe Espacial selecionada não corresponde à sua classe principal.",

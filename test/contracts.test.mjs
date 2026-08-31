@@ -83,6 +83,10 @@ const ilhaOpenSpatialCopyAndPixOnlySource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260831171907_ilha_open_spatial_copy_and_pix_only.sql'),
   'utf8'
 );
+const ilhaOpenSpatialClassRulesSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260831182036_align_ilha_open_spatial_class_rules.sql'),
+  'utf8'
+);
 const asaasWebhookEventPrivilegesSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260831132000_restore_asaas_webhook_event_service_role_crud.sql'),
   'utf8'
@@ -522,6 +526,12 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(tournamentSource, /spatialAddonPeriodLabel/);
   assert.match(ilhaOpenSpatialCopyAndPixOnlySource, /allowed_payment_methods\s*=\s*'\["PIX"\]'::jsonb/);
   assert.match(ilhaOpenSpatialCopyAndPixOnlySource, /spatial_event_period_label'[\s\S]*'21 a 27 de setembro'/);
+  assert.match(ilhaOpenSpatialClassRulesSource, /'ESP-A-M'[\s\S]*jsonb_build_array\('M2', 'M3', 'M4'\)/);
+  assert.match(ilhaOpenSpatialClassRulesSource, /'ESP-B-M'[\s\S]*jsonb_build_array\('M5', 'M6', 'M7'\)/);
+  assert.doesNotMatch(ilhaOpenSpatialClassRulesSource, /'(?:M1|F2|F3|F4)'\s*,\s*jsonb_build_object\('category_code'/);
+  assert.match(ilhaOpenSpatialClassRulesSource, /A Espacial A é exclusiva para atletas inscritos na 2ª, 3ª ou 4ª Classe Masculina\./);
+  assert.match(ilhaOpenSpatialClassRulesSource, /A Espacial B é exclusiva para atletas inscritos na 5ª, 6ª ou 7ª Classe Masculina\./);
+  assert.match(tournamentRegisterSource, /A segunda inscrição só é permitida na Espacial A para atletas da 2ª, 3ª e 4ª Classe Masculina ou na Espacial B para atletas da 5ª, 6ª e 7ª Classe Masculina\./);
   assert.match(tournamentSource, /additional_category_id:\s*\$\('spatialAddon'\)\.checked/);
   assert.match(tournamentSource, /participantRegistrationAmount\(selected\) \+ addonFee/);
   const retryPayment = sourceSection(tournamentSource, "const retry = $('retryPaymentBtn')", 'if (state.registrationOnly)');
