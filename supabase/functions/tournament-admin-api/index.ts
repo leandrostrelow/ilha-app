@@ -736,6 +736,15 @@ function tournamentPayload(input: Row, current: Row = {}) {
   if (name.length < 3) throw new ApiError("Informe o nome do torneio.");
   const rawStatus = input.status || current.status || "DRAFT";
   const registrationOpen = booleanValue(input.inscricoes_abertas ?? input.registration_open, current.registration_open === true);
+  const currentSettings = firstObject(current.settings);
+  const requestedSettings = firstObject(input.settings, currentSettings);
+  const currentPricing = firstObject(currentSettings.registration_pricing);
+  const requestedPricing = firstObject(requestedSettings.registration_pricing, currentPricing);
+  const registrationPricing = {
+    CINCATE: Math.min(99999.99, Math.max(0, numberValue(requestedPricing.CINCATE, numberValue(currentPricing.CINCATE, 0)))),
+    ILHA_STUDENT: Math.min(99999.99, Math.max(0, numberValue(requestedPricing.ILHA_STUDENT, numberValue(currentPricing.ILHA_STUDENT, 0)))),
+    NON_MEMBER: Math.min(99999.99, Math.max(0, numberValue(requestedPricing.NON_MEMBER, numberValue(currentPricing.NON_MEMBER, 0)))),
+  };
   return {
     name,
     year: integerValue(input.ano ?? input.year, current.year || new Date().getFullYear()),
@@ -749,7 +758,7 @@ function tournamentPayload(input: Row, current: Row = {}) {
     instagram: nullableText(input.instagram ?? current.instagram, 120),
     whatsapp: nullableText(input.whatsapp ?? current.whatsapp, 30),
     notes: nullableText(input.observacoes ?? input.notes ?? current.notes, 4000),
-    settings: firstObject(input.settings, current.settings),
+    settings: { ...requestedSettings, registration_pricing: registrationPricing },
     updated_at: new Date().toISOString(),
   };
 }

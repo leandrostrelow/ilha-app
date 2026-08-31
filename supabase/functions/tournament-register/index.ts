@@ -626,10 +626,18 @@ Deno.serve(async (request) => {
     if (!Number.isFinite(configuredBaseAmount) || configuredBaseAmount < 0) {
       return json(request, { error: "O valor desta categoria ainda não foi configurado." }, 409);
     }
-    // CINCATE/Aluno Ilha are self-declared in the public form and therefore do
-    // not authorize a discount. Only the server-held courtesy capability can
-    // reduce the catalog/category price.
-    const baseAmount = participantType === "COURTESY" ? 0 : configuredBaseAmount;
+    const tournamentSettings = tournament.settings && typeof tournament.settings === "object" && !Array.isArray(tournament.settings)
+      ? tournament.settings as JsonRecord
+      : {};
+    const registrationPricing = tournamentSettings.registration_pricing && typeof tournamentSettings.registration_pricing === "object" && !Array.isArray(tournamentSettings.registration_pricing)
+      ? tournamentSettings.registration_pricing as JsonRecord
+      : {};
+    const participantAmount = Number(registrationPricing[participantType]);
+    const baseAmount = participantType === "COURTESY"
+      ? 0
+      : Number.isFinite(participantAmount) && participantAmount >= 0
+      ? participantAmount
+      : configuredBaseAmount;
     const amount = participantType === "COURTESY" ? 0 : baseAmount + additionalFee;
 
     failureStage = "athlete_upsert";

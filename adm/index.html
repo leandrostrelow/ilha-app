@@ -21846,6 +21846,27 @@
                 <input id="tournamentWhatsapp" />
               </div>
               <div class="field full">
+                <div class="card-title" style="margin:8px 0 2px">
+                  <div><h3>Valores da inscrição</h3><div class="muted">Aplicados conforme o perfil escolhido na página pública.</div></div>
+                </div>
+              </div>
+              <div class="field">
+                <label>CINCATE</label>
+                <input id="tournamentPriceCincate" type="number" min="0" max="99999.99" step="0.01" inputmode="decimal" />
+              </div>
+              <div class="field">
+                <label>Aluno Ilha Tênis</label>
+                <input id="tournamentPriceStudent" type="number" min="0" max="99999.99" step="0.01" inputmode="decimal" />
+              </div>
+              <div class="field">
+                <label>Não associado</label>
+                <input id="tournamentPriceNonMember" type="number" min="0" max="99999.99" step="0.01" inputmode="decimal" />
+              </div>
+              <div class="field">
+                <label>Adicional Classe Espacial</label>
+                <input value="Editado nas regras/classes" disabled />
+              </div>
+              <div class="field full">
                 <label>Observações</label>
                 <textarea id="tournamentNotes"></textarea>
               </div>
@@ -22454,6 +22475,10 @@
       $('tournamentEnd').value = t.data_fim || '';
       $('tournamentInstagram').value = t.instagram || '';
       $('tournamentWhatsapp').value = t.whatsapp || '';
+      const pricing = t.settings && t.settings.registration_pricing || {};
+      $('tournamentPriceCincate').value = Number.isFinite(Number(pricing.CINCATE)) ? Number(pricing.CINCATE).toFixed(2) : '';
+      $('tournamentPriceStudent').value = Number.isFinite(Number(pricing.ILHA_STUDENT)) ? Number(pricing.ILHA_STUDENT).toFixed(2) : '';
+      $('tournamentPriceNonMember').value = Number.isFinite(Number(pricing.NON_MEMBER)) ? Number(pricing.NON_MEMBER).toFixed(2) : '';
       $('tournamentNotes').value = t.observacoes || '';
     }
 
@@ -24292,6 +24317,15 @@
     async function saveTournament(event) {
       event.preventDefault();
       try {
+        const pricing = {
+          CINCATE: Number($('tournamentPriceCincate').value),
+          ILHA_STUDENT: Number($('tournamentPriceStudent').value),
+          NON_MEMBER: Number($('tournamentPriceNonMember').value)
+        };
+        if (Object.values(pricing).some(function (value) { return !Number.isFinite(value) || value < 0; })) {
+          toast('Informe valores válidos para os três tipos de inscrição.');
+          return;
+        }
         const requestedStatus = $('tournamentStatus').value;
         let registrationsOpen = $('tournamentRegistrationOpen').value === 'true';
         let status = requestedStatus;
@@ -24317,6 +24351,7 @@
             inscricoes_abertas: registrationsOpen,
             instagram: $('tournamentInstagram').value,
             whatsapp: $('tournamentWhatsapp').value,
+            settings: Object.assign({}, state.data.torneio.settings || {}, { registration_pricing: pricing }),
             observacoes: $('tournamentNotes').value
           }
         });

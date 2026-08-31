@@ -519,7 +519,7 @@
             <div class="form-field full" id="emailField"><label for="athleteEmail">E-mail</label><input id="athleteEmail" name="email" type="email" autocomplete="email" required /></div>
             <div class="form-field full" id="minorField" hidden><label>Participante menor de idade?</label><div class="choice-grid minor-toggle"><label class="choice-card"><input type="radio" name="is_minor" value="false" checked /><span>Não</span></label><label class="choice-card"><input type="radio" name="is_minor" value="true" /><span>Sim</span></label></div></div>
             <div class="form-field full" id="guardianFields" hidden><div class="form-grid"><div class="form-field"><label for="guardianName">Nome do responsável</label><input id="guardianName" name="guardian_name" maxlength="120" autocomplete="name" /></div><div class="form-field"><label for="guardianPhone">Telefone do responsável</label><input id="guardianPhone" name="guardian_phone" type="tel" inputmode="tel" maxlength="15" autocomplete="tel" placeholder="(27) 99999-9999" /></div></div></div>
-            <div class="form-field full" id="participantTypeField"><label>Tipo de inscrição</label><div class="choice-grid pricing" id="registrationParticipantType"><label class="choice-card"><input type="radio" name="participant_type" value="CINCATE" required /><span><strong>CINCATE</strong></span></label><label class="choice-card"><input type="radio" name="participant_type" value="ILHA_STUDENT" required /><span><strong>Aluno Ilha Tênis</strong></span></label><label class="choice-card"><input type="radio" name="participant_type" value="NON_MEMBER" required /><span><strong>Não associado</strong></span></label></div></div>
+            <div class="form-field full" id="participantTypeField"><label>Tipo de inscrição</label><div class="choice-grid pricing" id="registrationParticipantType"><label class="choice-card"><input type="radio" name="participant_type" value="CINCATE" required /><span><strong>CINCATE</strong><small id="participantPriceCincate"></small></span></label><label class="choice-card"><input type="radio" name="participant_type" value="ILHA_STUDENT" required /><span><strong>Aluno Ilha Tênis</strong><small id="participantPriceStudent"></small></span></label><label class="choice-card"><input type="radio" name="participant_type" value="NON_MEMBER" required /><span><strong>Não associado</strong><small id="participantPriceNonMember"></small></span></label></div></div>
             <div class="form-field full" id="registrationPriceField" hidden><div class="registration-price"><span>Valor da inscrição</span><strong id="registrationPrice">R$ 0,00</strong></div></div>
             <div class="form-field full" id="genderField"><label>Sexo</label><div class="choice-grid" id="registrationGender"><label class="choice-card"><input type="radio" name="gender" value="MALE" required /><span>Masculino</span></label><label class="choice-card"><input type="radio" name="gender" value="FEMALE" required /><span>Feminino</span></label></div></div>
             <div class="form-field full" id="categoryField" hidden><label>Classes disponíveis</label><div class="category-checks" id="registrationCategories"></div></div>
@@ -721,6 +721,24 @@
 
     function tournament() { return state.snapshot && (state.snapshot.tournament || state.snapshot.torneio) || {}; }
     function tournamentSettings() { const value = field(tournament(),'settings'); return value && typeof value === 'object' ? value : {}; }
+    function registrationPricing() { const value = tournamentSettings().registration_pricing; return value && typeof value === 'object' && !Array.isArray(value) ? value : {}; }
+    function participantRegistrationAmount(row) {
+      const selectedType = document.querySelector('input[name="participant_type"]:checked')?.value || '';
+      const configured = Number(registrationPricing()[selectedType]);
+      return Number.isFinite(configured) && configured >= 0 ? configured : categoryRegistrationAmount(row);
+    }
+    function renderParticipantPrices() {
+      const pricing = registrationPricing();
+      const entries = [
+        ['participantPriceCincate','CINCATE'],
+        ['participantPriceStudent','ILHA_STUDENT'],
+        ['participantPriceNonMember','NON_MEMBER']
+      ];
+      entries.forEach(([id,key]) => {
+        const value = Number(pricing[key]);
+        $(id).textContent = Number.isFinite(value) && value >= 0 ? money(value) : '';
+      });
+    }
     function isInternalRegistration() { return clean(tournamentSettings().registration_mode).toUpperCase() === 'MONTHLY_BILLING_SIMPLE'; }
     function currentRegistrationFunction() { return clean(tournamentSettings().registration_function) || REGISTRATION_FUNCTION; }
     function internalRegistrationAmount(count) {
@@ -1080,6 +1098,7 @@
         input.required = !internal && !state.courtesyMode;
         input.onchange = updateRegistrationPrice;
       });
+      renderParticipantPrices();
       $('registrationGender').querySelectorAll('input[name="gender"]').forEach((input) => input.onchange = renderRegistrationCategories);
       $('spatialAddon').onchange = updateRegistrationPrice;
       document.querySelectorAll('input[name="is_minor"]').forEach((input) => input.onchange = updateGuardianFields);
@@ -1126,7 +1145,7 @@
       if (selected) {
         const rule = spatialAddonRule(selected);
         const addonFee = $('spatialAddon').checked && rule ? Number(rule.fee || 0) : 0;
-        $('registrationPrice').textContent = money(categoryRegistrationAmount(selected) + addonFee);
+        $('registrationPrice').textContent = money(participantRegistrationAmount(selected) + addonFee);
       }
     }
     function renderRegistrationCategories() {
