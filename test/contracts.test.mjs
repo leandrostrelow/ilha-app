@@ -87,6 +87,10 @@ const ilhaOpenSpatialClassRulesSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260831182036_align_ilha_open_spatial_class_rules.sql'),
   'utf8'
 );
+const tournamentLogoStorageSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260831192934_add_tournament_logo_storage.sql'),
+  'utf8'
+);
 const asaasWebhookEventPrivilegesSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260831132000_restore_asaas_webhook_event_service_role_crud.sql'),
   'utf8'
@@ -536,6 +540,16 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(tournamentSource, /participantRegistrationAmount\(selected\) \+ addonFee/);
   assert.match(tournamentSource, /class="reservation-warning" role="alert"/);
   assert.match(tournamentSource, /⚠️<\/span><strong>Sua vaga fica reservada por 2 horas e só é confirmada após o pagamento\./);
+  assert.match(tournamentSource, /Seja um patrocinador do torneio/);
+  assert.match(tournamentSource, /wa\.me\/5527999805814/);
+  assert.match(tournamentSource, /function tournamentTitleHtml/);
+  assert.doesNotMatch(functionSource(tournamentSource, 'overviewHtml'), /summary-grid|<h3>Informações<\/h3>/);
+  assert.match(adminSource, /id="tournamentLogoFile"[^>]*accept="image\/png/);
+  assert.match(adminSource, /1600 × 600 px/);
+  assert.match(functionSource(adminSource, 'uploadTournamentLogo'), /file\.size > 2 \* 1024 \* 1024/);
+  assert.match(tournamentAdminSource, /logo_url: nullableText\(input\.logo_url/);
+  assert.match(tournamentLogoStorageSource, /'tournament-branding'[\s\S]*2097152[\s\S]*'image\/png'/);
+  assert.match(tournamentLogoStorageSource, /has_tournament_permission\('tournaments\.write'\)/);
   const retryPayment = sourceSection(tournamentSource, "const retry = $('retryPaymentBtn')", 'if (state.registrationOnly)');
   assert.match(retryPayment, /initializeRegistrationCaptcha\(\)/);
   assert.match(retryPayment, /registrationFoot'\)\.hidden = false/);

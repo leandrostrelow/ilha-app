@@ -21819,6 +21819,13 @@
                 <label>Nome do torneio</label>
                 <input id="tournamentName" />
               </div>
+              <div class="field full">
+                <label>Logo do torneio (PNG)</label>
+                <input id="tournamentLogoUrl" type="hidden" />
+                <input id="tournamentLogoFile" type="file" accept="image/png,.png" />
+                <div class="muted">Recomendado: 1600 × 600 px, fundo transparente e até 2 MB.</div>
+                <div id="tournamentLogoPreview" style="display:none;margin-top:10px;padding:14px;border:1px solid #d7e4e7;border-radius:14px;background:#0a3440"><img alt="Prévia da logo do torneio" style="display:block;max-width:100%;width:360px;max-height:135px;object-fit:contain;object-position:left center" /></div>
+              </div>
               <div class="field">
                 <label>Ano</label>
                 <input id="tournamentYear" type="number" />
@@ -22473,6 +22480,8 @@
     function renderTournament() {
       const t = state.data.torneio || {};
       $('tournamentName').value = t.nome || '';
+      $('tournamentLogoUrl').value = t.logo_url || '';
+      renderTournamentLogoPreview(t.logo_url || '');
       $('tournamentYear').value = t.ano || '';
       const legacyStatusMap = {
         RASCUNHO: 'DRAFT',
@@ -24439,6 +24448,7 @@
             inscricoes_abertas: registrationsOpen,
             instagram: $('tournamentInstagram').value,
             whatsapp: $('tournamentWhatsapp').value,
+            logo_url: $('tournamentLogoUrl').value,
             settings: Object.assign({}, currentSettings, {
               registration_pricing: pricing,
               spatial_addon_fee: spatialAddonFee,
@@ -24452,6 +24462,34 @@
       } catch (error) {
         toast(error.message);
       }
+    }
+
+    function renderTournamentLogoPreview(url) {
+      const preview = $('tournamentLogoPreview');
+      const image = preview && preview.querySelector('img');
+      if (!preview || !image) return;
+      preview.style.display = url ? 'block' : 'none';
+      image.src = url || '';
+    }
+
+    async function uploadTournamentLogo(file) {
+      if (!file || file.type !== 'image/png') throw new Error('Escolha uma imagem PNG.');
+      if (file.size > 2 * 1024 * 1024) throw new Error('A logo deve ter no máximo 2 MB.');
+      if (!state.selectedTournamentId) throw new Error('Selecione um torneio antes de enviar a logo.');
+      const objectPath = String(state.selectedTournamentId) + '/logo-' + Date.now() + '.png';
+      const headers = supabaseHeaders(true);
+      headers['Content-Type'] = 'image/png';
+      const response = await fetchWithAdminTimeout(supabaseBaseUrl() + '/storage/v1/object/tournament-branding/' + encodeStoragePath(objectPath), {
+        method: 'POST', headers: headers, body: file
+      }, 60000);
+      if (!response.ok) {
+        const body = await response.json().catch(function () { return {}; });
+        throw new Error(body.message || body.error || 'Não foi possível enviar a logo.');
+      }
+      const url = supabaseBaseUrl() + '/storage/v1/object/public/tournament-branding/' + encodeStoragePath(objectPath);
+      $('tournamentLogoUrl').value = url;
+      renderTournamentLogoPreview(url);
+      toast('Logo enviada. Clique em Salvar torneio para publicar.');
     }
 
     function setTournamentModal(id, open) {
@@ -42796,6 +42834,14 @@
       if (event.key === 'Escape' && document.body.classList.contains('player-editing')) clearPlayerForm();
     });
     $('tournamentForm').addEventListener('submit', saveTournament);
+    $('tournamentLogoFile').addEventListener('change', function (event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      uploadTournamentLogo(file).catch(function (error) {
+        $('tournamentLogoFile').value = '';
+        toast(error.message);
+      });
+    });
     $('newTournamentBtn').addEventListener('click', openTournamentCreateModal);
     $('newCategoryBtn').addEventListener('click', function () { openCategoryEditor(''); });
     $('tournamentCreateForm').addEventListener('submit', createTournament);

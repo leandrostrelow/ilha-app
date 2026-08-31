@@ -203,6 +203,8 @@
     .event-hero-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(5,35,42,.96) 0, rgba(5,35,42,.76) 48%, rgba(5,35,42,.18) 100%); }
     .event-hero-body { position: relative; z-index: 1; max-width: 810px; padding: clamp(28px, 5vw, 56px); }
     .event-hero h1 { margin: 0; font-size: clamp(38px, 6vw, 70px); line-height: .98; letter-spacing: -.055em; }
+    .tournament-logo { display: block; width: min(560px, 86vw); max-height: 210px; object-fit: contain; object-position: left center; }
+    .registration-intro .tournament-logo { width: min(430px, 80vw); max-height: 150px; }
     .event-hero p { max-width: 680px; margin: 16px 0 0; color: rgba(255,255,255,.78); font-size: 17px; line-height: 1.5; }
     .hero-meta { margin-top: 21px; display: flex; flex-wrap: wrap; gap: 8px; }
     .meta-pill { min-height: 34px; display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 7px 11px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.15); font-size: 12px; font-weight: 850; }
@@ -301,6 +303,8 @@
     .sponsor { min-height: 90px; display: grid; place-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: #fff; text-decoration: none; }
     .sponsor img { max-width: 130px; max-height: 58px; object-fit: contain; }
     .sponsor span { font-weight: 850; }
+    .sponsor-invite { margin: 16px 0 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .sponsor-cta { margin-top: 14px; background: #25d366; border-color: #25d366; color: #092d17; }
 
     .empty-state { min-height: 180px; display: grid; place-items: center; padding: 30px; border: 1px dashed #bdd0d5; border-radius: 18px; background: #fafcfc; color: var(--muted); text-align: center; font-weight: 750; }
     .loading-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
@@ -826,7 +830,7 @@
       }
       $('appMain').innerHTML =
         '<section class="event-hero">' + (cover ? '<img class="event-hero-bg" src="' + escapeHtml(cover) + '" alt="" />' : '') + '<div class="event-hero-shade"></div><div class="event-hero-body">' +
-        '<p class="eyebrow">' + escapeHtml(field(item,'club_name','clube') || 'Ilha Tênis') + '</p><h1>' + escapeHtml(name) + '</h1><p>' + escapeHtml(field(item,'short_description','description','descricao') || 'Acompanhe todas as informações do torneio.') + '</p>' +
+        '<p class="eyebrow">' + escapeHtml(field(item,'club_name','clube') || 'Ilha Tênis') + '</p>' + tournamentTitleHtml(item, name) + '<p>' + escapeHtml(field(item,'short_description','description','descricao') || 'Acompanhe todas as informações do torneio.') + '</p>' +
         '<div class="hero-meta"><span class="meta-pill">' + escapeHtml(formatRange(item)) + '</span><span class="meta-pill">' + escapeHtml(field(item,'location','venue','local') || 'Ilha Tênis') + '</span><span class="meta-pill">' + escapeHtml(statusLabel(item)) + '</span></div>' +
         (open ? '<div class="hero-actions"><button class="button lime" type="button" data-open-registration>Fazer inscrição</button></div>' : '') + '</div></section>' +
         '<nav class="event-nav" aria-label="Seções do torneio">' + tabButton('overview','Visão geral') + tabButton('categories','Classes') + tabButton('registrations','Inscritos') + tabButton('brackets','Chaves') + tabButton('schedule','Agenda') + tabButton('results','Resultados') + '</nav>' +
@@ -852,20 +856,23 @@
       const introCopy = internal
         ? 'Inscrição rápida para atletas do clube. Escolha uma ou duas classes; o valor será cobrado na próxima mensalidade.'
         : (state.courtesyMode ? 'Link reservado para professores e parceiros. Escolha sua classe e confirme a inscrição sem pagamento.' : 'Escolha sua classe, preencha seus dados e conclua o pagamento para confirmar a inscrição.');
-      $('appMain').innerHTML = '<section class="registration-intro"><div><p class="eyebrow">' + (state.courtesyMode ? 'Inscrição isenta' : 'Inscrições') + '</p><h1>' + escapeHtml(name) + '</h1><p>' + escapeHtml(introCopy) + '</p><div class="hero-meta"><span class="meta-pill">' + escapeHtml(formatRange(item)) + '</span><span class="meta-pill">' + escapeHtml(field(item,'location','venue','local') || 'Ilha Tênis') + '</span><span class="meta-pill">' + escapeHtml(statusLabel(item)) + '</span></div></div>' + (internal && cover ? '<img class="registration-poster" src="' + escapeHtml(cover) + '" alt="Cartaz do ' + escapeHtml(name) + '" />' : '') + '</section>';
+      $('appMain').innerHTML = '<section class="registration-intro"><div><p class="eyebrow">' + (state.courtesyMode ? 'Inscrição isenta' : 'Inscrições') + '</p>' + tournamentTitleHtml(item, name) + '<p>' + escapeHtml(introCopy) + '</p><div class="hero-meta"><span class="meta-pill">' + escapeHtml(formatRange(item)) + '</span><span class="meta-pill">' + escapeHtml(field(item,'location','venue','local') || 'Ilha Tênis') + '</span><span class="meta-pill">' + escapeHtml(statusLabel(item)) + '</span></div></div>' + (internal && cover ? '<img class="registration-poster" src="' + escapeHtml(cover) + '" alt="Cartaz do ' + escapeHtml(name) + '" />' : '') + '</section>';
       if (isRegistrationOpen(item)) openRegistration();
       else $('appMain').innerHTML += '<div class="error-card"><h2>Inscrições encerradas</h2><p>A organização informará quando houver uma nova oportunidade.</p><a class="button primary" href="' + publicUrl(state.slug) + '">Ver página do torneio</a></div>';
     }
 
     function tabButton(id,label) { return '<button type="button" data-tab="' + id + '" class="' + (id === state.activeTab ? 'active' : '') + '">' + label + '</button>'; }
+    function tournamentTitleHtml(item,name) {
+      const logo = field(item,'logo_url');
+      return logo
+        ? '<img class="tournament-logo" src="' + escapeHtml(logo) + '" alt="' + escapeHtml(name) + '" onerror="this.hidden=true;this.nextElementSibling.hidden=false" /><h1 hidden>' + escapeHtml(name) + '</h1>'
+        : '<h1>' + escapeHtml(name) + '</h1>';
+    }
     function overviewHtml(item) {
-      const activeRegistrations = registrations().filter((row) => !['CANCELLED','CANCELADO'].includes(clean(field(row,'status','registration_status')).toUpperCase()));
-      const finalized = matches().filter(isFinalized);
       const scheduled = matches().filter((row) => !isFinalized(row) && (field(row,'scheduled_at','match_date','event_date','date','data') || field(row,'match_time','time','hora')));
-      return '<div class="summary-grid"><div class="summary-card"><span>Atletas</span><strong>' + activeRegistrations.length + '</strong></div><div class="summary-card"><span>Classes</span><strong>' + categories().length + '</strong></div><div class="summary-card"><span>Jogos</span><strong>' + matches().length + '</strong></div><div class="summary-card"><span>Finalizados</span><strong>' + finalized.length + '</strong></div></div>' +
-        '<div class="content-grid"><div><div class="panel"><div class="panel-head"><div><h2>Sobre o torneio</h2></div></div><div class="info-copy">' + escapeHtml(field(item,'description','descricao','notes','observacoes') || 'As informações completas serão publicadas em breve.') + '</div></div>' +
+      return '<div class="content-grid"><div><div class="panel"><div class="panel-head"><div><h2>Sobre o torneio</h2></div></div><div class="info-copy">' + escapeHtml(field(item,'description','descricao','notes','observacoes') || 'As informações completas serão publicadas em breve.') + '</div></div>' +
         (scheduled.length ? '<div class="panel"><div class="panel-head"><div><h2>Próximos jogos</h2><p>Programação mais próxima.</p></div></div><div class="agenda-list">' + scheduled.slice().sort(matchDateSort).slice(0,4).map(agendaMatchHtml).join('') + '</div></div>' : '') + '</div>' +
-        '<aside><div class="panel"><div class="panel-head"><div><h3>Informações</h3></div></div><div class="registration-list">' + infoRow('Período',formatRange(item)) + infoRow('Local',field(item,'location','venue','local') || 'Ilha Tênis') + infoRow('Inscrição',isRegistrationOpen(item) ? 'Aberta' : 'Fechada') + infoRow('Jogos agendados',String(scheduled.length)) + '</div></div>' + sponsorsHtml() + '</aside></div>';
+        '<aside>' + sponsorsHtml() + '</aside></div>';
     }
     function infoRow(label,value) { return '<div class="registration-row" style="grid-template-columns:minmax(0,1fr) auto"><div><strong>' + escapeHtml(label) + '</strong></div><span class="mini-chip">' + escapeHtml(value) + '</span></div>'; }
 
@@ -988,8 +995,9 @@
     }
 
     function sponsorsHtml() {
-      if (!sponsors().length) return '';
-      return '<div class="panel"><div class="panel-head"><div><h3>Parceiros</h3></div></div><div class="sponsor-grid">' + sponsors().map((row) => { const href = safeHref(field(row,'link_url','url','website_url','instagram_url')); const logo = field(row,'logo_url','image_url'); return '<a class="sponsor" href="' + escapeHtml(href) + '" target="_blank" rel="noopener">' + (logo ? '<img src="' + escapeHtml(logo) + '" alt="' + escapeHtml(field(row,'name','nome')) + '" loading="lazy" />' : '<span>' + escapeHtml(field(row,'name','nome') || 'Parceiro') + '</span>') + '</a>'; }).join('') + '</div></div>';
+      const cards = sponsors().length ? '<div class="sponsor-grid">' + sponsors().map((row) => { const href = safeHref(field(row,'link_url','url','website_url','instagram_url')); const logo = field(row,'logo_url','image_url'); return '<a class="sponsor" href="' + escapeHtml(href) + '" target="_blank" rel="noopener">' + (logo ? '<img src="' + escapeHtml(logo) + '" alt="' + escapeHtml(field(row,'name','nome')) + '" loading="lazy" />' : '<span>' + escapeHtml(field(row,'name','nome') || 'Parceiro') + '</span>') + '</a>'; }).join('') + '</div>' : '';
+      const message = encodeURIComponent('Olá! Quero saber mais sobre as oportunidades de patrocínio do torneio Ilha Open 2026.');
+      return '<div class="panel"><div class="panel-head"><div><h3>Parceiros</h3></div></div>' + cards + '<p class="sponsor-invite">Sua marca também pode fazer parte desta experiência. Apoie o esporte local, conecte-se com atletas e torcedores e ganhe destaque durante o torneio.</p><a class="button full sponsor-cta" href="https://wa.me/5527999805814?text=' + message + '" target="_blank" rel="noopener" aria-label="Falar pelo WhatsApp para patrocinar o torneio">💬 Seja um patrocinador do torneio</a></div>';
     }
     function siteFooter() { return '<footer>Ilha Tênis Colatina · Torneios, chaves e resultados</footer>'; }
 

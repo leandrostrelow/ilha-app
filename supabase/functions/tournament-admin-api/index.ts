@@ -449,6 +449,7 @@ function mapTournament(row: Row, includeCapabilities = false) {
     notes: row.notes || "",
     descricao: row.description || row.short_description || "",
     description: row.description || row.short_description || "",
+    logo_url: row.logo_url || "",
     capa_url: row.cover_url || "",
     cover_url: row.cover_url || "",
     inscricoes_abertas: row.registration_open === true,
@@ -790,6 +791,7 @@ function tournamentPayload(input: Row, current: Row = {}) {
     is_published: booleanValue(input.publicado ?? input.is_published, current.is_published === true),
     instagram: nullableText(input.instagram ?? current.instagram, 120),
     whatsapp: nullableText(input.whatsapp ?? current.whatsapp, 30),
+    logo_url: nullableText(input.logo_url ?? current.logo_url, 1000),
     notes: nullableText(input.observacoes ?? input.notes ?? current.notes, 4000),
     settings: {
       ...requestedSettings,
