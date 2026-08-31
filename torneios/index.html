@@ -339,7 +339,14 @@
     .category-check input { width: 19px; height: 19px; accent-color: var(--teal); }
     .category-check strong { display: block; font-size: 13px; }
     .category-check small { display: block; margin-top: 4px; color: var(--teal); font-size: 11px; font-weight: 850; }
-    .spatial-addon-copy { margin: 0 0 8px; color: var(--muted); font-size: 12px; font-weight: 750; line-height: 1.45; }
+    .spatial-addon-copy { display: grid; gap: 5px; margin: 0 0 10px; padding: 12px 13px; border: 1px solid #ead05e; border-radius: 14px; background: #fff8cb; color: #55470b; font-size: 12px; font-weight: 750; line-height: 1.45; }
+    .spatial-addon-copy strong { color: #352d08; font-size: 13px; }
+    .spatial-addon-option { border-color: #68bd76; background: #e9f8ec; box-shadow: 0 5px 16px rgba(42,139,65,.09); }
+    .spatial-addon-option:hover { border-color: #3da653; background: #def4e3; }
+    .spatial-addon-option:has(input:checked) { border-color: #23883b; background: #cdf0d4; box-shadow: 0 0 0 3px rgba(35,136,59,.12); }
+    .spatial-addon-option input { accent-color: #23883b; }
+    .spatial-addon-option strong { color: #176b2a; }
+    .spatial-addon-option small { color: #237336; }
     .choice-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
     .choice-grid.pricing { grid-template-columns: repeat(3,minmax(0,1fr)); }
     .choice-grid.days { grid-template-columns: repeat(4,minmax(0,1fr)); }
@@ -523,10 +530,10 @@
             <div class="form-field full" id="registrationPriceField" hidden><div class="registration-price"><span>Valor da inscrição</span><strong id="registrationPrice">R$ 0,00</strong></div></div>
             <div class="form-field full" id="genderField"><label>Sexo</label><div class="choice-grid" id="registrationGender"><label class="choice-card"><input type="radio" name="gender" value="MALE" required /><span>Masculino</span></label><label class="choice-card"><input type="radio" name="gender" value="FEMALE" required /><span>Feminino</span></label></div></div>
             <div class="form-field full" id="categoryField" hidden><label>Classes disponíveis</label><div class="category-checks" id="registrationCategories"></div></div>
-            <div class="form-field full" id="spatialAddonField" hidden><p class="spatial-addon-copy">Você pode jogar também em uma Classe Espacial com a mesma inscrição.</p><label class="category-check"><input id="spatialAddon" name="spatial_addon" type="checkbox" value="" /><span><strong id="spatialAddonTitle">Deseja participar também da Classe Espacial?</strong><small id="spatialAddonDescription">Adicione por mais R$ 80,00.</small></span></label></div>
+            <div class="form-field full" id="spatialAddonField" hidden><div class="spatial-addon-copy"><strong>🎾 Você pode jogar também na Classe Espacial 🚀</strong><span id="spatialAddonPeriod">Essa classe acontece de 21 a 27 de setembro.</span><span>Essa classe não conta pontos para o CINCATE; é apenas uma classe interna do Ilha.</span></div><label class="category-check spatial-addon-option"><input id="spatialAddon" name="spatial_addon" type="checkbox" value="" /><span><strong id="spatialAddonTitle">Quero participar da Classe Espacial</strong><small id="spatialAddonDescription">Adicione por mais R$ 80,00 no mesmo pagamento.</small></span></label></div>
             <div class="form-field full" id="availabilityField"><label>Dias em que posso jogar</label><div class="choice-grid days"><label class="choice-card"><input type="checkbox" name="availability_days" value="MONDAY" /><span>Segunda</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="TUESDAY" /><span>Terça</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="WEDNESDAY" /><span>Quarta</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="THURSDAY" /><span>Quinta</span></label></div><p class="field-hint">Marque todos os dias em que você tem disponibilidade.</p></div>
             <div class="form-field" id="cityField"><label for="athleteCity">Cidade</label><input id="athleteCity" name="city" autocomplete="address-level2" value="Colatina" /></div>
-            <div class="form-field" id="paymentMethodField"><label for="paymentMethod">Pagamento</label><select id="paymentMethod" name="payment_method"></select></div>
+            <div class="form-field" id="paymentMethodField"><label for="paymentMethod" id="paymentMethodLabel">Forma de pagamento</label><select id="paymentMethod" name="payment_method"></select><p class="field-hint" id="paymentMethodHint" hidden>Pagamento disponível somente via Pix.</p></div>
             <div class="form-field full" id="partnerField" hidden><label for="partnerName">Nome da dupla</label><input id="partnerName" name="partner_name" placeholder="Nome completo do parceiro ou parceira" /></div>
             <div class="form-field full" id="notesField"><label for="athleteNotes">Observação</label><textarea id="athleteNotes" name="notes" placeholder="Restrição de horário ou informação importante"></textarea></div>
             <div class="bot-field" aria-hidden="true" inert><label for="registrationWebsite">Não preencha este campo</label><input id="registrationWebsite" name="website" tabindex="-1" autocomplete="off" /></div>
@@ -777,6 +784,9 @@
       const fallback = Number(rule && rule.fee);
       return Number.isFinite(fallback) && fallback >= 0 ? fallback : 0;
     }
+    function spatialAddonPeriodLabel() {
+      return clean(tournamentSettings().spatial_event_period_label) || '21 a 27 de setembro';
+    }
     function updateSpatialAddonField() {
       const selected = categories().find((row) => categoryId(row) === selectedCategoryId());
       const rule = !isInternalRegistration() ? spatialAddonRule(selected) : null;
@@ -790,7 +800,8 @@
       }
       const fee = spatialAddonFee();
       $('spatialAddon').value = categoryId(additional);
-      $('spatialAddonTitle').textContent = 'Deseja participar também da ' + clean(rule.label || field(additional,'name','nome')) + '?';
+      $('spatialAddonPeriod').textContent = 'Essa classe acontece de ' + spatialAddonPeriodLabel() + '.';
+      $('spatialAddonTitle').textContent = 'Quero participar da ' + clean(rule.label || field(additional,'name','nome'));
       $('spatialAddonDescription').textContent = 'Adicione por mais ' + money(fee) + ' no mesmo pagamento.';
     }
     function playerName(match, slot) { return field(match, 'side' + slot + '_name', 'player' + slot + '_name', 'jogador' + slot + '_nome') || field(match['player' + slot],'name','nome') || 'A definir'; }
@@ -1102,9 +1113,12 @@
       $('registrationGender').querySelectorAll('input[name="gender"]').forEach((input) => { input.required = true; });
       document.querySelector('label[for="athleteCpf"]').textContent = state.courtesyMode ? 'CPF (opcional)' : 'CPF';
       const allowedPayments = list(field(item,'allowed_payment_methods','formas_pagamento'));
-      const paymentMethods = allowedPayments.length ? allowedPayments : ['PIX','CREDIT_CARD'];
+      const paymentMethods = (allowedPayments.length ? allowedPayments : ['PIX','CREDIT_CARD']).map((method) => clean(method).toUpperCase()).filter(Boolean);
       const paymentLabels = {PIX:'Pix',CREDIT_CARD:'Cartão de crédito',BOLETO:'Boleto',UNDEFINED:'Escolher no checkout'};
-      $('paymentMethod').innerHTML = paymentMethods.map((method) => '<option value="' + escapeHtml(clean(method).toUpperCase()) + '">' + escapeHtml(paymentLabels[clean(method).toUpperCase()] || method) + '</option>').join('');
+      const pixOnly = paymentMethods.length === 1 && paymentMethods[0] === 'PIX';
+      $('paymentMethodLabel').textContent = pixOnly ? 'Forma de pagamento — somente Pix' : 'Forma de pagamento';
+      $('paymentMethodHint').hidden = !pixOnly;
+      $('paymentMethod').innerHTML = paymentMethods.map((method) => '<option value="' + escapeHtml(method) + '">' + escapeHtml(paymentLabels[method] || method) + '</option>').join('');
       $('registrationParticipantType').querySelectorAll('input[name="participant_type"]').forEach((input) => {
         input.required = !internal && !state.courtesyMode;
         input.onchange = updateRegistrationPrice;

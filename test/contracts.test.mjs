@@ -79,6 +79,10 @@ const ilhaOpenServiceRoleAuthFixSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260831123000_fix_spatial_bundle_service_role_auth.sql'),
   'utf8'
 );
+const ilhaOpenSpatialCopyAndPixOnlySource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260831171907_ilha_open_spatial_copy_and_pix_only.sql'),
+  'utf8'
+);
 const asaasWebhookEventPrivilegesSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260831132000_restore_asaas_webhook_event_service_role_crud.sql'),
   'utf8'
@@ -505,7 +509,15 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(ilhaOpenServiceRoleAuthFixSource, /auth\.jwt\(\) ->> ''role''/);
   assert.match(ilhaOpenServiceRoleAuthFixSource, /corrected_count <> 2/);
   assert.match(tournamentSource, /id="spatialAddonField"/);
-  assert.match(tournamentSource, /Deseja participar também da Classe Espacial/);
+  assert.match(tournamentSource, /Você pode jogar também na Classe Espacial/);
+  assert.match(tournamentSource, /Essa classe não conta pontos para o CINCATE/);
+  assert.match(tournamentSource, /Quero participar da/);
+  assert.doesNotMatch(tournamentSource, /SIM, quero participar também da/);
+  assert.doesNotMatch(tournamentSource, /identificada pela cor amarela/);
+  assert.match(tournamentSource, /spatial-addon-option/);
+  assert.match(tournamentSource, /spatialAddonPeriodLabel/);
+  assert.match(ilhaOpenSpatialCopyAndPixOnlySource, /allowed_payment_methods\s*=\s*'\["PIX"\]'::jsonb/);
+  assert.match(ilhaOpenSpatialCopyAndPixOnlySource, /spatial_event_period_label'[\s\S]*'21 a 27 de setembro'/);
   assert.match(tournamentSource, /additional_category_id:\s*\$\('spatialAddon'\)\.checked/);
   assert.match(tournamentSource, /participantRegistrationAmount\(selected\) \+ addonFee/);
   const retryPayment = sourceSection(tournamentSource, "const retry = $('retryPaymentBtn')", 'if (state.registrationOnly)');
