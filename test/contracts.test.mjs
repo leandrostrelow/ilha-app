@@ -542,6 +542,13 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.doesNotMatch(existingProviderPayment, /createOrRecoverPayment/);
   assert.match(tournamentRegisterSource, /claim_public_tournament_registration_bundle/);
   assert.match(tournamentRegisterSource, /baseAmount \+ additionalFee/);
+  const asaasCustomer = functionSource(tournamentRegisterSource, 'ensureAsaasCustomer');
+  assert.doesNotMatch(asaasCustomer, /if \(athlete\.asaas_customer_id\) return/);
+  assert.match(asaasCustomer, /customers\?cpfCnpj=/);
+  assert.match(asaasCustomer, /externalReference:\s*`tournament-athlete:\$\{athlete\.id\}`/);
+  assert.match(tournamentRegisterSource, /providerErrorSnapshot\(error\)/);
+  assert.match(tournamentRegisterSource, /provider_status/);
+  assert.match(tournamentRegisterSource, /provider_codes/);
   const billingDate = functionSource(tournamentRegisterSource, 'saoPauloDate');
   assert.match(billingDate, /timeZone: "America\/Sao_Paulo"/);
   assert.match(billingDate, /formatToParts/);

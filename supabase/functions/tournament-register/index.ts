@@ -268,6 +268,32 @@ function asaasConfig() {
   return { apiKey, baseUrl: configuredUrl };
 }
 
+class AsaasRequestError extends Error {
+  status: number;
+  codes: string[];
+
+  constructor(status: number, codes: string[], message: string) {
+    super(message);
+    this.name = "AsaasRequestError";
+    this.status = status;
+    this.codes = codes;
+  }
+}
+
+function providerErrorSnapshot(error: unknown) {
+  if (error instanceof AsaasRequestError) {
+    return {
+      error_code: "asaas_request_failed",
+      provider_status: error.status,
+      provider_codes: error.codes.slice(0, 5),
+    };
+  }
+  if (error instanceof DOMException && error.name === "AbortError") {
+    return { error_code: "provider_timeout", provider_status: null, provider_codes: [] };
+  }
+  return { error_code: "provider_request_failed", provider_status: null, provider_codes: [] };
+}
+
 async function asaasRequest(path: string, init: RequestInit = {}) {
   const { apiKey, baseUrl } = asaasConfig();
   const controller = new AbortController();
@@ -287,9 +313,10 @@ async function asaasRequest(path: string, init: RequestInit = {}) {
     const body = await response.json().catch(() => ({})) as JsonRecord;
     if (!response.ok) {
       const errors = Array.isArray(body.errors) ? body.errors : [];
+      const codes = errors.map((item: JsonRecord) => text(item.code, 80)).filter(Boolean);
       const message = errors.map((item: JsonRecord) => text(item.description, 180)).filter(Boolean).join(" ") ||
         `Asaas respondeu com status ${response.status}.`;
-      throw new Error(message);
+      throw new AsaasRequestError(response.status, codes, message);
     }
     return body as JsonRecord;
   } finally {
@@ -304,9 +331,11 @@ async function findAsaasPayment(externalReference: string) {
 }
 
 async function ensureAsaasCustomer(supabase: DbClient, athlete: JsonRecord) {
-  if (athlete.asaas_customer_id) return String(athlete.asaas_customer_id);
   const cpf = String(athlete.cpf || "");
   if (!cpf) throw new Error("O pagamento online ainda precisa ser concluído pela organização.");
+  // Customer IDs belong to one Asaas environment. Always resolve the CPF in
+  // the currently configured environment instead of trusting a stale ID from
+  // a previous sandbox/production configuration.
   const existing = await asaasRequest(`/customers?cpfCnpj=${encodeURIComponent(cpf)}&limit=1`);
   const rows = Array.isArray(existing.data) ? existing.data : [];
   let customer = (rows[0] || null) as JsonRecord | null;
@@ -318,6 +347,7 @@ async function ensureAsaasCustomer(supabase: DbClient, athlete: JsonRecord) {
         cpfCnpj: cpf,
         email: athlete.email || undefined,
         mobilePhone: athlete.phone || undefined,
+        externalReference: `tournament-athlete:${athlete.id}`,
         notificationDisabled: false,
       }),
     });
@@ -930,10 +960,12 @@ Deno.serve(async (request) => {
     failureStage = "asaas_payment";
     try {
       localPayment = await createOrRecoverPayment(supabase, claimedPayment, athlete, tournament, category, additionalCategory);
-    } catch (_error) {
+    } catch (error) {
+      const providerError = providerErrorSnapshot(error);
+      console.error("tournament-register provider failure", { stage: failureStage, ...providerError });
       const failedPayment = await supabase.from("tournament_payments").update({
         status: "FAILED",
-        raw_response: { error_code: "provider_request_failed", stage: failureStage },
+        raw_response: { ...providerError, stage: failureStage },
         updated_at: new Date().toISOString(),
       }).eq("id", claimedPayment.id).select("*").single();
       if (failedPayment.error) throw failedPayment.error;
