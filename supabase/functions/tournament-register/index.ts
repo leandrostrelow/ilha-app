@@ -217,12 +217,18 @@ function normalizeBillingType(value: unknown) {
 }
 
 function saoPauloDate() {
-  return new Intl.DateTimeFormat("en-CA", {
+  const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Sao_Paulo",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(new Date());
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  if (!/^\d{4}$/.test(values.year || "") || !/^\d{2}$/.test(values.month || "") ||
+    !/^\d{2}$/.test(values.day || "")) {
+    throw new Error("Não foi possível calcular a data da cobrança.");
+  }
+  return `${values.year}-${values.month}-${values.day}`;
 }
 
 function safeRegistration(row: JsonRecord) {

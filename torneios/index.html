@@ -1345,7 +1345,19 @@
         (retryable ? '<button class="button lime full" type="button" id="retryPaymentBtn">Tentar gerar pagamento novamente</button>' : '') +
         '<button class="button primary full" type="button" id="finishRegistrationBtn">Concluir</button>';
       const copy = $('copyPixBtn'); if (copy) copy.addEventListener('click',async () => { try { await navigator.clipboard.writeText(pix); copy.textContent='Pix copiado'; } catch(error) { copy.textContent='Selecione e copie o código acima'; } });
-      const retry = $('retryPaymentBtn'); if (retry) retry.addEventListener('click',() => { $('registrationForm').hidden = false; $('registrationSuccess').hidden = true; $('registrationForm').requestSubmit(); });
+      const retry = $('retryPaymentBtn'); if (retry) retry.addEventListener('click',async () => {
+        $('registrationForm').hidden = false;
+        $('registrationFoot').hidden = false;
+        $('registrationSuccess').hidden = true;
+        $('registrationError').hidden = true;
+        $('submitRegistrationBtn').textContent = 'Tentar gerar pagamento novamente';
+        try {
+          await initializeRegistrationCaptcha();
+          $('registrationCaptchaStatus').scrollIntoView({behavior:'smooth',block:'center'});
+        } catch (error) {
+          showRegistrationError(error && error.message || 'Não foi possível carregar a proteção anti-robô.');
+        }
+      });
       if (state.registrationOnly) {
         $('finishRegistrationBtn').textContent = 'Ver página do torneio';
         $('finishRegistrationBtn').addEventListener('click',() => { location.href = publicUrl(state.slug); });

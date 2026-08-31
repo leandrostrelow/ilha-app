@@ -74,6 +74,10 @@ const ilhaOpenSpatialBundleRepairSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260831111500_repair_ilha_open_spatial_bundle_claim.sql'),
   'utf8'
 );
+const ilhaOpenServiceRoleAuthFixSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260831123000_fix_spatial_bundle_service_role_auth.sql'),
+  'utf8'
+);
 const internalTournamentSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260824170451_add_internal_tournament_registration.sql'),
   'utf8'
@@ -483,12 +487,24 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(ilhaOpenSpatialBundleRepairSource, /insert into public\.tournament_registrations/);
   assert.doesNotMatch(ilhaOpenSpatialBundleRepairSource, /tournament_claim_public_registration\s*\(/);
   assert.match(ilhaOpenSpatialBundleRepairSource, /current_setting\('request\.jwt\.claim\.role'/);
+  assert.match(ilhaOpenServiceRoleAuthFixSource, /claim_public_tournament_registration_bundle/);
+  assert.match(ilhaOpenServiceRoleAuthFixSource, /sync_tournament_registration_payment_group/);
+  assert.match(ilhaOpenServiceRoleAuthFixSource, /auth\.jwt\(\) ->> ''role''/);
+  assert.match(ilhaOpenServiceRoleAuthFixSource, /corrected_count <> 2/);
   assert.match(tournamentSource, /id="spatialAddonField"/);
   assert.match(tournamentSource, /Deseja participar também da Classe Espacial/);
   assert.match(tournamentSource, /additional_category_id:\s*\$\('spatialAddon'\)\.checked/);
   assert.match(tournamentSource, /participantRegistrationAmount\(selected\) \+ addonFee/);
+  const retryPayment = sourceSection(tournamentSource, "const retry = $('retryPaymentBtn')", 'if (state.registrationOnly)');
+  assert.match(retryPayment, /initializeRegistrationCaptcha\(\)/);
+  assert.match(retryPayment, /registrationFoot'\)\.hidden = false/);
+  assert.doesNotMatch(retryPayment, /requestSubmit\(\)/);
   assert.match(tournamentRegisterSource, /claim_public_tournament_registration_bundle/);
   assert.match(tournamentRegisterSource, /baseAmount \+ additionalFee/);
+  const billingDate = functionSource(tournamentRegisterSource, 'saoPauloDate');
+  assert.match(billingDate, /timeZone: "America\/Sao_Paulo"/);
+  assert.match(billingDate, /formatToParts/);
+  assert.match(billingDate, /`\$\{values\.year\}-\$\{values\.month\}-\$\{values\.day\}`/);
   assert.match(asaasWebhookSource, /sync_tournament_registration_payment_group/);
 });
 
