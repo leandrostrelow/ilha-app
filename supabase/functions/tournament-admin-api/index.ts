@@ -32,6 +32,7 @@ const writeActions = new Set([
   "updateScore",
   "saveAgendaEvent",
   "deleteAgendaEvent",
+  "createRegistrationInvite",
   "setLiveState",
 ]);
 
@@ -82,6 +83,13 @@ function nullableText(value: unknown, max = 500) {
 
 function digits(value: unknown) {
   return String(value ?? "").replace(/\D/g, "");
+}
+
+async function sha256Hex(value: string) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function isValidCpf(value: string) {
@@ -736,6 +744,50 @@ async function audit(client: DbClient, actorId: string, tournamentId: string, en
     new_data: newData || null,
   });
   if (error) console.error("tournament audit failure", { action, code: String(error.code || "database_error") });
+}
+
+async function createRegistrationInvite(client: DbClient, actorId: string, payload: Row) {
+  const tournament = await currentTournament(client, payload);
+  const athleteLimit = integerValue(payload.athlete_limit ?? payload.quantidade, 1);
+  if (athleteLimit < 1 || athleteLimit > 6) {
+    throw new ApiError("Escolha entre um e seis convites.");
+  }
+  if (tournament.registration_open !== true || tournament.status !== "REGISTRATION_OPEN") {
+    throw new ApiError("Abra as inscrições do torneio antes de gerar um convite.", 409);
+  }
+
+  const rawToken = crypto.randomUUID();
+  const tokenHash = await sha256Hex(rawToken);
+  const expiresAt = tournament.registration_closes_at || null;
+  const result = await client.from("tournament_registration_invites").insert({
+    tournament_id: tournament.id,
+    token_hash: tokenHash,
+    athlete_limit: athleteLimit,
+    status: "ACTIVE",
+    expires_at: expiresAt,
+    created_by: actorId,
+  }).select("id,tournament_id,athlete_limit,status,expires_at,created_at").single();
+  assertNoError(result.error);
+  const createdInvite = result.data as Row | null;
+  if (!createdInvite?.id) throw new ApiError("Não foi possível gerar o convite.", 500);
+  await audit(
+    client,
+    actorId,
+    tournament.id,
+    "registration_invite",
+    String(createdInvite.id),
+    "CREATE",
+    null,
+    { athlete_limit: athleteLimit, expires_at: expiresAt },
+  );
+
+  return {
+    ...createdInvite,
+    token: rawToken,
+    tournament_name: tournament.name || "Ilha Open",
+    tournament_slug: tournament.slug || "",
+    invite_url: `https://app.ilhatenis.com/inscricoes/${encodeURIComponent(tournament.slug || "")}/convite/${encodeURIComponent(rawToken)}`,
+  };
 }
 
 async function uniqueSlug(client: DbClient, desired: string, ignoredId = "") {
@@ -1649,6 +1701,10 @@ Deno.serve(async (request) => {
     else if (action === "updateScore") result = await updateMatchFields(client, profile.id, payload, "score");
     else if (action === "saveAgendaEvent") result = await saveAgendaEvent(client, profile.id, payload);
     else if (action === "deleteAgendaEvent") result = await deleteAgendaEvent(client, profile.id, payload);
+    else if (action === "createRegistrationInvite") {
+      result = await createRegistrationInvite(trustedClient, profile.id, payload);
+      responseTournamentId = (result as Row).tournament_id;
+    }
     else result = await setLiveState(client, profile.id, payload);
 
     const response: Row = { ok: true, result };

@@ -33,6 +33,10 @@ const tournamentFamilyCheckoutSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260901032343_add_tournament_family_checkout.sql'),
   'utf8'
 );
+const tournamentInviteSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260901040358_add_single_use_tournament_invites.sql'),
+  'utf8'
+);
 const barOrderPushSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'bar-order-push', 'index.ts'), 'utf8');
 const sharedCorsSource = await readFile(path.join(projectRoot, 'supabase', 'functions', '_shared', 'cors.ts'), 'utf8');
 const serviceWorkerSource = await readFile(path.join(projectRoot, 'service-worker.js'), 'utf8');
@@ -702,6 +706,33 @@ test('inscrição familiar reúne menores e adultos em um único Pix sem usar o 
   assert.equal((tournamentFamilyCheckoutSource.match(/auth\.jwt\(\) ->> 'role'/g) || []).length, 3);
   assert.doesNotMatch(tournamentFamilyCheckoutSource, /current_setting\('request\.jwt\.claim\.role'/);
   assert.doesNotMatch(tournamentFamilyCheckoutSource, /app_clients|app_family_members|students/);
+});
+
+test('convite isento é único, limitado e consumido atomicamente com a inscrição', () => {
+  assert.match(adminSource, /id="registrationInviteBtn"[^>]*>Gerar convite</);
+  assert.doesNotMatch(adminSource, /id="courtesyTournamentLink"/);
+  assert.match(functionSource(adminSource, 'registrationInviteMessage'), /link exclusivo[\s\S]*deixa de funcionar/);
+  assert.match(functionSource(adminSource, 'downloadRegistrationInviteCard'), /canvas\.width = 1080[\s\S]*canvas\.height = 1350/);
+  assert.match(tournamentAdminSource, /createRegistrationInvite/);
+  assert.match(tournamentAdminSource, /crypto\.randomUUID\(\)/);
+  assert.match(tournamentAdminSource, /token_hash:\s*tokenHash/);
+  assert.match(tournamentInviteSource, /create table public\.tournament_registration_invites/);
+  assert.match(tournamentInviteSource, /alter table public\.tournament_registration_invites enable row level security/);
+  assert.match(tournamentInviteSource, /revoke all on table public\.tournament_registration_invites from public, anon, authenticated/);
+  assert.match(tournamentInviteSource, /for update/);
+  assert.match(tournamentInviteSource, /athlete_count > invite_row\.athlete_limit/);
+  assert.match(tournamentInviteSource, /set status = 'USED'/);
+  assert.match(tournamentInviteSource, /update public\.tournaments[\s\S]*courtesy_registration_token = null/);
+  assert.match(tournamentRegisterSource, /claim_public_tournament_invite_bundle/);
+  assert.match(tournamentRegisterSource, /await sha256Hex\(inviteToken\)/);
+  assert.match(tournamentRegisterSource, /Este convite já foi utilizado/);
+});
+
+test('inscrição avisa sobre elegibilidade e permite ajuste administrativo de classe', () => {
+  assert.match(tournamentSource, /CINCATE e Aluno Ilha Tênis serão conferidos/);
+  assert.match(tournamentSource, /organização poderá alterar a classe escolhida/);
+  assert.match(adminSource, /<label>Classe da inscrição<\/label>/);
+  assert.match(adminSource, /esta inscrição será movida para a classe escolhida/);
 });
 
 test('Ilha Open interno usa cadastro simples e cobrança futura sem Asaas', () => {
@@ -1895,9 +1926,18 @@ test('popup de reserva fica acima do menu e preserva confirmacao no celular', ()
   assert.match(indexSource, /\.court-booking-modal \.court-dialog \{[\s\S]*?display:\s*flex;[\s\S]*?overflow:\s*hidden;/);
   assert.match(indexSource, /\.court-booking-modal form \{[\s\S]*?min-height:\s*0;[\s\S]*?overflow:\s*hidden;/);
   assert.match(indexSource, /\.court-booking-modal \.court-dialog-body \{[\s\S]*?overflow-y:\s*auto;[\s\S]*?-webkit-overflow-scrolling:\s*touch;/);
-  assert.match(indexSource, /max-height:\s*calc\(100dvh - max\(12px, env\(safe-area-inset-top\)\)\)/);
+  assert.match(indexSource, /\.court-booking-modal \{ align-items:\s*center; padding:\s*10px; \}/);
+  assert.match(indexSource, /max-height:\s*calc\(100dvh - 20px\)/);
+  assert.match(indexSource, /border-radius:\s*22px;/);
   assert.match(functionSource(indexSource, 'openClientCourtBooking'), /classList\.add\('court-booking-open'\)/);
   assert.match(functionSource(indexSource, 'closeClientCourtBooking'), /classList\.remove\('court-booking-open'\)/);
+});
+
+test('popups públicos e administrativos ficam centralizados', () => {
+  assert.match(tournamentSource, /\.modal-backdrop \{[^}]*place-items:\s*center/);
+  assert.match(adminSource, /body\.bar-admin-surface \.admin-modal-overlay\.show \{[\s\S]*place-items:\s*center/);
+  assert.match(indexSource, /\.external-modal \{[\s\S]*align-items:\s*center;[\s\S]*place-items:\s*center;/);
+  assert.match(barPublicSource, /\.sheet-backdrop \{[\s\S]*align-items:\s*center;/);
 });
 
 test('migrations canonicas possuem timestamps unicos e crescentes', async () => {

@@ -348,7 +348,7 @@
     .error-card h2 { margin: 0; }
     .error-card p { color: var(--muted); line-height: 1.5; }
 
-    .modal-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; align-items: end; justify-items: center; padding: 24px; background: rgba(4,28,34,.68); backdrop-filter: blur(7px); }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 24px; background: rgba(4,28,34,.68); backdrop-filter: blur(7px); }
     .modal {
       width: min(780px,100%);
       max-height: calc(100dvh - 48px);
@@ -397,6 +397,8 @@
     .registration-price span { color: #53686e; font-size: 12px; font-weight: 850; }
     .registration-price strong { color: #315f00; font-size: 21px; }
     .field-hint { margin: 0; color: var(--muted); font-size: 11px; font-weight: 700; }
+    .eligibility-warning { padding: 10px 12px; border: 1px solid #efce75; border-radius: 12px; background: #fff8df; color: #6d5410; font-size: 11px; font-weight: 750; line-height: 1.45; }
+    .eligibility-warning strong { color: #503c00; }
     .consent { margin-top: 16px; display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 9px; color: var(--muted); font-size: 12px; line-height: 1.45; }
     .consent input { width: 18px; height: 18px; accent-color: var(--teal); }
     .captcha-shell { margin-top: 14px; min-height: 70px; display: grid; justify-items: start; gap: 7px; }
@@ -575,8 +577,8 @@
       .result-player:last-child { text-align: center; }
       .score-pill { justify-self: center; }
       .sponsor-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
-      .modal-backdrop { padding: 0; align-items: end; }
-      .modal { max-height: 94dvh; border-radius: 24px 24px 0 0; }
+      .modal-backdrop { place-items: center; padding: 10px; }
+      .modal { max-height: calc(100dvh - 20px); border-radius: 22px; }
       .modal-head, .modal-body { padding-left: 17px; padding-right: 17px; }
       .modal-foot { padding-left: 17px; padding-right: 17px; }
       .form-grid, .category-checks { grid-template-columns: 1fr; }
@@ -651,9 +653,11 @@
             <div class="form-field full" id="minorField" hidden><label>Participante menor de idade?</label><div class="choice-grid minor-toggle"><label class="choice-card"><input type="radio" name="is_minor" value="false" checked /><span>Não</span></label><label class="choice-card"><input type="radio" name="is_minor" value="true" /><span>Sim</span></label></div></div>
             <div class="form-field full" id="guardianFields" hidden><div class="form-grid"><div class="form-field"><label for="guardianName">Nome do responsável</label><input id="guardianName" name="guardian_name" maxlength="120" autocomplete="name" /></div><div class="form-field"><label for="guardianPhone">Telefone do responsável</label><input id="guardianPhone" name="guardian_phone" type="tel" inputmode="tel" maxlength="15" autocomplete="tel" placeholder="(27) 99999-9999" /></div></div></div>
             <div class="form-field full" id="participantTypeField"><label>Tipo de inscrição</label><div class="choice-grid pricing" id="registrationParticipantType"><label class="choice-card"><input type="radio" name="participant_type" value="CINCATE" required /><span><strong>CINCATE</strong><small id="participantPriceCincate"></small></span></label><label class="choice-card"><input type="radio" name="participant_type" value="ILHA_STUDENT" required /><span><strong>Aluno Ilha Tênis</strong><small id="participantPriceStudent"></small></span></label><label class="choice-card"><input type="radio" name="participant_type" value="NON_MEMBER" required /><span><strong>Não associado</strong><small id="participantPriceNonMember"></small></span></label></div></div>
+            <div class="form-field full eligibility-warning" id="membershipEligibilityWarning"><strong>⚠️ Atenção:</strong> as opções CINCATE e Aluno Ilha Tênis serão conferidas pela organização. Se o vínculo informado não for confirmado, a inscrição poderá ser ajustada ou cancelada.</div>
             <div class="form-field full" id="registrationPriceField" hidden><div class="registration-price"><span>Valor da inscrição</span><strong id="registrationPrice">R$ 0,00</strong></div></div>
             <div class="form-field full" id="genderField"><label>Sexo</label><div class="choice-grid" id="registrationGender"><label class="choice-card"><input type="radio" name="gender" value="MALE" required /><span>Masculino</span></label><label class="choice-card"><input type="radio" name="gender" value="FEMALE" required /><span>Feminino</span></label></div></div>
             <div class="form-field full" id="categoryField" hidden><label>Classes disponíveis</label><div class="category-checks" id="registrationCategories"></div></div>
+            <div class="form-field full eligibility-warning" id="classAdjustmentWarning"><strong>🎾 Equilíbrio técnico:</strong> a organização poderá alterar a classe escolhida para preservar a competitividade do torneio.</div>
             <div class="form-field full" id="spatialAddonField" hidden><div class="spatial-addon-copy"><strong>🎾 Você pode jogar também na Classe Espacial 🚀</strong><strong id="spatialAddonPeriod">Essa classe acontece de 21 a 27 de setembro.</strong><strong>⚠️ não conta pontos para o CINCATE; é apenas uma classe interna do Ilha.</strong></div><label class="category-check spatial-addon-option"><input id="spatialAddon" name="spatial_addon" type="checkbox" value="" /><span><strong id="spatialAddonTitle">SIM, quero participar da Classe Espacial</strong><small id="spatialAddonDescription">Adicione por mais R$ 80,00 no mesmo pagamento.</small></span></label></div>
             <div class="form-field full" id="availabilityField"><label>Dias em que posso jogar</label><div class="choice-grid days"><label class="choice-card"><input type="checkbox" name="availability_days" value="MONDAY" /><span>Segunda</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="TUESDAY" /><span>Terça</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="WEDNESDAY" /><span>Quarta</span></label><label class="choice-card"><input type="checkbox" name="availability_days" value="THURSDAY" /><span>Quinta</span></label></div><p class="field-hint">Marque todos os dias em que você tem disponibilidade. Sexta-feira e sábado são dias obrigatórios de jogo e não permitem restrição de horário. As finais serão disputadas no domingo.</p></div>
             <div class="form-field" id="cityField"><label for="athleteCity">Cidade</label><input id="athleteCity" name="city" autocomplete="address-level2" value="Colatina" /></div>
@@ -666,7 +670,7 @@
         </form>
         <form id="familyRegistrationForm" hidden>
           <section class="family-form-section">
-            <div class="family-section-head"><div><span class="step-pill">1</span><h3>Responsável e pagamento</h3></div><p>O Pix e os contatos da organização ficarão no nome deste responsável.</p></div>
+            <div class="family-section-head"><div><span class="step-pill">1</span><h3 id="familyPayerTitle">Responsável e pagamento</h3></div><p id="familyPayerHint">O Pix e os contatos da organização ficarão no nome deste responsável.</p></div>
             <div class="form-grid">
               <div class="form-field full"><label for="familyPayerName">Nome completo do responsável</label><input id="familyPayerName" autocomplete="name" maxlength="120" required /></div>
               <div class="form-field"><label for="familyPayerCpf">CPF do responsável</label><input id="familyPayerCpf" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00" required /></div>
@@ -677,15 +681,16 @@
           </section>
           <section class="family-form-section">
             <div class="family-section-head"><div><span class="step-pill">2</span><h3 id="familyAthletesTitle">Atletas</h3></div><p>CPF e telefone são opcionais para menores de idade.</p></div>
+            <div class="eligibility-warning" id="familyEligibilityWarning"><strong>⚠️ Atenção:</strong> os perfis CINCATE e Aluno Ilha Tênis serão conferidos. A organização poderá ajustar ou cancelar a inscrição se o vínculo não for confirmado e também poderá alterar a classe para preservar o equilíbrio técnico.</div>
             <div class="family-athlete-list" id="familyAthleteList"></div>
             <button class="button family-add-athlete" id="familyAddAthleteBtn" type="button">＋ Adicionar outro atleta</button>
           </section>
           <section class="family-form-section family-checkout-section">
-            <div class="family-section-head"><div><span class="step-pill">3</span><h3>Resumo da inscrição</h3></div><p>Todas as vagas serão reservadas juntas por duas horas.</p></div>
+            <div class="family-section-head"><div><span class="step-pill">3</span><h3>Resumo da inscrição</h3></div><p id="familyCheckoutHint">Todas as vagas serão reservadas juntas por duas horas.</p></div>
             <div class="family-summary" id="familyRegistrationSummary"></div>
-            <div class="form-field"><label for="familyPaymentMethod">Forma de pagamento</label><select id="familyPaymentMethod"></select></div>
+            <div class="form-field" id="familyPaymentField"><label for="familyPaymentMethod">Forma de pagamento</label><select id="familyPaymentMethod"></select></div>
           </section>
-          <label class="consent"><input id="familyRegistrationConsent" type="checkbox" required /><span>Confirmo que sou responsável pelos menores informados, que os dados estão corretos e autorizo a inscrição e a cobrança única do valor total.</span></label>
+          <label class="consent"><input id="familyRegistrationConsent" type="checkbox" required /><span id="familyRegistrationConsentText">Confirmo que sou responsável pelos menores informados, que os dados estão corretos e autorizo a inscrição e a cobrança única do valor total.</span></label>
         </form>
         <div class="captcha-shell" id="registrationCaptchaShell">
           <div id="registrationCaptchaWidget"></div>
@@ -708,11 +713,15 @@
     const REGISTRATION_FUNCTION = 'tournament-register';
     const routeParts = location.pathname.split('/').filter(Boolean);
     const courtesySegmentIndex = routeParts.indexOf('cortesia');
+    const inviteSegmentIndex = routeParts.indexOf('convite');
     const state = {
       slug: routeSlug(),
       registrationOnly: routeParts[0] === 'inscricoes',
       courtesyMode: courtesySegmentIndex >= 0,
       courtesyToken: courtesySegmentIndex >= 0 ? decodeURIComponent(routeParts[courtesySegmentIndex + 1] || '') : '',
+      inviteMode: inviteSegmentIndex >= 0,
+      inviteToken: inviteSegmentIndex >= 0 ? decodeURIComponent(routeParts[inviteSegmentIndex + 1] || '') : '',
+      inviteInfo: null,
       snapshot: null,
       activeTab: 'categories',
       bracketCategory: '',
@@ -822,10 +831,24 @@
       });
     }
 
+    async function getRegistrationInviteInfo() {
+      const params = new URLSearchParams({ tournament_slug: state.slug, invite_token: state.inviteToken });
+      return requestJson(SUPABASE_URL + '/functions/v1/' + currentRegistrationFunction() + '?' + params.toString(), {
+        method: 'GET', headers: headers()
+      });
+    }
+
     async function loadPage() {
       try {
         const payload = await getSnapshot(state.slug);
         state.snapshot = payload && payload.data ? payload.data : payload;
+        if (state.courtesyMode && !state.inviteMode) {
+          throw new Error('Este link de isenção foi substituído por convites únicos. Solicite um novo convite à organização.');
+        }
+        if (state.inviteMode) {
+          state.inviteInfo = await getRegistrationInviteInfo();
+          state.captchaConfig = state.inviteInfo;
+        }
         if (state.registrationOnly && state.slug) renderRegistrationOnly();
         else if (state.slug) renderTournament(); else renderLanding();
       } catch (error) { renderError(error); }
@@ -887,6 +910,8 @@
         '<span class="meta-pill status-pill ' + (open ? 'status-open' : '') + '"><span class="meta-pill-icon" aria-hidden="true">' + (open ? '●' : 'ℹ️') + '</span><strong>' + escapeHtml(statusLabel(item)) + '</strong></span></div>';
     }
     function money(value) { const number = Number(value || 0); return number ? number.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'Grátis'; }
+    function registrationInviteLimit() { return Math.max(1,Math.min(6,Number(state.inviteInfo && state.inviteInfo.athlete_limit || 1))); }
+    function registrationInviteCountLabel() { const count = registrationInviteLimit(); return count === 1 ? '1 convite' : count + ' convites'; }
     function initials(name) { return clean(name).split(/\s+/).slice(0,2).map((part) => part[0]).join('').toUpperCase() || 'IT'; }
     function shortTime(value) {
       const raw = clean(value);
@@ -1053,8 +1078,8 @@
       const cover = field(item,'cover_url','banner_url','image_url');
       const introCopy = internal
         ? 'Inscrição rápida para atletas do clube. Escolha uma ou duas classes; o valor será cobrado na próxima mensalidade.'
-        : (state.courtesyMode ? 'Link reservado para professores e parceiros. Escolha sua classe e confirme a inscrição sem pagamento.' : 'Escolha sua classe, preencha seus dados e conclua o pagamento para confirmar a inscrição.');
-      $('appMain').innerHTML = '<section class="registration-intro"><div><p class="eyebrow">' + (state.courtesyMode ? 'Inscrição isenta' : 'Inscrições') + '</p>' + tournamentTitleHtml(item, name) + '<p>' + escapeHtml(introCopy) + '</p>' + heroMetaHtml(item) + '</div>' + (internal && cover ? '<img class="registration-poster" src="' + escapeHtml(cover) + '" alt="Cartaz do ' + escapeHtml(name) + '" />' : '') + '</section>';
+        : (state.inviteMode ? 'Você recebeu ' + registrationInviteCountLabel() + '. Este convite é isento, exclusivo e será inutilizado após a inscrição.' : 'Escolha sua classe, preencha seus dados e conclua o pagamento para confirmar a inscrição.');
+      $('appMain').innerHTML = '<section class="registration-intro"><div><p class="eyebrow">' + (state.inviteMode ? 'Convite exclusivo' : 'Inscrições') + '</p>' + tournamentTitleHtml(item, name) + '<p>' + escapeHtml(introCopy) + '</p>' + heroMetaHtml(item) + '</div>' + (internal && cover ? '<img class="registration-poster" src="' + escapeHtml(cover) + '" alt="Cartaz do ' + escapeHtml(name) + '" />' : '') + '</section>';
       if (isRegistrationOpen(item)) openRegistration();
       else $('appMain').innerHTML += '<div class="error-card"><h2>Inscrições encerradas</h2><p>A organização informará quando houver uma nova oportunidade.</p><a class="button primary" href="' + publicUrl(state.slug) + '">Ver página do torneio</a></div>';
     }
@@ -1343,7 +1368,7 @@
         return value.toString(16);
       });
     }
-    function familyRequestStorageKey() { return 'ilha_torneio_familia:' + state.slug; }
+    function familyRequestStorageKey() { return 'ilha_torneio_familia:' + state.slug + (state.inviteMode ? ':convite:' + state.inviteToken : ''); }
     function loadFamilyRequestToken() {
       if (state.familyRequestToken) return state.familyRequestToken;
       try { state.familyRequestToken = localStorage.getItem(familyRequestStorageKey()) || ''; } catch (error) {}
@@ -1376,8 +1401,17 @@
       $('registrationFoot').hidden = true;
       $('registrationError').hidden = true;
       $('registrationTitle').textContent = 'Inscrição · ' + (field(tournament(),'name','nome') || 'Torneio');
-      $('registrationSubtitle').textContent = 'Escolha como deseja realizar a inscrição.';
+      $('registrationSubtitle').textContent = state.inviteMode ? 'Convite exclusivo e de uso único.' : 'Escolha como deseja realizar a inscrição.';
       $('registrationSubtitle').hidden = false;
+      $('registrationChooserTitle').textContent = state.inviteMode ? 'Você recebeu ' + registrationInviteCountLabel() : 'Quem você deseja inscrever?';
+      const chooserParagraph = $('registrationChooser').querySelector('.registration-chooser-copy p');
+      if (chooserParagraph) chooserParagraph.textContent = state.inviteMode
+        ? 'Escolha quem será inscrito. Nenhuma cobrança será gerada e o link deixará de funcionar após a confirmação.'
+        : 'Escolha uma opção. Você poderá conferir todos os dados antes de gerar o Pix.';
+      const familyModeCopy = $('registrationChooser').querySelector('[data-registration-mode="family"] small');
+      if (familyModeCopy) familyModeCopy.textContent = state.inviteMode
+        ? 'Use até ' + registrationInviteLimit() + ' vaga(s) deste convite em uma única inscrição.'
+        : 'Inscreva até seis atletas e pague tudo em um único Pix.';
       setTimeout(() => document.querySelector('[data-registration-mode]')?.focus(),50);
     }
     function familyBaseAthlete(options) {
@@ -1427,6 +1461,7 @@
       });
     }
     function familyAthletePrice(athlete) {
+      if (state.inviteMode) return 0;
       const base = Number(registrationPricing()[athlete.participantType]);
       const category = categories().find((row) => categoryId(row) === String(athlete.categoryId));
       const addon = athlete.spatial && spatialAddonRule(category) ? spatialAddonFee() : 0;
@@ -1457,13 +1492,16 @@
           '<div class="form-field full"><label>Telefone do atleta' + (athlete.isMinor ? ' (opcional)' : '') + '</label><input data-family-field="phone" type="tel" inputmode="tel" maxlength="15" placeholder="' + (athlete.isMinor ? 'Preencha somente se ele tiver' : '(27) 99999-9999') + '" value="' + escapeHtml(formatPhone(athlete.phone)) + '" ' + (athlete.isMinor ? '' : 'required') + ' /></div>';
       const categoryOptions = '<option value="">Escolha a classe</option>' + availableCategories.map((row) => '<option value="' + escapeHtml(categoryId(row)) + '" ' + (categoryId(row) === String(athlete.categoryId) ? 'selected' : '') + '>' + escapeHtml(field(row,'name','nome')) + '</option>').join('');
       const participantOptions = [['','Escolha o perfil'],['CINCATE','CINCATE'],['ILHA_STUDENT','Aluno Ilha Tênis'],['NON_MEMBER','Não associado']].map(([value,labelText]) => '<option value="' + value + '" ' + (athlete.participantType === value ? 'selected' : '') + '>' + labelText + (value && registrationPricing()[value] !== undefined ? ' · ' + money(registrationPricing()[value]) : '') + '</option>').join('');
+      const participantFieldHtml = state.inviteMode
+        ? '<input data-family-field="participant_type" type="hidden" value="COURTESY" /><div class="eligibility-warning"><strong>✓ Convite isento:</strong> nenhuma cobrança será gerada para este atleta.</div>'
+        : '<div class="form-field"><label>Tipo de inscrição</label><select data-family-field="participant_type" required>' + participantOptions + '</select></div>';
       const genderOptions = [['','Escolha'],['MALE','Masculino'],['FEMALE','Feminino']].map(([value,labelText]) => '<option value="' + value + '" ' + (athlete.gender === value ? 'selected' : '') + '>' + labelText + '</option>').join('');
       const dayLabels = {MONDAY:'Segunda',TUESDAY:'Terça',WEDNESDAY:'Quarta',THURSDAY:'Quinta'};
       const days = Object.entries(dayLabels).map(([value,labelText]) => '<label class="family-day-option"><input data-family-day type="checkbox" value="' + value + '" ' + (athlete.availabilityDays.includes(value) ? 'checked' : '') + ' /><span>' + labelText + '</span></label>').join('');
       return '<article class="family-athlete-card" data-family-athlete="' + athlete.id + '"><div class="family-athlete-head"><div><strong>' + escapeHtml(label) + '</strong><small>' + (athlete.isPayer ? 'Responsável participante' : (athlete.isMinor ? 'Menor de idade' : 'Atleta adulto')) + '</small></div>' +
         (!athlete.isPayer && state.registrationMode === 'family' ? '<button class="family-athlete-remove" type="button" data-family-remove="' + athlete.id + '">Remover</button>' : '') + '</div><div class="family-athlete-fields">' +
         '<div class="form-field full"><label>O atleta é menor de idade?</label><select data-family-field="minor" ' + (lockedMinor ? 'disabled' : '') + '><option value="false" ' + (!athlete.isMinor ? 'selected' : '') + '>Não</option><option value="true" ' + (athlete.isMinor ? 'selected' : '') + '>Sim</option></select></div>' + identityFields +
-        '<div class="form-field"><label>Tipo de inscrição</label><select data-family-field="participant_type" required>' + participantOptions + '</select></div>' +
+        participantFieldHtml +
         '<div class="form-field"><label>Sexo</label><select data-family-field="gender" required>' + genderOptions + '</select></div>' +
         '<div class="form-field full"><label>Classe</label><select data-family-field="category_id" required ' + (!athlete.gender ? 'disabled' : '') + '>' + categoryOptions + '</select></div>' +
         (addonCategory ? '<label class="family-spatial-option full"><input data-family-field="spatial" type="checkbox" ' + (athlete.spatial ? 'checked' : '') + ' /><span><strong>Adicionar ' + escapeHtml(clean(addonRule.label || field(addonCategory,'name','nome'))) + '</strong><small>Mais ' + escapeHtml(money(spatialAddonFee())) + ' no mesmo Pix.</small></span></label>' : '') +
@@ -1482,7 +1520,7 @@
         return '<div class="family-summary-row"><span><strong>' + escapeHtml(name) + '</strong><br>' + escapeHtml(detail + (rule ? ' + ' + clean(rule.label || 'Classe Espacial') : '')) + '</span><strong>' + escapeHtml(money(familyAthletePrice(athlete))) + '</strong></div>';
       }).join('');
       const total = rows.reduce((sum,athlete) => sum + familyAthletePrice(athlete),0);
-      $('familyRegistrationSummary').innerHTML = summaryRows + '<div class="family-summary-total"><span>Total em um único Pix</span><strong>' + escapeHtml(money(total)) + '</strong></div>';
+      $('familyRegistrationSummary').innerHTML = summaryRows + '<div class="family-summary-total"><span>' + (state.inviteMode ? 'Convite isento' : 'Total em um único Pix') + '</span><strong>' + escapeHtml(state.inviteMode ? 'Sem cobrança' : money(total)) + '</strong></div>';
     }
     function bindFamilyAthleteCards() {
       $('familyAthleteList').querySelectorAll('[data-family-remove]').forEach((button) => button.addEventListener('click',() => {
@@ -1515,11 +1553,25 @@
       loadFamilyRequestToken();
       $('familyRegistrationForm').reset();
       $('familyPayerPlayerLabel').hidden = mode !== 'family';
-      $('familyPayerParticipates').checked = false;
-      $('familyAddAthleteBtn').hidden = mode !== 'family';
-      $('familyAthletesTitle').textContent = mode === 'minor' ? 'Dados do menor' : 'Atletas da família';
+      $('familyPayerParticipates').checked = mode === 'individual';
+      $('familyPayerTitle').textContent = state.inviteMode ? 'Responsável pelo convite' : 'Responsável e pagamento';
+      $('familyPayerHint').textContent = state.inviteMode
+        ? 'A organização usará estes dados somente para identificar a inscrição e entrar em contato.'
+        : 'O Pix e os contatos da organização ficarão no nome deste responsável.';
+      $('familyAddAthleteBtn').hidden = mode !== 'family' || (state.inviteMode && registrationInviteLimit() <= 1);
+      $('familyAthletesTitle').textContent = mode === 'minor' ? 'Dados do menor' : (mode === 'individual' ? 'Dados do atleta' : 'Atletas da família');
       $('familyPaymentMethod').innerHTML = paymentOptionsHtml();
-      state.familyAthletes.push(familyBaseAthlete({isMinor:true}));
+      $('familyPaymentField').hidden = state.inviteMode;
+      $('familyCheckoutHint').textContent = state.inviteMode
+        ? 'O convite será utilizado uma única vez e nenhuma cobrança será gerada.'
+        : 'Todas as vagas serão reservadas juntas por duas horas.';
+      $('familyRegistrationConsentText').textContent = state.inviteMode
+        ? 'Confirmo que sou responsável pelos menores informados, que os dados estão corretos e autorizo a inscrição pelo convite.'
+        : 'Confirmo que sou responsável pelos menores informados, que os dados estão corretos e autorizo a inscrição e a cobrança única do valor total.';
+      $('familyEligibilityWarning').innerHTML = state.inviteMode
+        ? '<strong>🎾 Equilíbrio técnico:</strong> a organização poderá alterar a classe escolhida para preservar a competitividade do torneio.'
+        : '<strong>⚠️ Atenção:</strong> os perfis CINCATE e Aluno Ilha Tênis serão conferidos. A organização poderá ajustar ou cancelar a inscrição se o vínculo não for confirmado e também poderá alterar a classe para preservar o equilíbrio técnico.';
+      state.familyAthletes.push(mode === 'individual' ? familyBaseAthlete({isPayer:true,isMinor:false}) : familyBaseAthlete({isMinor:true}));
       renderFamilyAthletes();
     }
     async function selectRegistrationMode(mode) {
@@ -1531,7 +1583,7 @@
       $('registrationFoot').hidden = false;
       $('registrationCaptchaShell').hidden = false;
       $('cancelRegistrationBtn').textContent = 'Voltar';
-      if (mode === 'individual') {
+      if (mode === 'individual' && !state.inviteMode) {
         $('registrationForm').hidden = false;
         $('familyRegistrationForm').hidden = true;
         $('submitRegistrationBtn').setAttribute('form','registrationForm');
@@ -1543,8 +1595,10 @@
         $('familyRegistrationForm').hidden = false;
         prepareFamilyForm(mode);
         $('submitRegistrationBtn').setAttribute('form','familyRegistrationForm');
-        $('registrationSubtitle').textContent = mode === 'minor' ? 'O responsável fará a inscrição e o pagamento.' : 'Até seis atletas, com uma única cobrança.';
-        $('submitRegistrationBtn').textContent = 'Gerar Pix da inscrição';
+        $('registrationSubtitle').textContent = state.inviteMode
+          ? 'Convite para até ' + registrationInviteLimit() + ' atleta(s), sem cobrança.'
+          : (mode === 'minor' ? 'O responsável fará a inscrição e o pagamento.' : 'Até seis atletas, com uma única cobrança.');
+        $('submitRegistrationBtn').textContent = state.inviteMode ? 'Confirmar inscrição isenta' : 'Gerar Pix da inscrição';
         setTimeout(() => $('familyPayerName').focus(),50);
       }
       try { await initializeRegistrationCaptcha(); }
@@ -1562,7 +1616,7 @@
       $('registrationChooser').hidden = true;
       $('familyRegistrationForm').hidden = true;
       $('registrationTitle').textContent = 'Inscrição · ' + (field(item,'name','nome') || 'Torneio');
-      const registrationSubtitle = internal ? 'Informe nome e telefone e escolha até duas classes.' : (state.courtesyMode ? 'Inscrição isenta para professor ou parceiro.' : '');
+      const registrationSubtitle = internal ? 'Informe nome e telefone e escolha até duas classes.' : (state.inviteMode ? 'Convite exclusivo e de uso único.' : (state.courtesyMode ? 'Inscrição isenta para professor ou parceiro.' : ''));
       $('registrationSubtitle').textContent = registrationSubtitle;
       $('registrationSubtitle').hidden = !registrationSubtitle;
       state.registrationCategories = categories().filter((row) => {
@@ -1577,6 +1631,8 @@
       $('spatialAddon').value = '';
       $('registrationPriceField').hidden = !internal;
       $('participantTypeField').hidden = internal || state.courtesyMode;
+      $('membershipEligibilityWarning').hidden = internal || state.courtesyMode || state.inviteMode;
+      $('classAdjustmentWarning').hidden = internal;
       $('paymentMethodField').hidden = internal || state.courtesyMode;
       $('cpfField').hidden = internal;
       $('emailField').hidden = internal;
@@ -1723,7 +1779,8 @@
       if (!/^\S+@\S+\.\S+$/.test(payer.email)) return showRegistrationError('Informe o e-mail do responsável.');
       const athletes = captureFamilyAthletes();
       if (!athletes.length) return showRegistrationError('Adicione pelo menos um atleta.');
-      if (athletes.length > 6) return showRegistrationError('Cada inscrição familiar pode ter no máximo seis atletas.');
+      const athleteLimit = state.inviteMode ? registrationInviteLimit() : 6;
+      if (athletes.length > athleteLimit) return showRegistrationError('Este formulário permite no máximo ' + athleteLimit + ' atleta(s).');
       const payloadAthletes = [];
       const cpfs = new Set();
       for (let index = 0; index < athletes.length; index += 1) {
@@ -1744,7 +1801,7 @@
           if (cpfs.has(cpf)) return showRegistrationError('Cada atleta precisa ter seus próprios dados.');
           cpfs.add(cpf);
         }
-        if (!athlete.participantType) return showRegistrationError('Escolha o tipo de inscrição de ' + name + '.');
+        if (!athlete.participantType || (state.inviteMode && athlete.participantType !== 'COURTESY')) return showRegistrationError('Escolha o tipo de inscrição de ' + name + '.');
         if (!athlete.gender) return showRegistrationError('Escolha o sexo de ' + name + '.');
         if (!athlete.categoryId) return showRegistrationError('Escolha a classe de ' + name + '.');
         if (!athlete.availabilityDays.length) return showRegistrationError('Marque os dias disponíveis de ' + name + '.');
@@ -1771,9 +1828,10 @@
       }
       if (!$('familyRegistrationConsent').checked) return showRegistrationError('Confirme a responsabilidade e a autorização da inscrição.');
       const payload = {
-        registration_mode: state.registrationMode === 'minor' ? 'MINOR' : 'FAMILY',
+        registration_mode: state.inviteMode ? 'INVITE' : (state.registrationMode === 'minor' ? 'MINOR' : 'FAMILY'),
         tournament_slug: state.slug,
         request_token: loadFamilyRequestToken(),
+        invite_token: state.inviteMode ? state.inviteToken : undefined,
         payer: payer,
         athletes: payloadAthletes,
         payment_method: $('familyPaymentMethod').value || 'PIX',
@@ -1781,7 +1839,7 @@
         captcha_token: state.captchaToken
       };
       state.lastRegistrationPayload = payload;
-      return submitRegistrationPayload(payload,currentRegistrationFunction(),'Gerar Pix da inscrição');
+      return submitRegistrationPayload(payload,currentRegistrationFunction(),state.inviteMode ? 'Confirmar inscrição isenta' : 'Gerar Pix da inscrição');
     }
 
     async function submitRegistration(event) {
@@ -1897,10 +1955,14 @@
       const waitlist = ['WAITLIST','LISTA_ESPERA'].includes(registrationStatus);
       const confirmed = ['PAID','PAGO','CONFIRMED','CONFIRMADO'].includes(normalizedStatus) || registrationStatus === 'CONFIRMED';
       const noPayment = normalizedStatus === 'NOT_REQUIRED';
-      const successTitle = familyCheckout
+      const successTitle = state.inviteMode
+        ? 'Convite utilizado com sucesso!'
+        : familyCheckout
         ? (confirmed || noPayment ? 'Inscrições da família confirmadas!' : 'Inscrição familiar recebida!')
         : (waitlist ? 'Inscrição na lista de espera!' : (confirmed || noPayment ? 'Inscrição confirmada!' : 'Inscrição recebida!'));
-      const successCopy = result.warning || (waitlist
+      const successCopy = state.inviteMode
+        ? 'As inscrições foram confirmadas. Por segurança, este link não poderá ser utilizado novamente.'
+        : result.warning || (waitlist
         ? 'Sua inscrição foi registrada. A organização entrará em contato se uma vaga for liberada.'
         : (confirmed || noPayment
           ? (familyCheckout ? 'Todas as vagas foram registradas com sucesso.' : 'Sua vaga foi registrada com sucesso.')
@@ -1977,7 +2039,8 @@
     });
     $('familyAddAthleteBtn').addEventListener('click',() => {
       captureFamilyAthletes();
-      if (state.familyAthletes.length >= 6) return showRegistrationError('Cada inscrição familiar pode ter no máximo seis atletas.');
+      const athleteLimit = state.inviteMode ? registrationInviteLimit() : 6;
+      if (state.familyAthletes.length >= athleteLimit) return showRegistrationError('Este convite permite no máximo ' + athleteLimit + ' atleta(s).');
       state.familyAthletes.push(familyBaseAthlete({isMinor:true}));
       renderFamilyAthletes();
       $('familyAthleteList').lastElementChild?.scrollIntoView({behavior:'smooth',block:'nearest'});

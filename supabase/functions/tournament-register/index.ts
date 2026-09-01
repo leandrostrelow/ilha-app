@@ -151,6 +151,13 @@ async function hmacSha256(secret: string, value: string) {
     .join("");
 }
 
+async function sha256Hex(value: string) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 async function verifyTurnstile(
   request: Request,
   token: string,
@@ -706,6 +713,8 @@ async function handleFamilyRegistration(
     const payerCpf = digits(payer.cpf);
     const billingType = normalizeBillingType(payload.payment_method);
     const requestToken = text(payload.request_token, 80);
+    const inviteToken = text(payload.invite_token, 80);
+    const inviteMode = Boolean(inviteToken);
     const captchaToken = text(payload.captcha_token, 2048);
     const termsAccepted = payload.terms_accepted === true;
     const athleteInputs = Array.isArray(payload.athletes) ? payload.athletes.map(record) : [];
@@ -713,6 +722,7 @@ async function handleFamilyRegistration(
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tournamentSlug) || !isUuid(requestToken)) {
       return json(request, { error: "Torneio ou solicitação inválidos." }, 400);
     }
+    if (inviteMode && !isUuid(inviteToken)) return json(request, { error: "Este convite é inválido." }, 403);
     if (payerName.length < 2) return json(request, { error: "Informe o nome completo do responsável." }, 400);
     if (!/^\S+@\S+\.\S+$/.test(payerEmail)) return json(request, { error: "Informe o e-mail do responsável." }, 400);
     if (payerPhone.length < 10 || payerPhone.length > 13) {
@@ -722,7 +732,7 @@ async function handleFamilyRegistration(
     if (athleteInputs.length < 1 || athleteInputs.length > 6) {
       return json(request, { error: "Adicione de um a seis atletas à inscrição." }, 400);
     }
-    if (!allowedBillingTypes.has(billingType)) return json(request, { error: "Forma de pagamento inválida." }, 400);
+    if (!inviteMode && !allowedBillingTypes.has(billingType)) return json(request, { error: "Forma de pagamento inválida." }, 400);
     if (!termsAccepted) return json(request, { error: "Confirme os dados e a autorização da inscrição familiar." }, 400);
     if (!captchaToken) return json(request, { error: "Confirme que você não é um robô." }, 400);
 
@@ -784,7 +794,8 @@ async function handleFamilyRegistration(
         if (submittedCpfs.has(cpf)) return json(request, { error: "Cada atleta precisa ter seus próprios dados." }, 400);
         submittedCpfs.add(cpf);
       }
-      if (!allowedParticipantTypes.has(participantType) || participantType === "COURTESY") {
+      if ((inviteMode && participantType !== "COURTESY") ||
+        (!inviteMode && (!allowedParticipantTypes.has(participantType) || participantType === "COURTESY"))) {
         return json(request, { error: `Escolha o tipo de inscrição de ${fullName}.` }, 400);
       }
       if (!allowedGenders.has(gender)) return json(request, { error: `Escolha o sexo de ${fullName}.` }, 400);
@@ -880,13 +891,33 @@ async function handleFamilyRegistration(
     const allowedMethods = Array.isArray(tournament.allowed_payment_methods)
       ? tournament.allowed_payment_methods.map((method) => String(method).toUpperCase())
       : ["PIX", "BOLETO", "CREDIT_CARD"];
-    if (billingType === "UNDEFINED") {
+    if (!inviteMode && billingType === "UNDEFINED") {
       const canChoose = allowedMethods.includes("UNDEFINED") ||
         ["PIX", "BOLETO", "CREDIT_CARD"].filter((method) => allowedMethods.includes(method)).length > 1;
       if (!canChoose) return json(request, { error: "Escolha uma forma de pagamento disponível." }, 400);
     }
-    if (!allowedMethods.includes(billingType)) {
+    if (!inviteMode && !allowedMethods.includes(billingType)) {
       return json(request, { error: "Esta forma de pagamento não está disponível no torneio." }, 400);
+    }
+
+    const inviteTokenHash = inviteMode ? await sha256Hex(inviteToken) : "";
+    let invitation: JsonRecord | null = null;
+    if (inviteMode) {
+      const invitationResult = await supabase.from("tournament_registration_invites")
+        .select("id,tournament_id,athlete_limit,status,expires_at,used_registration_group_id")
+        .eq("tournament_id", tournament.id)
+        .eq("token_hash", inviteTokenHash)
+        .maybeSingle();
+      if (invitationResult.error) throw invitationResult.error;
+      invitation = invitationResult.data as JsonRecord | null;
+      if (!invitation) return json(request, { error: "Este convite é inválido." }, 403);
+      if (Number(invitation.athlete_limit || 0) < athleteInputs.length) {
+        return json(request, { error: `Este convite permite no máximo ${invitation.athlete_limit} atleta(s).` }, 409);
+      }
+      if (invitation.expires_at && Date.parse(String(invitation.expires_at)) < Date.now()) {
+        return json(request, { error: "Este convite expirou." }, 410);
+      }
+      if (invitation.status === "REVOKED") return json(request, { error: "Este convite foi cancelado." }, 410);
     }
 
     const existingGroupResult = await supabase.from("tournament_registration_groups")
@@ -898,6 +929,9 @@ async function handleFamilyRegistration(
       const existingGroup = existingGroupResult.data as JsonRecord;
       if (String(existingGroup.tournament_id) !== String(tournament.id) || digits(existingGroup.payer_cpf) !== payerCpf) {
         return json(request, { error: "Esta tentativa de inscrição não corresponde ao responsável informado." }, 403);
+      }
+      if (inviteMode && String(invitation?.used_registration_group_id || "") !== String(existingGroup.id)) {
+        return json(request, { error: "Este convite já foi utilizado." }, 410);
       }
       const existingRegistrations = await supabase.from("tournament_registrations")
         .select("*")
@@ -913,6 +947,9 @@ async function handleFamilyRegistration(
         billingType,
       );
     }
+    if (inviteMode && invitation?.status === "USED") {
+      return json(request, { error: "Este convite já foi utilizado." }, 410);
+    }
 
     failureStage = "family_category_lookup";
     const categoriesResult = await supabase.from("tournament_categories")
@@ -924,6 +961,7 @@ async function handleFamilyRegistration(
     const registrationPricing = record(tournamentSettings.registration_pricing);
     const spatialAddonMap = record(tournamentSettings.spatial_addons);
     const rpcEntries: JsonRecord[] = [];
+    const createdAthleteIds: string[] = [];
 
     for (const athleteInput of validatedAthletes) {
       const category = categoryMap.get(athleteInput.categoryId);
@@ -951,7 +989,7 @@ async function handleFamilyRegistration(
           return json(request, { error: "O valor da Classe Espacial ainda não foi configurado." }, 409);
         }
       }
-      const primaryAmount = Number(registrationPricing[athleteInput.participantType]);
+      const primaryAmount = inviteMode ? 0 : Number(registrationPricing[athleteInput.participantType]);
       if (!Number.isFinite(primaryAmount) || primaryAmount < 0) {
         return json(request, { error: `O valor da inscrição de ${athleteInput.fullName} ainda não foi configurado.` }, 409);
       }
@@ -1027,6 +1065,7 @@ async function handleFamilyRegistration(
           .eq("id", athlete.id).select("*").single();
       } else {
         athleteResult = await supabase.from("tournament_athletes").insert(athleteValues).select("*").single();
+        if (athleteResult.data?.id) createdAthleteIds.push(String(athleteResult.data.id));
       }
       if (athleteResult.error?.code === "23505") {
         return json(request, { error: `Já existe um cadastro de ${athleteInput.fullName}. Confira os dados ou fale com a organização.` }, 409);
@@ -1048,7 +1087,7 @@ async function handleFamilyRegistration(
     }
 
     failureStage = "family_registration_claim";
-    const claimResult = await supabase.rpc("claim_public_tournament_family_bundle", {
+    const claimParameters = {
       p_tournament_id: tournament.id,
       p_request_token: requestToken,
       p_payer_name: payerName,
@@ -1056,8 +1095,17 @@ async function handleFamilyRegistration(
       p_payer_phone: payerPhone,
       p_payer_cpf: payerCpf,
       p_entries: rpcEntries,
-    });
+    };
+    const claimResult = inviteMode
+      ? await supabase.rpc("claim_public_tournament_invite_bundle", {
+        p_invite_token_hash: inviteTokenHash,
+        ...claimParameters,
+      })
+      : await supabase.rpc("claim_public_tournament_family_bundle", claimParameters);
     if (claimResult.error?.code === "P0001") {
+      if (createdAthleteIds.length) {
+        await supabase.from("tournament_athletes").delete().in("id", createdAthleteIds);
+      }
       return json(request, { error: claimResult.error.message }, 409);
     }
     if (claimResult.error) throw claimResult.error;
@@ -1094,6 +1142,52 @@ Deno.serve(async (request) => {
   if (request.method === "GET") {
     if (!securityConfig) {
       return json(request, { error: "As inscrições estão temporariamente indisponíveis." }, 503);
+    }
+    const url = new URL(request.url);
+    const inviteToken = text(url.searchParams.get("invite_token"), 80);
+    const tournamentSlug = text(url.searchParams.get("tournament_slug"), 100).toLowerCase();
+    if (inviteToken || tournamentSlug) {
+      if (!isUuid(inviteToken) || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tournamentSlug)) {
+        return json(request, { error: "Este convite é inválido." }, 403);
+      }
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+      const supabaseKey = serviceRoleKey();
+      if (!supabaseUrl || !supabaseKey) return json(request, { error: "Convites temporariamente indisponíveis." }, 503);
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const tournamentResult = await supabase.from("tournaments")
+        .select("id,name,slug,status,registration_open,registration_closes_at,is_published")
+        .eq("slug", tournamentSlug)
+        .maybeSingle();
+      if (tournamentResult.error) throw tournamentResult.error;
+      if (!tournamentResult.data || tournamentResult.data.is_published !== true) {
+        return json(request, { error: "Torneio não encontrado." }, 404);
+      }
+      const inviteResult = await supabase.from("tournament_registration_invites")
+        .select("id,tournament_id,athlete_limit,status,expires_at")
+        .eq("tournament_id", tournamentResult.data.id)
+        .eq("token_hash", await sha256Hex(inviteToken))
+        .maybeSingle();
+      if (inviteResult.error) throw inviteResult.error;
+      const invite = inviteResult.data as JsonRecord | null;
+      if (!invite) return json(request, { error: "Este convite é inválido." }, 403);
+      if (invite.status === "USED") return json(request, { error: "Este convite já foi utilizado." }, 410);
+      if (invite.status === "REVOKED") return json(request, { error: "Este convite foi cancelado." }, 410);
+      if (invite.expires_at && Date.parse(String(invite.expires_at)) < Date.now()) {
+        return json(request, { error: "Este convite expirou." }, 410);
+      }
+      if (tournamentResult.data.status !== "REGISTRATION_OPEN" || tournamentResult.data.registration_open !== true) {
+        return json(request, { error: "As inscrições deste torneio estão fechadas." }, 409);
+      }
+      return json(request, {
+        captcha_provider: "turnstile",
+        captcha_site_key: securityConfig.turnstileSiteKey,
+        invitation: true,
+        athlete_limit: invite.athlete_limit,
+        tournament_name: tournamentResult.data.name,
+        expires_at: invite.expires_at,
+      });
     }
     return json(request, {
       captcha_provider: "turnstile",
