@@ -41,6 +41,10 @@ const tournamentInviteManagementSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260901143732_add_tournament_invite_management.sql'),
   'utf8'
 );
+const tournamentInviteShareSecretSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260901150918_add_tournament_invite_share_secret.sql'),
+  'utf8'
+);
 const barOrderPushSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'bar-order-push', 'index.ts'), 'utf8');
 const sharedCorsSource = await readFile(path.join(projectRoot, 'supabase', 'functions', '_shared', 'cors.ts'), 'utf8');
 const serviceWorkerSource = await readFile(path.join(projectRoot, 'service-worker.js'), 'utf8');
@@ -715,7 +719,8 @@ test('inscrição familiar reúne menores e adultos em um único Pix sem usar o 
 test('convite isento é único, limitado e consumido atomicamente com a inscrição', () => {
   assert.match(adminSource, /id="registrationInviteBtn"[^>]*>Gerar convite</);
   assert.doesNotMatch(adminSource, /id="courtesyTournamentLink"/);
-  assert.match(functionSource(adminSource, 'registrationInviteMessage'), /link exclusivo[\s\S]*deixa de funcionar/);
+  assert.match(functionSource(adminSource, 'registrationInviteMessage'), /Use o link abaixo[\s\S]*único e exclusivo para você/);
+  assert.doesNotMatch(functionSource(adminSource, 'registrationInviteMessage'), /🎾|🚀|�/);
   const downloadInviteCard = functionSource(adminSource, 'downloadRegistrationInviteCard');
   assert.match(downloadInviteCard, /canvas\.width = 1080[\s\S]*canvas\.height = 1350/);
   assert.match(adminSource, /id="registrationInviteTournamentLogo"/);
@@ -745,15 +750,22 @@ test('ADM identifica, acompanha, cancela e exclui convites não utilizados sem e
   assert.match(adminSource, /id="registrationInviteRecipientName"/);
   assert.match(adminSource, /id="registrationInviteRecipientPhone"/);
   assert.match(functionSource(adminSource, 'renderRegistrationInvites'), /used_athletes[\s\S]*data-revoke-registration-invite[\s\S]*data-delete-registration-invite/);
+  assert.match(functionSource(adminSource, 'renderRegistrationInvites'), /data-share-registration-invite/);
+  assert.match(functionSource(adminSource, 'shareManagedRegistrationInvite'), /getRegistrationInviteShareLink[\s\S]*registrationInviteMessage\(invite\)[\s\S]*window\.open/);
   assert.match(tournamentAdminSource, /recipient_name: recipientName/);
   assert.match(tournamentAdminSource, /convites:[\s\S]*used_athletes/);
   assert.match(tournamentAdminSource, /revokeRegistrationInvite/);
   assert.match(functionSource(tournamentAdminSource, 'deleteRegistrationInvite'), /status === "USED"[\s\S]*\.delete\(\)[\s\S]*\.neq\("status", "USED"\)[\s\S]*\.is\("used_registration_group_id", null\)/);
   assert.match(tournamentAdminSource, /action === "deleteRegistrationInvite"/);
+  assert.match(functionSource(tournamentAdminSource, 'createRegistrationInvite'), /encryptRegistrationInviteToken\(rawToken\)[\s\S]*token_ciphertext: tokenCiphertext/);
+  assert.match(functionSource(tournamentAdminSource, 'getRegistrationInviteShareLink'), /decryptRegistrationInviteToken[\s\S]*token_hash[\s\S]*invite_url/);
   assert.doesNotMatch(functionSource(tournamentAdminSource, 'loadSnapshot'), /token_hash/);
+  assert.match(functionSource(tournamentAdminSource, 'loadSnapshot'), /share_ready: Boolean\(invite\.token_ciphertext\)/);
   assert.match(tournamentInviteManagementSource, /add column if not exists recipient_name text/);
   assert.match(tournamentInviteManagementSource, /recipient_phone is null or recipient_phone ~ '\^\[0-9\]\{10,13\}\$'/);
   assert.match(tournamentInviteManagementSource, /tournament_id, created_at desc/);
+  assert.match(tournamentInviteShareSecretSource, /add column if not exists token_ciphertext text/);
+  assert.match(tournamentInviteShareSecretSource, /revoke all on table public\.tournament_registration_invites from public, anon, authenticated/);
 });
 
 test('inscrição avisa sobre elegibilidade e permite ajuste administrativo de classe', () => {

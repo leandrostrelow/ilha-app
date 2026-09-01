@@ -24857,9 +24857,9 @@
       const count = Number(invite && invite.athlete_limit || 1);
       const tournamentName = invite && invite.tournament_name || (state.data.torneio && state.data.torneio.nome) || 'Ilha Open';
       const recipient = String(invite && invite.recipient_name || '').trim();
-      return (recipient ? 'Olá, ' + recipient + '!\n\n' : '') + '🎾 Você recebeu ' + registrationInviteLabel(count) + ' para o ' + tournamentName + '!\n\n' +
-        'Use o link exclusivo abaixo para inscrever até ' + registrationInviteAthleteLabel(count) + '. A inscrição é isenta e o convite deixa de funcionar assim que for utilizado:\n' +
-        invite.invite_url + '\n\nNos vemos em quadra! 🚀';
+      return (recipient ? 'Olá, ' + recipient + '!\n\n' : '') + 'Você recebeu ' + registrationInviteLabel(count) + ' para o ' + tournamentName + '!\n\n' +
+        'Use o link abaixo para inscrever até ' + registrationInviteAthleteLabel(count) + '. A inscrição é isenta e esse convite é único e exclusivo para você.\n\n' +
+        invite.invite_url + '\n\nNos vemos em quadra!';
     }
 
     function registrationInviteStatus(status) {
@@ -24931,7 +24931,7 @@
           '<div class="invite-manager-use"><strong>' + escapeHtml(useTitle) + '</strong><span>' + escapeHtml(useDetail) + '</span></div>' +
           '<div><span class="invite-manager-status ' + status.className + '">' + status.label + '</span><div class="invite-manager-meta">Criado em ' + escapeHtml(registrationInviteDateTime(invite.created_at) || 'data não informada') + '</div></div>' +
           '<div class="invite-manager-actions">' +
-            (phone ? '<a class="ghost-btn" href="https://wa.me/' + escapeHtml(phone) + '" target="_blank" rel="noopener">WhatsApp</a>' : '') +
+            (invite.status === 'ACTIVE' ? '<button class="ghost-btn" type="button" data-share-registration-invite="' + escapeHtml(invite.id) + '">WhatsApp</button>' : (phone ? '<a class="ghost-btn" href="https://wa.me/' + escapeHtml(phone) + '" target="_blank" rel="noopener">WhatsApp</a>' : '')) +
             (invite.status === 'ACTIVE' ? '<button class="danger-btn" type="button" data-revoke-registration-invite="' + escapeHtml(invite.id) + '">Cancelar</button>' : '') +
             (invite.status !== 'USED' ? '<button class="danger-btn" type="button" data-delete-registration-invite="' + escapeHtml(invite.id) + '">Excluir</button>' : '') +
           '</div></article>';
@@ -25044,6 +25044,25 @@
       const phone = whatsappNumber(invite.recipient_phone);
       const destination = 'https://wa.me/' + (phone || '') + '?text=' + encodeURIComponent(registrationInviteMessage(invite));
       window.open(destination, '_blank', 'noopener');
+    }
+
+    async function shareManagedRegistrationInvite(inviteId) {
+      const managedInvite = (state.data.convites || []).find(function (item) { return String(item.id) === String(inviteId); });
+      if (!managedInvite || managedInvite.status !== 'ACTIVE') return toast('Somente convites ativos podem ser enviados.');
+      if (!managedInvite.share_ready && !confirm('Este convite foi criado antes do envio pelo gerenciamento. Ao continuar, um novo link será criado e o link anterior deixará de funcionar. Continuar?')) return;
+      try {
+        const invite = await apiPost({
+          action: 'getRegistrationInviteShareLink',
+          tournament_id: state.selectedTournamentId,
+          invite_id: inviteId
+        }, { silent: true, returnData: false });
+        const phone = whatsappNumber(invite && invite.recipient_phone);
+        const destination = 'https://wa.me/' + (phone || '') + '?text=' + encodeURIComponent(registrationInviteMessage(invite));
+        window.open(destination, '_blank', 'noopener');
+        if (invite && invite.rotated) loadData(false);
+      } catch (error) {
+        toast(error.message);
+      }
     }
 
     function loadCanvasImage(source) {
@@ -43368,6 +43387,11 @@
       const deleteInviteBtn = event.target.closest('[data-delete-registration-invite]');
       if (deleteInviteBtn) {
         deleteRegistrationInvite(deleteInviteBtn.dataset.deleteRegistrationInvite);
+        return;
+      }
+      const shareInviteBtn = event.target.closest('[data-share-registration-invite]');
+      if (shareInviteBtn) {
+        shareManagedRegistrationInvite(shareInviteBtn.dataset.shareRegistrationInvite);
         return;
       }
 

@@ -33,6 +33,7 @@ const writeActions = new Set([
   "saveAgendaEvent",
   "deleteAgendaEvent",
   "createRegistrationInvite",
+  "getRegistrationInviteShareLink",
   "revokeRegistrationInvite",
   "deleteRegistrationInvite",
   "setLiveState",
@@ -92,6 +93,53 @@ async function sha256Hex(value: string) {
   return Array.from(new Uint8Array(digest))
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
+}
+
+function base64UrlEncode(value: Uint8Array) {
+  let binary = "";
+  value.forEach((byte) => { binary += String.fromCharCode(byte); });
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function base64UrlDecode(value: string) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized + "=".repeat((4 - normalized.length % 4) % 4);
+  return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
+}
+
+async function registrationInviteEncryptionKey() {
+  const secret = serviceRoleKey();
+  if (!secret) throw new ApiError("Configuração segura dos convites indisponível.", 500);
+  const material = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(`ilha-tournament-invite:${secret}`),
+  );
+  return crypto.subtle.importKey("raw", material, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+}
+
+async function encryptRegistrationInviteToken(token: string) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    await registrationInviteEncryptionKey(),
+    new TextEncoder().encode(token),
+  );
+  return `${base64UrlEncode(iv)}.${base64UrlEncode(new Uint8Array(encrypted))}`;
+}
+
+async function decryptRegistrationInviteToken(ciphertext: string) {
+  const [ivValue, encryptedValue, ...rest] = text(ciphertext, 240).split(".");
+  if (!ivValue || !encryptedValue || rest.length) throw new ApiError("O link protegido deste convite é inválido.", 500);
+  try {
+    const decrypted = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: base64UrlDecode(ivValue) },
+      await registrationInviteEncryptionKey(),
+      base64UrlDecode(encryptedValue),
+    );
+    return new TextDecoder().decode(decrypted);
+  } catch (_error) {
+    throw new ApiError("Não foi possível recuperar o link protegido deste convite.", 500);
+  }
 }
 
 function isValidCpf(value: string) {
@@ -665,7 +713,7 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", incl
     client.from("tournament_courts").select("*").eq("tournament_id", id).order("sort_order").order("name"),
     client.from("tournament_schedule_events").select("*").eq("tournament_id", id).order("event_date").order("event_time"),
     includeCapabilities
-      ? client.from("tournament_registration_invites").select("id,tournament_id,recipient_name,recipient_phone,athlete_limit,status,used_registration_group_id,expires_at,created_at,used_at,revoked_at").eq("tournament_id", id).order("created_at", { ascending: false })
+      ? client.from("tournament_registration_invites").select("id,tournament_id,recipient_name,recipient_phone,athlete_limit,status,used_registration_group_id,token_ciphertext,expires_at,created_at,used_at,revoked_at").eq("tournament_id", id).order("created_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
     includeCapabilities
       ? client.from("tournament_registration_groups").select("id,payer_name,payer_email,payer_phone,status,created_at").eq("tournament_id", id)
@@ -743,6 +791,7 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", incl
         payer_phone: group.payer_phone || "",
         group_status: group.status || "",
         used_athletes: athleteNamesByGroup.get(groupId) || [],
+        share_ready: Boolean(invite.token_ciphertext),
       };
     }) : [],
     cobrancas_inscricoes: includeCapabilities ? registrationOrders.map((row) => ({
@@ -804,10 +853,12 @@ async function createRegistrationInvite(client: DbClient, actorId: string, paylo
 
   const rawToken = crypto.randomUUID();
   const tokenHash = await sha256Hex(rawToken);
+  const tokenCiphertext = await encryptRegistrationInviteToken(rawToken);
   const expiresAt = tournament.registration_closes_at || null;
   const result = await client.from("tournament_registration_invites").insert({
     tournament_id: tournament.id,
     token_hash: tokenHash,
+    token_ciphertext: tokenCiphertext,
     recipient_name: recipientName,
     recipient_phone: recipientPhone || null,
     athlete_limit: athleteLimit,
@@ -835,6 +886,72 @@ async function createRegistrationInvite(client: DbClient, actorId: string, paylo
     tournament_name: tournament.name || "Ilha Open",
     tournament_slug: tournament.slug || "",
     invite_url: `https://app.ilhatenis.com/inscricoes/${encodeURIComponent(tournament.slug || "")}/convite/${encodeURIComponent(rawToken)}`,
+  };
+}
+
+async function getRegistrationInviteShareLink(client: DbClient, actorId: string, payload: Row) {
+  const tournament = await currentTournament(client, payload);
+  const inviteId = uuid(payload.invite_id || payload.id);
+  if (!inviteId) throw new ApiError("Convite inválido.");
+  const currentResult = await client.from("tournament_registration_invites")
+    .select("id,tournament_id,recipient_name,recipient_phone,athlete_limit,status,token_hash,token_ciphertext,expires_at,created_at")
+    .eq("id", inviteId)
+    .eq("tournament_id", tournament.id)
+    .maybeSingle();
+  assertNoError(currentResult.error);
+  let invite = currentResult.data as Row | null;
+  if (!invite) throw new ApiError("Convite não encontrado.", 404);
+  if (invite.status !== "ACTIVE") throw new ApiError("Somente convites ativos podem ser enviados.", 409);
+  if (invite.expires_at && new Date(invite.expires_at).getTime() < Date.now()) {
+    throw new ApiError("Este convite expirou. Gere um novo convite.", 409);
+  }
+
+  let rawToken = "";
+  let rotated = false;
+  if (invite.token_ciphertext) {
+    rawToken = await decryptRegistrationInviteToken(String(invite.token_ciphertext));
+    if (await sha256Hex(rawToken) !== invite.token_hash) {
+      throw new ApiError("A proteção do link deste convite não pôde ser validada.", 500);
+    }
+  } else {
+    rawToken = crypto.randomUUID();
+    const replacement = {
+      token_hash: await sha256Hex(rawToken),
+      token_ciphertext: await encryptRegistrationInviteToken(rawToken),
+    };
+    const updateResult = await client.from("tournament_registration_invites")
+      .update(replacement)
+      .eq("id", inviteId)
+      .eq("tournament_id", tournament.id)
+      .eq("status", "ACTIVE")
+      .is("token_ciphertext", null)
+      .select("id,tournament_id,recipient_name,recipient_phone,athlete_limit,status,token_hash,token_ciphertext,expires_at,created_at")
+      .maybeSingle();
+    assertNoError(updateResult.error);
+    if (!updateResult.data) throw new ApiError("O convite foi alterado por outra operação. Atualize a lista.", 409);
+    invite = updateResult.data as Row;
+    rotated = true;
+    await audit(client, actorId, tournament.id, "registration_invite", inviteId, "ROTATE_SHARE_LINK", {
+      ...currentResult.data,
+      token_hash: "[protected]",
+      token_ciphertext: "[protected]",
+    }, {
+      ...invite,
+      token_hash: "[protected]",
+      token_ciphertext: "[protected]",
+    });
+  }
+
+  return {
+    id: invite.id,
+    tournament_id: tournament.id,
+    tournament_name: tournament.name || "Ilha Open",
+    tournament_slug: tournament.slug || "",
+    recipient_name: invite.recipient_name || "",
+    recipient_phone: invite.recipient_phone || "",
+    athlete_limit: invite.athlete_limit,
+    invite_url: `https://app.ilhatenis.com/inscricoes/${encodeURIComponent(tournament.slug || "")}/convite/${encodeURIComponent(rawToken)}`,
+    rotated,
   };
 }
 
@@ -1817,6 +1934,10 @@ Deno.serve(async (request) => {
     }
     else if (action === "revokeRegistrationInvite") {
       result = await revokeRegistrationInvite(trustedClient, profile.id, payload);
+      responseTournamentId = (result as Row).tournament_id;
+    }
+    else if (action === "getRegistrationInviteShareLink") {
+      result = await getRegistrationInviteShareLink(trustedClient, profile.id, payload);
       responseTournamentId = (result as Row).tournament_id;
     }
     else if (action === "deleteRegistrationInvite") {
