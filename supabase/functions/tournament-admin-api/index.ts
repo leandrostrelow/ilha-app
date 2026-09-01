@@ -33,6 +33,7 @@ const writeActions = new Set([
   "saveAgendaEvent",
   "deleteAgendaEvent",
   "createRegistrationInvite",
+  "revokeRegistrationInvite",
   "setLiveState",
 ]);
 
@@ -646,12 +647,12 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", incl
 
   const empty = {
     torneio: {}, categorias: [], jogadores: [], inscricoes: [], jogos: [], quadras: [], agenda: [],
-    config: [], live: {}, pagamentos_online: [], torneios: tournaments.map((row) => mapTournament(row, includeCapabilities)),
+    config: [], live: {}, pagamentos_online: [], convites: [], torneios: tournaments.map((row) => mapTournament(row, includeCapabilities)),
   };
   if (!tournament) return empty;
 
   const id = tournament.id;
-  const [categoriesResult, athletesResult, registrationsResult, ordersResult, paymentsResult, matchesResult, courtsResult, eventsResult, liveResult] = await Promise.all([
+  const [categoriesResult, athletesResult, registrationsResult, ordersResult, paymentsResult, matchesResult, courtsResult, eventsResult, invitesResult, registrationGroupsResult, liveResult] = await Promise.all([
     client.from("tournament_categories").select("*").eq("tournament_id", id).order("sort_order").order("name"),
     client.from("tournament_athletes").select("*").order("full_name"),
     client.from("tournament_registrations").select("*").eq("tournament_id", id).order("created_at"),
@@ -662,9 +663,15 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", incl
     client.from("tournament_matches").select("*").eq("tournament_id", id).order("category_id").order("round_no").order("match_no"),
     client.from("tournament_courts").select("*").eq("tournament_id", id).order("sort_order").order("name"),
     client.from("tournament_schedule_events").select("*").eq("tournament_id", id).order("event_date").order("event_time"),
+    includeCapabilities
+      ? client.from("tournament_registration_invites").select("id,tournament_id,recipient_name,recipient_phone,athlete_limit,status,used_registration_group_id,expires_at,created_at,used_at,revoked_at").eq("tournament_id", id).order("created_at", { ascending: false })
+      : Promise.resolve({ data: [], error: null }),
+    includeCapabilities
+      ? client.from("tournament_registration_groups").select("id,payer_name,payer_email,payer_phone,status,created_at").eq("tournament_id", id)
+      : Promise.resolve({ data: [], error: null }),
     client.from("tournament_live_state").select("*").eq("tournament_id", id).maybeSingle(),
   ]);
-  [categoriesResult, athletesResult, registrationsResult, ordersResult, paymentsResult, matchesResult, courtsResult, eventsResult, liveResult].forEach((result) => assertNoError(result.error));
+  [categoriesResult, athletesResult, registrationsResult, ordersResult, paymentsResult, matchesResult, courtsResult, eventsResult, invitesResult, registrationGroupsResult, liveResult].forEach((result) => assertNoError(result.error));
 
   const categories = ((categoriesResult.data || []) as Row[]).filter((row) => row.active !== false);
   const visibleCategoryIds = new Set(categories.map((row) => String(row.id)));
@@ -684,6 +691,17 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", incl
   const athleteMap = new Map(athletes.map((row) => [String(row.id), row]));
   const registrationOrders = (ordersResult.data || []) as Row[];
   const orderMap = new Map(registrationOrders.map((row) => [String(row.id), row]));
+  const registrationGroups = (registrationGroupsResult.data || []) as Row[];
+  const registrationGroupMap = new Map(registrationGroups.map((row) => [String(row.id), row]));
+  const athleteNamesByGroup = new Map<string, string[]>();
+  registrations.forEach((registration) => {
+    const groupId = String(registration.registration_group_id || "");
+    const athleteName = String(athleteMap.get(String(registration.athlete_id || ""))?.full_name || "").trim();
+    if (!groupId || !athleteName) return;
+    const names = athleteNamesByGroup.get(groupId) || [];
+    if (!names.includes(athleteName)) names.push(athleteName);
+    athleteNamesByGroup.set(groupId, names);
+  });
   const activeOrderByAthlete = new Map(
     registrationOrders
       .filter((row) => row.status !== "CANCELLED")
@@ -705,6 +723,27 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", incl
     jogadores: athletes.map((row) => mapAthlete(row, includeCapabilities, activeOrderByAthlete.get(String(row.id)) || {})),
     inscricoes: registrations.map((row) => mapRegistration(row, includeCapabilities, orderMap.get(String(row.registration_order_id)) || {})),
     pagamentos_online: includeCapabilities ? ((paymentsResult.data || []) as Row[]).map(mapOnlinePayment) : [],
+    convites: includeCapabilities ? ((invitesResult.data || []) as Row[]).map((invite) => {
+      const groupId = String(invite.used_registration_group_id || "");
+      const group = registrationGroupMap.get(groupId) || {};
+      const expired = invite.status === "ACTIVE" && invite.expires_at && new Date(invite.expires_at).getTime() < Date.now();
+      return {
+        id: invite.id,
+        recipient_name: invite.recipient_name || "Convite anterior",
+        recipient_phone: invite.recipient_phone || "",
+        athlete_limit: invite.athlete_limit,
+        status: expired ? "EXPIRED" : invite.status,
+        expires_at: invite.expires_at || "",
+        created_at: invite.created_at || "",
+        used_at: invite.used_at || "",
+        revoked_at: invite.revoked_at || "",
+        used_registration_group_id: groupId,
+        payer_name: group.payer_name || "",
+        payer_phone: group.payer_phone || "",
+        group_status: group.status || "",
+        used_athletes: athleteNamesByGroup.get(groupId) || [],
+      };
+    }) : [],
     cobrancas_inscricoes: includeCapabilities ? registrationOrders.map((row) => ({
       id: row.id,
       jogador_id: row.athlete_id,
@@ -749,8 +788,14 @@ async function audit(client: DbClient, actorId: string, tournamentId: string, en
 async function createRegistrationInvite(client: DbClient, actorId: string, payload: Row) {
   const tournament = await currentTournament(client, payload);
   const athleteLimit = integerValue(payload.athlete_limit ?? payload.quantidade, 1);
+  const recipientName = text(payload.recipient_name, 120).replace(/\s+/g, " ");
+  const recipientPhone = digits(payload.recipient_phone);
   if (athleteLimit < 1 || athleteLimit > 6) {
     throw new ApiError("Escolha entre um e seis convites.");
+  }
+  if (recipientName.length < 2) throw new ApiError("Informe para quem o convite será enviado.");
+  if (recipientPhone && !/^\d{10,13}$/.test(recipientPhone)) {
+    throw new ApiError("Informe um WhatsApp válido ou deixe o campo vazio.");
   }
   if (tournament.registration_open !== true || tournament.status !== "REGISTRATION_OPEN") {
     throw new ApiError("Abra as inscrições do torneio antes de gerar um convite.", 409);
@@ -762,11 +807,13 @@ async function createRegistrationInvite(client: DbClient, actorId: string, paylo
   const result = await client.from("tournament_registration_invites").insert({
     tournament_id: tournament.id,
     token_hash: tokenHash,
+    recipient_name: recipientName,
+    recipient_phone: recipientPhone || null,
     athlete_limit: athleteLimit,
     status: "ACTIVE",
     expires_at: expiresAt,
     created_by: actorId,
-  }).select("id,tournament_id,athlete_limit,status,expires_at,created_at").single();
+  }).select("id,tournament_id,recipient_name,recipient_phone,athlete_limit,status,expires_at,created_at").single();
   assertNoError(result.error);
   const createdInvite = result.data as Row | null;
   if (!createdInvite?.id) throw new ApiError("Não foi possível gerar o convite.", 500);
@@ -778,7 +825,7 @@ async function createRegistrationInvite(client: DbClient, actorId: string, paylo
     String(createdInvite.id),
     "CREATE",
     null,
-    { athlete_limit: athleteLimit, expires_at: expiresAt },
+    { recipient_name: recipientName, recipient_phone: recipientPhone || null, athlete_limit: athleteLimit, expires_at: expiresAt },
   );
 
   return {
@@ -788,6 +835,36 @@ async function createRegistrationInvite(client: DbClient, actorId: string, paylo
     tournament_slug: tournament.slug || "",
     invite_url: `https://app.ilhatenis.com/inscricoes/${encodeURIComponent(tournament.slug || "")}/convite/${encodeURIComponent(rawToken)}`,
   };
+}
+
+async function revokeRegistrationInvite(client: DbClient, actorId: string, payload: Row) {
+  const tournament = await currentTournament(client, payload);
+  const inviteId = uuid(payload.invite_id || payload.id);
+  if (!inviteId) throw new ApiError("Convite inválido.");
+  const currentResult = await client.from("tournament_registration_invites")
+    .select("id,tournament_id,recipient_name,recipient_phone,athlete_limit,status,used_registration_group_id,expires_at,created_at,used_at,revoked_at")
+    .eq("id", inviteId)
+    .eq("tournament_id", tournament.id)
+    .maybeSingle();
+  assertNoError(currentResult.error);
+  const current = currentResult.data as Row | null;
+  if (!current) throw new ApiError("Convite não encontrado.", 404);
+  if (current.status === "USED") throw new ApiError("Este convite já foi utilizado e permanece no histórico.", 409);
+  if (current.status === "REVOKED") return current;
+
+  const revokedAt = new Date().toISOString();
+  const updateResult = await client.from("tournament_registration_invites")
+    .update({ status: "REVOKED", revoked_at: revokedAt })
+    .eq("id", inviteId)
+    .eq("tournament_id", tournament.id)
+    .eq("status", "ACTIVE")
+    .select("id,tournament_id,recipient_name,recipient_phone,athlete_limit,status,used_registration_group_id,expires_at,created_at,used_at,revoked_at")
+    .maybeSingle();
+  assertNoError(updateResult.error);
+  const updated = updateResult.data as Row | null;
+  if (!updated) throw new ApiError("O convite foi alterado por outra operação. Atualize a lista.", 409);
+  await audit(client, actorId, tournament.id, "registration_invite", inviteId, "REVOKE", current, updated);
+  return updated;
 }
 
 async function uniqueSlug(client: DbClient, desired: string, ignoredId = "") {
@@ -1703,6 +1780,10 @@ Deno.serve(async (request) => {
     else if (action === "deleteAgendaEvent") result = await deleteAgendaEvent(client, profile.id, payload);
     else if (action === "createRegistrationInvite") {
       result = await createRegistrationInvite(trustedClient, profile.id, payload);
+      responseTournamentId = (result as Row).tournament_id;
+    }
+    else if (action === "revokeRegistrationInvite") {
+      result = await revokeRegistrationInvite(trustedClient, profile.id, payload);
       responseTournamentId = (result as Row).tournament_id;
     }
     else result = await setLiveState(client, profile.id, payload);

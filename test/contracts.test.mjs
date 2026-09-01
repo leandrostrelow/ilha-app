@@ -37,6 +37,10 @@ const tournamentInviteSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260901040358_add_single_use_tournament_invites.sql'),
   'utf8'
 );
+const tournamentInviteManagementSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260901143732_add_tournament_invite_management.sql'),
+  'utf8'
+);
 const barOrderPushSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'bar-order-push', 'index.ts'), 'utf8');
 const sharedCorsSource = await readFile(path.join(projectRoot, 'supabase', 'functions', '_shared', 'cors.ts'), 'utf8');
 const serviceWorkerSource = await readFile(path.join(projectRoot, 'service-worker.js'), 'utf8');
@@ -715,8 +719,8 @@ test('convite isento é único, limitado e consumido atomicamente com a inscriç
   const downloadInviteCard = functionSource(adminSource, 'downloadRegistrationInviteCard');
   assert.match(downloadInviteCard, /canvas\.width = 1080[\s\S]*canvas\.height = 1350/);
   assert.match(adminSource, /id="registrationInviteTournamentLogo"/);
-  assert.match(adminSource, /class="tournament-invite-brand club"[\s\S]*src="\/logo\.png"/);
-  assert.match(downloadInviteCard, /torneio\.logo_url[\s\S]*new URL\('\/logo\.png'/);
+  assert.match(adminSource, /class="tournament-invite-brand club"[\s\S]*src="\/assets\/branding\/ilha-tenis-logo-light\.png"/);
+  assert.match(downloadInviteCard, /torneio\.logo_url[\s\S]*new URL\('\/assets\/branding\/ilha-tenis-logo-light\.png'/);
   assert.match(tournamentAdminSource, /createRegistrationInvite/);
   assert.match(tournamentAdminSource, /crypto\.randomUUID\(\)/);
   assert.match(tournamentAdminSource, /token_hash:\s*tokenHash/);
@@ -730,6 +734,20 @@ test('convite isento é único, limitado e consumido atomicamente com a inscriç
   assert.match(tournamentRegisterSource, /claim_public_tournament_invite_bundle/);
   assert.match(tournamentRegisterSource, /await sha256Hex\(inviteToken\)/);
   assert.match(tournamentRegisterSource, /Este convite já foi utilizado/);
+});
+
+test('ADM identifica, acompanha e cancela convites do torneio sem expor o token', () => {
+  assert.match(adminSource, /data-tab="invitations">Convites/);
+  assert.match(adminSource, /id="registrationInviteRecipientName"/);
+  assert.match(adminSource, /id="registrationInviteRecipientPhone"/);
+  assert.match(functionSource(adminSource, 'renderRegistrationInvites'), /used_athletes[\s\S]*data-revoke-registration-invite/);
+  assert.match(tournamentAdminSource, /recipient_name: recipientName/);
+  assert.match(tournamentAdminSource, /convites:[\s\S]*used_athletes/);
+  assert.match(tournamentAdminSource, /revokeRegistrationInvite/);
+  assert.doesNotMatch(functionSource(tournamentAdminSource, 'loadSnapshot'), /token_hash/);
+  assert.match(tournamentInviteManagementSource, /add column if not exists recipient_name text/);
+  assert.match(tournamentInviteManagementSource, /recipient_phone is null or recipient_phone ~ '\^\[0-9\]\{10,13\}\$'/);
+  assert.match(tournamentInviteManagementSource, /tournament_id, created_at desc/);
 });
 
 test('inscrição avisa sobre elegibilidade e permite ajuste administrativo de classe', () => {
