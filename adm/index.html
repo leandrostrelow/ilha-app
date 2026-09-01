@@ -3267,7 +3267,7 @@
 
     .tournament-invite-result { display: grid; gap: 14px; }
     .tournament-invite-card {
-      min-height: 330px;
+      min-height: 380px;
       display: grid;
       grid-template-columns: minmax(0, 1fr) 150px;
       align-items: center;
@@ -3278,6 +3278,21 @@
       background: radial-gradient(circle at 90% 10%, rgba(182,239,0,.28), transparent 12rem), linear-gradient(135deg,#072f3a,#075f69);
       color: #fff;
     }
+    .tournament-invite-copy { min-width: 0; }
+    .tournament-invite-brand-row { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .tournament-invite-brand {
+      display: grid;
+      place-items: center;
+      height: 68px;
+      min-width: 0;
+      padding: 9px 13px;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 15px;
+      background: rgba(255,255,255,.1);
+    }
+    .tournament-invite-brand.tournament { width: min(230px, 48%); }
+    .tournament-invite-brand.club { width: min(180px, 42%); background: #fff; }
+    .tournament-invite-brand img { display: block; width: 100%; height: 100%; object-fit: contain; }
     .tournament-invite-card .invite-kicker { color: #b6ef00; font-size: 12px; font-weight: 950; letter-spacing: .13em; text-transform: uppercase; }
     .tournament-invite-card h3 { margin: 9px 0 8px; color: #fff; font-size: 34px; line-height: 1.02; letter-spacing: -.045em; }
     .tournament-invite-card p { margin: 0; color: rgba(255,255,255,.78); font-size: 13px; line-height: 1.5; }
@@ -6090,6 +6105,7 @@
         padding: 14px;
       }
       .tournament-invite-card { grid-template-columns: 1fr; padding: 22px; text-align: center; }
+      .tournament-invite-brand-row { justify-content: center; }
       .tournament-invite-card h3 { font-size: 28px; }
       .tournament-invite-qr { width: 150px; margin: 0 auto; }
       .bar-product-modal .modal-actions > * {
@@ -22092,7 +22108,13 @@
       </form>
       <div class="tournament-invite-result" id="registrationInviteResult" hidden>
         <div class="tournament-invite-card" id="registrationInviteCardPreview">
-          <div><span class="invite-kicker">Convite exclusivo</span><h3 id="registrationInviteCardTitle">Você recebeu 1 convite</h3><p id="registrationInviteCardText">Ilha Open · inscrição isenta e de uso único.</p></div>
+          <div class="tournament-invite-copy">
+            <div class="tournament-invite-brand-row">
+              <div class="tournament-invite-brand tournament" id="registrationInviteTournamentLogoWrap" hidden><img id="registrationInviteTournamentLogo" alt="Logo do torneio" /></div>
+              <div class="tournament-invite-brand club"><img src="/logo.png" alt="Ilha Tênis Colatina" /></div>
+            </div>
+            <span class="invite-kicker">Convite exclusivo</span><h3 id="registrationInviteCardTitle">Você recebeu 1 convite</h3><p id="registrationInviteCardText">Ilha Open · inscrição isenta e de uso único.</p>
+          </div>
           <div class="tournament-invite-qr"><img id="registrationInviteQr" alt="QR Code do convite" /></div>
         </div>
         <div class="tournament-invite-url" id="registrationInviteUrl"></div>
@@ -24789,12 +24811,15 @@
     function renderRegistrationInviteResult(invite) {
       state.registrationInvite = invite;
       const count = Number(invite.athlete_limit || 1);
+      const tournamentLogoUrl = state.data && state.data.torneio && state.data.torneio.logo_url || '';
       $('registrationInviteForm').hidden = true;
       $('registrationInviteResult').hidden = false;
       $('registrationInviteCardTitle').textContent = 'Você recebeu ' + registrationInviteLabel(count);
       $('registrationInviteCardText').textContent = (invite.tournament_name || 'Ilha Open') + ' · inscrição isenta e de uso único.';
       $('registrationInviteUrl').textContent = invite.invite_url || '';
       $('registrationInviteQr').src = registrationInviteQrDataUrl(invite.invite_url || '');
+      $('registrationInviteTournamentLogoWrap').hidden = !tournamentLogoUrl;
+      $('registrationInviteTournamentLogo').src = tournamentLogoUrl;
     }
 
     function openRegistrationInviteModal() {
@@ -24839,10 +24864,19 @@
     function loadCanvasImage(source) {
       return new Promise(function (resolve, reject) {
         const image = new Image();
+        image.crossOrigin = 'anonymous';
         image.onload = function () { resolve(image); };
         image.onerror = reject;
         image.src = source;
       });
+    }
+
+    function drawCanvasContainedImage(context, image, x, y, width, height) {
+      if (!image || !image.naturalWidth || !image.naturalHeight) return;
+      const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
+      const drawWidth = image.naturalWidth * scale;
+      const drawHeight = image.naturalHeight * scale;
+      context.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
     }
 
     async function downloadRegistrationInviteCard() {
@@ -24863,23 +24897,41 @@
       context.arc(970, 80, 310, 0, Math.PI * 2);
       context.fill();
 
+      const tournamentLogoUrl = state.data && state.data.torneio && state.data.torneio.logo_url || '';
+      const clubLogoUrl = new URL('/logo.png', window.location.origin).href;
+      const logoResults = await Promise.all([
+        tournamentLogoUrl ? loadCanvasImage(tournamentLogoUrl).catch(function () { return null; }) : Promise.resolve(null),
+        loadCanvasImage(clubLogoUrl).catch(function () { return null; })
+      ]);
+      const tournamentLogo = logoResults[0];
+      const clubLogo = logoResults[1];
+      if (tournamentLogo) {
+        drawCanvasContainedImage(context, tournamentLogo, 78, 48, 430, 130);
+      } else {
+        context.fillStyle = '#ffffff';
+        context.font = '900 58px Inter, Arial, sans-serif';
+        context.fillText(invite.tournament_name || 'ILHA OPEN', 78, 130);
+      }
+      context.fillStyle = '#ffffff';
+      context.beginPath();
+      context.roundRect(742, 54, 260, 112, 24);
+      context.fill();
+      if (clubLogo) drawCanvasContainedImage(context, clubLogo, 766, 72, 212, 76);
+
       context.fillStyle = '#b6ef00';
       context.font = '900 32px Inter, Arial, sans-serif';
       context.letterSpacing = '5px';
-      context.fillText('CONVITE EXCLUSIVO', 78, 108);
+      context.fillText('CONVITE EXCLUSIVO', 78, 252);
       context.letterSpacing = '0px';
-      context.fillStyle = '#ffffff';
-      context.font = '900 92px Inter, Arial, sans-serif';
-      context.fillText('ILHA OPEN', 76, 230);
       context.fillStyle = '#b6ef00';
       context.font = '900 150px Inter, Arial, sans-serif';
-      context.fillText(String(count), 70, 445);
+      context.fillText(String(count), 70, 468);
       context.fillStyle = '#ffffff';
       context.font = '900 64px Inter, Arial, sans-serif';
-      context.fillText(count === 1 ? 'CONVITE' : 'CONVITES', 250, 430);
+      context.fillText(count === 1 ? 'CONVITE' : 'CONVITES', 250, 453);
       context.font = '700 36px Inter, Arial, sans-serif';
       context.fillStyle = 'rgba(255,255,255,.82)';
-      context.fillText('para viver essa experiência em quadra', 78, 515);
+      context.fillText('para viver essa experiência em quadra', 78, 538);
 
       context.fillStyle = '#ffffff';
       context.beginPath();

@@ -712,7 +712,11 @@ test('convite isento é único, limitado e consumido atomicamente com a inscriç
   assert.match(adminSource, /id="registrationInviteBtn"[^>]*>Gerar convite</);
   assert.doesNotMatch(adminSource, /id="courtesyTournamentLink"/);
   assert.match(functionSource(adminSource, 'registrationInviteMessage'), /link exclusivo[\s\S]*deixa de funcionar/);
-  assert.match(functionSource(adminSource, 'downloadRegistrationInviteCard'), /canvas\.width = 1080[\s\S]*canvas\.height = 1350/);
+  const downloadInviteCard = functionSource(adminSource, 'downloadRegistrationInviteCard');
+  assert.match(downloadInviteCard, /canvas\.width = 1080[\s\S]*canvas\.height = 1350/);
+  assert.match(adminSource, /id="registrationInviteTournamentLogo"/);
+  assert.match(adminSource, /class="tournament-invite-brand club"[\s\S]*src="\/logo\.png"/);
+  assert.match(downloadInviteCard, /torneio\.logo_url[\s\S]*new URL\('\/logo\.png'/);
   assert.match(tournamentAdminSource, /createRegistrationInvite/);
   assert.match(tournamentAdminSource, /crypto\.randomUUID\(\)/);
   assert.match(tournamentAdminSource, /token_hash:\s*tokenHash/);
