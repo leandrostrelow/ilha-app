@@ -565,16 +565,17 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(tournamentAdminSource, /logo_url: nullableText\(input\.logo_url/);
   assert.match(tournamentLogoStorageSource, /'tournament-branding'[\s\S]*2097152[\s\S]*'image\/png'/);
   assert.match(tournamentLogoStorageSource, /has_tournament_permission\('tournaments\.write'\)/);
-  for (const id of ['publicTabCategories', 'publicTabRegistrations', 'publicTabBrackets', 'publicTabSchedule', 'publicTabResults', 'publicTabAbout', 'tournamentAboutTitle', 'tournamentAboutText', 'tournamentAboutImageFile', 'aboutSponsorList']) {
+  for (const id of ['publicTabCategories', 'publicTabRegistrations', 'publicTabBrackets', 'publicTabSchedule', 'publicTabResults', 'publicTabAbout', 'tournamentAboutTitle', 'tournamentAboutText', 'tournamentSponsorText', 'tournamentAboutImageFile', 'aboutSponsorList']) {
     assert.match(adminSource, new RegExp(`id="${id}"`));
   }
   assert.match(adminSource, /id="tournamentLocation"/);
   assert.match(functionSource(adminSource, 'renderTournament'), /tournamentLocation'[\s\S]*t\.clube \|\| t\.club_name/);
   assert.match(functionSource(adminSource, 'saveTournament'), /clube:\s*\$\('tournamentLocation'\)\.value\.trim\(\)/);
-  assert.match(functionSource(adminSource, 'saveTournament'), /public_tabs:\s*publicTabs[\s\S]*about_event:\s*aboutEvent/);
+  assert.match(functionSource(adminSource, 'saveTournament'), /sponsor_text:\s*\$\('tournamentSponsorText'\)[\s\S]*public_tabs:\s*publicTabs[\s\S]*about_event:\s*aboutEvent/);
   assert.match(functionSource(adminSource, 'uploadTournamentBrandingImage'), /2 \* 1024 \* 1024[\s\S]*tournament-branding/);
   assert.match(tournamentAdminSource, /const publicTabs = \{[\s\S]*registrations:[\s\S]*const aboutEvent = \{/);
-  assert.match(tournamentAdminSource, /public_tabs:\s*publicTabs[\s\S]*about_event:\s*aboutEvent/);
+  assert.match(tournamentAdminSource, /sponsor_text:\s*text\(requestedAboutEvent\.sponsor_text, 1000\)[\s\S]*public_tabs:\s*publicTabs[\s\S]*about_event:\s*aboutEvent/);
+  assert.match(functionSource(tournamentSource, 'sponsorsHtml'), /aboutEventSettings\(\)\.sponsor_text[\s\S]*escapeHtml\(sponsorText\)/);
   const retryPayment = sourceSection(tournamentSource, "const retry = $('retryPaymentBtn')", 'if (state.registrationOnly)');
   assert.match(retryPayment, /initializeRegistrationCaptcha\(\)/);
   assert.match(retryPayment, /registrationFoot'\)\.hidden = false/);

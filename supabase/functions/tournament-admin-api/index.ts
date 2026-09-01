@@ -803,6 +803,7 @@ function tournamentPayload(input: Row, current: Row = {}) {
   const aboutEvent = {
     title: text(requestedAboutEvent.title, 120),
     text: text(requestedAboutEvent.text, 4000),
+    sponsor_text: text(requestedAboutEvent.sponsor_text, 1000),
     image_url: nullableText(requestedAboutEvent.image_url, 1000),
     sponsors: aboutSponsors,
   };

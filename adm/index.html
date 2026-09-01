@@ -21977,6 +21977,10 @@
             <div><h3>Patrocinadores</h3><div class="muted">Adicione nome, logo PNG e link. Você pode deixar o link em branco.</div></div>
             <button class="ghost-btn" type="button" id="addAboutSponsorBtn">Adicionar patrocinador</button>
           </div>
+          <div class="field" style="margin-bottom:12px">
+            <label>Texto da seção Parceiros</label>
+            <textarea id="tournamentSponsorText" maxlength="1000" rows="3" placeholder="Convide empresas e marcas para apoiar o torneio."></textarea>
+          </div>
           <div class="about-sponsor-list" id="aboutSponsorList"></div>
         </div>
       </div>
@@ -22614,6 +22618,7 @@
       const about = settings.about_event || {};
       $('tournamentAboutTitle').value = about.title || '';
       $('tournamentAboutText').value = about.text || '';
+      $('tournamentSponsorText').value = about.sponsor_text || '';
       $('tournamentAboutImageUrl').value = about.image_url || '';
       renderTournamentAboutImagePreview(about.image_url || '');
       state.aboutSponsors = Array.isArray(about.sponsors) ? about.sponsors.map(function (sponsor) {
@@ -24549,6 +24554,7 @@
         const aboutEvent = {
           title: $('tournamentAboutTitle').value.trim(),
           text: $('tournamentAboutText').value.trim(),
+          sponsor_text: $('tournamentSponsorText').value.trim(),
           image_url: $('tournamentAboutImageUrl').value.trim(),
           sponsors: state.aboutSponsors.filter(function (sponsor) { return sponsor.name || sponsor.logo_url; })
         };
