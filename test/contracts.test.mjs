@@ -29,6 +29,10 @@ const scopedPushSubscriptionsSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260901001500_scope_play_and_admin_push_subscriptions.sql'),
   'utf8'
 );
+const tournamentFamilyCheckoutSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260901032343_add_tournament_family_checkout.sql'),
+  'utf8'
+);
 const barOrderPushSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'bar-order-push', 'index.ts'), 'utf8');
 const sharedCorsSource = await readFile(path.join(projectRoot, 'supabase', 'functions', '_shared', 'cors.ts'), 'utf8');
 const serviceWorkerSource = await readFile(path.join(projectRoot, 'service-worker.js'), 'utf8');
@@ -551,7 +555,8 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(tournamentSource, /additional_category_id:\s*\$\('spatialAddon'\)\.checked/);
   assert.match(tournamentSource, /participantRegistrationAmount\(selected\) \+ addonFee/);
   assert.match(tournamentSource, /class="reservation-warning" role="alert"/);
-  assert.match(tournamentSource, /⚠️<\/span><strong>Sua vaga fica reservada por 2 horas e só é confirmada após o pagamento\./);
+  assert.match(tournamentSource, /Sua vaga fica reservada por 2 horas e só é confirmada após o pagamento\./);
+  assert.match(tournamentSource, /Suas vagas ficam reservadas por 2 horas e só são confirmadas após o pagamento\./);
   assert.match(tournamentSource, /Seja um patrocinador do torneio/);
   assert.match(tournamentSource, /wa\.me\/5527999805814/);
   assert.match(tournamentSource, /function tournamentTitleHtml/);
@@ -667,6 +672,36 @@ test('inscrição online reserva a vaga por duas horas e o ADM permite reenviar 
   assert.match(adminSource, /Enviar cobrança no WhatsApp/);
   assert.match(adminSource, /data-tournament-payment-copy/);
   assert.match(adminSource, /data-tournament-payment-pix/);
+});
+
+test('inscrição familiar reúne menores e adultos em um único Pix sem usar o cadastro de alunos', () => {
+  for (const marker of [
+    'data-registration-mode="individual"',
+    'data-registration-mode="minor"',
+    'data-registration-mode="family"',
+    'CPF e telefone são opcionais para menores de idade',
+    'O responsável também vai jogar',
+    'Adicionar outro atleta',
+    'Total em um único Pix'
+  ]) assert.match(tournamentSource, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(tournamentSource, /payer:\s*payer/);
+  assert.match(tournamentSource, /athletes:\s*payloadAthletes/);
+  assert.match(tournamentSource, /additional_category_id:\s*additional/);
+  assert.match(tournamentRegisterSource, /handleFamilyRegistration/);
+  assert.match(tournamentRegisterSource, /if \(isMinor\)[\s\S]*cpf && !isValidCpf/);
+  assert.match(tournamentRegisterSource, /ensureAsaasFamilyCustomer/);
+  assert.match(tournamentRegisterSource, /registration_group_id:\s*group\.id/);
+  assert.match(tournamentRegisterSource, /tournament-family:\$\{group\.id\}/);
+  assert.match(tournamentFamilyCheckoutSource, /create table public\.tournament_registration_groups/i);
+  assert.match(tournamentFamilyCheckoutSource, /alter table public\.tournament_registration_groups enable row level security/i);
+  assert.match(tournamentFamilyCheckoutSource, /claim_public_tournament_family_bundle/);
+  assert.match(tournamentFamilyCheckoutSource, /jsonb_array_elements\(p_entries\) with ordinality/);
+  assert.match(tournamentFamilyCheckoutSource, /registration\.registration_group_id = target_group_id/);
+  assert.match(tournamentFamilyCheckoutSource, /archive_expired_tournament_payment[\s\S]*target_group_id/);
+  assert.match(tournamentFamilyCheckoutSource, /delete from public\.tournament_payments[\s\S]*payment_row\.id/);
+  assert.equal((tournamentFamilyCheckoutSource.match(/auth\.jwt\(\) ->> 'role'/g) || []).length, 3);
+  assert.doesNotMatch(tournamentFamilyCheckoutSource, /current_setting\('request\.jwt\.claim\.role'/);
+  assert.doesNotMatch(tournamentFamilyCheckoutSource, /app_clients|app_family_members|students/);
 });
 
 test('Ilha Open interno usa cadastro simples e cobrança futura sem Asaas', () => {
@@ -1475,7 +1510,7 @@ test('reinscricao publica exige prova antes de alterar atleta existente', () => 
   assert.match(tournamentRegisterSource, /!registration && athleteHasAnyRegistration/);
   assert.doesNotMatch(tournamentRegisterSource, /\.from\(["']app_clients["']\)/);
   const authorization = tournamentRegisterSource.indexOf('registration_authorization');
-  const athleteMutation = tournamentRegisterSource.indexOf('.from("tournament_athletes").update');
+  const athleteMutation = tournamentRegisterSource.indexOf('.from("tournament_athletes").update', authorization);
   assert.ok(authorization !== -1 && authorization < athleteMutation);
 });
 

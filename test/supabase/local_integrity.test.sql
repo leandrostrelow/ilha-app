@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(50);
+select plan(56);
 
 select has_table(
   'public',
@@ -653,6 +653,60 @@ select is(
   ),
   0,
   'o cadastro Ilha Play permanece separado dos perfis de equipe'
+);
+
+select has_table(
+  'public',
+  'tournament_registration_groups',
+  'a inscrição familiar possui um agrupador exclusivo do torneio'
+);
+
+select ok(
+  (select relrowsecurity from pg_class where oid = 'public.tournament_registration_groups'::regclass),
+  'RLS está habilitado nos grupos familiares do torneio'
+);
+
+select ok(
+  not has_table_privilege('anon', 'public.tournament_registration_groups', 'SELECT')
+    and not has_table_privilege('authenticated', 'public.tournament_registration_groups', 'SELECT'),
+  'dados do responsável não ficam expostos no Data API público'
+);
+
+select ok(
+  has_table_privilege('service_role', 'public.tournament_registration_groups', 'SELECT')
+    and has_table_privilege('service_role', 'public.tournament_registration_groups', 'INSERT')
+    and has_table_privilege('service_role', 'public.tournament_registration_groups', 'UPDATE'),
+  'somente o backend confiável opera a inscrição familiar'
+);
+
+select ok(
+  (
+    select count(*) = 2
+    from information_schema.columns
+    where table_schema = 'public'
+      and column_name = 'registration_group_id'
+      and table_name in ('tournament_registrations', 'tournament_payments')
+  ),
+  'inscrições individuais e o Pix único apontam para o mesmo grupo'
+);
+
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.claim_public_tournament_family_bundle(uuid,uuid,text,text,text,text,jsonb)',
+    'EXECUTE'
+  )
+    and not has_function_privilege(
+      'authenticated',
+      'public.claim_public_tournament_family_bundle(uuid,uuid,text,text,text,text,jsonb)',
+      'EXECUTE'
+    )
+    and has_function_privilege(
+      'service_role',
+      'public.claim_public_tournament_family_bundle(uuid,uuid,text,text,text,text,jsonb)',
+      'EXECUTE'
+    ),
+  'a reserva familiar atômica só pode ser chamada pela Edge Function'
 );
 
 select * from finish();

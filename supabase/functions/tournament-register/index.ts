@@ -472,6 +472,622 @@ async function createOrRecoverPayment(
   return await saveProviderPayment(supabase, { ...localPayment, provider_customer_id: customerId }, providerPayment);
 }
 
+function record(value: unknown): JsonRecord {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : {};
+}
+
+function validBirthDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day;
+}
+
+function ageOnDate(birthDate: string, referenceDate = saoPauloDate()) {
+  if (!validBirthDate(birthDate) || !validBirthDate(referenceDate)) return null;
+  const [birthYear, birthMonth, birthDay] = birthDate.split("-").map(Number);
+  const [year, month, day] = referenceDate.split("-").map(Number);
+  let age = year - birthYear;
+  if (month < birthMonth || (month === birthMonth && day < birthDay)) age -= 1;
+  return age;
+}
+
+async function familyAthleteSourceKey(
+  payerEmail: string,
+  payerPhone: string,
+  fullName: string,
+  birthDate: string,
+  cpf: string,
+) {
+  const identity = [payerEmail, payerPhone, fullName.toLowerCase(), birthDate, cpf].join("|");
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(identity));
+  return `tournament-family:${Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function safeRegistrationGroup(row: JsonRecord) {
+  return {
+    id: row.id,
+    public_token: row.public_token,
+    primary_registration_id: row.primary_registration_id,
+    status: row.status,
+    total_amount: row.total_amount,
+  };
+}
+
+async function ensureAsaasFamilyCustomer(supabase: DbClient, group: JsonRecord) {
+  const cpf = digits(group.payer_cpf);
+  if (!isValidCpf(cpf)) throw new Error("O CPF do responsável pela cobrança é inválido.");
+  const existing = await asaasRequest(`/customers?cpfCnpj=${encodeURIComponent(cpf)}&limit=1`);
+  const rows = Array.isArray(existing.data) ? existing.data : [];
+  let customer = (rows[0] || null) as JsonRecord | null;
+  if (!customer) {
+    customer = await asaasRequest("/customers", {
+      method: "POST",
+      body: JSON.stringify({
+        name: group.payer_name,
+        cpfCnpj: cpf,
+        email: group.payer_email,
+        mobilePhone: group.payer_phone,
+        externalReference: `tournament-family:${group.id}`,
+        notificationDisabled: false,
+      }),
+    });
+  }
+  const customerId = text(customer?.id, 80);
+  if (!customerId) throw new Error("O Asaas não retornou o responsável pela cobrança.");
+  const update = await supabase.from("tournament_registration_groups").update({
+    provider_customer_id: customerId,
+    updated_at: new Date().toISOString(),
+  }).eq("id", group.id);
+  if (update.error) throw update.error;
+  return customerId;
+}
+
+async function createOrRecoverFamilyPayment(
+  supabase: DbClient,
+  localPayment: JsonRecord,
+  group: JsonRecord,
+  tournament: JsonRecord,
+  athleteCount: number,
+) {
+  const externalReference = String(localPayment.external_reference);
+  const recovered = await findAsaasPayment(externalReference);
+  if (recovered) return await saveProviderPayment(supabase, localPayment, recovered);
+
+  const customerId = await ensureAsaasFamilyCustomer(supabase, group);
+  const providerPayment = await asaasRequest("/payments", {
+    method: "POST",
+    body: JSON.stringify({
+      customer: customerId,
+      billingType: localPayment.billing_type,
+      value: Number(localPayment.amount),
+      dueDate: saoPauloDate(),
+      description: asaasSafeDescription(
+        `Inscrição familiar ${tournament.name} - ${athleteCount} atleta${athleteCount === 1 ? "" : "s"}`,
+      ),
+      externalReference,
+    }),
+  });
+  return await saveProviderPayment(supabase, { ...localPayment, provider_customer_id: customerId }, providerPayment);
+}
+
+async function finishFamilyCheckout(
+  request: Request,
+  supabase: DbClient,
+  group: JsonRecord,
+  registrations: JsonRecord[],
+  tournament: JsonRecord,
+  billingType: string,
+) {
+  const primaryRegistrationId = text(group.primary_registration_id, 80);
+  const amount = Number(group.total_amount || 0);
+  if (!isUuid(primaryRegistrationId) || !Number.isFinite(amount) || amount < 0) {
+    throw new Error("Grupo de inscrição familiar inválido.");
+  }
+  const responseBody = (payment: JsonRecord | null, extra: JsonRecord = {}) => ({
+    registration_group: safeRegistrationGroup(group),
+    registration: registrations[0] ? safeRegistration(registrations[0]) : null,
+    registrations: registrations.map(safeRegistration),
+    payment: safePayment(payment),
+    tracking_token: group.public_token,
+    family_checkout: true,
+    ...extra,
+  });
+  if (amount === 0) return json(request, responseBody(null), 201);
+
+  const paymentLookup = await supabase.from("tournament_payments")
+    .select("*")
+    .eq("registration_group_id", group.id)
+    .maybeSingle();
+  if (paymentLookup.error) throw paymentLookup.error;
+  let localPayment = paymentLookup.data as JsonRecord | null;
+  let ownsPaymentCreation = false;
+  if (!localPayment) {
+    const insert = await supabase.from("tournament_payments").insert({
+      tournament_id: tournament.id,
+      registration_id: primaryRegistrationId,
+      registration_group_id: group.id,
+      provider: "ASAAS",
+      external_reference: `tournament-family:${group.id}`,
+      billing_type: billingType,
+      status: "CREATED",
+      amount,
+    }).select("*").single();
+    if (insert.error?.code === "23505") {
+      const retry = await supabase.from("tournament_payments")
+        .select("*")
+        .eq("registration_group_id", group.id)
+        .single();
+      if (retry.error) throw retry.error;
+      localPayment = retry.data as JsonRecord;
+    } else if (insert.error) throw insert.error;
+    else {
+      localPayment = insert.data as JsonRecord;
+      ownsPaymentCreation = true;
+    }
+  }
+  if (!localPayment) throw new Error("Não foi possível preparar a cobrança familiar.");
+
+  if (localPayment.provider_payment_id) {
+    try {
+      localPayment = await repairExistingPixPayment(supabase, localPayment);
+    } catch (error) {
+      console.warn("tournament-register family PIX repair deferred", {
+        payment_id: localPayment.id,
+        error: error instanceof Error ? error.message : "unknown",
+      });
+    }
+    return json(request, responseBody(localPayment));
+  }
+  if (!retryablePaymentStatuses.has(String(localPayment.status))) {
+    return json(request, responseBody(localPayment));
+  }
+  if (!ownsPaymentCreation) {
+    const age = Date.now() - Date.parse(String(localPayment.updated_at || localPayment.created_at));
+    if (localPayment.status === "FAILED" || age > 120000) {
+      const claim = await supabase.from("tournament_payments")
+        .update({ status: "CREATED", billing_type: billingType, updated_at: new Date().toISOString() })
+        .eq("id", localPayment.id)
+        .eq("status", localPayment.status)
+        .eq("updated_at", localPayment.updated_at)
+        .select("*")
+        .maybeSingle();
+      if (claim.error) throw claim.error;
+      if (claim.data) {
+        localPayment = claim.data as JsonRecord;
+        ownsPaymentCreation = true;
+      }
+    }
+  }
+  if (!ownsPaymentCreation) {
+    return json(request, responseBody(localPayment, {
+      error: "A cobrança familiar ainda está sendo preparada. Tente novamente em alguns segundos.",
+    }), 409);
+  }
+
+  const claimedPayment = localPayment;
+  try {
+    localPayment = await createOrRecoverFamilyPayment(
+      supabase,
+      claimedPayment,
+      group,
+      tournament,
+      new Set(registrations.map((row) => String(row.athlete_id || ""))).size,
+    );
+  } catch (error) {
+    const providerError = providerErrorSnapshot(error);
+    console.error("tournament-register family provider failure", { stage: "asaas_family_payment", ...providerError });
+    const failed = await supabase.from("tournament_payments").update({
+      status: "FAILED",
+      raw_response: { ...providerError, stage: "asaas_family_payment" },
+      updated_at: new Date().toISOString(),
+    }).eq("id", claimedPayment.id).select("*").single();
+    if (failed.error) throw failed.error;
+    return json(request, responseBody(failed.data as JsonRecord, {
+      retryable: true,
+      warning: "As inscrições foram reservadas, mas a cobrança não ficou pronta. Tente gerar o pagamento novamente.",
+    }), 202);
+  }
+  return json(request, responseBody(localPayment), 201);
+}
+
+async function handleFamilyRegistration(
+  request: Request,
+  payload: JsonRecord,
+  securityConfig: PublicRegistrationSecurityConfig,
+) {
+  let failureStage = "family_payload";
+  try {
+    const tournamentSlug = text(payload.tournament_slug, 100).toLowerCase();
+    const payer = record(payload.payer);
+    const payerName = text(payer.full_name, 120);
+    const payerEmail = text(payer.email, 180).toLowerCase();
+    const payerPhone = digits(payer.phone);
+    const payerCpf = digits(payer.cpf);
+    const billingType = normalizeBillingType(payload.payment_method);
+    const requestToken = text(payload.request_token, 80);
+    const captchaToken = text(payload.captcha_token, 2048);
+    const termsAccepted = payload.terms_accepted === true;
+    const athleteInputs = Array.isArray(payload.athletes) ? payload.athletes.map(record) : [];
+
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tournamentSlug) || !isUuid(requestToken)) {
+      return json(request, { error: "Torneio ou solicitação inválidos." }, 400);
+    }
+    if (payerName.length < 2) return json(request, { error: "Informe o nome completo do responsável." }, 400);
+    if (!/^\S+@\S+\.\S+$/.test(payerEmail)) return json(request, { error: "Informe o e-mail do responsável." }, 400);
+    if (payerPhone.length < 10 || payerPhone.length > 13) {
+      return json(request, { error: "Informe um telefone válido do responsável." }, 400);
+    }
+    if (!isValidCpf(payerCpf)) return json(request, { error: "Informe um CPF válido do responsável." }, 400);
+    if (athleteInputs.length < 1 || athleteInputs.length > 6) {
+      return json(request, { error: "Adicione de um a seis atletas à inscrição." }, 400);
+    }
+    if (!allowedBillingTypes.has(billingType)) return json(request, { error: "Forma de pagamento inválida." }, 400);
+    if (!termsAccepted) return json(request, { error: "Confirme os dados e a autorização da inscrição familiar." }, 400);
+    if (!captchaToken) return json(request, { error: "Confirme que você não é um robô." }, 400);
+
+    type ValidatedAthlete = {
+      fullName: string;
+      birthDate: string;
+      isMinor: boolean;
+      isPayer: boolean;
+      cpf: string;
+      phone: string;
+      participantType: string;
+      gender: string;
+      availabilityDays: string[];
+      city: string | null;
+      partnerName: string | null;
+      notes: string | null;
+      categoryId: string;
+      additionalCategoryId: string;
+    };
+    const validatedAthletes: ValidatedAthlete[] = [];
+    const submittedCpfs = new Set<string>();
+    let payerAthleteCount = 0;
+    for (const input of athleteInputs) {
+      const isPayer = input.is_payer === true;
+      const isMinor = input.is_minor === true;
+      const fullName = isPayer ? payerName : text(input.full_name, 120);
+      const birthDate = text(input.birth_date, 10);
+      const computedAge = birthDate ? ageOnDate(birthDate) : null;
+      const cpf = isPayer ? payerCpf : digits(input.cpf);
+      const phone = isPayer ? payerPhone : digits(input.phone);
+      const participantType = text(input.participant_type, 30).toUpperCase();
+      const gender = text(input.gender, 20).toUpperCase();
+      const availabilityDays = Array.isArray(input.availability_days)
+        ? input.availability_days.map((day) => text(day, 20).toUpperCase()).filter(Boolean)
+        : [];
+      const categoryId = text(input.category_id, 80);
+      const additionalCategoryId = text(input.additional_category_id, 80);
+      if (fullName.length < 2) return json(request, { error: "Informe o nome completo de cada atleta." }, 400);
+      if (isPayer) payerAthleteCount += 1;
+      if (payerAthleteCount > 1) return json(request, { error: "O responsável pode aparecer apenas uma vez como atleta." }, 400);
+      if (isMinor) {
+        if (!validBirthDate(birthDate) || computedAge === null || computedAge < 0 || computedAge >= 18) {
+          return json(request, { error: `Informe uma data de nascimento válida para ${fullName}.` }, 400);
+        }
+        if (cpf && !isValidCpf(cpf)) return json(request, { error: `Confira o CPF opcional de ${fullName}.` }, 400);
+        if (phone && (phone.length < 10 || phone.length > 13)) {
+          return json(request, { error: `Confira o telefone opcional de ${fullName}.` }, 400);
+        }
+      } else {
+        if (birthDate && (!validBirthDate(birthDate) || computedAge === null || computedAge < 18)) {
+          return json(request, { error: `${fullName} deve ser marcado como menor de idade.` }, 400);
+        }
+        if (!isValidCpf(cpf)) return json(request, { error: `Informe um CPF válido para ${fullName}.` }, 400);
+        if (!isPayer && (phone.length < 10 || phone.length > 13)) {
+          return json(request, { error: `Informe um telefone válido para ${fullName}.` }, 400);
+        }
+      }
+      if (cpf) {
+        if (submittedCpfs.has(cpf)) return json(request, { error: "Cada atleta precisa ter seus próprios dados." }, 400);
+        submittedCpfs.add(cpf);
+      }
+      if (!allowedParticipantTypes.has(participantType) || participantType === "COURTESY") {
+        return json(request, { error: `Escolha o tipo de inscrição de ${fullName}.` }, 400);
+      }
+      if (!allowedGenders.has(gender)) return json(request, { error: `Escolha o sexo de ${fullName}.` }, 400);
+      if (!availabilityDays.length || availabilityDays.some((day) => !allowedAvailabilityDays.has(day))) {
+        return json(request, { error: `Informe os dias disponíveis de ${fullName}.` }, 400);
+      }
+      if (!isUuid(categoryId) || (additionalCategoryId && !isUuid(additionalCategoryId))) {
+        return json(request, { error: `Escolha uma classe válida para ${fullName}.` }, 400);
+      }
+      validatedAthletes.push({
+        fullName,
+        birthDate,
+        isMinor,
+        isPayer,
+        cpf,
+        phone,
+        participantType,
+        gender,
+        availabilityDays,
+        city: nullableText(input.city, 100),
+        partnerName: nullableText(input.partner_name, 120),
+        notes: nullableText(input.notes, 500),
+        categoryId,
+        additionalCategoryId,
+      });
+    }
+
+    failureStage = "family_database_setup";
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const supabaseKey = serviceRoleKey();
+    if (!supabaseUrl || !supabaseKey) throw new Error("Configuração do Supabase ausente.");
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    failureStage = "family_network_rate_limit";
+    const clientIp = trustedClientIp(request);
+    const ipHash = clientIp ? await hmacSha256(securityConfig.rateLimitSalt, `ip:${clientIp}`) : null;
+    const networkResult = await supabase.rpc("consume_tournament_registration_network_rate_limits", { p_ip_hash: ipHash });
+    if (networkResult.error) throw networkResult.error;
+    const networkLimit = (Array.isArray(networkResult.data) ? networkResult.data[0] : networkResult.data) as
+      | { allowed?: boolean; retry_after_seconds?: number }
+      | null;
+    if (!networkLimit?.allowed) {
+      const retryAfter = Math.max(1, Math.min(1800, Number(networkLimit?.retry_after_seconds || 60)));
+      return json(request, { error: "Muitas tentativas de inscrição. Aguarde um pouco e tente novamente." }, 429, {
+        "Retry-After": String(retryAfter),
+      });
+    }
+
+    failureStage = "family_captcha_verification";
+    let captchaAccepted = false;
+    try {
+      captchaAccepted = await verifyTurnstile(request, captchaToken, securityConfig);
+    } catch (_error) {
+      return json(request, { error: "Não foi possível validar a proteção anti-robô agora. Tente novamente." }, 503);
+    }
+    if (!captchaAccepted) {
+      return json(request, { error: "A validação anti-robô expirou ou não foi aceita. Tente novamente." }, 400);
+    }
+
+    failureStage = "family_identity_rate_limit";
+    const identityHash = await hmacSha256(securityConfig.rateLimitSalt, `family:${payerEmail}|${payerPhone}`);
+    const identityResult = await supabase.rpc("consume_tournament_registration_identity_rate_limit", {
+      p_identity_hash: identityHash,
+    });
+    if (identityResult.error) throw identityResult.error;
+    const identityLimit = (Array.isArray(identityResult.data) ? identityResult.data[0] : identityResult.data) as
+      | { allowed?: boolean; retry_after_seconds?: number }
+      | null;
+    if (!identityLimit?.allowed) {
+      const retryAfter = Math.max(1, Math.min(1800, Number(identityLimit?.retry_after_seconds || 60)));
+      return json(request, { error: "Muitas tentativas para estes dados. Aguarde um pouco e tente novamente." }, 429, {
+        "Retry-After": String(retryAfter),
+      });
+    }
+
+    failureStage = "family_tournament_lookup";
+    const tournamentResult = await supabase.from("tournaments")
+      .select("id,name,slug,status,registration_open,registration_opens_at,registration_closes_at,allowed_payment_methods,is_published,settings")
+      .eq("slug", tournamentSlug)
+      .maybeSingle();
+    if (tournamentResult.error) throw tournamentResult.error;
+    const tournament = tournamentResult.data as JsonRecord | null;
+    if (!tournament || tournament.is_published !== true) return json(request, { error: "Torneio não encontrado." }, 404);
+    const now = Date.now();
+    const opensAt = tournament.registration_opens_at ? Date.parse(String(tournament.registration_opens_at)) : null;
+    const closesAt = tournament.registration_closes_at ? Date.parse(String(tournament.registration_closes_at)) : null;
+    if (tournament.status !== "REGISTRATION_OPEN" || tournament.registration_open !== true ||
+      (opensAt && now < opensAt) || (closesAt && now > closesAt)) {
+      return json(request, { error: "As inscrições deste torneio estão fechadas." }, 409);
+    }
+    const allowedMethods = Array.isArray(tournament.allowed_payment_methods)
+      ? tournament.allowed_payment_methods.map((method) => String(method).toUpperCase())
+      : ["PIX", "BOLETO", "CREDIT_CARD"];
+    if (billingType === "UNDEFINED") {
+      const canChoose = allowedMethods.includes("UNDEFINED") ||
+        ["PIX", "BOLETO", "CREDIT_CARD"].filter((method) => allowedMethods.includes(method)).length > 1;
+      if (!canChoose) return json(request, { error: "Escolha uma forma de pagamento disponível." }, 400);
+    }
+    if (!allowedMethods.includes(billingType)) {
+      return json(request, { error: "Esta forma de pagamento não está disponível no torneio." }, 400);
+    }
+
+    const existingGroupResult = await supabase.from("tournament_registration_groups")
+      .select("*")
+      .eq("request_token", requestToken)
+      .maybeSingle();
+    if (existingGroupResult.error) throw existingGroupResult.error;
+    if (existingGroupResult.data) {
+      const existingGroup = existingGroupResult.data as JsonRecord;
+      if (String(existingGroup.tournament_id) !== String(tournament.id) || digits(existingGroup.payer_cpf) !== payerCpf) {
+        return json(request, { error: "Esta tentativa de inscrição não corresponde ao responsável informado." }, 403);
+      }
+      const existingRegistrations = await supabase.from("tournament_registrations")
+        .select("*")
+        .eq("registration_group_id", existingGroup.id)
+        .order("created_at");
+      if (existingRegistrations.error) throw existingRegistrations.error;
+      return await finishFamilyCheckout(
+        request,
+        supabase,
+        existingGroup,
+        (existingRegistrations.data || []) as JsonRecord[],
+        tournament,
+        billingType,
+      );
+    }
+
+    failureStage = "family_category_lookup";
+    const categoriesResult = await supabase.from("tournament_categories")
+      .select("id,tournament_id,code,name,event_type,gender,registration_fee,registration_open,max_entries,active")
+      .eq("tournament_id", tournament.id);
+    if (categoriesResult.error) throw categoriesResult.error;
+    const categoryMap = new Map(((categoriesResult.data || []) as JsonRecord[]).map((row) => [String(row.id), row]));
+    const tournamentSettings = record(tournament.settings);
+    const registrationPricing = record(tournamentSettings.registration_pricing);
+    const spatialAddonMap = record(tournamentSettings.spatial_addons);
+    const rpcEntries: JsonRecord[] = [];
+
+    for (const athleteInput of validatedAthletes) {
+      const category = categoryMap.get(athleteInput.categoryId);
+      if (!category || category.active !== true || category.registration_open !== true) {
+        return json(request, { error: `A classe escolhida para ${athleteInput.fullName} não está disponível.` }, 409);
+      }
+      if (category.gender && ![athleteInput.gender, "MIXED", "OPEN"].includes(String(category.gender).toUpperCase())) {
+        return json(request, { error: `A classe escolhida não corresponde ao sexo de ${athleteInput.fullName}.` }, 400);
+      }
+      if (category.event_type === "DOUBLES" && !athleteInput.partnerName) {
+        return json(request, { error: `Informe a dupla de ${athleteInput.fullName}.` }, 400);
+      }
+      const addonRule = record(spatialAddonMap[String(category.code)]);
+      let additionalCategory: JsonRecord | null = null;
+      let additionalFee = 0;
+      if (athleteInput.additionalCategoryId) {
+        additionalCategory = categoryMap.get(athleteInput.additionalCategoryId) || null;
+        if (!additionalCategory || additionalCategory.active !== true || additionalCategory.registration_open !== true ||
+          String(additionalCategory.code) !== text(addonRule.category_code, 40)) {
+          return json(request, { error: `A Classe Espacial escolhida para ${athleteInput.fullName} não é válida.` }, 400);
+        }
+        const configuredFee = Number(tournamentSettings.spatial_addon_fee);
+        additionalFee = Number.isFinite(configuredFee) ? configuredFee : Number(addonRule.fee ?? additionalCategory.registration_fee);
+        if (!Number.isFinite(additionalFee) || additionalFee < 0) {
+          return json(request, { error: "O valor da Classe Espacial ainda não foi configurado." }, 409);
+        }
+      }
+      const primaryAmount = Number(registrationPricing[athleteInput.participantType]);
+      if (!Number.isFinite(primaryAmount) || primaryAmount < 0) {
+        return json(request, { error: `O valor da inscrição de ${athleteInput.fullName} ainda não foi configurado.` }, 409);
+      }
+
+      const sourceKey = await familyAthleteSourceKey(
+        payerEmail,
+        payerPhone,
+        athleteInput.fullName,
+        athleteInput.birthDate,
+        athleteInput.cpf,
+      );
+      let athleteResult = await supabase.from("tournament_athletes").select("*").eq("source_key", sourceKey).maybeSingle();
+      if (athleteResult.error) throw athleteResult.error;
+      let athlete = athleteResult.data as JsonRecord | null;
+      if (athleteInput.cpf) {
+        const cpfResult = await supabase.from("tournament_athletes").select("*").eq("cpf", athleteInput.cpf).maybeSingle();
+        if (cpfResult.error) throw cpfResult.error;
+        if (cpfResult.data && athlete && String(cpfResult.data.id) !== String(athlete.id)) {
+          return json(request, { error: `Os dados de ${athleteInput.fullName} já estão vinculados a outro cadastro.` }, 409);
+        }
+        athlete = (cpfResult.data || athlete) as JsonRecord | null;
+      }
+      if (athlete) {
+        const currentTournamentRegistration = await supabase.from("tournament_registrations")
+          .select("id")
+          .eq("tournament_id", tournament.id)
+          .eq("athlete_id", athlete.id)
+          .limit(1)
+          .maybeSingle();
+        if (currentTournamentRegistration.error) throw currentTournamentRegistration.error;
+        if (currentTournamentRegistration.data) {
+          return json(request, {
+            error: `${athleteInput.fullName} já possui inscrição neste torneio. Fale com a organização para alterar ou complementar a inscrição.`,
+          }, 409);
+        }
+        const previousRegistration = await supabase.from("tournament_registrations")
+          .select("id")
+          .eq("athlete_id", athlete.id)
+          .limit(1)
+          .maybeSingle();
+        if (previousRegistration.error) throw previousRegistration.error;
+        const storedCpf = digits(athlete.cpf);
+        const submittedCpfMatches = isValidCpf(athleteInput.cpf) && storedCpf === athleteInput.cpf;
+        const minorGuardianMatches = athleteInput.isMinor && !athleteInput.cpf &&
+          String(athlete.source_key || "") === sourceKey &&
+          text(athlete.email, 180).toLowerCase() === payerEmail &&
+          digits(athlete.guardian_phone) === payerPhone &&
+          text(athlete.birth_date, 10) === athleteInput.birthDate;
+        if (previousRegistration.data && !submittedCpfMatches && !minorGuardianMatches) {
+          return json(request, {
+            error: `Os dados de ${athleteInput.fullName} já existem. Confirme os dados do responsável, o CPF ou fale com a organização.`,
+          }, 409);
+        }
+      }
+      const athleteValues = {
+        full_name: athleteInput.fullName,
+        source_key: sourceKey,
+        email: athleteInput.isMinor ? payerEmail : (athleteInput.isPayer ? payerEmail : null),
+        phone: athleteInput.phone || null,
+        cpf: athleteInput.cpf || null,
+        birth_date: athleteInput.birthDate || null,
+        gender: athleteInput.gender,
+        city: athleteInput.city,
+        is_minor: athleteInput.isMinor,
+        guardian_name: athleteInput.isMinor ? payerName : null,
+        guardian_phone: athleteInput.isMinor ? payerPhone : null,
+        active: true,
+        status: "ACTIVE",
+        updated_at: new Date().toISOString(),
+      };
+      if (athlete) {
+        athleteResult = await supabase.from("tournament_athletes").update(athleteValues)
+          .eq("id", athlete.id).select("*").single();
+      } else {
+        athleteResult = await supabase.from("tournament_athletes").insert(athleteValues).select("*").single();
+      }
+      if (athleteResult.error?.code === "23505") {
+        return json(request, { error: `Já existe um cadastro de ${athleteInput.fullName}. Confira os dados ou fale com a organização.` }, 409);
+      }
+      if (athleteResult.error) throw athleteResult.error;
+      athlete = athleteResult.data as JsonRecord;
+      rpcEntries.push({
+        athlete_id: athlete.id,
+        primary_category_id: category.id,
+        additional_category_id: additionalCategory?.id || null,
+        public_name: athleteInput.fullName,
+        public_city: athleteInput.city,
+        partner_name: athleteInput.partnerName,
+        primary_amount: primaryAmount,
+        notes: registrationNotes(athleteInput.participantType, athleteInput.availabilityDays, athleteInput.notes) +
+          (athleteInput.isMinor ? `\nMenor de idade. Responsável: ${payerName}.` : "") +
+          (additionalCategory ? `\nClasse adicional: ${additionalCategory.name} (${additionalFee}).` : ""),
+      });
+    }
+
+    failureStage = "family_registration_claim";
+    const claimResult = await supabase.rpc("claim_public_tournament_family_bundle", {
+      p_tournament_id: tournament.id,
+      p_request_token: requestToken,
+      p_payer_name: payerName,
+      p_payer_email: payerEmail,
+      p_payer_phone: payerPhone,
+      p_payer_cpf: payerCpf,
+      p_entries: rpcEntries,
+    });
+    if (claimResult.error?.code === "P0001") {
+      return json(request, { error: claimResult.error.message }, 409);
+    }
+    if (claimResult.error) throw claimResult.error;
+    const claimed = record(claimResult.data);
+    const claimedGroupSummary = record(claimed.registration_group);
+    const groupLookup = await supabase.from("tournament_registration_groups")
+      .select("*")
+      .eq("id", claimedGroupSummary.id)
+      .single();
+    if (groupLookup.error) throw groupLookup.error;
+    const claimedRegistrations = Array.isArray(claimed.registrations)
+      ? claimed.registrations.map(record)
+      : [];
+    return await finishFamilyCheckout(
+      request,
+      supabase,
+      groupLookup.data as JsonRecord,
+      claimedRegistrations,
+      tournament,
+      billingType,
+    );
+  } catch (error) {
+    const code = error && typeof error === "object" && "code" in error
+      ? text((error as JsonRecord).code, 40)
+      : "internal_error";
+    console.error("tournament-register family failure", { stage: failureStage, code });
+    return json(request, { error: "Não foi possível concluir a inscrição familiar.", code: failureStage }, 500);
+  }
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(request) });
   const securityConfig = publicRegistrationSecurityConfig();
@@ -506,6 +1122,10 @@ Deno.serve(async (request) => {
       payload = parsed as JsonRecord;
     } catch (_error) {
       return json(request, { error: "Dados da inscrição inválidos." }, 400);
+    }
+
+    if (Array.isArray(payload.athletes)) {
+      return await handleFamilyRegistration(request, payload, securityConfig);
     }
 
     const tournamentSlug = text(payload.tournament_slug, 100).toLowerCase();
