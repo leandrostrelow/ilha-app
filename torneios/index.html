@@ -275,6 +275,15 @@
     .about-copy { min-width: 0; }
     .about-copy h2 { margin: 0; font-size: clamp(25px,4vw,38px); letter-spacing: -.04em; }
     .about-copy p { margin: 14px 0 0; color: #4d646b; font-size: 15px; line-height: 1.7; white-space: pre-line; }
+    .about-contact-list { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin-top: 18px; }
+    .about-contact-link { min-width: 0; min-height: 58px; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 15px; background: #f7fafb; text-decoration: none; }
+    .about-contact-link:hover { border-color: var(--teal); background: #f0fafb; }
+    .about-contact-icon { width: 32px; height: 32px; flex: 0 0 32px; display: grid; place-items: center; border-radius: 10px; background: var(--navy); color: #fff; font-size: 16px; }
+    .about-contact-icon svg { width: 18px; height: 18px; }
+    .about-contact-link span:last-child { min-width: 0; }
+    .about-contact-link small, .about-contact-link strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .about-contact-link small { color: var(--muted); font-size: 9px; font-weight: 900; text-transform: uppercase; }
+    .about-contact-link strong { margin-top: 2px; font-size: 11px; }
     .about-image { width: 100%; max-height: 330px; margin-top: 20px; border-radius: 18px; object-fit: cover; }
     .about-partners { padding: 18px; border-radius: 20px; background: linear-gradient(145deg,#082f3a,#075f69); color: #fff; }
     .about-partners h3 { margin: 0 0 14px; font-size: 20px; }
@@ -502,6 +511,7 @@
       .category-card-foot .mini-chip { min-height: 24px; padding: 4px 7px; font-size: 9px; }
       .public-price-grid { grid-template-columns: 1fr; gap: 7px; }
       .public-price-card { padding: 12px 14px; }
+      .about-contact-list { grid-template-columns: 1fr; }
       .tournament-card { grid-template-rows: 160px auto; }
       .summary-grid { gap: 8px; }
       .summary-card { min-height: 100px; padding: 15px; }
@@ -771,7 +781,7 @@
       const open = isRegistrationOpen(item);
       return '<div class="hero-meta">' +
         '<span class="meta-pill meta-date"><span class="meta-pill-icon" aria-hidden="true">📅</span><span><small>Data do evento</small><strong>' + escapeHtml(formatHeroRange(item)) + '</strong></span></span>' +
-        '<span class="meta-pill"><span class="meta-pill-icon" aria-hidden="true">📍</span><span><small>Local</small><strong>' + escapeHtml(field(item,'location','venue','club_name','local') || 'Ilha Tênis') + '</strong></span></span>' +
+        '<span class="meta-pill"><span class="meta-pill-icon" aria-hidden="true">📍</span><span><small>Local</small><strong>' + escapeHtml(field(item,'club_name','clube','venue','location','local') || 'Ilha Tênis') + '</strong></span></span>' +
         '<span class="meta-pill status-pill ' + (open ? 'status-open' : '') + '"><span class="meta-pill-icon" aria-hidden="true">' + (open ? '●' : 'ℹ️') + '</span><strong>' + escapeHtml(statusLabel(item)) + '</strong></span></div>';
     }
     function money(value) { const number = Number(value || 0); return number ? number.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'Grátis'; }
@@ -974,7 +984,16 @@
       const title = clean(item.title) || 'Sobre o evento';
       const copy = clean(item.text) || clean(field(tournament(),'description','descricao','notes','observacoes')) || 'Em breve, a organização publicará mais informações sobre o evento.';
       const image = clean(item.image_url);
+      const rawInstagram = clean(field(tournament(),'instagram'));
+      const instagramHandle = (rawInstagram || 'ilhateniscolatina').replace(/^https?:\/\/(?:www\.)?instagram\.com\//i,'').replace(/^@/,'').replace(/[\/?#].*$/,'') || 'ilhateniscolatina';
+      const instagramHref = safeHref(/^https?:\/\//i.test(rawInstagram) ? rawInstagram : 'https://www.instagram.com/' + encodeURIComponent(instagramHandle), 'https://www.instagram.com/ilhateniscolatina');
+      const whatsappMessage = encodeURIComponent('Olá! Quero saber mais sobre o Ilha Open 2026.');
+      const contacts = '<div class="about-contact-list" aria-label="Contatos e localização do evento">' +
+        '<a class="about-contact-link" href="' + escapeHtml(instagramHref) + '" target="_blank" rel="noopener"><span class="about-contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg></span><span><small>Instagram</small><strong>@' + escapeHtml(instagramHandle) + '</strong></span></a>' +
+        '<a class="about-contact-link" href="https://wa.me/5527999805814?text=' + whatsappMessage + '" target="_blank" rel="noopener"><span class="about-contact-icon" aria-hidden="true">💬</span><span><small>Contato</small><strong>(27) 99980-5814</strong></span></a>' +
+        '<a class="about-contact-link" href="https://www.google.com/maps/search/?api=1&amp;query=Ilha%20T%C3%AAnis%20Colatina" target="_blank" rel="noopener"><span class="about-contact-icon" aria-hidden="true">📍</span><span><small>Localização</small><strong>Ilha Tênis — Colatina</strong></span></a></div>';
       return '<div class="panel"><div class="about-layout"><div class="about-copy"><h2>' + escapeHtml(title) + '</h2><p>' + escapeHtml(copy) + '</p>' +
+        contacts +
         (image ? '<img class="about-image" src="' + escapeHtml(image) + '" alt="' + escapeHtml(title) + '" loading="lazy" />' : '') +
         '</div><aside class="about-partners">' + sponsorsHtml(true) + '</aside></div></div>';
     }
