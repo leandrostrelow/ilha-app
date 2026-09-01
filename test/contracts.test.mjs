@@ -576,6 +576,10 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(tournamentAdminSource, /const publicTabs = \{[\s\S]*registrations:[\s\S]*const aboutEvent = \{/);
   assert.match(tournamentAdminSource, /sponsor_text:\s*text\(requestedAboutEvent\.sponsor_text, 1000\)[\s\S]*public_tabs:\s*publicTabs[\s\S]*about_event:\s*aboutEvent/);
   assert.match(functionSource(tournamentSource, 'sponsorsHtml'), /aboutEventSettings\(\)\.sponsor_text[\s\S]*escapeHtml\(sponsorText\)/);
+  assert.match(functionSource(tournamentSource, 'sponsorsHtml'), /sponsorHref[\s\S]*href \? '<a class="sponsor"[\s\S]*'<div class="sponsor">'/);
+  assert.match(functionSource(tournamentSource, 'sponsorHref'), /if \(!raw \|\|[\s\S]*instagram\.com/);
+  assert.match(tournamentSource, /\.sponsor \{[^}]*aspect-ratio:\s*1 \/ 1/);
+  assert.match(adminSource, /Instagram<input data-sponsor-field="link_url"[\s\S]*1080 × 1080 px/);
   const retryPayment = sourceSection(tournamentSource, "const retry = $('retryPaymentBtn')", 'if (state.registrationOnly)');
   assert.match(retryPayment, /initializeRegistrationCaptcha\(\)/);
   assert.match(retryPayment, /registrationFoot'\)\.hidden = false/);

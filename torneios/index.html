@@ -333,8 +333,9 @@
     .score-pill { min-width: 76px; min-height: 38px; display: grid; place-items: center; border-radius: 12px; background: var(--navy); color: #fff; font-size: 13px; font-weight: 950; }
 
     .sponsor-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
-    .sponsor { min-height: 90px; display: grid; place-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: #fff; text-decoration: none; }
-    .sponsor img { max-width: 130px; max-height: 58px; object-fit: contain; }
+    .sponsor { min-height: 0; aspect-ratio: 1 / 1; display: grid; place-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: #fff; text-decoration: none; }
+    a.sponsor:hover { border-color: var(--lime); transform: translateY(-2px); }
+    .sponsor img { width: 78%; height: 78%; max-width: 150px; max-height: 150px; object-fit: contain; }
     .sponsor span { font-weight: 850; }
     .sponsor-invite { margin: 16px 0 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
     .sponsor-cta { margin-top: 14px; background: #25d366; border-color: #25d366; color: #092d17; }
@@ -679,6 +680,13 @@
         return ['http:','https:'].includes(url.protocol) ? url.href : (fallback || '#');
       } catch (error) { return fallback || '#'; }
     };
+    function sponsorHref(value) {
+      const raw = clean(value);
+      if (!raw || /^\/(?!\/)/.test(raw)) return '';
+      if (/^@?[a-z0-9._]+$/i.test(raw)) return 'https://www.instagram.com/' + encodeURIComponent(raw.replace(/^@/,''));
+      if (/^(?:www\.)?instagram\.com\//i.test(raw)) return safeHref('https://' + raw, '');
+      return safeHref(raw, '');
+    }
     const field = (row, ...names) => {
       for (const name of names) if (row && row[name] !== null && row[name] !== undefined && row[name] !== '') return row[name];
       return '';
@@ -1129,7 +1137,7 @@
     }
     function sponsorsHtml(insideAbout) {
       const rows = allSponsors();
-      const cards = rows.length ? '<div class="sponsor-grid">' + rows.map((row) => { const href = safeHref(field(row,'link_url','url','website_url','instagram_url')); const logo = field(row,'logo_url','image_url'); return '<a class="sponsor" href="' + escapeHtml(href) + '" target="_blank" rel="noopener">' + (logo ? '<img src="' + escapeHtml(logo) + '" alt="' + escapeHtml(field(row,'name','nome')) + '" loading="lazy" />' : '<span>' + escapeHtml(field(row,'name','nome') || 'Parceiro') + '</span>') + '</a>'; }).join('') + '</div>' : '<p class="sponsor-invite">As marcas parceiras serão apresentadas aqui.</p>';
+      const cards = rows.length ? '<div class="sponsor-grid">' + rows.map((row) => { const href = sponsorHref(field(row,'link_url','url','website_url','instagram_url')); const logo = field(row,'logo_url','image_url'); const content = logo ? '<img src="' + escapeHtml(logo) + '" alt="' + escapeHtml(field(row,'name','nome')) + '" loading="lazy" />' : '<span>' + escapeHtml(field(row,'name','nome') || 'Parceiro') + '</span>'; return href ? '<a class="sponsor" href="' + escapeHtml(href) + '" target="_blank" rel="noopener">' + content + '</a>' : '<div class="sponsor">' + content + '</div>'; }).join('') + '</div>' : '<p class="sponsor-invite">As marcas parceiras serão apresentadas aqui.</p>';
       const message = encodeURIComponent('Olá! Quero saber mais sobre as oportunidades de patrocínio do torneio Ilha Open 2026.');
       const sponsorText = clean(aboutEventSettings().sponsor_text) || 'Sua marca também pode fazer parte desta experiência. Apoie o esporte local, conecte-se com atletas e torcedores e ganhe destaque durante o torneio.';
       const content = '<div class="panel-head"><div><h3>Parceiros</h3></div></div>' + cards + '<p class="sponsor-invite">' + escapeHtml(sponsorText) + '</p><a class="button full sponsor-cta" href="https://wa.me/5527999805814?text=' + message + '" target="_blank" rel="noopener" aria-label="Falar pelo WhatsApp para patrocinar o torneio">💬 Seja um patrocinador do torneio</a>';
