@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(56);
+select plan(57);
 
 select has_table(
   'public',
@@ -688,6 +688,11 @@ select ok(
       and table_name in ('tournament_registrations', 'tournament_payments')
   ),
   'inscrições individuais e o Pix único apontam para o mesmo grupo'
+);
+
+select ok(
+  to_regclass('public.tournament_registration_groups_primary_registration_idx') is not null,
+  'a referência principal do grupo possui índice para sincronização e limpeza'
 );
 
 select ok(
