@@ -122,10 +122,12 @@ Deno.serve(async (request) => {
 
     for (const dispatch of dispatches) {
       try {
+        const subscriptionSurface = String(dispatch.event_type || "").toUpperCase() === "NOVO_ALUNO" ? "ADM" : "ILHA_PLAY";
         const { data: subscriptions, error: subscriptionsError } = await supabase
           .from("app_push_subscriptions")
           .select("id, endpoint, p256dh, auth_key")
           .eq("user_id", dispatch.user_id)
+          .eq("app_surface", subscriptionSurface)
           .eq("enabled", true);
         if (subscriptionsError) throw subscriptionsError;
 

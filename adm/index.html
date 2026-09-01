@@ -31417,6 +31417,7 @@
           p256dh: json.keys.p256dh,
           auth_key: json.keys.auth,
           user_agent: navigator.userAgent.slice(0, 500),
+          app_surface: 'ADM',
           enabled: true,
           updated_at: new Date().toISOString()
         },
@@ -31452,6 +31453,7 @@
 
     function handleAdminNotificationInsert(payload) {
       const notification = payload && payload.new || {};
+      if (String(notification.event_type || '').toUpperCase() === 'COMUNICADO') return;
       playAdminNotificationSound(false);
       toast([notification.title, notification.body].filter(Boolean).join(' — ') || 'Novo aviso no ADM.');
       if (document.body.classList.contains('club-clients')) {

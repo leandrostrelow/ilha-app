@@ -6180,7 +6180,8 @@
       }, 120);
     }
 
-    function handleClientNotificationInsert() {
+    function handleClientNotificationInsert(payload) {
+      if (String(payload && payload.new && payload.new.event_type || '').toUpperCase() === 'COMUNICADO') return;
       playClientNotificationSound(false);
       scheduleClientNotificationRefresh();
     }
@@ -7256,6 +7257,7 @@
         body: row.body || '',
         image_url: '',
         link_url: row.link_url || '',
+        event_type: row.event_type || '',
         target_type: 'todos',
         target_plan_code: '',
         active: true,
@@ -7376,7 +7378,7 @@
           ? value(3).map(mapAnnouncementRow)
           : announcements.filter(function (item) { return item.source_type === 'announcement'; });
         const clientNotifications = (fulfilled(5) ? value(5) : announcements.filter(function (item) { return item.source_type === 'client'; })).filter(function (row) {
-          return String(row.event_type || '').toUpperCase() !== 'NOVO_ALUNO';
+          return !['NOVO_ALUNO', 'COMUNICADO'].includes(String(row.event_type || '').toUpperCase());
         });
         announcements = publicAnnouncements
           .concat(fulfilled(5) ? clientNotifications.map(mapClientNotificationRow) : clientNotifications)

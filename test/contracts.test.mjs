@@ -20,8 +20,13 @@ const clubUserAccessSource = await readFile(path.join(projectRoot, 'supabase', '
 const barUserAccessSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'bar-user-access', 'index.ts'), 'utf8');
 const asaasWebhookSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'asaas-payment-webhook', 'index.ts'), 'utf8');
 const clientBroadcastPushSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'client-broadcast-push', 'index.ts'), 'utf8');
+const clientNotificationDispatchSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'client-notification-dispatch', 'index.ts'), 'utf8');
 const atomicClientBroadcastSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260828105000_atomic_client_broadcast_enqueue.sql'),
+  'utf8'
+);
+const scopedPushSubscriptionsSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260901001500_scope_play_and_admin_push_subscriptions.sql'),
   'utf8'
 );
 const barOrderPushSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'bar-order-push', 'index.ts'), 'utf8');
@@ -430,6 +435,13 @@ test('comunicados usam a fila resiliente e não enviam Web Push diretamente', ()
   assert.match(adminSource, /Number\(stats\.failed \|\| 0\)/);
   assert.match(adminSource, /Number\(stats\.partial \|\| 0\)/);
   assert.doesNotMatch(functionSource(adminSource, 'notifyClientAccessReleased'), /sendClientAnnouncementPush/);
+  assert.match(functionSource(indexSource, 'loadClientData'), /'NOVO_ALUNO', 'COMUNICADO'/);
+  assert.match(functionSource(indexSource, 'handleClientNotificationInsert'), /event_type[\s\S]*COMUNICADO[\s\S]*return/);
+  assert.match(functionSource(adminSource, 'handleAdminNotificationInsert'), /event_type[\s\S]*COMUNICADO[\s\S]*return/);
+  assert.match(functionSource(adminSource, 'saveAdminPushSubscription'), /app_surface:\s*'ADM'/);
+  assert.match(scopedPushSubscriptionsSource, /app_surface text not null default 'ILHA_PLAY'/);
+  assert.match(scopedPushSubscriptionsSource, /subscription\.app_surface = 'ILHA_PLAY'/);
+  assert.match(clientNotificationDispatchSource, /subscriptionSurface[\s\S]*NOVO_ALUNO[\s\S]*ADM[\s\S]*ILHA_PLAY[\s\S]*\.eq\("app_surface", subscriptionSurface\)/);
 });
 
 test('Ilha Store usa catálogo persistente com valor, estoque e CRUD administrativo', () => {
