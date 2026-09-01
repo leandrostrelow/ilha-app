@@ -3279,16 +3279,16 @@
       color: #fff;
     }
     .tournament-invite-copy { min-width: 0; }
-    .tournament-invite-brand-row { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .tournament-invite-brand-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 24px; }
     .tournament-invite-brand {
       display: grid;
       place-items: center;
-      height: 88px;
+      height: 96px;
       min-width: 0;
       padding: 0;
     }
     .tournament-invite-brand.tournament { width: min(300px, 54%); }
-    .tournament-invite-brand.club { width: min(250px, 42%); }
+    .tournament-invite-brand.club { width: 104px; height: 116px; flex: 0 0 104px; }
     .tournament-invite-brand img { display: block; width: 100%; height: 100%; object-fit: contain; }
     .tournament-invite-card .invite-kicker { color: #b6ef00; font-size: 12px; font-weight: 950; letter-spacing: .13em; text-transform: uppercase; }
     .tournament-invite-card h3 { margin: 9px 0 8px; color: #fff; font-size: 34px; line-height: 1.02; letter-spacing: -.045em; }
@@ -22168,7 +22168,7 @@
           <div class="tournament-invite-copy">
             <div class="tournament-invite-brand-row">
               <div class="tournament-invite-brand tournament" id="registrationInviteTournamentLogoWrap" hidden><img id="registrationInviteTournamentLogo" alt="Logo do torneio" /></div>
-              <div class="tournament-invite-brand club"><img src="/assets/branding/ilha-tenis-logo-light.png" alt="Ilha Tênis Colatina" /></div>
+              <div class="tournament-invite-brand club"><img src="/assets/branding/ilha-tenis-ball.png" alt="Ilha Tênis Colatina" /></div>
             </div>
             <span class="invite-kicker">Convite exclusivo</span><h3 id="registrationInviteCardTitle">Você recebeu 1 convite</h3><p id="registrationInviteCardText">Ilha Open · inscrição isenta e de uso único.</p>
           </div>
@@ -22176,6 +22176,7 @@
         </div>
         <div class="tournament-invite-url" id="registrationInviteUrl"></div>
         <div class="actions">
+          <button class="primary-btn" id="sendRegistrationInviteWhatsAppBtn" type="button">Enviar no WhatsApp</button>
           <button class="ghost-btn" id="copyRegistrationInviteMessageBtn" type="button">Copiar mensagem</button>
           <button class="primary-btn" id="downloadRegistrationInviteCardBtn" type="button">Baixar arte</button>
           <button class="ghost-btn" id="newRegistrationInviteBtn" type="button">Gerar outro</button>
@@ -24932,6 +24933,7 @@
           '<div class="invite-manager-actions">' +
             (phone ? '<a class="ghost-btn" href="https://wa.me/' + escapeHtml(phone) + '" target="_blank" rel="noopener">WhatsApp</a>' : '') +
             (invite.status === 'ACTIVE' ? '<button class="danger-btn" type="button" data-revoke-registration-invite="' + escapeHtml(invite.id) + '">Cancelar</button>' : '') +
+            (invite.status !== 'USED' ? '<button class="danger-btn" type="button" data-delete-registration-invite="' + escapeHtml(invite.id) + '">Excluir</button>' : '') +
           '</div></article>';
       }).join('');
     }
@@ -24950,7 +24952,7 @@
       $('registrationInviteForm').hidden = true;
       $('registrationInviteResult').hidden = false;
       $('registrationInviteCardTitle').textContent = 'Você recebeu ' + registrationInviteLabel(count);
-      $('registrationInviteCardText').textContent = (invite.recipient_name ? 'Para ' + invite.recipient_name + ' · ' : '') + (invite.tournament_name || 'Ilha Open') + ' · uso único.';
+      $('registrationInviteCardText').textContent = (invite.recipient_name ? invite.recipient_name + ' · ' : '') + (invite.tournament_name || 'Ilha Open') + ' · uso único.';
       $('registrationInviteUrl').textContent = invite.invite_url || '';
       $('registrationInviteQr').src = registrationInviteQrDataUrl(invite.invite_url || '');
       $('registrationInviteTournamentLogoWrap').hidden = !tournamentLogoUrl;
@@ -25007,6 +25009,24 @@
       }
     }
 
+    async function deleteRegistrationInvite(inviteId) {
+      const invite = (state.data.convites || []).find(function (item) { return String(item.id) === String(inviteId); });
+      if (!invite) return toast('Convite não encontrado.');
+      if (invite.status === 'USED') return toast('Convites utilizados permanecem no histórico da inscrição.');
+      const recipient = invite.recipient_name || 'este convidado';
+      if (!confirm('Excluir permanentemente o convite de ' + recipient + '? O link deixará de funcionar e esta ação não poderá ser desfeita.')) return;
+      try {
+        await apiPost({
+          action: 'deleteRegistrationInvite',
+          tournament_id: state.selectedTournamentId,
+          invite_id: inviteId
+        }, { returnData: true });
+        toast('Convite excluído.');
+      } catch (error) {
+        toast(error.message);
+      }
+    }
+
     async function copyRegistrationInviteMessage() {
       if (!state.registrationInvite) return;
       const message = registrationInviteMessage(state.registrationInvite);
@@ -25016,6 +25036,14 @@
       } catch (error) {
         toast('Não foi possível copiar. Selecione o link exibido.');
       }
+    }
+
+    function sendRegistrationInviteWhatsApp() {
+      const invite = state.registrationInvite;
+      if (!invite || !invite.invite_url) return toast('Gere o convite antes de enviar.');
+      const phone = whatsappNumber(invite.recipient_phone);
+      const destination = 'https://wa.me/' + (phone || '') + '?text=' + encodeURIComponent(registrationInviteMessage(invite));
+      window.open(destination, '_blank', 'noopener');
     }
 
     function loadCanvasImage(source) {
@@ -25055,7 +25083,7 @@
       context.fill();
 
       const tournamentLogoUrl = state.data && state.data.torneio && state.data.torneio.logo_url || '';
-      const clubLogoUrl = new URL('/assets/branding/ilha-tenis-logo-light.png', window.location.origin).href;
+      const clubLogoUrl = new URL('/assets/branding/ilha-tenis-ball.png', window.location.origin).href;
       const logoResults = await Promise.all([
         tournamentLogoUrl ? loadCanvasImage(tournamentLogoUrl).catch(function () { return null; }) : Promise.resolve(null),
         loadCanvasImage(clubLogoUrl).catch(function () { return null; })
@@ -25069,13 +25097,7 @@
         context.font = '900 58px Inter, Arial, sans-serif';
         context.fillText(invite.tournament_name || 'ILHA OPEN', 68, 138);
       }
-      if (clubLogo) drawCanvasContainedImage(context, clubLogo, 670, 65, 340, 102);
-      context.strokeStyle = 'rgba(255,255,255,.18)';
-      context.lineWidth = 2;
-      context.beginPath();
-      context.moveTo(78, 220);
-      context.lineTo(1002, 220);
-      context.stroke();
+      if (clubLogo) drawCanvasContainedImage(context, clubLogo, 760, 18, 250, 205);
 
       context.fillStyle = '#b6ef00';
       context.font = '900 29px Inter, Arial, sans-serif';
@@ -25083,7 +25105,7 @@
       context.fillText('CONVITE EXCLUSIVO', 78, 278);
       context.letterSpacing = '0px';
       context.fillStyle = '#ffffff';
-      drawFitText(context, 'PARA ' + String(invite.recipient_name || 'CONVIDADO').toUpperCase(), 78, 342, 840, 43, 900, 'left');
+      drawFitText(context, String(invite.recipient_name || 'CONVIDADO').toUpperCase(), 78, 342, 840, 43, 900, 'left');
       context.fillStyle = 'rgba(255,255,255,.72)';
       context.font = '800 34px Inter, Arial, sans-serif';
       context.fillText('VOCÊ RECEBEU', 78, 405);
@@ -43343,6 +43365,11 @@
         revokeRegistrationInvite(revokeInviteBtn.dataset.revokeRegistrationInvite);
         return;
       }
+      const deleteInviteBtn = event.target.closest('[data-delete-registration-invite]');
+      if (deleteInviteBtn) {
+        deleteRegistrationInvite(deleteInviteBtn.dataset.deleteRegistrationInvite);
+        return;
+      }
 
       const editPlayerBtn = event.target.closest('[data-edit-player]');
       if (editPlayerBtn) {
@@ -43532,6 +43559,7 @@
     $('registrationInviteSearch').addEventListener('input', renderRegistrationInvites);
     $('registrationInviteStatusFilter').addEventListener('change', renderRegistrationInvites);
     $('registrationInviteForm').addEventListener('submit', createRegistrationInviteFromForm);
+    $('sendRegistrationInviteWhatsAppBtn').addEventListener('click', sendRegistrationInviteWhatsApp);
     $('copyRegistrationInviteMessageBtn').addEventListener('click', copyRegistrationInviteMessage);
     $('downloadRegistrationInviteCardBtn').addEventListener('click', function () {
       downloadRegistrationInviteCard().catch(function () { toast('Não foi possível gerar a arte do convite.'); });

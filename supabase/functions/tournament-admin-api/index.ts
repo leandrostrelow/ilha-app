@@ -34,6 +34,7 @@ const writeActions = new Set([
   "deleteAgendaEvent",
   "createRegistrationInvite",
   "revokeRegistrationInvite",
+  "deleteRegistrationInvite",
   "setLiveState",
 ]);
 
@@ -865,6 +866,38 @@ async function revokeRegistrationInvite(client: DbClient, actorId: string, paylo
   if (!updated) throw new ApiError("O convite foi alterado por outra operação. Atualize a lista.", 409);
   await audit(client, actorId, tournament.id, "registration_invite", inviteId, "REVOKE", current, updated);
   return updated;
+}
+
+async function deleteRegistrationInvite(client: DbClient, actorId: string, payload: Row) {
+  const tournament = await currentTournament(client, payload);
+  const inviteId = uuid(payload.invite_id || payload.id);
+  if (!inviteId) throw new ApiError("Convite inválido.");
+  const currentResult = await client.from("tournament_registration_invites")
+    .select("id,tournament_id,recipient_name,recipient_phone,athlete_limit,status,used_registration_group_id,expires_at,created_at,used_at,revoked_at")
+    .eq("id", inviteId)
+    .eq("tournament_id", tournament.id)
+    .maybeSingle();
+  assertNoError(currentResult.error);
+  const current = currentResult.data as Row | null;
+  if (!current) throw new ApiError("Convite não encontrado.", 404);
+  if (current.status === "USED" || current.used_registration_group_id) {
+    throw new ApiError("Convites utilizados permanecem no histórico da inscrição.", 409);
+  }
+
+  const deleteResult = await client.from("tournament_registration_invites")
+    .delete()
+    .eq("id", inviteId)
+    .eq("tournament_id", tournament.id)
+    .neq("status", "USED")
+    .is("used_registration_group_id", null)
+    .select("id")
+    .maybeSingle();
+  assertNoError(deleteResult.error);
+  if (!deleteResult.data) {
+    throw new ApiError("O convite foi utilizado ou alterado por outra operação. Atualize a lista.", 409);
+  }
+  await audit(client, actorId, tournament.id, "registration_invite", inviteId, "DELETE", current, null);
+  return { id: inviteId, deleted: true, tournament_id: tournament.id };
 }
 
 async function uniqueSlug(client: DbClient, desired: string, ignoredId = "") {
@@ -1784,6 +1817,10 @@ Deno.serve(async (request) => {
     }
     else if (action === "revokeRegistrationInvite") {
       result = await revokeRegistrationInvite(trustedClient, profile.id, payload);
+      responseTournamentId = (result as Row).tournament_id;
+    }
+    else if (action === "deleteRegistrationInvite") {
+      result = await deleteRegistrationInvite(trustedClient, profile.id, payload);
       responseTournamentId = (result as Row).tournament_id;
     }
     else result = await setLiveState(client, profile.id, payload);
