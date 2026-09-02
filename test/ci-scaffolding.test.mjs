@@ -138,6 +138,8 @@ test('preparador de Supabase cria baseline e bootstrap sintético na ordem do ru
   assert.match(tournaments, /tournaments/);
   const fixture = await readFile(path.join(target, 'supabase', 'migrations', result.migrations[fixtureIndex]), 'utf8');
   assert.match(fixture, /ci-protected-admin@tests\.invalid/);
+  assert.match(fixture, /'ilha-open-2026'/);
+  assert.match(fixture, /'REGISTRATION_CLOSED',[\s\S]*false/);
   assert.doesNotMatch(fixture, /@ilhatenis\.com/);
   const recoverableReset = await readFile(
     path.join(target, 'supabase', 'migrations', result.migrations[recoverableResetIndex]),
