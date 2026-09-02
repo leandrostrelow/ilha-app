@@ -1498,11 +1498,13 @@ where id in (
 insert into public.tournament_registration_invites (
   tournament_id,
   token_hash,
-  athlete_limit
+  athlete_limit,
+  recipient_name
 ) values (
   '22000000-0000-4000-8000-000000000001'::uuid,
   repeat('e', 64),
-  1
+  1,
+  'Convidado sintético da CI'
 );
 
 create temporary table ci_family_invite_result on commit drop as
