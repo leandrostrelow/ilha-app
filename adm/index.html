@@ -35379,10 +35379,32 @@
       }).join('|');
     }
 
-    function barCheckoutGroupUsesQuantity(group) {
+    function barCheckoutGroupUsesQuantity(group, splitCount) {
       const quantity = Number(group && group.quantity || 0);
       const unitCents = Math.round(Number(group && group.unitPrice || 0) * 100);
-      return Number.isInteger(quantity) && quantity > 1 && unitCents > 0;
+      const count = Math.max(2, Math.min(12, Number.isFinite(Number(splitCount))
+        ? Number(splitCount)
+        : Number(opsState.barCheckoutSplitCount || 2)));
+      return Number.isInteger(quantity) && quantity >= count && unitCents > 0;
+    }
+
+    function barCheckoutInitialGroupAllocation(group, splitCount) {
+      const count = Math.max(2, Math.min(12, Number(splitCount || 2)));
+      const quantity = Math.max(0, Number(group && group.quantity || 0));
+      const unitCents = Math.max(0, Math.round(Number(group && group.unitPrice || 0) * 100));
+      if (barCheckoutGroupUsesQuantity(group, count)) {
+        const baseQuantity = Math.floor(quantity / count);
+        const remainder = quantity - (baseQuantity * count);
+        return Array.from({ length: count }, function (_, index) {
+          return (baseQuantity + (index < remainder ? 1 : 0)) * unitCents;
+        });
+      }
+      const totalCents = Math.max(0, Math.round(quantity * Number(group && group.unitPrice || 0) * 100));
+      const baseCents = Math.floor(totalCents / count);
+      const remainder = totalCents - (baseCents * count);
+      return Array.from({ length: count }, function (_, index) {
+        return baseCents + (index < remainder ? 1 : 0);
+      });
     }
 
     function ensureBarCheckoutSplitAllocations(order) {
@@ -35411,21 +35433,7 @@
           });
           return result;
         }
-        if (barCheckoutGroupUsesQuantity(group)) {
-          const baseQuantity = Math.floor(quantity / count);
-          return Array.from({ length: count }, function (_, index) {
-            const personQuantity = index === count - 1
-              ? quantity - (baseQuantity * (count - 1))
-              : baseQuantity;
-            return personQuantity * unitCents;
-          });
-        }
-        const totalCents = Math.max(0, Math.round(Number(group.quantity || 0) * Number(group.unitPrice || 0) * 100));
-        const baseCents = Math.floor(totalCents / count);
-        const remainder = totalCents - (baseCents * count);
-        return Array.from({ length: count }, function (_, index) {
-          return baseCents + (index < remainder ? 1 : 0);
-        });
+        return barCheckoutInitialGroupAllocation(group, count);
       });
       opsState.barCheckoutSplitAllocationSignature = signature;
       opsState.barCheckoutSplitAllocationTotalCents = null;
@@ -35500,7 +35508,7 @@
       if (!order) return;
       const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
       const group = opsState.barCheckoutGroups[groupIndex];
-      if (!group || !barCheckoutGroupUsesQuantity(group) || personIndex < 0 || personIndex >= count - 1) return;
+      if (!group || !barCheckoutGroupUsesQuantity(group, count) || personIndex < 0 || personIndex >= count - 1) return;
       ensureBarCheckoutSplitAllocations(order);
       const totalQuantity = Math.max(0, Math.round(Number(group.quantity || 0)));
       const unitCents = Math.max(1, Math.round(Number(group.unitPrice || 0) * 100));
@@ -35536,22 +35544,7 @@
       const count = Math.max(2, Math.min(12, Number(opsState.barCheckoutSplitCount || 2)));
       const group = opsState.barCheckoutGroups[groupIndex];
       if (!order || !group) return;
-      const totalCents = Math.max(0, Math.round(Number(group.quantity || 0) * Number(group.unitPrice || 0) * 100));
-      if (barCheckoutGroupUsesQuantity(group)) {
-        const totalQuantity = Math.max(0, Math.round(Number(group.quantity || 0)));
-        const unitCents = Math.max(1, Math.round(Number(group.unitPrice || 0) * 100));
-        const baseQuantity = Math.floor(totalQuantity / count);
-        const remainder = totalQuantity - (baseQuantity * count);
-        opsState.barCheckoutSplitAllocations[groupIndex] = Array.from({ length: count }, function (_, index) {
-          return (baseQuantity + (index < remainder ? 1 : 0)) * unitCents;
-        });
-      } else {
-        const baseCents = Math.floor(totalCents / count);
-        const remainder = totalCents - (baseCents * count);
-        opsState.barCheckoutSplitAllocations[groupIndex] = Array.from({ length: count }, function (_, index) {
-          return baseCents + (index < remainder ? 1 : 0);
-        });
-      }
+      opsState.barCheckoutSplitAllocations[groupIndex] = barCheckoutInitialGroupAllocation(group, count);
       syncBarCheckoutSplitValuesFromAllocations(order);
       renderBarCheckoutSplit(order);
     }
@@ -35764,7 +35757,7 @@
       $('barCheckoutSplitAllocation').innerHTML = enabled && mode === 'separate' ? opsState.barCheckoutGroups.map(function (group, groupIndex) {
         const groupTotalCents = Math.max(0, Math.round(Number(group.quantity || 0) * Number(group.unitPrice || 0) * 100));
         const unitCents = Math.max(0, Math.round(Number(group.unitPrice || 0) * 100));
-        const usesQuantity = barCheckoutGroupUsesQuantity(group);
+        const usesQuantity = barCheckoutGroupUsesQuantity(group, count);
         const allocation = opsState.barCheckoutSplitAllocations[groupIndex] || [];
         const people = Array.from({ length: count }, function (_, personIndex) {
           const savedPart = savedByPosition.get(personIndex + 1);
