@@ -283,7 +283,7 @@ test('datas locais nao convertem o dia pelo UTC', () => {
   const localDateString = loadFunction(indexSource, 'localDateString', {
     clubDateTimeParts
   });
-  assert.equal(localDateString(new Date(2026, 7, 21, 0, 5)), '2026-08-21');
+  assert.equal(localDateString(new Date('2026-08-21T00:05:00-03:00')), '2026-08-21');
 });
 
 test('cadastro pendente nunca persiste a senha', () => {
