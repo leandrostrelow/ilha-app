@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(110);
+select plan(119);
 
 select has_table(
   'public',
@@ -2671,6 +2671,174 @@ select ok(
     where to_regclass(format('public.%I', expected.index_name)) is null
   ),
   'as chaves estrangeiras operacionais possuem índices de apoio'
+);
+
+select is(
+  (
+    select column_default::text
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'app_announcements'
+      and column_name = 'target_type'
+  ),
+  null::text,
+  'comunicados sem público explícito falham fechados em vez de assumir todos'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.app_announcements'::regclass
+      and conname = 'app_announcements_target_plan_required_check'
+      and pg_get_constraintdef(oid) like '%target_plan_code%'
+  )
+  and exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.app_announcements'::regclass
+      and conname = 'app_announcements_target_type_check'
+      and pg_get_constraintdef(oid) not like '%outro%'
+  ),
+  'comunicado por plano exige código e usa somente públicos suportados em todos os canais'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'app_announcements'
+      and policyname = 'announcements read own audience or permitted staff'
+      and qual like '%target_type%'
+      and qual like '%auth.uid%'
+  ),
+  'a audiência do comunicado é aplicada por RLS no banco'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.enqueue_app_client_broadcast(text,text,text,text,text,text,text,uuid)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.enqueue_app_client_broadcast(text,text,text,text,text,text,text,uuid)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'public.enqueue_app_client_broadcast(text,text,text,text,text,text,text,uuid)',
+    'EXECUTE'
+  ),
+  'o fanout segmentado continua exclusivo do service_role'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_trigger
+    where tgrelid = 'public.tournament_registrations'::regclass
+      and tgname = 'notify_club_admins_about_tournament_registration'
+      and tgenabled <> 'D'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.notify_club_admins_about_tournament_registration()',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'public.notify_club_admins_about_tournament_registration()',
+    'EXECUTE'
+  ),
+  'a notificação de inscrição é disparada pelo banco sem RPC pública'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.app_client_notifications as notification
+    where notification.event_type = 'TORNEIO_INSCRICAO'
+  )
+  and not exists (
+    select 1
+    from public.app_client_notifications as notification
+    where notification.event_type = 'TORNEIO_INSCRICAO'
+      and (
+        notification.body like '%@%'
+        or notification.body ~ '[0-9]{10,}'
+        or not exists (
+          select 1
+          from public.profiles as profile
+          join auth.users as auth_user on auth_user.id = profile.id
+          join public.protected_access_accounts as protected_account
+            on protected_account.email = lower(trim(auth_user.email))
+           and protected_account.role = profile.role
+           and protected_account.active is true
+          where profile.id = notification.user_id
+            and profile.active is true
+            and (
+              profile.role = 'admin'
+              or (
+                coalesce(profile.permissions, '[]'::jsonb) ? 'tournaments'
+                and coalesce(protected_account.permissions, '[]'::jsonb) ? 'tournaments'
+              )
+            )
+        )
+      )
+  ),
+  'inscrições geram somente avisos mínimos para equipe autorizada do ADM'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.public_registration_rate_limits'::regclass
+      and conname = 'public_registration_rate_limits_scope_key_check'
+      and pg_get_constraintdef(oid) like '%tracking-token%'
+      and pg_get_constraintdef(oid) like '%tracking-ip%'
+  ),
+  'limites persistentes aceitam somente hashes de acompanhamento e rede'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.consume_tournament_payment_tracking_rate_limits(text,text,text)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.consume_tournament_payment_tracking_rate_limits(text,text,text)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'public.consume_tournament_payment_tracking_rate_limits(text,text,text)',
+    'EXECUTE'
+  ),
+  'limite do acompanhamento Pix é executável somente pelo backend'
+);
+
+select is(
+  (
+    with consumed as (
+      select result.allowed, result.retry_after_seconds
+      from generate_series(1, 6) as attempt
+      cross join lateral public.consume_tournament_payment_tracking_rate_limits(
+        repeat('f', 63) || substr((attempt * 0)::text, 1, 1),
+        repeat('e', 63) || substr((attempt * 0)::text, 1, 1),
+        'retry_payment'
+      ) as result
+    )
+    select count(*) filter (where allowed is false)::integer
+    from consumed
+  ),
+  1,
+  'a sexta retomada da mesma cobrança na janela é bloqueada'
 );
 
 select * from finish();

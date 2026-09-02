@@ -22,6 +22,11 @@ function notificationTtlSeconds(eventType: string) {
   return 24 * 60 * 60;
 }
 
+function notificationSurface(eventType: string) {
+  const adminOnlyEvents = new Set(["NOVO_ALUNO", "TORNEIO_INSCRICAO"]);
+  return adminOnlyEvents.has(String(eventType || "").toUpperCase()) ? "ADM" : "ILHA_PLAY";
+}
+
 function deliveryErrorCode(error: unknown) {
   if (error && typeof error === "object" && "statusCode" in error) {
     return String((error as { statusCode?: unknown }).statusCode || "delivery_error").slice(0, 40);
@@ -122,7 +127,7 @@ Deno.serve(async (request) => {
 
     for (const dispatch of dispatches) {
       try {
-        const subscriptionSurface = String(dispatch.event_type || "").toUpperCase() === "NOVO_ALUNO" ? "ADM" : "ILHA_PLAY";
+        const subscriptionSurface = notificationSurface(dispatch.event_type);
         const { data: subscriptions, error: subscriptionsError } = await supabase
           .from("app_push_subscriptions")
           .select("id, endpoint, p256dh, auth_key")
@@ -146,7 +151,7 @@ Deno.serve(async (request) => {
               title: dispatch.title,
               body: dispatch.body,
               url: dispatch.link_url || "/?view=notifications",
-              tag: `ilha-play-${dispatch.notification_id}`,
+              tag: `${subscriptionSurface === "ADM" ? "ilha-adm" : "ilha-play"}-${dispatch.notification_id}`,
               icon: "/icon.png",
               badge: "/icon.png",
             }), {

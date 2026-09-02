@@ -6178,7 +6178,9 @@
     }
 
     function handleClientNotificationInsert(payload) {
-      if (String(payload && payload.new && payload.new.event_type || '').toUpperCase() === 'COMUNICADO') return;
+      if (['COMUNICADO', 'NOVO_ALUNO', 'TORNEIO_INSCRICAO'].includes(
+        String(payload && payload.new && payload.new.event_type || '').toUpperCase()
+      )) return;
       playClientNotificationSound(false);
       scheduleClientNotificationRefresh();
     }
@@ -7375,7 +7377,7 @@
           ? value(3).map(mapAnnouncementRow)
           : announcements.filter(function (item) { return item.source_type === 'announcement'; });
         const clientNotifications = (fulfilled(5) ? value(5) : announcements.filter(function (item) { return item.source_type === 'client'; })).filter(function (row) {
-          return !['NOVO_ALUNO', 'COMUNICADO'].includes(String(row.event_type || '').toUpperCase());
+          return !['NOVO_ALUNO', 'TORNEIO_INSCRICAO', 'COMUNICADO'].includes(String(row.event_type || '').toUpperCase());
         });
         announcements = publicAnnouncements
           .concat(fulfilled(5) ? clientNotifications.map(mapClientNotificationRow) : clientNotifications)
