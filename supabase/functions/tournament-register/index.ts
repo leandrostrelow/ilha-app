@@ -47,6 +47,7 @@ const allowedAvailabilityDays = new Set(["MONDAY", "TUESDAY", "WEDNESDAY", "THUR
 const allowedParticipantTypes = new Set(["CINCATE", "ILHA_STUDENT", "NON_MEMBER", "COURTESY"]);
 const participantLabels: Record<string, string> = { CINCATE: "CINCATE", ILHA_STUDENT: "Aluno Ilha Tênis", NON_MEMBER: "Não associado", COURTESY: "Cortesia (isento)" };
 const retryablePaymentStatuses = new Set(["CREATED", "FAILED"]);
+const pixRepairablePaymentStatuses = new Set(["CREATED", "RECONCILING", "PENDING", "CONFIRMED", "OVERDUE"]);
 const paymentReconciliationDelaysSeconds = [5, 15, 30, 60, 120, 300, 600];
 const publicRegistrationRuleErrors = new Set([
   "A Espacial A e a Espacial B são exclusivas para quem já está inscrito da 2ª à 6ª Classe Masculina.",
@@ -303,6 +304,25 @@ function safePayment(row: JsonRecord | null) {
     pix_encoded_image: terminalPayment ? null : row.pix_encoded_image || null,
     pix_expires_at: terminalPayment ? null : row.pix_expires_at || null,
     expires_at: row.expires_at || null,
+  };
+}
+
+function hasDeferredPixRepair(payment: JsonRecord | null) {
+  if (!payment || !payment.provider_payment_id || String(payment.billing_type || "").toUpperCase() !== "PIX") {
+    return false;
+  }
+  const status = String(payment.status || "").trim().toUpperCase();
+  return pixRepairablePaymentStatuses.has(status) && !(payment.pix_payload && payment.pix_encoded_image);
+}
+
+function deferredPixRepairResponse(payment: JsonRecord | null): JsonRecord {
+  if (!hasDeferredPixRepair(payment)) return {};
+  return {
+    retryable: true,
+    pix_retryable: true,
+    warning: payment?.invoice_url
+      ? "A cobrança foi criada e o link de pagamento continua válido. O QR Code Pix ainda está sendo preparado; tente carregá-lo novamente em alguns segundos."
+      : "A cobrança foi criada no Asaas, mas o QR Code Pix ainda está sendo preparado. Tente carregá-lo novamente em alguns segundos.",
   };
 }
 
@@ -789,10 +809,21 @@ async function saveProviderPayment(
     ? "PARTIALLY_REFUNDED"
     : mapAsaasPaymentStatus(providerPayment.status);
   let pix: JsonRecord = {};
+  let pixRetrievalError: JsonRecord | null = null;
   const activePixStatus = ["CREATED", "PENDING", "CONFIRMED", "OVERDUE"].includes(providerStatus);
   if (String(localPayment.billing_type) === "PIX" && activePixStatus &&
     !(localPayment.pix_payload && localPayment.pix_encoded_image)) {
-    pix = await asaasRequest(`/payments/${encodeURIComponent(providerPaymentId)}/pixQrCode`);
+    try {
+      pix = await asaasRequest(`/payments/${encodeURIComponent(providerPaymentId)}/pixQrCode`);
+    } catch (error) {
+      // The charge is already known to exist. Losing only the QR lookup must
+      // never turn it into FAILED or allow a second provider charge on retry.
+      pixRetrievalError = providerErrorSnapshot(error);
+      console.warn("tournament-register provider PIX retrieval deferred", {
+        payment_id: localPayment.id,
+        provider_error: pixRetrievalError,
+      });
+    }
   }
   const localStatus = String(localPayment.status || "");
   const terminalProviderStatus = ["REFUNDED", "PARTIALLY_REFUNDED", "CANCELLED"].includes(providerStatus);
@@ -841,7 +872,12 @@ async function saveProviderPayment(
         chargeback_status: chargebackStatus,
         completed_refund_cents: refundCents,
       },
-      pix: { expiration_date: text(pix.expirationDate, 80) },
+      pix: {
+        expiration_date: text(pix.expirationDate, 80),
+        ...(pixRetrievalError
+          ? { retrieval_error: { ...pixRetrievalError, stage: "asaas_pix_qr_code" } }
+          : {}),
+      },
   };
   const applied = await supabase.rpc("apply_tournament_payment_reconciliation", {
     p_payment_id: localPayment.id,
@@ -1115,11 +1151,13 @@ async function finishFamilyCheckout(
         provider_error: providerErrorSnapshot(error),
       });
     }
-    return json(request, responseBody(localPayment));
+    return json(request, responseBody(localPayment, deferredPixRepairResponse(localPayment)));
   }
   if (localPayment.status === "RECONCILING") {
     localPayment = await reconcileAmbiguousPayment(supabase, localPayment);
-    if (localPayment.provider_payment_id) return json(request, responseBody(localPayment));
+    if (localPayment.provider_payment_id) {
+      return json(request, responseBody(localPayment, deferredPixRepairResponse(localPayment)));
+    }
     return json(request, responseBody(localPayment, {
       retryable: false,
       warning: "Estamos conferindo a cobrança no Asaas. Não gere outro pagamento; esta tela será liberada assim que a resposta for confirmada.",
@@ -1190,7 +1228,12 @@ async function finishFamilyCheckout(
       warning: "As inscrições foram reservadas, mas a cobrança não ficou pronta. Tente gerar o pagamento novamente.",
     }), 202);
   }
-  return json(request, responseBody(localPayment), 201);
+  const deferredPix = hasDeferredPixRepair(localPayment);
+  return json(
+    request,
+    responseBody(localPayment, deferredPixRepairResponse(localPayment)),
+    deferredPix ? 202 : 201,
+  );
 }
 
 async function handleFamilyRegistration(
@@ -2120,20 +2163,24 @@ Deno.serve(async (request) => {
         additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
         payment: safePayment(localPayment),
         tracking_token: registration.public_token,
+        ...deferredPixRepairResponse(localPayment),
       });
     }
     if (localPayment.status === "RECONCILING") {
       localPayment = await reconcileAmbiguousPayment(supabase, localPayment);
+      const existingProviderPayment = Boolean(localPayment.provider_payment_id);
       return json(request, {
         registration: safeRegistration(registration),
         additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
         payment: safePayment(localPayment),
         tracking_token: registration.public_token,
-        retryable: false,
-        warning: localPayment.provider_payment_id
-          ? undefined
-          : "Estamos conferindo a cobrança no Asaas. Não gere outro pagamento; esta tela será liberada assim que a resposta for confirmada.",
-      }, localPayment.provider_payment_id ? 200 : 202);
+        ...(existingProviderPayment
+          ? deferredPixRepairResponse(localPayment)
+          : {
+            retryable: false,
+            warning: "Estamos conferindo a cobrança no Asaas. Não gere outro pagamento; esta tela será liberada assim que a resposta for confirmada.",
+          }),
+      }, existingProviderPayment ? 200 : 202);
     }
     if (!retryablePaymentStatuses.has(String(localPayment.status))) {
       return json(request, {
@@ -2225,12 +2272,14 @@ Deno.serve(async (request) => {
       }, 202);
     }
 
+    const deferredPix = hasDeferredPixRepair(localPayment);
     return json(request, {
       registration: safeRegistration(registration),
       additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
       payment: safePayment(localPayment),
       tracking_token: registration.public_token,
-    }, 201);
+      ...deferredPixRepairResponse(localPayment),
+    }, deferredPix ? 202 : 201);
   } catch (error) {
     const code = error && typeof error === "object" && "code" in error
       ? text((error as JsonRecord).code, 40)

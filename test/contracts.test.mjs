@@ -646,6 +646,39 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(pixRepair, /pix_payload\s*&&\s*localPayment\.pix_encoded_image/);
   assert.match(pixRepair, /payments\/\$\{encodeURIComponent\(providerPaymentId\)\}/);
   assert.match(pixRepair, /saveProviderPayment/);
+  const saveProviderPayment = functionSource(tournamentRegisterSource, 'saveProviderPayment');
+  assert.match(
+    saveProviderPayment,
+    /try\s*\{[\s\S]*pixQrCode[\s\S]*catch \(error\)[\s\S]*pixRetrievalError = providerErrorSnapshot\(error\)[\s\S]*apply_tournament_payment_reconciliation/,
+  );
+  assert.match(saveProviderPayment, /p_provider_payment_id:\s*providerPaymentId/);
+  assert.match(saveProviderPayment, /p_invoice_url:[\s\S]*providerPayment\.invoiceUrl/);
+  assert.match(saveProviderPayment, /retrieval_error:[\s\S]*stage:\s*"asaas_pix_qr_code"/);
+  assert.doesNotMatch(saveProviderPayment, /status:\s*"FAILED"/);
+  const deferredPixRepair = vm.runInNewContext(
+    `(() => {
+      const pixRepairablePaymentStatuses = new Set(["CREATED", "RECONCILING", "PENDING", "CONFIRMED", "OVERDUE"]);
+      return (${functionSource(tournamentRegisterSource, 'hasDeferredPixRepair').replace('payment: JsonRecord | null', 'payment')});
+    })()`,
+  );
+  assert.equal(deferredPixRepair({ provider_payment_id: 'pay_known', billing_type: 'PIX', status: 'PENDING' }), true);
+  assert.equal(deferredPixRepair({
+    provider_payment_id: 'pay_known',
+    billing_type: 'PIX',
+    status: 'PENDING',
+    pix_payload: 'copy-and-paste',
+    pix_encoded_image: 'encoded-image',
+  }), false);
+  assert.equal(deferredPixRepair({ provider_payment_id: 'pay_known', billing_type: 'PIX', status: 'FAILED' }), false);
+  assert.equal(deferredPixRepair({ billing_type: 'PIX', status: 'PENDING' }), false);
+  const deferredPixResponse = functionSource(tournamentRegisterSource, 'deferredPixRepairResponse');
+  assert.match(deferredPixResponse, /retryable:\s*true/);
+  assert.match(deferredPixResponse, /pix_retryable:\s*true/);
+  assert.match(deferredPixResponse, /link de pagamento continua válido/);
+  assert.ok(
+    (tournamentRegisterSource.match(/deferredPixRepairResponse\(localPayment\)/g) || []).length >= 6,
+    'os fluxos individual e familiar preservam e permitem reparar a cobrança conhecida',
+  );
   const existingProviderPayment = sourceSection(
     tournamentRegisterSource,
     'if (localPayment.provider_payment_id)',
