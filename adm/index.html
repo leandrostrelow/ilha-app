@@ -2063,6 +2063,40 @@
       gap: 9px;
     }
 
+    .announcement-push-toggle {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      margin: 0;
+      border: 1px solid #d7e5e9;
+      border-radius: 12px;
+      padding: 11px 13px;
+      background: #f7fafb;
+      color: var(--text);
+      text-transform: none;
+      cursor: pointer;
+    }
+
+    .announcement-push-toggle input {
+      width: 19px;
+      min-height: 19px;
+      flex: 0 0 19px;
+      accent-color: var(--teal);
+    }
+
+    .announcement-push-toggle span {
+      display: grid;
+      gap: 3px;
+    }
+
+    .announcement-push-toggle small {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+      line-height: 1.35;
+    }
+
     @media (max-width: 760px) {
       .announcement-card {
         grid-template-columns: minmax(0, 1fr);
@@ -3265,37 +3299,82 @@
       color: #173500;
     }
 
-    .tournament-invite-result { display: grid; gap: 14px; }
+    .tournament-invite-result { display: grid; justify-items: center; gap: 14px; }
     .tournament-invite-card {
-      min-height: 380px;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 150px;
-      align-items: center;
-      gap: 20px;
+      position: relative;
+      isolation: isolate;
+      width: min(430px, 100%);
+      min-height: 540px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 18px;
       overflow: hidden;
-      padding: 28px;
-      border-radius: 22px;
-      background: radial-gradient(circle at 90% 10%, rgba(182,239,0,.28), transparent 12rem), linear-gradient(135deg,#072f3a,#075f69);
+      padding: 26px;
+      border: 3px solid #b6ef00;
+      border-radius: 30px;
+      background:
+        radial-gradient(circle at 104% -5%, rgba(182,239,0,.2), transparent 14rem),
+        linear-gradient(160deg, #062f38 0%, #064852 100%);
       color: #fff;
+      box-shadow: 0 24px 55px rgba(6, 47, 56, .24);
     }
-    .tournament-invite-copy { min-width: 0; }
-    .tournament-invite-brand-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 24px; }
+    .tournament-invite-card::before,
+    .tournament-invite-card::after {
+      content: '';
+      position: absolute;
+      z-index: 2;
+      top: 59%;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 0 3px #b6ef00;
+    }
+    .tournament-invite-card::before { left: -18px; }
+    .tournament-invite-card::after { right: -18px; }
+    .tournament-invite-copy { min-width: 0; display: grid; gap: 8px; }
+    .tournament-invite-brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+      min-height: 98px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(255,255,255,.2);
+    }
     .tournament-invite-brand {
       display: grid;
       place-items: center;
-      height: 96px;
       min-width: 0;
       padding: 0;
     }
-    .tournament-invite-brand.tournament { width: min(300px, 54%); }
-    .tournament-invite-brand.club { width: 104px; height: 116px; flex: 0 0 104px; }
+    .tournament-invite-brand.tournament { width: min(250px, 58%); height: 96px; }
+    .tournament-invite-brand.club { width: 142px; height: 78px; flex: 0 0 142px; }
     .tournament-invite-brand img { display: block; width: 100%; height: 100%; object-fit: contain; }
+    .tournament-invite-brand img[hidden] { display: none; }
+    .tournament-invite-brand-fallback { color: #fff; font-size: 25px; font-weight: 950; line-height: 1; letter-spacing: -.04em; text-transform: uppercase; }
     .tournament-invite-card .invite-kicker { color: #b6ef00; font-size: 12px; font-weight: 950; letter-spacing: .13em; text-transform: uppercase; }
-    .tournament-invite-card h3 { margin: 9px 0 8px; color: #fff; font-size: 34px; line-height: 1.02; letter-spacing: -.045em; }
+    .tournament-invite-card h3 { margin: 0; color: #fff; font-size: 30px; line-height: 1.05; letter-spacing: -.035em; overflow-wrap: anywhere; }
+    .tournament-invite-card-title { color: rgba(255,255,255,.72); font-size: 12px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+    .tournament-invite-quantity { display: flex; align-items: flex-end; gap: 12px; min-height: 76px; }
+    .tournament-invite-quantity strong { color: #b6ef00; font-size: 78px; line-height: .8; letter-spacing: -.07em; }
+    .tournament-invite-quantity span { padding-bottom: 2px; color: #fff; font-size: 30px; font-weight: 950; line-height: 1; text-transform: uppercase; }
     .tournament-invite-card p { margin: 0; color: rgba(255,255,255,.78); font-size: 13px; line-height: 1.5; }
-    .tournament-invite-qr { display: grid; place-items: center; padding: 11px; border-radius: 18px; background: #fff; }
-    .tournament-invite-qr img { width: 128px; height: 128px; }
-    .tournament-invite-url { overflow-wrap: anywhere; padding: 11px 13px; border: 1px solid var(--line); border-radius: 12px; background: #f6f9fa; font-size: 11px; font-weight: 800; }
+    .tournament-invite-qr {
+      display: grid;
+      place-items: center;
+      gap: 7px;
+      margin-top: auto;
+      padding: 16px;
+      border-radius: 22px;
+      background: #f7fbf7;
+      color: #0a3440;
+    }
+    .tournament-invite-qr img { width: 168px; height: 168px; }
+    .tournament-invite-qr span { font-size: 10px; font-weight: 950; letter-spacing: .06em; text-align: center; text-transform: uppercase; }
+    .tournament-invite-card-footer { color: rgba(255,255,255,.72); font-size: 10px; font-weight: 850; letter-spacing: .08em; text-align: center; text-transform: uppercase; }
+    .tournament-invite-url { width: 100%; overflow-wrap: anywhere; padding: 11px 13px; border: 1px solid var(--line); border-radius: 12px; background: #f6f9fa; font-size: 11px; font-weight: 800; }
     .invite-manager-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
     .invite-manager-metric { display: grid; gap: 4px; padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: #f7fafb; }
     .invite-manager-metric strong { font-size: 26px; color: var(--dark); }
@@ -3331,7 +3410,7 @@
     }
 
     #players .player-list-card { order: 1; }
-    #players .player-form-card { order: 2; }
+    #players .player-form-card { display: none; }
 
     .player-edit-backdrop {
       position: fixed;
@@ -3353,6 +3432,7 @@
     }
 
     body.player-editing #players .player-form-card {
+      display: block;
       position: fixed;
       z-index: 120;
       top: 50%;
@@ -6118,10 +6198,14 @@
         transform: translate(-50%, -50%);
         padding: 14px;
       }
-      .tournament-invite-card { grid-template-columns: 1fr; padding: 22px; text-align: center; }
-      .tournament-invite-brand-row { justify-content: center; }
-      .tournament-invite-card h3 { font-size: 28px; }
-      .tournament-invite-qr { width: 150px; margin: 0 auto; }
+      .tournament-invite-card { min-height: 520px; padding: 22px; }
+      .tournament-invite-brand-row { gap: 14px; min-height: 86px; }
+      .tournament-invite-brand.tournament { height: 82px; }
+      .tournament-invite-brand.club { width: 120px; height: 64px; flex-basis: 120px; }
+      .tournament-invite-card h3 { font-size: 26px; }
+      .tournament-invite-quantity strong { font-size: 68px; }
+      .tournament-invite-quantity span { font-size: 26px; }
+      .tournament-invite-qr img { width: 150px; height: 150px; }
       .invite-manager-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .invite-manager-toolbar, .invite-manager-row { grid-template-columns: 1fr; }
       .invite-manager-actions { justify-content: flex-start; }
@@ -21252,6 +21336,15 @@
                   <label for="announcementPlan">Plano</label>
                   <select id="announcementPlan"></select>
                 </div>
+                <div class="field full" id="announcementPushOption">
+                  <label class="announcement-push-toggle" for="announcementSendPush">
+                    <input id="announcementSendPush" type="checkbox" />
+                    <span>
+                      <strong>Enviar notificação Push agora</strong>
+                      <small>Opcional. Desmarcado, o comunicado será publicado somente no início do Ilha Play.</small>
+                    </span>
+                  </label>
+                </div>
                 <div class="field full">
                   <div class="announcement-form-actions">
                     <button class="primary-btn" id="announcementSubmitBtn" type="submit">Publicar comunicado</button>
@@ -21753,7 +21846,7 @@
     <section class="section" id="players">
       <div class="player-edit-backdrop" id="playerEditBackdrop" aria-hidden="true"></div>
       <div class="grid">
-        <div class="card span-5 player-form-card">
+        <div class="card span-5 player-form-card" id="playerEditorDialog" role="dialog" aria-modal="true" aria-labelledby="playerFormTitle" aria-hidden="true" tabindex="-1">
           <div class="card-title">
             <div>
               <h2 id="playerFormTitle">Novo jogador</h2>
@@ -21843,7 +21936,7 @@
             </div>
             <div class="actions">
               <button class="primary-btn" type="submit">Salvar jogador</button>
-              <button class="ghost-btn" id="playerClearBtn" type="button" onclick="clearPlayerForm()">Limpar</button>
+              <button class="ghost-btn" id="playerClearBtn" type="button" onclick="clearPlayerForm()">Cancelar</button>
             </div>
           </form>
         </div>
@@ -21853,6 +21946,7 @@
               <h2>Jogadores cadastrados</h2>
               <div class="muted" id="playerListHint">Lista sincronizada com a base do torneio.</div>
             </div>
+            <button class="primary-btn" id="newPlayerBtn" type="button">Novo jogador</button>
           </div>
           <div class="player-filters">
             <input id="playerSearch" placeholder="Buscar jogador, cidade ou telefone" />
@@ -22165,14 +22259,19 @@
       </form>
       <div class="tournament-invite-result" id="registrationInviteResult" hidden>
         <div class="tournament-invite-card" id="registrationInviteCardPreview">
-          <div class="tournament-invite-copy">
-            <div class="tournament-invite-brand-row">
-              <div class="tournament-invite-brand tournament" id="registrationInviteTournamentLogoWrap" hidden><img id="registrationInviteTournamentLogo" alt="Logo do torneio" /></div>
-              <div class="tournament-invite-brand club"><img src="/assets/branding/ilha-tenis-ball.png" alt="Ilha Tênis Colatina" /></div>
-            </div>
-            <span class="invite-kicker">Convite exclusivo</span><h3 id="registrationInviteCardTitle">Você recebeu 1 convite</h3><p id="registrationInviteCardText">Ilha Open · inscrição isenta e de uso único.</p>
+          <div class="tournament-invite-brand-row">
+            <div class="tournament-invite-brand tournament" id="registrationInviteTournamentLogoWrap" hidden><img id="registrationInviteTournamentLogo" alt="Logo do torneio" /><span class="tournament-invite-brand-fallback" id="registrationInviteTournamentFallback" hidden>Ilha Open</span></div>
+            <div class="tournament-invite-brand club"><img src="/assets/branding/ilha-tenis-logo-light.png" alt="Ilha Tênis Colatina" /></div>
           </div>
-          <div class="tournament-invite-qr"><img id="registrationInviteQr" alt="QR Code do convite" /></div>
+          <div class="tournament-invite-copy">
+            <span class="invite-kicker">Convite exclusivo</span>
+            <h3 id="registrationInviteCardRecipient">Convidado</h3>
+            <span class="tournament-invite-card-title" id="registrationInviteCardTitle">Você recebeu</span>
+            <div class="tournament-invite-quantity"><strong id="registrationInviteCardCount">1</strong><span id="registrationInviteCardCountLabel">Convite</span></div>
+            <p id="registrationInviteCardText">Ilha Open · inscrição isenta e de uso único.</p>
+          </div>
+          <div class="tournament-invite-qr"><img id="registrationInviteQr" alt="QR Code do convite" /><span>Aponte a câmera para se inscrever</span></div>
+          <div class="tournament-invite-card-footer">Ilha Tênis · Colatina</div>
         </div>
         <div class="tournament-invite-url" id="registrationInviteUrl"></div>
         <div class="actions">
@@ -24566,14 +24665,54 @@
       $('playerClearBtn').textContent = 'Cancelar';
       document.body.classList.add('player-editing');
       $('playerEditBackdrop').setAttribute('aria-hidden', 'false');
+      $('playerEditorDialog').setAttribute('aria-hidden', 'false');
       window.setTimeout(function () { $('playerName').focus(); }, 80);
     }
 
-    function clearPlayerForm() {
+    function openNewPlayerForm() {
+      clearPlayerForm(false);
+      $('playerFormTitle').textContent = 'Novo jogador';
+      $('playerClearBtn').textContent = 'Cancelar';
+      if ($('playerCategoryFilter').value) $('registrationCategory').value = $('playerCategoryFilter').value;
+      document.body.classList.add('player-editing');
+      $('playerEditBackdrop').setAttribute('aria-hidden', 'false');
+      $('playerEditorDialog').setAttribute('aria-hidden', 'false');
+      window.setTimeout(function () { $('playerName').focus(); }, 80);
+    }
+
+    function trapPlayerEditorFocus(event) {
+      if (event.key !== 'Tab' || !document.body.classList.contains('player-editing')) return;
+      const dialog = $('playerEditorDialog');
+      const focusable = Array.from(dialog.querySelectorAll(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+      )).filter(function (element) {
+        return element.getAttribute('aria-hidden') !== 'true' && element.offsetParent !== null;
+      });
+      if (!focusable.length) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!dialog.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    function clearPlayerForm(restoreFocus) {
       document.body.classList.remove('player-editing');
       $('playerEditBackdrop').setAttribute('aria-hidden', 'true');
+      $('playerEditorDialog').setAttribute('aria-hidden', 'true');
       $('playerFormTitle').textContent = 'Novo jogador';
-      $('playerClearBtn').textContent = 'Limpar';
+      $('playerClearBtn').textContent = 'Cancelar';
       $('playerForm').reset();
       $('playerId').value = '';
       $('registrationId').value = '';
@@ -24584,6 +24723,7 @@
       $('playerGuardianName').value = '';
       $('playerGuardianPhone').value = '';
       updatePlayerGuardianFields();
+      if (restoreFocus !== false && $('newPlayerBtn')) window.setTimeout(function () { $('newPlayerBtn').focus(); }, 0);
     }
 
     function updatePlayerGuardianFields() {
@@ -24937,6 +25077,7 @@
           '<div class="invite-manager-use"><strong>' + escapeHtml(useTitle) + '</strong><span>' + escapeHtml(useDetail) + '</span></div>' +
           '<div><span class="invite-manager-status ' + status.className + '">' + status.label + '</span><div class="invite-manager-meta">Criado em ' + escapeHtml(registrationInviteDateTime(invite.created_at) || 'data não informada') + '</div></div>' +
           '<div class="invite-manager-actions">' +
+            (invite.status === 'ACTIVE' ? '<button class="ghost-btn" type="button" data-download-registration-invite="' + escapeHtml(invite.id) + '">Baixar PNG</button>' : '') +
             (invite.status === 'ACTIVE' ? '<button class="ghost-btn" type="button" data-share-registration-invite="' + escapeHtml(invite.id) + '">WhatsApp</button>' : (phone ? '<a class="ghost-btn" href="https://wa.me/' + escapeHtml(phone) + '" target="_blank" rel="noopener">WhatsApp</a>' : '')) +
             (invite.status === 'ACTIVE' ? '<button class="danger-btn" type="button" data-revoke-registration-invite="' + escapeHtml(invite.id) + '">Cancelar</button>' : '') +
             (invite.status !== 'USED' ? '<button class="danger-btn" type="button" data-delete-registration-invite="' + escapeHtml(invite.id) + '">Excluir</button>' : '') +
@@ -24957,12 +25098,29 @@
       const tournamentLogoUrl = state.data && state.data.torneio && state.data.torneio.logo_url || '';
       $('registrationInviteForm').hidden = true;
       $('registrationInviteResult').hidden = false;
-      $('registrationInviteCardTitle').textContent = 'Você recebeu ' + registrationInviteLabel(count);
-      $('registrationInviteCardText').textContent = (invite.recipient_name ? invite.recipient_name + ' · ' : '') + (invite.tournament_name || 'Ilha Open') + ' · uso único.';
+      $('registrationInviteCardRecipient').textContent = String(invite.recipient_name || 'Convidado').toUpperCase();
+      $('registrationInviteCardTitle').textContent = 'Você recebeu';
+      $('registrationInviteCardCount').textContent = String(count);
+      $('registrationInviteCardCountLabel').textContent = count === 1 ? 'Convite' : 'Convites';
+      $('registrationInviteCardText').textContent = (invite.tournament_name || 'Ilha Open') + ' · inscrição isenta e de uso único.';
       $('registrationInviteUrl').textContent = invite.invite_url || '';
       $('registrationInviteQr').src = registrationInviteQrDataUrl(invite.invite_url || '');
-      $('registrationInviteTournamentLogoWrap').hidden = !tournamentLogoUrl;
-      $('registrationInviteTournamentLogo').src = tournamentLogoUrl;
+      const tournamentLogo = $('registrationInviteTournamentLogo');
+      const tournamentFallback = $('registrationInviteTournamentFallback');
+      $('registrationInviteTournamentLogoWrap').hidden = false;
+      tournamentFallback.textContent = invite.tournament_name || 'Ilha Open';
+      tournamentLogo.hidden = true;
+      tournamentFallback.hidden = false;
+      tournamentLogo.onload = function () {
+        tournamentLogo.hidden = false;
+        tournamentFallback.hidden = true;
+      };
+      tournamentLogo.onerror = function () {
+        tournamentLogo.hidden = true;
+        tournamentFallback.hidden = false;
+      };
+      if (tournamentLogoUrl) tournamentLogo.src = tournamentLogoUrl;
+      else tournamentLogo.removeAttribute('src');
     }
 
     function openRegistrationInviteModal() {
@@ -25052,22 +25210,38 @@
       window.open(destination, '_blank', 'noopener');
     }
 
-    async function shareManagedRegistrationInvite(inviteId) {
+    async function getManagedRegistrationInvitePayload(inviteId, actionLabel) {
       const managedInvite = (state.data.convites || []).find(function (item) { return String(item.id) === String(inviteId); });
-      if (!managedInvite || managedInvite.status !== 'ACTIVE') return toast('Somente convites ativos podem ser enviados.');
-      if (!managedInvite.share_ready && !confirm('Este convite foi criado antes do envio pelo gerenciamento. Ao continuar, um novo link será criado e o link anterior deixará de funcionar. Continuar?')) return;
+      if (!managedInvite || managedInvite.status !== 'ACTIVE') return toast('Somente convites ativos podem ser compartilhados.');
+      if (!managedInvite.share_ready && !confirm('Este convite foi criado antes do gerenciamento seguro. Ao ' + actionLabel + ', um novo link será criado e o link anterior deixará de funcionar. Continuar?')) return null;
+      const invite = await apiPost({
+        action: 'getRegistrationInviteShareLink',
+        tournament_id: state.selectedTournamentId,
+        invite_id: inviteId
+      }, { silent: true, returnData: false });
+      if (invite && invite.rotated) loadData(false);
+      return invite;
+    }
+
+    async function shareManagedRegistrationInvite(inviteId) {
       try {
-        const invite = await apiPost({
-          action: 'getRegistrationInviteShareLink',
-          tournament_id: state.selectedTournamentId,
-          invite_id: inviteId
-        }, { silent: true, returnData: false });
+        const invite = await getManagedRegistrationInvitePayload(inviteId, 'enviar');
+        if (!invite) return;
         const phone = whatsappNumber(invite && invite.recipient_phone);
         const destination = 'https://wa.me/' + (phone || '') + '?text=' + encodeURIComponent(registrationInviteMessage(invite));
         window.open(destination, '_blank', 'noopener');
-        if (invite && invite.rotated) loadData(false);
       } catch (error) {
         toast(error.message);
+      }
+    }
+
+    async function downloadManagedRegistrationInvite(inviteId) {
+      try {
+        const invite = await getManagedRegistrationInvitePayload(inviteId, 'baixar a arte');
+        if (!invite) return;
+        await downloadRegistrationInviteCard(invite);
+      } catch (error) {
+        toast(error.message || 'Não foi possível gerar a arte do convite.');
       }
     }
 
@@ -25089,26 +25263,44 @@
       context.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
     }
 
-    async function downloadRegistrationInviteCard() {
-      const invite = state.registrationInvite;
+    async function downloadRegistrationInviteCard(inviteOverride) {
+      const invite = inviteOverride || state.registrationInvite;
       if (!invite || !invite.invite_url) return;
       const count = Number(invite.athlete_limit || 1);
       const canvas = document.createElement('canvas');
       canvas.width = 1080;
       canvas.height = 1350;
       const context = canvas.getContext('2d');
-      const gradient = context.createLinearGradient(0, 0, 1080, 1350);
-      gradient.addColorStop(0, '#062e38');
-      gradient.addColorStop(1, '#087985');
-      context.fillStyle = gradient;
+      context.fillStyle = '#eef4f1';
       context.fillRect(0, 0, canvas.width, canvas.height);
-      context.fillStyle = 'rgba(182,239,0,.17)';
+
+      const ticketGradient = context.createLinearGradient(34, 24, 1046, 1326);
+      ticketGradient.addColorStop(0, '#062f38');
+      ticketGradient.addColorStop(1, '#07535d');
+      context.fillStyle = ticketGradient;
       context.beginPath();
-      context.arc(970, 80, 310, 0, Math.PI * 2);
+      context.roundRect(34, 24, 1012, 1302, 56);
       context.fill();
+      context.strokeStyle = '#b6ef00';
+      context.lineWidth = 8;
+      context.stroke();
+
+      context.save();
+      context.beginPath();
+      context.roundRect(38, 28, 1004, 1294, 52);
+      context.clip();
+      context.fillStyle = 'rgba(182,239,0,.16)';
+      context.beginPath();
+      context.arc(1000, 60, 330, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = 'rgba(255,255,255,.035)';
+      context.beginPath();
+      context.arc(40, 1270, 260, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
 
       const tournamentLogoUrl = state.data && state.data.torneio && state.data.torneio.logo_url || '';
-      const clubLogoUrl = new URL('/assets/branding/ilha-tenis-ball.png', window.location.origin).href;
+      const clubLogoUrl = new URL('/assets/branding/ilha-tenis-logo-light.png', window.location.origin).href;
       const logoResults = await Promise.all([
         tournamentLogoUrl ? loadCanvasImage(tournamentLogoUrl).catch(function () { return null; }) : Promise.resolve(null),
         loadCanvasImage(clubLogoUrl).catch(function () { return null; })
@@ -25116,51 +25308,74 @@
       const tournamentLogo = logoResults[0];
       const clubLogo = logoResults[1];
       if (tournamentLogo) {
-        drawCanvasContainedImage(context, tournamentLogo, 68, 38, 520, 175);
+        drawCanvasContainedImage(context, tournamentLogo, 76, 62, 540, 170);
       } else {
         context.fillStyle = '#ffffff';
-        context.font = '900 58px Inter, Arial, sans-serif';
-        context.fillText(invite.tournament_name || 'ILHA OPEN', 68, 138);
+        drawFitText(context, String(invite.tournament_name || 'ILHA OPEN').toUpperCase(), 76, 158, 540, 58, 900, 'left');
       }
-      if (clubLogo) drawCanvasContainedImage(context, clubLogo, 760, 18, 250, 205);
+      if (clubLogo) drawCanvasContainedImage(context, clubLogo, 696, 82, 300, 118);
+
+      context.strokeStyle = 'rgba(255,255,255,.24)';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(76, 260);
+      context.lineTo(1004, 260);
+      context.stroke();
 
       context.fillStyle = '#b6ef00';
       context.font = '900 29px Inter, Arial, sans-serif';
       context.letterSpacing = '5px';
-      context.fillText('CONVITE EXCLUSIVO', 78, 278);
+      context.fillText('CONVITE EXCLUSIVO', 76, 320);
       context.letterSpacing = '0px';
       context.fillStyle = '#ffffff';
-      drawFitText(context, String(invite.recipient_name || 'CONVIDADO').toUpperCase(), 78, 342, 840, 43, 900, 'left');
+      drawFitText(context, String(invite.recipient_name || 'CONVIDADO').toUpperCase(), 76, 386, 900, 52, 900, 'left');
       context.fillStyle = 'rgba(255,255,255,.72)';
-      context.font = '800 34px Inter, Arial, sans-serif';
-      context.fillText('VOCÊ RECEBEU', 78, 405);
+      context.font = '800 30px Inter, Arial, sans-serif';
+      context.fillText('VOCÊ RECEBEU', 76, 452);
       context.fillStyle = '#b6ef00';
-      context.font = '900 142px Inter, Arial, sans-serif';
-      context.fillText(String(count), 70, 548);
+      context.font = '900 158px Inter, Arial, sans-serif';
+      context.fillText(String(count), 68, 610);
       context.fillStyle = '#ffffff';
-      context.font = '900 62px Inter, Arial, sans-serif';
-      context.fillText(count === 1 ? 'CONVITE' : 'CONVITES', 250, 530);
-      context.font = '700 32px Inter, Arial, sans-serif';
+      context.font = '900 66px Inter, Arial, sans-serif';
+      context.fillText(count === 1 ? 'CONVITE' : 'CONVITES', 250, 592);
+      context.font = '700 30px Inter, Arial, sans-serif';
       context.fillStyle = 'rgba(255,255,255,.82)';
-      drawFitText(context, 'Seu acesso exclusivo ao ' + (invite.tournament_name || 'Ilha Open'), 78, 600, 850, 32, 700, 'left');
+      drawFitText(context, 'Seu acesso exclusivo ao ' + (invite.tournament_name || 'Ilha Open'), 76, 657, 900, 30, 700, 'left');
 
-      context.fillStyle = '#ffffff';
+      context.save();
+      context.setLineDash([14, 14]);
+      context.strokeStyle = 'rgba(255,255,255,.25)';
+      context.lineWidth = 2;
       context.beginPath();
-      context.roundRect(78, 645, 924, 505, 38);
+      context.moveTo(76, 696);
+      context.lineTo(1004, 696);
+      context.stroke();
+      context.restore();
+      context.fillStyle = '#eef4f1';
+      context.beginPath();
+      context.arc(34, 696, 30, 0, Math.PI * 2);
+      context.fill();
+      context.beginPath();
+      context.arc(1046, 696, 30, 0, Math.PI * 2);
+      context.fill();
+
+      context.fillStyle = '#f7fbf7';
+      context.beginPath();
+      context.roundRect(76, 730, 928, 442, 38);
       context.fill();
       const qrImage = await loadCanvasImage(registrationInviteQrDataUrl(invite.invite_url));
-      context.drawImage(qrImage, 345, 680, 390, 390);
+      context.drawImage(qrImage, 370, 760, 340, 340);
       context.fillStyle = '#0a3440';
       context.textAlign = 'center';
-      context.font = '900 28px Inter, Arial, sans-serif';
-      context.fillText('ACESSE O LINK ÚNICO PARA SE INSCREVER', 540, 1110);
+      context.font = '900 25px Inter, Arial, sans-serif';
+      context.fillText('APONTE A CÂMERA PARA SE INSCREVER', 540, 1140);
       context.textAlign = 'left';
       context.fillStyle = 'rgba(255,255,255,.78)';
       context.font = '700 27px Inter, Arial, sans-serif';
-      context.fillText('Inscrição isenta · convite de uso único', 78, 1240);
+      context.fillText('Inscrição isenta · convite de uso único', 76, 1240);
       context.fillStyle = '#b6ef00';
-      context.font = '900 25px Inter, Arial, sans-serif';
-      context.fillText('ILHA TÊNIS · COLATINA', 78, 1290);
+      context.font = '900 24px Inter, Arial, sans-serif';
+      context.fillText('ILHA TÊNIS · COLATINA', 76, 1287);
 
       const link = document.createElement('a');
       link.download = 'convite-' + String(invite.tournament_slug || 'ilha-open') + '-' + count + '.png';
@@ -38293,6 +38508,9 @@
     function resetAnnouncementForm() {
       $('announcementForm').reset();
       $('announcementEditId').value = '';
+      $('announcementPushOption').hidden = false;
+      $('announcementSendPush').disabled = false;
+      $('announcementSendPush').checked = false;
       $('announcementFormTitle').textContent = 'Novo comunicado';
       $('announcementFormHint').textContent = 'Texto, imagem, link e público.';
       $('announcementSubmitBtn').textContent = 'Publicar comunicado';
@@ -38316,6 +38534,8 @@
         $('announcementLink').value = item.linkUrl || '';
         $('announcementTarget').value = item.targetType || 'todos';
         $('announcementPlan').value = item.targetPlanCode || '';
+        $('announcementPushOption').hidden = true;
+        $('announcementSendPush').disabled = true;
         if (/^https?:\/\//i.test(item.fullImageUrl || item.imageUrl || '')) {
           $('announcementImage').value = item.fullImageUrl || item.imageUrl;
         }
@@ -38585,19 +38805,32 @@
         if (!title) throw new Error('Informe o titulo do comunicado.');
         const targetType = $('announcementTarget').value;
         if (!targetType) throw new Error('Escolha quem deve receber o comunicado.');
-        if (!editingItem && targetType === 'todos' && !window.confirm('Enviar este comunicado para todos os clientes?')) return;
+        const targetPlanCode = targetType === 'plano' ? $('announcementPlan').value : '';
+        if (targetType === 'plano' && !targetPlanCode) throw new Error('Escolha o plano que deve receber o comunicado.');
+        const sendPushNow = !editingItem && $('announcementSendPush').checked;
+        const messageBody = $('announcementBody').value.trim();
+        if (sendPushNow && !messageBody) throw new Error('Inclua uma mensagem para enviar a notificação Push.');
+        if (!editingItem) {
+          const audienceLabel = targetType === 'todos'
+            ? 'todos os clientes ativos'
+            : (targetType === 'plano' ? 'os clientes do plano selecionado' : 'o público selecionado');
+          const confirmation = sendPushNow
+            ? 'Publicar no Ilha Play e enviar uma notificação Push agora para ' + audienceLabel + '?'
+            : 'Publicar no Ilha Play para ' + audienceLabel + '? Nenhuma notificação Push será enviada agora.';
+          if (!window.confirm(confirmation)) return;
+        }
         const typedImage = $('announcementImage').value.trim();
         const currentImage = editingItem && !announcementRemoveImageRequested ? editingItem.imageUrl : '';
         const currentFullImage = editingItem && !announcementRemoveImageRequested ? editingItem.fullImageUrl : '';
         const importedImage = announcementCroppedImage || announcementFullImage || typedImage || currentImage;
         const payload = {
           title: title,
-          body: $('announcementBody').value.trim(),
+          body: messageBody,
           image_url: importedImage,
           image_full_url: announcementFullImage || typedImage || currentFullImage || importedImage,
           link_url: normalizeAdminLink($('announcementLink').value),
           target_type: targetType,
-          target_plan_code: targetType === 'plano' ? $('announcementPlan').value : null,
+          target_plan_code: targetPlanCode || null,
           active: editingItem ? editingItem.active : true
         };
         if (!editingItem) payload.published_at = new Date().toISOString();
@@ -38618,7 +38851,7 @@
         }
         let pushResult = null;
         let pushError = null;
-        if (!editingItem && payload.body) {
+        if (!editingItem && sendPushNow && payload.body) {
           try {
             pushResult = await sendClientAnnouncementPush({
               action: 'broadcast',
@@ -38654,7 +38887,8 @@
         if (editingItem) toast('Comunicado atualizado. A notificação não foi reenviada.');
         else if (pushError) toast('Comunicado publicado, mas as notificações falharam. Tente novamente ou consulte os logs.');
         else if (pushResult && pushResult.queued) toast('Comunicado publicado para ' + pushResult.queued + ' cliente(s); ' + Number(pushResult.push_enabled_recipients || 0) + ' com push ativo.');
-        else toast('Comunicado publicado. Nenhum destinatário ativo encontrado.');
+        else if (sendPushNow) toast('Comunicado publicado. Nenhum destinatário ativo encontrado para o Push.');
+        else toast('Comunicado publicado no Ilha Play. O Push não foi enviado.');
       } catch (error) {
         reportActionError(error);
       } finally {
@@ -43400,6 +43634,11 @@
         shareManagedRegistrationInvite(shareInviteBtn.dataset.shareRegistrationInvite);
         return;
       }
+      const downloadInviteBtn = event.target.closest('[data-download-registration-invite]');
+      if (downloadInviteBtn) {
+        downloadManagedRegistrationInvite(downloadInviteBtn.dataset.downloadRegistrationInvite);
+        return;
+      }
 
       const editPlayerBtn = event.target.closest('[data-edit-player]');
       if (editPlayerBtn) {
@@ -43530,11 +43769,16 @@
     });
     $('agendaEventForm').addEventListener('submit', saveAgendaEvent);
     $('playerForm').addEventListener('submit', savePlayer);
+    $('newPlayerBtn').addEventListener('click', openNewPlayerForm);
     $('playerEditCloseBtn').addEventListener('click', clearPlayerForm);
     $('playerEditBackdrop').addEventListener('click', clearPlayerForm);
     $('playerMinor').addEventListener('change', updatePlayerGuardianFields);
     document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && document.body.classList.contains('player-editing')) clearPlayerForm();
+      if (event.key === 'Escape' && document.body.classList.contains('player-editing')) {
+        clearPlayerForm();
+        return;
+      }
+      trapPlayerEditorFocus(event);
     });
     $('tournamentForm').addEventListener('submit', saveTournament);
     $('settings').addEventListener('input', function (event) {

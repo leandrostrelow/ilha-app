@@ -154,16 +154,24 @@ Deno.serve(async (request) => {
     const requestedUrl = String(input.url || "/").trim();
     const url = requestedUrl.startsWith("/") && !requestedUrl.startsWith("//") ? requestedUrl.slice(0, 1000) : "/";
     const userId = String(input.user_id || "").trim();
-    const targetType = String(input.target_type || "todos").trim().toLowerCase();
+    // A bulk delivery must always name its audience. Defaulting a missing value
+    // to `todos` turns an old or malformed ADM request into an accidental
+    // broadcast. A direct user_id remains an explicit single-recipient target.
+    const targetType = String(input.target_type || "").trim().toLowerCase();
     const targetPlanCode = String(input.target_plan_code || "").trim();
     if (!title || !body) return json(request, { error: "Informe título e mensagem." }, 400);
     if (userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) {
       return json(request, { error: "Cliente inválido." }, 400);
     }
-    if (!new Set(["todos", "plano", "aluno", "mensalista", "avulso"]).has(targetType)) {
+    if (!userId && !targetType) {
+      return json(request, { error: "Escolha o público da notificação." }, 400);
+    }
+    if (targetType && !new Set(["todos", "plano", "aluno", "mensalista", "avulso"]).has(targetType)) {
       return json(request, { error: "Público da notificação inválido." }, 400);
     }
-    if (targetType === "plano" && !targetPlanCode) return json(request, { error: "Escolha o plano da notificação." }, 400);
+    if (!userId && targetType === "plano" && !targetPlanCode) {
+      return json(request, { error: "Escolha o plano da notificação." }, 400);
+    }
 
     const eventType = String(input.event_type || "COMUNICADO").trim().toUpperCase().replace(/[^A-Z0-9_]/g, "_").slice(0, 50) || "COMUNICADO";
     const requestTag = String(input.tag || crypto.randomUUID()).trim().replace(/[^a-zA-Z0-9:_-]/g, "-").slice(0, 120) || crypto.randomUUID();

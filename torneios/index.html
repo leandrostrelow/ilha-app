@@ -402,6 +402,9 @@
     .eligibility-warning strong { color: #503c00; }
     .consent { margin-top: 16px; display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 9px; color: var(--muted); font-size: 12px; line-height: 1.45; }
     .consent input { width: 18px; height: 18px; accent-color: var(--teal); }
+    .privacy-notice { margin-top: 14px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 13px; background: #f7fafb; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .privacy-notice strong { display: block; margin-bottom: 2px; color: var(--ink); font-size: 12px; }
+    .privacy-notice a { display: inline-block; margin-top: 5px; color: var(--teal); font-weight: 900; text-decoration: underline; text-underline-offset: 2px; }
     .captcha-shell { margin-top: 14px; min-height: 70px; display: grid; justify-items: start; gap: 7px; }
     .captcha-status { margin: 0; color: var(--muted); font-size: 12px; font-weight: 750; }
     .captcha-status.error { color: #a62e36; }
@@ -467,6 +470,9 @@
     .reservation-warning strong { color: inherit; }
     .payment-qr { width: min(230px, 100%); margin: 2px auto; border: 10px solid #fff; border-radius: 14px; }
     .pix-copy { word-break: break-all; color: var(--teal); font-size: 12px; font-weight: 800; }
+    .payment-status-actions { display: grid; gap: 7px; }
+    .payment-status-feedback { margin: 0; color: var(--muted); font-size: 11px; font-weight: 750; line-height: 1.4; }
+    .payment-status-feedback.error { color: #a62e36; }
 
     body.registration-only .site-head { position: static; }
     body.registration-only .head-actions { display: none; }
@@ -694,6 +700,11 @@
           </section>
           <label class="consent"><input id="familyRegistrationConsent" type="checkbox" required /><span id="familyRegistrationConsentText">Confirmo que sou responsável pelos menores informados, que os dados estão corretos e autorizo a inscrição e a cobrança única do valor total.</span></label>
         </form>
+        <aside class="privacy-notice" id="registrationPrivacyNotice" hidden>
+          <strong>Privacidade</strong>
+          <span>Os dados informados são usados para processar a inscrição, gerar o Pix quando aplicável e enviar comunicações sobre o torneio.</span>
+          <a id="registrationPrivacyLink" target="_blank" rel="noopener">Saiba como falar com a organização sobre seus dados</a>
+        </aside>
         <div class="captcha-shell" id="registrationCaptchaShell">
           <div id="registrationCaptchaWidget"></div>
           <p class="captcha-status" id="registrationCaptchaStatus" role="status">Carregando proteção anti-robô…</p>
@@ -741,7 +752,12 @@
       registrationTrigger: null,
       captchaConfig: null,
       captchaToken: '',
-      captchaWidgetId: null
+      captchaWidgetId: null,
+      paymentStatusTimer: null,
+      paymentStatusLoading: false,
+      paymentStatusPollAttempt: 0,
+      activeTrackingToken: '',
+      lastRegistrationResult: null
     };
     const PUBLIC_TAB_DEFAULTS = {
       categories: true,
@@ -968,6 +984,29 @@
     function aboutEventSettings() {
       const value = tournamentSettings().about_event;
       return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    }
+    function privacyPolicyUrl() {
+      const configured = field(
+        aboutEventSettings(),
+        'privacy_url',
+        'privacy_policy_url',
+      ) || field(tournamentSettings(),'privacy_url','privacy_policy_url');
+      return configured ? safeHref(configured,'') : '';
+    }
+    function configureRegistrationPrivacy() {
+      const notice = $('registrationPrivacyNotice');
+      const link = $('registrationPrivacyLink');
+      if (!notice || !link) return;
+      const configuredUrl = privacyPolicyUrl();
+      if (configuredUrl) {
+        link.href = configuredUrl;
+        link.textContent = 'Consultar aviso de privacidade';
+      } else {
+        const message = encodeURIComponent('Olá! Quero tirar uma dúvida sobre o uso dos meus dados na inscrição do torneio.');
+        link.href = 'https://wa.me/5527999805814?text=' + message;
+        link.textContent = 'Falar com a organização sobre seus dados';
+      }
+      notice.hidden = false;
     }
     function configuredSponsors() {
       return list(aboutEventSettings().sponsors).filter((row) => row && typeof row === 'object');
@@ -1482,6 +1521,7 @@
       $('registrationSuccess').hidden = true;
       $('registrationCaptchaShell').hidden = true;
       $('registrationFoot').hidden = true;
+      $('registrationPrivacyNotice').hidden = true;
       $('registrationError').hidden = true;
       $('registrationTitle').textContent = 'Inscrição · ' + (field(tournament(),'name','nome') || 'Torneio');
       $('registrationSubtitle').textContent = state.inviteMode ? 'Convite exclusivo e de uso único.' : 'Escolha como deseja realizar a inscrição.';
@@ -1665,6 +1705,7 @@
       $('registrationError').hidden = true;
       $('registrationFoot').hidden = false;
       $('registrationCaptchaShell').hidden = false;
+      configureRegistrationPrivacy();
       $('cancelRegistrationBtn').textContent = 'Voltar';
       if (mode === 'individual' && !state.inviteMode) {
         $('registrationForm').hidden = false;
@@ -1731,6 +1772,7 @@
     function openRegistration() {
       const item = tournament();
       if (!isRegistrationOpen(item)) return;
+      clearPaymentStatusMonitor(true);
       state.registrationTrigger = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
         ? document.activeElement
         : null;
@@ -1739,6 +1781,7 @@
       $('registrationForm').reset();
       $('registrationChooser').hidden = true;
       $('familyRegistrationForm').hidden = true;
+      $('registrationPrivacyNotice').hidden = true;
       $('registrationTitle').textContent = 'Inscrição · ' + (field(item,'name','nome') || 'Torneio');
       const registrationSubtitle = internal ? 'Informe nome e telefone e escolha até duas classes.' : (state.inviteMode ? 'Convite exclusivo e de uso único.' : (state.courtesyMode ? 'Inscrição isenta para professor ou parceiro.' : ''));
       $('registrationSubtitle').textContent = registrationSubtitle;
@@ -1808,6 +1851,7 @@
         showRegistrationChooser();
         return;
       }
+      configureRegistrationPrivacy();
       if (internal) {
         clearRegistrationCaptcha();
         $('submitRegistrationBtn').disabled = false;
@@ -1875,6 +1919,7 @@
     }
     function closeRegistration() {
       if (state.submitting || state.registrationOnly) return;
+      clearPaymentStatusMonitor(true);
       clearRegistrationCaptcha();
       $('registrationModal').hidden = true;
       $('registrationModal').setAttribute('aria-hidden','true');
@@ -2084,9 +2129,128 @@
         $('submitRegistrationBtn').textContent = idleLabel;
       }
     }
+    function clearPaymentStatusMonitor(resetCheckout) {
+      if (state.paymentStatusTimer) clearTimeout(state.paymentStatusTimer);
+      state.paymentStatusTimer = null;
+      if (resetCheckout) {
+        state.paymentStatusPollAttempt = 0;
+        state.activeTrackingToken = '';
+        state.lastRegistrationResult = null;
+      }
+    }
+    function paymentStatusIsTerminal(result) {
+      if (!result || result.terminal === true || result.confirmed === true) return true;
+      const paymentStatus = clean(field(result.payment,'status')).toUpperCase();
+      const registrationRows = list(result.registrations).length ? list(result.registrations) : [result.registration].filter(Boolean);
+      const registrationStatuses = registrationRows.map((row) => clean(field(row,'status')).toUpperCase());
+      const registrationPaymentStatuses = registrationRows.map((row) => clean(field(row,'payment_status')).toUpperCase());
+      if (['PARTIALLY_REFUNDED','REFUNDED','CANCELLED','CHARGEBACK','OVERDUE'].includes(paymentStatus)) return true;
+      if (registrationStatuses.length && registrationStatuses.every((status) => ['WAITLIST','CANCELLED','REFUNDED'].includes(status))) return true;
+      return registrationStatuses.length > 0 && registrationStatuses.every((status,index) =>
+        status === 'CONFIRMED' && ['PAID','NOT_REQUIRED'].includes(registrationPaymentStatuses[index])
+      );
+    }
+    function mergePaymentStatusResult(current, update) {
+      const previous = current && typeof current === 'object' ? current : {};
+      const next = update && typeof update === 'object' ? update : {};
+      const merged = Object.assign({}, previous, next);
+      delete merged.tracking_token;
+      if (previous.payment || next.payment) merged.payment = Object.assign({}, previous.payment || {}, next.payment || {});
+      if (Array.isArray(next.registrations)) {
+        const previousRows = list(previous.registrations);
+        merged.registrations = next.registrations.map((row,index) => Object.assign({}, previousRows[index] || {}, row || {}));
+        if (merged.registrations[0]) merged.registration = Object.assign({}, previous.registration || {}, merged.registrations[0]);
+      } else if (next.registration) {
+        merged.registration = Object.assign({}, previous.registration || {}, next.registration);
+      }
+      return merged;
+    }
+    function setPaymentStatusFeedback(message,isError) {
+      const feedback = $('paymentStatusFeedback');
+      if (!feedback) return;
+      feedback.textContent = message;
+      feedback.classList.toggle('error',Boolean(isError));
+    }
+    function schedulePaymentStatusRefresh() {
+      if (!state.activeTrackingToken || paymentStatusIsTerminal(state.lastRegistrationResult)) return;
+      if (state.paymentStatusTimer) clearTimeout(state.paymentStatusTimer);
+      const delays = [5000,8000,12000,20000,30000];
+      const delay = document.hidden ? 30000 : delays[Math.min(state.paymentStatusPollAttempt,delays.length - 1)];
+      state.paymentStatusTimer = setTimeout(() => refreshPaymentStatus(false),delay);
+    }
+    async function requestPaymentStatus(trackingToken) {
+      return requestJson(SUPABASE_URL + '/functions/v1/' + REGISTRATION_FUNCTION, {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify({
+          action: 'payment_status',
+          tournament_slug: state.slug,
+          tracking_token: trackingToken,
+        }),
+      });
+    }
+    async function refreshPaymentStatus(manual) {
+      if (!state.activeTrackingToken || state.paymentStatusLoading) return;
+      state.paymentStatusLoading = true;
+      if (state.paymentStatusTimer) clearTimeout(state.paymentStatusTimer);
+      state.paymentStatusTimer = null;
+      const refreshButton = $('refreshPaymentStatusBtn');
+      if (refreshButton) refreshButton.disabled = true;
+      setPaymentStatusFeedback(manual ? 'Consultando o pagamento…' : 'Atualizando o status do pagamento…',false);
+      try {
+        const statusResult = await requestPaymentStatus(state.activeTrackingToken);
+        state.paymentStatusPollAttempt += 1;
+        const merged = mergePaymentStatusResult(state.lastRegistrationResult,statusResult);
+        renderRegistrationSuccess(merged,true);
+        if (!paymentStatusIsTerminal(merged)) setPaymentStatusFeedback('Ainda aguardando a confirmação do Pix. A atualização continuará automaticamente.',false);
+      } catch (error) {
+        setPaymentStatusFeedback(error && error.message || 'Não foi possível consultar o pagamento agora.',true);
+        state.paymentStatusPollAttempt += 1;
+        schedulePaymentStatusRefresh();
+      } finally {
+        state.paymentStatusLoading = false;
+        const currentButton = $('refreshPaymentStatusBtn');
+        if (currentButton) currentButton.disabled = false;
+      }
+    }
+    async function retryIndividualPayment() {
+      if (!state.activeTrackingToken || state.paymentStatusLoading) return;
+      state.paymentStatusLoading = true;
+      if (state.paymentStatusTimer) clearTimeout(state.paymentStatusTimer);
+      state.paymentStatusTimer = null;
+      const retryButton = $('retryPaymentBtn');
+      if (retryButton) {
+        retryButton.disabled = true;
+        retryButton.textContent = 'Retomando a cobrança…';
+      }
+      setPaymentStatusFeedback('Retomando a cobrança já reservada, sem criar outra inscrição…',false);
+      try {
+        const retryResult = await requestJson(SUPABASE_URL + '/functions/v1/' + REGISTRATION_FUNCTION, {
+          method: 'POST',
+          headers: headers(),
+          body: JSON.stringify({
+            action: 'retry_payment',
+            tournament_slug: state.slug,
+            tracking_token: state.activeTrackingToken,
+          }),
+        });
+        const merged = mergePaymentStatusResult(state.lastRegistrationResult,retryResult);
+        renderRegistrationSuccess(merged,true);
+      } catch (error) {
+        setPaymentStatusFeedback(error && error.message || 'Não foi possível retomar a cobrança agora.',true);
+        if (retryButton) {
+          retryButton.disabled = false;
+          retryButton.textContent = 'Tentar gerar pagamento novamente';
+        }
+        schedulePaymentStatusRefresh();
+      } finally {
+        state.paymentStatusLoading = false;
+      }
+    }
     function showRegistrationError(message) { $('registrationError').textContent = message; $('registrationError').hidden = false; $('registrationError').scrollIntoView({behavior:'smooth',block:'nearest'}); }
-    function renderRegistrationSuccess(result) {
+    function renderRegistrationSuccess(result,preserveFocus) {
       if (isInternalRegistration()) {
+        clearPaymentStatusMonitor(true);
         const order = result.order || {};
         const selectedNames = list(result.registrations).map((row) => categoryName(field(row,'category_id'))).filter(Boolean);
         const duplicateCopy = result.duplicate === true ? 'Esta inscrição já estava registrada e não foi duplicada.' : 'Sua inscrição foi registrada com sucesso.';
@@ -2094,12 +2258,20 @@
         $('familyRegistrationForm').hidden = true;
         $('registrationCaptchaShell').hidden = true;
         $('registrationFoot').hidden = true;
+        $('registrationPrivacyNotice').hidden = true;
         $('registrationSuccess').hidden = false;
         $('registrationSuccess').innerHTML = '<div class="success-icon">✓</div><div><h3>Inscrição confirmada!</h3><p>' + escapeHtml(duplicateCopy) + '</p></div><div class="payment-box"><strong>' + escapeHtml(selectedNames.join(' · ') || 'Classe confirmada') + '</strong><span>Valor autorizado: ' + escapeHtml(money(field(order,'amount'))) + '</span><span>A cobrança será incluída na próxima mensalidade do clube.</span><small>Código: ' + escapeHtml(field(order,'public_code') || 'confirmado') + '</small></div><button class="button primary full" type="button" id="finishRegistrationBtn">Ver página do torneio</button>';
-        $('registrationSuccess').focus();
+        if (!preserveFocus) $('registrationSuccess').focus();
         $('finishRegistrationBtn').addEventListener('click',() => { location.href = publicUrl(state.slug); });
         return;
       }
+      clearPaymentStatusMonitor(false);
+      const receivedTrackingToken = clean(result && result.tracking_token);
+      if (receivedTrackingToken) state.activeTrackingToken = receivedTrackingToken;
+      const displayResult = Object.assign({},result || {});
+      delete displayResult.tracking_token;
+      result = displayResult;
+      state.lastRegistrationResult = result;
       const familyCheckout = result.family_checkout === true;
       const payment = result.payment || {};
       const registrationStatus = clean(field(result.registration,'status','registration_status')).toUpperCase();
@@ -2111,14 +2283,23 @@
       const normalizedStatus = clean(status).toUpperCase();
       const retryable = result.retryable === true || normalizedStatus === 'FAILED';
       const waitlist = ['WAITLIST','LISTA_ESPERA'].includes(registrationStatus);
-      const confirmed = ['PAID','PAGO','RECEIVED','RECEBIDO'].includes(normalizedStatus);
+      const registrationRowsForStatus = list(result.registrations).length
+        ? list(result.registrations)
+        : [result.registration,result.additional_registration].filter(Boolean);
+      const paidAtProvider = ['PAID','PAGO','RECEIVED','RECEBIDO'].includes(normalizedStatus);
+      const registrationsConfirmed = registrationRowsForStatus.length > 0 && registrationRowsForStatus.every((row) =>
+        clean(field(row,'status')).toUpperCase() === 'CONFIRMED' &&
+        clean(field(row,'payment_status')).toUpperCase() === 'PAID'
+      );
+      const confirmed = result.confirmed === true || (paidAtProvider && registrationsConfirmed);
+      const paymentAwaitingConfirmation = paidAtProvider && !confirmed;
       const partialRefund = normalizedStatus === 'PARTIALLY_REFUNDED';
       const paymentInAnalysis = normalizedStatus === 'CONFIRMED';
       const manualPaymentReview = normalizedStatus === 'REVIEW_REQUIRED';
       const refunded = normalizedStatus === 'REFUNDED';
       const cancelledOrDisputed = ['CANCELLED','CHARGEBACK'].includes(normalizedStatus);
       const overdue = normalizedStatus === 'OVERDUE';
-      const paymentActionBlocked = partialRefund || paymentInAnalysis || manualPaymentReview || refunded || cancelledOrDisputed || overdue;
+      const paymentActionBlocked = paymentAwaitingConfirmation || partialRefund || paymentInAnalysis || manualPaymentReview || refunded || cancelledOrDisputed || overdue;
       const vacancyConfirmed = confirmed || partialRefund;
       const noPayment = normalizedStatus === 'NOT_REQUIRED';
       const payable = ['PENDING','PENDENTE'].includes(normalizedStatus);
@@ -2129,6 +2310,8 @@
         ? 'Convite utilizado com sucesso!'
         : partialRefund
         ? 'Pagamento parcialmente estornado'
+        : paymentAwaitingConfirmation
+        ? 'Confirmando pagamento'
         : paymentInAnalysis || manualPaymentReview
         ? 'Pagamento em análise'
         : refunded
@@ -2144,6 +2327,8 @@
         ? 'As inscrições foram confirmadas. Por segurança, este link não poderá ser utilizado novamente.'
         : partialRefund
         ? 'A vaga permanece confirmada, mas o pagamento teve estorno parcial e está em revisão pela organização.'
+        : paymentAwaitingConfirmation
+        ? 'O Pix foi recebido e a confirmação da vaga está sendo concluída. Não gere outro pagamento.'
         : paymentInAnalysis
         ? 'O Asaas está analisando o pagamento. Não gere outro Pix; a confirmação será atualizada automaticamente.'
         : manualPaymentReview
@@ -2162,7 +2347,7 @@
           ? (familyCheckout ? 'Todas as vagas foram registradas com sucesso.' : 'Sua vaga foi registrada com sucesso.')
           : (familyCheckout ? 'Conclua o pagamento único abaixo para confirmar todas as vagas.' : 'Conclua o pagamento abaixo para confirmar sua vaga.')));
       const statusLabels = { PENDING:'Pendente', PENDENTE:'Pendente', CREATED:'Preparando cobrança', RECONCILING:'Conferindo cobrança', FAILED:'Falha ao gerar cobrança', PAID:'Pago', PAGO:'Pago', RECEIVED:'Pago', RECEBIDO:'Pago', CONFIRMED:'Pagamento em análise', REVIEW_REQUIRED:'Revisão manual necessária', PARTIALLY_REFUNDED:'Estorno parcial · em revisão', OVERDUE:'Prazo vencido', REFUNDED:'Estornado', CANCELLED:'Cancelado', CHARGEBACK:'Pagamento contestado', CONFIRMADO:'Confirmado', NOT_REQUIRED:'Sem pagamento', WAITLIST:'Lista de espera' };
-      const statusLabel = waitlist ? 'Lista de espera' : (statusLabels[normalizedStatus] || status);
+      const statusLabel = waitlist ? 'Lista de espera' : (paymentAwaitingConfirmation ? 'Pix recebido · confirmando vaga' : (statusLabels[normalizedStatus] || status));
       const familyRegistrations = familyCheckout ? list(result.registrations) : [];
       const selectedClassNames = familyCheckout
         ? familyRegistrations.map((row) => {
@@ -2173,10 +2358,16 @@
       const reservationDeadline = reservationExpiresAt
         ? new Date(reservationExpiresAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
         : '';
+      // CONFIRMED e REVIEW_REQUIRED ainda podem ser reconciliados. Preservar o
+      // token nesses estados permite acompanhar exatamente a mesma cobrança.
+      const terminalCheckout = vacancyConfirmed || noPayment || waitlist || refunded || cancelledOrDisputed;
+      const statusTrackingTerminal = result.terminal === true || terminalCheckout || overdue;
+      const canTrackPayment = Boolean(state.activeTrackingToken) && !statusTrackingTerminal;
       $('registrationForm').hidden = true;
       $('familyRegistrationForm').hidden = true;
       $('registrationCaptchaShell').hidden = true;
       $('registrationFoot').hidden = true;
+      $('registrationPrivacyNotice').hidden = true;
       $('registrationSuccess').hidden = false;
       $('registrationSuccess').innerHTML = '<div class="success-icon">✓</div><div><h3>' + escapeHtml(successTitle) + '</h3><p>' + escapeHtml(successCopy) + '</p></div>' +
         '<div class="payment-box"><strong>Status: ' + escapeHtml(statusLabel) + '</strong>' +
@@ -2186,17 +2377,25 @@
         (invoiceUrl && payable ? '<a class="button lime full" href="' + escapeHtml(safeHref(invoiceUrl)) + '" target="_blank" rel="noopener">Pagar inscrição</a>' : '') +
         (pixImage && payable ? '<img class="payment-qr" src="data:image/png;base64,' + escapeHtml(pixImage) + '" alt="QR Code Pix" />' : '') +
         (pix && payable ? '<div class="pix-copy" id="pixPayload">' + escapeHtml(pix) + '</div><button class="button full" type="button" id="copyPixBtn">Copiar Pix</button>' : '') + '</div>' +
+        (canTrackPayment ? '<div class="payment-status-actions"><button class="button full" type="button" id="refreshPaymentStatusBtn">Atualizar status do pagamento</button><p class="payment-status-feedback" id="paymentStatusFeedback" role="status">O status será atualizado automaticamente após o Pix.</p></div>' : '') +
         (canRetryPayment ? '<button class="button lime full" type="button" id="retryPaymentBtn">Tentar gerar pagamento novamente</button>' : '') +
         '<button class="button primary full" type="button" id="finishRegistrationBtn">Concluir</button>';
-      $('registrationSuccess').focus();
+      if (!preserveFocus) $('registrationSuccess').focus();
       const copy = $('copyPixBtn'); if (copy) copy.addEventListener('click',async () => { try { await navigator.clipboard.writeText(pix); copy.textContent='Pix copiado'; } catch(error) { copy.textContent='Selecione e copie o código acima'; } });
+      const refresh = $('refreshPaymentStatusBtn'); if (refresh) refresh.addEventListener('click',() => refreshPaymentStatus(true));
       const retry = $('retryPaymentBtn'); if (retry) retry.addEventListener('click',async () => {
+        if (!familyCheckout && state.activeTrackingToken) {
+          await retryIndividualPayment();
+          return;
+        }
+        clearPaymentStatusMonitor(false);
         $('registrationForm').hidden = familyCheckout;
         $('familyRegistrationForm').hidden = !familyCheckout;
         $('registrationFoot').hidden = false;
         $('registrationCaptchaShell').hidden = false;
         $('registrationSuccess').hidden = true;
         $('registrationError').hidden = true;
+        configureRegistrationPrivacy();
         $('submitRegistrationBtn').textContent = 'Tentar gerar pagamento novamente';
         $('submitRegistrationBtn').setAttribute('form',familyCheckout ? 'familyRegistrationForm' : 'registrationForm');
         try {
@@ -2206,10 +2405,6 @@
           showRegistrationError(error && error.message || 'Não foi possível carregar a proteção anti-robô.');
         }
       });
-      // CONFIRMED e REVIEW_REQUIRED ainda podem ser reconciliados. Preservar o
-      // token nesses estados permite retomar exatamente a mesma cobrança, sem
-      // criar uma nova tentativa (especialmente no checkout familiar).
-      const terminalCheckout = vacancyConfirmed || noPayment || waitlist || refunded || cancelledOrDisputed;
       if (familyCheckout && terminalCheckout) clearFamilyRequestToken();
       if (!familyCheckout && terminalCheckout) clearIndividualRequestToken(state.individualRequestKey);
       if (state.registrationOnly) {
@@ -2218,6 +2413,7 @@
       } else {
         $('finishRegistrationBtn').addEventListener('click',closeRegistration);
       }
+      if (canTrackPayment) schedulePaymentStatusRefresh();
     }
 
     $('closeRegistrationBtn').addEventListener('click',closeRegistration);

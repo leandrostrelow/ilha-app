@@ -307,6 +307,31 @@ function safePayment(row: JsonRecord | null) {
   };
 }
 
+function safeTrackingRegistration(row: JsonRecord) {
+  return {
+    category_id: row.category_id,
+    status: row.status,
+    payment_status: row.payment_status,
+    total_amount: row.total_amount,
+    paid_amount: row.paid_amount,
+    confirmed_at: row.confirmed_at || null,
+    cancelled_at: row.cancelled_at || null,
+    created_at: row.created_at,
+  };
+}
+
+function safeTrackingPayment(row: JsonRecord | null) {
+  if (!row) return null;
+  return {
+    status: row.status,
+    billing_type: row.billing_type,
+    amount: row.amount,
+    paid_at: row.paid_at || null,
+    expires_at: row.expires_at || null,
+    pix_expires_at: row.pix_expires_at || null,
+  };
+}
+
 function hasDeferredPixRepair(payment: JsonRecord | null) {
   if (!payment || !payment.provider_payment_id || String(payment.billing_type || "").toUpperCase() !== "PIX") {
     return false;
@@ -1236,6 +1261,368 @@ async function finishFamilyCheckout(
   );
 }
 
+type TrackedCheckout = {
+  tournament: JsonRecord;
+  group: JsonRecord | null;
+  registrations: JsonRecord[];
+  payment: JsonRecord | null;
+  familyCheckout: boolean;
+};
+
+class PaymentTrackingRateLimitError extends Error {
+  retryAfterSeconds: number;
+
+  constructor(retryAfterSeconds: number) {
+    super("Muitas consultas deste pagamento. Aguarde um pouco e tente novamente.");
+    this.name = "PaymentTrackingRateLimitError";
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
+
+function activePaymentReservation(payment: JsonRecord | null) {
+  if (!payment) return false;
+  const expiresAt = Date.parse(String(payment.expires_at || ""));
+  return Number.isFinite(expiresAt) && expiresAt > Date.now();
+}
+
+function trackingCheckoutResponse(
+  checkout: TrackedCheckout,
+  payment: JsonRecord | null = checkout.payment,
+  includePaymentInstructions = false,
+  extra: JsonRecord = {},
+) {
+  const registrations = checkout.registrations.map(safeTrackingRegistration);
+  const paymentStatus = text(payment?.status, 40).toUpperCase();
+  const registrationConfirmed = registrations.length > 0 && registrations.every((row) =>
+    String(row.status || "").toUpperCase() === "CONFIRMED" &&
+    String(row.payment_status || "").toUpperCase() === "PAID"
+  );
+  const noPayment = !payment && registrations.length > 0 && registrations.every((row) =>
+    ["NOT_REQUIRED", "PAID"].includes(String(row.payment_status || "").toUpperCase())
+  );
+  const waitlisted = registrations.length > 0 && registrations.every((row) =>
+    String(row.status || "").toUpperCase() === "WAITLIST"
+  );
+  const terminalPayment = ["PARTIALLY_REFUNDED", "REFUNDED", "CANCELLED", "CHARGEBACK", "OVERDUE"]
+    .includes(paymentStatus);
+  const terminalRegistration = registrations.some((row) =>
+    ["CANCELLED", "REFUNDED"].includes(String(row.status || "").toUpperCase())
+  );
+  return {
+    registration_group: checkout.group
+      ? { status: checkout.group.status, total_amount: checkout.group.total_amount }
+      : null,
+    registration: registrations[0] || null,
+    registrations,
+    payment: includePaymentInstructions ? safePayment(payment) : safeTrackingPayment(payment),
+    family_checkout: checkout.familyCheckout,
+    confirmed: paymentStatus === "RECEIVED" && registrationConfirmed,
+    terminal: registrationConfirmed || noPayment || waitlisted || terminalPayment || terminalRegistration,
+    reservation_active: activePaymentReservation(payment),
+    ...extra,
+  };
+}
+
+async function loadTrackedCheckout(
+  supabase: DbClient,
+  tournament: JsonRecord,
+  trackingToken: string,
+): Promise<TrackedCheckout | null> {
+  const groupResult = await supabase.from("tournament_registration_groups")
+    .select("*")
+    .eq("tournament_id", tournament.id)
+    .eq("public_token", trackingToken)
+    .maybeSingle();
+  if (groupResult.error) throw groupResult.error;
+  const group = groupResult.data as JsonRecord | null;
+  if (group) {
+    const registrationsResult = await supabase.from("tournament_registrations")
+      .select("*")
+      .eq("registration_group_id", group.id)
+      .order("created_at", { ascending: true });
+    if (registrationsResult.error) throw registrationsResult.error;
+    const paymentResult = await supabase.from("tournament_payments")
+      .select("*")
+      .eq("registration_group_id", group.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (paymentResult.error) throw paymentResult.error;
+    return {
+      tournament,
+      group,
+      registrations: (registrationsResult.data || []) as JsonRecord[],
+      payment: paymentResult.data as JsonRecord | null,
+      familyCheckout: true,
+    };
+  }
+
+  const registrationResult = await supabase.from("tournament_registrations")
+    .select("*")
+    .eq("tournament_id", tournament.id)
+    .eq("public_token", trackingToken)
+    .maybeSingle();
+  if (registrationResult.error) throw registrationResult.error;
+  const registration = registrationResult.data as JsonRecord | null;
+  if (!registration) return null;
+  const childResult = await supabase.from("tournament_registrations")
+    .select("*")
+    .eq("parent_registration_id", registration.id)
+    .order("created_at", { ascending: true });
+  if (childResult.error) throw childResult.error;
+  const paymentResult = await supabase.from("tournament_payments")
+    .select("*")
+    .eq("registration_id", registration.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (paymentResult.error) throw paymentResult.error;
+  return {
+    tournament,
+    group: null,
+    registrations: [registration, ...((childResult.data || []) as JsonRecord[])],
+    payment: paymentResult.data as JsonRecord | null,
+    familyCheckout: false,
+  };
+}
+
+async function trackedCheckoutFromPayload(
+  request: Request,
+  payload: JsonRecord,
+  action: "payment_status" | "retry_payment",
+  securityConfig: PublicRegistrationSecurityConfig,
+) {
+  const tournamentSlug = text(payload.tournament_slug, 100).toLowerCase();
+  const trackingToken = text(payload.tracking_token, 80);
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tournamentSlug) || !isUuid(trackingToken)) return null;
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  const supabaseKey = serviceRoleKey();
+  if (!supabaseUrl || !supabaseKey) throw new Error("Configuração do Supabase ausente.");
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const clientIp = trustedClientIp(request);
+  const trackingHash = await hmacSha256(
+    securityConfig.rateLimitSalt,
+    `payment-tracking:${action}:${trackingToken}`,
+  );
+  const ipHash = clientIp
+    ? await hmacSha256(securityConfig.rateLimitSalt, `payment-tracking-ip:${action}:${clientIp}`)
+    : null;
+  const rateLimitResult = await supabase.rpc("consume_tournament_payment_tracking_rate_limits", {
+    p_tracking_hash: trackingHash,
+    p_ip_hash: ipHash,
+    p_action: action,
+  });
+  if (rateLimitResult.error) throw rateLimitResult.error;
+  const rateLimit = (
+    Array.isArray(rateLimitResult.data) ? rateLimitResult.data[0] : rateLimitResult.data
+  ) as { allowed?: boolean; retry_after_seconds?: number } | null;
+  if (!rateLimit?.allowed) {
+    throw new PaymentTrackingRateLimitError(
+      Math.max(1, Math.min(600, Number(rateLimit?.retry_after_seconds || 60))),
+    );
+  }
+  const tournamentResult = await supabase.from("tournaments")
+    .select("id,name,slug")
+    .eq("slug", tournamentSlug)
+    .maybeSingle();
+  if (tournamentResult.error) throw tournamentResult.error;
+  if (!tournamentResult.data) return null;
+  const checkout = await loadTrackedCheckout(supabase, tournamentResult.data as JsonRecord, trackingToken);
+  return checkout ? { supabase, checkout } : null;
+}
+
+function trackingRateLimitResponse(request: Request, error: PaymentTrackingRateLimitError) {
+  return json(request, { error: error.message }, 429, {
+    "Retry-After": String(error.retryAfterSeconds),
+  });
+}
+
+async function handlePaymentStatus(
+  request: Request,
+  payload: JsonRecord,
+  securityConfig: PublicRegistrationSecurityConfig,
+) {
+  let tracked;
+  try {
+    tracked = await trackedCheckoutFromPayload(request, payload, "payment_status", securityConfig);
+  } catch (error) {
+    if (error instanceof PaymentTrackingRateLimitError) return trackingRateLimitResponse(request, error);
+    throw error;
+  }
+  if (!tracked) return json(request, { error: "Acompanhamento não encontrado." }, 404);
+  return json(request, trackingCheckoutResponse(tracked.checkout));
+}
+
+async function handleIndividualPaymentRetry(
+  request: Request,
+  payload: JsonRecord,
+  securityConfig: PublicRegistrationSecurityConfig,
+) {
+  let tracked;
+  try {
+    tracked = await trackedCheckoutFromPayload(request, payload, "retry_payment", securityConfig);
+  } catch (error) {
+    if (error instanceof PaymentTrackingRateLimitError) return trackingRateLimitResponse(request, error);
+    throw error;
+  }
+  if (!tracked) return json(request, { error: "Acompanhamento não encontrado." }, 404);
+  const { supabase, checkout } = tracked;
+  if (checkout.familyCheckout) {
+    return json(request, { error: "Retome a inscrição familiar pelo formulário original." }, 409);
+  }
+  const response = (payment: JsonRecord | null, extra: JsonRecord = {}, status = 200) =>
+    json(request, trackingCheckoutResponse(checkout, payment, true, extra), status);
+  let localPayment = checkout.payment;
+  const registration = checkout.registrations[0];
+  if (!registration || !localPayment) {
+    return json(request, { error: "A cobrança reservada não foi encontrada." }, 409);
+  }
+  const localStatus = text(localPayment.status, 40).toUpperCase();
+  const registrationStatus = text(registration.status, 40).toUpperCase();
+  const registrationPaymentStatus = text(registration.payment_status, 40).toUpperCase();
+  if (["WAITLIST", "CANCELLED", "REFUNDED"].includes(registrationStatus) ||
+    registrationPaymentStatus === "PAID" ||
+    ["RECEIVED", "CONFIRMED", "REVIEW_REQUIRED", "PARTIALLY_REFUNDED", "REFUNDED", "CANCELLED", "CHARGEBACK", "OVERDUE"]
+      .includes(localStatus)) {
+    return response(localPayment);
+  }
+  if (!activePaymentReservation(localPayment)) {
+    return json(request, {
+      ...trackingCheckoutResponse(checkout),
+      error: "Sua reserva de 2 horas expirou. Inicie uma nova inscrição quando as vagas estiverem abertas.",
+    }, 410);
+  }
+
+  const providerEnvironment = asaasConfig().environment;
+  localPayment = await ensurePaymentProviderEnvironment(supabase, localPayment);
+  if (text(localPayment.provider_environment, 20).toUpperCase() !== providerEnvironment) {
+    return response(localPayment, {
+      retryable: false,
+      warning: "A cobrança pertence a outro ambiente do Asaas e precisa de revisão da organização.",
+    }, 202);
+  }
+  if (localPayment.provider_payment_id) {
+    try {
+      localPayment = await repairExistingPixPayment(supabase, localPayment);
+    } catch (error) {
+      console.warn("tournament-register tracked PIX repair deferred", {
+        payment_id: localPayment.id,
+        provider_error: providerErrorSnapshot(error),
+      });
+    }
+    return response(localPayment, deferredPixRepairResponse(localPayment));
+  }
+  if (localPayment.status === "RECONCILING") {
+    localPayment = await reconcileAmbiguousPayment(supabase, localPayment);
+    if (localPayment.provider_payment_id) {
+      return response(localPayment, deferredPixRepairResponse(localPayment));
+    }
+    return response(localPayment, {
+      retryable: false,
+      warning: "Estamos conferindo a cobrança no Asaas. Não gere outro pagamento.",
+    }, 202);
+  }
+  if (!retryablePaymentStatuses.has(String(localPayment.status))) return response(localPayment);
+
+  const paymentAge = Date.now() - Date.parse(String(localPayment.updated_at || localPayment.created_at));
+  if (localPayment.status !== "FAILED" && paymentAge <= 120000) {
+    return response(localPayment, {
+      retryable: true,
+      warning: "A cobrança ainda está sendo preparada. Tente atualizar novamente em alguns segundos.",
+    }, 202);
+  }
+
+  const claim = await supabase.from("tournament_payments")
+    .update({ status: "CREATED", billing_type: "PIX", updated_at: new Date().toISOString() })
+    .eq("id", localPayment.id)
+    .eq("status", localPayment.status)
+    .eq("provider_environment", providerEnvironment)
+    .eq("updated_at", localPayment.updated_at)
+    .select("*")
+    .maybeSingle();
+  if (claim.error) throw claim.error;
+  if (!claim.data) {
+    const latest = await supabase.from("tournament_payments").select("*").eq("id", localPayment.id).single();
+    if (latest.error) throw latest.error;
+    return response(latest.data as JsonRecord, {
+      retryable: true,
+      warning: "A cobrança ainda está sendo preparada. Tente atualizar novamente em alguns segundos.",
+    }, 202);
+  }
+  localPayment = claim.data as JsonRecord;
+  const providerClaim = await claimProviderPaymentAttempt(supabase, localPayment, "PIX");
+  if (!providerClaim) {
+    const latest = await supabase.from("tournament_payments").select("*").eq("id", localPayment.id).single();
+    if (latest.error) throw latest.error;
+    return response(latest.data as JsonRecord, {
+      retryable: true,
+      warning: "A cobrança ainda está sendo preparada. Tente atualizar novamente em alguns segundos.",
+    }, 202);
+  }
+
+  const athleteResult = await supabase.from("tournament_athletes")
+    .select("*")
+    .eq("id", registration.athlete_id)
+    .single();
+  if (athleteResult.error) throw athleteResult.error;
+  const categoryResult = await supabase.from("tournament_categories")
+    .select("id,name")
+    .eq("id", registration.category_id)
+    .eq("tournament_id", checkout.tournament.id)
+    .single();
+  if (categoryResult.error) throw categoryResult.error;
+  const additionalRegistration = checkout.registrations.find((row) => row.parent_registration_id === registration.id);
+  let additionalCategory: JsonRecord | null = null;
+  if (additionalRegistration?.category_id) {
+    const additionalResult = await supabase.from("tournament_categories")
+      .select("id,name")
+      .eq("id", additionalRegistration.category_id)
+      .eq("tournament_id", checkout.tournament.id)
+      .single();
+    if (additionalResult.error) throw additionalResult.error;
+    additionalCategory = additionalResult.data as JsonRecord;
+  }
+
+  try {
+    localPayment = await createOrRecoverPayment(
+      supabase,
+      providerClaim as JsonRecord,
+      athleteResult.data as JsonRecord,
+      checkout.tournament,
+      categoryResult.data as JsonRecord,
+      additionalCategory,
+    );
+  } catch (error) {
+    const providerError = providerErrorSnapshot(error);
+    console.error("tournament-register tracked provider failure", {
+      stage: "asaas_payment_retry",
+      ...providerError,
+    });
+    if (error instanceof AmbiguousPaymentCreationError) {
+      const reconciling = await deferPaymentReconciliation(supabase, providerClaim as JsonRecord, error);
+      return response(reconciling, {
+        retryable: false,
+        warning: "O Asaas ainda não confirmou se a cobrança foi criada. Não tente gerar outra.",
+      }, 202);
+    }
+    const failed = await markClaimedProviderFailure(
+      supabase,
+      providerClaim as JsonRecord,
+      { ...providerError, stage: "asaas_payment_retry" },
+    );
+    return response(failed.payment, failed.applied
+      ? {
+        retryable: true,
+        warning: "A cobrança não ficou pronta. Você pode tentar novamente enquanto a reserva estiver ativa.",
+      }
+      : {}, failed.applied ? 202 : 200);
+  }
+  const deferredPix = hasDeferredPixRepair(localPayment);
+  return response(localPayment, deferredPixRepairResponse(localPayment), deferredPix ? 202 : 200);
+}
+
 async function handleFamilyRegistration(
   request: Request,
   payload: JsonRecord,
@@ -1705,6 +2092,17 @@ Deno.serve(async (request) => {
     } catch (_error) {
       return json(request, { error: "Dados da inscrição inválidos." }, 400);
     }
+
+    const action = text(payload.action, 40).toLowerCase();
+    if (action === "payment_status") {
+      failureStage = "payment_status";
+      return await handlePaymentStatus(request, payload, securityConfig);
+    }
+    if (action === "retry_payment") {
+      failureStage = "payment_retry";
+      return await handleIndividualPaymentRetry(request, payload, securityConfig);
+    }
+    if (action) return json(request, { error: "Ação inválida." }, 400);
 
     if (Array.isArray(payload.athletes)) {
       return await handleFamilyRegistration(request, payload, securityConfig);

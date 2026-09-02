@@ -92,6 +92,10 @@ const publicRegistrationRateLimitSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260822091000_public_registration_abuse_protection.sql'),
   'utf8'
 );
+const tournamentPaymentTrackingRateLimitSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260902183000_rate_limit_tournament_payment_tracking.sql'),
+  'utf8'
+);
 const ilhaOpenClassesAndLimitsSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260831100000_configure_ilha_open_2026_classes_and_registration_limits.sql'),
   'utf8'
@@ -458,7 +462,8 @@ test('comunicados usam a fila resiliente e não enviam Web Push diretamente', ()
   assert.match(adminSource, /id="announcementCancelEditBtn"/);
   assert.match(adminSource, /function editAnnouncementAction\(id\)/);
   assert.match(saveAnnouncement, /method: 'PATCH'/);
-  assert.match(saveAnnouncement, /!editingItem && payload\.body/);
+  assert.match(adminSource, /id="announcementSendPush"/);
+  assert.match(saveAnnouncement, /!editingItem && sendPushNow && payload\.body/);
   assert.match(saveAnnouncement, /A notificação não foi reenviada/);
   assert.match(saveAnnouncement, /if \(!editingItem\) payload\.published_at/);
   assert.match(adminSource, /data-announcement-resend/);
@@ -475,13 +480,14 @@ test('comunicados usam a fila resiliente e não enviam Web Push diretamente', ()
   assert.match(adminSource, /Number\(stats\.failed \|\| 0\)/);
   assert.match(adminSource, /Number\(stats\.partial \|\| 0\)/);
   assert.doesNotMatch(functionSource(adminSource, 'notifyClientAccessReleased'), /sendClientAnnouncementPush/);
-  assert.match(functionSource(indexSource, 'loadClientData'), /'NOVO_ALUNO', 'COMUNICADO'/);
-  assert.match(functionSource(indexSource, 'handleClientNotificationInsert'), /event_type[\s\S]*COMUNICADO[\s\S]*return/);
+  assert.match(functionSource(indexSource, 'loadClientData'), /'NOVO_ALUNO', 'TORNEIO_INSCRICAO', 'COMUNICADO'/);
+  assert.match(functionSource(indexSource, 'handleClientNotificationInsert'), /COMUNICADO[\s\S]*event_type[\s\S]*return/);
   assert.match(functionSource(adminSource, 'handleAdminNotificationInsert'), /event_type[\s\S]*COMUNICADO[\s\S]*return/);
   assert.match(functionSource(adminSource, 'saveAdminPushSubscription'), /app_surface:\s*'ADM'/);
   assert.match(scopedPushSubscriptionsSource, /app_surface text not null default 'ILHA_PLAY'/);
   assert.match(scopedPushSubscriptionsSource, /subscription\.app_surface = 'ILHA_PLAY'/);
-  assert.match(clientNotificationDispatchSource, /subscriptionSurface[\s\S]*NOVO_ALUNO[\s\S]*ADM[\s\S]*ILHA_PLAY[\s\S]*\.eq\("app_surface", subscriptionSurface\)/);
+  assert.match(clientNotificationDispatchSource, /adminOnlyEvents[\s\S]*NOVO_ALUNO[\s\S]*TORNEIO_INSCRICAO[\s\S]*ADM[\s\S]*ILHA_PLAY/);
+  assert.match(clientNotificationDispatchSource, /\.eq\("app_surface", subscriptionSurface\)/);
 });
 
 test('Ilha Store usa catálogo persistente com valor, estoque e CRUD administrativo', () => {
@@ -1057,8 +1063,10 @@ test('convite isento é único, limitado e consumido atomicamente com a inscriç
   const downloadInviteCard = functionSource(adminSource, 'downloadRegistrationInviteCard');
   assert.match(downloadInviteCard, /canvas\.width = 1080[\s\S]*canvas\.height = 1350/);
   assert.match(adminSource, /id="registrationInviteTournamentLogo"/);
-  assert.match(adminSource, /class="tournament-invite-brand club"[\s\S]*src="\/assets\/branding\/ilha-tenis-ball\.png"/);
-  assert.match(downloadInviteCard, /torneio\.logo_url[\s\S]*new URL\('\/assets\/branding\/ilha-tenis-ball\.png'/);
+  assert.match(adminSource, /id="registrationInviteCardRecipient"[\s\S]*id="registrationInviteCardCount"[\s\S]*id="registrationInviteQr"/);
+  assert.match(adminSource, /class="tournament-invite-brand club"[\s\S]*src="\/assets\/branding\/ilha-tenis-logo-light\.png"/);
+  assert.match(downloadInviteCard, /torneio\.logo_url[\s\S]*new URL\('\/assets\/branding\/ilha-tenis-logo-light\.png'/);
+  assert.match(downloadInviteCard, /strokeStyle = '#b6ef00'[\s\S]*roundRect\(76, 730, 928, 442[\s\S]*registrationInviteQrDataUrl/);
   assert.doesNotMatch(downloadInviteCard, /'PARA '\s*\+/);
   assert.doesNotMatch(downloadInviteCard, /moveTo\(78, 220\)/);
   assert.match(functionSource(adminSource, 'sendRegistrationInviteWhatsApp'), /registrationInviteMessage\(invite\)[\s\S]*window\.open/);
@@ -1089,7 +1097,10 @@ test('ADM identifica, acompanha, cancela e exclui convites não utilizados sem e
   assert.match(adminSource, /id="registrationInviteRecipientPhone"/);
   assert.match(functionSource(adminSource, 'renderRegistrationInvites'), /used_athletes[\s\S]*data-revoke-registration-invite[\s\S]*data-delete-registration-invite/);
   assert.match(functionSource(adminSource, 'renderRegistrationInvites'), /data-share-registration-invite/);
-  assert.match(functionSource(adminSource, 'shareManagedRegistrationInvite'), /getRegistrationInviteShareLink[\s\S]*registrationInviteMessage\(invite\)[\s\S]*window\.open/);
+  assert.match(functionSource(adminSource, 'renderRegistrationInvites'), /data-download-registration-invite/);
+  assert.match(functionSource(adminSource, 'getManagedRegistrationInvitePayload'), /getRegistrationInviteShareLink/);
+  assert.match(functionSource(adminSource, 'shareManagedRegistrationInvite'), /getManagedRegistrationInvitePayload[\s\S]*registrationInviteMessage\(invite\)[\s\S]*window\.open/);
+  assert.match(functionSource(adminSource, 'downloadManagedRegistrationInvite'), /getManagedRegistrationInvitePayload[\s\S]*downloadRegistrationInviteCard\(invite\)/);
   assert.match(tournamentAdminSource, /recipient_name: recipientName/);
   assert.match(tournamentAdminSource, /convites:[\s\S]*used_athletes/);
   assert.match(tournamentAdminSource, /revokeRegistrationInvite/);
@@ -1111,6 +1122,15 @@ test('inscrição avisa sobre elegibilidade e permite ajuste administrativo de c
   assert.match(tournamentSource, /organização poderá alterar a classe escolhida/);
   assert.match(adminSource, /<label>Classe da inscrição<\/label>/);
   assert.match(adminSource, /esta inscrição será movida para a classe escolhida/);
+});
+
+test('cadastro manual de jogador abre em modal a partir de um único botão', () => {
+  assert.match(adminSource, /id="newPlayerBtn"[^>]*>Novo jogador<\/button>/);
+  assert.match(adminSource, /id="playerEditorDialog"[^>]*role="dialog"[^>]*aria-modal="true"[^>]*aria-hidden="true"/);
+  assert.match(adminSource, /#players \.player-form-card \{ display: none; \}/);
+  assert.match(functionSource(adminSource, 'openNewPlayerForm'), /player-editing[\s\S]*playerEditorDialog[\s\S]*playerName/);
+  assert.match(functionSource(adminSource, 'trapPlayerEditorFocus'), /event\.key !== 'Tab'[\s\S]*querySelectorAll[\s\S]*event\.shiftKey[\s\S]*focus\(\)/);
+  assert.match(functionSource(adminSource, 'clearPlayerForm'), /playerEditorDialog[\s\S]*aria-hidden[\s\S]*newPlayerBtn/);
 });
 
 test('rota residual de inscrição interna permanece privada e falha fechada por padrão', () => {
@@ -2513,6 +2533,70 @@ test('popups públicos e administrativos ficam centralizados', () => {
   assert.match(adminSource, /body\.bar-admin-surface \.admin-modal-overlay\.show \{[\s\S]*place-items:\s*center/);
   assert.match(indexSource, /\.external-modal \{[\s\S]*align-items:\s*center;[\s\S]*place-items:\s*center;/);
   assert.match(barPublicSource, /\.sheet-backdrop \{[\s\S]*align-items:\s*center;/);
+});
+
+test('acompanhamento do Pix é privado, somente leitura e atualiza a tela sem nova cobrança', () => {
+  const statusHandler = functionSource(tournamentRegisterSource, 'handlePaymentStatus');
+  assert.match(statusHandler, /trackedCheckoutFromPayload[\s\S]*trackingCheckoutResponse/);
+  assert.doesNotMatch(statusHandler, /asaasRequest|createOrRecoverPayment|claimProviderPaymentAttempt/);
+
+  const safeRegistrationStatus = functionSource(tournamentRegisterSource, 'safeTrackingRegistration');
+  const safePaymentStatus = functionSource(tournamentRegisterSource, 'safeTrackingPayment');
+  assert.doesNotMatch(safeRegistrationStatus, /public_name|public_code|public_token|request_token|cpf|email|phone/);
+  assert.doesNotMatch(safePaymentStatus, /provider_payment_id|external_reference|invoice_url|pix_payload|pix_encoded_image/);
+  const trackingResponse = sourceSection(tournamentRegisterSource, 'function trackingCheckoutResponse(', 'async function loadTrackedCheckout');
+  assert.match(trackingResponse, /paymentStatus === "RECEIVED" && registrationConfirmed/);
+  assert.doesNotMatch(trackingResponse, /terminalPayment\s*=\s*\["RECEIVED"/);
+
+  const statusRequest = functionSource(tournamentSource, 'requestPaymentStatus');
+  assert.match(statusRequest, /method:\s*'POST'[\s\S]*action:\s*'payment_status'[\s\S]*tracking_token:\s*trackingToken/);
+  assert.doesNotMatch(statusRequest, /URLSearchParams|location\.|searchParams/);
+  assert.match(functionSource(tournamentSource, 'schedulePaymentStatusRefresh'), /setTimeout\(\(\) => refreshPaymentStatus\(false\)/);
+  assert.match(functionSource(tournamentSource, 'refreshPaymentStatus'), /requestPaymentStatus[\s\S]*renderRegistrationSuccess/);
+  assert.match(functionSource(tournamentSource, 'renderRegistrationSuccess'), /delete displayResult\.tracking_token[\s\S]*refreshPaymentStatusBtn[\s\S]*schedulePaymentStatusRefresh/);
+  assert.match(functionSource(tournamentSource, 'renderRegistrationSuccess'), /paymentAwaitingConfirmation[\s\S]*Pix foi recebido e a confirmação da vaga está sendo concluída/);
+});
+
+test('acompanhamento público do Pix tem limites separados por token, IP e ação', () => {
+  const trackedLookup = functionSource(tournamentRegisterSource, 'trackedCheckoutFromPayload');
+  assert.match(trackedLookup, /payment-tracking:\$\{action\}:\$\{trackingToken\}/);
+  assert.match(trackedLookup, /payment-tracking-ip:\$\{action\}:\$\{clientIp\}/);
+  assert.match(trackedLookup, /consume_tournament_payment_tracking_rate_limits/);
+  assert.match(trackedLookup, /rateLimit\?\.allowed/);
+  assert.match(functionSource(tournamentRegisterSource, 'trackingRateLimitResponse'), /429[\s\S]*Retry-After/);
+  assert.match(tournamentPaymentTrackingRateLimitSource, /tracking-token:\[a-f0-9\]\{64\}/);
+  assert.match(tournamentPaymentTrackingRateLimitSource, /tracking-ip:\[a-f0-9\]\{64\}/);
+  assert.match(tournamentPaymentTrackingRateLimitSource, /v_action = 'payment_status' then 30 else 5/);
+  assert.match(tournamentPaymentTrackingRateLimitSource, /revoke all[\s\S]*from public, anon, authenticated/);
+  assert.match(tournamentPaymentTrackingRateLimitSource, /grant execute[\s\S]*to service_role/);
+});
+
+test('retomada individual reutiliza a cobrança reservada mesmo após o fechamento das inscrições', () => {
+  const retryHandler = functionSource(tournamentRegisterSource, 'handleIndividualPaymentRetry');
+  assert.match(retryHandler, /trackedCheckoutFromPayload/);
+  assert.match(retryHandler, /activePaymentReservation\(localPayment\)/);
+  assert.match(retryHandler, /localPayment\.status !== "FAILED" && paymentAge <= 120000/);
+  assert.match(retryHandler, /createOrRecoverPayment/);
+  assert.ok(
+    retryHandler.indexOf('activePaymentReservation(localPayment)') < retryHandler.indexOf('createOrRecoverPayment'),
+    'a reserva precisa ser validada antes de qualquer retomada no provedor',
+  );
+  assert.doesNotMatch(retryHandler, /registration_open|registration_closes_at|registration_opens_at/);
+  assert.match(tournamentRegisterSource, /action === "retry_payment"[\s\S]*handleIndividualPaymentRetry/);
+
+  const retryClient = functionSource(tournamentSource, 'retryIndividualPayment');
+  assert.match(retryClient, /action:\s*'retry_payment'[\s\S]*tracking_token:\s*state\.activeTrackingToken/);
+  assert.doesNotMatch(retryClient, /initializeRegistrationCaptcha|lastRegistrationPayload|requestSubmit/);
+});
+
+test('formulário do torneio explica o uso dos dados e usa política configurada ou contato existente', () => {
+  assert.match(tournamentSource, /id="registrationPrivacyNotice"[\s\S]*processar a inscrição[\s\S]*gerar o Pix quando aplicável/);
+  const configuredPrivacy = functionSource(tournamentSource, 'privacyPolicyUrl');
+  assert.match(configuredPrivacy, /aboutEventSettings[\s\S]*privacy_url[\s\S]*privacy_policy_url/);
+  const privacyNotice = functionSource(tournamentSource, 'configureRegistrationPrivacy');
+  assert.match(privacyNotice, /Consultar aviso de privacidade/);
+  assert.match(privacyNotice, /wa\.me\/5527999805814/);
+  assert.match(privacyNotice, /Falar com a organização sobre seus dados/);
 });
 
 test('migrations canonicas possuem timestamps unicos e crescentes', async () => {
