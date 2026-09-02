@@ -1218,7 +1218,7 @@
       const MOBILE_MENU_VIEW = new URLSearchParams(window.location.search).get('view') === 'mobile' || /^\/cardapio\/?$/.test(window.location.pathname);
       const MENU_VISIBILITY_FIELD = MOBILE_MENU_VIEW ? 'menu_visible' : 'menu_tv_visible';
       const MENU_QUERY = 'bar_products?select=id,name,category,sale_price,image_url,notes,menu_featured,menu_sort_order,updated_at&active=eq.true&' + MENU_VISIBILITY_FIELD + '=eq.true&order=category.asc,menu_sort_order.asc,name.asc';
-      const EVENT_ART_QUERY = 'bar_tv_event_art?select=image_url,updated_at&id=eq.true&active=eq.true&limit=1';
+      const EVENT_ART_QUERY = 'bar_tv_event_art?select=image_url,slides,menu_duration_seconds,updated_at&id=eq.true&active=eq.true&limit=1';
       const MENU_REFRESH_INTERVAL = 15000;
       const MENU_REQUEST_TIMEOUT_MS = 12000;
       const APP_SYNC_CHANNEL = 'ilha-app-sync-v1';
@@ -1236,6 +1236,11 @@
       let activeCategoryFilter = 'all';
       let resizeTimer = 0;
       let currentEventArtUrl = '';
+      let currentEventSlides = [];
+      let menuSlideDurationSeconds = 10;
+      let eventSlideshowIndex = 0;
+      let eventSlideshowTimer = 0;
+      let lastEventSlideshowPayload = '';
       let eventArtOpenedFullscreen = false;
 
       function escapeHtml(value) {
@@ -1559,20 +1564,73 @@
           }, function (response) { return response.json(); });
           if (!result.response.ok) throw new Error('Arte indisponível.');
           const row = Array.isArray(result.body) ? result.body[0] : null;
-          currentEventArtUrl = row && String(row.image_url || '').trim() || '';
+          const configuredSlides = row && Array.isArray(row.slides) ? row.slides : [];
+          currentEventSlides = configuredSlides.map(function (slide) {
+            return {
+              imageUrl: String(slide && slide.image_url || '').trim(),
+              durationSeconds: Math.min(300, Math.max(3, Number(slide && slide.duration_seconds || 10))),
+              active: Boolean(slide && slide.active !== false)
+            };
+          }).filter(function (slide) { return slide.imageUrl && slide.active; }).slice(0, 5);
+          if (!currentEventSlides.length && row && row.image_url) {
+            currentEventSlides = [{ imageUrl: String(row.image_url).trim(), durationSeconds: 10, active: true }];
+          }
+          menuSlideDurationSeconds = Math.min(300, Math.max(3, Number(row && row.menu_duration_seconds || 10)));
         } catch (error) {
-          currentEventArtUrl = '';
+          currentEventSlides = [];
+          menuSlideDurationSeconds = 10;
         }
-        document.getElementById('menuEventArtBtn').hidden = !currentEventArtUrl;
-        if (!currentEventArtUrl && !document.getElementById('menuEventArt').hidden) closeEventArt();
+        currentEventArtUrl = currentEventSlides[0] && currentEventSlides[0].imageUrl || '';
+        document.getElementById('menuEventArtBtn').hidden = !currentEventSlides.length;
+        const nextPayload = JSON.stringify([menuSlideDurationSeconds, currentEventSlides]);
+        if (nextPayload !== lastEventSlideshowPayload) {
+          lastEventSlideshowPayload = nextPayload;
+          startEventSlideshow();
+        }
+      }
+
+      function scheduleEventSlideshow(seconds) {
+        clearTimeout(eventSlideshowTimer);
+        if (!currentEventSlides.length || document.hidden) return;
+        eventSlideshowTimer = setTimeout(showNextEventSlideshowItem, Math.max(3, Number(seconds || 10)) * 1000);
+      }
+
+      function showMenuSlideshowItem() {
+        const overlay = document.getElementById('menuEventArt');
+        overlay.hidden = true;
+        document.body.classList.remove('is-event-art-open');
+        document.getElementById('menuEventArtImage').removeAttribute('src');
+        scheduleEventSlideshow(menuSlideDurationSeconds);
+      }
+
+      function showNextEventSlideshowItem() {
+        if (!currentEventSlides.length) return showMenuSlideshowItem();
+        const sequenceLength = currentEventSlides.length + 1;
+        eventSlideshowIndex = (eventSlideshowIndex + 1) % sequenceLength;
+        if (eventSlideshowIndex === 0) return showMenuSlideshowItem();
+        const slide = currentEventSlides[eventSlideshowIndex - 1];
+        showEventArtSlide(slide);
+      }
+
+      function startEventSlideshow() {
+        clearTimeout(eventSlideshowTimer);
+        eventSlideshowIndex = 0;
+        showMenuSlideshowItem();
+      }
+
+      function showEventArtSlide(slide) {
+        if (!slide || !slide.imageUrl) return showMenuSlideshowItem();
+        const overlay = document.getElementById('menuEventArt');
+        document.getElementById('menuEventArtImage').src = slide.imageUrl;
+        overlay.hidden = false;
+        document.body.classList.add('is-event-art-open');
+        scheduleEventSlideshow(slide.durationSeconds);
       }
 
       async function openEventArt() {
-        if (!currentEventArtUrl) return;
-        const overlay = document.getElementById('menuEventArt');
-        document.getElementById('menuEventArtImage').src = currentEventArtUrl;
-        overlay.hidden = false;
-        document.body.classList.add('is-event-art-open');
+        if (!currentEventSlides.length) return;
+        eventSlideshowIndex = 1;
+        showEventArtSlide(currentEventSlides[0]);
         eventArtOpenedFullscreen = false;
         try {
           if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
@@ -1583,10 +1641,8 @@
       }
 
       async function closeEventArt(exitFullscreen) {
-        const overlay = document.getElementById('menuEventArt');
-        overlay.hidden = true;
-        document.body.classList.remove('is-event-art-open');
-        document.getElementById('menuEventArtImage').removeAttribute('src');
+        eventSlideshowIndex = 0;
+        showMenuSlideshowItem();
         const shouldExitFullscreen = exitFullscreen !== false && eventArtOpenedFullscreen && document.fullscreenElement;
         eventArtOpenedFullscreen = false;
         if (shouldExitFullscreen) {
@@ -1634,9 +1690,11 @@
       document.getElementById('menuEventArtBtn').addEventListener('click', openEventArt);
       document.getElementById('menuEventArtClose').addEventListener('click', function () { closeEventArt(); });
       document.getElementById('menuEventArtImage').addEventListener('error', function () {
-        currentEventArtUrl = '';
-        document.getElementById('menuEventArtBtn').hidden = true;
-        closeEventArt();
+        const failedUrl = this.getAttribute('src') || '';
+        currentEventSlides = currentEventSlides.filter(function (slide) { return slide.imageUrl !== failedUrl; });
+        currentEventArtUrl = currentEventSlides[0] && currentEventSlides[0].imageUrl || '';
+        document.getElementById('menuEventArtBtn').hidden = !currentEventSlides.length;
+        startEventSlideshow();
       });
       document.getElementById('menuFullscreenBtn').addEventListener('click', toggleFullscreen);
       document.getElementById('menuMobileCategories').addEventListener('click', function (event) {
@@ -1674,7 +1732,11 @@
         if (!document.hidden) loadEventArt();
       }, 30000);
       document.addEventListener('visibilitychange', function () {
-        if (!document.hidden) loadMenu();
+        if (!document.hidden) {
+          loadMenu();
+          loadEventArt();
+          startEventSlideshow();
+        } else clearTimeout(eventSlideshowTimer);
       });
       window.addEventListener('focus', loadMenu);
       window.addEventListener('online', loadMenu);
