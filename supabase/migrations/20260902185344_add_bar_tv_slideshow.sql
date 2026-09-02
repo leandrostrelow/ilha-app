@@ -13,7 +13,7 @@ as $$
         where jsonb_typeof(slide.value) <> 'object'
            or jsonb_typeof(slide.value -> 'image_url') <> 'string'
            or not (
-             (slide.value ->> 'image_url') ~ '^https://lkqtgptebkgfwguykxhv[.]supabase[.]co/storage/v1/object/public/bar-products/eventos/[A-Za-z0-9._~!$&''()*+,;=:@%/-]+$'
+             (slide.value ->> 'image_url') ~ '^https://[a-z0-9]{20}[.]supabase[.]co/storage/v1/object/public/bar-products/eventos/[A-Za-z0-9._~!$&''()*+,;=:@%/-]+$'
              or (slide.value ->> 'image_url') ~ '^https://app[.]ilhatenis[.]com/assets/bar-events/[A-Za-z0-9._~!$&''()*+,;=:@%/-]+$'
            )
            or case
