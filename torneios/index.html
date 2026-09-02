@@ -646,7 +646,7 @@
           <div class="registration-chooser-copy">
             <span class="eyebrow">Vamos começar</span>
             <h3 id="registrationChooserTitle">Quem você deseja inscrever?</h3>
-            <p>Escolha uma opção. Você poderá conferir todos os dados antes de gerar o Pix.</p>
+            <p hidden></p>
           </div>
           <div class="registration-mode-grid">
             <button class="registration-mode-card" type="button" data-registration-mode="individual"><span aria-hidden="true">👤</span><strong>Somente eu</strong><small>Faça sua inscrição individual como atleta adulto.</small></button>
@@ -1533,13 +1533,16 @@
       $('registrationPrivacyNotice').hidden = true;
       $('registrationError').hidden = true;
       $('registrationTitle').textContent = 'Inscrição · ' + (field(tournament(),'name','nome') || 'Torneio');
-      $('registrationSubtitle').textContent = state.inviteMode ? 'Convite exclusivo e de uso único.' : 'Escolha como deseja realizar a inscrição.';
-      $('registrationSubtitle').hidden = false;
+      $('registrationSubtitle').textContent = state.inviteMode ? 'Convite exclusivo e de uso único.' : '';
+      $('registrationSubtitle').hidden = !state.inviteMode;
       $('registrationChooserTitle').textContent = state.inviteMode ? 'Você recebeu ' + registrationInviteCountLabel() : 'Quem você deseja inscrever?';
       const chooserParagraph = $('registrationChooser').querySelector('.registration-chooser-copy p');
-      if (chooserParagraph) chooserParagraph.textContent = state.inviteMode
-        ? 'Escolha quem será inscrito. Nenhuma cobrança será gerada e o link deixará de funcionar após a confirmação.'
-        : 'Escolha uma opção. Você poderá conferir todos os dados antes de gerar o Pix.';
+      if (chooserParagraph) {
+        chooserParagraph.textContent = state.inviteMode
+          ? 'Escolha quem será inscrito. Nenhuma cobrança será gerada e o link deixará de funcionar após a confirmação.'
+          : '';
+        chooserParagraph.hidden = !state.inviteMode;
+      }
       const familyModeCopy = $('registrationChooser').querySelector('[data-registration-mode="family"] small');
       if (familyModeCopy) familyModeCopy.textContent = state.inviteMode
         ? 'Use até ' + registrationInviteLimit() + ' vaga(s) deste convite em uma única inscrição.'
