@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(119);
+select plan(120);
 
 select has_table(
   'public',
@@ -2839,6 +2839,25 @@ select is(
   ),
   1,
   'a sexta retomada da mesma cobrança na janela é bloqueada'
+);
+
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.tournament_public_registration_status(uuid)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'public.tournament_public_registration_status(uuid)',
+    'EXECUTE'
+  )
+  and has_function_privilege(
+    'service_role',
+    'public.tournament_public_registration_status(uuid)',
+    'EXECUTE'
+  ),
+  'o status legado do torneio é acessível somente pelo backend'
 );
 
 select * from finish();

@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(5);
+select plan(6);
 
 select is(
   (
@@ -50,13 +50,31 @@ select ok(
       ('public.bar_public_card_request_service(text,text,text)'),
       ('public.bar_public_order_status(text,text)'),
       ('public.bar_public_request_service(text,text,text,text,text)'),
-      ('public.tournament_public_snapshot(text)'),
-      ('public.tournament_public_registration_status(uuid)')
+      ('public.tournament_public_snapshot(text)')
     ) as public_rpc(function_signature)
     where not has_function_privilege('anon', public_rpc.function_signature, 'EXECUTE')
        or not has_function_privilege('authenticated', public_rpc.function_signature, 'EXECUTE')
   ),
   'as RPCs públicas por capacidade permanecem disponíveis sem login'
+);
+
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.tournament_public_registration_status(uuid)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'public.tournament_public_registration_status(uuid)',
+    'EXECUTE'
+  )
+  and has_function_privilege(
+    'service_role',
+    'public.tournament_public_registration_status(uuid)',
+    'EXECUTE'
+  ),
+  'o acompanhamento legado do torneio não contorna a Edge Function protegida'
 );
 
 select ok(
