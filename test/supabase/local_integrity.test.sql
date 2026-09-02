@@ -474,7 +474,11 @@ select is(
     from pg_proc procedure
     join pg_namespace namespace on namespace.oid = procedure.pronamespace
     where namespace.nspname = 'public'
-      and pg_get_functiondef(procedure.oid) like '%lkqtgptebkgfwguykxhv%'
+      and case
+        when procedure.prokind in ('f', 'p')
+          then pg_get_functiondef(procedure.oid) like '%lkqtgptebkgfwguykxhv%'
+        else false
+      end
   ),
   0,
   'nenhuma função local conserva endpoint ou referência do projeto de produção'
