@@ -15804,9 +15804,7 @@
     .bar-tv-event-art-card {
       min-width: 0;
       display: grid;
-      grid-template-columns: 116px minmax(0, 1fr) auto;
-      align-items: center;
-      gap: 15px;
+      gap: 13px;
       padding: 13px;
       border: 1px solid rgba(7, 139, 151, .25);
       border-radius: 13px;
@@ -15814,8 +15812,32 @@
       box-shadow: 0 8px 20px rgba(22, 49, 62, .05);
     }
 
+    .bar-tv-slideshow-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    .bar-tv-slideshow-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .bar-tv-slide-row {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: #fff;
+    }
+
     .bar-tv-event-art-preview {
-      width: 116px;
+      width: 72px;
       aspect-ratio: 9 / 16;
       overflow: hidden;
       display: grid;
@@ -15866,10 +15888,10 @@
     }
 
     .bar-tv-event-art-actions {
-      display: grid;
+      display: flex;
+      flex-wrap: wrap;
       justify-items: stretch;
       gap: 7px;
-      min-width: 178px;
     }
 
     .bar-tv-event-art-actions button,
@@ -15914,6 +15936,29 @@
       min-height: 16px;
       margin: 0;
       accent-color: var(--teal);
+    }
+
+    .bar-tv-duration-field {
+      display: inline-grid;
+      grid-template-columns: auto 68px auto;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .bar-tv-duration-field input {
+      min-height: 36px;
+      padding: 6px 8px;
+      text-align: center;
+    }
+
+    @media (max-width: 760px) {
+      .bar-tv-slideshow-head { align-items: stretch; flex-direction: column; }
+      .bar-tv-slide-row { grid-template-columns: 62px minmax(0, 1fr); }
+      .bar-tv-event-art-preview { width: 62px; }
+      .bar-tv-slide-row .bar-tv-event-art-actions { grid-column: 1 / -1; }
     }
 
     .bar-menu-editor-panel {
@@ -20560,17 +20605,18 @@
               </div>
 
               <section class="bar-tv-event-art-card" aria-labelledby="barTvEventArtTitle">
-                <div class="bar-tv-event-art-preview" id="barTvEventArtPreview"><svg aria-hidden="true"><use href="#bar-icon-photo"></use></svg></div>
-                <div class="bar-tv-event-art-copy">
-                  <h3 id="barTvEventArtTitle">Arte vertical para eventos na TV</h3>
-                  <p>Envie uma imagem que poderá ocupar a tela inteira do cardápio. O sistema ajusta automaticamente para o formato vertical 1080 × 1920.</p>
-                  <small id="barTvEventArtStatus">Nenhuma arte cadastrada</small>
+                <div class="bar-tv-slideshow-head">
+                  <div class="bar-tv-event-art-copy">
+                    <h3 id="barTvEventArtTitle">Sequência da TV</h3>
+                    <p>O cardápio e até 5 imagens ficam rodando em loop. As artes são ajustadas automaticamente para o formato vertical 1080 × 1920.</p>
+                    <small id="barTvEventArtStatus">Somente o cardápio está na sequência</small>
+                  </div>
+                  <div class="bar-tv-event-art-actions">
+                    <label class="bar-tv-duration-field" for="barTvMenuDuration">Cardápio <input id="barTvMenuDuration" type="number" min="3" max="300" step="1" value="10" /> segundos</label>
+                    <button type="button" id="barTvEventArtPickBtn">＋ Adicionar imagem</button>
+                  </div>
                 </div>
-                <div class="bar-tv-event-art-actions">
-                  <button type="button" id="barTvEventArtPickBtn">Escolher imagem</button>
-                  <label class="bar-tv-event-art-toggle" for="barTvEventArtActive"><input id="barTvEventArtActive" type="checkbox" />Mostrar na TV</label>
-                  <button class="danger" type="button" id="barTvEventArtRemoveBtn" hidden>Remover</button>
-                </div>
+                <div class="bar-tv-slideshow-list" id="barTvEventArtList"></div>
                 <input id="barTvEventArtFile" type="file" accept="image/jpeg,image/png,image/webp" hidden />
               </section>
 
@@ -28492,9 +28538,21 @@
     }
 
     function mapBarTvEventArtRow(row) {
+      const rawSlides = row && Array.isArray(row.slides) ? row.slides : [];
+      const fallbackSlides = !rawSlides.length && row && row.image_url
+        ? [{ image_url: row.image_url, duration_seconds: 10, active: row.active !== false }]
+        : [];
       return {
         imageUrl: row && row.image_url || '',
-        active: Boolean(row && row.active && row.image_url),
+        active: Boolean(row && row.active),
+        menuDurationSeconds: Math.min(300, Math.max(3, Number(row && row.menu_duration_seconds || 10))),
+        slides: (rawSlides.length ? rawSlides : fallbackSlides).slice(0, 5).map(function (slide) {
+          return {
+            imageUrl: String(slide && slide.image_url || ''),
+            durationSeconds: Math.min(300, Math.max(3, Number(slide && slide.duration_seconds || 10))),
+            active: Boolean(slide && slide.active !== false)
+          };
+        }).filter(function (slide) { return Boolean(slide.imageUrl); }),
         updatedAt: row && row.updated_at || ''
       };
     }
@@ -33506,19 +33564,26 @@
     }
 
     function renderBarTvEventArt() {
-      const preview = $('barTvEventArtPreview');
-      if (!preview) return;
+      const list = $('barTvEventArtList');
+      if (!list) return;
       const art = opsData.barTvEventArt || mapBarTvEventArtRow(null);
-      const imageUrl = String(art.imageUrl || '').trim();
-      preview.innerHTML = imageUrl
-        ? '<img src="' + escapeHtml(imageUrl) + '" alt="Prévia da arte vertical de eventos" />'
-        : '<svg aria-hidden="true"><use href="#bar-icon-photo"></use></svg>';
-      $('barTvEventArtActive').checked = Boolean(imageUrl && art.active);
-      $('barTvEventArtActive').disabled = !imageUrl;
-      $('barTvEventArtRemoveBtn').hidden = !imageUrl;
-      $('barTvEventArtStatus').textContent = !imageUrl
-        ? 'Nenhuma arte cadastrada'
-        : (art.active ? 'Disponível no botão de imagem da TV' : 'Arte salva, mas escondida da TV');
+      const slides = Array.isArray(art.slides) ? art.slides : [];
+      $('barTvMenuDuration').value = String(art.menuDurationSeconds || 10);
+      $('barTvEventArtPickBtn').disabled = slides.length >= 5;
+      $('barTvEventArtPickBtn').textContent = slides.length >= 5 ? 'Limite de 5 imagens' : '＋ Adicionar imagem';
+      $('barTvEventArtStatus').textContent = slides.length
+        ? slides.filter(function (slide) { return slide.active; }).length + ' imagem(ns) ativa(s) + cardápio no loop'
+        : 'Somente o cardápio está na sequência';
+      list.innerHTML = slides.map(function (slide, index) {
+        return '<article class="bar-tv-slide-row" data-bar-tv-slide="' + index + '">' +
+          '<div class="bar-tv-event-art-preview"><img src="' + escapeHtml(slide.imageUrl) + '" alt="Prévia da imagem ' + (index + 1) + ' da TV" /></div>' +
+          '<div class="bar-tv-event-art-copy"><h3>Imagem ' + (index + 1) + '</h3><p>Será exibida entre as passagens do cardápio.</p></div>' +
+          '<div class="bar-tv-event-art-actions">' +
+            '<label class="bar-tv-duration-field">Tempo <input type="number" min="3" max="300" step="1" value="' + escapeHtml(slide.durationSeconds) + '" data-bar-tv-slide-duration="' + index + '" /> segundos</label>' +
+            '<label class="bar-tv-event-art-toggle"><input type="checkbox" data-bar-tv-slide-active="' + index + '" ' + (slide.active ? 'checked' : '') + ' />Mostrar na TV</label>' +
+            '<button class="danger" type="button" data-bar-tv-slide-remove="' + index + '">Remover</button>' +
+          '</div></article>';
+      }).join('');
     }
 
     function renderBarMenuEditor() {
@@ -36517,12 +36582,26 @@
 
     async function saveBarTvEventArt(nextArt) {
       let savedArt = Object.assign({}, opsData.barTvEventArt || mapBarTvEventArtRow(null), nextArt || {});
+      savedArt.slides = (Array.isArray(savedArt.slides) ? savedArt.slides : []).slice(0, 5).map(function (slide) {
+        return {
+          imageUrl: String(slide && slide.imageUrl || ''),
+          durationSeconds: Math.min(300, Math.max(3, Number(slide && slide.durationSeconds || 10))),
+          active: Boolean(slide && slide.active)
+        };
+      }).filter(function (slide) { return Boolean(slide.imageUrl); });
+      savedArt.menuDurationSeconds = Math.min(300, Math.max(3, Number(savedArt.menuDurationSeconds || 10)));
+      const firstSlide = savedArt.slides[0] || null;
+      const hasActiveSlide = savedArt.slides.some(function (slide) { return slide.active; });
       if (barCanPersist()) {
         const saved = await supabaseRest('bar_tv_event_art?id=eq.true', {
           method: 'PATCH',
           body: {
-            image_url: String(savedArt.imageUrl || ''),
-            active: Boolean(savedArt.active && savedArt.imageUrl),
+            image_url: firstSlide ? firstSlide.imageUrl : '',
+            active: hasActiveSlide,
+            slides: savedArt.slides.map(function (slide) {
+              return { image_url: slide.imageUrl, duration_seconds: slide.durationSeconds, active: slide.active };
+            }),
+            menu_duration_seconds: savedArt.menuDurationSeconds,
             updated_by: adminProfile && adminProfile.id || null,
             updated_at: new Date().toISOString()
           },
@@ -36539,7 +36618,8 @@
     async function selectBarTvEventArt(file) {
       const prepared = await resizeBarTvEventImage(file);
       if (!prepared) return;
-      const previousUrl = String(opsData.barTvEventArt && opsData.barTvEventArt.imageUrl || '');
+      const currentSlides = (opsData.barTvEventArt && opsData.barTvEventArt.slides || []).slice();
+      if (currentSlides.length >= 5) throw new Error('Você pode cadastrar no máximo 5 imagens na sequência da TV.');
       const pickButton = $('barTvEventArtPickBtn');
       let uploadedUrl = prepared.previewUrl;
       try {
@@ -36547,31 +36627,34 @@
         pickButton.disabled = true;
         pickButton.textContent = 'Enviando...';
         if (barCanPersist()) uploadedUrl = await uploadBarTvEventImage(prepared.blob);
-        await saveBarTvEventArt({ imageUrl: uploadedUrl, active: true });
-        if (barCanPersist() && previousUrl && previousUrl !== uploadedUrl) deleteBarProductImage(previousUrl);
-        toast('Arte vertical salva e liberada na TV.');
+        currentSlides.push({ imageUrl: uploadedUrl, durationSeconds: 10, active: true });
+        await saveBarTvEventArt({ slides: currentSlides });
+        toast('Imagem adicionada à sequência da TV.');
       } catch (error) {
-        if (barCanPersist() && uploadedUrl && uploadedUrl !== prepared.previewUrl && uploadedUrl !== previousUrl) deleteBarProductImage(uploadedUrl);
+        if (barCanPersist() && uploadedUrl && uploadedUrl !== prepared.previewUrl) deleteBarProductImage(uploadedUrl);
         throw error;
       } finally {
         pickButton.disabled = false;
-        pickButton.textContent = 'Escolher imagem';
         $('barTvEventArtFile').value = '';
+        renderBarTvEventArt();
       }
     }
 
-    async function toggleBarTvEventArt(active) {
-      if (!opsData.barTvEventArt || !opsData.barTvEventArt.imageUrl) return;
-      await saveBarTvEventArt({ active: Boolean(active) });
-      toast(active ? 'Arte disponível na TV.' : 'Arte escondida da TV.');
+    async function updateBarTvEventArtSlide(index, changes) {
+      const slides = (opsData.barTvEventArt && opsData.barTvEventArt.slides || []).map(function (slide) { return Object.assign({}, slide); });
+      if (!slides[index]) return;
+      slides[index] = Object.assign(slides[index], changes || {});
+      await saveBarTvEventArt({ slides: slides });
     }
 
-    async function removeBarTvEventArt() {
-      const previousUrl = String(opsData.barTvEventArt && opsData.barTvEventArt.imageUrl || '');
-      if (!previousUrl || !window.confirm('Remover a arte vertical de eventos da TV?')) return;
-      await saveBarTvEventArt({ imageUrl: '', active: false });
+    async function removeBarTvEventArt(index) {
+      const slides = (opsData.barTvEventArt && opsData.barTvEventArt.slides || []).slice();
+      const previousUrl = String(slides[index] && slides[index].imageUrl || '');
+      if (!previousUrl || !window.confirm('Remover esta imagem da sequência da TV?')) return;
+      slides.splice(index, 1);
+      await saveBarTvEventArt({ slides: slides });
       if (barCanPersist()) deleteBarProductImage(previousUrl);
-      toast('Arte de eventos removida.');
+      toast('Imagem removida da sequência da TV.');
     }
 
     function resetBarProductForm() {
@@ -42850,11 +42933,34 @@
           reportActionError(error);
         });
       });
-      $('barTvEventArtActive').addEventListener('change', function () {
-        toggleBarTvEventArt(this.checked).catch(reportActionError);
+      $('barTvMenuDuration').addEventListener('change', function () {
+        const duration = Math.min(300, Math.max(3, Number(this.value || 10)));
+        this.value = String(duration);
+        saveBarTvEventArt({ menuDurationSeconds: duration }).then(function () {
+          toast('Tempo do cardápio atualizado.');
+        }).catch(reportActionError);
       });
-      $('barTvEventArtRemoveBtn').addEventListener('click', function () {
-        removeBarTvEventArt().catch(reportActionError);
+      $('barTvEventArtList').addEventListener('change', function (event) {
+        const durationInput = event.target.closest('[data-bar-tv-slide-duration]');
+        if (durationInput) {
+          const index = Number(durationInput.dataset.barTvSlideDuration);
+          const duration = Math.min(300, Math.max(3, Number(durationInput.value || 10)));
+          durationInput.value = String(duration);
+          updateBarTvEventArtSlide(index, { durationSeconds: duration }).then(function () {
+            toast('Tempo da imagem atualizado.');
+          }).catch(reportActionError);
+          return;
+        }
+        const activeInput = event.target.closest('[data-bar-tv-slide-active]');
+        if (activeInput) {
+          updateBarTvEventArtSlide(Number(activeInput.dataset.barTvSlideActive), { active: activeInput.checked }).then(function () {
+            toast(activeInput.checked ? 'Imagem liberada na TV.' : 'Imagem pausada.');
+          }).catch(reportActionError);
+        }
+      });
+      $('barTvEventArtList').addEventListener('click', function (event) {
+        const removeButton = event.target.closest('[data-bar-tv-slide-remove]');
+        if (removeButton) removeBarTvEventArt(Number(removeButton.dataset.barTvSlideRemove)).catch(reportActionError);
       });
       $('barStockForm').addEventListener('submit', saveBarStockAction);
       $('barTableForm').addEventListener('submit', saveBarTableAction);

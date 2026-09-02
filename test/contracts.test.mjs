@@ -208,6 +208,10 @@ const barQrStockRepairMigrationSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260828211500_repair_public_bar_qr_stock_decrement.sql'),
   'utf8'
 );
+const barTvSlideshowMigrationSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260902185344_add_bar_tv_slideshow.sql'),
+  'utf8'
+);
 const securityOperationsSource = await readFile(path.join(projectRoot, 'SECURITY_OPERATIONS.md'), 'utf8');
 const gitignoreSource = await readFile(path.join(projectRoot, '.gitignore'), 'utf8');
 const sqlFiles = (await readdir(path.join(projectRoot, 'supabase'), { recursive: true }))
@@ -1650,6 +1654,26 @@ test('cardapio publico libera o polling quando a rede nao responde', () => {
   assert.match(loadMenu, /fetchMenuRequest\(/);
   assert.match(loadMenu, /finally[\s\S]*refreshInFlight = false/);
   assert.match(menuSource, /const MENU_REFRESH_INTERVAL = 15000/);
+});
+
+test('TV do Bar alterna o cardapio com ate cinco imagens e tempo individual', () => {
+  assert.match(barTvSlideshowMigrationSource, /add column if not exists slides jsonb not null default '\[\]'::jsonb/i);
+  assert.match(barTvSlideshowMigrationSource, /jsonb_array_length\(candidate\) > 5 then false/i);
+  assert.match(barTvSlideshowMigrationSource, /menu_duration_seconds between 3 and 300/i);
+  assert.match(barTvSlideshowMigrationSource, /public reads active bar tv event art[\s\S]*to anon[\s\S]*active is true/i);
+  assert.match(adminSource, /id="barTvMenuDuration"[^>]*min="3"[^>]*max="300"/i);
+  assert.match(adminSource, /id="barTvEventArtList"/i);
+  assert.match(functionSource(adminSource, 'saveBarTvEventArt'), /slides:\s*savedArt\.slides\.map/);
+  assert.match(functionSource(menuSource, 'startEventSlideshow'), /eventSlideshowIndex = 0[\s\S]*showMenuSlideshowItem/);
+  assert.match(functionSource(menuSource, 'showNextEventSlideshowItem'), /currentEventSlides\.length \+ 1[\s\S]*showMenuSlideshowItem/);
+  assert.match(functionSource(menuSource, 'showEventArtSlide'), /scheduleEventSlideshow\(slide\.durationSeconds\)/);
+});
+
+test('pagina publica iguala os modos de inscricao e repete o CTA nos pontos principais', () => {
+  assert.doesNotMatch(tournamentSource, /registration-mode-card featured/);
+  assert.match(functionSource(tournamentSource, 'publicRegistrationCtaHtml'), /Inscreva-se aqui/);
+  assert.match(functionSource(tournamentSource, 'categoriesHtml'), /registrationPricesHtml\(\) \+ publicRegistrationCtaHtml\(\)/);
+  assert.match(functionSource(tournamentSource, 'aboutHtml'), /publicRegistrationCtaHtml\(\)[\s\S]*contacts/);
 });
 
 test('deadline das superficies publicas aborta uma conexao que nunca responde', async () => {

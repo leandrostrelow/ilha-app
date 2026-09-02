@@ -269,6 +269,9 @@
     .public-price-card { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 15px; background: #f7fafb; }
     .public-price-card span { color: #53686e; font-size: 11px; font-weight: 900; text-transform: uppercase; }
     .public-price-card strong { color: var(--teal); font-size: 20px; white-space: nowrap; }
+    .public-registration-cta { width: 100%; min-height: 54px; margin: 0 0 20px; border-color: var(--lime); background: var(--lime); color: #173800; font-size: 16px; box-shadow: 0 12px 26px rgba(160,225,0,.24); }
+    .public-registration-cta:hover { filter: brightness(.97); transform: translateY(-1px); }
+    .about-copy .public-registration-cta { margin: 18px 0 0; }
     .mini-chip { display: inline-flex; align-items: center; min-height: 27px; border-radius: 999px; padding: 5px 8px; background: #edf4f5; color: #526a71; font-size: 10px; font-weight: 900; text-transform: uppercase; }
 
     .about-layout { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(280px,.85fr); gap: 18px; }
@@ -418,7 +421,6 @@
     .registration-mode-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 11px; }
     .registration-mode-card { min-height: 158px; display: grid; align-content: center; justify-items: center; gap: 7px; padding: 18px 13px; border: 1px solid var(--line); border-radius: 18px; background: #fff; color: var(--ink); text-align: center; }
     .registration-mode-card:hover, .registration-mode-card:focus-visible { border-color: var(--teal); transform: translateY(-2px); box-shadow: 0 10px 28px rgba(7,63,71,.10); }
-    .registration-mode-card.featured { border-color: #8ecb00; background: linear-gradient(155deg,#fbffe9,#efffc1); }
     .registration-mode-card > span { font-size: 31px; }
     .registration-mode-card strong { font-size: 15px; }
     .registration-mode-card small { color: var(--muted); font-size: 11px; font-weight: 700; line-height: 1.4; }
@@ -649,7 +651,7 @@
           <div class="registration-mode-grid">
             <button class="registration-mode-card" type="button" data-registration-mode="individual"><span aria-hidden="true">👤</span><strong>Somente eu</strong><small>Faça sua inscrição individual como atleta adulto.</small></button>
             <button class="registration-mode-card" type="button" data-registration-mode="minor"><span aria-hidden="true">🧒</span><strong>Um menor de idade</strong><small>O responsável preenche os dados e realiza o pagamento.</small></button>
-            <button class="registration-mode-card featured" type="button" data-registration-mode="family"><span aria-hidden="true">👨‍👩‍👧‍👦</span><strong>Minha família</strong><small>Inscreva até seis atletas e pague tudo em um único Pix.</small></button>
+            <button class="registration-mode-card" type="button" data-registration-mode="family"><span aria-hidden="true">👨‍👩‍👧‍👦</span><strong>Minha família</strong><small>Inscreva até seis atletas e pague tudo em um único Pix.</small></button>
           </div>
         </section>
         <form id="registrationForm">
@@ -1170,6 +1172,7 @@
         '<a class="about-contact-link" href="https://wa.me/5527999805814?text=' + whatsappMessage + '" target="_blank" rel="noopener"><span class="about-contact-icon" aria-hidden="true">💬</span><span><small>Contato</small><strong>(27) 99980-5814</strong></span></a>' +
         '<a class="about-contact-link" href="https://www.google.com/maps/search/?api=1&amp;query=Ilha%20T%C3%AAnis%20Colatina" target="_blank" rel="noopener"><span class="about-contact-icon" aria-hidden="true">📍</span><span><small>Localização</small><strong>Ilha Tênis — Colatina</strong></span></a></div>';
       return '<div class="panel"><div class="about-layout"><div class="about-copy"><h2>' + escapeHtml(title) + '</h2><p>' + escapeHtml(copy) + '</p>' +
+        publicRegistrationCtaHtml() +
         contacts +
         (image ? '<img class="about-image" src="' + escapeHtml(image) + '" alt="' + escapeHtml(title) + '" loading="lazy" />' : '') +
         '</div><aside class="about-partners">' + sponsorsHtml(true) + '</aside></div></div>';
@@ -1182,8 +1185,14 @@
       return '<div class="public-price-grid" role="group" aria-label="Valores da inscrição"><div class="public-price-card"><span>CINCATE</span><strong>' + escapeHtml(money(pricing.CINCATE || 0)) + '</strong></div><div class="public-price-card"><span>Aluno Ilha Tênis</span><strong>' + escapeHtml(money(pricing.ILHA_STUDENT || 0)) + '</strong></div><div class="public-price-card"><span>Não associado</span><strong>' + escapeHtml(money(pricing.NON_MEMBER || 0)) + '</strong></div></div>';
     }
 
+    function publicRegistrationCtaHtml() {
+      return isRegistrationOpen(tournament())
+        ? '<button class="button lime public-registration-cta" type="button" data-open-registration>Inscreva-se aqui</button>'
+        : '';
+    }
+
     function categoriesHtml() {
-      return '<div class="panel"><div class="panel-head"><div><h2>Classes</h2><p>Confira modalidades, limites e valores por perfil.</p></div></div>' + registrationPricesHtml() + '<div class="category-grid">' + (categories().map((row) => {
+      return '<div class="panel"><div class="panel-head"><div><h2>Classes</h2><p>Confira modalidades, limites e valores por perfil.</p></div></div>' + registrationPricesHtml() + publicRegistrationCtaHtml() + '<div class="category-grid">' + (categories().map((row) => {
         const id = categoryId(row);
         const rawStoredCount = field(row,'registration_count','quantidade_inscritos');
         const storedCount = rawStoredCount === '' ? NaN : Number(rawStoredCount);
