@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(98);
+select plan(110);
 
 select has_table(
   'public',
@@ -1044,6 +1044,730 @@ select throws_ok(
   'o checkout atômico rejeita qualquer forma de pagamento diferente de Pix'
 );
 
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.claim_public_tournament_family_checkout(uuid,uuid,text,text,text,text,jsonb,text,text,text,boolean)',
+    'EXECUTE'
+  )
+    and not has_function_privilege(
+      'authenticated',
+      'public.claim_public_tournament_family_checkout(uuid,uuid,text,text,text,text,jsonb,text,text,text,boolean)',
+      'EXECUTE'
+    )
+    and has_function_privilege(
+      'service_role',
+      'public.claim_public_tournament_family_checkout(uuid,uuid,text,text,text,text,jsonb,text,text,text,boolean)',
+      'EXECUTE'
+    ),
+  'o checkout familiar atômico só pode ser chamado pelo backend confiável'
+);
+
+create temporary table ci_family_checkout_probe_miss_result on commit drop as
+select public.claim_public_tournament_family_checkout(
+  '22000000-0000-4000-8000-000000000001'::uuid,
+  '23000000-0000-4000-8000-000000000006'::uuid,
+  'Responsável do Probe Ausente',
+  'ci-family-probe@tests.invalid',
+  '27999999996',
+  '01234567890',
+  jsonb_build_array(jsonb_build_object(
+    'athlete_source_key', 'tournament-family:' || repeat('g', 64)
+  )),
+  'PIX',
+  'SANDBOX',
+  null,
+  false
+) as result;
+
+select ok(
+  not (select (result ->> 'found')::boolean from ci_family_checkout_probe_miss_result)
+    and not exists (
+      select 1
+      from public.tournament_registration_groups
+      where request_token = '23000000-0000-4000-8000-000000000006'::uuid
+    )
+    and not exists (
+      select 1
+      from public.tournament_athletes
+      where source_key = 'tournament-family:' || repeat('g', 64)
+    )
+    and not exists (
+      select 1
+      from public.tournament_payments
+      where external_reference like 'tournament-family:%'
+        and registration_group_id in (
+          select id
+          from public.tournament_registration_groups
+          where request_token = '23000000-0000-4000-8000-000000000006'::uuid
+        )
+    ),
+  'o probe ausente não cria nem altera atleta, grupo ou cobrança'
+);
+
+insert into public.tournament_athletes (
+  id,
+  source_key,
+  full_name,
+  email,
+  phone,
+  birth_date,
+  gender,
+  city
+) values (
+  '23000000-0000-4000-8000-000000000008'::uuid,
+  'ci-family-legacy-athlete',
+  'Atleta Familiar Legado',
+  'ci-family-legacy@tests.invalid',
+  '27999999998',
+  '1987-02-18',
+  'MALE',
+  'Colatina'
+);
+
+create temporary table ci_family_legacy_group_result on commit drop as
+select public.claim_public_tournament_family_bundle(
+  '22000000-0000-4000-8000-000000000001'::uuid,
+  '23000000-0000-4000-8000-000000000007'::uuid,
+  'Responsável Familiar Legado',
+  'ci-family-legacy@tests.invalid',
+  '27999999998',
+  '11144477735',
+  jsonb_build_array(jsonb_build_object(
+    'athlete_id', '23000000-0000-4000-8000-000000000008',
+    'primary_category_id', '22000000-0000-4000-8000-000000000002',
+    'additional_category_id', null,
+    'public_name', 'Atleta Familiar Legado',
+    'public_city', 'Colatina',
+    'partner_name', null,
+    'primary_amount', 73,
+    'notes', 'Fixture de grupo legado sem cobrança local'
+  ))
+) as result;
+
+create temporary table ci_family_legacy_probe_result on commit drop as
+select public.claim_public_tournament_family_checkout(
+  '22000000-0000-4000-8000-000000000001'::uuid,
+  '23000000-0000-4000-8000-000000000007'::uuid,
+  'Responsável Familiar Legado',
+  'ci-family-legacy@tests.invalid',
+  '27999999998',
+  '11144477735',
+  jsonb_build_array(jsonb_build_object(
+    'athlete_source_key', 'tournament-family:' || repeat('8', 64)
+  )),
+  'PIX',
+  'SANDBOX',
+  null,
+  false
+) as result;
+
+select ok(
+  (select (result ->> 'found')::boolean from ci_family_legacy_probe_result)
+    and (select (result ->> 'payment_created')::boolean from ci_family_legacy_probe_result)
+    and exists (
+      select 1
+      from public.tournament_registration_groups as registration_group
+      join public.tournament_payments as payment
+        on payment.registration_group_id = registration_group.id
+      where registration_group.request_token = '23000000-0000-4000-8000-000000000007'::uuid
+        and payment.id = (
+          select (result #>> '{payment,id}')::uuid
+          from ci_family_legacy_probe_result
+        )
+        and payment.registration_id = registration_group.primary_registration_id
+        and payment.provider = 'ASAAS'
+        and payment.provider_environment = 'SANDBOX'
+        and payment.external_reference = 'tournament-family:' || registration_group.id::text
+        and payment.billing_type = 'PIX'
+        and payment.status = 'CREATED'
+        and payment.amount = 73
+        and payment.expires_at = registration_group.created_at + interval '2 hours'
+    ),
+  'o probe existente repara atomicamente a cobrança ausente de um grupo pago legado'
+);
+
+create temporary table ci_family_legacy_replay_result on commit drop as
+select public.claim_public_tournament_family_checkout(
+  '22000000-0000-4000-8000-000000000001'::uuid,
+  '23000000-0000-4000-8000-000000000007'::uuid,
+  'Responsável Familiar Legado',
+  'ci-family-legacy@tests.invalid',
+  '27999999998',
+  '11144477735',
+  jsonb_build_array(jsonb_build_object(
+    'athlete_source_key', 'tournament-family:' || repeat('8', 64)
+  )),
+  'PIX',
+  'SANDBOX',
+  null,
+  false
+) as result;
+
+select ok(
+  (select result #>> '{payment,id}' from ci_family_legacy_replay_result) =
+    (select result #>> '{payment,id}' from ci_family_legacy_probe_result)
+    and not (select (result ->> 'payment_created')::boolean from ci_family_legacy_replay_result)
+    and (
+      select count(*)
+      from public.tournament_payments
+      where registration_group_id = (
+        select (result #>> '{registration_group,id}')::uuid
+        from ci_family_legacy_probe_result
+      )
+    ) = 1,
+  'repetir o probe legado preserva exatamente a mesma cobrança local'
+);
+
+update public.tournament_registration_groups
+set created_at = now() - interval '3 hours',
+    status = 'PENDING'
+where id = (
+  select (result #>> '{registration_group,id}')::uuid
+  from ci_family_legacy_probe_result
+);
+
+update public.tournament_payments
+set expires_at = now() - interval '1 minute'
+where id = (
+  select (result #>> '{payment,id}')::uuid
+  from ci_family_legacy_probe_result
+);
+
+create temporary table ci_family_legacy_expired_result on commit drop as
+select public.claim_public_tournament_family_checkout(
+  '22000000-0000-4000-8000-000000000001'::uuid,
+  '23000000-0000-4000-8000-000000000007'::uuid,
+  'Responsável Familiar Legado',
+  'ci-family-legacy@tests.invalid',
+  '27999999998',
+  '11144477735',
+  jsonb_build_array(jsonb_build_object(
+    'athlete_source_key', 'tournament-family:' || repeat('8', 64)
+  )),
+  'PIX',
+  'SANDBOX',
+  null,
+  false
+) as result;
+
+select ok(
+  (select (result ->> 'expired')::boolean from ci_family_legacy_expired_result)
+    and not (select (result ->> 'found')::boolean from ci_family_legacy_expired_result)
+    and not exists (
+      select 1
+      from public.tournament_registration_groups
+      where request_token = '23000000-0000-4000-8000-000000000007'::uuid
+    )
+    and not exists (
+      select 1
+      from public.tournament_payments as payment
+      where payment.registration_group_id = (
+        select (result #>> '{registration_group,id}')::uuid
+        from ci_family_legacy_probe_result
+      )
+    )
+    and not exists (
+      select 1
+      from public.tournament_registrations as registration
+      where registration.registration_group_id = (
+        select (result #>> '{registration_group,id}')::uuid
+        from ci_family_legacy_probe_result
+      )
+    )
+    and exists (
+      select 1
+      from private.tournament_expired_registration_attempts as expired_attempt
+      where expired_attempt.registration_group_id = (
+        select (result #>> '{registration_group,id}')::uuid
+        from ci_family_legacy_probe_result
+      )
+        and (expired_attempt.payment_snapshot ->> 'amount')::numeric = 73
+        and expired_attempt.payment_snapshot ->> 'provider_payment_id' is null
+    ),
+  'uma cobrança local legada já existente e vencida é arquivada sem expor o provedor'
+);
+
+create temporary table ci_family_checkout_created_result on commit drop as
+select public.claim_public_tournament_family_checkout(
+  '22000000-0000-4000-8000-000000000001'::uuid,
+  '23000000-0000-4000-8000-000000000001'::uuid,
+  'Responsável Familiar Sintético',
+  'ci-family-payer@tests.invalid',
+  '27999999990',
+  '39053344705',
+  jsonb_build_array(
+    jsonb_build_object(
+      'athlete_source_key', 'tournament-family:' || repeat('a', 64),
+      'athlete_full_name', 'Responsável Familiar Sintético',
+      'athlete_email', 'ci-family-payer@tests.invalid',
+      'athlete_phone', '27999999990',
+      'athlete_cpf', '39053344705',
+      'athlete_birth_date', '1985-01-15',
+      'athlete_gender', 'MALE',
+      'athlete_city', 'Colatina',
+      'athlete_is_minor', false,
+      'athlete_guardian_name', null,
+      'athlete_guardian_phone', null,
+      'primary_category_id', '22000000-0000-4000-8000-000000000002',
+      'additional_category_id', null,
+      'public_name', 'Responsável Familiar Sintético',
+      'public_city', 'Colatina',
+      'partner_name', null,
+      'primary_amount', 50,
+      'notes', 'Fixture familiar adulta'
+    ),
+    jsonb_build_object(
+      'athlete_source_key', 'tournament-family:' || repeat('b', 64),
+      'athlete_full_name', 'Atleta Familiar Menor',
+      'athlete_email', 'ci-family-payer@tests.invalid',
+      'athlete_phone', null,
+      'athlete_cpf', null,
+      'athlete_birth_date', '2012-05-20',
+      'athlete_gender', 'FEMALE',
+      'athlete_city', 'Colatina',
+      'athlete_is_minor', true,
+      'athlete_guardian_name', 'Responsável Familiar Sintético',
+      'athlete_guardian_phone', '27999999990',
+      'primary_category_id', '22000000-0000-4000-8000-000000000003',
+      'additional_category_id', null,
+      'public_name', 'Atleta Familiar Menor',
+      'public_city', 'Colatina',
+      'partner_name', null,
+      'primary_amount', 50,
+      'notes', 'Fixture familiar menor'
+    )
+  ),
+  'PIX',
+  'SANDBOX',
+  null,
+  true
+) as result;
+
+select ok(
+  (select (result ->> 'payment_created')::boolean from ci_family_checkout_created_result)
+    and (
+      select count(*)
+      from public.tournament_athletes
+      where source_key in (
+        'tournament-family:' || repeat('a', 64),
+        'tournament-family:' || repeat('b', 64)
+      )
+    ) = 2
+    and (
+      select count(*)
+      from public.tournament_registrations as registration
+      where registration.registration_group_id = (
+        select (result #>> '{registration_group,id}')::uuid
+        from ci_family_checkout_created_result
+      )
+    ) = 2
+    and exists (
+      select 1
+      from public.tournament_payments as payment
+      where payment.registration_group_id = (
+        select (result #>> '{registration_group,id}')::uuid
+        from ci_family_checkout_created_result
+      )
+        and payment.registration_id = (
+          select (result #>> '{registration_group,primary_registration_id}')::uuid
+          from ci_family_checkout_created_result
+        )
+        and payment.external_reference = 'tournament-family:' || payment.registration_group_id::text
+        and payment.provider_environment = 'SANDBOX'
+        and payment.billing_type = 'PIX'
+        and payment.status = 'CREATED'
+        and payment.amount = 100
+        and payment.expires_at is not null
+    ),
+  'o checkout familiar grava atletas, inscrições e uma cobrança local na mesma transação'
+);
+
+update public.tournaments
+set registration_open = false
+where id = '22000000-0000-4000-8000-000000000001'::uuid;
+
+update public.tournament_categories
+set registration_open = false,
+    registration_fee = 999
+where id in (
+  '22000000-0000-4000-8000-000000000002'::uuid,
+  '22000000-0000-4000-8000-000000000003'::uuid
+);
+
+create temporary table ci_family_checkout_replayed_result on commit drop as
+select public.claim_public_tournament_family_checkout(
+  '22000000-0000-4000-8000-000000000001'::uuid,
+  '23000000-0000-4000-8000-000000000001'::uuid,
+  'Responsável Familiar Sintético',
+  'ci-family-payer@tests.invalid',
+  '27999999990',
+  '39053344705',
+  jsonb_build_array(
+    jsonb_build_object(
+      'athlete_source_key', 'tournament-family:' || repeat('a', 64),
+      'athlete_full_name', 'Responsável Familiar Sintético',
+      'athlete_email', 'ci-family-payer@tests.invalid',
+      'athlete_phone', '27999999990',
+      'athlete_cpf', '39053344705',
+      'athlete_birth_date', '1985-01-15',
+      'athlete_gender', 'MALE',
+      'athlete_city', 'Colatina',
+      'athlete_is_minor', false,
+      'athlete_guardian_name', null,
+      'athlete_guardian_phone', null,
+      'primary_category_id', '22000000-0000-4000-8000-000000000002',
+      'additional_category_id', null,
+      'public_name', 'Responsável Familiar Sintético',
+      'public_city', 'Colatina',
+      'partner_name', null,
+      'primary_amount', 50,
+      'notes', 'Fixture familiar adulta'
+    ),
+    jsonb_build_object(
+      'athlete_source_key', 'tournament-family:' || repeat('b', 64),
+      'athlete_full_name', 'Atleta Familiar Menor',
+      'athlete_email', 'ci-family-payer@tests.invalid',
+      'athlete_phone', null,
+      'athlete_cpf', null,
+      'athlete_birth_date', '2012-05-20',
+      'athlete_gender', 'FEMALE',
+      'athlete_city', 'Colatina',
+      'athlete_is_minor', true,
+      'athlete_guardian_name', 'Responsável Familiar Sintético',
+      'athlete_guardian_phone', '27999999990',
+      'primary_category_id', '22000000-0000-4000-8000-000000000003',
+      'additional_category_id', null,
+      'public_name', 'Atleta Familiar Menor',
+      'public_city', 'Colatina',
+      'partner_name', null,
+      'primary_amount', 50,
+      'notes', 'Fixture familiar menor'
+    )
+  ),
+  'PIX',
+  'SANDBOX',
+  null,
+  false
+) as result;
+
+select ok(
+  (select (result ->> 'found')::boolean from ci_family_checkout_replayed_result)
+    and not (select (result ->> 'payment_created')::boolean from ci_family_checkout_replayed_result)
+    and (
+      select result #>> '{registration_group,id}'
+      from ci_family_checkout_replayed_result
+    ) = (
+      select result #>> '{registration_group,id}'
+      from ci_family_checkout_created_result
+    )
+    and (
+      select result #>> '{payment,id}'
+      from ci_family_checkout_replayed_result
+    ) = (
+      select result #>> '{payment,id}'
+      from ci_family_checkout_created_result
+    )
+    and (
+      select count(*)
+      from public.tournament_payments
+      where registration_group_id = (
+        select (result #>> '{registration_group,id}')::uuid
+        from ci_family_checkout_created_result
+      )
+    ) = 1,
+  'o probe idempotente devolve o mesmo grupo e Pix mesmo após fechar inscrições e alterar preços'
+);
+
+update public.tournaments
+set registration_open = true
+where id = '22000000-0000-4000-8000-000000000001'::uuid;
+
+update public.tournament_categories
+set registration_open = true,
+    registration_fee = 50
+where id in (
+  '22000000-0000-4000-8000-000000000002'::uuid,
+  '22000000-0000-4000-8000-000000000003'::uuid
+);
+
+insert into public.tournament_registration_invites (
+  tournament_id,
+  token_hash,
+  athlete_limit
+) values (
+  '22000000-0000-4000-8000-000000000001'::uuid,
+  repeat('e', 64),
+  1
+);
+
+create temporary table ci_family_invite_result on commit drop as
+select public.claim_public_tournament_family_checkout(
+  '22000000-0000-4000-8000-000000000001'::uuid,
+  '23000000-0000-4000-8000-000000000004'::uuid,
+  'Responsável do Convite',
+  'ci-family-invite@tests.invalid',
+  '27999999994',
+  '52998224725',
+  jsonb_build_array(
+    jsonb_build_object(
+      'athlete_source_key', 'tournament-family:' || repeat('e', 64),
+      'athlete_full_name', 'Menor do Convite',
+      'athlete_email', 'ci-family-invite@tests.invalid',
+      'athlete_phone', null,
+      'athlete_cpf', null,
+      'athlete_birth_date', '2013-04-12',
+      'athlete_gender', 'FEMALE',
+      'athlete_city', 'Colatina',
+      'athlete_is_minor', true,
+      'athlete_guardian_name', 'Responsável do Convite',
+      'athlete_guardian_phone', '27999999994',
+      'primary_category_id', '22000000-0000-4000-8000-000000000002',
+      'additional_category_id', null,
+      'public_name', 'Menor do Convite',
+      'public_city', 'Colatina',
+      'partner_name', null,
+      'primary_amount', 0,
+      'notes', 'Fixture de convite isento'
+    )
+  ),
+  'PIX',
+  'NOT_APPLICABLE',
+  repeat('e', 64),
+  true
+) as result;
+
+select ok(
+  (select result #>> '{invitation,status}' from ci_family_invite_result) = 'USED'
+    and (select result #>> '{registration_group,status}' from ci_family_invite_result) = 'CONFIRMED'
+    and (select (result #>> '{registration_group,total_amount}')::numeric from ci_family_invite_result) = 0
+    and (select result -> 'payment' from ci_family_invite_result) = 'null'::jsonb
+    and not (select (result ->> 'payment_created')::boolean from ci_family_invite_result)
+    and not exists (
+      select 1
+      from public.tournament_payments
+      where registration_group_id = (
+        select (result #>> '{registration_group,id}')::uuid
+        from ci_family_invite_result
+      )
+    ),
+  'o convite isento é consumido atomicamente sem depender do ambiente ou da chave do Asaas'
+);
+
+create temporary table ci_family_invite_replayed_result on commit drop as
+select public.claim_public_tournament_family_checkout(
+  '22000000-0000-4000-8000-000000000001'::uuid,
+  '23000000-0000-4000-8000-000000000004'::uuid,
+  'Responsável do Convite',
+  'ci-family-invite@tests.invalid',
+  '27999999994',
+  '52998224725',
+  jsonb_build_array(
+    jsonb_build_object(
+      'athlete_source_key', 'tournament-family:' || repeat('e', 64),
+      'athlete_full_name', 'Menor do Convite',
+      'athlete_email', 'ci-family-invite@tests.invalid',
+      'athlete_phone', null,
+      'athlete_cpf', null,
+      'athlete_birth_date', '2013-04-12',
+      'athlete_gender', 'FEMALE',
+      'athlete_city', 'Colatina',
+      'athlete_is_minor', true,
+      'athlete_guardian_name', 'Responsável do Convite',
+      'athlete_guardian_phone', '27999999994',
+      'primary_category_id', '22000000-0000-4000-8000-000000000002',
+      'additional_category_id', null,
+      'public_name', 'Menor do Convite',
+      'public_city', 'Colatina',
+      'partner_name', null,
+      'primary_amount', 0,
+      'notes', 'Fixture de convite isento'
+    )
+  ),
+  'PIX',
+  'NOT_APPLICABLE',
+  repeat('e', 64),
+  false
+) as result;
+
+select ok(
+  (select result #>> '{registration_group,id}' from ci_family_invite_replayed_result) =
+    (select result #>> '{registration_group,id}' from ci_family_invite_result)
+    and (select result #>> '{invitation,status}' from ci_family_invite_replayed_result) = 'USED'
+    and not (select (result ->> 'payment_created')::boolean from ci_family_invite_replayed_result),
+  'o convite usado aceita somente a repetição idempotente do mesmo request_token'
+);
+
+select throws_ok(
+  $sql$
+    select public.claim_public_tournament_family_checkout(
+      '22000000-0000-4000-8000-000000000001'::uuid,
+      '23000000-0000-4000-8000-000000000005'::uuid,
+      'Outro Responsável do Convite',
+      'ci-family-invite-other@tests.invalid',
+      '27999999995',
+      '12345678901',
+      jsonb_build_array(
+        jsonb_build_object(
+          'athlete_source_key', 'tournament-family:' || repeat('f', 64),
+          'athlete_full_name', 'Outro Menor do Convite',
+          'athlete_email', 'ci-family-invite-other@tests.invalid',
+          'athlete_phone', null,
+          'athlete_cpf', null,
+          'athlete_birth_date', '2014-06-10',
+          'athlete_gender', 'MALE',
+          'athlete_city', 'Colatina',
+          'athlete_is_minor', true,
+          'athlete_guardian_name', 'Outro Responsável do Convite',
+          'athlete_guardian_phone', '27999999995',
+          'primary_category_id', '22000000-0000-4000-8000-000000000002',
+          'additional_category_id', null,
+          'public_name', 'Outro Menor do Convite',
+          'public_city', 'Colatina',
+          'partner_name', null,
+          'primary_amount', 0,
+          'notes', 'Tentativa com outro token'
+        )
+      ),
+      'PIX',
+      'NOT_APPLICABLE',
+      repeat('e', 64),
+      false
+    )
+  $sql$,
+  'P0001',
+  'Este convite já foi utilizado.',
+  'o convite usado rejeita outro request_token dentro da transação protegida'
+);
+
+insert into public.tournament_athletes (
+  id,
+  source_key,
+  full_name,
+  email,
+  phone,
+  cpf,
+  birth_date,
+  gender,
+  city
+) values (
+  '23000000-0000-4000-8000-000000000003'::uuid,
+  'tournament-family:' || repeat('c', 64),
+  'Atleta Antes do Rollback',
+  'ci-family-original@tests.invalid',
+  '27999999991',
+  '11144477735',
+  '1988-03-10',
+  'MALE',
+  'Colatina'
+);
+
+create function pg_temp.reject_ci_family_payment()
+returns trigger
+language plpgsql
+as $$
+begin
+  raise exception using errcode = 'P0001', message = 'Falha sintética ao criar cobrança familiar.';
+end;
+$$;
+
+create trigger reject_ci_family_payment
+before insert on public.tournament_payments
+for each row
+when (new.external_reference like 'tournament-family:%')
+execute function pg_temp.reject_ci_family_payment();
+
+select throws_ok(
+  $sql$
+    select public.claim_public_tournament_family_checkout(
+      '22000000-0000-4000-8000-000000000001'::uuid,
+      '23000000-0000-4000-8000-000000000002'::uuid,
+      'Responsável do Rollback',
+      'ci-family-rollback@tests.invalid',
+      '27999999992',
+      '11144477735',
+      jsonb_build_array(
+        jsonb_build_object(
+          'athlete_source_key', 'tournament-family:' || repeat('c', 64),
+          'athlete_full_name', 'Atleta Alterado Indevidamente',
+          'athlete_email', 'ci-family-altered@tests.invalid',
+          'athlete_phone', '27999999991',
+          'athlete_cpf', '11144477735',
+          'athlete_birth_date', '1988-03-10',
+          'athlete_gender', 'MALE',
+          'athlete_city', 'Outra Cidade',
+          'athlete_is_minor', false,
+          'athlete_guardian_name', null,
+          'athlete_guardian_phone', null,
+          'primary_category_id', '22000000-0000-4000-8000-000000000002',
+          'additional_category_id', null,
+          'public_name', 'Atleta Alterado Indevidamente',
+          'public_city', 'Outra Cidade',
+          'partner_name', null,
+          'primary_amount', 50,
+          'notes', 'Fixture de rollback'
+        ),
+        jsonb_build_object(
+          'athlete_source_key', 'tournament-family:' || repeat('d', 64),
+          'athlete_full_name', 'Atleta Novo do Rollback',
+          'athlete_email', null,
+          'athlete_phone', '27999999993',
+          'athlete_cpf', '93541134780',
+          'athlete_birth_date', '1991-08-22',
+          'athlete_gender', 'FEMALE',
+          'athlete_city', 'Colatina',
+          'athlete_is_minor', false,
+          'athlete_guardian_name', null,
+          'athlete_guardian_phone', null,
+          'primary_category_id', '22000000-0000-4000-8000-000000000003',
+          'additional_category_id', null,
+          'public_name', 'Atleta Novo do Rollback',
+          'public_city', 'Colatina',
+          'partner_name', null,
+          'primary_amount', 50,
+          'notes', 'Fixture de rollback'
+        )
+      ),
+      'PIX',
+      'SANDBOX',
+      null,
+      true
+    )
+  $sql$,
+  'P0001',
+  'Falha sintética ao criar cobrança familiar.',
+  'falhar ao criar a cobrança local desfaz todo o checkout familiar'
+);
+
+drop trigger reject_ci_family_payment on public.tournament_payments;
+
+select ok(
+  exists (
+    select 1
+    from public.tournament_athletes
+    where id = '23000000-0000-4000-8000-000000000003'::uuid
+      and full_name = 'Atleta Antes do Rollback'
+      and email = 'ci-family-original@tests.invalid'
+      and city = 'Colatina'
+  )
+    and not exists (
+      select 1
+      from public.tournament_athletes
+      where source_key = 'tournament-family:' || repeat('d', 64)
+    )
+    and not exists (
+      select 1
+      from public.tournament_registration_groups
+      where request_token = '23000000-0000-4000-8000-000000000002'::uuid
+    )
+    and not exists (
+      select 1
+      from public.tournament_registrations
+      where public_name in ('Atleta Alterado Indevidamente', 'Atleta Novo do Rollback')
+    ),
+  'o rollback preserva o atleta existente e não deixa atleta, grupo ou inscrição órfãos'
+);
+
 insert into public.tournament_athletes (
   id,
   source_key,
@@ -1684,6 +2408,13 @@ select ok(
   'o estorno parcial mantém a vaga confirmada e reduz o valor líquido pago'
 );
 
+update public.tournament_payments
+set invoice_url = 'https://provider.invalid/stale-invoice',
+    pix_payload = 'stale-pix-payload',
+    pix_encoded_image = 'stale-qr-image',
+    pix_expires_at = now() + interval '2 hours'
+where id = '21000000-0000-4000-8000-000000000008'::uuid;
+
 create temporary table ci_full_refund_reconciliation_result on commit drop as
 select public.apply_tournament_payment_reconciliation(
   '21000000-0000-4000-8000-000000000008'::uuid,
@@ -1727,6 +2458,10 @@ select ok(
       and status = 'REFUNDED'
       and paid_at is null
       and next_reconciliation_at is null
+      and invoice_url is null
+      and pix_payload is null
+      and pix_encoded_image is null
+      and pix_expires_at is null
   )
     and exists (
       select 1

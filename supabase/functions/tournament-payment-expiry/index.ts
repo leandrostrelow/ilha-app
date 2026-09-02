@@ -10,6 +10,7 @@ const MAX_RUNTIME_MS = 20_000;
 const PROVIDER_TIMEOUT_MS = 4_000;
 const CONFIRMED_REVIEW_WINDOW_MS = 72 * 60 * 60 * 1000;
 const reconciliationDelaysSeconds = [300, 600, 1_800, 3_600, 10_800, 21_600];
+const EXPIRY_REMOVABLE_PROVIDER_STATUSES = new Set(["PENDING", "OVERDUE"]);
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -96,6 +97,26 @@ function providerStatus(payment: Row) {
   if (status === "RECEIVED_IN_CASH") return "RECEIVED";
   if (["DELETED", "CANCELLED"].includes(status)) return "CANCELLED";
   return status;
+}
+
+function paymentExpiryRemoteDisposition(
+  hasStoredProviderPaymentId: boolean,
+  remoteOk: boolean,
+  remoteHttpStatus: number,
+  remoteBodyIsEmpty: boolean,
+  remoteProviderPaymentId: string,
+  remoteProviderStatus: string,
+) {
+  if (remoteHttpStatus === 404) return "ARCHIVE_REMOTE_ABSENT";
+  if (remoteOk && !hasStoredProviderPaymentId && remoteBodyIsEmpty) return "ARCHIVE_REMOTE_ABSENT";
+  if (
+    remoteOk &&
+    Boolean(remoteProviderPaymentId) &&
+    EXPIRY_REMOVABLE_PROVIDER_STATUSES.has(remoteProviderStatus)
+  ) {
+    return "DELETE_THEN_ARCHIVE";
+  }
+  return "DEFER";
 }
 
 function chargebackStatus(payment: Row) {
@@ -492,6 +513,14 @@ Deno.serve(async (request) => {
         }
       }
       const status = providerStatus(remotePayment);
+      const remoteDisposition = paymentExpiryRemoteDisposition(
+        Boolean(String(payment.provider_payment_id || "").trim()),
+        remote.ok,
+        remote.status,
+        Object.keys(remotePayment).length === 0,
+        recoveredProviderPaymentId,
+        status,
+      );
       const currentStatus = String(payment.status || "");
       if (currentStatus === "RECEIVED" && !["RECEIVED", "PARTIALLY_REFUNDED", "REFUNDED", "CHARGEBACK", "CANCELLED"].includes(status)) {
         await scheduleReconciliation(client, payment, undefined, 24 * 60 * 60);
@@ -555,7 +584,7 @@ Deno.serve(async (request) => {
       }
 
       if (!isExpired(payment)) {
-        if (recoveredProviderPaymentId) {
+        if (remoteDisposition === "DELETE_THEN_ARCHIVE") {
           const nextStatus = status === "OVERDUE" ? "OVERDUE" : "PENDING";
           await applyPaymentState(client, payment, remotePayment, nextStatus, {
             startedAt: String(payment.reconciliation_started_at || new Date().toISOString()),
@@ -569,8 +598,14 @@ Deno.serve(async (request) => {
         return;
       }
 
+      if (!["DELETE_THEN_ARCHIVE", "ARCHIVE_REMOTE_ABSENT"].includes(remoteDisposition)) {
+        await scheduleReconciliation(client, payment);
+        summary.deferred += 1;
+        return;
+      }
+
       const providerPaymentId = String(payment.provider_payment_id || recoveredProviderPaymentId || "").trim();
-      if (providerPaymentId && remote.status !== 404) {
+      if (remoteDisposition === "DELETE_THEN_ARCHIVE") {
         const removed = await asaasRequest(`/payments/${encodeURIComponent(providerPaymentId)}`, { method: "DELETE" });
         if (!removed.ok && removed.status !== 404) {
           await scheduleReconciliation(client, payment);

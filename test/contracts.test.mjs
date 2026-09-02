@@ -33,6 +33,10 @@ const tournamentFamilyCheckoutSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260901032343_add_tournament_family_checkout.sql'),
   'utf8'
 );
+const atomicTournamentFamilyCheckoutSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260902134031_atomic_tournament_family_checkout.sql'),
+  'utf8'
+);
 const tournamentInviteSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260901040358_add_single_use_tournament_invites.sql'),
   'utf8'
@@ -134,6 +138,10 @@ const tournamentPaymentExpiryAuthFixSource = await readFile(
 );
 const tournamentPaymentReconciliationSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260901202936_harden_tournament_payment_reconciliation.sql'),
+  'utf8'
+);
+const terminalPaymentArtifactCleanupSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260902104500_clear_terminal_tournament_payment_artifacts.sql'),
   'utf8'
 );
 const asaasGoLiveRunbookSource = await readFile(
@@ -652,6 +660,35 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(tournamentRegisterSource, /providerErrorSnapshot\(error\)/);
   assert.match(tournamentRegisterSource, /provider_status/);
   assert.match(tournamentRegisterSource, /provider_codes/);
+  assert.doesNotMatch(
+    tournamentRegisterSource,
+    /console\.warn\("tournament-register(?: family)? PIX repair deferred",\s*\{[\s\S]{0,250}error\.message/,
+  );
+  assert.match(
+    tournamentRegisterSource,
+    /console\.warn\("tournament-register(?: family)? PIX repair deferred",\s*\{[\s\S]{0,250}provider_error:\s*providerErrorSnapshot\(error\)/,
+  );
+  const safePayment = vm.runInNewContext(
+    `(${functionSource(tournamentRegisterSource, 'safePayment').replace('row: JsonRecord | null', 'row')})`,
+  );
+  for (const status of ['REFUNDED', 'CANCELLED', 'CHARGEBACK']) {
+    const terminalPayment = safePayment({
+      id: 'pay_terminal',
+      status,
+      invoice_url: 'https://provider.invalid/invoice',
+      pix_payload: 'stale-pix-payload',
+      pix_encoded_image: 'stale-qr-image',
+      pix_expires_at: '2026-09-02T12:00:00Z',
+    });
+    for (const field of ['invoice_url', 'pix_payload', 'pix_encoded_image', 'pix_expires_at']) {
+      assert.equal(terminalPayment[field], null);
+    }
+  }
+  assert.equal(safePayment({ status: 'PENDING', pix_payload: 'active-pix' }).pix_payload, 'active-pix');
+  assert.match(
+    terminalPaymentArtifactCleanupSource,
+    /before insert or update of status, invoice_url, pix_payload, pix_encoded_image, pix_expires_at[\s\S]*'REFUNDED', 'CANCELLED', 'CHARGEBACK'/,
+  );
   const safeDescription = vm.runInNewContext(
     `(${functionSource(tournamentRegisterSource, 'asaasSafeDescription').replace('value: unknown', 'value')})`,
   );
@@ -702,6 +739,43 @@ test('inscrição online reserva a vaga por duas horas e o ADM permite reenviar 
   assert.match(tournamentPaymentExpiryAuthFixSource, /auth\.jwt\(\) ->> ''role''/);
   assert.match(tournamentPaymentExpirySource, /payments\/\$\{encodeURIComponent\(providerPaymentId\)\}/);
   assert.match(tournamentPaymentExpirySource, /method: "DELETE"/);
+  assert.match(tournamentPaymentExpirySource, /EXPIRY_REMOVABLE_PROVIDER_STATUSES = new Set\(\["PENDING", "OVERDUE"\]\)/);
+  const expiryDispositionSource = functionSource(tournamentPaymentExpirySource, 'paymentExpiryRemoteDisposition')
+    .replace(/:\s*(?:boolean|number|string)/g, '');
+  const expiryDisposition = vm.runInNewContext(
+    `(() => {
+      const EXPIRY_REMOVABLE_PROVIDER_STATUSES = new Set(["PENDING", "OVERDUE"]);
+      return (${expiryDispositionSource});
+    })()`,
+  );
+  assert.equal(expiryDisposition(true, true, 200, false, 'pay_pending', 'PENDING'), 'DELETE_THEN_ARCHIVE');
+  assert.equal(expiryDisposition(true, true, 200, false, 'pay_overdue', 'OVERDUE'), 'DELETE_THEN_ARCHIVE');
+  assert.equal(expiryDisposition(true, false, 404, true, '', ''), 'ARCHIVE_REMOTE_ABSENT');
+  assert.equal(expiryDisposition(false, true, 200, true, '', ''), 'ARCHIVE_REMOTE_ABSENT');
+  for (const status of [
+    'CREATED',
+    'CONFIRMED',
+    'RECEIVED',
+    'REFUND_IN_PROGRESS',
+    'AWAITING_CHARGEBACK_REVERSAL',
+    'UNKNOWN_FUTURE_STATUS',
+    '',
+  ]) {
+    assert.equal(
+      expiryDisposition(true, true, 200, false, 'pay_review', status),
+      'DEFER',
+      `status ${status || '(empty)'} must fail closed`,
+    );
+  }
+  assert.equal(
+    expiryDisposition(true, true, 200, true, '', ''),
+    'DEFER',
+    'a malformed successful lookup for a stored provider id is not safe absence',
+  );
+  assert.match(
+    tournamentPaymentExpirySource,
+    /if \(!\["DELETE_THEN_ARCHIVE", "ARCHIVE_REMOTE_ABSENT"\]\.includes\(remoteDisposition\)\) \{\s*await scheduleReconciliation\(client, payment\);\s*summary\.deferred \+= 1;\s*return;/,
+  );
   assert.match(tournamentPaymentExpirySource, /status === "RECEIVED"/);
   assert.match(tournamentPaymentExpirySource, /status === "CONFIRMED"[\s\S]*persistConfirmedReview/);
   assert.match(tournamentPaymentExpirySource, /CONFIRMED_REVIEW_WINDOW_MS = 72 \* 60 \* 60 \* 1000/);
@@ -823,8 +897,33 @@ test('inscrição familiar reúne menores e adultos em um único Pix sem usar o 
   assert.match(tournamentRegisterSource, /handleFamilyRegistration/);
   assert.match(tournamentRegisterSource, /if \(isMinor\)[\s\S]*cpf && !isValidCpf/);
   assert.match(tournamentRegisterSource, /ensureAsaasFamilyCustomer/);
-  assert.match(tournamentRegisterSource, /registration_group_id:\s*group\.id/);
   assert.match(tournamentRegisterSource, /tournament-family:\$\{group\.id\}/);
+  assert.match(tournamentRegisterSource, /claim_public_tournament_family_checkout/);
+  assert.match(tournamentRegisterSource, /athlete_source_key:\s*await familyAthleteSourceKey/);
+  assert.doesNotMatch(
+    functionSource(tournamentRegisterSource, 'handleFamilyRegistration'),
+    /from\("tournament_athletes"\)\.(?:insert|update|delete)/,
+  );
+  const familyRegistrationHandler = functionSource(tournamentRegisterSource, 'handleFamilyRegistration');
+  assert.doesNotMatch(familyRegistrationHandler, /existingGroupResult|retryEntries|primary_amount:\s*0/);
+  assert.equal((familyRegistrationHandler.match(/await claimFamilyCheckout\(/g) || []).length, 2);
+  assert.match(familyRegistrationHandler, /if \(billingType !== "PIX"\)/);
+  assert.doesNotMatch(familyRegistrationHandler, /allowedBillingTypes\.has\(billingType\)/);
+  assert.match(familyRegistrationHandler, /p_billing_type:\s*"PIX"/);
+  assert.match(familyRegistrationHandler, /tournament,\s*"PIX",\s*Object\.keys\(record\(claimed\.payment\)\)/);
+  assert.match(familyRegistrationHandler, /p_create_if_missing:\s*createIfMissing/);
+  assert.match(familyRegistrationHandler, /!inviteMode\s*&&\s*!allowedMethods\.includes\("PIX"\)/);
+  assert.match(familyRegistrationHandler, /primary_amount:\s*primaryAmount/);
+  assert.match(atomicTournamentFamilyCheckoutSource, /normalized_billing_type <> 'PIX'/);
+  const familyProbeIndex = familyRegistrationHandler.indexOf('await claimFamilyCheckout(probeEntries, false)');
+  const familyOpenGateIndex = familyRegistrationHandler.indexOf('tournament.status !== "REGISTRATION_OPEN"');
+  const familyCategoryGateIndex = familyRegistrationHandler.indexOf('failureStage = "family_category_lookup"');
+  const familyCreateIndex = familyRegistrationHandler.indexOf('await claimFamilyCheckout(rpcEntries, true)');
+  assert.ok(
+    familyProbeIndex >= 0 && familyOpenGateIndex > familyProbeIndex &&
+      familyCategoryGateIndex > familyOpenGateIndex && familyCreateIndex > familyCategoryGateIndex,
+    'o retry existente precisa ser recuperado antes dos gates mutáveis; uma criação nova só ocorre depois deles',
+  );
   assert.match(tournamentFamilyCheckoutSource, /create table public\.tournament_registration_groups/i);
   assert.match(tournamentFamilyCheckoutSource, /alter table public\.tournament_registration_groups enable row level security/i);
   assert.match(tournamentFamilyCheckoutSource, /claim_public_tournament_family_bundle/);
@@ -835,6 +934,84 @@ test('inscrição familiar reúne menores e adultos em um único Pix sem usar o 
   assert.equal((tournamentFamilyCheckoutSource.match(/auth\.jwt\(\) ->> 'role'/g) || []).length, 3);
   assert.doesNotMatch(tournamentFamilyCheckoutSource, /current_setting\('request\.jwt\.claim\.role'/);
   assert.doesNotMatch(tournamentFamilyCheckoutSource, /app_clients|app_family_members|students/);
+  assert.match(
+    atomicTournamentFamilyCheckoutSource,
+    /create or replace function public\.claim_public_tournament_family_checkout[\s\S]*security invoker/i,
+  );
+  const familyPreReadIndex = atomicTournamentFamilyCheckoutSource.indexOf('into pre_read_group');
+  const familyPaymentLockIndex = atomicTournamentFamilyCheckoutSource.indexOf(
+    'where payment.registration_group_id = pre_read_group.id',
+    familyPreReadIndex,
+  );
+  const familyGroupLockIndex = atomicTournamentFamilyCheckoutSource.indexOf(
+    'where registration_group.id = pre_read_group.id',
+    familyPaymentLockIndex,
+  );
+  const familyExistingDecisionIndex = atomicTournamentFamilyCheckoutSource.indexOf(
+    'if existing_group.id is not null then',
+    familyGroupLockIndex,
+  );
+  assert.ok(
+    familyPreReadIndex >= 0 && familyPaymentLockIndex > familyPreReadIndex &&
+      familyGroupLockIndex > familyPaymentLockIndex && familyExistingDecisionIndex > familyGroupLockIndex,
+    'o retry familiar precisa bloquear payment -> group antes de decidir entre existente e novo',
+  );
+  assert.doesNotMatch(
+    atomicTournamentFamilyCheckoutSource.slice(familyPreReadIndex, familyPaymentLockIndex),
+    /for update/i,
+  );
+  assert.match(
+    atomicTournamentFamilyCheckoutSource.slice(familyPaymentLockIndex, familyGroupLockIndex),
+    /for update/i,
+  );
+  const familyProbeMissIndex = atomicTournamentFamilyCheckoutSource.indexOf('if not p_create_if_missing then');
+  const familyAthleteWriteIndex = atomicTournamentFamilyCheckoutSource.indexOf('insert into public.tournament_athletes');
+  assert.ok(
+    familyProbeMissIndex >= 0 && familyAthleteWriteIndex > familyProbeMissIndex,
+    'um probe sem grupo precisa retornar antes de qualquer gravação de atleta',
+  );
+  assert.match(
+    atomicTournamentFamilyCheckoutSource.slice(familyProbeMissIndex, familyAthleteWriteIndex),
+    /'found', false/,
+  );
+  assert.match(
+    atomicTournamentFamilyCheckoutSource,
+    /claimed_group_id := coalesce\([\s\S]*existing_group\.id[\s\S]*registration_group,id/,
+  );
+  assert.match(
+    atomicTournamentFamilyCheckoutSource,
+    /if payment_row\.id is null then[\s\S]{0,800}insert into public\.tournament_payments/i,
+  );
+  assert.doesNotMatch(
+    atomicTournamentFamilyCheckoutSource,
+    /payment_row\.id is null and p_create_if_missing/,
+  );
+  assert.match(
+    atomicTournamentFamilyCheckoutSource,
+    /existing_group\.id is not null[\s\S]*payment_row\.provider_payment_id is null[\s\S]*payment_row\.status in \('CREATED', 'FAILED'\)[\s\S]*archive_expired_tournament_payment\(payment_row\.id\)[\s\S]*'expired', true/,
+  );
+  assert.match(
+    familyRegistrationHandler,
+    /if \(probedCheckout\.expired === true\) \{[\s\S]{0,300}\}, 410\);/,
+  );
+  assert.match(atomicTournamentFamilyCheckoutSource, /'found', true/);
+  assert.match(
+    atomicTournamentFamilyCheckoutSource,
+    /insert into public\.tournament_athletes[\s\S]*claim_public_tournament_family_bundle[\s\S]*insert into public\.tournament_payments/i,
+  );
+  assert.match(
+    atomicTournamentFamilyCheckoutSource,
+    /'tournament-family:' \|\| group_row\.id::text[\s\S]*on conflict \(registration_group_id\)/i,
+  );
+  assert.match(atomicTournamentFamilyCheckoutSource, /group_row\.created_at \+ interval '2 hours'/i);
+  assert.match(
+    atomicTournamentFamilyCheckoutSource,
+    /claim_public_tournament_invite_bundle[\s\S]*'payment_created', payment_created/i,
+  );
+  assert.match(
+    atomicTournamentFamilyCheckoutSource,
+    /revoke all on function public\.claim_public_tournament_family_checkout[\s\S]*from public, anon, authenticated, service_role[\s\S]*to service_role/i,
+  );
 });
 
 test('convite isento é único, limitado e consumido atomicamente com a inscrição', () => {
@@ -861,7 +1038,12 @@ test('convite isento é único, limitado e consumido atomicamente com a inscriç
   assert.match(tournamentInviteSource, /athlete_count > invite_row\.athlete_limit/);
   assert.match(tournamentInviteSource, /set status = 'USED'/);
   assert.match(tournamentInviteSource, /update public\.tournaments[\s\S]*courtesy_registration_token = null/);
-  assert.match(tournamentRegisterSource, /claim_public_tournament_invite_bundle/);
+  assert.match(tournamentRegisterSource, /claim_public_tournament_family_checkout/);
+  assert.match(atomicTournamentFamilyCheckoutSource, /claim_public_tournament_invite_bundle/);
+  assert.match(
+    functionSource(tournamentRegisterSource, 'handleFamilyRegistration'),
+    /inviteMode \? "NOT_APPLICABLE" : asaasConfig\(\)\.environment/,
+  );
   assert.match(tournamentRegisterSource, /await sha256Hex\(inviteToken\)/);
   assert.match(tournamentRegisterSource, /Este convite já foi utilizado/);
 });
