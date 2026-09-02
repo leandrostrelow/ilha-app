@@ -96,6 +96,10 @@ const tournamentPaymentTrackingRateLimitSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260902183000_rate_limit_tournament_payment_tracking.sql'),
   'utf8'
 );
+const revokeLegacyTournamentStatusSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260902183300_revoke_legacy_public_tournament_registration_status.sql'),
+  'utf8'
+);
 const ilhaOpenClassesAndLimitsSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260831100000_configure_ilha_open_2026_classes_and_registration_limits.sql'),
   'utf8'
@@ -2569,6 +2573,17 @@ test('acompanhamento público do Pix tem limites separados por token, IP e açã
   assert.match(tournamentPaymentTrackingRateLimitSource, /v_action = 'payment_status' then 30 else 5/);
   assert.match(tournamentPaymentTrackingRateLimitSource, /revoke all[\s\S]*from public, anon, authenticated/);
   assert.match(tournamentPaymentTrackingRateLimitSource, /grant execute[\s\S]*to service_role/);
+});
+
+test('RPC legado não contorna o acompanhamento protegido do Pix', () => {
+  assert.match(
+    revokeLegacyTournamentStatusSource,
+    /revoke all on function public\.tournament_public_registration_status\(uuid\)[\s\S]*from public, anon, authenticated, service_role/,
+  );
+  assert.match(
+    revokeLegacyTournamentStatusSource,
+    /grant execute on function public\.tournament_public_registration_status\(uuid\)[\s\S]*to service_role/,
+  );
 });
 
 test('retomada individual reutiliza a cobrança reservada mesmo após o fechamento das inscrições', () => {

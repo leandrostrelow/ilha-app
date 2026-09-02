@@ -43,12 +43,13 @@ test('migration revoga somente execuções internas comprovadamente desnecessár
 });
 
 test('contrato SQL cobre menor privilégio e preserva as RPCs públicas intencionais', () => {
-  assert.match(sqlContract, /select plan\(5\)/);
+  assert.match(sqlContract, /select plan\(6\)/);
   assert.match(sqlContract, /procedure\.prorettype = 'pg_catalog\.trigger'::regtype/);
   assert.match(sqlContract, /public\.bar_add_order_item\(uuid,uuid,numeric,text\)/);
   assert.match(sqlContract, /public\.bar_add_order_item\(uuid,uuid,numeric,text,text\)/);
   assert.match(sqlContract, /public\.bar_public_menu\(text\)/);
   assert.match(sqlContract, /public\.tournament_public_snapshot\(text\)/);
+  assert.match(sqlContract, /public\.tournament_public_registration_status\(uuid\)/);
   assert.match(sqlContract, /private\.get_my_family_summary_impl\(uuid\)/);
 });
 
