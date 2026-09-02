@@ -156,6 +156,8 @@ test('CI de banco opera somente no Supabase local e repete migrations do zero', 
   assert.match(workflow, /db reset --local/);
   assert.match(workflow, /test db --local/);
   assert.match(workflow, /db lint --local/);
+  assert.match(workflow, /SUPABASE_CI_DIR: \/tmp\/ilha-supabase-ci-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
+  assert.doesNotMatch(workflow, /\$\{\{ runner\.temp \}\}/);
   assert.doesNotMatch(workflow, /\b(?:db push|link|--linked)\b/);
   assert.doesNotMatch(workflow, /SUPABASE_(?:ACCESS_TOKEN|DB_PASSWORD|SERVICE_ROLE)/);
 });

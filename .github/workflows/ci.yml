@@ -44,8 +44,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
-      SUPABASE_CI_DIR: ${{ runner.temp }}/ilha-supabase-ci
-      SUPABASE_HOME: ${{ runner.temp }}/supabase-home
+      SUPABASE_CI_DIR: /tmp/ilha-supabase-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      SUPABASE_HOME: /tmp/supabase-home-${{ github.run_id }}-${{ github.run_attempt }}
       SUPABASE_TELEMETRY_DISABLED: '1'
     steps:
       - name: Checkout sem credencial persistente
