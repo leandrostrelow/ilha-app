@@ -474,13 +474,21 @@ function seedOrder(size: number): number[] {
   return result;
 }
 
-function mapTournament(row: Row, includeCapabilities = false) {
-  const publicUrl = row.slug ? `https://app.ilhatenis.com/torneios/${encodeURIComponent(row.slug)}` : "";
-  const settings = { ...firstObject(row.settings) };
-  delete settings.courtesy_registration_token;
-  if (includeCapabilities && row.courtesy_registration_token) {
-    settings.courtesy_registration_token = row.courtesy_registration_token;
+const privateTournamentSettingKey = /(^|_)(token|secret|password|api_key|private_key)($|_)/i;
+
+function sanitizeTournamentSettings(value: unknown) {
+  const settings = { ...firstObject(value) };
+  for (const key of Object.keys(settings)) {
+    if (key === "courtesy_registration_token" || privateTournamentSettingKey.test(key)) {
+      delete settings[key];
+    }
   }
+  return settings;
+}
+
+function mapTournament(row: Row, _includeCapabilities = false) {
+  const publicUrl = row.slug ? `https://app.ilhatenis.com/torneios/${encodeURIComponent(row.slug)}` : "";
+  const settings = sanitizeTournamentSettings(row.settings);
   return {
     torneio_id: row.id,
     id: row.id,
@@ -1036,8 +1044,8 @@ function tournamentPayload(input: Row, current: Row = {}) {
   if (name.length < 3) throw new ApiError("Informe o nome do torneio.");
   const rawStatus = input.status || current.status || "DRAFT";
   const registrationOpen = booleanValue(input.inscricoes_abertas ?? input.registration_open, current.registration_open === true);
-  const currentSettings = firstObject(current.settings);
-  const requestedSettings = firstObject(input.settings, currentSettings);
+  const currentSettings = sanitizeTournamentSettings(current.settings);
+  const requestedSettings = sanitizeTournamentSettings(firstObject(input.settings, currentSettings));
   const currentPricing = firstObject(currentSettings.registration_pricing);
   const requestedPricing = firstObject(requestedSettings.registration_pricing, currentPricing);
   const registrationPricing = {

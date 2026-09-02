@@ -22865,8 +22865,11 @@
           };
           const payment = billingLabels[billingStatus] || (regs[0] ? regs[0].status_pagamento : '');
           const onlineStatus = String(onlinePayment && onlinePayment.status || '').toUpperCase();
-          const onlinePending = ['CREATED', 'PENDING', 'FAILED', 'OVERDUE'].includes(onlineStatus);
-          const onlinePaid = ['RECEIVED', 'CONFIRMED'].includes(onlineStatus);
+          const onlinePending = ['CREATED', 'RECONCILING', 'PENDING', 'FAILED', 'OVERDUE'].includes(onlineStatus);
+          const onlineReview = onlineStatus === 'CONFIRMED';
+          const onlineManualReview = onlineStatus === 'REVIEW_REQUIRED';
+          const onlinePartialReview = onlineStatus === 'PARTIALLY_REFUNDED';
+          const onlinePaid = ['RECEIVED', 'RECEIVED_IN_CASH'].includes(onlineStatus);
           const onlineExpiry = onlinePayment && onlinePayment.reserva_expira_em
             ? new Date(onlinePayment.reserva_expira_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
             : '';
@@ -22884,6 +22887,9 @@
             (courtesy ? '<span class="mini-tag">CORTESIA</span>' : '') +
             (payment ? '<span class="mini-tag warn">' + escapeHtml(payment) + '</span>' : '') +
             (onlinePending ? '<span class="mini-tag warn">PAGAMENTO ONLINE · ' + escapeHtml(money(onlinePayment.valor)) + '</span>' : '') +
+            (onlineReview ? '<span class="mini-tag warn">PAGAMENTO EM ANÁLISE · ' + escapeHtml(money(onlinePayment.valor)) + '</span>' : '') +
+            (onlineManualReview ? '<span class="mini-tag warn">REVISÃO MANUAL DO PAGAMENTO · ' + escapeHtml(money(onlinePayment.valor)) + '</span>' : '') +
+            (onlinePartialReview ? '<span class="mini-tag warn">ESTORNO PARCIAL · REVISÃO</span>' : '') +
             (onlinePaid ? '<span class="mini-tag">PAGO ONLINE · ' + escapeHtml(money(onlinePayment.valor)) + '</span>' : '') +
             '</div></div>' +
             '<div class="actions tournament-payment-actions" style="margin:0">' +

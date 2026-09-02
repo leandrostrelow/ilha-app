@@ -390,6 +390,7 @@
     .choice-grid.days { grid-template-columns: repeat(4,minmax(0,1fr)); }
     .choice-card { position: relative; min-height: 52px; display: grid; place-items: center; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: #fff; color: #53686e; font-size: 13px; font-weight: 900; text-align: center; cursor: pointer; }
     .choice-card:has(input:checked) { border-color: var(--lime); background: var(--lime-soft); color: var(--ink); box-shadow: inset 0 0 0 1px var(--lime); }
+    .choice-card:has(input:focus-visible) { outline: 3px solid #006b75; outline-offset: 2px; }
     .choice-card input { position: absolute; opacity: 0; pointer-events: none; }
     .choice-card strong { display: block; }
     .choice-card small { display: block; margin-top: 3px; color: var(--teal); font-size: 12px; font-weight: 950; }
@@ -408,7 +409,7 @@
     .form-error { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: #fff0f1; color: #a62e36; font-size: 12px; font-weight: 800; }
     .registration-chooser { display: grid; gap: 18px; padding: 4px 0 8px; }
     .registration-chooser-copy { text-align: center; }
-    .registration-chooser-copy .eyebrow { color: var(--teal); }
+    .registration-chooser-copy .eyebrow { color: #006b75; }
     .registration-chooser-copy h3 { margin: 7px 0 5px; font-size: 25px; letter-spacing: -.035em; }
     .registration-chooser-copy p { max-width: 560px; margin: 0 auto; color: var(--muted); font-size: 13px; line-height: 1.5; }
     .registration-mode-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 11px; }
@@ -442,6 +443,7 @@
     .family-athlete-days { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; }
     .family-day-option { position: relative; min-height: 38px; display: grid; place-items: center; padding: 7px; border: 1px solid var(--line); border-radius: 11px; color: var(--muted); font-size: 10px; font-weight: 900; cursor: pointer; }
     .family-day-option:has(input:checked) { border-color: var(--lime); background: var(--lime-soft); color: var(--ink); }
+    .family-day-option:has(input:focus-visible) { outline: 3px solid #006b75; outline-offset: 2px; }
     .family-day-option input { position: absolute; opacity: 0; }
     .family-spatial-option { display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 9px; padding: 10px 11px; border: 1px solid #6fbd7c; border-radius: 12px; background: #e8f8eb; color: #1f6f31; cursor: pointer; }
     .family-spatial-option input { width: 18px; height: 18px; accent-color: #23883b; }
@@ -626,7 +628,7 @@
   </main>
 
   <div class="modal-backdrop" id="registrationModal" aria-hidden="true" hidden>
-    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="registrationTitle">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="registrationTitle" tabindex="-1">
       <div class="modal-head">
         <div><h2 id="registrationTitle">Inscrição</h2><p id="registrationSubtitle" hidden></p></div>
         <button class="close-btn" id="closeRegistrationBtn" type="button" aria-label="Fechar">×</button>
@@ -697,7 +699,7 @@
           <p class="captcha-status" id="registrationCaptchaStatus" role="status">Carregando proteção anti-robô…</p>
         </div>
         <div class="form-error" id="registrationError" role="alert" hidden></div>
-        <div class="success-box" id="registrationSuccess" hidden></div>
+        <div class="success-box" id="registrationSuccess" role="status" tabindex="-1" hidden></div>
       </div>
       <div class="modal-foot" id="registrationFoot">
         <button class="button" id="cancelRegistrationBtn" type="button">Cancelar</button>
@@ -733,6 +735,10 @@
       familyAthletes: [],
       familyAthleteSequence: 0,
       familyRequestToken: '',
+      familyRequestKey: '',
+      individualRequestTokens: {},
+      individualRequestKey: '',
+      registrationTrigger: null,
       captchaConfig: null,
       captchaToken: '',
       captchaWidgetId: null
@@ -1127,9 +1133,9 @@
     function infoRow(label,value) { return '<div class="registration-row" style="grid-template-columns:minmax(0,1fr) auto"><div><strong>' + escapeHtml(label) + '</strong></div><span class="mini-chip">' + escapeHtml(value) + '</span></div>'; }
 
     function registrationPricesHtml() {
-      if (isInternalRegistration()) return '<div class="public-price-grid" aria-label="Valores da inscrição"><div class="public-price-card"><span>1 classe</span><strong>' + escapeHtml(money(internalRegistrationAmount(1))) + '</strong></div><div class="public-price-card"><span>2 classes</span><strong>' + escapeHtml(money(internalRegistrationAmount(2))) + '</strong></div><div class="public-price-card"><span>Cobrança</span><strong>Próxima mensalidade</strong></div></div>';
+      if (isInternalRegistration()) return '<div class="public-price-grid" role="group" aria-label="Valores da inscrição"><div class="public-price-card"><span>1 classe</span><strong>' + escapeHtml(money(internalRegistrationAmount(1))) + '</strong></div><div class="public-price-card"><span>2 classes</span><strong>' + escapeHtml(money(internalRegistrationAmount(2))) + '</strong></div><div class="public-price-card"><span>Cobrança</span><strong>Próxima mensalidade</strong></div></div>';
       const pricing = registrationPricing();
-      return '<div class="public-price-grid" aria-label="Valores da inscrição"><div class="public-price-card"><span>CINCATE</span><strong>' + escapeHtml(money(pricing.CINCATE || 0)) + '</strong></div><div class="public-price-card"><span>Aluno Ilha Tênis</span><strong>' + escapeHtml(money(pricing.ILHA_STUDENT || 0)) + '</strong></div><div class="public-price-card"><span>Não associado</span><strong>' + escapeHtml(money(pricing.NON_MEMBER || 0)) + '</strong></div></div>';
+      return '<div class="public-price-grid" role="group" aria-label="Valores da inscrição"><div class="public-price-card"><span>CINCATE</span><strong>' + escapeHtml(money(pricing.CINCATE || 0)) + '</strong></div><div class="public-price-card"><span>Aluno Ilha Tênis</span><strong>' + escapeHtml(money(pricing.ILHA_STUDENT || 0)) + '</strong></div><div class="public-price-card"><span>Não associado</span><strong>' + escapeHtml(money(pricing.NON_MEMBER || 0)) + '</strong></div></div>';
     }
 
     function categoriesHtml() {
@@ -1362,29 +1368,101 @@
     }
     function registrationRequestToken() {
       if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,(character) => {
-        const random = Math.floor(Math.random() * 16);
-        const value = character === 'x' ? random : (random & 3 | 8);
-        return value.toString(16);
-      });
+      if (!window.crypto || typeof window.crypto.getRandomValues !== 'function') {
+        throw new Error('Seu navegador não oferece a proteção necessária para iniciar a inscrição. Atualize-o e tente novamente.');
+      }
+      const bytes = window.crypto.getRandomValues(new Uint8Array(16));
+      bytes[6] = (bytes[6] & 15) | 64;
+      bytes[8] = (bytes[8] & 63) | 128;
+      const hex = Array.from(bytes,(value) => value.toString(16).padStart(2,'0'));
+      return hex.slice(0,4).join('') + '-' + hex.slice(4,6).join('') + '-' + hex.slice(6,8).join('') + '-' + hex.slice(8,10).join('') + '-' + hex.slice(10).join('');
     }
-    function familyRequestStorageKey() { return 'ilha_torneio_familia:' + state.slug + (state.inviteMode ? ':convite:' + state.inviteToken : ''); }
-    function loadFamilyRequestToken() {
-      if (state.familyRequestToken) return state.familyRequestToken;
-      try { state.familyRequestToken = localStorage.getItem(familyRequestStorageKey()) || ''; } catch (error) {}
+    async function secureStorageFingerprint(parts) {
+      if (!window.crypto || !window.crypto.subtle) throw new Error('Seu navegador não oferece a proteção necessária para iniciar a inscrição. Atualize-o e tente novamente.');
+      const identity = parts.map((value) => clean(value)).join('|');
+      const digest = await crypto.subtle.digest('SHA-256',new TextEncoder().encode(identity));
+      return Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2,'0')).join('');
+    }
+    async function familyRequestStorageKey(payer) {
+      return 'ilha_torneio_familia:' + await secureStorageFingerprint([
+        state.slug,
+        state.inviteMode ? state.inviteToken : 'publica',
+        digitsOnly(payer && payer.cpf),
+        clean(payer && payer.email).toLowerCase(),
+        digitsOnly(payer && payer.phone)
+      ]);
+    }
+    function loadFamilyRequestToken(storageKey) {
+      if (state.familyRequestToken && state.familyRequestKey === storageKey) return state.familyRequestToken;
+      state.familyRequestKey = storageKey;
+      state.familyRequestToken = '';
+      try { state.familyRequestToken = localStorage.getItem(storageKey) || ''; } catch (error) {}
       if (!state.familyRequestToken) {
         state.familyRequestToken = registrationRequestToken();
-        try { localStorage.setItem(familyRequestStorageKey(),state.familyRequestToken); } catch (error) {}
+        try { localStorage.setItem(storageKey,state.familyRequestToken); } catch (error) {}
       }
       return state.familyRequestToken;
     }
-    function clearFamilyRequestToken() {
+    function clearFamilyRequestToken(storageKey) {
+      const key = storageKey || state.familyRequestKey;
       state.familyRequestToken = '';
-      try { localStorage.removeItem(familyRequestStorageKey()); } catch (error) {}
+      state.familyRequestKey = '';
+      if (!key) return;
+      try { localStorage.removeItem(key); } catch (error) {}
     }
+    async function individualStorageFingerprint(categoryIdValue,phoneValue,cpfValue,emailValue) {
+      return secureStorageFingerprint([
+        state.slug,
+        categoryIdValue,
+        digitsOnly(phoneValue),
+        digitsOnly(cpfValue) || clean(emailValue).toLowerCase(),
+        state.courtesyMode ? 'cortesia' : 'publica'
+      ]);
+    }
+    async function individualRequestStorageKey(categoryIdValue,phoneValue,cpfValue,emailValue) {
+      return 'ilha_torneio_tentativa:' + await individualStorageFingerprint(categoryIdValue,phoneValue,cpfValue,emailValue);
+    }
+    async function individualTrackingStorageKey(categoryIdValue,phoneValue,cpfValue,emailValue) {
+      return 'ilha_torneio_acompanhamento:' + await individualStorageFingerprint(categoryIdValue,phoneValue,cpfValue,emailValue);
+    }
+    function loadIndividualRequestToken(storageKey) {
+      if (state.individualRequestTokens[storageKey]) return state.individualRequestTokens[storageKey];
+      let token = '';
+      try { token = localStorage.getItem(storageKey) || ''; } catch (error) {}
+      if (!token) token = registrationRequestToken();
+      state.individualRequestTokens[storageKey] = token;
+      try { localStorage.setItem(storageKey,token); } catch (error) {}
+      return token;
+    }
+    function clearIndividualRequestToken(storageKey) {
+      if (!storageKey) return;
+      delete state.individualRequestTokens[storageKey];
+      if (state.individualRequestKey === storageKey) state.individualRequestKey = '';
+      try { localStorage.removeItem(storageKey); } catch (error) {}
+    }
+    function clearLegacyIndividualStorage() {
+      // Versões antigas colocavam telefone, CPF, e-mail, slug ou token de
+      // convite diretamente no nome da chave. As versões atuais mantêm apenas
+      // um fingerprint SHA-256 opaco depois do prefixo.
+      const opaqueKey = /^ilha_torneio_(?:tentativa|acompanhamento|familia):[a-f0-9]{64}$/;
+      try {
+        const keys = [];
+        for (let index = 0; index < localStorage.length; index += 1) {
+          const key = localStorage.key(index);
+          if (!key) continue;
+          const oldTrackingKey = key.startsWith('ilha_torneio:');
+          const oldCapabilityKey = /^(?:ilha_torneio_tentativa|ilha_torneio_acompanhamento|ilha_torneio_familia):/.test(key) && !opaqueKey.test(key);
+          if (oldTrackingKey || oldCapabilityKey) keys.push(key);
+        }
+        keys.forEach((key) => localStorage.removeItem(key));
+      } catch (error) {}
+    }
+    clearLegacyIndividualStorage();
     function publicPaymentMethods() {
-      const allowed = list(field(tournament(),'allowed_payment_methods','formas_pagamento'));
-      return (allowed.length ? allowed : ['PIX','CREDIT_CARD']).map((method) => clean(method).toUpperCase()).filter(Boolean);
+      // O checkout público e a Edge Function aceitam exclusivamente Pix.
+      // Manter a mesma regra nos dois lados evita exibir uma opção que o
+      // servidor recusaria e impede uma configuração antiga de reativá-la.
+      return ['PIX'];
     }
     function paymentOptionsHtml() {
       const labels = {PIX:'Pix',CREDIT_CARD:'Cartão de crédito',BOLETO:'Boleto',UNDEFINED:'Escolher no checkout'};
@@ -1546,11 +1624,10 @@
       bindFamilyAthleteCards();
       updateFamilyRegistrationSummary();
     }
-    function prepareFamilyForm(mode) {
+    async function prepareFamilyForm(mode) {
       state.registrationMode = mode;
       state.familyAthletes = [];
       state.familyAthleteSequence = 0;
-      loadFamilyRequestToken();
       $('familyRegistrationForm').reset();
       $('familyPayerPlayerLabel').hidden = mode !== 'family';
       $('familyPayerParticipates').checked = mode === 'individual';
@@ -1573,6 +1650,7 @@
         : '<strong>⚠️ Atenção:</strong> os perfis CINCATE e Aluno Ilha Tênis serão conferidos. A organização poderá ajustar ou cancelar a inscrição se o vínculo não for confirmado e também poderá alterar a classe para preservar o equilíbrio técnico.';
       state.familyAthletes.push(mode === 'individual' ? familyBaseAthlete({isPayer:true,isMinor:false}) : familyBaseAthlete({isMinor:true}));
       renderFamilyAthletes();
+      return true;
     }
     async function selectRegistrationMode(mode) {
       if (!['individual','minor','family'].includes(mode)) return;
@@ -1593,7 +1671,7 @@
       } else {
         $('registrationForm').hidden = true;
         $('familyRegistrationForm').hidden = false;
-        prepareFamilyForm(mode);
+        if (!await prepareFamilyForm(mode)) return;
         $('submitRegistrationBtn').setAttribute('form','familyRegistrationForm');
         $('registrationSubtitle').textContent = state.inviteMode
           ? 'Convite para até ' + registrationInviteLimit() + ' atleta(s), sem cobrança.'
@@ -1608,9 +1686,50 @@
       }
     }
 
+    function setRegistrationBackgroundInert(inert) {
+      [document.querySelector('.site-head'),$('appMain')].forEach((element) => {
+        if (!element) return;
+        if (inert) element.setAttribute('inert','');
+        else element.removeAttribute('inert');
+      });
+    }
+    function registrationModalFocusableElements() {
+      return Array.from($('registrationModal').querySelectorAll(
+        'a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]):not([tabindex="-1"]),select:not([disabled]),textarea:not([disabled]),iframe,[tabindex]:not([tabindex="-1"])'
+      )).filter((element) => !element.closest('[hidden],[inert]') && element.getClientRects().length > 0);
+    }
+    function handleRegistrationModalKeydown(event) {
+      if ($('registrationModal').hidden || state.registrationOnly) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeRegistration();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = registrationModalFocusableElements();
+      if (!focusable.length) {
+        event.preventDefault();
+        $('registrationModal').querySelector('.modal')?.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !$('registrationModal').contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
     function openRegistration() {
       const item = tournament();
       if (!isRegistrationOpen(item)) return;
+      state.registrationTrigger = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+        ? document.activeElement
+        : null;
+      state.individualRequestKey = '';
       const internal = isInternalRegistration();
       $('registrationForm').reset();
       $('registrationChooser').hidden = true;
@@ -1672,6 +1791,10 @@
       $('registrationError').textContent = '';
       $('registrationModal').hidden = false;
       $('registrationModal').setAttribute('aria-hidden','false');
+      const modalDialog = $('registrationModal').querySelector('.modal');
+      if (state.registrationOnly) modalDialog?.removeAttribute('aria-modal');
+      else modalDialog?.setAttribute('aria-modal','true');
+      setRegistrationBackgroundInert(!state.registrationOnly);
       document.body.classList.add('modal-open');
       $('submitRegistrationBtn').setAttribute('form','registrationForm');
       $('cancelRegistrationBtn').textContent = 'Cancelar';
@@ -1745,7 +1868,17 @@
       updateSpatialAddonField();
       updatePartnerField();
     }
-    function closeRegistration() { if (state.submitting || state.registrationOnly) return; clearRegistrationCaptcha(); $('registrationModal').hidden = true; $('registrationModal').setAttribute('aria-hidden','true'); document.body.classList.remove('modal-open'); }
+    function closeRegistration() {
+      if (state.submitting || state.registrationOnly) return;
+      clearRegistrationCaptcha();
+      $('registrationModal').hidden = true;
+      $('registrationModal').setAttribute('aria-hidden','true');
+      setRegistrationBackgroundInert(false);
+      document.body.classList.remove('modal-open');
+      const trigger = state.registrationTrigger;
+      state.registrationTrigger = null;
+      if (trigger && trigger.isConnected) setTimeout(() => trigger.focus(),0);
+    }
     function selectedCategoryId() { return document.querySelector('input[name="category_id"]:checked')?.value || ''; }
     function selectedCategoryIds() { return Array.from(document.querySelectorAll('input[name="category_id"]:checked')).map((input) => input.value); }
     function updateGuardianFields() {
@@ -1827,10 +1960,17 @@
         });
       }
       if (!$('familyRegistrationConsent').checked) return showRegistrationError('Confirme a responsabilidade e a autorização da inscrição.');
+      let familyRequestKey = '';
+      let familyRequestTokenValue = '';
+      try {
+        familyRequestKey = await familyRequestStorageKey(payer);
+        familyRequestTokenValue = loadFamilyRequestToken(familyRequestKey);
+      }
+      catch (error) { return showRegistrationError(error && error.message || 'Seu navegador não conseguiu proteger esta inscrição.'); }
       const payload = {
         registration_mode: state.inviteMode ? 'INVITE' : (state.registrationMode === 'minor' ? 'MINOR' : 'FAMILY'),
         tournament_slug: state.slug,
-        request_token: loadFamilyRequestToken(),
+        request_token: familyRequestTokenValue,
         invite_token: state.inviteMode ? state.inviteToken : undefined,
         payer: payer,
         athletes: payloadAthletes,
@@ -1897,8 +2037,20 @@
       if (!['CINCATE','ILHA_STUDENT','NON_MEMBER','COURTESY'].includes(payload.participant_type)) return showRegistrationError('Escolha o tipo de inscrição.');
       if (!['MALE','FEMALE'].includes(payload.gender)) return showRegistrationError('Escolha o sexo.');
       if (!payload.availability_days.length) return showRegistrationError('Marque pelo menos um dia em que você pode jogar.');
-      const trackingKey = ['ilha_torneio',state.slug,payload.category_id,payload.phone.replace(/\D/g,'')].join(':');
-      try { payload.tracking_token = localStorage.getItem(trackingKey) || undefined; } catch (error) {}
+      let trackingKey = '';
+      let requestKey = '';
+      try {
+        if (!window.crypto || !window.crypto.subtle) throw new Error('Seu navegador não oferece a proteção necessária para iniciar a inscrição. Atualize-o e tente novamente.');
+        trackingKey = await individualTrackingStorageKey(payload.category_id,payload.phone,payload.cpf,payload.email);
+        requestKey = await individualRequestStorageKey(payload.category_id,payload.phone,payload.cpf,payload.email);
+        payload.request_token = loadIndividualRequestToken(requestKey);
+      } catch (error) {
+        return showRegistrationError(error && error.message || 'Seu navegador não conseguiu proteger esta inscrição.');
+      }
+      state.individualRequestKey = requestKey;
+      try {
+        payload.tracking_token = localStorage.getItem(trackingKey) || undefined;
+      } catch (error) {}
       state.lastRegistrationPayload = payload;
       return submitRegistrationPayload(payload, REGISTRATION_FUNCTION, state.courtesyMode ? 'Confirmar inscrição isenta' : 'Continuar para pagamento', trackingKey);
     }
@@ -1939,6 +2091,7 @@
         $('registrationFoot').hidden = true;
         $('registrationSuccess').hidden = false;
         $('registrationSuccess').innerHTML = '<div class="success-icon">✓</div><div><h3>Inscrição confirmada!</h3><p>' + escapeHtml(duplicateCopy) + '</p></div><div class="payment-box"><strong>' + escapeHtml(selectedNames.join(' · ') || 'Classe confirmada') + '</strong><span>Valor autorizado: ' + escapeHtml(money(field(order,'amount'))) + '</span><span>A cobrança será incluída na próxima mensalidade do clube.</span><small>Código: ' + escapeHtml(field(order,'public_code') || 'confirmado') + '</small></div><button class="button primary full" type="button" id="finishRegistrationBtn">Ver página do torneio</button>';
+        $('registrationSuccess').focus();
         $('finishRegistrationBtn').addEventListener('click',() => { location.href = publicUrl(state.slug); });
         return;
       }
@@ -1953,21 +2106,57 @@
       const normalizedStatus = clean(status).toUpperCase();
       const retryable = result.retryable === true || normalizedStatus === 'FAILED';
       const waitlist = ['WAITLIST','LISTA_ESPERA'].includes(registrationStatus);
-      const confirmed = ['PAID','PAGO','CONFIRMED','CONFIRMADO'].includes(normalizedStatus) || registrationStatus === 'CONFIRMED';
+      const confirmed = ['PAID','PAGO','RECEIVED','RECEBIDO'].includes(normalizedStatus);
+      const partialRefund = normalizedStatus === 'PARTIALLY_REFUNDED';
+      const paymentInAnalysis = normalizedStatus === 'CONFIRMED';
+      const manualPaymentReview = normalizedStatus === 'REVIEW_REQUIRED';
+      const refunded = normalizedStatus === 'REFUNDED';
+      const cancelledOrDisputed = ['CANCELLED','CHARGEBACK'].includes(normalizedStatus);
+      const overdue = normalizedStatus === 'OVERDUE';
+      const paymentActionBlocked = partialRefund || paymentInAnalysis || manualPaymentReview || refunded || cancelledOrDisputed || overdue;
+      const vacancyConfirmed = confirmed || partialRefund;
       const noPayment = normalizedStatus === 'NOT_REQUIRED';
+      const payable = ['PENDING','PENDENTE'].includes(normalizedStatus);
+      const preparingPayment = ['CREATED','RECONCILING'].includes(normalizedStatus);
+      const canRetryPayment = retryable && !paymentActionBlocked;
+      const showReservation = !waitlist && (payable || preparingPayment || canRetryPayment);
       const successTitle = state.inviteMode
         ? 'Convite utilizado com sucesso!'
+        : partialRefund
+        ? 'Pagamento parcialmente estornado'
+        : paymentInAnalysis || manualPaymentReview
+        ? 'Pagamento em análise'
+        : refunded
+        ? 'Pagamento estornado'
+        : cancelledOrDisputed
+        ? 'Inscrição não confirmada'
+        : overdue
+        ? 'Prazo de pagamento encerrado'
         : familyCheckout
         ? (confirmed || noPayment ? 'Inscrições da família confirmadas!' : 'Inscrição familiar recebida!')
         : (waitlist ? 'Inscrição na lista de espera!' : (confirmed || noPayment ? 'Inscrição confirmada!' : 'Inscrição recebida!'));
       const successCopy = state.inviteMode
         ? 'As inscrições foram confirmadas. Por segurança, este link não poderá ser utilizado novamente.'
+        : partialRefund
+        ? 'A vaga permanece confirmada, mas o pagamento teve estorno parcial e está em revisão pela organização.'
+        : paymentInAnalysis
+        ? 'O Asaas está analisando o pagamento. Não gere outro Pix; a confirmação será atualizada automaticamente.'
+        : manualPaymentReview
+        ? 'A cobrança precisa de conferência da organização. Não gere outro Pix enquanto a revisão estiver em andamento.'
+        : refunded
+        ? 'O pagamento foi estornado. A organização poderá orientar você caso seja necessária uma nova inscrição.'
+        : cancelledOrDisputed
+        ? 'A cobrança foi cancelada ou contestada e a vaga não está confirmada. Fale com a organização se precisar de ajuda.'
+        : overdue
+        ? 'O prazo desta cobrança terminou e a vaga não está confirmada. Aguarde a conferência automática ou fale com a organização antes de tentar novamente.'
+        : preparingPayment
+        ? 'A criação da cobrança está sendo conferida. Aguarde alguns instantes e retome com os mesmos dados; não faça outra inscrição.'
         : result.warning || (waitlist
         ? 'Sua inscrição foi registrada. A organização entrará em contato se uma vaga for liberada.'
         : (confirmed || noPayment
           ? (familyCheckout ? 'Todas as vagas foram registradas com sucesso.' : 'Sua vaga foi registrada com sucesso.')
           : (familyCheckout ? 'Conclua o pagamento único abaixo para confirmar todas as vagas.' : 'Conclua o pagamento abaixo para confirmar sua vaga.')));
-      const statusLabels = { PENDING:'Pendente', PENDENTE:'Pendente', PAID:'Pago', PAGO:'Pago', CONFIRMED:'Confirmado', CONFIRMADO:'Confirmado', NOT_REQUIRED:'Sem pagamento', WAITLIST:'Lista de espera' };
+      const statusLabels = { PENDING:'Pendente', PENDENTE:'Pendente', CREATED:'Preparando cobrança', RECONCILING:'Conferindo cobrança', FAILED:'Falha ao gerar cobrança', PAID:'Pago', PAGO:'Pago', RECEIVED:'Pago', RECEBIDO:'Pago', CONFIRMED:'Pagamento em análise', REVIEW_REQUIRED:'Revisão manual necessária', PARTIALLY_REFUNDED:'Estorno parcial · em revisão', OVERDUE:'Prazo vencido', REFUNDED:'Estornado', CANCELLED:'Cancelado', CHARGEBACK:'Pagamento contestado', CONFIRMADO:'Confirmado', NOT_REQUIRED:'Sem pagamento', WAITLIST:'Lista de espera' };
       const statusLabel = waitlist ? 'Lista de espera' : (statusLabels[normalizedStatus] || status);
       const familyRegistrations = familyCheckout ? list(result.registrations) : [];
       const selectedClassNames = familyCheckout
@@ -1987,13 +2176,14 @@
       $('registrationSuccess').innerHTML = '<div class="success-icon">✓</div><div><h3>' + escapeHtml(successTitle) + '</h3><p>' + escapeHtml(successCopy) + '</p></div>' +
         '<div class="payment-box"><strong>Status: ' + escapeHtml(statusLabel) + '</strong>' +
         (selectedClassNames.length ? '<span>' + (familyCheckout ? 'Inscrições:<br>' + selectedClassNames.map((label) => '• ' + escapeHtml(label)).join('<br>') : 'Classes: ' + escapeHtml(selectedClassNames.join(' + '))) + '</span>' : '') +
-        (!confirmed && !noPayment && !waitlist ? '<span class="reservation-warning" role="alert"><span aria-hidden="true">⚠️</span><strong>' + (familyCheckout ? 'Suas vagas ficam reservadas por 2 horas e só são confirmadas após o pagamento.' : 'Sua vaga fica reservada por 2 horas e só é confirmada após o pagamento.') + '</strong></span>' : '') +
-        (reservationDeadline && !confirmed ? '<span>Prazo para pagar: ' + escapeHtml(reservationDeadline) + '</span>' : '') +
-        (invoiceUrl ? '<a class="button lime full" href="' + escapeHtml(safeHref(invoiceUrl)) + '" target="_blank" rel="noopener">Pagar inscrição</a>' : '') +
-        (pixImage ? '<img class="payment-qr" src="data:image/png;base64,' + escapeHtml(pixImage) + '" alt="QR Code Pix" />' : '') +
-        (pix ? '<div class="pix-copy" id="pixPayload">' + escapeHtml(pix) + '</div><button class="button full" type="button" id="copyPixBtn">Copiar Pix</button>' : '') + '</div>' +
-        (retryable ? '<button class="button lime full" type="button" id="retryPaymentBtn">Tentar gerar pagamento novamente</button>' : '') +
+        (showReservation ? '<span class="reservation-warning" role="alert"><span aria-hidden="true">⚠️</span><strong>' + (familyCheckout ? 'Suas vagas ficam reservadas por 2 horas e só são confirmadas após o pagamento.' : 'Sua vaga fica reservada por 2 horas e só é confirmada após o pagamento.') + '</strong></span>' : '') +
+        (reservationDeadline && showReservation ? '<span>Prazo para pagar: ' + escapeHtml(reservationDeadline) + '</span>' : '') +
+        (invoiceUrl && payable ? '<a class="button lime full" href="' + escapeHtml(safeHref(invoiceUrl)) + '" target="_blank" rel="noopener">Pagar inscrição</a>' : '') +
+        (pixImage && payable ? '<img class="payment-qr" src="data:image/png;base64,' + escapeHtml(pixImage) + '" alt="QR Code Pix" />' : '') +
+        (pix && payable ? '<div class="pix-copy" id="pixPayload">' + escapeHtml(pix) + '</div><button class="button full" type="button" id="copyPixBtn">Copiar Pix</button>' : '') + '</div>' +
+        (canRetryPayment ? '<button class="button lime full" type="button" id="retryPaymentBtn">Tentar gerar pagamento novamente</button>' : '') +
         '<button class="button primary full" type="button" id="finishRegistrationBtn">Concluir</button>';
+      $('registrationSuccess').focus();
       const copy = $('copyPixBtn'); if (copy) copy.addEventListener('click',async () => { try { await navigator.clipboard.writeText(pix); copy.textContent='Pix copiado'; } catch(error) { copy.textContent='Selecione e copie o código acima'; } });
       const retry = $('retryPaymentBtn'); if (retry) retry.addEventListener('click',async () => {
         $('registrationForm').hidden = familyCheckout;
@@ -2011,7 +2201,12 @@
           showRegistrationError(error && error.message || 'Não foi possível carregar a proteção anti-robô.');
         }
       });
-      if (familyCheckout && !retryable) clearFamilyRequestToken();
+      // CONFIRMED e REVIEW_REQUIRED ainda podem ser reconciliados. Preservar o
+      // token nesses estados permite retomar exatamente a mesma cobrança, sem
+      // criar uma nova tentativa (especialmente no checkout familiar).
+      const terminalCheckout = vacancyConfirmed || noPayment || waitlist || refunded || cancelledOrDisputed;
+      if (familyCheckout && terminalCheckout) clearFamilyRequestToken();
+      if (!familyCheckout && terminalCheckout) clearIndividualRequestToken(state.individualRequestKey);
       if (state.registrationOnly) {
         $('finishRegistrationBtn').textContent = 'Ver página do torneio';
         $('finishRegistrationBtn').addEventListener('click',() => { location.href = publicUrl(state.slug); });
@@ -2048,7 +2243,7 @@
     $('registrationModal').addEventListener('click',(event) => { if (event.target === $('registrationModal')) closeRegistration(); });
     $('registrationForm').addEventListener('submit',submitRegistration);
     $('familyRegistrationForm').addEventListener('submit',submitFamilyRegistration);
-    document.addEventListener('keydown',(event) => { if (event.key === 'Escape' && !$('registrationModal').hidden) closeRegistration(); });
+    document.addEventListener('keydown',handleRegistrationModalKeydown);
 
     loadPage();
   </script>

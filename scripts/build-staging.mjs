@@ -1,4 +1,4 @@
-import { cp, readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import { readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -101,6 +101,31 @@ export function rewriteStagingHtml(relativePath, source, config) {
   return output;
 }
 
+function isTestSlugCanonicalRedirect(rule) {
+  if (!rule || typeof rule !== 'object') return false;
+  const source = String(rule.source || '').trim();
+  const destination = String(rule.destination || '').trim();
+  if (!source.endsWith('-teste')) return false;
+  return destination === source.slice(0, -'-teste'.length);
+}
+
+export function rewriteStagingVercelConfig(source) {
+  let config;
+  try {
+    config = JSON.parse(source);
+  } catch (_error) {
+    throw new Error('vercel.json inválido; o artefato de staging não pode ser isolado.');
+  }
+  if (!config || typeof config !== 'object' || Array.isArray(config)) {
+    throw new Error('vercel.json deve conter um objeto JSON.');
+  }
+  if (config.redirects !== undefined && !Array.isArray(config.redirects)) {
+    throw new Error('vercel.json deve declarar redirects como uma lista.');
+  }
+  config.redirects = (config.redirects || []).filter((rule) => !isTestSlugCanonicalRedirect(rule));
+  return `${JSON.stringify(config, null, 2)}\n`;
+}
+
 async function collectHtml(directory) {
   const files = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -151,7 +176,11 @@ export async function buildStagingArtifact(env = process.env) {
     const source = await readFile(htmlFile, 'utf8');
     await writeFile(htmlFile, rewriteStagingHtml(relativePath, source, config));
   }
-  await cp(path.join(projectRoot, 'vercel.json'), path.join(destination, 'vercel.json'));
+  const vercelConfig = await readFile(path.join(projectRoot, 'vercel.json'), 'utf8');
+  await writeFile(
+    path.join(destination, 'vercel.json'),
+    rewriteStagingVercelConfig(vercelConfig)
+  );
   await assertStagingArtifact(destination, config);
   return { destination, projectRef: config.projectRef, htmlFiles: Object.keys(PUBLIC_CONSTANTS) };
 }

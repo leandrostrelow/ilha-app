@@ -5,7 +5,11 @@ import path from 'node:path';
 import os from 'node:os';
 import { prepareSupabaseCiProject } from '../scripts/prepare-supabase-ci.mjs';
 import { assertPublishedRuntime, loadStagingConfig } from '../scripts/e2e/staging-guard.mjs';
-import { loadStagingPublicConfig, rewriteStagingHtml } from '../scripts/build-staging.mjs';
+import {
+  loadStagingPublicConfig,
+  rewriteStagingHtml,
+  rewriteStagingVercelConfig
+} from '../scripts/build-staging.mjs';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
 
@@ -175,6 +179,11 @@ test('E2E exercita Push real, reset lógico e ciclo sintético completo no Asaas
   assert.match(source, /reset_app_client_account/);
   assert.match(source, /assertBarIdentityPreserved/);
   assert.match(guard, /api-sandbox\.asaas\.com\/v3/);
+  assert.match(source, /sandbox\/payment\/\$\{encodeURIComponent\(paymentId\)\}\/confirm/);
+  assert.match(source, /waitForAsaasPaymentSettlement\(paymentId\)/);
+  assert.match(source, /payments\/\$\{encodeURIComponent\(paymentId\)\}\/refund/);
+  assert.match(source, /paymentSettled/);
+  assert.match(source, /for \(let delivery = 1; delivery <= 2; delivery \+= 1\)/);
   assert.doesNotMatch(`${source}\n${guard}`, /https:\/\/api\.asaas\.com\/v3/);
 });
 
@@ -200,6 +209,48 @@ test('build de staging troca somente constantes públicas e recusa produção', 
     }),
     /produção/
   );
+});
+
+test('build de staging preserva slugs de teste removendo apenas redirects para o canônico', async () => {
+  const productionSource = await readFile(path.join(projectRoot, 'vercel.json'), 'utf8');
+  const productionConfig = JSON.parse(productionSource);
+  const stagingConfig = JSON.parse(rewriteStagingVercelConfig(productionSource));
+  const canonicalRedirects = [
+    {
+      source: '/inscricoes/ilha-open-2026-teste',
+      destination: '/inscricoes/ilha-open-2026'
+    },
+    {
+      source: '/torneios/ilha-open-2026-teste',
+      destination: '/torneios/ilha-open-2026'
+    }
+  ];
+
+  for (const expected of canonicalRedirects) {
+    assert.ok(
+      productionConfig.redirects.some((rule) => rule.source === expected.source && rule.destination === expected.destination),
+      `produção deve preservar ${expected.source}`
+    );
+    assert.ok(
+      !stagingConfig.redirects.some((rule) => rule.source === expected.source),
+      `staging não deve redirecionar ${expected.source}`
+    );
+  }
+
+  const customSource = JSON.stringify({
+    redirects: [
+      { source: '/evento-teste', destination: '/evento', permanent: false },
+      { source: '/arquivo-teste', destination: '/outro-destino', permanent: false },
+      { source: '/clientes', destination: '/', permanent: true }
+    ],
+    rewrites: [{ source: '/evento/:slug', destination: '/evento' }]
+  });
+  const customStaging = JSON.parse(rewriteStagingVercelConfig(customSource));
+  assert.deepEqual(customStaging.redirects, [
+    { source: '/arquivo-teste', destination: '/outro-destino', permanent: false },
+    { source: '/clientes', destination: '/', permanent: true }
+  ]);
+  assert.deepEqual(customStaging.rewrites, [{ source: '/evento/:slug', destination: '/evento' }]);
 });
 
 test('workflow de artefato staging não possui deploy nem recebe segredos', async () => {

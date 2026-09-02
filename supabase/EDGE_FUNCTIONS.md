@@ -10,13 +10,15 @@ o deploy:
 - `false`: callbacks públicos que se autenticam no próprio handler:
   `asaas-payment-webhook` (segredo do provedor), `bar-order-push` (capacidade da
   comanda), `client-notification-dispatch` (segredo de despacho),
+  `tournament-payment-expiry` (segredo interno do cron),
   `tournament-register` (token de cortesia/acompanhamento quando aplicável) e
   `protected-access-recovery` (resposta genérica, allowlist, cooldown e limites
   de tentativa).
 
 Segredos obrigatórios são configurados somente no ambiente de deploy; nunca em
 arquivos versionados: `SUPABASE_URL`, chave secreta/service role,
-`ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN`, chaves VAPID, segredo de despacho,
+`ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN`, `TOURNAMENT_PAYMENT_EXPIRY_TOKEN`,
+chaves VAPID, segredo de despacho,
 `TURNSTILE_SECRET_KEY` e `PUBLIC_REGISTRATION_RATE_LIMIT_SALT`. A configuração
 pública `TURNSTILE_SITE_KEY` também é fornecida pelo ambiente para evitar
 acoplamento entre projetos. Staging/preview deve fornecer
@@ -74,3 +76,36 @@ cobrança. O limite persistente é atômico no Postgres e guarda apenas HMACs de
 IP e identidade, nunca IP, e-mail ou telefone em claro. Global e IP são
 contabilizados antes do CAPTCHA; identidade somente depois da validação, para
 que tokens falsos não bloqueiem uma vítima.
+
+## Reconciliação de pagamentos do torneio
+
+`tournament-payment-expiry` valida o cabeçalho interno
+`x-tournament-expiry-token` no próprio handler. Sua entrada em `config.toml`
+permanece com `verify_jwt = false`, pois `sb_publishable_*` não é JWT. A chave
+publicável vai somente em `apikey`. Use o mesmo valor aleatório de
+ao menos 32 caracteres no secret de deploy `TOURNAMENT_PAYMENT_EXPIRY_TOKEN` e
+no Vault com o nome `tournament_payment_expiry_token`; nunca use a chave do
+Asaas como esse token. O Vault também deve manter
+`tournament_payment_expiry_url` e
+`tournament_payment_expiry_publishable_key`.
+
+As três funções financeiras validam o ambiente antes de reutilizar qualquer
+ID, link ou QR Code: Sandbox exige a URL `https://api-sandbox.asaas.com/v3` e
+chave moderna de prefixo `$aact_hmlg_`; Produção exige
+`https://api.asaas.com/v3` e prefixo `$aact_prod_`. A cobrança local guarda
+`provider_environment`; valor `UNKNOWN` ou divergente é isolado em
+`REVIEW_REQUIRED`, sem consulta ao provedor do ambiente atual. Respostas remotas
+também precisam declarar `billingType=PIX` exatamente.
+
+A rotina reconcilia em lotes limitados antes das duas horas para recuperar
+webhooks perdidos. Somente `PAYMENT_RECEIVED`/`PAYMENT_RECEIVED_IN_CASH`
+confirmam a vaga. `PAYMENT_CONFIRMED` permanece em análise por até 72 horas e
+nunca é excluído pela expiração normal; depois disso fica marcado para revisão
+manual. Uma cobrança só é arquivada quando `expires_at <= now()` e o provedor
+continua sem liquidação.
+
+Estorno parcial permanece `PARTIALLY_REFUNDED`, conserva a vaga confirmada e
+mostra o saldo líquido somente quando os itens de estorno `DONE` estiverem
+disponíveis; sem eles a rotina consulta novamente em cinco minutos. Chargeback
+é apresentado como `CANCELLED` e continua em reconciliação periódica enquanto
+o estado remoto ainda puder ser revertido.

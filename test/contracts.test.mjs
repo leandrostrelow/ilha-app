@@ -45,6 +45,10 @@ const tournamentInviteShareSecretSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260901150918_add_tournament_invite_share_secret.sql'),
   'utf8'
 );
+const tournamentPublicCapabilityHardeningSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260901202913_harden_tournament_public_capabilities.sql'),
+  'utf8'
+);
 const barOrderPushSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'bar-order-push', 'index.ts'), 'utf8');
 const sharedCorsSource = await readFile(path.join(projectRoot, 'supabase', 'functions', '_shared', 'cors.ts'), 'utf8');
 const serviceWorkerSource = await readFile(path.join(projectRoot, 'service-worker.js'), 'utf8');
@@ -116,12 +120,24 @@ const asaasWebhookEventPrivilegesSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260831132000_restore_asaas_webhook_event_service_role_crud.sql'),
   'utf8'
 );
+const asaasWebhookClaimSource = await readFile(
+  path.join(projectRoot, 'supabase', '20260812_harden_tournament_registration_payments.sql'),
+  'utf8'
+);
 const tournamentPaymentExpiryMigrationSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260831162642_tournament_payment_expiry.sql'),
   'utf8'
 );
 const tournamentPaymentExpiryAuthFixSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260831163730_repair_tournament_payment_expiry_service_role_auth.sql'),
+  'utf8'
+);
+const tournamentPaymentReconciliationSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260901202936_harden_tournament_payment_reconciliation.sql'),
+  'utf8'
+);
+const asaasGoLiveRunbookSource = await readFile(
+  path.join(projectRoot, 'docs', 'asaas-go-live-runbook.md'),
   'utf8'
 );
 const internalTournamentSource = await readFile(
@@ -504,6 +520,8 @@ test('inscricao paga envia CPF ao backend e cortesia permanece opcional', () => 
   assert.match(tournamentSource, /athleteCpf[^\n]+required\s*=\s*!internal\s*&&\s*!state\.courtesyMode/);
   assert.match(tournamentRegisterSource, /const submittedCpf = digits\(payload\.cpf\)/);
   assert.match(tournamentRegisterSource, /participantType !== "COURTESY" && !isValidCpf\(submittedCpf\)/);
+  assert.match(tournamentRegisterSource, /Este link de cortesia foi substituído por um convite exclusivo/);
+  assert.doesNotMatch(tournamentRegisterSource, /tournament\.courtesy_registration_token/);
   assert.match(tournamentRegisterSource, /cpf:\s*effectiveCpf \|\| null/);
 });
 
@@ -625,7 +643,7 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   );
   assert.match(existingProviderPayment, /repairExistingPixPayment/);
   assert.doesNotMatch(existingProviderPayment, /createOrRecoverPayment/);
-  assert.match(tournamentRegisterSource, /claim_public_tournament_registration_bundle/);
+  assert.match(tournamentRegisterSource, /claim_public_tournament_registration_checkout/);
   assert.match(tournamentRegisterSource, /baseAmount \+ additionalFee/);
   const asaasCustomer = functionSource(tournamentRegisterSource, 'ensureAsaasCustomer');
   assert.doesNotMatch(asaasCustomer, /if \(athlete\.asaas_customer_id\) return/);
@@ -642,11 +660,19 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
     'Inscricao Ilha Open 2026 2a Classe Masculina Espacial A Masculino',
   );
   assert.match(functionSource(tournamentRegisterSource, 'createOrRecoverPayment'), /description:\s*asaasSafeDescription/);
+  assert.match(
+    functionSource(tournamentRegisterSource, 'ensureAsaasCustomer'),
+    /notificationDisabled:\s*asaasConfig\(\)\.environment === "SANDBOX"/
+  );
+  assert.match(
+    functionSource(tournamentRegisterSource, 'ensureAsaasFamilyCustomer'),
+    /notificationDisabled:\s*asaasConfig\(\)\.environment === "SANDBOX"/
+  );
   const billingDate = functionSource(tournamentRegisterSource, 'saoPauloDate');
   assert.match(billingDate, /timeZone: "America\/Sao_Paulo"/);
   assert.match(billingDate, /formatToParts/);
   assert.match(billingDate, /`\$\{values\.year\}-\$\{values\.month\}-\$\{values\.day\}`/);
-  assert.match(asaasWebhookSource, /sync_tournament_registration_payment_group/);
+  assert.match(asaasWebhookSource, /apply_tournament_payment_reconciliation/);
 });
 
 test('valores por perfil e adicional espacial do Ilha Open são editáveis no ADM e validados no backend', () => {
@@ -676,8 +702,103 @@ test('inscrição online reserva a vaga por duas horas e o ADM permite reenviar 
   assert.match(tournamentPaymentExpiryAuthFixSource, /auth\.jwt\(\) ->> ''role''/);
   assert.match(tournamentPaymentExpirySource, /payments\/\$\{encodeURIComponent\(providerPaymentId\)\}/);
   assert.match(tournamentPaymentExpirySource, /method: "DELETE"/);
-  assert.match(tournamentPaymentExpirySource, /status === "RECEIVED" \|\| status === "CONFIRMED"/);
+  assert.match(tournamentPaymentExpirySource, /status === "RECEIVED"/);
+  assert.match(tournamentPaymentExpirySource, /status === "CONFIRMED"[\s\S]*persistConfirmedReview/);
+  assert.match(tournamentPaymentExpirySource, /CONFIRMED_REVIEW_WINDOW_MS = 72 \* 60 \* 60 \* 1000/);
+  assert.match(tournamentPaymentExpirySource, /TOURNAMENT_PAYMENT_EXPIRY_TOKEN/);
+  assert.match(tournamentPaymentExpirySource, /x-tournament-expiry-token/);
+  assert.match(tournamentPaymentExpirySource, /const MAX_BATCH = 12[\s\S]*const MAX_CONCURRENCY = 3[\s\S]*const MAX_RUNTIME_MS/);
+  assert.match(tournamentPaymentExpirySource, /next_reconciliation_at[\s\S]*lte\("next_reconciliation_at", now\)/);
+  assert.match(functionSource(tournamentPaymentExpirySource, 'archiveLocally'), /if \(!isExpired\(payment\)\) return false/);
   assert.match(tournamentPaymentExpirySource, /archive_expired_tournament_payment/);
+  assert.match(tournamentPaymentReconciliationSource, /'RECONCILING'[\s\S]*'REVIEW_REQUIRED'/);
+  assert.match(tournamentPaymentReconciliationSource, /tournament_payments_reconciliation_due_idx/);
+  assert.match(tournamentPaymentReconciliationSource, /tournament_payment_expiry_token/);
+  assert.match(tournamentPaymentReconciliationSource, /'x-tournament-expiry-token', expiry_token/);
+  assert.doesNotMatch(tournamentPaymentReconciliationSource, /'Authorization', 'Bearer '/);
+  assert.doesNotMatch(tournamentPaymentReconciliationSource, /request\.jwt\.claim\.role/);
+  assert.ok((tournamentPaymentReconciliationSource.match(/auth\.jwt\(\) ->> 'role'/g) || []).length >= 3);
+  assert.match(tournamentRegisterSource, /claimProviderPaymentAttempt/);
+  assert.match(tournamentRegisterSource, /AmbiguousPaymentCreationError/);
+  assert.match(tournamentRegisterSource, /status: "RECONCILING"/);
+  const markClaimedFailure = functionSource(tournamentRegisterSource, 'markClaimedProviderFailure');
+  assert.match(markClaimedFailure, /eq\("status", claimedPayment\.status\)/);
+  assert.match(markClaimedFailure, /eq\("updated_at", claimedPayment\.updated_at\)/);
+  assert.match(markClaimedFailure, /select\("\*"\)[\s\S]*eq\("id", claimedPayment\.id\)[\s\S]*single\(\)/);
+  assert.match(tournamentSource, /payload\.request_token = loadIndividualRequestToken\(requestKey\)/);
+  assert.match(functionSource(tournamentSource, 'loadIndividualRequestToken'), /localStorage\.setItem\(storageKey,token\)/);
+  const registrationTokenFactory = functionSource(tournamentSource, 'registrationRequestToken');
+  assert.match(registrationTokenFactory, /crypto\.getRandomValues/);
+  assert.doesNotMatch(registrationTokenFactory, /Math\.random/);
+  const storageFingerprint = functionSource(tournamentSource, 'secureStorageFingerprint');
+  assert.match(storageFingerprint, /crypto\.subtle\.digest\('SHA-256'/);
+  const familyStorageKey = functionSource(tournamentSource, 'familyRequestStorageKey');
+  assert.match(familyStorageKey, /secureStorageFingerprint/);
+  assert.match(familyStorageKey, /digitsOnly\(payer && payer\.cpf\)/);
+  const familyRequestToken = functionSource(tournamentSource, 'loadFamilyRequestToken');
+  assert.match(familyRequestToken, /state\.familyRequestKey = storageKey;[\s\S]*state\.familyRequestToken = '';[\s\S]*localStorage\.getItem\(storageKey\)/);
+  const individualStorageKey = functionSource(tournamentSource, 'individualRequestStorageKey');
+  assert.match(individualStorageKey, /individualStorageFingerprint/);
+  const legacyStorageCleanup = functionSource(tournamentSource, 'clearLegacyIndividualStorage');
+  assert.match(legacyStorageCleanup, /oldTrackingKey[\s\S]*oldCapabilityKey/);
+  assert.match(legacyStorageCleanup, /!opaqueKey\.test\(key\)/);
+  assert.match(legacyStorageCleanup, /localStorage\.removeItem\(key\)/);
+  assert.doesNotMatch(tournamentSource, /\['ilha_torneio',state\.slug,payload\.category_id,payload\.phone/);
+  assert.match(tournamentPaymentReconciliationSource, /create or replace function public\.claim_public_tournament_registration_checkout/);
+  assert.match(tournamentPaymentReconciliationSource, /registration\.request_token = p_request_token/);
+  assert.match(tournamentPaymentReconciliationSource, /insert into public\.tournament_payments[\s\S]*on conflict \(registration_id\) do nothing/);
+  assert.match(functionSource(tournamentRegisterSource, 'reconcileAmbiguousPayment'), /findAsaasPayment/);
+  assert.doesNotMatch(functionSource(tournamentRegisterSource, 'reconcileAmbiguousPayment'), /method:\s*"POST"/);
+  assert.match(functionSource(tournamentRegisterSource, 'saveProviderPayment'), /moneyCents\(providerAmount\)[\s\S]*moneyCents\(localPayment\.amount\)/);
+  assert.match(functionSource(tournamentPaymentExpirySource, 'completedRefundAmountCents'), /moneyCents\(refund\.value\)/);
+  assert.match(tournamentPaymentExpirySource, /refundTotalCents >= paymentAmountCents/);
+  assert.match(tournamentPaymentReconciliationSource, /provider_environment text not null default 'UNKNOWN'/);
+  assert.match(tournamentPaymentReconciliationSource, /quarantine_tournament_payment_environment/);
+  assert.match(tournamentPaymentReconciliationSource, /provider_environment = 'UNKNOWN'[\s\S]*invoice_url = null[\s\S]*pix_payload = null/);
+  assert.match(tournamentRegisterSource, /provider_environment: providerEnvironment/);
+  assert.match(tournamentRegisterSource, /p_provider_environment: providerEnvironment/);
+  for (const source of [tournamentRegisterSource, asaasWebhookSource, tournamentPaymentExpirySource]) {
+    assert.match(source, /\$aact_hmlg_/);
+    assert.match(source, /\$aact_prod_/);
+    assert.match(source, /provider_environment/);
+  }
+  assert.match(functionSource(tournamentRegisterSource, 'saveProviderPayment'), /providerBillingType !== "PIX"/);
+  assert.match(asaasWebhookSource, /providerBillingType !== "PIX"/);
+  assert.match(functionSource(tournamentPaymentExpirySource, 'remoteMismatch'), /billingType[\s\S]*!== "PIX"/);
+  assert.match(asaasGoLiveRunbookSource, /incompatible_active_charges[\s\S]*deve ser \*\*zero\*\*/i);
+  const saveProviderPayment = functionSource(tournamentRegisterSource, 'saveProviderPayment');
+  assert.match(saveProviderPayment, /status === "RECEIVED"[\s\S]*apply_tournament_payment_reconciliation/);
+  assert.match(tournamentPaymentReconciliationSource, /create or replace function public\.apply_tournament_payment_reconciliation/);
+  assert.match(tournamentPaymentReconciliationSource, /for update[\s\S]*sync_tournament_registration_payment_group/);
+  assert.doesNotMatch(adminSource, /const onlinePaid = \['RECEIVED', 'CONFIRMED'\]/);
+  assert.match(adminSource, /onlineReview = onlineStatus === 'CONFIRMED'/);
+  assert.match(adminSource, /onlineManualReview = onlineStatus === 'REVIEW_REQUIRED'/);
+  assert.match(adminSource, /onlinePartialReview = onlineStatus === 'PARTIALLY_REFUNDED'/);
+  assert.match(tournamentSource, /CONFIRMED:'Pagamento em análise'/);
+  assert.match(tournamentSource, /PARTIALLY_REFUNDED:'Estorno parcial · em revisão'/);
+  const publicPaymentResult = functionSource(tournamentSource, 'renderRegistrationSuccess');
+  assert.match(publicPaymentResult, /const payable = \['PENDING','PENDENTE'\]\.includes\(normalizedStatus\)/);
+  assert.match(publicPaymentResult, /invoiceUrl && payable/);
+  assert.match(publicPaymentResult, /pixImage && payable/);
+  assert.match(publicPaymentResult, /pix && payable/);
+  assert.match(publicPaymentResult, /\['CANCELLED','CHARGEBACK'\]/);
+  assert.match(publicPaymentResult, /OVERDUE:'Prazo vencido'/);
+  assert.match(publicPaymentResult, /terminalCheckout[\s\S]*clearFamilyRequestToken\(\)/);
+  assert.match(publicPaymentResult, /terminalCheckout[\s\S]*clearIndividualRequestToken\(state\.individualRequestKey\)/);
+  assert.match(tournamentSource, /class="modal" role="dialog" aria-modal="true"[^>]*tabindex="-1"/);
+  assert.match(tournamentSource, /class="success-box"[^>]*role="status"[^>]*tabindex="-1"/);
+  assert.match(tournamentSource, /choice-card:has\(input:focus-visible\)/);
+  assert.match(tournamentSource, /family-day-option:has\(input:focus-visible\)/);
+  const modalInert = functionSource(tournamentSource, 'setRegistrationBackgroundInert');
+  assert.match(modalInert, /setAttribute\('inert'/);
+  assert.match(modalInert, /removeAttribute\('inert'/);
+  const modalKeyboard = functionSource(tournamentSource, 'handleRegistrationModalKeydown');
+  assert.match(modalKeyboard, /event\.key !== 'Tab'/);
+  assert.match(modalKeyboard, /first[\s\S]*last/);
+  const modalFocusable = functionSource(tournamentSource, 'registrationModalFocusableElements');
+  assert.match(modalFocusable, /not\(\[tabindex="-1"\]\)/);
+  assert.match(modalFocusable, /closest\('\[hidden\],\[inert\]'\)/);
+  assert.match(functionSource(tournamentSource, 'closeRegistration'), /trigger\.focus\(\)/);
   assert.match(tournamentRegisterSource, /expires_at: row\.expires_at \|\| null/);
   assert.match(tournamentSource, /Sua vaga fica reservada por 2 horas e só é confirmada após o pagamento/);
   assert.match(tournamentAdminSource, /pagamentos_online/);
@@ -775,7 +896,7 @@ test('inscrição avisa sobre elegibilidade e permite ajuste administrativo de c
   assert.match(adminSource, /esta inscrição será movida para a classe escolhida/);
 });
 
-test('Ilha Open interno usa cadastro simples e cobrança futura sem Asaas', () => {
+test('rota residual de inscrição interna permanece privada e falha fechada por padrão', () => {
   for (const marker of [
     'name="is_minor"',
     'name="guardian_name"',
@@ -793,7 +914,12 @@ test('Ilha Open interno usa cadastro simples e cobrança futura sem Asaas', () =
   assert.match(tournamentInternalRegisterSource, /captcha_provider:\s*"none"/);
   assert.match(tournamentInternalRegisterSource, /const honeypot = text\(payload\.website/);
   assert.match(tournamentInternalRegisterSource, /category_gender_validation/);
-  assert.match(tournamentInternalRegisterSource, /staging \? "synthetic-staging-only-rate-limit-salt-v1" : serviceRoleKey\(\)/);
+  const internalSecurityConfig = functionSource(tournamentInternalRegisterSource, 'securityConfig');
+  assert.match(internalSecurityConfig, /TOURNAMENT_INTERNAL_REGISTRATION_ENABLED/);
+  assert.match(internalSecurityConfig, /=== "true"/);
+  assert.match(internalSecurityConfig, /if \(!explicitlyEnabled\) return null/);
+  assert.match(internalSecurityConfig, /PUBLIC_REGISTRATION_RATE_LIMIT_SALT/);
+  assert.doesNotMatch(internalSecurityConfig, /serviceRoleKey|synthetic-staging-only/);
   assert.match(tournamentSource, /gender:\s*clean\(form\.get\('gender'\)\)/);
   assert.match(tournamentSource, /website:\s*clean\(form\.get\('website'\)\)/);
   assert.doesNotMatch(tournamentInternalRegisterSource, /ASAAS|paymentLink|billingType/);
@@ -1333,13 +1459,162 @@ test('gestao de acessos preserva contas vinculadas e reativa revogadas somente p
 
 test('webhook Asaas trata chargeback repetido como idempotente', () => {
   const precedence = functionSource(asaasWebhookSource, 'preservesStrongerPaymentState');
-  assert.match(precedence, /\["DISPUTED", "CHARGEBACK"\]\.includes\(nextStatus\)/);
-  assert.match(asaasWebhookSource, /disputed\s*\?\s*"CHARGEBACK"/);
+  const executablePrecedence = precedence
+    .replace(/: string/g, '')
+    .replace(/: boolean/g, '');
+  const preservesStrongerPaymentState = vm.runInNewContext(`(${executablePrecedence})`);
+  const claimPosition = asaasWebhookSource.indexOf('supabase.rpc("claim_asaas_webhook_event"');
+  const paymentLookupPosition = asaasWebhookSource.indexOf('failureStage = "payment_lookup"');
+  assert.equal(preservesStrongerPaymentState('REFUNDED', 'RECEIVED', 'PAYMENT_RECEIVED'), true);
+  assert.equal(preservesStrongerPaymentState('CANCELLED', 'RECEIVED', 'PAYMENT_RECEIVED', false), true);
+  assert.equal(preservesStrongerPaymentState('CANCELLED', 'RECEIVED', 'PAYMENT_RECEIVED', true), false);
+  assert.equal(preservesStrongerPaymentState('CANCELLED', 'DISPUTED', 'PAYMENT_CHARGEBACK_REQUESTED', true), false);
+  assert.match(precedence, /currentStatus === "CANCELLED"[\s\S]*reversibleCancellation/);
+  assert.match(asaasWebhookSource, /disputed\s*\?\s*"CANCELLED"/);
+  assert.match(asaasWebhookSource, /disputed[\s\S]*6 \* 60 \* 60/);
+  assert.match(tournamentPaymentExpirySource, /status === "CHARGEBACK"[\s\S]*reconcileCancellation/);
+  assert.match(asaasWebhookSource, /payment_status: "PARTIALLY_REFUNDED"/);
+  assert.match(tournamentPaymentExpirySource, /"PARTIALLY_REFUNDED"[\s\S]*registrationPaidAmount/);
+  assert.ok(claimPosition > -1 && paymentLookupPosition > claimPosition, 'o ID do evento precisa ser reservado antes da baixa');
+  assert.match(asaasWebhookClaimSource, /event_id text not null unique|on conflict \(event_id\) do nothing/i);
+  assert.match(asaasWebhookSource, /claimStatus === "DONE"\) return json\(\{ received: true, duplicate: true \}\)/);
+  assert.match(asaasWebhookSource, /claimStatus === "BUSY"\) return json\(\{ received: false, processing: true \}, 503\)/);
+  assert.match(asaasWebhookSource, /const settled = !mismatchReason && paymentStatus === "RECEIVED"/);
+  assert.doesNotMatch(asaasWebhookSource, /PAYMENT_DUNNING_RECEIVED:\s*"RECEIVED"/);
+  assert.match(asaasWebhookSource, /apply_tournament_payment_reconciliation/);
   assert.match(asaasWebhookSource, /processing_token/);
   assert.match(asaasWebhookSource, /A posse do processamento do evento foi perdida/);
   assert.match(asaasWebhookEventPrivilegesSource, /revoke all on table public\.asaas_webhook_events from anon, authenticated/);
   assert.match(asaasWebhookEventPrivilegesSource, /grant select, insert, update, delete on table public\.asaas_webhook_events to service_role/);
   assert.match(asaasWebhookEventPrivilegesSource, /has_table_privilege\('service_role'/);
+});
+
+test('webhook Asaas calcula estornos e bloqueia transicoes financeiras regressivas', () => {
+  const executableRefundTransition = functionSource(asaasWebhookSource, 'refundTransitionState')
+    .replace(/: string/g, '')
+    .replace(/: number \| null/g, '')
+    .replace(/: number/g, '');
+  const refundTransitionState = vm.runInNewContext(`(${executableRefundTransition})`);
+  const executablePrecedence = functionSource(asaasWebhookSource, 'preservesStrongerPaymentState')
+    .replace(/: string/g, '')
+    .replace(/: boolean/g, '');
+  const preservesStrongerPaymentState = vm.runInNewContext(`(${executablePrecedence})`);
+
+  const partial = refundTransitionState('RECEIVED', 'PARTIALLY_REFUNDED', 18000, 8000);
+  assert.equal(partial.partialRefund, true);
+  assert.equal(partial.reversed, false);
+  assert.equal(partial.remainingPaidCents, 10000);
+
+  const fullByRefundTotal = refundTransitionState('PARTIALLY_REFUNDED', 'RECEIVED', 18000, 18000);
+  assert.equal(fullByRefundTotal.fullRefund, true);
+  assert.equal(fullByRefundTotal.reversed, true);
+  assert.equal(fullByRefundTotal.remainingPaidCents, 0);
+
+  const fullByEvent = refundTransitionState('PARTIALLY_REFUNDED', 'REFUNDED', 18000, 0);
+  assert.equal(fullByEvent.reversed, true);
+  assert.equal(fullByEvent.partialRefund, false);
+
+  const pending = refundTransitionState('RECEIVED', 'REFUND_PENDING', 18000, 0);
+  assert.equal(pending.refundPending, true);
+  assert.equal(pending.reversed, false);
+  assert.equal(pending.partialRefund, false);
+
+  const staleReceived = refundTransitionState('PARTIALLY_REFUNDED', 'RECEIVED', 18000, 0);
+  assert.equal(staleReceived.partialRefund, true);
+  assert.equal(staleReceived.remainingPaidCents, null);
+  assert.equal(preservesStrongerPaymentState('REFUNDED', 'RECEIVED', 'PAYMENT_RECEIVED'), true);
+  assert.equal(
+    preservesStrongerPaymentState('REFUNDED', 'PARTIALLY_REFUNDED', 'PAYMENT_PARTIALLY_REFUNDED'),
+    true
+  );
+
+  const deletedAfterPartial = refundTransitionState('PARTIALLY_REFUNDED', 'CANCELLED', 18000, 8000);
+  assert.equal(deletedAfterPartial.manualReview, true);
+  assert.equal(deletedAfterPartial.reversed, false);
+  assert.match(asaasWebhookSource, /manualReview\s*\?\s*"REVIEW_REQUIRED"/);
+  assert.match(asaasWebhookSource, /error_code: "partial_refund_cancelled"/);
+  assert.match(asaasWebhookSource, /next_reconciliation_at: manualReview[\s\S]*\? null/);
+  assert.match(asaasWebhookSource, /else if \(manualReview\)[\s\S]*registrationUpdate = null/);
+});
+
+test('runbook financeiro separa o E2E válido, expiração, estorno e limite de chargeback', () => {
+  assert.match(
+    asaasGoLiveRunbookSource,
+    /ohndgphxtwhokekjyobu\.supabase\.co\/functions\/v1\/asaas-payment-webhook/
+  );
+  assert.match(asaasGoLiveRunbookSource, /PAYMENT_RECEIVED[\s\S]*event_rows/);
+  assert.match(asaasGoLiveRunbookSource, /public\.invoke_tournament_payment_expiry\(\)/);
+  assert.match(asaasGoLiveRunbookSource, /net\._http_response/);
+  assert.match(asaasGoLiveRunbookSource, /PAYMENT_PARTIALLY_REFUNDED[\s\S]*PARTIALLY_REFUNDED/);
+  assert.match(asaasGoLiveRunbookSource, /Integration Success/);
+  assert.match(asaasGoLiveRunbookSource, /não envie[\s\S]*ASAAS_WEBHOOK_TOKEN/i);
+});
+
+test('webhook Asaas isola cobrancas com o mesmo ID por ambiente', async () => {
+  const executableLookupSource = functionSource(asaasWebhookSource, 'findTournamentPayment')
+    .replace(/: DbClient/g, '')
+    .replace(/: string/g, '')
+    .replace(/ as JsonRecord \| null/g, '');
+  const findTournamentPayment = vm.runInNewContext(`(${executableLookupSource})`);
+  const payments = [
+    {
+      id: 'sandbox-payment',
+      provider: 'ASAAS',
+      provider_environment: 'SANDBOX',
+      provider_payment_id: 'pay_same_environment_scoped_id',
+      external_reference: 'tournament-registration:sandbox'
+    },
+    {
+      id: 'production-payment',
+      provider: 'ASAAS',
+      provider_environment: 'PRODUCTION',
+      provider_payment_id: 'pay_same_environment_scoped_id',
+      external_reference: 'tournament-registration:production'
+    }
+  ];
+  const supabase = {
+    from(tableName) {
+      assert.equal(tableName, 'tournament_payments');
+      const filters = [];
+      const query = {
+        select() {
+          return query;
+        },
+        eq(column, value) {
+          filters.push([column, value]);
+          return query;
+        },
+        async maybeSingle() {
+          const matches = payments.filter((payment) => filters.every(([column, value]) => payment[column] === value));
+          if (matches.length > 1) return { data: null, error: new Error('multiple rows') };
+          return { data: matches[0] || null, error: null };
+        }
+      };
+      return query;
+    }
+  };
+
+  const sandboxPayment = await findTournamentPayment(
+    supabase,
+    'SANDBOX',
+    'pay_same_environment_scoped_id',
+    'tournament-registration:sandbox'
+  );
+  const productionPayment = await findTournamentPayment(
+    supabase,
+    'PRODUCTION',
+    'pay_same_environment_scoped_id',
+    'tournament-registration:production'
+  );
+
+  assert.equal(sandboxPayment.id, 'sandbox-payment');
+  assert.equal(productionPayment.id, 'production-payment');
+  assert.notEqual(sandboxPayment.id, productionPayment.id);
+  assert.match(
+    functionSource(asaasWebhookSource, 'findTournamentPayment'),
+    /eq\("provider_environment", providerEnvironment\)[\s\S]*eq\("provider_payment_id", providerPaymentId\)/
+  );
+  assert.match(asaasWebhookSource, /p_payment_id: localPayment\.id[\s\S]*p_provider_environment: providerEnvironment/);
 });
 
 test('onboarding e cancelamento usam RPCs validadas sem fallback local de producao', () => {
@@ -1552,6 +1827,11 @@ test('inscricao publica exige Turnstile e rate limit persistente sem PII em clar
   assert.match(tournamentRegisterSource, /challenges\.cloudflare\.com\/turnstile\/v0\/siteverify/);
   assert.match(tournamentRegisterSource, /outcome\.action === "tournament_registration"/);
   assert.match(tournamentRegisterSource, /turnstileAllowedHostnames\.has/);
+  assert.match(tournamentRegisterSource, /const syntheticStagingRef = "ohndgphxtwhokekjyobu"/);
+  assert.match(tournamentRegisterSource, /config\.turnstileSiteKey === cloudflareTestSiteKey/);
+  assert.match(tournamentRegisterSource, /config\.turnstileSecretKey === cloudflareTestSecretKey/);
+  assert.match(tournamentRegisterSource, /isSyntheticStagingProject\(\)/);
+  assert.match(tournamentRegisterSource, /if \(usesOfficialTestKeys\) return outcome\.success === true/);
   assert.match(tournamentRegisterSource, /consume_tournament_registration_network_rate_limits/);
   assert.match(tournamentRegisterSource, /consume_tournament_registration_identity_rate_limit/);
   assert.match(tournamentRegisterSource, /"Retry-After"/);
@@ -1586,12 +1866,50 @@ test('reinscricao publica exige prova antes de alterar atleta existente', () => 
 });
 
 test('snapshot administrativo nao entrega bearer tokens a permissao somente leitura', () => {
-  assert.match(tournamentAdminSource, /courtesy_registration_token/);
   assert.match(tournamentAdminSource, /public_token/);
   assert.match(tournamentAdminSource, /canWrite|tournaments\.write/);
-  assert.match(tournamentAdminSource, /delete settings\.courtesy_registration_token/);
+  const settingsSanitizer = functionSource(tournamentAdminSource, 'sanitizeTournamentSettings');
+  assert.match(settingsSanitizer, /courtesy_registration_token/);
+  assert.match(settingsSanitizer, /privateTournamentSettingKey/);
+  assert.doesNotMatch(functionSource(tournamentAdminSource, 'mapTournament'), /courtesy_registration_token/);
+  assert.doesNotMatch(tournamentAdminSource, /settings\.courtesy_registration_token\s*=/);
+  const tournamentPayloadSource = sourceSection(
+    tournamentAdminSource,
+    'function tournamentPayload',
+    'async function saveTournament'
+  );
+  assert.match(tournamentPayloadSource, /sanitizeTournamentSettings\(firstObject\(input\.settings/);
   assert.match(tournamentAdminSource, /if \(includeCapabilities\) registration\.public_token/);
   assert.match(tournamentAdminSource, /loadSnapshot\(trustedClient, tournamentId, slug, canWrite\)/);
+});
+
+test('snapshot público usa allow-list e relações sensíveis têm grants mínimos', () => {
+  assert.match(tournamentPublicCapabilityHardeningSource, /settings = coalesce\(settings, '\{\}'::jsonb\) - 'courtesy_registration_token'/);
+  assert.match(tournamentPublicCapabilityHardeningSource, /tournaments_settings_without_legacy_courtesy_check[\s\S]*courtesy_registration_token[\s\S]*validate constraint/);
+  assert.match(tournamentPublicCapabilityHardeningSource, /set schema private/);
+  assert.match(tournamentPublicCapabilityHardeningSource, /revoke all on function private\.tournament_public_snapshot_legacy_unsafe\(text\)[\s\S]*from public, anon, authenticated, service_role/);
+  const publicSnapshot = sourceSection(
+    tournamentPublicCapabilityHardeningSource,
+    'create function public.tournament_public_snapshot',
+    'comment on function public.tournament_public_snapshot'
+  );
+  for (const key of ['public_tabs', 'about_event', 'registration_pricing', 'spatial_addon_fee', 'spatial_addons', 'spatial_event_period_label']) {
+    assert.match(publicSnapshot, new RegExp(`'${key}'`));
+  }
+  const publicSettingsProjection = sourceSection(
+    publicSnapshot,
+    'public_settings := jsonb_strip_nulls',
+    'stored_theme :='
+  );
+  for (const forbidden of ['courtesy_registration_token', 'registration_function', 'api_key']) {
+    assert.doesNotMatch(publicSettingsProjection, new RegExp(`'${forbidden}'`));
+  }
+  assert.match(publicSnapshot, /snapshot\s*->\s*'tournament'[\s\S]*-\s*'courtesy_registration_token'/);
+  assert.match(tournamentPublicCapabilityHardeningSource, /revoke all on table[\s\S]*public\.asaas_webhook_events[\s\S]*public\.tournament_registration_invites[\s\S]*from public, anon, authenticated, service_role/);
+  assert.doesNotMatch(tournamentPublicCapabilityHardeningSource, /grant\s+(?:all|truncate|references|trigger)[\s\S]*to authenticated/i);
+  assert.match(tournamentPublicCapabilityHardeningSource, /grant select, insert on table public\.tournament_audit_log to authenticated/);
+  assert.match(tournamentPublicCapabilityHardeningSource, /grant select, insert on table public\.tournament_audit_log to service_role/);
+  assert.match(tournamentPublicCapabilityHardeningSource, /revoke all on sequence public\.tournament_audit_log_id_seq[\s\S]*from public, anon, authenticated, service_role/);
 });
 
 test('alterações do torneio recarregam a agenda pelo cliente administrativo já autorizado', () => {

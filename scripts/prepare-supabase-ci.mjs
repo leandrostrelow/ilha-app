@@ -86,10 +86,14 @@ export async function prepareSupabaseCiProject(target) {
     path.join(projectRoot, 'test', 'supabase', 'fixtures', '20260821187500_ci_seed_protected_access.sql'),
     path.join(destinationMigrations, '20260821187500_ci_seed_protected_access.sql')
   );
-  await cp(
-    path.join(projectRoot, 'test', 'supabase', 'local_integrity.test.sql'),
-    path.join(destinationTests, 'local_integrity.test.sql')
-  );
+  const sourceTests = path.join(projectRoot, 'test', 'supabase');
+  const testNames = (await readdir(sourceTests))
+    .filter((name) => name.endsWith('.test.sql'))
+    .sort();
+  if (!testNames.length) throw new Error('A CI local precisa de ao menos um contrato SQL do Supabase.');
+  for (const name of testNames) {
+    await cp(path.join(sourceTests, name), path.join(destinationTests, name));
+  }
 
   return {
     destination,
@@ -99,7 +103,8 @@ export async function prepareSupabaseCiProject(target) {
       ...migrationNames.slice(0, allowlistIndex + 1),
       '20260821187500_ci_seed_protected_access.sql',
       ...migrationNames.slice(hardeningIndex)
-    ]
+    ],
+    tests: testNames
   };
 }
 

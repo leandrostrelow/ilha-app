@@ -38,21 +38,30 @@ produção são bloqueados. O fluxo então valida Auth, PostgREST/RLS, abertura 
 Realtime, PWA, persistência/logout e responsividade do Ilha Play e ADM. Para o
 Push, o Chromium recebe permissão somente para o host de staging, cria e persiste
 uma inscrição, recebe uma notificação sintética pela Edge Function e remove a
-inscrição ao final. Para o Asaas, mantém a prova fail-closed do webhook e também
-cria, consulta e remove um cliente e uma cobrança exclusivamente no Sandbox. O
-cliente não recebe e-mail ou telefone e é criado com notificações desativadas.
+inscrição ao final. Para o Asaas, mantém a prova fail-closed do webhook inclusive
+para a mesma entrega não autenticada repetida; também cria, consulta, simula a
+baixa até `RECEIVED`, solicita o estorno e tenta remover o cliente sintético
+exclusivamente no Sandbox. O cliente não recebe e-mail ou telefone e é criado
+com notificações desativadas; fixtures que o histórico financeiro impedir de
+apagar continuam identificáveis pelo prefixo técnico `ilha-e2e`.
 
 Esses testes são gates reais: ausência da tabela de inscrições, configuração
 VAPID privada, permissão `communication`, acesso ao provedor Push, chave Sandbox
 ou documento sintético faz o job falhar; não há mensagem de sucesso baseada
-somente na presença das variáveis. Falhas de limpeza também reprovam o job e as
-fixtures Asaas usam `externalReference` com prefixo `ilha-e2e` para localização.
+somente na presença das variáveis. Falhas antes da liquidação reprovam o job. Se
+somente o estorno assíncrono ou a exclusão posterior do cliente ficar pendente,
+o job avisa e as fixtures Asaas permanecem localizáveis pelo
+`externalReference` com prefixo `ilha-e2e`.
 
 O mesmo job cria um cadastro Ilha Play e uma inscrição Push fictícia para a
 conta Bar, chama `reset_app_client_account`, confirma que Play/Push sumiram e
 que Auth, perfil, allowlist e permissões Bar continuam válidos. Depois autentica
 novamente, recria o Play e repete o reset. Isso cobre diretamente o caso de uma
 pessoa que pertence somente à equipe do Bar e também aparece como cliente.
+
+A repetição com token inválido não prova idempotência de uma entrega válida. A
+homologação manual de idempotência em staging e o canário que movimenta dinheiro
+real estão separados no [runbook do Asaas](../../docs/asaas-go-live-runbook.md).
 
 O workflow não recebe `service_role`, chave secreta do Supabase, chave VAPID
 privada ou senha de banco. A chave Asaas é estritamente de Sandbox e fica em

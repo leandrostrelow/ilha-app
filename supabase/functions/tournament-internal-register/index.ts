@@ -95,9 +95,15 @@ type SecurityConfig = {
 };
 
 function securityConfig(): SecurityConfig | null {
-  const staging = isSyntheticStaging();
-  const rateLimitSalt = Deno.env.get("PUBLIC_REGISTRATION_RATE_LIMIT_SALT") ||
-    (staging ? "synthetic-staging-only-rate-limit-salt-v1" : serviceRoleKey());
+  const explicitlyEnabled = (Deno.env.get("TOURNAMENT_INTERNAL_REGISTRATION_ENABLED") || "")
+    .trim()
+    .toLowerCase() === "true";
+  if (!explicitlyEnabled) return null;
+
+  // This retired flow must never derive a public rate-limit secret from the
+  // service-role credential. Re-enabling it requires an explicit, independent
+  // secret and an audited origin allow-list.
+  const rateLimitSalt = Deno.env.get("PUBLIC_REGISTRATION_RATE_LIMIT_SALT") || "";
   if (!configuredOrigins || rateLimitSalt.length < 32) return null;
   return { rateLimitSalt };
 }

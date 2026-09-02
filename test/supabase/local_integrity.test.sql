@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(57);
+select plan(98);
 
 select has_table(
   'public',
@@ -525,24 +525,22 @@ select ok(
 
 select is(
   (
-    select settings ->> 'registration_mode'
+    select count(*)::integer
     from public.tournaments
     where slug = 'ilha-open-interno-2026'
   ),
-  'MONTHLY_BILLING_SIMPLE',
-  'o novo torneio usa o modo separado de cobrança na mensalidade'
+  0,
+  'o torneio interno residual não permanece publicável'
 );
 
-select is(
-  (
-    select count(*)::integer
-    from public.tournament_categories as category
-    join public.tournaments as tournament on tournament.id = category.tournament_id
-    where tournament.slug = 'ilha-open-interno-2026'
-      and category.active
+select ok(
+  exists (
+    select 1
+    from private.tournament_deletion_backups
+    where tournament_slug = 'ilha-open-interno-2026'
+      and snapshot -> 'tournament' ->> 'slug' = 'ilha-open-interno-2026'
   ),
-  10,
-  'as dez classes separadas por sexo são cadastradas e editáveis no ADM'
+  'a remoção do torneio interno conserva um backup privado verificável'
 );
 
 select has_column(
@@ -712,6 +710,1226 @@ select ok(
       'EXECUTE'
     ),
   'a reserva familiar atômica só pode ser chamada pela Edge Function'
+);
+
+-- Exercita o protocolo de idempotência e a reconciliação financeira com
+-- fixtures sintéticas. Toda a seção roda na transação externa e é desfeita
+-- pelo rollback final, sem criar atleta, cobrança ou evento persistente.
+select set_config('request.jwt.claim.role', 'service_role', true);
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"10000000-0000-4000-8000-000000000001","role":"service_role"}',
+  true
+);
+
+select is(
+  public.claim_asaas_webhook_event(
+    'ci-payment-event-1',
+    'PAYMENT_RECEIVED',
+    'pay_ci_reconciliation',
+    '{"fixture":true}'::jsonb,
+    '20000000-0000-4000-8000-000000000001'::uuid
+  ),
+  'CLAIMED',
+  'o primeiro worker reivindica o evento do Asaas'
+);
+
+select is(
+  public.claim_asaas_webhook_event(
+    'ci-payment-event-1',
+    'PAYMENT_RECEIVED',
+    'pay_ci_reconciliation',
+    '{"fixture":true}'::jsonb,
+    '20000000-0000-4000-8000-000000000002'::uuid
+  ),
+  'BUSY',
+  'um segundo worker não processa o evento enquanto o claim está ativo'
+);
+
+update public.asaas_webhook_events
+set processing_started_at = now() - interval '2 minutes'
+where event_id = 'ci-payment-event-1';
+
+select is(
+  public.claim_asaas_webhook_event(
+    'ci-payment-event-1',
+    'PAYMENT_RECEIVED',
+    'pay_ci_reconciliation',
+    '{"fixture":true,"retry":true}'::jsonb,
+    '20000000-0000-4000-8000-000000000003'::uuid
+  ),
+  'CLAIMED',
+  'um worker retoma o processamento depois que o claim fica obsoleto'
+);
+
+update public.asaas_webhook_events
+set status = 'PROCESSED',
+    processed_at = now()
+where event_id = 'ci-payment-event-1';
+
+select is(
+  public.claim_asaas_webhook_event(
+    'ci-payment-event-1',
+    'PAYMENT_RECEIVED',
+    'pay_ci_reconciliation',
+    '{"fixture":true,"duplicate":true}'::jsonb,
+    '20000000-0000-4000-8000-000000000004'::uuid
+  ),
+  'DONE',
+  'um evento já processado é reconhecido sem executar novamente'
+);
+
+select is(
+  public.claim_asaas_webhook_event(
+    'ci-refund-event-1',
+    'PAYMENT_REFUNDED',
+    'pay_ci_reconciliation',
+    '{"fixture":true,"refund":true}'::jsonb,
+    '20000000-0000-4000-8000-000000000005'::uuid
+  ),
+  'CLAIMED',
+  'o primeiro evento de estorno integral é reivindicado'
+);
+
+update public.asaas_webhook_events
+set status = 'PROCESSED',
+    processed_at = now(),
+    processing_token = null,
+    processing_started_at = null
+where event_id = 'ci-refund-event-1';
+
+select is(
+  public.claim_asaas_webhook_event(
+    'ci-refund-event-1',
+    'PAYMENT_REFUNDED',
+    'pay_ci_reconciliation',
+    '{"fixture":true,"refund":true,"duplicate":true}'::jsonb,
+    '20000000-0000-4000-8000-000000000006'::uuid
+  ),
+  'DONE',
+  'o mesmo evento de estorno integral não é aplicado duas vezes'
+);
+
+insert into public.tournaments (
+  id,
+  name,
+  slug,
+  status,
+  registration_open,
+  is_published,
+  default_fee,
+  allowed_payment_methods
+)
+values (
+  '22000000-0000-4000-8000-000000000001'::uuid,
+  'Torneio Checkout Sintético',
+  'ci-payment-checkout',
+  'REGISTRATION_OPEN',
+  true,
+  true,
+  50,
+  '["PIX"]'::jsonb
+);
+
+insert into public.tournament_categories (
+  id,
+  tournament_id,
+  code,
+  name,
+  registration_fee,
+  registration_open,
+  max_entries,
+  sort_order
+)
+values
+  (
+    '22000000-0000-4000-8000-000000000002'::uuid,
+    '22000000-0000-4000-8000-000000000001'::uuid,
+    'CI-A',
+    'Classe Checkout A',
+    50,
+    true,
+    8,
+    1
+  ),
+  (
+    '22000000-0000-4000-8000-000000000003'::uuid,
+    '22000000-0000-4000-8000-000000000001'::uuid,
+    'CI-B',
+    'Classe Checkout B',
+    50,
+    true,
+    8,
+    2
+  );
+
+insert into public.tournament_athletes (
+  id,
+  source_key,
+  full_name,
+  email
+)
+values
+  (
+    '22000000-0000-4000-8000-000000000004'::uuid,
+    'ci-payment-checkout-athlete-a',
+    'Atleta Checkout A',
+    'ci-checkout-a@tests.invalid'
+  ),
+  (
+    '22000000-0000-4000-8000-000000000005'::uuid,
+    'ci-payment-checkout-athlete-b',
+    'Atleta Checkout B',
+    'ci-checkout-b@tests.invalid'
+  );
+
+create temporary table ci_checkout_created_result on commit drop as
+select public.claim_public_tournament_registration_checkout(
+  '22000000-0000-4000-8000-000000000001'::uuid,
+  '22000000-0000-4000-8000-000000000006'::uuid,
+  '22000000-0000-4000-8000-000000000002'::uuid,
+  null,
+  '22000000-0000-4000-8000-000000000004'::uuid,
+  'Atleta Checkout A',
+  'Colatina',
+  'Ilha Tênis',
+  null,
+  null,
+  50,
+  'PIX',
+  'SANDBOX',
+  'Fixture de checkout atômico'
+) as result;
+
+select ok(
+  (select (result ->> 'payment_created')::boolean from ci_checkout_created_result)
+    and exists (
+      select 1
+      from public.tournament_registrations as registration
+      join public.tournament_payments as payment
+        on payment.registration_id = registration.id
+       and payment.tournament_id = registration.tournament_id
+      where registration.request_token = '22000000-0000-4000-8000-000000000006'::uuid
+        and registration.athlete_id = '22000000-0000-4000-8000-000000000004'::uuid
+        and registration.category_id = '22000000-0000-4000-8000-000000000002'::uuid
+        and registration.status = 'PENDING'
+        and registration.payment_status = 'PENDING'
+        and registration.total_amount = 50
+        and payment.status = 'CREATED'
+        and payment.billing_type = 'PIX'
+        and payment.provider_environment = 'SANDBOX'
+        and payment.amount = 50
+    ),
+  'o checkout individual cria inscrição e cobrança local na mesma operação'
+);
+
+create temporary table ci_checkout_replayed_result on commit drop as
+select public.claim_public_tournament_registration_checkout(
+  '22000000-0000-4000-8000-000000000001'::uuid,
+  '22000000-0000-4000-8000-000000000006'::uuid,
+  '22000000-0000-4000-8000-000000000002'::uuid,
+  null,
+  '22000000-0000-4000-8000-000000000004'::uuid,
+  'Atleta Checkout A',
+  'Colatina',
+  'Ilha Tênis',
+  null,
+  null,
+  50,
+  'PIX',
+  'SANDBOX',
+  'Fixture de checkout atômico'
+) as result;
+
+select ok(
+  not (select (result ->> 'payment_created')::boolean from ci_checkout_replayed_result)
+    and (
+      select result #>> '{registration,id}'
+      from ci_checkout_replayed_result
+    ) = (
+      select result #>> '{registration,id}'
+      from ci_checkout_created_result
+    )
+    and (
+      select result #>> '{payment,id}'
+      from ci_checkout_replayed_result
+    ) = (
+      select result #>> '{payment,id}'
+      from ci_checkout_created_result
+    )
+    and (
+      select count(*)
+      from public.tournament_registrations
+      where request_token = '22000000-0000-4000-8000-000000000006'::uuid
+    ) = 1
+    and (
+      select count(*)
+      from public.tournament_payments as payment
+      join public.tournament_registrations as registration
+        on registration.id = payment.registration_id
+      where registration.request_token = '22000000-0000-4000-8000-000000000006'::uuid
+    ) = 1,
+  'repetir o mesmo request_token devolve a inscrição e a cobrança existentes'
+);
+
+select throws_ok(
+  $sql$
+    select public.claim_public_tournament_registration_checkout(
+      '22000000-0000-4000-8000-000000000001'::uuid,
+      '22000000-0000-4000-8000-000000000006'::uuid,
+      '22000000-0000-4000-8000-000000000002'::uuid,
+      null,
+      '22000000-0000-4000-8000-000000000005'::uuid,
+      'Atleta Checkout B',
+      'Colatina',
+      'Ilha Tênis',
+      null,
+      null,
+      50,
+      'PIX',
+      'SANDBOX',
+      'Tentativa divergente por atleta'
+    )
+  $sql$,
+  '42501',
+  'Esta tentativa não corresponde à inscrição informada.',
+  'o mesmo request_token não pode ser reutilizado para outro atleta'
+);
+
+select throws_ok(
+  $sql$
+    select public.claim_public_tournament_registration_checkout(
+      '22000000-0000-4000-8000-000000000001'::uuid,
+      '22000000-0000-4000-8000-000000000006'::uuid,
+      '22000000-0000-4000-8000-000000000003'::uuid,
+      null,
+      '22000000-0000-4000-8000-000000000004'::uuid,
+      'Atleta Checkout A',
+      'Colatina',
+      'Ilha Tênis',
+      null,
+      null,
+      50,
+      'PIX',
+      'SANDBOX',
+      'Tentativa divergente por categoria'
+    )
+  $sql$,
+  '42501',
+  'Esta tentativa não corresponde à inscrição informada.',
+  'o mesmo request_token não pode ser reutilizado para outra categoria'
+);
+
+select throws_ok(
+  $sql$
+    select public.claim_public_tournament_registration_checkout(
+      '22000000-0000-4000-8000-000000000001'::uuid,
+      '22000000-0000-4000-8000-000000000006'::uuid,
+      '22000000-0000-4000-8000-000000000002'::uuid,
+      null,
+      '22000000-0000-4000-8000-000000000004'::uuid,
+      'Atleta Checkout A',
+      'Colatina',
+      'Ilha Tênis',
+      null,
+      null,
+      50,
+      'BOLETO',
+      'SANDBOX',
+      'Tentativa com forma de pagamento inválida'
+    )
+  $sql$,
+  '22023',
+  'Forma de pagamento do provedor inválida.',
+  'o checkout atômico rejeita qualquer forma de pagamento diferente de Pix'
+);
+
+insert into public.tournament_athletes (
+  id,
+  source_key,
+  full_name,
+  email,
+  phone
+)
+values (
+  '21000000-0000-4000-8000-000000000001'::uuid,
+  'ci-payment-reconciliation-athlete',
+  'Atleta Reconciliação Sintético',
+  'ci-payment-athlete@tests.invalid',
+  '27999999997'
+);
+
+insert into public.tournament_registration_groups (
+  id,
+  tournament_id,
+  request_token,
+  public_token,
+  payer_name,
+  payer_email,
+  payer_phone,
+  payer_cpf,
+  status,
+  total_amount
+)
+select
+  '21000000-0000-4000-8000-000000000002'::uuid,
+  tournament.id,
+  '21000000-0000-4000-8000-000000000003'::uuid,
+  '21000000-0000-4000-8000-000000000004'::uuid,
+  'Responsável Financeiro Sintético',
+  'ci-payment-payer@tests.invalid',
+  '27999999996',
+  '12345678901',
+  'PENDING',
+  100
+from public.tournaments as tournament
+where tournament.slug = 'ilha-open-2026-teste';
+
+insert into public.tournament_registrations (
+  id,
+  tournament_id,
+  category_id,
+  athlete_id,
+  public_name,
+  public_token,
+  request_token,
+  status,
+  payment_status,
+  total_amount,
+  paid_amount,
+  source,
+  registration_group_id
+)
+select
+  '21000000-0000-4000-8000-000000000005'::uuid,
+  tournament.id,
+  (
+    select category.id
+    from public.tournament_categories as category
+    where category.tournament_id = tournament.id
+    order by category.sort_order, category.id
+    limit 1
+  ),
+  '21000000-0000-4000-8000-000000000001'::uuid,
+  'Atleta Reconciliação Sintético',
+  '21000000-0000-4000-8000-000000000006'::uuid,
+  '21000000-0000-4000-8000-000000000007'::uuid,
+  'PENDING',
+  'PENDING',
+  100,
+  0,
+  'DEMO',
+  '21000000-0000-4000-8000-000000000002'::uuid
+from public.tournaments as tournament
+where tournament.slug = 'ilha-open-2026-teste';
+
+update public.tournament_registration_groups
+set primary_registration_id = '21000000-0000-4000-8000-000000000005'::uuid
+where id = '21000000-0000-4000-8000-000000000002'::uuid;
+
+insert into public.tournament_payments (
+  id,
+  tournament_id,
+  registration_id,
+  registration_group_id,
+  provider,
+  provider_environment,
+  provider_payment_id,
+  external_reference,
+  billing_type,
+  status,
+  amount,
+  expires_at,
+  raw_response
+)
+select
+  '21000000-0000-4000-8000-000000000008'::uuid,
+  registration.tournament_id,
+  registration.id,
+  registration.registration_group_id,
+  'ASAAS',
+  'SANDBOX',
+  'pay_ci_reconciliation',
+  'ci:tournament-payment-reconciliation',
+  'PIX',
+  'PENDING',
+  100,
+  now() - interval '1 hour',
+  '{"fixture":true}'::jsonb
+from public.tournament_registrations as registration
+where registration.id = '21000000-0000-4000-8000-000000000005'::uuid;
+
+insert into public.tournament_athletes (
+  id,
+  source_key,
+  full_name,
+  email,
+  phone
+)
+values (
+  '21000000-0000-4000-8000-000000000009'::uuid,
+  'ci-payment-reconciliation-production-athlete',
+  'Atleta Reconciliação Produção',
+  'ci-payment-production@tests.invalid',
+  '27999999995'
+);
+
+insert into public.tournament_registrations (
+  id,
+  tournament_id,
+  category_id,
+  athlete_id,
+  public_name,
+  public_token,
+  status,
+  payment_status,
+  total_amount,
+  paid_amount,
+  source
+)
+select
+  '21000000-0000-4000-8000-000000000010'::uuid,
+  tournament.id,
+  (
+    select category.id
+    from public.tournament_categories as category
+    where category.tournament_id = tournament.id
+    order by category.sort_order, category.id
+    limit 1
+  ),
+  '21000000-0000-4000-8000-000000000009'::uuid,
+  'Atleta Reconciliação Produção',
+  '21000000-0000-4000-8000-000000000011'::uuid,
+  'PENDING',
+  'PENDING',
+  100,
+  0,
+  'DEMO'
+from public.tournaments as tournament
+where tournament.slug = 'ilha-open-2026-teste';
+
+insert into public.tournament_payments (
+  id,
+  tournament_id,
+  registration_id,
+  provider,
+  provider_environment,
+  provider_payment_id,
+  external_reference,
+  billing_type,
+  status,
+  amount,
+  expires_at,
+  raw_response
+)
+select
+  '21000000-0000-4000-8000-000000000012'::uuid,
+  registration.tournament_id,
+  registration.id,
+  'ASAAS',
+  'PRODUCTION',
+  'pay_ci_reconciliation',
+  'ci:tournament-payment-reconciliation-production',
+  'PIX',
+  'PENDING',
+  100,
+  now() - interval '1 hour',
+  '{"fixture":true,"environment":"production"}'::jsonb
+from public.tournament_registrations as registration
+where registration.id = '21000000-0000-4000-8000-000000000010'::uuid;
+
+create temporary table ci_stale_reconciliation_result on commit drop as
+select public.apply_tournament_payment_reconciliation(
+  '21000000-0000-4000-8000-000000000008'::uuid,
+  'PENDING',
+  (
+    select payment.updated_at - interval '1 second'
+    from public.tournament_payments as payment
+    where payment.id = '21000000-0000-4000-8000-000000000008'::uuid
+  ),
+  'RECEIVED',
+  'SANDBOX',
+  'pay_ci_reconciliation',
+  'cus_ci_reconciliation',
+  'PIX',
+  'https://tests.invalid/invoice',
+  'ci-pix-payload',
+  'ci-pix-image',
+  '2099-01-01 12:00:00+00'::timestamptz,
+  '{"fixture":true,"phase":"stale"}'::jsonb,
+  '2026-09-01 12:00:00+00'::timestamptz,
+  '2026-09-01 11:59:00+00'::timestamptz,
+  1,
+  null,
+  'CONFIRMED',
+  'PAID',
+  100,
+  '2026-09-01 12:00:00+00'::timestamptz,
+  null
+) as result;
+
+select ok(
+  not (select (result ->> 'applied')::boolean from ci_stale_reconciliation_result),
+  'o CAS recusa uma reconciliação baseada em updated_at obsoleto'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.tournament_payments as payment
+    where payment.id = '21000000-0000-4000-8000-000000000008'::uuid
+      and payment.status = 'PENDING'
+      and payment.provider_customer_id is null
+      and payment.paid_at is null
+  )
+    and exists (
+      select 1
+      from public.tournament_registrations as registration
+      where registration.id = '21000000-0000-4000-8000-000000000005'::uuid
+        and registration.status = 'PENDING'
+        and registration.payment_status = 'PENDING'
+        and registration.paid_amount = 0
+    )
+    and exists (
+      select 1
+      from public.tournament_registration_groups as registration_group
+      where registration_group.id = '21000000-0000-4000-8000-000000000002'::uuid
+        and registration_group.status = 'PENDING'
+    ),
+  'o CAS obsoleto não altera cobrança, inscrição nem grupo'
+);
+
+create temporary table ci_applied_reconciliation_result on commit drop as
+select public.apply_tournament_payment_reconciliation(
+  '21000000-0000-4000-8000-000000000008'::uuid,
+  'PENDING',
+  (
+    select payment.updated_at
+    from public.tournament_payments as payment
+    where payment.id = '21000000-0000-4000-8000-000000000008'::uuid
+  ),
+  'RECEIVED',
+  'SANDBOX',
+  'pay_ci_reconciliation',
+  'cus_ci_reconciliation',
+  'PIX',
+  'https://tests.invalid/invoice',
+  'ci-pix-payload',
+  'ci-pix-image',
+  '2099-01-01 12:00:00+00'::timestamptz,
+  '{"fixture":true,"phase":"applied"}'::jsonb,
+  '2026-09-01 12:00:00+00'::timestamptz,
+  '2026-09-01 11:59:00+00'::timestamptz,
+  2,
+  null,
+  'CONFIRMED',
+  'PAID',
+  100,
+  '2026-09-01 12:00:00+00'::timestamptz,
+  null
+) as result;
+
+select ok(
+  (select (result ->> 'applied')::boolean from ci_applied_reconciliation_result),
+  'a reconciliação com a versão atual aplica a transição'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.tournament_payments as payment
+    where payment.id = '21000000-0000-4000-8000-000000000008'::uuid
+      and payment.status = 'RECEIVED'
+      and payment.provider_payment_id = 'pay_ci_reconciliation'
+      and payment.provider_customer_id = 'cus_ci_reconciliation'
+      and payment.paid_at = '2026-09-01 12:00:00+00'::timestamptz
+      and payment.reconciliation_attempts = 2
+  ),
+  'a aplicação persiste o estado e os identificadores da cobrança'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.tournament_payments
+    where id = '21000000-0000-4000-8000-000000000008'::uuid
+      and provider_environment = 'SANDBOX'
+      and provider_payment_id = 'pay_ci_reconciliation'
+      and status = 'RECEIVED'
+  )
+    and exists (
+      select 1
+      from public.tournament_payments
+      where id = '21000000-0000-4000-8000-000000000012'::uuid
+        and provider_environment = 'PRODUCTION'
+        and provider_payment_id = 'pay_ci_reconciliation'
+        and status = 'PENDING'
+        and provider_customer_id is null
+        and paid_at is null
+        and reconciliation_attempts = 0
+    ),
+  'a reconciliação isola cobranças com o mesmo ID por ambiente do Asaas'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.tournament_registrations as registration
+    where registration.id = '21000000-0000-4000-8000-000000000005'::uuid
+      and registration.status = 'CONFIRMED'
+      and registration.payment_status = 'PAID'
+      and registration.paid_amount = 100
+      and registration.confirmed_at = '2026-09-01 12:00:00+00'::timestamptz
+  ),
+  'a mesma aplicação confirma e quita a inscrição'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.tournament_registration_groups as registration_group
+    where registration_group.id = '21000000-0000-4000-8000-000000000002'::uuid
+      and registration_group.status = 'CONFIRMED'
+  ),
+  'a mesma aplicação confirma o grupo familiar'
+);
+
+select throws_ok(
+  $sql$
+    select public.apply_tournament_payment_reconciliation(
+      '21000000-0000-4000-8000-000000000008'::uuid,
+      'RECEIVED',
+      (
+        select payment.updated_at
+        from public.tournament_payments as payment
+        where payment.id = '21000000-0000-4000-8000-000000000008'::uuid
+      ),
+      'CONFIRMED',
+      'SANDBOX',
+      'pay_ci_divergent',
+      'cus_ci_reconciliation',
+      'PIX',
+      null,
+      null,
+      null,
+      null,
+      '{"fixture":true,"phase":"provider-divergence"}'::jsonb,
+      '2026-09-01 12:00:00+00'::timestamptz,
+      null,
+      3,
+      null,
+      'CONFIRMED',
+      'PAID',
+      100,
+      '2026-09-01 12:00:00+00'::timestamptz,
+      null
+    )
+  $sql$,
+  '22023',
+  'Identificador da cobrança divergente.',
+  'a reconciliação rejeita um identificador de cobrança divergente'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.tournament_payments as payment
+    where payment.id = '21000000-0000-4000-8000-000000000008'::uuid
+      and payment.status = 'RECEIVED'
+      and payment.provider_payment_id = 'pay_ci_reconciliation'
+      and payment.reconciliation_attempts = 2
+  )
+    and exists (
+      select 1
+      from public.tournament_registrations as registration
+      where registration.id = '21000000-0000-4000-8000-000000000005'::uuid
+        and registration.status = 'CONFIRMED'
+        and registration.payment_status = 'PAID'
+    ),
+  'a divergência do provedor preserva cobrança e inscrição anteriores'
+);
+
+select throws_ok(
+  $sql$
+    select public.apply_tournament_payment_reconciliation(
+      '21000000-0000-4000-8000-000000000008'::uuid,
+      'RECEIVED',
+      (
+        select payment.updated_at
+        from public.tournament_payments as payment
+        where payment.id = '21000000-0000-4000-8000-000000000008'::uuid
+      ),
+      'CONFIRMED',
+      'SANDBOX',
+      'pay_ci_reconciliation',
+      'cus_ci_reconciliation',
+      'PIX',
+      null,
+      null,
+      null,
+      null,
+      '{"fixture":true,"phase":"atomic-rollback"}'::jsonb,
+      '2026-09-01 12:00:00+00'::timestamptz,
+      null,
+      3,
+      null,
+      'INVALID',
+      'PAID',
+      100,
+      '2026-09-01 12:00:00+00'::timestamptz,
+      null
+    )
+  $sql$,
+  '22023',
+  'Status de inscrição inválido.',
+  'uma falha na sincronização interrompe a aplicação inteira'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.tournament_payments as payment
+    where payment.id = '21000000-0000-4000-8000-000000000008'::uuid
+      and payment.status = 'RECEIVED'
+      and payment.reconciliation_attempts = 2
+  )
+    and exists (
+      select 1
+      from public.tournament_registration_groups as registration_group
+      where registration_group.id = '21000000-0000-4000-8000-000000000002'::uuid
+        and registration_group.status = 'CONFIRMED'
+    ),
+  'o rollback atômico desfaz a atualização e conserva cobrança, inscrição e grupo'
+);
+
+select ok(
+  not public.archive_expired_tournament_payment(
+    '21000000-0000-4000-8000-000000000008'::uuid
+  )
+    and exists (
+      select 1
+      from public.tournament_payments
+      where id = '21000000-0000-4000-8000-000000000008'::uuid
+        and status = 'RECEIVED'
+    )
+    and exists (
+      select 1
+      from public.tournament_registrations
+      where id = '21000000-0000-4000-8000-000000000005'::uuid
+    ),
+  'o arquivamento preserva uma cobrança recebida mesmo após a expiração'
+);
+
+update public.tournament_payments
+set status = 'CONFIRMED'
+where id = '21000000-0000-4000-8000-000000000008'::uuid;
+
+select ok(
+  not public.archive_expired_tournament_payment(
+    '21000000-0000-4000-8000-000000000008'::uuid
+  )
+    and exists (
+      select 1
+      from public.tournament_payments
+      where id = '21000000-0000-4000-8000-000000000008'::uuid
+        and status = 'CONFIRMED'
+    )
+    and exists (
+      select 1
+      from public.tournament_registration_groups
+      where id = '21000000-0000-4000-8000-000000000002'::uuid
+    ),
+  'o arquivamento preserva uma cobrança confirmada e o grupo relacionado'
+);
+
+update public.tournament_payments
+set status = 'REVIEW_REQUIRED'
+where id = '21000000-0000-4000-8000-000000000008'::uuid;
+
+select ok(
+  not public.archive_expired_tournament_payment(
+    '21000000-0000-4000-8000-000000000008'::uuid
+  )
+    and exists (
+      select 1
+      from public.tournament_payments
+      where id = '21000000-0000-4000-8000-000000000008'::uuid
+        and status = 'REVIEW_REQUIRED'
+    )
+    and exists (
+      select 1
+      from public.tournament_registrations
+      where id = '21000000-0000-4000-8000-000000000005'::uuid
+    ),
+  'o arquivamento preserva cobrança em revisão e sua inscrição'
+);
+
+update public.tournament_payments
+set status = 'PARTIALLY_REFUNDED'
+where id = '21000000-0000-4000-8000-000000000008'::uuid;
+
+select ok(
+  not public.archive_expired_tournament_payment(
+    '21000000-0000-4000-8000-000000000008'::uuid
+  )
+    and exists (
+      select 1
+      from public.tournament_payments
+      where id = '21000000-0000-4000-8000-000000000008'::uuid
+        and status = 'PARTIALLY_REFUNDED'
+    )
+    and exists (
+      select 1
+      from public.tournament_registrations
+      where id = '21000000-0000-4000-8000-000000000005'::uuid
+    ),
+  'o arquivamento preserva cobrança com estorno parcial e sua inscrição'
+);
+
+create temporary table ci_environment_quarantine_result on commit drop as
+select public.quarantine_tournament_payment_environment(
+  '21000000-0000-4000-8000-000000000008'::uuid,
+  'PARTIALLY_REFUNDED',
+  (
+    select payment.updated_at
+    from public.tournament_payments as payment
+    where payment.id = '21000000-0000-4000-8000-000000000008'::uuid
+  ),
+  'ci_environment_mismatch'
+) as result;
+
+select ok(
+  (select (result ->> 'applied')::boolean from ci_environment_quarantine_result)
+    and exists (
+      select 1
+      from public.tournament_payments
+      where id = '21000000-0000-4000-8000-000000000008'::uuid
+        and status = 'REVIEW_REQUIRED'
+        and invoice_url is null
+        and pix_payload is null
+        and pix_encoded_image is null
+        and next_reconciliation_at is null
+    )
+    and exists (
+      select 1
+      from public.tournament_registrations
+      where id = '21000000-0000-4000-8000-000000000005'::uuid
+        and status = 'PENDING'
+        and payment_status = 'PENDING'
+        and paid_amount = 0
+    ),
+  'a quarentena de ambiente remove meios de pagamento e suspende a vaga atomicamente'
+);
+
+create temporary table ci_partial_refund_reconciliation_result on commit drop as
+select public.apply_tournament_payment_reconciliation(
+  '21000000-0000-4000-8000-000000000008'::uuid,
+  'REVIEW_REQUIRED',
+  (
+    select payment.updated_at
+    from public.tournament_payments as payment
+    where payment.id = '21000000-0000-4000-8000-000000000008'::uuid
+  ),
+  'PARTIALLY_REFUNDED',
+  'SANDBOX',
+  'pay_ci_reconciliation',
+  'cus_ci_reconciliation',
+  'PIX',
+  null,
+  null,
+  null,
+  null,
+  '{"fixture":true,"phase":"partial-refund"}'::jsonb,
+  '2026-09-01 12:00:00+00'::timestamptz,
+  null,
+  0,
+  now() + interval '24 hours',
+  'CONFIRMED',
+  'PARTIALLY_REFUNDED',
+  70,
+  '2026-09-01 12:00:00+00'::timestamptz,
+  null
+) as result;
+
+select ok(
+  (select (result ->> 'applied')::boolean from ci_partial_refund_reconciliation_result),
+  'a reconciliação aplica o estorno parcial atomicamente'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.tournament_payments
+    where id = '21000000-0000-4000-8000-000000000008'::uuid
+      and status = 'PARTIALLY_REFUNDED'
+      and paid_at = '2026-09-01 12:00:00+00'::timestamptz
+      and next_reconciliation_at is not null
+  )
+    and exists (
+      select 1
+      from public.tournament_registrations
+      where id = '21000000-0000-4000-8000-000000000005'::uuid
+        and status = 'CONFIRMED'
+        and payment_status = 'PARTIALLY_REFUNDED'
+        and paid_amount = 70
+        and confirmed_at = '2026-09-01 12:00:00+00'::timestamptz
+        and cancelled_at is null
+    )
+    and exists (
+      select 1
+      from public.tournament_registration_groups
+      where id = '21000000-0000-4000-8000-000000000002'::uuid
+        and status = 'CONFIRMED'
+    ),
+  'o estorno parcial mantém a vaga confirmada e reduz o valor líquido pago'
+);
+
+create temporary table ci_full_refund_reconciliation_result on commit drop as
+select public.apply_tournament_payment_reconciliation(
+  '21000000-0000-4000-8000-000000000008'::uuid,
+  'PARTIALLY_REFUNDED',
+  (
+    select payment.updated_at
+    from public.tournament_payments as payment
+    where payment.id = '21000000-0000-4000-8000-000000000008'::uuid
+  ),
+  'REFUNDED',
+  'SANDBOX',
+  'pay_ci_reconciliation',
+  'cus_ci_reconciliation',
+  'PIX',
+  null,
+  null,
+  null,
+  null,
+  '{"fixture":true,"phase":"full-refund"}'::jsonb,
+  null,
+  null,
+  0,
+  null,
+  'REFUNDED',
+  'REFUNDED',
+  0,
+  null,
+  null
+) as result;
+
+select ok(
+  (select (result ->> 'applied')::boolean from ci_full_refund_reconciliation_result),
+  'a reconciliação aplica o estorno integral após o parcial'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.tournament_payments
+    where id = '21000000-0000-4000-8000-000000000008'::uuid
+      and status = 'REFUNDED'
+      and paid_at is null
+      and next_reconciliation_at is null
+  )
+    and exists (
+      select 1
+      from public.tournament_registrations
+      where id = '21000000-0000-4000-8000-000000000005'::uuid
+        and status = 'REFUNDED'
+        and payment_status = 'REFUNDED'
+        and paid_amount = 0
+        and confirmed_at is null
+    )
+    and exists (
+      select 1
+      from public.tournament_registration_groups
+      where id = '21000000-0000-4000-8000-000000000002'::uuid
+        and status = 'REFUNDED'
+    ),
+  'o estorno integral zera a cobrança e encerra inscrição e grupo como reembolsados'
+);
+
+select ok(
+  not exists (
+    select 1
+    from public.tournaments
+    where coalesce(settings, '{}'::jsonb) ? 'courtesy_registration_token'
+       or (to_jsonb(tournaments) ->> 'courtesy_registration_token') is not null
+  )
+    and exists (
+      select 1
+      from pg_constraint
+      where conrelid = 'public.tournaments'::regclass
+        and conname = 'tournaments_settings_without_legacy_courtesy_check'
+        and convalidated
+    )
+    and (
+      not exists (
+        select 1
+        from information_schema.columns
+        where table_schema = 'public'
+          and table_name = 'tournaments'
+          and column_name = 'courtesy_registration_token'
+      )
+      or exists (
+        select 1
+        from pg_constraint
+        where conrelid = 'public.tournaments'::regclass
+          and conname = 'tournaments_without_legacy_courtesy_token_check'
+          and convalidated
+      )
+    ),
+  'o token legado foi removido e não pode voltar aos settings persistidos'
+);
+
+update public.tournaments
+set settings = coalesce(settings, '{}'::jsonb) || jsonb_build_object(
+  'api_key', 'ci-secret-must-not-leak',
+  'registration_function', 'tournament-internal-register',
+  'public_tabs', jsonb_build_object('categories', false)
+)
+where id = (
+  select id
+  from public.tournaments
+  where slug = 'ilha-open-2026-teste'
+);
+
+create temporary table ci_anon_tournament_snapshot (payload jsonb not null);
+grant insert on table ci_anon_tournament_snapshot to anon;
+set local role anon;
+insert into ci_anon_tournament_snapshot (payload)
+select public.tournament_public_snapshot('ilha-open-2026-teste');
+reset role;
+
+select ok(
+  (
+    select
+      coalesce((payload #> '{tournament,settings}') ? 'public_tabs', false)
+      and not coalesce((payload -> 'tournament') ? 'courtesy_registration_token', true)
+      and not coalesce((payload #> '{tournament,settings}') ?| array[
+        'courtesy_registration_token',
+        'api_key',
+        'registration_function'
+      ], true)
+    from ci_anon_tournament_snapshot
+  ),
+  'o snapshot anônimo preserva apresentação permitida sem expor capacidades'
+);
+
+select ok(
+  not has_function_privilege('anon', 'private.tournament_public_snapshot_legacy_unsafe(text)', 'EXECUTE')
+    and not has_function_privilege('authenticated', 'private.tournament_public_snapshot_legacy_unsafe(text)', 'EXECUTE')
+    and not has_function_privilege('service_role', 'private.tournament_public_snapshot_legacy_unsafe(text)', 'EXECUTE')
+    and has_function_privilege('anon', 'public.tournament_public_snapshot(text)', 'EXECUTE')
+    and has_function_privilege('authenticated', 'public.tournament_public_snapshot(text)', 'EXECUTE')
+    and has_function_privilege('service_role', 'public.tournament_public_snapshot(text)', 'EXECUTE'),
+  'somente o wrapper seguro do snapshot é executável pelos papéis da API'
+);
+
+select ok(
+  not exists (
+    select 1
+    from unnest(array[
+      'tournaments', 'tournament_categories', 'tournament_athletes',
+      'tournament_registrations', 'tournament_payments', 'asaas_webhook_events',
+      'tournament_courts', 'tournament_matches', 'tournament_match_sets',
+      'tournament_schedule_events', 'tournament_sponsors', 'tournament_live_state',
+      'tournament_audit_log', 'tournament_registration_orders',
+      'tournament_registration_groups', 'tournament_registration_invites',
+      'public_registration_rate_limits'
+    ]) as protected(table_name)
+    where has_table_privilege('anon', format('public.%I', protected.table_name), 'SELECT')
+       or has_table_privilege('anon', format('public.%I', protected.table_name), 'INSERT')
+       or has_table_privilege('anon', format('public.%I', protected.table_name), 'UPDATE')
+       or has_table_privilege('anon', format('public.%I', protected.table_name), 'DELETE')
+       or has_table_privilege('anon', format('public.%I', protected.table_name), 'TRUNCATE')
+       or has_table_privilege('anon', format('public.%I', protected.table_name), 'REFERENCES')
+       or has_table_privilege('anon', format('public.%I', protected.table_name), 'TRIGGER')
+  ),
+  'anon não possui privilégios diretos nas relações de torneio'
+);
+
+select ok(
+  not exists (
+    select 1
+    from unnest(array[
+      'tournaments', 'tournament_categories', 'tournament_athletes',
+      'tournament_registrations', 'tournament_payments', 'asaas_webhook_events',
+      'tournament_courts', 'tournament_matches', 'tournament_match_sets',
+      'tournament_schedule_events', 'tournament_sponsors', 'tournament_live_state',
+      'tournament_audit_log', 'tournament_registration_orders',
+      'tournament_registration_groups', 'tournament_registration_invites',
+      'public_registration_rate_limits'
+    ]) as protected(table_name)
+    where has_table_privilege('authenticated', format('public.%I', protected.table_name), 'TRUNCATE')
+       or has_table_privilege('authenticated', format('public.%I', protected.table_name), 'REFERENCES')
+       or has_table_privilege('authenticated', format('public.%I', protected.table_name), 'TRIGGER')
+  ),
+  'authenticated não recebe privilégios estruturais ou destrutivos'
+);
+
+select ok(
+  not exists (
+    select 1
+    from unnest(array[
+      'tournaments', 'tournament_categories', 'tournament_athletes',
+      'tournament_registrations', 'tournament_payments', 'asaas_webhook_events',
+      'tournament_courts', 'tournament_matches', 'tournament_match_sets',
+      'tournament_schedule_events', 'tournament_sponsors', 'tournament_live_state',
+      'tournament_audit_log', 'tournament_registration_orders',
+      'tournament_registration_groups', 'tournament_registration_invites',
+      'public_registration_rate_limits'
+    ]) as protected(table_name)
+    where has_table_privilege('service_role', format('public.%I', protected.table_name), 'TRUNCATE')
+       or has_table_privilege('service_role', format('public.%I', protected.table_name), 'REFERENCES')
+       or has_table_privilege('service_role', format('public.%I', protected.table_name), 'TRIGGER')
+  ),
+  'service_role recebe somente DML e não conserva privilégios estruturais legados'
+);
+
+select ok(
+  has_table_privilege('service_role', 'public.tournament_audit_log', 'SELECT')
+    and has_table_privilege('service_role', 'public.tournament_audit_log', 'INSERT')
+    and not has_table_privilege('service_role', 'public.tournament_audit_log', 'UPDATE')
+    and not has_table_privilege('service_role', 'public.tournament_audit_log', 'DELETE'),
+  'o log de auditoria permanece append-only até para service_role'
+);
+
+select ok(
+  has_sequence_privilege('service_role', 'public.tournament_audit_log_id_seq', 'USAGE')
+    and has_sequence_privilege('service_role', 'public.tournament_audit_log_id_seq', 'SELECT')
+    and not has_sequence_privilege('service_role', 'public.tournament_audit_log_id_seq', 'UPDATE'),
+  'a sequência do log concede somente os privilégios necessários'
+);
+
+select ok(
+  not exists (
+    select 1
+    from unnest(array[
+      'asaas_webhook_events', 'tournament_registration_orders',
+      'tournament_registration_groups', 'tournament_registration_invites',
+      'public_registration_rate_limits'
+    ]) as protected(table_name)
+    where has_table_privilege('authenticated', format('public.%I', protected.table_name), 'SELECT')
+       or has_table_privilege('authenticated', format('public.%I', protected.table_name), 'INSERT')
+       or has_table_privilege('authenticated', format('public.%I', protected.table_name), 'UPDATE')
+       or has_table_privilege('authenticated', format('public.%I', protected.table_name), 'DELETE')
+  ),
+  'eventos de webhook, convites, grupos, pedidos e limites permanecem service-only'
+);
+
+select ok(
+  not exists (
+    select 1
+    from unnest(array[
+      'tournament_athletes_auth_user_id_idx',
+      'tournament_athletes_app_client_id_idx',
+      'tournament_registrations_category_tournament_idx',
+      'tournament_payments_tournament_status_idx',
+      'tournament_audit_log_tournament_created_idx',
+      'tournament_registration_orders_athlete_id_idx',
+      'tournament_registration_invites_created_by_idx'
+    ]) as expected(index_name)
+    where to_regclass(format('public.%I', expected.index_name)) is null
+  ),
+  'as chaves estrangeiras operacionais possuem índices de apoio'
 );
 
 select * from finish();

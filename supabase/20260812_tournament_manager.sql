@@ -108,11 +108,12 @@ create table if not exists public.tournament_registrations (
   public_club text,
   public_code text not null default ('INS-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8))),
   public_token uuid not null default gen_random_uuid(),
+  request_token uuid,
   partner_name text,
   shirt_size text,
   seed_number integer,
   status text not null default 'PENDING' check (status in ('PENDING', 'CONFIRMED', 'WAITLIST', 'CANCELLED', 'REFUNDED')),
-  payment_status text not null default 'PENDING' check (payment_status in ('NOT_REQUIRED', 'PENDING', 'PAID', 'OVERDUE', 'REFUNDED', 'CANCELLED')),
+  payment_status text not null default 'PENDING' check (payment_status in ('NOT_REQUIRED', 'PENDING', 'PAID', 'PARTIALLY_REFUNDED', 'OVERDUE', 'REFUNDED', 'CANCELLED')),
   total_amount numeric(10,2) not null default 0 check (total_amount >= 0),
   paid_amount numeric(10,2) not null default 0 check (paid_amount >= 0),
   source text not null default 'PUBLIC' check (source in ('PUBLIC', 'ADMIN', 'IMPORT', 'DEMO')),
@@ -138,26 +139,39 @@ create table if not exists public.tournament_payments (
   tournament_id uuid not null references public.tournaments(id) on delete cascade,
   registration_id uuid not null,
   provider text not null default 'ASAAS',
+  provider_environment text not null default 'UNKNOWN' check (provider_environment in ('SANDBOX', 'PRODUCTION', 'UNKNOWN')),
   provider_customer_id text,
   provider_payment_id text,
   external_reference text not null,
   billing_type text check (billing_type in ('PIX', 'BOLETO', 'CREDIT_CARD', 'UNDEFINED')),
-  status text not null default 'CREATED' check (status in ('CREATED', 'PENDING', 'RECEIVED', 'CONFIRMED', 'OVERDUE', 'REFUNDED', 'CANCELLED', 'CHARGEBACK', 'FAILED')),
+  status text not null default 'CREATED' check (status in ('CREATED', 'RECONCILING', 'PENDING', 'RECEIVED', 'CONFIRMED', 'REVIEW_REQUIRED', 'PARTIALLY_REFUNDED', 'OVERDUE', 'REFUNDED', 'CANCELLED', 'CHARGEBACK', 'FAILED')),
   amount numeric(10,2) not null check (amount >= 0),
   invoice_url text,
   pix_payload text,
   pix_encoded_image text,
   pix_expires_at timestamptz,
+  expires_at timestamptz,
   raw_response jsonb not null default '{}'::jsonb,
   paid_at timestamptz,
+  provider_attempted_at timestamptz,
+  reconciliation_started_at timestamptz,
+  next_reconciliation_at timestamptz,
+  reconciliation_attempts integer not null default 0 check (reconciliation_attempts >= 0),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (registration_id),
-  unique (provider, provider_payment_id),
   unique (external_reference)
 );
 
 create index if not exists tournament_payments_registration_idx on public.tournament_payments(registration_id, status);
+create unique index if not exists tournament_payments_provider_environment_payment_id_uq
+  on public.tournament_payments(provider, provider_environment, provider_payment_id)
+  where provider_payment_id is not null;
+create index if not exists tournament_payments_reconciliation_due_idx
+  on public.tournament_payments(next_reconciliation_at, id)
+  where provider = 'ASAAS'
+    and status in ('RECONCILING', 'PENDING', 'CONFIRMED', 'REVIEW_REQUIRED', 'PARTIALLY_REFUNDED', 'RECEIVED', 'CANCELLED', 'OVERDUE')
+    and next_reconciliation_at is not null;
 
 create table if not exists public.asaas_webhook_events (
   id uuid primary key default gen_random_uuid(),
@@ -168,7 +182,9 @@ create table if not exists public.asaas_webhook_events (
   status text not null default 'PENDING' check (status in ('PENDING', 'PROCESSED', 'IGNORED', 'FAILED')),
   received_at timestamptz not null default now(),
   processed_at timestamptz,
-  error text
+  error text,
+  processing_token uuid,
+  processing_started_at timestamptz
 );
 
 create table if not exists public.tournament_courts (

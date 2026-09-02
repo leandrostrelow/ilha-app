@@ -7,6 +7,18 @@ const defaultAllowedOrigins = new Set([
   "http://127.0.0.1:8769",
 ]);
 
+const syntheticStagingRef = "ohndgphxtwhokekjyobu";
+const cloudflareTestSiteKey = "1x00000000000000000000AA";
+const cloudflareTestSecretKey = "1x0000000000000000000000000000000AA";
+
+function isSyntheticStagingProject() {
+  try {
+    return new URL(Deno.env.get("SUPABASE_URL") || "").hostname === `${syntheticStagingRef}.supabase.co`;
+  } catch (_error) {
+    return false;
+  }
+}
+
 function publicRegistrationAllowedOrigins() {
   const origins = new Set(defaultAllowedOrigins);
   const configured = (Deno.env.get("PUBLIC_REGISTRATION_ALLOWED_ORIGINS") || "").trim();
@@ -29,12 +41,13 @@ function publicRegistrationAllowedOrigins() {
 
 const configuredAllowedOrigins = publicRegistrationAllowedOrigins();
 
-const allowedBillingTypes = new Set(["PIX", "BOLETO", "CREDIT_CARD", "UNDEFINED"]);
+const allowedBillingTypes = new Set(["PIX"]);
 const allowedGenders = new Set(["MALE", "FEMALE"]);
 const allowedAvailabilityDays = new Set(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY"]);
 const allowedParticipantTypes = new Set(["CINCATE", "ILHA_STUDENT", "NON_MEMBER", "COURTESY"]);
 const participantLabels: Record<string, string> = { CINCATE: "CINCATE", ILHA_STUDENT: "Aluno Ilha Tênis", NON_MEMBER: "Não associado", COURTESY: "Cortesia (isento)" };
 const retryablePaymentStatuses = new Set(["CREATED", "FAILED"]);
+const paymentReconciliationDelaysSeconds = [5, 15, 30, 60, 120, 300, 600];
 const publicRegistrationRuleErrors = new Set([
   "A Espacial A e a Espacial B são exclusivas para quem já está inscrito da 2ª à 6ª Classe Masculina.",
   "A Espacial A é exclusiva para atletas inscritos na 2ª, 3ª ou 4ª Classe Masculina.",
@@ -79,16 +92,16 @@ function json(request: Request, body: unknown, status = 200, extraHeaders: Recor
 }
 
 function serviceRoleKey() {
-  const legacyKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (legacyKey) return legacyKey;
   const currentKeys = Deno.env.get("SUPABASE_SECRET_KEYS");
-  if (!currentKeys) return "";
-  try {
-    const parsed = JSON.parse(currentKeys);
-    return parsed.default || "";
-  } catch (_error) {
-    return currentKeys.startsWith("sb_secret_") ? currentKeys : "";
+  if (currentKeys) {
+    try {
+      const parsed = JSON.parse(currentKeys);
+      if (parsed.default) return parsed.default;
+    } catch (_error) {
+      if (currentKeys.startsWith("sb_secret_")) return currentKeys;
+    }
   }
+  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 }
 
 function text(value: unknown, maxLength: number) {
@@ -179,9 +192,18 @@ async function verifyTurnstile(
     });
     if (!response.ok) throw new Error("turnstile_unavailable");
     const outcome = await response.json() as { success?: boolean; hostname?: string; action?: string };
-    return outcome.success === true &&
-      outcome.action === "tournament_registration" &&
-      config.turnstileAllowedHostnames.has(String(outcome.hostname || "").toLowerCase());
+    const usesOfficialTestKeys = isSyntheticStagingProject() &&
+      config.turnstileSiteKey === cloudflareTestSiteKey &&
+      config.turnstileSecretKey === cloudflareTestSecretKey;
+    // Cloudflare's official dummy keys intentionally return synthetic metadata
+    // (currently example.com and no action). Accept that response only in the
+    // isolated staging project with the exact published test-key pair.
+    if (usesOfficialTestKeys) return outcome.success === true;
+    const actionMatches = outcome.action === "tournament_registration";
+    const hostnameMatches = config.turnstileAllowedHostnames.has(
+      String(outcome.hostname || "").toLowerCase(),
+    );
+    return outcome.success === true && actionMatches && hostnameMatches;
   } finally {
     clearTimeout(timeout);
   }
@@ -284,9 +306,18 @@ function safePayment(row: JsonRecord | null) {
 function asaasConfig() {
   const apiKey = Deno.env.get("ASAAS_API_KEY") || "";
   const configuredUrl = (Deno.env.get("ASAAS_BASE_URL") || "").replace(/\/+$/, "");
-  const allowedUrls = new Set(["https://api-sandbox.asaas.com/v3", "https://api.asaas.com/v3"]);
-  if (!apiKey || !allowedUrls.has(configuredUrl)) throw new Error("Configuração de pagamento indisponível.");
-  return { apiKey, baseUrl: configuredUrl };
+  const environment = configuredUrl === "https://api-sandbox.asaas.com/v3"
+    ? "SANDBOX"
+    : configuredUrl === "https://api.asaas.com/v3"
+    ? "PRODUCTION"
+    : "UNKNOWN";
+  const keyMatchesEnvironment = environment === "SANDBOX"
+    ? apiKey.startsWith("$aact_hmlg_")
+    : environment === "PRODUCTION"
+    ? apiKey.startsWith("$aact_prod_")
+    : false;
+  if (!apiKey || !keyMatchesEnvironment) throw new Error("Configuração de pagamento indisponível.");
+  return { apiKey, baseUrl: configuredUrl, environment };
 }
 
 class AsaasRequestError extends Error {
@@ -301,7 +332,35 @@ class AsaasRequestError extends Error {
   }
 }
 
-function providerErrorSnapshot(error: unknown) {
+class AmbiguousPaymentCreationError extends Error {
+  override cause: unknown;
+
+  constructor(cause: unknown) {
+    super("A criação da cobrança ficou com resultado indeterminado.");
+    this.name = "AmbiguousPaymentCreationError";
+    this.cause = cause;
+  }
+}
+
+class DuplicateProviderPaymentsError extends Error {
+  constructor() {
+    super("Mais de uma cobrança foi encontrada para a mesma inscrição.");
+    this.name = "DuplicateProviderPaymentsError";
+  }
+}
+
+function isAmbiguousProviderFailure(error: unknown) {
+  if (error instanceof DOMException && error.name === "AbortError") return true;
+  if (error instanceof AsaasRequestError) {
+    return error.status >= 500 || [408, 409, 425, 429].includes(error.status);
+  }
+  return true;
+}
+
+function providerErrorSnapshot(error: unknown): JsonRecord {
+  if (error instanceof AmbiguousPaymentCreationError) {
+    return { ...providerErrorSnapshot(error.cause), ambiguous_result: true };
+  }
   if (error instanceof AsaasRequestError) {
     return {
       error_code: "asaas_request_failed",
@@ -313,6 +372,15 @@ function providerErrorSnapshot(error: unknown) {
     return { error_code: "provider_timeout", provider_status: null, provider_codes: [] };
   }
   return { error_code: "provider_request_failed", provider_status: null, provider_codes: [] };
+}
+
+function secondsFromNow(seconds: number) {
+  return new Date(Date.now() + Math.max(1, seconds) * 1000).toISOString();
+}
+
+function reconciliationDelaySeconds(attempts: number) {
+  const index = Math.max(0, Math.min(paymentReconciliationDelaysSeconds.length - 1, attempts));
+  return paymentReconciliationDelaysSeconds[index];
 }
 
 async function asaasRequest(path: string, init: RequestInit = {}) {
@@ -346,9 +414,116 @@ async function asaasRequest(path: string, init: RequestInit = {}) {
 }
 
 async function findAsaasPayment(externalReference: string) {
-  const result = await asaasRequest(`/payments?externalReference=${encodeURIComponent(externalReference)}&limit=1`);
+  const result = await asaasRequest(`/payments?externalReference=${encodeURIComponent(externalReference)}&limit=2`);
   const rows = Array.isArray(result.data) ? result.data : [];
-  return (rows[0] || null) as JsonRecord | null;
+  const exact = rows.filter((row) => row && typeof row === "object" &&
+    text((row as JsonRecord).externalReference, 180) === externalReference) as JsonRecord[];
+  if (exact.length > 1) throw new DuplicateProviderPaymentsError();
+  return exact[0] || null;
+}
+
+async function claimProviderPaymentAttempt(
+  supabase: DbClient,
+  localPayment: JsonRecord,
+  billingType: string,
+) {
+  const now = new Date().toISOString();
+  let claim = supabase.from("tournament_payments").update({
+    status: "RECONCILING",
+    billing_type: billingType,
+    provider_attempted_at: now,
+    reconciliation_started_at: localPayment.reconciliation_started_at || now,
+    reconciliation_attempts: 0,
+    next_reconciliation_at: secondsFromNow(paymentReconciliationDelaysSeconds[0]),
+    updated_at: now,
+  }).eq("id", localPayment.id).eq("status", localPayment.status);
+  claim = claim.eq("provider_environment", asaasConfig().environment);
+  claim = localPayment.updated_at
+    ? claim.eq("updated_at", localPayment.updated_at)
+    : claim.is("updated_at", null);
+  const result = await claim.select("*").maybeSingle();
+  if (result.error) throw result.error;
+  return result.data as JsonRecord | null;
+}
+
+async function deferPaymentReconciliation(
+  supabase: DbClient,
+  localPayment: JsonRecord,
+  error: unknown = null,
+) {
+  const attempts = Math.max(0, Number(localPayment.reconciliation_attempts || 0)) + 1;
+  const providerError = error ? providerErrorSnapshot(error) : null;
+  const now = new Date().toISOString();
+  const update: JsonRecord = {
+    status: "RECONCILING",
+    reconciliation_started_at: localPayment.reconciliation_started_at || now,
+    reconciliation_attempts: attempts,
+    next_reconciliation_at: secondsFromNow(reconciliationDelaySeconds(attempts)),
+    updated_at: now,
+  };
+  if (providerError) update.raw_response = { ...providerError, stage: "asaas_payment_reconciliation" };
+  const result = await supabase.from("tournament_payments").update(update)
+    .eq("id", localPayment.id)
+    .eq("status", "RECONCILING")
+    .eq("provider_environment", asaasConfig().environment)
+    .select("*")
+    .maybeSingle();
+  if (result.error) throw result.error;
+  if (result.data) return result.data as JsonRecord;
+  const latest = await supabase.from("tournament_payments").select("*").eq("id", localPayment.id).single();
+  if (latest.error) throw latest.error;
+  return latest.data as JsonRecord;
+}
+
+async function markClaimedProviderFailure(
+  supabase: DbClient,
+  claimedPayment: JsonRecord,
+  rawResponse: JsonRecord,
+) {
+  const update = supabase.from("tournament_payments").update({
+    status: "FAILED",
+    raw_response: rawResponse,
+    reconciliation_started_at: null,
+    reconciliation_attempts: 0,
+    next_reconciliation_at: null,
+    updated_at: new Date().toISOString(),
+  }).eq("id", claimedPayment.id).eq("status", claimedPayment.status);
+  const guarded = claimedPayment.updated_at
+    ? update.eq("updated_at", claimedPayment.updated_at)
+    : update.is("updated_at", null);
+  const failed = await guarded.select("*").maybeSingle();
+  if (failed.error) throw failed.error;
+  if (failed.data) return { payment: failed.data as JsonRecord, applied: true };
+
+  // A webhook or the reconciliation cron may have completed while the
+  // provider request was failing. Never overwrite that newer state.
+  const latest = await supabase.from("tournament_payments")
+    .select("*")
+    .eq("id", claimedPayment.id)
+    .single();
+  if (latest.error) throw latest.error;
+  return { payment: latest.data as JsonRecord, applied: false };
+}
+
+async function reconcileAmbiguousPayment(supabase: DbClient, localPayment: JsonRecord) {
+  localPayment = await ensurePaymentProviderEnvironment(supabase, localPayment);
+  if (text(localPayment.provider_environment, 20).toUpperCase() !== asaasConfig().environment) return localPayment;
+  const nextAt = Date.parse(String(localPayment.next_reconciliation_at || ""));
+  if (Number.isFinite(nextAt) && nextAt > Date.now()) return localPayment;
+  try {
+    const recovered = await findAsaasPayment(String(localPayment.external_reference || ""));
+    if (recovered) return await saveProviderPayment(supabase, localPayment, recovered);
+    return await deferPaymentReconciliation(supabase, localPayment);
+  } catch (error) {
+    if (error instanceof DuplicateProviderPaymentsError) {
+      return await markProviderMismatchForReview(supabase, localPayment, {}, "duplicate_external_reference");
+    }
+    console.warn("tournament-register payment reconciliation deferred", {
+      payment_id: localPayment.id,
+      ...providerErrorSnapshot(error),
+    });
+    return await deferPaymentReconciliation(supabase, localPayment, error);
+  }
 }
 
 async function ensureAsaasCustomer(supabase: DbClient, athlete: JsonRecord) {
@@ -369,7 +544,9 @@ async function ensureAsaasCustomer(supabase: DbClient, athlete: JsonRecord) {
         email: athlete.email || undefined,
         mobilePhone: athlete.phone || undefined,
         externalReference: `tournament-athlete:${athlete.id}`,
-        notificationDisabled: false,
+        // Sandbox fixtures must never notify a synthetic e-mail or phone. Keep
+        // the production behavior unchanged for real tournament customers.
+        notificationDisabled: asaasConfig().environment === "SANDBOX",
       }),
     });
   }
@@ -384,13 +561,187 @@ async function ensureAsaasCustomer(supabase: DbClient, athlete: JsonRecord) {
 
 function mapAsaasPaymentStatus(value: unknown) {
   const status = text(value, 40).toUpperCase();
-  if (status === "RECEIVED") return "RECEIVED";
+  if (["RECEIVED", "RECEIVED_IN_CASH"].includes(status)) return "RECEIVED";
   if (status === "CONFIRMED") return "CONFIRMED";
   if (status === "OVERDUE") return "OVERDUE";
   if (status === "REFUNDED") return "REFUNDED";
+  if (status === "PARTIALLY_REFUNDED") return "PARTIALLY_REFUNDED";
   if (status === "DELETED") return "CANCELLED";
   if (status === "PENDING") return "PENDING";
   return "CREATED";
+}
+
+function providerPaidAt(payment: JsonRecord) {
+  const value = text(payment.clientPaymentDate || payment.paymentDate, 40);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return `${value}T12:00:00-03:00`;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? new Date(parsed).toISOString() : new Date().toISOString();
+}
+
+function moneyCents(value: unknown) {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? Math.round(amount * 100) : null;
+}
+
+function completedRefundAmountCents(payment: JsonRecord) {
+  const refunds = Array.isArray(payment.refunds) ? payment.refunds : [];
+  return refunds.reduce((total: number, item: unknown) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return total;
+    const refund = item as JsonRecord;
+    if (text(refund.status, 30).toUpperCase() !== "DONE") return total;
+    const value = moneyCents(refund.value);
+    return total + (value !== null && value > 0 ? value : 0);
+  }, 0);
+}
+
+function providerChargebackStatus(payment: JsonRecord) {
+  const chargeback = payment.chargeback && typeof payment.chargeback === "object" && !Array.isArray(payment.chargeback)
+    ? payment.chargeback as JsonRecord
+    : {};
+  return text(chargeback.status, 40).toUpperCase();
+}
+
+async function quarantineProviderEnvironment(
+  supabase: DbClient,
+  localPayment: JsonRecord,
+  reason: string,
+) {
+  let candidate = localPayment;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const quarantined = await supabase.rpc("quarantine_tournament_payment_environment", {
+      p_payment_id: candidate.id,
+      p_expected_status: candidate.status,
+      p_expected_updated_at: candidate.updated_at,
+      p_reason: reason,
+    });
+    if (quarantined.error) throw quarantined.error;
+    const result = record(quarantined.data);
+    const payment = record(result.payment);
+    if (!payment.id) throw new Error("O resultado da quarentena da cobrança é inválido.");
+    if (result.applied === true || text(payment.provider_environment, 20).toUpperCase() === asaasConfig().environment) {
+      return payment;
+    }
+    candidate = payment;
+  }
+  throw new Error("A cobrança mudou durante a quarentena de ambiente.");
+}
+
+async function ensurePaymentProviderEnvironment(
+  supabase: DbClient,
+  localPayment: JsonRecord,
+) {
+  const currentEnvironment = asaasConfig().environment;
+  const storedEnvironment = text(localPayment.provider_environment, 20).toUpperCase() || "UNKNOWN";
+  if (storedEnvironment === currentEnvironment) return localPayment;
+
+  const pristine = storedEnvironment === "UNKNOWN" && !localPayment.provider_payment_id &&
+    !localPayment.provider_attempted_at && ["CREATED", "FAILED"].includes(String(localPayment.status || ""));
+  if (pristine) {
+    let update = supabase.from("tournament_payments")
+      .update({ provider_environment: currentEnvironment, updated_at: new Date().toISOString() })
+      .eq("id", localPayment.id)
+      .eq("status", localPayment.status);
+    update = localPayment.updated_at
+      ? update.eq("updated_at", localPayment.updated_at)
+      : update.is("updated_at", null);
+    const bound = await update.select("*").maybeSingle();
+    if (bound.error) throw bound.error;
+    if (bound.data) return bound.data as JsonRecord;
+    const latest = await supabase.from("tournament_payments").select("*").eq("id", localPayment.id).single();
+    if (latest.error) throw latest.error;
+    localPayment = latest.data as JsonRecord;
+    if (text(localPayment.provider_environment, 20).toUpperCase() === currentEnvironment) return localPayment;
+  }
+
+  return await quarantineProviderEnvironment(
+    supabase,
+    localPayment,
+    storedEnvironment === "UNKNOWN" ? "provider_environment_unknown" : "provider_environment_mismatch",
+  );
+}
+
+async function markProviderMismatchForReview(
+  supabase: DbClient,
+  localPayment: JsonRecord,
+  providerPayment: JsonRecord,
+  reason: string,
+) {
+  const now = new Date().toISOString();
+  const applied = await supabase.rpc("apply_tournament_payment_reconciliation", {
+    p_payment_id: localPayment.id,
+    p_expected_status: localPayment.status,
+    p_expected_updated_at: localPayment.updated_at,
+    p_status: "REVIEW_REQUIRED",
+    p_provider_environment: asaasConfig().environment,
+    p_provider_payment_id: localPayment.provider_payment_id || null,
+    p_provider_customer_id: localPayment.provider_customer_id || null,
+    p_billing_type: localPayment.billing_type || "PIX",
+    p_invoice_url: localPayment.invoice_url || null,
+    p_pix_payload: localPayment.pix_payload || null,
+    p_pix_encoded_image: localPayment.pix_encoded_image || null,
+    p_pix_expires_at: localPayment.pix_expires_at || null,
+    p_raw_response: {
+      error_code: "provider_payment_mismatch",
+      reason,
+      provider_payment_id: text(providerPayment.id, 100),
+      provider_external_reference: text(providerPayment.externalReference, 180),
+      provider_amount: Number.isFinite(Number(providerPayment.value)) ? Number(providerPayment.value) : null,
+    },
+    p_paid_at: null,
+    p_reconciliation_started_at: now,
+    p_reconciliation_attempts: Number(localPayment.reconciliation_attempts || 0),
+    p_next_reconciliation_at: secondsFromNow(6 * 60 * 60),
+    p_registration_status: "PENDING",
+    p_registration_payment_status: "PENDING",
+    p_registration_paid_amount: 0,
+    p_confirmed_at: null,
+    p_cancelled_at: null,
+  });
+  if (applied.error) throw applied.error;
+  const result = record(applied.data);
+  const payment = record(result.payment);
+  if (!payment.id) throw new Error("O resultado da revisão da cobrança é inválido.");
+  return payment;
+}
+
+function registrationReconciliationForStatus(
+  localPayment: JsonRecord,
+  providerPayment: JsonRecord,
+  status: string,
+) {
+  let registrationStatus: string | null = null;
+  let paymentStatus: string | null = null;
+  let paidAmount: number | null = null;
+  let confirmedAt: string | null = null;
+  let cancelledAt: string | null = null;
+  if (status === "RECEIVED") {
+    registrationStatus = "CONFIRMED";
+    paymentStatus = "PAID";
+    paidAmount = Number(localPayment.amount || providerPayment.value || 0);
+    confirmedAt = providerPaidAt(providerPayment);
+  } else if (status === "CONFIRMED") {
+    registrationStatus = "PENDING";
+    paymentStatus = "PENDING";
+    paidAmount = 0;
+  } else if (status === "PARTIALLY_REFUNDED") {
+    registrationStatus = "CONFIRMED";
+    paymentStatus = "PARTIALLY_REFUNDED";
+    const refundCents = completedRefundAmountCents(providerPayment);
+    const amountCents = moneyCents(localPayment.amount) || 0;
+    if (refundCents > 0) paidAmount = Math.max(0, amountCents - refundCents) / 100;
+    confirmedAt = nullableText(localPayment.paid_at, 80) || providerPaidAt(providerPayment);
+  } else if (status === "REFUNDED") {
+    registrationStatus = "REFUNDED";
+    paymentStatus = "REFUNDED";
+    paidAmount = 0;
+    cancelledAt = new Date().toISOString();
+  } else if (status === "CANCELLED") {
+    registrationStatus = "CANCELLED";
+    paymentStatus = "CANCELLED";
+    paidAmount = 0;
+    cancelledAt = new Date().toISOString();
+  }
+  return { registrationStatus, paymentStatus, paidAmount, confirmedAt, cancelledAt };
 }
 
 async function saveProviderPayment(
@@ -398,51 +749,133 @@ async function saveProviderPayment(
   localPayment: JsonRecord,
   providerPayment: JsonRecord,
 ) {
+  localPayment = await ensurePaymentProviderEnvironment(supabase, localPayment);
+  if (String(localPayment.status) === "REVIEW_REQUIRED" &&
+    text(localPayment.provider_environment, 20).toUpperCase() !== asaasConfig().environment) {
+    return localPayment;
+  }
   const providerPaymentId = text(providerPayment.id, 100);
   if (!providerPaymentId) throw new Error("Cobrança sem identificador no Asaas.");
+  const externalReference = text(providerPayment.externalReference, 180);
+  const providerAmount = Number(providerPayment.value);
+  const providerBillingType = text(providerPayment.billingType, 40).toUpperCase();
+  const mismatchedProviderId = localPayment.provider_payment_id && localPayment.provider_payment_id !== providerPaymentId;
+  const mismatchedReference = !externalReference || externalReference !== String(localPayment.external_reference || "");
+  const mismatchedAmount = moneyCents(providerAmount) === null ||
+    moneyCents(providerAmount) !== moneyCents(localPayment.amount);
+  const mismatchedBillingType = providerBillingType !== "PIX";
+  if (mismatchedProviderId || mismatchedReference || mismatchedAmount || mismatchedBillingType) {
+    const reason = mismatchedProviderId
+      ? "provider_payment_id"
+      : mismatchedReference
+      ? "external_reference"
+      : mismatchedAmount
+      ? "amount"
+      : "billing_type";
+    return await markProviderMismatchForReview(supabase, localPayment, providerPayment, reason);
+  }
+  const chargebackStatus = providerChargebackStatus(providerPayment);
+  const activeChargeback = ["REQUESTED", "IN_DISPUTE", "DISPUTE_LOST", "DONE"].includes(chargebackStatus);
+  const refundCents = completedRefundAmountCents(providerPayment);
+  const amountCents = moneyCents(localPayment.amount) || 0;
+  const providerStatus = activeChargeback
+    ? "CANCELLED"
+    : refundCents >= amountCents && amountCents > 0
+    ? "REFUNDED"
+    : mapAsaasPaymentStatus(providerPayment.status) === "RECEIVED" && refundCents > 0
+    ? "PARTIALLY_REFUNDED"
+    : mapAsaasPaymentStatus(providerPayment.status);
   let pix: JsonRecord = {};
-  if (String(localPayment.billing_type) === "PIX") {
+  const activePixStatus = ["CREATED", "PENDING", "CONFIRMED", "OVERDUE"].includes(providerStatus);
+  if (String(localPayment.billing_type) === "PIX" && activePixStatus &&
+    !(localPayment.pix_payload && localPayment.pix_encoded_image)) {
     pix = await asaasRequest(`/payments/${encodeURIComponent(providerPaymentId)}/pixQrCode`);
   }
-  const providerStatus = mapAsaasPaymentStatus(providerPayment.status);
   const localStatus = String(localPayment.status || "");
-  const status = ["RECEIVED", "CONFIRMED"].includes(localStatus) &&
-      !["RECEIVED", "CONFIRMED"].includes(providerStatus)
-    ? localStatus
+  const terminalProviderStatus = ["REFUNDED", "PARTIALLY_REFUNDED", "CANCELLED"].includes(providerStatus);
+  const status = localStatus === "RECEIVED" && !terminalProviderStatus
+    ? "RECEIVED"
+    : localStatus === "REVIEW_REQUIRED" && ["CREATED", "PENDING", "CONFIRMED", "OVERDUE"].includes(providerStatus)
+    ? "REVIEW_REQUIRED"
+    : localStatus === "CONFIRMED" && ["CREATED", "PENDING", "OVERDUE"].includes(providerStatus)
+    ? "CONFIRMED"
+    : localStatus === "PARTIALLY_REFUNDED" && ["CREATED", "PENDING", "CONFIRMED", "RECEIVED", "OVERDUE"].includes(providerStatus)
+    ? "PARTIALLY_REFUNDED"
     : providerStatus;
-  const update = {
-    provider_payment_id: providerPaymentId,
-    provider_customer_id: nullableText(providerPayment.customer || localPayment.provider_customer_id, 100),
-    status,
-    invoice_url: nullableText(
-      providerPayment.invoiceUrl || providerPayment.bankSlipUrl || localPayment.invoice_url,
-      1000,
-    ),
-    pix_payload: nullableText(pix.payload || localPayment.pix_payload, 4000),
-    pix_encoded_image: nullableText(pix.encodedImage || localPayment.pix_encoded_image, 500000),
-    pix_expires_at: nullableText(pix.expirationDate || localPayment.pix_expires_at, 80),
-    raw_response: {
+  const settledAt = status === "RECEIVED"
+    ? providerStatus === "RECEIVED"
+      ? providerPaidAt(providerPayment)
+      : nullableText(localPayment.paid_at, 80)
+    : status === "PARTIALLY_REFUNDED"
+    ? nullableText(localPayment.paid_at, 80) || providerPaidAt(providerPayment)
+    : null;
+  const reconciliationStartedAt = status === "REVIEW_REQUIRED"
+    ? localPayment.reconciliation_started_at || null
+    : status === "CONFIRMED"
+    ? localStatus === "CONFIRMED"
+      ? localPayment.reconciliation_started_at || new Date().toISOString()
+      : new Date().toISOString()
+    : null;
+  const nextReconciliationAt = status === "REVIEW_REQUIRED"
+    ? secondsFromNow(6 * 60 * 60)
+    : status === "RECEIVED"
+    ? secondsFromNow(24 * 60 * 60)
+    : status === "PARTIALLY_REFUNDED"
+    ? secondsFromNow(refundCents > 0 ? 24 * 60 * 60 : 5 * 60)
+    : status === "CANCELLED" && ["REQUESTED", "IN_DISPUTE"].includes(chargebackStatus)
+    ? secondsFromNow(6 * 60 * 60)
+    : ["CREATED", "PENDING", "CONFIRMED", "OVERDUE"].includes(status)
+    ? secondsFromNow(300)
+    : null;
+  const registration = registrationReconciliationForStatus(localPayment, providerPayment, status);
+  const rawResponse = {
       payment: {
         id: providerPaymentId,
         status: text(providerPayment.status, 40),
         billing_type: text(providerPayment.billingType, 40),
         due_date: text(providerPayment.dueDate, 20),
         external_reference: text(providerPayment.externalReference, 160),
+        chargeback_status: chargebackStatus,
+        completed_refund_cents: refundCents,
       },
       pix: { expiration_date: text(pix.expirationDate, 80) },
-    },
-    updated_at: new Date().toISOString(),
   };
-  const { data, error } = await supabase.from("tournament_payments")
-    .update(update)
-    .eq("id", localPayment.id)
-    .select("*")
-    .single();
-  if (error) throw error;
-  return data as JsonRecord;
+  const applied = await supabase.rpc("apply_tournament_payment_reconciliation", {
+    p_payment_id: localPayment.id,
+    p_expected_status: localPayment.status,
+    p_expected_updated_at: localPayment.updated_at,
+    p_status: status,
+    p_provider_environment: asaasConfig().environment,
+    p_provider_payment_id: providerPaymentId,
+    p_provider_customer_id: nullableText(providerPayment.customer || localPayment.provider_customer_id, 100),
+    p_billing_type: nullableText(providerPayment.billingType || localPayment.billing_type, 40),
+    p_invoice_url: nullableText(providerPayment.invoiceUrl || providerPayment.bankSlipUrl || localPayment.invoice_url, 1000),
+    p_pix_payload: nullableText(pix.payload || localPayment.pix_payload, 4000),
+    p_pix_encoded_image: nullableText(pix.encodedImage || localPayment.pix_encoded_image, 500000),
+    p_pix_expires_at: nullableText(pix.expirationDate || localPayment.pix_expires_at, 80),
+    p_raw_response: rawResponse,
+    p_paid_at: settledAt,
+    p_reconciliation_started_at: reconciliationStartedAt,
+    p_reconciliation_attempts: status === "REVIEW_REQUIRED"
+      ? Number(localPayment.reconciliation_attempts || 0)
+      : 0,
+    p_next_reconciliation_at: nextReconciliationAt,
+    p_registration_status: registration.registrationStatus,
+    p_registration_payment_status: registration.paymentStatus,
+    p_registration_paid_amount: registration.paidAmount,
+    p_confirmed_at: registration.confirmedAt,
+    p_cancelled_at: registration.cancelledAt,
+  });
+  if (applied.error) throw applied.error;
+  const result = record(applied.data);
+  const payment = record(result.payment);
+  if (!payment.id) throw new Error("O resultado da reconciliação da cobrança é inválido.");
+  return payment;
 }
 
 async function repairExistingPixPayment(supabase: DbClient, localPayment: JsonRecord) {
+  localPayment = await ensurePaymentProviderEnvironment(supabase, localPayment);
+  if (text(localPayment.provider_environment, 20).toUpperCase() !== asaasConfig().environment) return localPayment;
   const providerPaymentId = text(localPayment.provider_payment_id, 100);
   if (!providerPaymentId || String(localPayment.billing_type) !== "PIX") return localPayment;
   if (localPayment.pix_payload && localPayment.pix_encoded_image) return localPayment;
@@ -458,25 +891,46 @@ async function createOrRecoverPayment(
   category: JsonRecord,
   additionalCategory: JsonRecord | null,
 ) {
+  localPayment = await ensurePaymentProviderEnvironment(supabase, localPayment);
+  if (text(localPayment.provider_environment, 20).toUpperCase() !== asaasConfig().environment) return localPayment;
   const externalReference = String(localPayment.external_reference);
-  const recovered = await findAsaasPayment(externalReference);
-  if (recovered) return await saveProviderPayment(supabase, localPayment, recovered);
+  let recovered: JsonRecord | null;
+  try {
+    recovered = await findAsaasPayment(externalReference);
+  } catch (error) {
+    if (error instanceof DuplicateProviderPaymentsError) {
+      return await markProviderMismatchForReview(supabase, localPayment, {}, "duplicate_external_reference");
+    }
+    throw error;
+  }
+  if (recovered) {
+    try {
+      return await saveProviderPayment(supabase, localPayment, recovered);
+    } catch (error) {
+      throw new AmbiguousPaymentCreationError(error);
+    }
+  }
 
   const customerId = await ensureAsaasCustomer(supabase, athlete);
-  const providerPayment = await asaasRequest("/payments", {
-    method: "POST",
-    body: JSON.stringify({
-      customer: customerId,
-      billingType: localPayment.billing_type,
-      value: Number(localPayment.amount),
-      dueDate: saoPauloDate(),
-      description: asaasSafeDescription(
-        `Inscrição ${tournament.name} ${category.name}${additionalCategory ? ` ${additionalCategory.name}` : ""}`,
-      ),
-      externalReference,
-    }),
-  });
-  return await saveProviderPayment(supabase, { ...localPayment, provider_customer_id: customerId }, providerPayment);
+  try {
+    const providerPayment = await asaasRequest("/payments", {
+      method: "POST",
+      body: JSON.stringify({
+        customer: customerId,
+        billingType: localPayment.billing_type,
+        value: Number(localPayment.amount),
+        dueDate: saoPauloDate(),
+        description: asaasSafeDescription(
+          `Inscrição ${tournament.name} ${category.name}${additionalCategory ? ` ${additionalCategory.name}` : ""}`,
+        ),
+        externalReference,
+      }),
+    });
+    return await saveProviderPayment(supabase, { ...localPayment, provider_customer_id: customerId }, providerPayment);
+  } catch (error) {
+    if (isAmbiguousProviderFailure(error)) throw new AmbiguousPaymentCreationError(error);
+    throw error;
+  }
 }
 
 function record(value: unknown): JsonRecord {
@@ -536,7 +990,8 @@ async function ensureAsaasFamilyCustomer(supabase: DbClient, group: JsonRecord) 
         email: group.payer_email,
         mobilePhone: group.payer_phone,
         externalReference: `tournament-family:${group.id}`,
-        notificationDisabled: false,
+        // Family fixtures follow the same isolation rule as individual ones.
+        notificationDisabled: asaasConfig().environment === "SANDBOX",
       }),
     });
   }
@@ -557,25 +1012,46 @@ async function createOrRecoverFamilyPayment(
   tournament: JsonRecord,
   athleteCount: number,
 ) {
+  localPayment = await ensurePaymentProviderEnvironment(supabase, localPayment);
+  if (text(localPayment.provider_environment, 20).toUpperCase() !== asaasConfig().environment) return localPayment;
   const externalReference = String(localPayment.external_reference);
-  const recovered = await findAsaasPayment(externalReference);
-  if (recovered) return await saveProviderPayment(supabase, localPayment, recovered);
+  let recovered: JsonRecord | null;
+  try {
+    recovered = await findAsaasPayment(externalReference);
+  } catch (error) {
+    if (error instanceof DuplicateProviderPaymentsError) {
+      return await markProviderMismatchForReview(supabase, localPayment, {}, "duplicate_external_reference");
+    }
+    throw error;
+  }
+  if (recovered) {
+    try {
+      return await saveProviderPayment(supabase, localPayment, recovered);
+    } catch (error) {
+      throw new AmbiguousPaymentCreationError(error);
+    }
+  }
 
   const customerId = await ensureAsaasFamilyCustomer(supabase, group);
-  const providerPayment = await asaasRequest("/payments", {
-    method: "POST",
-    body: JSON.stringify({
-      customer: customerId,
-      billingType: localPayment.billing_type,
-      value: Number(localPayment.amount),
-      dueDate: saoPauloDate(),
-      description: asaasSafeDescription(
-        `Inscrição familiar ${tournament.name} - ${athleteCount} atleta${athleteCount === 1 ? "" : "s"}`,
-      ),
-      externalReference,
-    }),
-  });
-  return await saveProviderPayment(supabase, { ...localPayment, provider_customer_id: customerId }, providerPayment);
+  try {
+    const providerPayment = await asaasRequest("/payments", {
+      method: "POST",
+      body: JSON.stringify({
+        customer: customerId,
+        billingType: localPayment.billing_type,
+        value: Number(localPayment.amount),
+        dueDate: saoPauloDate(),
+        description: asaasSafeDescription(
+          `Inscrição familiar ${tournament.name} - ${athleteCount} atleta${athleteCount === 1 ? "" : "s"}`,
+        ),
+        externalReference,
+      }),
+    });
+    return await saveProviderPayment(supabase, { ...localPayment, provider_customer_id: customerId }, providerPayment);
+  } catch (error) {
+    if (isAmbiguousProviderFailure(error)) throw new AmbiguousPaymentCreationError(error);
+    throw error;
+  }
 }
 
 async function finishFamilyCheckout(
@@ -601,6 +1077,7 @@ async function finishFamilyCheckout(
     ...extra,
   });
   if (amount === 0) return json(request, responseBody(null), 201);
+  const providerEnvironment = asaasConfig().environment;
 
   const paymentLookup = await supabase.from("tournament_payments")
     .select("*")
@@ -615,6 +1092,7 @@ async function finishFamilyCheckout(
       registration_id: primaryRegistrationId,
       registration_group_id: group.id,
       provider: "ASAAS",
+      provider_environment: providerEnvironment,
       external_reference: `tournament-family:${group.id}`,
       billing_type: billingType,
       status: "CREATED",
@@ -634,6 +1112,14 @@ async function finishFamilyCheckout(
     }
   }
   if (!localPayment) throw new Error("Não foi possível preparar a cobrança familiar.");
+  localPayment = await ensurePaymentProviderEnvironment(supabase, localPayment);
+  if (String(localPayment.status) === "REVIEW_REQUIRED" &&
+    text(localPayment.provider_environment, 20).toUpperCase() !== providerEnvironment) {
+    return json(request, responseBody(localPayment, {
+      retryable: false,
+      warning: "A cobrança pertence a outro ambiente do Asaas e precisa de revisão da organização.",
+    }), 202);
+  }
 
   if (localPayment.provider_payment_id) {
     try {
@@ -646,6 +1132,14 @@ async function finishFamilyCheckout(
     }
     return json(request, responseBody(localPayment));
   }
+  if (localPayment.status === "RECONCILING") {
+    localPayment = await reconcileAmbiguousPayment(supabase, localPayment);
+    if (localPayment.provider_payment_id) return json(request, responseBody(localPayment));
+    return json(request, responseBody(localPayment, {
+      retryable: false,
+      warning: "Estamos conferindo a cobrança no Asaas. Não gere outro pagamento; esta tela será liberada assim que a resposta for confirmada.",
+    }), 202);
+  }
   if (!retryablePaymentStatuses.has(String(localPayment.status))) {
     return json(request, responseBody(localPayment));
   }
@@ -656,6 +1150,7 @@ async function finishFamilyCheckout(
         .update({ status: "CREATED", billing_type: billingType, updated_at: new Date().toISOString() })
         .eq("id", localPayment.id)
         .eq("status", localPayment.status)
+        .eq("provider_environment", providerEnvironment)
         .eq("updated_at", localPayment.updated_at)
         .select("*")
         .maybeSingle();
@@ -672,7 +1167,15 @@ async function finishFamilyCheckout(
     }), 409);
   }
 
-  const claimedPayment = localPayment;
+  const providerClaim = await claimProviderPaymentAttempt(supabase, localPayment, billingType);
+  if (!providerClaim) {
+    const latest = await supabase.from("tournament_payments").select("*").eq("id", localPayment.id).single();
+    if (latest.error) throw latest.error;
+    return json(request, responseBody(latest.data as JsonRecord, {
+      error: "A cobrança familiar ainda está sendo preparada. Tente novamente em alguns segundos.",
+    }), 409);
+  }
+  const claimedPayment = providerClaim;
   try {
     localPayment = await createOrRecoverFamilyPayment(
       supabase,
@@ -684,13 +1187,20 @@ async function finishFamilyCheckout(
   } catch (error) {
     const providerError = providerErrorSnapshot(error);
     console.error("tournament-register family provider failure", { stage: "asaas_family_payment", ...providerError });
-    const failed = await supabase.from("tournament_payments").update({
-      status: "FAILED",
-      raw_response: { ...providerError, stage: "asaas_family_payment" },
-      updated_at: new Date().toISOString(),
-    }).eq("id", claimedPayment.id).select("*").single();
-    if (failed.error) throw failed.error;
-    return json(request, responseBody(failed.data as JsonRecord, {
+    if (error instanceof AmbiguousPaymentCreationError) {
+      const reconciling = await deferPaymentReconciliation(supabase, claimedPayment, error);
+      return json(request, responseBody(reconciling, {
+        retryable: false,
+        warning: "O Asaas ainda não confirmou se a cobrança foi criada. Não tente gerar outra: faremos a conferência automaticamente.",
+      }), 202);
+    }
+    const failed = await markClaimedProviderFailure(
+      supabase,
+      claimedPayment,
+      { ...providerError, stage: "asaas_family_payment" },
+    );
+    if (!failed.applied) return json(request, responseBody(failed.payment));
+    return json(request, responseBody(failed.payment, {
       retryable: true,
       warning: "As inscrições foram reservadas, mas a cobrança não ficou pronta. Tente gerar o pagamento novamente.",
     }), 202);
@@ -1230,7 +1740,6 @@ Deno.serve(async (request) => {
     const phone = digits(payload.phone);
     const submittedCpf = digits(payload.cpf);
     const participantType = text(payload.participant_type, 30).toUpperCase();
-    const courtesyToken = text(payload.courtesy_token, 100);
     const gender = text(payload.gender, 20).toUpperCase();
     const availabilityDays = Array.isArray(payload.availability_days)
       ? payload.availability_days.map((day) => text(day, 20).toUpperCase()).filter(Boolean)
@@ -1239,6 +1748,7 @@ Deno.serve(async (request) => {
     const partnerName = nullableText(payload.partner_name, 120);
     const notes = nullableText(payload.notes, 500);
     const billingType = normalizeBillingType(payload.payment_method);
+    const requestToken = text(payload.request_token, 80);
     const trackingToken = text(payload.tracking_token, 80);
     const captchaToken = text(payload.captcha_token, 2048);
     const termsAccepted = payload.terms_accepted === true;
@@ -1246,11 +1756,17 @@ Deno.serve(async (request) => {
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tournamentSlug) || !isUuid(categoryId)) {
       return json(request, { error: "Torneio ou categoria inválidos." }, 400);
     }
+    if (!isUuid(requestToken)) return json(request, { error: "Tentativa de inscrição inválida." }, 400);
     if (fullName.length < 2) return json(request, { error: "Informe seu nome completo." }, 400);
     if (!/^\S+@\S+\.\S+$/.test(email)) return json(request, { error: "Informe um e-mail válido." }, 400);
     if (phone.length < 10 || phone.length > 13) return json(request, { error: "Informe um telefone válido com DDD." }, 400);
     if (submittedCpf && !isValidCpf(submittedCpf)) return json(request, { error: "Informe um CPF válido." }, 400);
     if (!allowedParticipantTypes.has(participantType)) return json(request, { error: "Escolha um tipo de inscrição válido." }, 400);
+    if (participantType === "COURTESY") {
+      return json(request, {
+        error: "Este link de cortesia foi substituído por um convite exclusivo. Solicite um novo convite à organização.",
+      }, 410);
+    }
     if (participantType !== "COURTESY" && !isValidCpf(submittedCpf)) {
       return json(request, { error: "Informe seu CPF para gerar a cobrança da inscrição." }, 400);
     }
@@ -1322,7 +1838,7 @@ Deno.serve(async (request) => {
 
     failureStage = "tournament_lookup";
     const { data: tournament, error: tournamentError } = await supabase.from("tournaments")
-      .select("id,name,slug,status,registration_open,registration_opens_at,registration_closes_at,default_fee,allowed_payment_methods,is_published,courtesy_registration_token,settings")
+      .select("id,name,slug,status,registration_open,registration_opens_at,registration_closes_at,default_fee,allowed_payment_methods,is_published,settings")
       .eq("slug", tournamentSlug)
       .maybeSingle();
     if (tournamentError) throw tournamentError;
@@ -1333,9 +1849,6 @@ Deno.serve(async (request) => {
     if (tournament.status !== "REGISTRATION_OPEN" || !tournament.registration_open ||
       (opensAt && now < opensAt) || (closesAt && now > closesAt)) {
       return json(request, { error: "As inscrições deste torneio estão fechadas." }, 409);
-    }
-    if (participantType === "COURTESY" && (!courtesyToken || courtesyToken !== String(tournament.courtesy_registration_token || ""))) {
-      return json(request, { error: "Este link de inscrição isenta é inválido ou expirou." }, 403);
     }
 
     failureStage = "category_lookup";
@@ -1427,6 +1940,7 @@ Deno.serve(async (request) => {
       ? 0
       : participantAmount;
     const amount = participantType === "COURTESY" ? 0 : baseAmount + additionalFee;
+    const providerEnvironment = asaasConfig().environment;
 
     failureStage = "athlete_upsert";
     const sourceKey = await publicAthleteSourceKey(email, phone);
@@ -1437,6 +1951,8 @@ Deno.serve(async (request) => {
     if (athleteError) throw athleteError;
     let registration: JsonRecord | null = null;
     let additionalRegistration: JsonRecord | null = null;
+    let localPayment: JsonRecord | null = null;
+    let ownsPaymentCreation = false;
     let registrationChecked = false;
     let athleteHasAnyRegistration = false;
     if (athlete) {
@@ -1451,7 +1967,8 @@ Deno.serve(async (request) => {
       registration = existingRegistration.data as JsonRecord | null;
       athleteHasAnyRegistration = Boolean(registration);
       registrationChecked = true;
-      if (registration && (!trackingToken || trackingToken !== String(registration.public_token))) {
+      const ownsByRequestToken = registration && requestToken === String(registration.request_token || "");
+      if (registration && !ownsByRequestToken && (!trackingToken || trackingToken !== String(registration.public_token))) {
         return json(request, { error: "Já existe uma inscrição deste atleta nesta classe. Use o acompanhamento da primeira inscrição." }, 409);
       }
       if (registration) {
@@ -1539,7 +2056,8 @@ Deno.serve(async (request) => {
         .maybeSingle();
       if (registrationResult.error) throw registrationResult.error;
       registration = registrationResult.data as JsonRecord | null;
-      if (registration && (!trackingToken || trackingToken !== String(registration.public_token))) {
+      const ownsByRequestToken = registration && requestToken === String(registration.request_token || "");
+      if (registration && !ownsByRequestToken && (!trackingToken || trackingToken !== String(registration.public_token))) {
         return json(request, { error: "Já existe uma inscrição deste atleta nesta classe. Use o acompanhamento da primeira inscrição." }, 409);
       }
     }
@@ -1561,8 +2079,9 @@ Deno.serve(async (request) => {
       }
     } else {
       failureStage = "registration_capacity";
-      const result = await supabase.rpc("claim_public_tournament_registration_bundle", {
+      const result = await supabase.rpc("claim_public_tournament_registration_checkout", {
         p_tournament_id: tournament.id,
+        p_request_token: requestToken,
         p_primary_category_id: category.id,
         p_additional_category_id: additionalCategory?.id || null,
         p_athlete_id: athlete.id,
@@ -1572,6 +2091,8 @@ Deno.serve(async (request) => {
         p_partner_name: partnerName,
         p_shirt_size: null,
         p_primary_amount: baseAmount,
+        p_billing_type: billingType,
+        p_provider_environment: providerEnvironment,
         p_notes: registrationNotes(participantType, availabilityDays, notes),
       });
       if (result.error?.code === "23505") {
@@ -1584,6 +2105,8 @@ Deno.serve(async (request) => {
       const bundle = (Array.isArray(result.data) ? result.data[0] : result.data) as JsonRecord | null;
       registration = bundle?.registration as JsonRecord | null;
       additionalRegistration = bundle?.additional_registration as JsonRecord | null;
+      localPayment = bundle?.payment as JsonRecord | null;
+      ownsPaymentCreation = bundle?.payment_created === true;
     }
     if (!registration) throw new Error("Não foi possível preparar a inscrição.");
     if (!additionalRegistration) {
@@ -1608,15 +2131,17 @@ Deno.serve(async (request) => {
 
     failureStage = "payment_claim";
     const externalReference = `tournament-registration:${registration.id}`;
-    const paymentResult = await supabase.from("tournament_payments").select("*").eq("registration_id", registration.id).maybeSingle();
-    if (paymentResult.error) throw paymentResult.error;
-    let localPayment = paymentResult.data as JsonRecord | null;
-    let ownsPaymentCreation = false;
+    if (!localPayment) {
+      const paymentResult = await supabase.from("tournament_payments").select("*").eq("registration_id", registration.id).maybeSingle();
+      if (paymentResult.error) throw paymentResult.error;
+      localPayment = paymentResult.data as JsonRecord | null;
+    }
     if (!localPayment) {
       const insert = await supabase.from("tournament_payments").insert({
         tournament_id: tournament.id,
         registration_id: registration.id,
         provider: "ASAAS",
+        provider_environment: providerEnvironment,
         external_reference: externalReference,
         billing_type: billingType,
         status: "CREATED",
@@ -1633,6 +2158,18 @@ Deno.serve(async (request) => {
       }
     }
     if (!localPayment) throw new Error("Não foi possível preparar a cobrança.");
+    localPayment = await ensurePaymentProviderEnvironment(supabase, localPayment);
+    if (String(localPayment.status) === "REVIEW_REQUIRED" &&
+      text(localPayment.provider_environment, 20).toUpperCase() !== providerEnvironment) {
+      return json(request, {
+        registration: safeRegistration(registration),
+        additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
+        payment: safePayment(localPayment),
+        tracking_token: registration.public_token,
+        retryable: false,
+        warning: "A cobrança pertence a outro ambiente do Asaas e precisa de revisão da organização.",
+      }, 202);
+    }
 
     if (localPayment.provider_payment_id) {
       try {
@@ -1650,6 +2187,19 @@ Deno.serve(async (request) => {
         tracking_token: registration.public_token,
       });
     }
+    if (localPayment.status === "RECONCILING") {
+      localPayment = await reconcileAmbiguousPayment(supabase, localPayment);
+      return json(request, {
+        registration: safeRegistration(registration),
+        additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
+        payment: safePayment(localPayment),
+        tracking_token: registration.public_token,
+        retryable: false,
+        warning: localPayment.provider_payment_id
+          ? undefined
+          : "Estamos conferindo a cobrança no Asaas. Não gere outro pagamento; esta tela será liberada assim que a resposta for confirmada.",
+      }, localPayment.provider_payment_id ? 200 : 202);
+    }
     if (!retryablePaymentStatuses.has(String(localPayment.status))) {
       return json(request, {
         registration: safeRegistration(registration),
@@ -1665,6 +2215,7 @@ Deno.serve(async (request) => {
           .update({ status: "CREATED", billing_type: billingType, updated_at: new Date().toISOString() })
           .eq("id", localPayment.id)
           .eq("status", localPayment.status)
+          .eq("provider_environment", providerEnvironment)
           .eq("updated_at", localPayment.updated_at)
           .select("*")
           .maybeSingle();
@@ -1686,23 +2237,53 @@ Deno.serve(async (request) => {
     }
 
     if (!localPayment) throw new Error("Não foi possível assumir a cobrança.");
-    const claimedPayment: JsonRecord = localPayment;
+    const providerClaim = await claimProviderPaymentAttempt(supabase, localPayment, billingType);
+    if (!providerClaim) {
+      const latest = await supabase.from("tournament_payments").select("*").eq("id", localPayment.id).single();
+      if (latest.error) throw latest.error;
+      return json(request, {
+        error: "A cobrança desta inscrição ainda está sendo preparada. Tente novamente em alguns segundos.",
+        registration: safeRegistration(registration),
+        additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
+        payment: safePayment(latest.data as JsonRecord),
+        tracking_token: registration.public_token,
+      }, 409);
+    }
+    const claimedPayment: JsonRecord = providerClaim;
     failureStage = "asaas_payment";
     try {
       localPayment = await createOrRecoverPayment(supabase, claimedPayment, athlete, tournament, category, additionalCategory);
     } catch (error) {
       const providerError = providerErrorSnapshot(error);
       console.error("tournament-register provider failure", { stage: failureStage, ...providerError });
-      const failedPayment = await supabase.from("tournament_payments").update({
-        status: "FAILED",
-        raw_response: { ...providerError, stage: failureStage },
-        updated_at: new Date().toISOString(),
-      }).eq("id", claimedPayment.id).select("*").single();
-      if (failedPayment.error) throw failedPayment.error;
+      if (error instanceof AmbiguousPaymentCreationError) {
+        const reconciling = await deferPaymentReconciliation(supabase, claimedPayment, error);
+        return json(request, {
+          registration: safeRegistration(registration),
+          additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
+          payment: safePayment(reconciling),
+          tracking_token: registration.public_token,
+          retryable: false,
+          warning: "O Asaas ainda não confirmou se a cobrança foi criada. Não tente gerar outra: faremos a conferência automaticamente.",
+        }, 202);
+      }
+      const failedPayment = await markClaimedProviderFailure(
+        supabase,
+        claimedPayment,
+        { ...providerError, stage: failureStage },
+      );
+      if (!failedPayment.applied) {
+        return json(request, {
+          registration: safeRegistration(registration),
+          additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
+          payment: safePayment(failedPayment.payment),
+          tracking_token: registration.public_token,
+        });
+      }
       return json(request, {
         registration: safeRegistration(registration),
         additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
-        payment: safePayment(failedPayment.data as JsonRecord),
+        payment: safePayment(failedPayment.payment),
         tracking_token: registration.public_token,
         retryable: true,
         warning: "Sua inscrição foi salva, mas a cobrança não ficou pronta. Tente gerar o pagamento novamente.",
