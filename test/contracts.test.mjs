@@ -612,6 +612,8 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(functionSource(tournamentSource, 'heroMetaHtml'), /Data do evento[\s\S]*Local[\s\S]*status-pill/);
   assert.match(functionSource(tournamentSource, 'heroMetaHtml'), /club_name','clube','venue','location','local/);
   assert.doesNotMatch(functionSource(tournamentSource, 'heroMetaHtml'), /<small>Inscrições<\/small>/);
+  assert.match(functionSource(tournamentSource, 'statusLabel'), /isRegistrationExplicitlyClosed\(row\)[\s\S]*Inscrições fechadas/);
+  assert.match(functionSource(tournamentSource, 'statusClass'), /isRegistrationExplicitlyClosed\(row\)/);
   assert.match(tournamentSource, /\.meta-pill\.status-open[^}]*rgba\(37,211,102/);
   assert.match(functionSource(tournamentSource, 'aboutHtml'), /about-contact-list[\s\S]*Instagram[\s\S]*wa\.me\/5527999805814[\s\S]*Ilha Tênis — Colatina[\s\S]*about-image[\s\S]*sponsorsHtml\(true\)/);
   assert.match(adminSource, /id="tournamentLogoFile"[^>]*accept="image\/png/);

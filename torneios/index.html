@@ -879,14 +879,19 @@
       }
       return ['REGISTRATION_OPEN','INSCRICOES_ABERTAS','ABERTO','OPEN'].includes(status);
     }
+    function isRegistrationExplicitlyClosed(row) {
+      const explicit = field(row, 'registration_open', 'registrations_open', 'inscricoes_abertas');
+      return explicit !== '' && explicit !== true && String(explicit).toLowerCase() !== 'true';
+    }
     function statusLabel(row) {
       if (isRegistrationOpen(row)) return 'Inscrições abertas';
+      if (isRegistrationExplicitlyClosed(row)) return 'Inscrições fechadas';
       const status = tournamentStatus(row);
       if (['FINISHED','FINALIZADO','ENCERRADO'].includes(status)) return 'Finalizado';
       if (['IN_PROGRESS','EM_ANDAMENTO'].includes(status)) return 'Em andamento';
       return status ? status.replaceAll('_',' ') : 'Em breve';
     }
-    function statusClass(row) { return isRegistrationOpen(row) ? 'open' : (['FINISHED','FINALIZADO','ENCERRADO'].includes(tournamentStatus(row)) ? 'closed' : ''); }
+    function statusClass(row) { return isRegistrationOpen(row) ? 'open' : (isRegistrationExplicitlyClosed(row) || ['FINISHED','FINALIZADO','ENCERRADO'].includes(tournamentStatus(row)) ? 'closed' : ''); }
     function dateValue(value) { const raw = clean(value); if (!raw) return null; const date = new Date(raw.length <= 10 ? raw + 'T12:00:00' : raw); return Number.isNaN(date.getTime()) ? null : date; }
     function formatDate(value, options) { const date = dateValue(value); return date ? date.toLocaleDateString('pt-BR', options || {day:'2-digit',month:'short',year:'numeric'}) : ''; }
     function formatRange(row) {
