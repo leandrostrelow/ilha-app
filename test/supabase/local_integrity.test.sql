@@ -2817,6 +2817,8 @@ select ok(
     select 1
     from public.app_client_notifications as notification
     where notification.event_type = 'TORNEIO_INSCRICAO'
+      and notification.title like 'Nova inscrição · %'
+      and notification.body like 'Inscrição recebida no %'
   )
   and not exists (
     select 1

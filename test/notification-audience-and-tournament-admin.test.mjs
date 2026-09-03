@@ -13,6 +13,15 @@ const migration = await readFile(
   ),
   'utf8'
 );
+const tournamentNotificationMigration = await readFile(
+  path.join(
+    projectRoot,
+    'supabase',
+    'migrations',
+    '20260903170638_add_athlete_name_to_tournament_admin_notification.sql'
+  ),
+  'utf8'
+);
 const broadcast = await readFile(
   path.join(projectRoot, 'supabase', 'functions', 'client-broadcast-push', 'index.ts'),
   'utf8'
@@ -54,8 +63,8 @@ test('leitura do comunicado é protegida no banco pela mesma audiência da fila'
   assert.match(migration, /grant execute on function public\.enqueue_app_client_broadcast[\s\S]*to service_role/i);
 });
 
-test('nova inscrição cria um único aviso mínimo para o ADM e não copia PII', () => {
-  const triggerFunction = migration.match(
+test('nova inscrição identifica o atleta no ADM sem copiar dados sensíveis', () => {
+  const triggerFunction = tournamentNotificationMigration.match(
     /create or replace function public\.notify_club_admins_about_tournament_registration\(\)[\s\S]*?as \$\$([\s\S]*?)\$\$;/i
   );
   assert.ok(triggerFunction, 'trigger de inscrição não encontrado');
@@ -65,7 +74,11 @@ test('nova inscrição cria um único aviso mínimo para o ADM e não copia PII'
   assert.match(triggerFunction[1], /on conflict \(dedupe_key\).*do nothing/is);
   assert.match(triggerFunction[1], /protected_access_accounts/);
   assert.match(triggerFunction[1], /\? 'tournaments'/);
-  assert.doesNotMatch(triggerFunction[1], /new\.(?:public_name|email|phone|cpf)|tournament_athletes/i);
+  assert.match(triggerFunction[1], /new\.public_name/);
+  assert.match(triggerFunction[1], /'Nova inscrição · ' \|\| athlete_name/);
+  assert.doesNotMatch(triggerFunction[1], /new\.(?:email|phone|cpf)|tournament_athletes/i);
+  assert.match(tournamentNotificationMigration, /update public\.app_client_notifications[\s\S]*resolved\.athlete_name/i);
+  assert.doesNotMatch(tournamentNotificationMigration, /payer_(?:email|phone|cpf)/i);
   assert.match(migration, /after insert on public\.tournament_registrations/i);
 });
 
