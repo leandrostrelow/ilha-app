@@ -2130,6 +2130,14 @@ test('pagina publica iguala os modos de inscricao e repete o CTA nos pontos prin
   assert.match(functionSource(tournamentSource, 'aboutHtml'), /publicRegistrationCtaHtml\(\)[\s\S]*contacts/);
 });
 
+test('lista pública de inscritos usa duas linhas sem avatar e destaca confirmados', () => {
+  const registrationRows = functionSource(tournamentSource, 'registrationRowsHtml');
+  assert.match(registrationRows, /registration-row-title/);
+  assert.match(registrationRows, /waitlist \? 'waitlist' : 'confirmed'/);
+  assert.doesNotMatch(registrationRows, /class="avatar"|initials\(registrationName/);
+  assert.match(tournamentSource, /\.registration-status\.confirmed[\s\S]*background: #e4f7e8[\s\S]*color: #176d2b/);
+});
+
 test('deadline das superficies publicas aborta uma conexao que nunca responde', async () => {
   const neverResponds = (_url, options) => new Promise((_resolve, reject) => {
     options.signal.addEventListener('abort', () => {
