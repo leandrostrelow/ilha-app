@@ -780,6 +780,7 @@
     const TOURNAMENT_PUSH_FUNCTION = 'tournament-public-push';
     const TOURNAMENT_PUSH_VAPID_KEY = 'BJtga8GuviTBc3mzDwBkr0kKw-kV02hVSwu6DjgZgSgAhFuvPZNj88WfTwyV7mXgJJnxKD5ZiJCRW8nv7ndx-RU';
     const TOURNAMENT_PUSH_TOKEN_KEY = 'ilha-open-2026:push-token';
+    const TOURNAMENT_PUSH_REGISTERED_KEY = 'ilha-open-2026:push-registered';
     const routeParts = location.pathname.split('/').filter(Boolean);
     const courtesySegmentIndex = routeParts.indexOf('cortesia');
     const inviteSegmentIndex = routeParts.indexOf('convite');
@@ -1410,6 +1411,14 @@
       return token;
     }
 
+    function tournamentPushRegistered() {
+      try { return localStorage.getItem(TOURNAMENT_PUSH_REGISTERED_KEY) === '1'; } catch (error) { return false; }
+    }
+
+    function markTournamentPushRegistered() {
+      try { localStorage.setItem(TOURNAMENT_PUSH_REGISTERED_KEY,'1'); } catch (error) {}
+    }
+
     function tournamentUrlBase64ToBytes(value) {
       const padding = '='.repeat((4 - value.length % 4) % 4);
       const raw = atob((value + padding).replace(/-/g,'+').replace(/_/g,'/'));
@@ -1477,6 +1486,7 @@
         let subscription = await registration.pushManager.getSubscription();
         if (!subscription) subscription = await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:tournamentUrlBase64ToBytes(TOURNAMENT_PUSH_VAPID_KEY)});
         await saveTournamentPushSubscription(subscription);
+        markTournamentPushRegistered();
         state.tournamentNotificationsEnabled = true;
         await registration.showNotification('Notificações ativadas!',{body:'Você receberá os avisos do Ilha Open 2026 por aqui.',icon:'/icons/ilha-open-192.png',badge:'/icons/ilha-open-192.png',tag:'ilha-open-2026-ativado',data:{url:publicUrl(state.slug)}});
         if (status) status.textContent = 'Notificações ativadas neste aparelho.';
@@ -1524,7 +1534,7 @@
       let subscribed = state.tournamentNotificationsEnabled;
       try {
         const registration = await navigator.serviceWorker.getRegistration('/torneios/');
-        subscribed = Boolean(registration && await registration.pushManager.getSubscription() && tournamentPushToken());
+        subscribed = Boolean(registration && await registration.pushManager.getSubscription() && tournamentPushRegistered());
       } catch (error) {}
       state.tournamentNotificationsEnabled = subscribed && Notification.permission === 'granted';
       notificationButton.disabled = Notification.permission === 'denied';
