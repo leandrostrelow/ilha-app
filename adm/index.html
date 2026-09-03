@@ -3650,7 +3650,7 @@
 
     .tabs {
       display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-columns: repeat(8, minmax(0, 1fr));
       gap: 7px;
     }
 
@@ -3688,6 +3688,65 @@
       padding: 12px;
       box-shadow: var(--shadow);
     }
+
+    .tournament-link-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .tournament-link-card {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #f8fbfc;
+    }
+
+    .tournament-link-card h3,
+    .tournament-link-card p { margin: 0; }
+
+    .tournament-link-card p {
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .tournament-link-kind {
+      width: fit-content;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: #e4f7ee;
+      color: #087447;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .tournament-link-kind.private {
+      background: #fff2cf;
+      color: #875c00;
+    }
+
+    .tournament-link-address {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #ffffff;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .tournament-link-card .actions { margin-top: auto; }
 
     .span-3 { grid-column: span 3; }
     .span-4 { grid-column: span 4; }
@@ -9783,6 +9842,7 @@
         padding: 8px 12px;
       }
       .span-3, .span-4, .span-5, .span-6, .span-7, .span-8, .span-12 { grid-column: span 12; }
+      .tournament-link-grid { grid-template-columns: 1fr; }
       .form-grid { grid-template-columns: 1fr; }
       .metric strong { font-size: 24px; }
       .agenda-list { grid-template-columns: repeat(2, minmax(280px, 1fr)); }
@@ -22008,9 +22068,6 @@
         <div class="top-actions">
           <select class="tournament-switcher" id="tournamentPicker" aria-label="Selecionar torneio"></select>
           <button class="primary-btn" type="button" id="newTournamentBtn">Criar torneio</button>
-          <a class="obs-link" id="registrationTournamentLink" href="../inscricoes/ilha-open-2026-teste" target="_blank" rel="noopener">Link de inscrições</a>
-          <button class="obs-link invite-trigger" id="registrationInviteBtn" type="button">Gerar convite</button>
-          <a class="obs-link" id="publicTournamentLink" href="../torneios/ilha-open-2026-teste" target="_blank" rel="noopener">Página pública</a>
           <div class="status" id="syncStatus">Sincronizando...</div>
         </div>
       </div>
@@ -22018,6 +22075,7 @@
         <button class="tab-btn active" type="button" data-tab="brackets">Chaves</button>
         <button class="tab-btn" type="button" data-tab="players">Jogadores</button>
         <button class="tab-btn" type="button" data-tab="invitations">Convites</button>
+        <button class="tab-btn" type="button" data-tab="links">Links</button>
         <button class="tab-btn" type="button" data-tab="schedule">Agenda</button>
         <button class="tab-btn" type="button" data-tab="results">Resultados</button>
         <button class="tab-btn" type="button" data-tab="settings">Torneio</button>
@@ -22068,6 +22126,69 @@
             </select>
           </div>
           <div class="tournament-history-list" id="tournamentRegistrationHistory"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="links">
+      <div class="card">
+        <div class="card-title">
+          <div>
+            <h2>Links do torneio</h2>
+            <div class="muted">Acesse e copie todos os endereços do torneio em um só lugar.</div>
+          </div>
+        </div>
+        <div class="tournament-link-grid">
+          <article class="tournament-link-card">
+            <span class="tournament-link-kind">Público</span>
+            <div>
+              <h3>Inscrição principal</h3>
+              <p>Link para novas inscrições e pagamento normal via Pix.</p>
+            </div>
+            <div class="tournament-link-address" id="registrationTournamentLinkText" aria-live="polite"></div>
+            <div class="actions">
+              <a class="primary-btn" id="registrationTournamentLink" href="../inscricoes/ilha-open-2026-teste" target="_blank" rel="noopener">Abrir inscrição</a>
+              <button class="ghost-btn" type="button" data-copy-tournament-link="registrationTournamentLink">Copiar link</button>
+            </div>
+          </article>
+
+          <article class="tournament-link-card">
+            <span class="tournament-link-kind private">Privado</span>
+            <div>
+              <h3>Adicionar Classe Espacial</h3>
+              <p>Envie somente para quem já está inscrito e pediu para adicionar a Espacial A ou B por R$ 80,00.</p>
+            </div>
+            <div class="tournament-link-address" id="spatialTournamentLinkText" aria-live="polite"></div>
+            <div class="actions">
+              <a class="primary-btn" id="spatialTournamentLink" href="../inscricoes/ilha-open-2026-teste/espacial" target="_blank" rel="noopener">Abrir Classe Espacial</a>
+              <button class="ghost-btn" type="button" data-copy-tournament-link="spatialTournamentLink">Copiar link</button>
+            </div>
+          </article>
+
+          <article class="tournament-link-card">
+            <span class="tournament-link-kind">Público</span>
+            <div>
+              <h3>Página do torneio</h3>
+              <p>Página com classes, informações do evento, inscritos e resultados publicados.</p>
+            </div>
+            <div class="tournament-link-address" id="publicTournamentLinkText" aria-live="polite"></div>
+            <div class="actions">
+              <a class="primary-btn" id="publicTournamentLink" href="../torneios/ilha-open-2026-teste" target="_blank" rel="noopener">Abrir página</a>
+              <button class="ghost-btn" type="button" data-copy-tournament-link="publicTournamentLink">Copiar link</button>
+            </div>
+          </article>
+
+          <article class="tournament-link-card">
+            <span class="tournament-link-kind private">Uso único</span>
+            <div>
+              <h3>Convites isentos</h3>
+              <p>Gere convites individuais, acompanhe quem usou e baixe a arte personalizada.</p>
+            </div>
+            <div class="actions">
+              <button class="primary-btn invite-trigger" id="registrationInviteBtn" type="button">Gerar convite</button>
+              <button class="ghost-btn" type="button" data-tab-go="invitations">Gerenciar convites</button>
+            </div>
+          </article>
         </div>
       </div>
     </section>
@@ -23075,13 +23196,33 @@
       const slug = state.data.torneio.slug || '';
       const publicLink = $('publicTournamentLink');
       const registrationLink = $('registrationTournamentLink');
+      const spatialLink = $('spatialTournamentLink');
       if (publicLink) {
         publicLink.href = slug ? '../torneios/' + encodeURIComponent(slug) : '../torneios';
         publicLink.hidden = !slug;
+        $('publicTournamentLinkText').textContent = slug ? new URL(publicLink.href, location.href).href : 'Torneio sem endereço público.';
       }
       if (registrationLink) {
         registrationLink.href = slug ? '../inscricoes/' + encodeURIComponent(slug) : '../torneios';
         registrationLink.hidden = !slug;
+        $('registrationTournamentLinkText').textContent = slug ? new URL(registrationLink.href, location.href).href : 'Torneio sem endereço de inscrição.';
+      }
+      if (spatialLink) {
+        spatialLink.href = slug ? '../inscricoes/' + encodeURIComponent(slug) + '/espacial' : '../torneios';
+        spatialLink.hidden = !slug;
+        $('spatialTournamentLinkText').textContent = slug ? new URL(spatialLink.href, location.href).href : 'Torneio sem endereço da Classe Espacial.';
+      }
+    }
+
+    async function copyTournamentLink(linkId) {
+      const link = $(linkId);
+      if (!link || link.hidden) return toast('Este torneio ainda não possui esse link.');
+      const value = new URL(link.href, location.href).href;
+      try {
+        await navigator.clipboard.writeText(value);
+        toast('Link copiado.');
+      } catch (error) {
+        window.prompt('Copie o link:', value);
       }
     }
 
@@ -44105,6 +44246,9 @@
     });
     document.querySelectorAll('[data-tab-go]').forEach(function (btn) {
       btn.addEventListener('click', function () { showTab(btn.dataset.tabGo); });
+    });
+    document.querySelectorAll('[data-copy-tournament-link]').forEach(function (btn) {
+      btn.addEventListener('click', function () { copyTournamentLink(btn.dataset.copyTournamentLink); });
     });
     document.addEventListener('change', function (event) {
       const resultCheckbox = event.target.closest('[data-result-match]');
