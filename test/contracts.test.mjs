@@ -1063,6 +1063,18 @@ test('inscrição familiar reúne menores e adultos em um único Pix sem usar o 
   );
 });
 
+test('aceite do convite menciona responsabilidade apenas quando existe menor', () => {
+  const consent = functionSource(tournamentSource, 'updateFamilyRegistrationConsent');
+  assert.match(consent, /athletes\.some\(\(athlete\) => athlete\.isMinor\)/);
+  assert.match(consent, /if \(hasMinor\)[\s\S]*sou responsável pelos menores informados/);
+  assert.match(consent, /singleAdultPayer[\s\S]*meus dados estão corretos e autorizo minha inscrição pelo convite/);
+  assert.match(consent, /athleteLabel[\s\S]*registrationLabel/);
+  assert.match(functionSource(tournamentSource, 'updateFamilyRegistrationSummary'), /updateFamilyRegistrationConsent\(rows\)/);
+  const submit = functionSource(tournamentSource, 'submitFamilyRegistration');
+  assert.match(submit, /const hasMinor = athletes\.some\(\(athlete\) => athlete\.isMinor\)/);
+  assert.match(submit, /hasMinor[\s\S]*Confirme a responsabilidade[\s\S]*Confirme os dados e a autorização/);
+});
+
 test('convite isento é único, limitado e consumido atomicamente com a inscrição', () => {
   assert.match(adminSource, /id="registrationInviteBtn"[^>]*>Gerar convite</);
   assert.doesNotMatch(adminSource, /id="courtesyTournamentLink"/);
