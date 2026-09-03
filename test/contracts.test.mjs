@@ -2625,6 +2625,14 @@ test('servidor local reproduz rotas limpas publicadas', () => {
 
 test('build de produção inclui as regras de rotas limpas da Vercel', () => {
   assert.match(vercelConfigSource, /"outputDirectory"\s*:\s*"dist"/);
+  assert.match(
+    vercelConfigSource,
+    /"source"\s*:\s*"\/inscricoes\/:slug\/espacial"\s*,\s*"destination"\s*:\s*"\/inscricoes\/espacial"/,
+  );
+  assert.doesNotMatch(
+    vercelConfigSource,
+    /"source"\s*:\s*"\/inscricoes\/:slug\/espacial"[\s\S]*?"destination"\s*:\s*"\/inscricoes\/espacial\/index\.html"/,
+  );
   assert.match(productionBuildSource, /developmentRootFiles\s*=\s*new Set\(\['package\.json'\]\)/);
   assert.doesNotMatch(productionBuildSource, /new Set\(\['package\.json',\s*'vercel\.json'\]\)/);
 });
