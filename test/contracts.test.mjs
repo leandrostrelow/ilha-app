@@ -1560,6 +1560,24 @@ test('Clientes do Bar preservam pessoas diferentes que compartilham telefone', (
   assert.equal(result.find((customer) => customer.name === 'Leandro Strelow').commandCount, 1);
 });
 
+test('divisao por itens do Bar nunca cria pessoas com valor zero por falta de unidades', () => {
+  const usesQuantity = loadFunction(adminSource, 'barCheckoutGroupUsesQuantity');
+  const initialAllocation = loadFunction(adminSource, 'barCheckoutInitialGroupAllocation', {
+    barCheckoutGroupUsesQuantity: usesQuantity
+  });
+
+  assert.equal(usesQuantity({ quantity: 2, unitPrice: 10 }, 3), false);
+  assert.deepEqual(
+    Array.from(initialAllocation({ quantity: 2, unitPrice: 10 }, 3)),
+    [667, 667, 666]
+  );
+  assert.equal(usesQuantity({ quantity: 5, unitPrice: 10 }, 3), true);
+  assert.deepEqual(
+    Array.from(initialAllocation({ quantity: 5, unitPrice: 10 }, 3)),
+    [2000, 2000, 1000]
+  );
+});
+
 test('ADM Bar carrega a operacao primeiro e deixa o historico fora do polling', () => {
   const snapshot = functionSource(adminSource, 'fetchBarOperationalSnapshot');
   const loadData = functionSource(adminSource, 'loadBarData');
