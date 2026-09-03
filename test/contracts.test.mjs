@@ -892,7 +892,9 @@ test('adicional privado da Espacial cria checkout standalone, idempotente e isol
   assert.doesNotMatch(spatialCandidates, /\.eq\(["'](?:cpf|payer_cpf)["'],\s*cpf\)/);
   assert.doesNotMatch(spatialProofCreation, /sha256Hex\(cpf\)/);
   assert.match(spatialProofCreation, /hmacSha256\(config\.rateLimitSalt, `spatial-addon-proof-cpf:\$\{cpf\}`\)/);
+  assert.match(spatialProofCreation, /primaryCategoryId[\s\S]*spatialCategoryId[\s\S]*p:\s*primaryCategoryId[\s\S]*x:\s*spatialCategoryId/);
   assert.match(spatialProofVerification, /secureStringEquals\(parsed\.c, expectedCpfBinding\)/);
+  assert.match(spatialProofVerification, /isUuid\(parsed\.p\)[\s\S]*isUuid\(parsed\.x\)/);
   assert.match(spatialCandidates, /\[\.\.\.registrations\]\.reverse\(\)\.find/);
   assert.match(
     spatialCheckout,
@@ -903,6 +905,10 @@ test('adicional privado da Espacial cria checkout standalone, idempotente e isol
     /!activePaymentReservation\(localPayment\)[\s\S]*status =?[^\n]*410|!activePaymentReservation\(localPayment\)[\s\S]*}, 410\)/,
   );
   assert.match(spatialCheckout, /candidate\.state === "REVIEW_REQUIRED"[\s\S]*precisa de revisão da organização/);
+  assert.match(
+    spatialCheckout,
+    /String\(item\.primaryCategory\.id\) === verifiedProof\.p[\s\S]*String\(item\.spatialCategory\.id\) === verifiedProof\.x/,
+  );
   assert.match(spatialCheckout, /candidate\.state === "PAYMENT_PENDING"[\s\S]*resume_private_tournament_spatial_addon_checkout[\s\S]*else \{[\s\S]*claim_private_tournament_spatial_addon_checkout/);
   assert.match(
     functionSource(tournamentRegisterSource, 'handleSpatialLookup'),

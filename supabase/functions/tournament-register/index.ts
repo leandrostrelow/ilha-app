@@ -198,6 +198,8 @@ type SpatialCandidateProof = {
   s: string;
   a: string;
   r: string;
+  p: string;
+  x: string;
   c: string;
   e: number;
 };
@@ -208,12 +210,16 @@ async function createSpatialCandidateProof(
   cpf: string,
   athleteId: string,
   primaryRegistrationId: string,
+  primaryCategoryId: string,
+  spatialCategoryId: string,
 ) {
   const proof: SpatialCandidateProof = {
     v: 1,
     s: tournamentSlug,
     a: athleteId,
     r: primaryRegistrationId,
+    p: primaryCategoryId,
+    x: spatialCategoryId,
     c: await hmacSha256(config.rateLimitSalt, `spatial-addon-proof-cpf:${cpf}`),
     e: Date.now() + 15 * 60 * 1000,
   };
@@ -242,6 +248,7 @@ async function verifySpatialCandidateProof(
   }
   const expectedCpfBinding = await hmacSha256(config.rateLimitSalt, `spatial-addon-proof-cpf:${cpf}`);
   if (parsed.v !== 1 || parsed.s !== tournamentSlug || !isUuid(parsed.a) || !isUuid(parsed.r) ||
+    !isUuid(parsed.p) || !isUuid(parsed.x) ||
     !/^[0-9a-f]{64}$/.test(parsed.c) || !secureStringEquals(parsed.c, expectedCpfBinding) ||
     !Number.isFinite(parsed.e) || parsed.e < Date.now() ||
     parsed.e > Date.now() + 16 * 60 * 1000) return null;
@@ -2537,6 +2544,8 @@ async function handleSpatialLookup(
         cpf,
         String(candidate.athlete.id),
         String(candidate.primaryRegistration.id),
+        String(candidate.primaryCategory.id),
+        String(candidate.spatialCategory.id),
       )
       : null;
     safeCandidates.push(safeSpatialCandidate(candidate, proof));
@@ -2594,7 +2603,10 @@ async function handleSpatialCheckout(
   }
   const candidates = await loadSpatialAddonCandidates(supabase, tournament, cpf);
   const candidate = candidates.find((item) =>
-    String(item.athlete.id) === verifiedProof.a && String(item.primaryRegistration.id) === verifiedProof.r
+    String(item.athlete.id) === verifiedProof.a &&
+    String(item.primaryRegistration.id) === verifiedProof.r &&
+    String(item.primaryCategory.id) === verifiedProof.p &&
+    String(item.spatialCategory.id) === verifiedProof.x
   );
   if (!candidate) {
     return json(request, { error: "Esta inscrição deixou de ser elegível. Fale com a organização." }, 409);
