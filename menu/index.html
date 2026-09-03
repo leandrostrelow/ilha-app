@@ -1080,6 +1080,13 @@
       place-items: center;
       overflow: hidden;
       background: #000000;
+      opacity: 0;
+      transition: opacity .65s ease;
+      will-change: opacity;
+    }
+
+    .menu-event-art.is-visible {
+      opacity: 1;
     }
 
     .menu-event-art[hidden] {
@@ -1096,6 +1103,13 @@
       display: block;
       object-fit: contain;
       background: #000000;
+      opacity: 1;
+      transition: opacity .65s ease;
+      will-change: opacity;
+    }
+
+    .menu-event-art img.is-fading {
+      opacity: 0;
     }
 
     @media (min-width: 720px) and (orientation: landscape) {
@@ -1221,6 +1235,7 @@
       const EVENT_ART_QUERY = 'bar_tv_event_art?select=image_url,slides,menu_duration_seconds,updated_at&id=eq.true&active=eq.true&limit=1';
       const MENU_REFRESH_INTERVAL = 15000;
       const MENU_REQUEST_TIMEOUT_MS = 12000;
+      const EVENT_ART_FADE_MS = 650;
       const APP_SYNC_CHANNEL = 'ilha-app-sync-v1';
       const APP_SYNC_STORAGE_KEY = 'ilha-app:last-change';
       const appSyncSource = Math.random().toString(36).slice(2);
@@ -1240,6 +1255,8 @@
       let menuSlideDurationSeconds = 10;
       let eventSlideshowIndex = 0;
       let eventSlideshowTimer = 0;
+      let eventSlideshowTransitionTimer = 0;
+      let eventSlideshowTransitionEpoch = 0;
       let lastEventSlideshowPayload = '';
       let eventArtOpenedFullscreen = false;
 
@@ -1585,22 +1602,40 @@
         const nextPayload = JSON.stringify([menuSlideDurationSeconds, currentEventSlides]);
         if (nextPayload !== lastEventSlideshowPayload) {
           lastEventSlideshowPayload = nextPayload;
+          currentEventSlides.forEach(function (slide) {
+            const preload = new Image();
+            preload.src = slide.imageUrl;
+          });
           startEventSlideshow();
         }
+      }
+
+      function eventSlideshowDelayMs(seconds) {
+        return Math.max(3, Number(seconds || 10)) * 1000;
       }
 
       function scheduleEventSlideshow(seconds) {
         clearTimeout(eventSlideshowTimer);
         if (!currentEventSlides.length || document.hidden) return;
-        eventSlideshowTimer = setTimeout(showNextEventSlideshowItem, Math.max(3, Number(seconds || 10)) * 1000);
+        eventSlideshowTimer = setTimeout(showNextEventSlideshowItem, eventSlideshowDelayMs(seconds));
       }
 
       function showMenuSlideshowItem() {
         const overlay = document.getElementById('menuEventArt');
-        overlay.hidden = true;
+        const image = document.getElementById('menuEventArtImage');
+        const transitionEpoch = ++eventSlideshowTransitionEpoch;
+        clearTimeout(eventSlideshowTransitionTimer);
+        overlay.classList.remove('is-visible');
+        image.classList.add('is-fading');
         document.body.classList.remove('is-event-art-open');
-        document.getElementById('menuEventArtImage').removeAttribute('src');
-        scheduleEventSlideshow(menuSlideDurationSeconds);
+        const finish = function () {
+          if (transitionEpoch !== eventSlideshowTransitionEpoch) return;
+          overlay.hidden = true;
+          image.removeAttribute('src');
+          scheduleEventSlideshow(menuSlideDurationSeconds);
+        };
+        if (overlay.hidden) finish();
+        else eventSlideshowTransitionTimer = setTimeout(finish, EVENT_ART_FADE_MS);
       }
 
       function showNextEventSlideshowItem() {
@@ -1614,6 +1649,7 @@
 
       function startEventSlideshow() {
         clearTimeout(eventSlideshowTimer);
+        clearTimeout(eventSlideshowTransitionTimer);
         eventSlideshowIndex = 0;
         showMenuSlideshowItem();
       }
@@ -1621,10 +1657,37 @@
       function showEventArtSlide(slide) {
         if (!slide || !slide.imageUrl) return showMenuSlideshowItem();
         const overlay = document.getElementById('menuEventArt');
-        document.getElementById('menuEventArtImage').src = slide.imageUrl;
-        overlay.hidden = false;
-        document.body.classList.add('is-event-art-open');
-        scheduleEventSlideshow(slide.durationSeconds);
+        const image = document.getElementById('menuEventArtImage');
+        const transitionEpoch = ++eventSlideshowTransitionEpoch;
+        const wasVisible = !overlay.hidden && overlay.classList.contains('is-visible');
+        clearTimeout(eventSlideshowTimer);
+        clearTimeout(eventSlideshowTransitionTimer);
+        image.classList.add('is-fading');
+
+        const swapImage = function () {
+          if (transitionEpoch !== eventSlideshowTransitionEpoch) return;
+          let revealed = false;
+          const reveal = function () {
+            if (revealed || transitionEpoch !== eventSlideshowTransitionEpoch) return;
+            revealed = true;
+            overlay.hidden = false;
+            document.body.classList.add('is-event-art-open');
+            requestAnimationFrame(function () {
+              if (transitionEpoch !== eventSlideshowTransitionEpoch) return;
+              overlay.classList.add('is-visible');
+              image.classList.remove('is-fading');
+            });
+            eventSlideshowTransitionTimer = setTimeout(function () {
+              if (transitionEpoch === eventSlideshowTransitionEpoch) scheduleEventSlideshow(slide.durationSeconds);
+            }, EVENT_ART_FADE_MS);
+          };
+          image.addEventListener('load', reveal, { once: true });
+          image.src = slide.imageUrl;
+          if (image.complete && image.naturalWidth > 0) Promise.resolve().then(reveal);
+        };
+
+        if (wasVisible) eventSlideshowTransitionTimer = setTimeout(swapImage, EVENT_ART_FADE_MS);
+        else swapImage();
       }
 
       async function openEventArt() {

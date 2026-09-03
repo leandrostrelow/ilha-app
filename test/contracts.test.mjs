@@ -1684,7 +1684,15 @@ test('TV do Bar alterna o cardapio com ate cinco imagens e tempo individual', ()
   assert.match(functionSource(adminSource, 'saveBarTvEventArt'), /slides:\s*savedArt\.slides\.map/);
   assert.match(functionSource(menuSource, 'startEventSlideshow'), /eventSlideshowIndex = 0[\s\S]*showMenuSlideshowItem/);
   assert.match(functionSource(menuSource, 'showNextEventSlideshowItem'), /currentEventSlides\.length \+ 1[\s\S]*showMenuSlideshowItem/);
-  assert.match(functionSource(menuSource, 'showEventArtSlide'), /scheduleEventSlideshow\(slide\.durationSeconds\)/);
+  const slideshowDelay = loadFunction(menuSource, 'eventSlideshowDelayMs');
+  assert.equal(slideshowDelay(10), 10000);
+  assert.equal(slideshowDelay(1), 3000);
+  assert.match(menuSource, /\.menu-event-art \{[\s\S]*transition: opacity \.65s ease/);
+  assert.match(menuSource, /\.menu-event-art img\.is-fading \{[\s\S]*opacity: 0/);
+  assert.match(functionSource(menuSource, 'loadEventArt'), /new Image\(\)[\s\S]*preload\.src = slide\.imageUrl/);
+  const showSlide = functionSource(menuSource, 'showEventArtSlide');
+  assert.match(showSlide, /addEventListener\('load', reveal/);
+  assert.match(showSlide, /scheduleEventSlideshow\(slide\.durationSeconds\)/);
 });
 
 test('pagina publica iguala os modos de inscricao e repete o CTA nos pontos principais', () => {
