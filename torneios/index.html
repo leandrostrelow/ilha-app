@@ -38,6 +38,8 @@
       --good: #208f55;
       --shadow: 0 16px 40px rgba(10, 52, 64, .10);
       --radius: 24px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
 
     * { box-sizing: border-box; }
@@ -77,6 +79,9 @@
       position: sticky;
       top: 0;
       z-index: 30;
+      padding-top: var(--safe-top);
+      padding-left: env(safe-area-inset-left, 0px);
+      padding-right: env(safe-area-inset-right, 0px);
       border-bottom: 1px solid rgba(216,228,231,.82);
       background: rgba(255,255,255,.91);
       backdrop-filter: blur(18px);
@@ -240,7 +245,7 @@
 
     .event-nav {
       position: sticky;
-      top: 76px;
+      top: calc(76px + var(--safe-top));
       z-index: 20;
       margin: 18px 0;
       display: flex;
@@ -392,10 +397,10 @@
     .error-card h2 { margin: 0; }
     .error-card p { color: var(--muted); line-height: 1.5; }
 
-    .modal-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 24px; background: rgba(4,28,34,.68); backdrop-filter: blur(7px); }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: calc(24px + var(--safe-top)) max(24px, env(safe-area-inset-right, 0px)) calc(24px + var(--safe-bottom)) max(24px, env(safe-area-inset-left, 0px)); background: rgba(4,28,34,.68); backdrop-filter: blur(7px); }
     .modal {
       width: min(780px,100%);
-      max-height: calc(100dvh - 48px);
+      max-height: calc(100dvh - 48px - var(--safe-top) - var(--safe-bottom));
       display: grid;
       grid-template-rows: auto minmax(0,1fr) auto;
       overflow: hidden;
@@ -601,7 +606,7 @@
       .hero-meta .meta-date { grid-column: 1 / -1; }
       .meta-pill { min-height: 50px; border-radius: 13px; padding: 7px 9px; }
       .meta-pill strong { font-size: 11px; }
-      .event-nav { top: 66px; margin: 10px 0; border-radius: 15px; }
+      .event-nav { top: calc(66px + var(--safe-top)); margin: 10px 0; border-radius: 15px; }
       .event-nav button { min-height: 38px; padding: 8px 11px; font-size: 12px; }
       .tournament-grid, .category-grid, .loading-grid { grid-template-columns: 1fr; }
       .category-grid { gap: 8px; }
@@ -638,8 +643,8 @@
       .result-player:last-child { text-align: center; }
       .score-pill { justify-self: center; }
       .sponsor-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
-      .modal-backdrop { place-items: center; padding: 10px; }
-      .modal { max-height: calc(100dvh - 20px); border-radius: 22px; }
+      .modal-backdrop { place-items: center; padding: calc(10px + var(--safe-top)) max(10px, env(safe-area-inset-right, 0px)) calc(10px + var(--safe-bottom)) max(10px, env(safe-area-inset-left, 0px)); }
+      .modal { max-height: calc(100dvh - 20px - var(--safe-top) - var(--safe-bottom)); border-radius: 22px; }
       .modal-head, .modal-body { padding-left: 17px; padding-right: 17px; }
       .modal-foot { padding-left: 17px; padding-right: 17px; }
       .form-grid, .category-checks { grid-template-columns: 1fr; }
@@ -674,7 +679,7 @@
 <body>
   <header class="site-head">
     <div class="site-head-inner">
-      <a class="brand-link" href="/torneios" aria-label="Torneios Ilha Tênis"><img src="/logo.png" alt="Ilha Tênis" /></a>
+      <div class="brand-link"><img src="/logo.png" alt="Ilha Tênis" /></div>
       <div class="head-actions" id="tournamentHeadActions" hidden>
         <a class="button head-sponsor" href="https://wa.me/5527999805814?text=Ol%C3%A1%21%20Quero%20saber%20mais%20sobre%20as%20oportunidades%20de%20patroc%C3%ADnio%20do%20torneio%20Ilha%20Open%202026." target="_blank" rel="noopener" aria-label="Falar pelo WhatsApp para patrocinar o torneio"><span aria-hidden="true">💬</span><span class="desktop-label">Seja um patrocinador</span><span class="mobile-label">Patrocinar</span></a>
         <button class="button lime" id="headRegisterBtn" type="button"><span class="desktop-label">Fazer inscrição</span><span class="mobile-label">Inscreva-se</span></button>
@@ -1653,7 +1658,9 @@
       if (tab === 'categories') url.searchParams.delete('tab'); else url.searchParams.set('tab',tab);
       history.replaceState(null,'',url.pathname + url.search + url.hash);
       if (tab === 'install') updateTournamentPwaUi().catch(() => {});
-      const nav = document.querySelector('.event-nav'); if (nav) window.scrollTo({top:Math.max(0,nav.offsetTop-86),behavior:'smooth'});
+      const nav = document.querySelector('.event-nav');
+      const headHeight = document.querySelector('.site-head')?.getBoundingClientRect().height || 0;
+      if (nav) window.scrollTo({top:Math.max(0,nav.offsetTop-headHeight-10),behavior:'smooth'});
     }
 
     function formatPhone(value) {
