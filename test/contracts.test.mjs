@@ -229,6 +229,10 @@ const barTvVideoMediaMigrationSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260903135849_add_bar_tv_video_media.sql'),
   'utf8'
 );
+const barTvPortableValidatorMigrationSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260903140805_make_bar_tv_media_validator_environment_safe.sql'),
+  'utf8'
+);
 const securityOperationsSource = await readFile(path.join(projectRoot, 'SECURITY_OPERATIONS.md'), 'utf8');
 const gitignoreSource = await readFile(path.join(projectRoot, '.gitignore'), 'utf8');
 const sqlFiles = (await readdir(path.join(projectRoot, 'supabase'), { recursive: true }))
@@ -2044,6 +2048,8 @@ test('TV do Bar alterna cardapio, imagens e videos MP4 com tempo individual', ()
   assert.match(barTvVideoMediaMigrationSource, /bar menu staff uploads tv media[\s\S]*to authenticated[\s\S]*has_bar_permission\('bar\.menu'\)/i);
   assert.match(barTvVideoMediaMigrationSource, /'media_type'[\s\S]*'media_url'/i);
   assert.match(barTvVideoMediaMigrationSource, /when slide\.value ->> 'media_type' = 'video'[\s\S]*bar-tv-media\/eventos/i);
+  assert.match(barTvPortableValidatorMigrationSource, /https:\/\/\[a-z0-9\]\{20\}\[\.\]supabase\[\.\]co[\s\S]*bar-tv-media\/eventos/i);
+  assert.doesNotMatch(barTvPortableValidatorMigrationSource, /lkqtgptebkgfwguykxhv/i);
   assert.match(adminSource, /id="barTvMenuDuration"[^>]*min="3"[^>]*max="300"/i);
   assert.match(adminSource, /id="barTvEventArtList"/i);
   assert.match(adminSource, /id="barTvEventArtFile"[^>]*accept="[^"]*video\/mp4/i);
