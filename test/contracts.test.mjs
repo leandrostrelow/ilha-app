@@ -1641,6 +1641,33 @@ test('modal de evento do ADM Bar rola no celular e mantém as ações acessívei
   );
 });
 
+test('ficha do aluno rola no desktop e no celular sem esconder as ações', () => {
+  assert.match(
+    adminSource,
+    /#clientModal \.admin-modal \{[\s\S]*?display: flex;[\s\S]*?max-height: calc\(100dvh - 24px\);[\s\S]*?overflow: hidden;/
+  );
+  assert.match(
+    adminSource,
+    /#clientModal \.admin-modal > form \{[\s\S]*?min-height: 0;[\s\S]*?flex: 1 1 auto;[\s\S]*?overflow: hidden;/
+  );
+  assert.match(
+    adminSource,
+    /#clientModal \.admin-modal-body \{[\s\S]*?flex: 1 1 auto;[\s\S]*?overflow-y: auto;[\s\S]*?-webkit-overflow-scrolling: touch;/
+  );
+  assert.match(
+    adminSource,
+    /#clientModal \.admin-modal-head,[\s\S]*?#clientModal \.modal-actions \{[\s\S]*?flex: 0 0 auto;/
+  );
+  assert.match(
+    adminSource,
+    /#clientModal \.modal-actions \{[\s\S]*?flex-wrap: wrap;/
+  );
+  assert.match(
+    adminSource,
+    /#clientModal \.modal-actions > button \{[\s\S]*?flex: 1 1 150px;/
+  );
+});
+
 test('indices do Bar cobrem snapshot, historico e chaves estrangeiras operacionais', () => {
   for (const indexName of [
     'bar_orders_opened_at_idx',

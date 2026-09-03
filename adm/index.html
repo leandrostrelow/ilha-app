@@ -3397,6 +3397,41 @@
     .admin-modal-overlay.show { place-items: center; }
     .admin-modal { max-height: calc(100dvh - 36px); overflow-y: auto; }
 
+    /* A ficha do aluno e longa: cabecalho e acoes ficam acessiveis enquanto o miolo rola. */
+    #clientModal .admin-modal {
+      display: flex;
+      min-height: 0;
+      max-height: calc(100dvh - 24px);
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #clientModal .admin-modal-head,
+    #clientModal .client-reset-notice,
+    #clientModal .modal-actions {
+      flex: 0 0 auto;
+    }
+    #clientModal .modal-actions {
+      flex-wrap: wrap;
+    }
+    #clientModal .modal-actions > button {
+      flex: 1 1 150px;
+    }
+    #clientModal .admin-modal > form {
+      display: flex;
+      min-height: 0;
+      flex: 1 1 auto;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #clientModal .admin-modal-body {
+      min-height: 0;
+      flex: 1 1 auto;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scroll-padding-bottom: 18px;
+      -webkit-overflow-scrolling: touch;
+    }
+
     /* O gestor trabalha de cima para baixo: consulta primeiro e edita depois. */
     #players > .grid,
     #settings > .grid {
