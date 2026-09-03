@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'ilha-play-v';
-const CACHE_NAME = 'ilha-play-v234-announcement-redelivery';
+const CACHE_NAME = 'ilha-play-v235-private-spatial-addon';
 const CORE_ASSETS = [
   '/',
   '/index.html',
@@ -35,6 +35,7 @@ const OPTIONAL_ASSETS = [
   './bar/manifest.json',
   './torneios/',
   './torneios/index.html',
+  './inscricoes/espacial/index.html',
   './publico.html',
   './bannerviafor.jpg',
   './cincate.png',
@@ -178,6 +179,9 @@ self.addEventListener('fetch', event => {
           }
           if (url.pathname === '/bar' || url.pathname.startsWith('/bar/')) {
             return caches.match('./bar/index.html');
+          }
+          if (/^\/inscricoes\/[^/]+\/espacial\/?$/.test(url.pathname)) {
+            return caches.match('./inscricoes/espacial/index.html');
           }
           if (url.pathname === '/torneios' || url.pathname.startsWith('/torneios/') || url.pathname === '/inscricoes' || url.pathname.startsWith('/inscricoes/')) {
             return caches.match('./torneios/index.html');

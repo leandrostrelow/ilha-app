@@ -47,7 +47,7 @@ const allowedAvailabilityDays = new Set(["MONDAY", "TUESDAY", "WEDNESDAY", "THUR
 const allowedParticipantTypes = new Set(["CINCATE", "ILHA_STUDENT", "NON_MEMBER", "COURTESY"]);
 const participantLabels: Record<string, string> = { CINCATE: "CINCATE", ILHA_STUDENT: "Aluno Ilha Tênis", NON_MEMBER: "Não associado", COURTESY: "Cortesia (isento)" };
 const retryablePaymentStatuses = new Set(["CREATED", "FAILED"]);
-const pixRepairablePaymentStatuses = new Set(["CREATED", "RECONCILING", "PENDING", "CONFIRMED", "OVERDUE"]);
+const pixRepairablePaymentStatuses = new Set(["CREATED", "RECONCILING", "PENDING", "OVERDUE"]);
 const paymentReconciliationDelaysSeconds = [5, 15, 30, 60, 120, 300, 600];
 const publicRegistrationRuleErrors = new Set([
   "A Espacial A e a Espacial B são exclusivas para quem já está inscrito da 2ª à 6ª Classe Masculina.",
@@ -172,6 +172,82 @@ async function sha256Hex(value: string) {
     .join("");
 }
 
+function secureStringEquals(left: string, right: string) {
+  const leftBytes = new TextEncoder().encode(left);
+  const rightBytes = new TextEncoder().encode(right);
+  if (leftBytes.length !== rightBytes.length) return false;
+  let difference = 0;
+  for (let index = 0; index < leftBytes.length; index += 1) {
+    difference |= leftBytes[index] ^ rightBytes[index];
+  }
+  return difference === 0;
+}
+
+function base64UrlEncode(value: string) {
+  return btoa(value).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function base64UrlDecode(value: string) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  return atob(padded);
+}
+
+type SpatialCandidateProof = {
+  v: 1;
+  s: string;
+  a: string;
+  r: string;
+  c: string;
+  e: number;
+};
+
+async function createSpatialCandidateProof(
+  config: PublicRegistrationSecurityConfig,
+  tournamentSlug: string,
+  cpf: string,
+  athleteId: string,
+  primaryRegistrationId: string,
+) {
+  const proof: SpatialCandidateProof = {
+    v: 1,
+    s: tournamentSlug,
+    a: athleteId,
+    r: primaryRegistrationId,
+    c: await hmacSha256(config.rateLimitSalt, `spatial-addon-proof-cpf:${cpf}`),
+    e: Date.now() + 15 * 60 * 1000,
+  };
+  const encoded = base64UrlEncode(JSON.stringify(proof));
+  const signature = await hmacSha256(config.rateLimitSalt, `spatial-addon-proof:${encoded}`);
+  return `${encoded}.${signature}`;
+}
+
+async function verifySpatialCandidateProof(
+  config: PublicRegistrationSecurityConfig,
+  proofValue: string,
+  tournamentSlug: string,
+  cpf: string,
+) {
+  const [encoded, signature, extra] = proofValue.split(".");
+  if (!encoded || !signature || extra || !/^[A-Za-z0-9_-]+$/.test(encoded) || !/^[0-9a-f]{64}$/.test(signature)) {
+    return null;
+  }
+  const expected = await hmacSha256(config.rateLimitSalt, `spatial-addon-proof:${encoded}`);
+  if (!secureStringEquals(signature, expected)) return null;
+  let parsed: SpatialCandidateProof;
+  try {
+    parsed = JSON.parse(base64UrlDecode(encoded)) as SpatialCandidateProof;
+  } catch (_error) {
+    return null;
+  }
+  const expectedCpfBinding = await hmacSha256(config.rateLimitSalt, `spatial-addon-proof-cpf:${cpf}`);
+  if (parsed.v !== 1 || parsed.s !== tournamentSlug || !isUuid(parsed.a) || !isUuid(parsed.r) ||
+    !/^[0-9a-f]{64}$/.test(parsed.c) || !secureStringEquals(parsed.c, expectedCpfBinding) ||
+    !Number.isFinite(parsed.e) || parsed.e < Date.now() ||
+    parsed.e > Date.now() + 16 * 60 * 1000) return null;
+  return parsed;
+}
+
 async function verifyTurnstile(
   request: Request,
   token: string,
@@ -249,13 +325,17 @@ function normalizeBillingType(value: unknown) {
   return normalized;
 }
 
-function saoPauloDate() {
+function saoPauloDate(reference: Date | string | number = new Date()) {
+  const referenceDate = reference instanceof Date ? reference : new Date(reference);
+  if (!Number.isFinite(referenceDate.getTime())) {
+    throw new Error("Não foi possível calcular a data da cobrança.");
+  }
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Sao_Paulo",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(new Date());
+  }).formatToParts(referenceDate);
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   if (!/^\d{4}$/.test(values.year || "") || !/^\d{2}$/.test(values.month || "") ||
     !/^\d{2}$/.test(values.day || "")) {
@@ -291,18 +371,22 @@ function safeRegistration(row: JsonRecord) {
 
 function safePayment(row: JsonRecord | null) {
   if (!row) return null;
-  const terminalPayment = ["REFUNDED", "CANCELLED", "CHARGEBACK"].includes(
-    String(row.status || "").trim().toUpperCase(),
-  );
+  const paymentStatus = String(row.status || "").trim().toUpperCase();
+  const reservationExpiresAt = Date.parse(String(row.expires_at || ""));
+  // Payment instructions fail closed. Only a provider-confirmed PENDING Pix
+  // with an active local reservation can be shown to the browser. This keeps
+  // stale, paid, ambiguous and manually reviewed charges from being payable.
+  const paymentInstructionsAllowed = paymentStatus === "PENDING" &&
+    Number.isFinite(reservationExpiresAt) && reservationExpiresAt > Date.now();
   return {
     id: row.id,
     status: row.status,
     billing_type: row.billing_type,
     amount: row.amount,
-    invoice_url: terminalPayment ? null : row.invoice_url || null,
-    pix_payload: terminalPayment ? null : row.pix_payload || null,
-    pix_encoded_image: terminalPayment ? null : row.pix_encoded_image || null,
-    pix_expires_at: terminalPayment ? null : row.pix_expires_at || null,
+    invoice_url: paymentInstructionsAllowed ? row.invoice_url || null : null,
+    pix_payload: paymentInstructionsAllowed ? row.pix_payload || null : null,
+    pix_encoded_image: paymentInstructionsAllowed ? row.pix_encoded_image || null : null,
+    pix_expires_at: paymentInstructionsAllowed ? row.pix_expires_at || null : null,
     expires_at: row.expires_at || null,
   };
 }
@@ -486,6 +570,10 @@ async function claimProviderPaymentAttempt(
     updated_at: now,
   }).eq("id", localPayment.id).eq("status", localPayment.status);
   claim = claim.eq("provider_environment", asaasConfig().environment);
+  // The expiry worker may race this claim at the two-hour boundary. Make the
+  // active reservation check part of the same database CAS so no Asaas request
+  // can begin after the local checkout became archivable.
+  claim = claim.gt("expires_at", now);
   claim = localPayment.updated_at
     ? claim.eq("updated_at", localPayment.updated_at)
     : claim.is("updated_at", null);
@@ -954,6 +1042,7 @@ async function createOrRecoverPayment(
   tournament: JsonRecord,
   category: JsonRecord,
   additionalCategory: JsonRecord | null,
+  providerCustomerId: string | null = null,
 ) {
   localPayment = await ensurePaymentProviderEnvironment(supabase, localPayment);
   if (text(localPayment.provider_environment, 20).toUpperCase() !== asaasConfig().environment) return localPayment;
@@ -975,7 +1064,8 @@ async function createOrRecoverPayment(
     }
   }
 
-  const customerId = await ensureAsaasCustomer(supabase, athlete);
+  const customerId = providerCustomerId || text(localPayment.provider_customer_id, 80) ||
+    await ensureAsaasCustomer(supabase, athlete);
   try {
     const providerPayment = await asaasRequest("/payments", {
       method: "POST",
@@ -983,7 +1073,7 @@ async function createOrRecoverPayment(
         customer: customerId,
         billingType: localPayment.billing_type,
         value: Number(localPayment.amount),
-        dueDate: saoPauloDate(),
+        dueDate: saoPauloDate(String(localPayment.expires_at || "")),
         description: asaasSafeDescription(
           `Inscrição ${tournament.name} ${category.name}${additionalCategory ? ` ${additionalCategory.name}` : ""}`,
         ),
@@ -995,6 +1085,45 @@ async function createOrRecoverPayment(
     if (isAmbiguousProviderFailure(error)) throw new AmbiguousPaymentCreationError(error);
     throw error;
   }
+}
+
+async function bindPaymentProviderCustomer(
+  supabase: DbClient,
+  localPayment: JsonRecord,
+  providerCustomerId: string,
+) {
+  const customerId = text(providerCustomerId, 80);
+  if (!customerId) throw new Error("O responsável pela cobrança não foi identificado.");
+  const existingCustomerId = text(localPayment.provider_customer_id, 80);
+  if (existingCustomerId) {
+    if (existingCustomerId !== customerId) {
+      throw new Error("A cobrança está vinculada a outro responsável e precisa de revisão.");
+    }
+    return localPayment;
+  }
+
+  let update = supabase.from("tournament_payments")
+    .update({ provider_customer_id: customerId, updated_at: new Date().toISOString() })
+    .eq("id", localPayment.id)
+    .eq("status", localPayment.status)
+    .eq("provider_environment", localPayment.provider_environment);
+  update = localPayment.updated_at
+    ? update.eq("updated_at", localPayment.updated_at)
+    : update.is("updated_at", null);
+  const bound = await update.select("*").maybeSingle();
+  if (bound.error) throw bound.error;
+  if (bound.data) return bound.data as JsonRecord;
+
+  const latest = await supabase.from("tournament_payments")
+    .select("*")
+    .eq("id", localPayment.id)
+    .single();
+  if (latest.error) throw latest.error;
+  const latestPayment = latest.data as JsonRecord;
+  if (text(latestPayment.provider_customer_id, 80) !== customerId) {
+    throw new Error("A cobrança mudou durante a vinculação do responsável.");
+  }
+  return latestPayment;
 }
 
 function record(value: unknown): JsonRecord {
@@ -1104,7 +1233,7 @@ async function createOrRecoverFamilyPayment(
         customer: customerId,
         billingType: localPayment.billing_type,
         value: Number(localPayment.amount),
-        dueDate: saoPauloDate(),
+        dueDate: saoPauloDate(String(localPayment.expires_at || "")),
         description: asaasSafeDescription(
           `Inscrição familiar ${tournament.name} - ${athleteCount} atleta${athleteCount === 1 ? "" : "s"}`,
         ),
@@ -1303,11 +1432,22 @@ function trackingCheckoutResponse(
   const waitlisted = registrations.length > 0 && registrations.every((row) =>
     String(row.status || "").toUpperCase() === "WAITLIST"
   );
-  const terminalPayment = ["PARTIALLY_REFUNDED", "REFUNDED", "CANCELLED", "CHARGEBACK", "OVERDUE"]
+  const terminalPayment = [
+    "REVIEW_REQUIRED",
+    "PARTIALLY_REFUNDED",
+    "REFUNDED",
+    "CANCELLED",
+    "CHARGEBACK",
+    "OVERDUE",
+  ]
     .includes(paymentStatus);
   const terminalRegistration = registrations.some((row) =>
     ["CANCELLED", "REFUNDED"].includes(String(row.status || "").toUpperCase())
   );
+  const reservationActive = activePaymentReservation(payment);
+  const expirableUnpaidPayment = ["CREATED", "RECONCILING", "PENDING", "FAILED"].includes(paymentStatus);
+  const reservationExpired = Boolean(payment) && expirableUnpaidPayment && !reservationActive &&
+    !registrationConfirmed && !noPayment && !waitlisted && !terminalPayment && !terminalRegistration;
   return {
     registration_group: checkout.group
       ? { status: checkout.group.status, total_amount: checkout.group.total_amount }
@@ -1317,8 +1457,10 @@ function trackingCheckoutResponse(
     payment: includePaymentInstructions ? safePayment(payment) : safeTrackingPayment(payment),
     family_checkout: checkout.familyCheckout,
     confirmed: paymentStatus === "RECEIVED" && registrationConfirmed,
-    terminal: registrationConfirmed || noPayment || waitlisted || terminalPayment || terminalRegistration,
-    reservation_active: activePaymentReservation(payment),
+    terminal: registrationConfirmed || noPayment || waitlisted || terminalPayment || terminalRegistration ||
+      reservationExpired,
+    reservation_active: reservationActive,
+    reservation_expired: reservationExpired,
     ...extra,
   };
 }
@@ -1424,7 +1566,7 @@ async function trackedCheckoutFromPayload(
     );
   }
   const tournamentResult = await supabase.from("tournaments")
-    .select("id,name,slug")
+    .select("id,name,slug,is_published,settings")
     .eq("slug", tournamentSlug)
     .maybeSingle();
   if (tournamentResult.error) throw tournamentResult.error;
@@ -1453,6 +1595,81 @@ async function handlePaymentStatus(
   }
   if (!tracked) return json(request, { error: "Acompanhamento não encontrado." }, 404);
   return json(request, trackingCheckoutResponse(tracked.checkout));
+}
+
+async function resumeTrackedSpatialAddon(
+  supabase: DbClient,
+  checkout: TrackedCheckout,
+  registration: JsonRecord,
+  localPayment: JsonRecord,
+  providerEnvironment: string,
+) {
+  const externalReference = text(localPayment.external_reference, 180);
+  if (!externalReference.startsWith("tournament-spatial-addon:")) {
+    return { spatial: false, payment: localPayment, error: "" };
+  }
+  if (externalReference !== `tournament-spatial-addon:${registration.id}`) {
+    return { spatial: true, payment: localPayment, error: "Esta cobrança da Classe Espacial precisa de revisão." };
+  }
+
+  const spatialCategoryResult = await supabase.from("tournament_categories")
+    .select("id,code")
+    .eq("id", registration.category_id)
+    .eq("tournament_id", checkout.tournament.id)
+    .maybeSingle();
+  if (spatialCategoryResult.error) throw spatialCategoryResult.error;
+  const spatialCode = text(spatialCategoryResult.data?.code, 40);
+  if (!spatialCode) {
+    return { spatial: true, payment: localPayment, error: "A Classe Espacial desta cobrança não foi encontrada." };
+  }
+
+  const addonMap = record(tournamentSettings(checkout.tournament).spatial_addons);
+  const eligiblePrimaryCodes = Object.entries(addonMap)
+    .filter(([, value]) => text(record(value).category_code, 40) === spatialCode)
+    .map(([code]) => code);
+  if (!eligiblePrimaryCodes.length) {
+    return { spatial: true, payment: localPayment, error: "A classe principal desta inscrição precisa de revisão." };
+  }
+
+  const primaryCategoriesResult = await supabase.from("tournament_categories")
+    .select("id")
+    .eq("tournament_id", checkout.tournament.id)
+    .in("code", eligiblePrimaryCodes);
+  if (primaryCategoriesResult.error) throw primaryCategoriesResult.error;
+  const primaryCategoryIds = (primaryCategoriesResult.data || []).map((row) => String(row.id)).filter(isUuid);
+  if (!primaryCategoryIds.length) {
+    return { spatial: true, payment: localPayment, error: "A classe principal desta inscrição não foi encontrada." };
+  }
+
+  const primaryRegistrationResult = await supabase.from("tournament_registrations")
+    .select("id")
+    .eq("tournament_id", checkout.tournament.id)
+    .eq("athlete_id", registration.athlete_id)
+    .eq("status", "CONFIRMED")
+    .in("payment_status", ["PAID", "NOT_REQUIRED"])
+    .in("category_id", primaryCategoryIds)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (primaryRegistrationResult.error) throw primaryRegistrationResult.error;
+  if (!primaryRegistrationResult.data?.id) {
+    return { spatial: true, payment: localPayment, error: "A inscrição principal confirmada não foi encontrada." };
+  }
+
+  const resume = await supabase.rpc("resume_private_tournament_spatial_addon_checkout", {
+    p_tournament_id: checkout.tournament.id,
+    p_athlete_id: registration.athlete_id,
+    p_primary_registration_id: primaryRegistrationResult.data.id,
+    p_spatial_registration_id: registration.id,
+    p_provider_environment: providerEnvironment,
+  });
+  if (resume.error?.code === "P0001" || resume.error?.code === "P0002" || resume.error?.code === "42501") {
+    return { spatial: true, payment: localPayment, error: resume.error.message };
+  }
+  if (resume.error) throw resume.error;
+  const resumedPayment = record(record(resume.data).payment);
+  if (!resumedPayment.id) throw new Error("A retomada da Classe Espacial retornou uma cobrança inválida.");
+  return { spatial: true, payment: resumedPayment, error: "" };
 }
 
 async function handleIndividualPaymentRetry(
@@ -1496,6 +1713,21 @@ async function handleIndividualPaymentRetry(
   }
 
   const providerEnvironment = asaasConfig().environment;
+  const spatialResume = await resumeTrackedSpatialAddon(
+    supabase,
+    checkout,
+    registration,
+    localPayment,
+    providerEnvironment,
+  );
+  if (spatialResume.error) {
+    return json(request, {
+      ...trackingCheckoutResponse(checkout),
+      error: spatialResume.error,
+      retryable: false,
+    }, 409);
+  }
+  localPayment = spatialResume.payment;
   localPayment = await ensurePaymentProviderEnvironment(supabase, localPayment);
   if (text(localPayment.provider_environment, 20).toUpperCase() !== providerEnvironment) {
     return response(localPayment, {
@@ -2011,6 +2243,554 @@ async function handleFamilyRegistration(
   }
 }
 
+type SpatialAddonCandidate = {
+  athlete: JsonRecord;
+  primaryRegistration: JsonRecord;
+  primaryCategory: JsonRecord;
+  spatialCategory: JsonRecord;
+  existingRegistration: JsonRecord | null;
+  amount: number;
+  state: "ELIGIBLE" | "PAYMENT_PENDING" | "ALREADY_REGISTERED" | "FULL" | "CLOSED" | "REVIEW_REQUIRED";
+};
+
+function tournamentSettings(tournament: JsonRecord) {
+  return tournament.settings && typeof tournament.settings === "object" && !Array.isArray(tournament.settings)
+    ? tournament.settings as JsonRecord
+    : {};
+}
+
+async function spatialPortalAuthorized(tournament: JsonRecord, rawToken: string) {
+  if (!isUuid(rawToken)) return false;
+  const portal = record(tournamentSettings(tournament).spatial_addon_portal);
+  const expectedHash = text(portal.token_hash, 64).toLowerCase();
+  if (portal.enabled !== true || !/^[0-9a-f]{64}$/.test(expectedHash)) return false;
+  return secureStringEquals(await sha256Hex(rawToken), expectedHash);
+}
+
+async function loadSpatialTournament(supabase: DbClient, tournamentSlug: string) {
+  const result = await supabase.from("tournaments")
+    .select("id,name,slug,status,registration_open,registration_opens_at,registration_closes_at,is_published,settings")
+    .eq("slug", tournamentSlug)
+    .maybeSingle();
+  if (result.error) throw result.error;
+  return result.data as JsonRecord | null;
+}
+
+function spatialTournamentIsOpen(tournament: JsonRecord) {
+  const now = Date.now();
+  const opensAt = tournament.registration_opens_at ? Date.parse(String(tournament.registration_opens_at)) : null;
+  const closesAt = tournament.registration_closes_at ? Date.parse(String(tournament.registration_closes_at)) : null;
+  return tournament.is_published === true && tournament.status === "REGISTRATION_OPEN" &&
+    tournament.registration_open === true && (!opensAt || now >= opensAt) && (!closesAt || now <= closesAt);
+}
+
+async function consumeSpatialNetworkLimit(
+  request: Request,
+  supabase: DbClient,
+  config: PublicRegistrationSecurityConfig,
+  scope: string,
+) {
+  const clientIp = trustedClientIp(request);
+  const ipHash = clientIp ? await hmacSha256(config.rateLimitSalt, `spatial-addon:${scope}:ip:${clientIp}`) : null;
+  const result = await supabase.rpc("consume_tournament_registration_network_rate_limits", {
+    p_ip_hash: ipHash,
+  });
+  if (result.error) throw result.error;
+  const limit = (Array.isArray(result.data) ? result.data[0] : result.data) as
+    | { allowed?: boolean; retry_after_seconds?: number }
+    | null;
+  return {
+    allowed: limit?.allowed === true,
+    retryAfter: Math.max(1, Math.min(1800, Number(limit?.retry_after_seconds || 60))),
+  };
+}
+
+async function consumeSpatialIdentityLimit(
+  supabase: DbClient,
+  config: PublicRegistrationSecurityConfig,
+  scope: string,
+  portalToken: string,
+  cpf: string,
+) {
+  const portalHash = await sha256Hex(portalToken);
+  const identityHash = await hmacSha256(
+    config.rateLimitSalt,
+    `spatial-addon:${scope}:${portalHash}:${cpf}`,
+  );
+  const result = await supabase.rpc("consume_tournament_registration_identity_rate_limit", {
+    p_identity_hash: identityHash,
+  });
+  if (result.error) throw result.error;
+  const limit = (Array.isArray(result.data) ? result.data[0] : result.data) as
+    | { allowed?: boolean; retry_after_seconds?: number }
+    | null;
+  return {
+    allowed: limit?.allowed === true,
+    retryAfter: Math.max(1, Math.min(1800, Number(limit?.retry_after_seconds || 60))),
+  };
+}
+
+async function loadSpatialAddonCandidates(
+  supabase: DbClient,
+  tournament: JsonRecord,
+  cpf: string,
+): Promise<SpatialAddonCandidate[]> {
+  const athleteIds = new Set<string>();
+  // CPF is sent only in the RPC POST body. Never place it in a PostgREST
+  // filter/query string, where infrastructure access logs could retain it.
+  const athleteLookup = await supabase.rpc(
+    "lookup_private_tournament_spatial_addon_athlete_ids",
+    {
+      p_tournament_id: tournament.id,
+      p_cpf: cpf,
+    },
+  );
+  if (athleteLookup.error) throw athleteLookup.error;
+  for (const match of athleteLookup.data || []) {
+    const athleteId = String(match.athlete_id || "");
+    if (isUuid(athleteId)) athleteIds.add(athleteId);
+  }
+  if (!athleteIds.size) return [];
+
+  const athletesResult = await supabase.from("tournament_athletes")
+    .select("*")
+    .in("id", [...athleteIds])
+    .eq("active", true)
+    .eq("status", "ACTIVE");
+  if (athletesResult.error) throw athletesResult.error;
+  const athleteMap = new Map<string, JsonRecord>(
+    (athletesResult.data || []).map((athlete) => [String(athlete.id), athlete as JsonRecord]),
+  );
+
+  const registrationsResult = await supabase.from("tournament_registrations")
+    .select("*")
+    .eq("tournament_id", tournament.id)
+    .in("athlete_id", [...athleteMap.keys()])
+    .order("created_at", { ascending: true });
+  if (registrationsResult.error) throw registrationsResult.error;
+  const registrations = (registrationsResult.data || []) as JsonRecord[];
+  if (!registrations.length) return [];
+
+  const categoriesResult = await supabase.from("tournament_categories")
+    .select("*")
+    .eq("tournament_id", tournament.id);
+  if (categoriesResult.error) throw categoriesResult.error;
+  const categories = (categoriesResult.data || []) as JsonRecord[];
+  const categoryById = new Map(categories.map((category) => [String(category.id), category]));
+  const categoryByCode = new Map(categories.map((category) => [String(category.code), category]));
+  const settings = tournamentSettings(tournament);
+  const addonMap = record(settings.spatial_addons);
+  const configuredFee = Number(settings.spatial_addon_fee);
+  const candidates: SpatialAddonCandidate[] = [];
+
+  for (const primaryRegistration of registrations) {
+    if (primaryRegistration.status !== "CONFIRMED" ||
+      !["PAID", "NOT_REQUIRED"].includes(String(primaryRegistration.payment_status))) continue;
+    const athlete = athleteMap.get(String(primaryRegistration.athlete_id));
+    const primaryCategory = categoryById.get(String(primaryRegistration.category_id));
+    if (!athlete || !primaryCategory) continue;
+    const addonRule = record(addonMap[String(primaryCategory.code)]);
+    const spatialCode = text(addonRule.category_code, 40);
+    if (!spatialCode) continue;
+    const spatialCategory = categoryByCode.get(spatialCode);
+    if (!spatialCategory) continue;
+    // The archive may retain an older terminal attempt. Always evaluate the
+    // newest registration, matching the database recovery RPC ordering.
+    const existingRegistration = [...registrations].reverse().find((registration) =>
+      String(registration.athlete_id) === String(athlete.id) &&
+      String(registration.category_id) === String(spatialCategory.id)
+    ) || null;
+    const recoverableExisting = Boolean(existingRegistration &&
+      !existingRegistration.parent_registration_id &&
+      !existingRegistration.registration_group_id &&
+      existingRegistration.request_token &&
+      existingRegistration.source === "PUBLIC" &&
+      Number(existingRegistration.total_amount) === 80 &&
+      existingRegistration.status === "PENDING" &&
+      existingRegistration.payment_status === "PENDING");
+    const ruleFee = Number(addonRule.fee);
+    const configuredAmount = Number.isFinite(configuredFee)
+      ? configuredFee
+      : Number.isFinite(ruleFee)
+      ? ruleFee
+      : Number(spatialCategory.registration_fee);
+    // Preserve the server-established R$ 80 reservation on retries even if an
+    // administrator edits future pricing while this Pix is still active.
+    const amount = recoverableExisting ? 80 : configuredAmount;
+    if (!Number.isFinite(amount) || amount !== 80) continue;
+    let state: SpatialAddonCandidate["state"] = "ELIGIBLE";
+    if (existingRegistration?.status === "CONFIRMED" &&
+      ["PAID", "NOT_REQUIRED"].includes(String(existingRegistration.payment_status))) {
+      state = "ALREADY_REGISTERED";
+    } else if (recoverableExisting) {
+      state = "PAYMENT_PENDING";
+    } else if (existingRegistration) {
+      state = "REVIEW_REQUIRED";
+    } else if (primaryCategory.active !== true || spatialCategory.active !== true ||
+      spatialCategory.registration_open !== true) {
+      state = "CLOSED";
+    } else if (spatialCategory.max_entries !== null && spatialCategory.max_entries !== undefined) {
+      const occupiedResult = await supabase.from("tournament_registrations")
+        .select("id", { count: "exact", head: true })
+        .eq("category_id", spatialCategory.id)
+        .in("status", ["PENDING", "CONFIRMED"]);
+      if (occupiedResult.error) throw occupiedResult.error;
+      if (Number(occupiedResult.count || 0) >= Number(spatialCategory.max_entries)) state = "FULL";
+    }
+    candidates.push({
+      athlete,
+      primaryRegistration,
+      primaryCategory,
+      spatialCategory,
+      existingRegistration,
+      amount,
+      state,
+    });
+  }
+
+  const unique = new Map<string, SpatialAddonCandidate>();
+  for (const candidate of candidates) {
+    const key = `${candidate.athlete.id}:${candidate.primaryRegistration.id}`;
+    if (!unique.has(key)) unique.set(key, candidate);
+  }
+  return [...unique.values()];
+}
+
+function safeSpatialCandidate(candidate: SpatialAddonCandidate, candidateProof: string | null) {
+  return {
+    athlete_name: candidate.athlete.full_name,
+    current_class: candidate.primaryCategory.name,
+    spatial_class: candidate.spatialCategory.name,
+    amount: candidate.amount,
+    state: candidate.state,
+    candidate_proof: candidateProof,
+  };
+}
+
+async function handleSpatialLookup(
+  request: Request,
+  payload: JsonRecord,
+  config: PublicRegistrationSecurityConfig,
+) {
+  const tournamentSlug = text(payload.tournament_slug, 100).toLowerCase();
+  const portalToken = text(payload.portal_token, 80);
+  const cpf = digits(payload.cpf);
+  const captchaToken = text(payload.captcha_token, 2048);
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tournamentSlug) || !isUuid(portalToken)) {
+    return json(request, { error: "Este link não é válido." }, 403);
+  }
+  if (!isValidCpf(cpf)) return json(request, { error: "Informe um CPF válido." }, 400);
+  if (!captchaToken) return json(request, { error: "Confirme que você não é um robô." }, 400);
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  const supabaseKey = serviceRoleKey();
+  if (!supabaseUrl || !supabaseKey) throw new Error("Configuração do Supabase ausente.");
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const networkLimit = await consumeSpatialNetworkLimit(request, supabase, config, "lookup");
+  if (!networkLimit.allowed) {
+    return json(request, { error: "Muitas tentativas. Aguarde um pouco e tente novamente." }, 429, {
+      "Retry-After": String(networkLimit.retryAfter),
+    });
+  }
+
+  const tournament = await loadSpatialTournament(supabase, tournamentSlug);
+  if (!tournament || !await spatialPortalAuthorized(tournament, portalToken)) {
+    return json(request, { error: "Este link não é válido." }, 403);
+  }
+  if (tournament.is_published !== true) {
+    return json(request, { error: "As inscrições para a Classe Espacial estão indisponíveis." }, 409);
+  }
+  let captchaAccepted = false;
+  try {
+    captchaAccepted = await verifyTurnstile(request, captchaToken, config);
+  } catch (_error) {
+    return json(request, { error: "Não foi possível validar a proteção anti-robô agora. Tente novamente." }, 503);
+  }
+  if (!captchaAccepted) {
+    return json(request, { error: "A validação anti-robô expirou ou não foi aceita. Tente novamente." }, 400);
+  }
+  const identityLimit = await consumeSpatialIdentityLimit(supabase, config, "lookup", portalToken, cpf);
+  if (!identityLimit.allowed) {
+    return json(request, { error: "Muitas tentativas para este CPF. Aguarde um pouco e tente novamente." }, 429, {
+      "Retry-After": String(identityLimit.retryAfter),
+    });
+  }
+
+  const candidates = await loadSpatialAddonCandidates(supabase, tournament, cpf);
+  if (!candidates.length) {
+    return json(request, {
+      error: "Não encontramos uma inscrição confirmada e elegível para este CPF.",
+    }, 404);
+  }
+  const tournamentOpen = spatialTournamentIsOpen(tournament);
+  if (!tournamentOpen && !candidates.some((candidate) => candidate.state === "PAYMENT_PENDING")) {
+    return json(request, { error: "As inscrições para a Classe Espacial estão fechadas." }, 409);
+  }
+  const safeCandidates = [];
+  for (const candidate of candidates) {
+    const proof = candidate.state === "PAYMENT_PENDING" || (tournamentOpen && candidate.state === "ELIGIBLE")
+      ? await createSpatialCandidateProof(
+        config,
+        tournamentSlug,
+        cpf,
+        String(candidate.athlete.id),
+        String(candidate.primaryRegistration.id),
+      )
+      : null;
+    safeCandidates.push(safeSpatialCandidate(candidate, proof));
+  }
+  return json(request, {
+    tournament_name: tournament.name,
+    candidates: safeCandidates,
+  });
+}
+
+async function handleSpatialCheckout(
+  request: Request,
+  payload: JsonRecord,
+  config: PublicRegistrationSecurityConfig,
+) {
+  const tournamentSlug = text(payload.tournament_slug, 100).toLowerCase();
+  const portalToken = text(payload.portal_token, 80);
+  const cpf = digits(payload.cpf);
+  const candidateProof = text(payload.candidate_proof, 2048);
+  const requestToken = text(payload.request_token, 80);
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tournamentSlug) || !isUuid(portalToken)) {
+    return json(request, { error: "Este link não é válido." }, 403);
+  }
+  if (!isValidCpf(cpf) || !isUuid(requestToken) || !candidateProof || payload.terms_accepted !== true) {
+    return json(request, { error: "Confirme os dados antes de gerar o Pix." }, 400);
+  }
+  const verifiedProof = await verifySpatialCandidateProof(config, candidateProof, tournamentSlug, cpf);
+  if (!verifiedProof) return json(request, { error: "Sua confirmação expirou. Consulte o CPF novamente." }, 403);
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  const supabaseKey = serviceRoleKey();
+  if (!supabaseUrl || !supabaseKey) throw new Error("Configuração do Supabase ausente.");
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const networkLimit = await consumeSpatialNetworkLimit(request, supabase, config, "checkout");
+  if (!networkLimit.allowed) {
+    return json(request, { error: "Muitas tentativas. Aguarde um pouco e tente novamente." }, 429, {
+      "Retry-After": String(networkLimit.retryAfter),
+    });
+  }
+  const identityLimit = await consumeSpatialIdentityLimit(supabase, config, "checkout", portalToken, cpf);
+  if (!identityLimit.allowed) {
+    return json(request, { error: "Muitas tentativas para este CPF. Aguarde um pouco e tente novamente." }, 429, {
+      "Retry-After": String(identityLimit.retryAfter),
+    });
+  }
+
+  const tournament = await loadSpatialTournament(supabase, tournamentSlug);
+  if (!tournament || !await spatialPortalAuthorized(tournament, portalToken)) {
+    return json(request, { error: "Este link não é válido." }, 403);
+  }
+  if (tournament.is_published !== true) {
+    return json(request, { error: "As inscrições para a Classe Espacial estão indisponíveis." }, 409);
+  }
+  const candidates = await loadSpatialAddonCandidates(supabase, tournament, cpf);
+  const candidate = candidates.find((item) =>
+    String(item.athlete.id) === verifiedProof.a && String(item.primaryRegistration.id) === verifiedProof.r
+  );
+  if (!candidate) {
+    return json(request, { error: "Esta inscrição deixou de ser elegível. Fale com a organização." }, 409);
+  }
+  if (candidate.state === "ALREADY_REGISTERED") {
+    return json(request, { error: "Este atleta já está inscrito na Classe Espacial." }, 409);
+  }
+  if (candidate.state === "FULL") {
+    return json(request, { error: "A Classe Espacial correspondente atingiu o limite de vagas." }, 409);
+  }
+  if (candidate.state === "REVIEW_REQUIRED") {
+    return json(request, { error: "Esta inscrição precisa de revisão da organização." }, 409);
+  }
+  if (candidate.state === "CLOSED") {
+    return json(request, { error: "A Classe Espacial correspondente está fechada." }, 409);
+  }
+  if (candidate.state === "ELIGIBLE" && !spatialTournamentIsOpen(tournament)) {
+    return json(request, { error: "As inscrições para a Classe Espacial estão fechadas." }, 409);
+  }
+
+  const providerEnvironment = asaasConfig().environment;
+  let registration: JsonRecord;
+  const category = candidate.spatialCategory;
+  let localPayment: JsonRecord;
+  let ownsPaymentCreation = false;
+
+  if (candidate.state === "PAYMENT_PENDING") {
+    const existingRegistration = record(candidate.existingRegistration);
+    const resume = await supabase.rpc("resume_private_tournament_spatial_addon_checkout", {
+      p_tournament_id: tournament.id,
+      p_athlete_id: candidate.athlete.id,
+      p_primary_registration_id: candidate.primaryRegistration.id,
+      p_spatial_registration_id: existingRegistration.id,
+      p_provider_environment: providerEnvironment,
+    });
+    if (resume.error?.code === "P0001" || resume.error?.code === "P0002" || resume.error?.code === "42501") {
+      return json(request, { error: resume.error.message }, 409);
+    }
+    if (resume.error) throw resume.error;
+    const checkout = record(resume.data);
+    registration = record(checkout.registration);
+    localPayment = record(checkout.payment);
+  } else {
+    const claim = await supabase.rpc("claim_private_tournament_spatial_addon_checkout", {
+      p_tournament_id: tournament.id,
+      p_request_token: requestToken,
+      p_athlete_id: candidate.athlete.id,
+      p_primary_registration_id: candidate.primaryRegistration.id,
+      p_billing_type: "PIX",
+      p_provider_environment: providerEnvironment,
+    });
+    if (claim.error?.code === "P0001" || claim.error?.code === "P0002" || claim.error?.code === "42501") {
+      return json(request, { error: claim.error.message }, 409);
+    }
+    if (claim.error) throw claim.error;
+    const checkout = record(claim.data);
+    registration = record(checkout.registration);
+    localPayment = record(checkout.payment);
+    ownsPaymentCreation = checkout.payment_created === true;
+  }
+  if (!registration.id || !category.id || !localPayment.id) {
+    throw new Error("O checkout do adicional retornou dados incompletos.");
+  }
+  const responseBody = (payment: JsonRecord, extra: JsonRecord = {}) => ({
+    registration: safeRegistration(registration),
+    payment: safePayment(payment),
+    tracking_token: registration.public_token,
+    athlete_name: candidate.athlete.full_name,
+    current_class: candidate.primaryCategory.name,
+    spatial_class: category.name,
+    ...extra,
+  });
+
+  if (!activePaymentReservation(localPayment)) {
+    return json(request, {
+      error: "A reserva desta Classe Espacial expirou. Aguarde alguns minutos e consulte o CPF novamente.",
+    }, 410);
+  }
+
+  localPayment = await ensurePaymentProviderEnvironment(supabase, localPayment);
+  if (String(localPayment.status) === "REVIEW_REQUIRED") {
+    return json(request, responseBody(localPayment, {
+      retryable: false,
+      warning: "Não pague esta cobrança. Ela precisa de revisão da organização.",
+    }), 202);
+  }
+  if (localPayment.provider_payment_id) {
+    try {
+      localPayment = await repairExistingPixPayment(supabase, localPayment);
+    } catch (error) {
+      console.warn("tournament-register spatial PIX repair deferred", {
+        payment_id: localPayment.id,
+        provider_error: providerErrorSnapshot(error),
+      });
+    }
+    return json(request, responseBody(localPayment, deferredPixRepairResponse(localPayment)));
+  }
+  if (localPayment.status === "RECONCILING") {
+    localPayment = await reconcileAmbiguousPayment(supabase, localPayment);
+    if (localPayment.provider_payment_id) {
+      return json(request, responseBody(localPayment, deferredPixRepairResponse(localPayment)));
+    }
+    return json(request, responseBody(localPayment, {
+      retryable: false,
+      warning: "Estamos conferindo a cobrança no Asaas. Não gere outro pagamento.",
+    }), 202);
+  }
+  if (!retryablePaymentStatuses.has(String(localPayment.status))) {
+    return json(request, responseBody(localPayment));
+  }
+  if (!ownsPaymentCreation) {
+    const age = Date.now() - Date.parse(String(localPayment.updated_at || localPayment.created_at));
+    if (localPayment.status === "FAILED" || age > 120000) {
+      const retryClaim = await supabase.from("tournament_payments")
+        .update({ status: "CREATED", billing_type: "PIX", updated_at: new Date().toISOString() })
+        .eq("id", localPayment.id)
+        .eq("status", localPayment.status)
+        .eq("provider_environment", providerEnvironment)
+        .eq("updated_at", localPayment.updated_at)
+        .select("*")
+        .maybeSingle();
+      if (retryClaim.error) throw retryClaim.error;
+      if (retryClaim.data) {
+        localPayment = retryClaim.data as JsonRecord;
+        ownsPaymentCreation = true;
+      }
+    }
+  }
+  if (!ownsPaymentCreation) {
+    return json(request, responseBody(localPayment, {
+      retryable: true,
+      warning: "A cobrança ainda está sendo preparada. Tente novamente em alguns segundos.",
+    }), 202);
+  }
+
+  let providerCustomerId: string | null = null;
+  if (candidate.primaryRegistration.registration_group_id) {
+    const groupResult = await supabase.from("tournament_registration_groups")
+      .select("*")
+      .eq("id", candidate.primaryRegistration.registration_group_id)
+      .eq("tournament_id", tournament.id)
+      .single();
+    if (groupResult.error) throw groupResult.error;
+    providerCustomerId = await ensureAsaasFamilyCustomer(supabase, groupResult.data as JsonRecord);
+    localPayment = await bindPaymentProviderCustomer(supabase, localPayment, providerCustomerId);
+  }
+
+  const providerClaim = await claimProviderPaymentAttempt(supabase, localPayment, "PIX");
+  if (!providerClaim) {
+    const latest = await supabase.from("tournament_payments").select("*").eq("id", localPayment.id).single();
+    if (latest.error) throw latest.error;
+    return json(request, responseBody(latest.data as JsonRecord, {
+      retryable: true,
+      warning: "A cobrança ainda está sendo preparada. Tente novamente em alguns segundos.",
+    }), 202);
+  }
+
+  try {
+    localPayment = await createOrRecoverPayment(
+      supabase,
+      providerClaim as JsonRecord,
+      candidate.athlete,
+      tournament,
+      category,
+      null,
+      providerCustomerId,
+    );
+  } catch (error) {
+    const providerError = providerErrorSnapshot(error);
+    console.error("tournament-register spatial provider failure", {
+      stage: "asaas_spatial_addon_payment",
+      ...providerError,
+    });
+    if (error instanceof AmbiguousPaymentCreationError) {
+      const reconciling = await deferPaymentReconciliation(supabase, providerClaim as JsonRecord, error);
+      return json(request, responseBody(reconciling, {
+        retryable: false,
+        warning: "O Asaas ainda não confirmou a cobrança. Não tente gerar outra; faremos a conferência automaticamente.",
+      }), 202);
+    }
+    const failed = await markClaimedProviderFailure(
+      supabase,
+      providerClaim as JsonRecord,
+      { ...providerError, stage: "asaas_spatial_addon_payment" },
+    );
+    return json(request, responseBody(failed.payment, failed.applied
+      ? {
+        retryable: true,
+        warning: "A vaga foi reservada, mas o Pix não ficou pronto. Tente novamente.",
+      }
+      : {}), failed.applied ? 202 : 200);
+  }
+  const deferredPix = hasDeferredPixRepair(localPayment);
+  return json(request, responseBody(localPayment, deferredPixRepairResponse(localPayment)), deferredPix ? 202 : 201);
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(request) });
   const securityConfig = publicRegistrationSecurityConfig();
@@ -2094,6 +2874,14 @@ Deno.serve(async (request) => {
     }
 
     const action = text(payload.action, 40).toLowerCase();
+    if (action === "spatial_lookup") {
+      failureStage = "spatial_lookup";
+      return await handleSpatialLookup(request, payload, securityConfig);
+    }
+    if (action === "spatial_checkout") {
+      failureStage = "spatial_checkout";
+      return await handleSpatialCheckout(request, payload, securityConfig);
+    }
     if (action === "payment_status") {
       failureStage = "payment_status";
       return await handlePaymentStatus(request, payload, securityConfig);

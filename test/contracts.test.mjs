@@ -11,6 +11,7 @@ const clientPreviewSource = await readFile(path.join(projectRoot, 'client-previe
 const barPublicSource = await readFile(path.join(projectRoot, 'bar', 'index.html'), 'utf8');
 const menuSource = await readFile(path.join(projectRoot, 'menu', 'index.html'), 'utf8');
 const tournamentSource = await readFile(path.join(projectRoot, 'torneios', 'index.html'), 'utf8');
+const privateSpatialAddonPageSource = await readFile(path.join(projectRoot, 'inscricoes', 'espacial', 'index.html'), 'utf8');
 const tournamentRegisterSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'tournament-register', 'index.ts'), 'utf8');
 const tournamentInternalRegisterSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'tournament-internal-register', 'index.ts'), 'utf8');
 const tournamentAdminSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'tournament-admin-api', 'index.ts'), 'utf8');
@@ -96,6 +97,10 @@ const tournamentPaymentTrackingRateLimitSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260902183000_rate_limit_tournament_payment_tracking.sql'),
   'utf8'
 );
+const failClosedPublicRateLimitSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260903112500_fail_closed_public_rate_limits.sql'),
+  'utf8'
+);
 const revokeLegacyTournamentStatusSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260902183300_revoke_legacy_public_tournament_registration_status.sql'),
   'utf8'
@@ -122,6 +127,14 @@ const ilhaOpenSpatialCopyAndPixOnlySource = await readFile(
 );
 const ilhaOpenSpatialClassRulesSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260831182036_align_ilha_open_spatial_class_rules.sql'),
+  'utf8'
+);
+const privateSpatialAddonCheckoutSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260903111614_add_private_spatial_addon_checkout.sql'),
+  'utf8'
+);
+const privateSpatialCpfLookupSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260903113000_private_spatial_cpf_lookup_rpc.sql'),
   'utf8'
 );
 const tournamentLogoStorageSource = await readFile(
@@ -720,7 +733,7 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   const safePayment = vm.runInNewContext(
     `(${functionSource(tournamentRegisterSource, 'safePayment').replace('row: JsonRecord | null', 'row')})`,
   );
-  for (const status of ['REFUNDED', 'CANCELLED', 'CHARGEBACK']) {
+  for (const status of ['CREATED', 'RECONCILING', 'FAILED', 'RECEIVED', 'CONFIRMED', 'REVIEW_REQUIRED', 'PARTIALLY_REFUNDED', 'OVERDUE', 'REFUNDED', 'CANCELLED', 'CHARGEBACK']) {
     const terminalPayment = safePayment({
       id: 'pay_terminal',
       status,
@@ -733,7 +746,16 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
       assert.equal(terminalPayment[field], null);
     }
   }
-  assert.equal(safePayment({ status: 'PENDING', pix_payload: 'active-pix' }).pix_payload, 'active-pix');
+  assert.equal(safePayment({
+    status: 'PENDING',
+    expires_at: new Date(Date.now() + 60_000).toISOString(),
+    pix_payload: 'active-pix',
+  }).pix_payload, 'active-pix');
+  assert.equal(safePayment({
+    status: 'PENDING',
+    expires_at: new Date(Date.now() - 60_000).toISOString(),
+    pix_payload: 'expired-pix',
+  }).pix_payload, null);
   assert.match(
     terminalPaymentArtifactCleanupSource,
     /before insert or update of status, invoice_url, pix_payload, pix_encoded_image, pix_expires_at[\s\S]*'REFUNDED', 'CANCELLED', 'CHARGEBACK'/,
@@ -758,7 +780,198 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(billingDate, /timeZone: "America\/Sao_Paulo"/);
   assert.match(billingDate, /formatToParts/);
   assert.match(billingDate, /`\$\{values\.year\}-\$\{values\.month\}-\$\{values\.day\}`/);
+  const billingDateRuntime = vm.runInNewContext(
+    `(${billingDate.replace('reference: Date | string | number', 'reference')})`,
+  );
+  assert.equal(billingDateRuntime('2026-09-04T02:30:00.000Z'), '2026-09-03');
+  assert.equal(billingDateRuntime('2026-09-04T03:30:00.000Z'), '2026-09-04');
+  assert.match(
+    functionSource(tournamentRegisterSource, 'createOrRecoverPayment'),
+    /dueDate:\s*saoPauloDate\(String\(localPayment\.expires_at \|\| ""\)\)/,
+  );
+  assert.match(
+    functionSource(tournamentRegisterSource, 'createOrRecoverFamilyPayment'),
+    /dueDate:\s*saoPauloDate\(String\(localPayment\.expires_at \|\| ""\)\)/,
+  );
   assert.match(asaasWebhookSource, /apply_tournament_payment_reconciliation/);
+});
+
+test('adicional privado da Espacial cria checkout standalone, idempotente e isolado da inscrição principal', () => {
+  const functionStart = 'create or replace function public.claim_private_tournament_spatial_addon_checkout';
+  const signature = sourceSection(privateSpatialAddonCheckoutSource, functionStart, 'returns jsonb');
+  const rpc = sourceSection(privateSpatialAddonCheckoutSource, functionStart, '\n$$;');
+  const resumeStart = 'create or replace function public.resume_private_tournament_spatial_addon_checkout';
+  const resumeRpc = sourceSection(privateSpatialAddonCheckoutSource, resumeStart, '\n$$;');
+  const registrationInsert = sourceSection(
+    rpc,
+    'insert into public.tournament_registrations',
+    'returning * into spatial_registration;',
+  );
+  const paymentInsert = sourceSection(
+    rpc,
+    'insert into public.tournament_payments',
+    'returning * into payment_row;',
+  );
+
+  assert.match(signature, /p_tournament_id uuid[\s\S]*p_request_token uuid[\s\S]*p_athlete_id uuid[\s\S]*p_primary_registration_id uuid/);
+  assert.doesNotMatch(signature, /p_(?:amount|fee)\b/);
+  assert.match(rpc, /security definer[\s\S]*set search_path = ''/);
+  assert.match(rpc, /auth\.jwt\(\) ->> 'role'[\s\S]*<> 'service_role'/);
+  assert.match(rpc, /registration\.status = 'CONFIRMED'[\s\S]*registration\.payment_status in \('PAID', 'NOT_REQUIRED'\)/);
+  assert.match(rpc, /tournament_row\.settings -> 'spatial_addons' -> primary_category\.code/);
+  assert.match(ilhaOpenSpatialClassRulesSource, /'M2'[\s\S]*'ESP-A-M'/);
+  assert.match(ilhaOpenSpatialClassRulesSource, /'M5'[\s\S]*'ESP-B-M'/);
+  assert.match(rpc, /addon_fee is null or addon_fee <> 80/);
+  assert.match(rpc, /payment_row\.billing_type is distinct from 'PIX'/);
+  assert.match(rpc, /payment_row\.registration_group_id is not null/);
+  assert.match(rpc, /payment_row\.status not in \('CREATED', 'RECONCILING', 'PENDING', 'FAILED'\)[\s\S]*payment_row\.expires_at is null[\s\S]*payment_row\.expires_at <= now\(\)/);
+  assert.match(rpc, /registration\.request_token = p_request_token[\s\S]*registration\.parent_registration_id is null/);
+  assert.match(rpc, /if found then[\s\S]*matched_request_token := true;[\s\S]*else[\s\S]*registration\.category_id = spatial_category\.id/);
+  assert.match(rpc, /matched_request_token[\s\S]*Esta tentativa não corresponde ao adicional informado/);
+  assert.match(rpc, /spatial_registration\.parent_registration_id is not null[\s\S]*spatial_registration\.registration_group_id is not null/);
+  assert.match(registrationInsert, /request_token[\s\S]*p_request_token[\s\S]*'PENDING'[\s\S]*addon_fee/);
+  assert.doesNotMatch(registrationInsert, /parent_registration_id/);
+  const paymentLockIndex = rpc.indexOf('where payment.registration_id = existing_spatial_registration_id');
+  const registrationLockIndex = rpc.indexOf('where registration.id = existing_spatial_registration_id');
+  assert.ok(paymentLockIndex >= 0 && registrationLockIndex > paymentLockIndex, 'a cobrança deve ser travada antes da inscrição existente');
+  assert.match(rpc, /if payment_row\.id is null then[\s\S]*insert into public\.tournament_payments/);
+  assert.match(paymentInsert, /spatial_registration\.id[\s\S]*'tournament-spatial-addon:' \|\| spatial_registration\.id::text[\s\S]*'PIX'[\s\S]*addon_fee/);
+  assert.doesNotMatch(
+    rpc,
+    /(?:update|delete from) public\.tournament_registrations[\s\S]{0,300}primary_registration\.id/i,
+  );
+  assert.match(privateSpatialAddonCheckoutSource, /revoke all on function public\.claim_private_tournament_spatial_addon_checkout\([\s\S]*from public, anon, authenticated/);
+  assert.match(privateSpatialAddonCheckoutSource, /grant execute on function public\.claim_private_tournament_spatial_addon_checkout\([\s\S]*to service_role/);
+  assert.match(resumeRpc, /auth\.jwt\(\) ->> 'role'[\s\S]*<> 'service_role'/);
+  assert.ok(
+    resumeRpc.indexOf('where payment.registration_id = p_spatial_registration_id') >= 0 &&
+      resumeRpc.indexOf('where registration.id = p_spatial_registration_id') >
+        resumeRpc.indexOf('where payment.registration_id = p_spatial_registration_id'),
+    'a retomada deve travar a cobrança antes da inscrição',
+  );
+  assert.match(
+    resumeRpc,
+    /payment_row\.provider <> 'ASAAS'[\s\S]*payment_row\.provider_environment <> p_provider_environment[\s\S]*payment_row\.external_reference <> 'tournament-spatial-addon:' \|\| spatial_registration\.id::text[\s\S]*payment_row\.billing_type is distinct from 'PIX'[\s\S]*payment_row\.amount <> 80/,
+  );
+  assert.match(resumeRpc, /payment_row\.status not in \('CREATED', 'RECONCILING', 'PENDING', 'FAILED'\)[\s\S]*payment_row\.expires_at is null[\s\S]*payment_row\.expires_at <= now\(\)/);
+  assert.match(privateSpatialAddonCheckoutSource, /revoke all on function public\.resume_private_tournament_spatial_addon_checkout\([\s\S]*from public, anon, authenticated/);
+  assert.match(privateSpatialAddonCheckoutSource, /grant execute on function public\.resume_private_tournament_spatial_addon_checkout\([\s\S]*to service_role/);
+  assert.match(privateSpatialAddonCheckoutSource, /revoke all on function public\.archive_expired_tournament_payment\(uuid, text, timestamptz\)[\s\S]*from public, anon, authenticated/);
+  assert.match(privateSpatialAddonCheckoutSource, /grant execute on function public\.archive_expired_tournament_payment\(uuid, text, timestamptz\)[\s\S]*to service_role/);
+  assert.match(privateSpatialAddonCheckoutSource, /tournament_registration_groups_tournament_payer_cpf_idx[\s\S]*\(tournament_id, payer_cpf\)/);
+  assert.doesNotMatch(privateSpatialAddonCheckoutSource, /'spatial_addon_portal'[\s\S]{0,180}'fee'/);
+  assert.match(
+    functionSource(tournamentRegisterSource, 'createOrRecoverPayment'),
+    /providerCustomerId \|\| text\(localPayment\.provider_customer_id, 80\) \|\|/,
+  );
+  assert.match(
+    functionSource(tournamentRegisterSource, 'claimProviderPaymentAttempt'),
+    /\.gt\("expires_at", now\)/,
+  );
+  const spatialCheckout = functionSource(tournamentRegisterSource, 'handleSpatialCheckout');
+  const spatialCandidates = sourceSection(
+    tournamentRegisterSource,
+    'async function loadSpatialAddonCandidates',
+    'function safeSpatialCandidate',
+  );
+  const spatialProofCreation = functionSource(tournamentRegisterSource, 'createSpatialCandidateProof');
+  const spatialProofVerification = functionSource(tournamentRegisterSource, 'verifySpatialCandidateProof');
+  const cpfLookupRpc = sourceSection(
+    privateSpatialCpfLookupSource,
+    'create or replace function public.lookup_private_tournament_spatial_addon_athlete_ids',
+    '\n$$;',
+  );
+  assert.match(cpfLookupRpc, /returns table \(athlete_id uuid\)/);
+  assert.match(cpfLookupRpc, /security definer[\s\S]*set search_path = ''/);
+  assert.match(cpfLookupRpc, /auth\.jwt\(\) ->> 'role'[\s\S]*<> 'service_role'/);
+  assert.match(cpfLookupRpc, /registration\.athlete_id = athlete\.id[\s\S]*registration\.tournament_id = p_tournament_id/);
+  assert.match(cpfLookupRpc, /registration_group\.tournament_id = p_tournament_id/);
+  assert.match(privateSpatialCpfLookupSource, /revoke all on function public\.lookup_private_tournament_spatial_addon_athlete_ids\(uuid, text\)[\s\S]*from public, anon, authenticated/);
+  assert.match(privateSpatialCpfLookupSource, /grant execute on function public\.lookup_private_tournament_spatial_addon_athlete_ids\(uuid, text\)[\s\S]*to service_role/);
+  assert.match(spatialCandidates, /\.rpc\([\s\S]*lookup_private_tournament_spatial_addon_athlete_ids[\s\S]*p_tournament_id:\s*tournament\.id[\s\S]*p_cpf:\s*cpf/);
+  assert.doesNotMatch(spatialCandidates, /\.eq\(["'](?:cpf|payer_cpf)["'],\s*cpf\)/);
+  assert.doesNotMatch(spatialProofCreation, /sha256Hex\(cpf\)/);
+  assert.match(spatialProofCreation, /hmacSha256\(config\.rateLimitSalt, `spatial-addon-proof-cpf:\$\{cpf\}`\)/);
+  assert.match(spatialProofVerification, /secureStringEquals\(parsed\.c, expectedCpfBinding\)/);
+  assert.match(spatialCandidates, /\[\.\.\.registrations\]\.reverse\(\)\.find/);
+  assert.match(
+    spatialCheckout,
+    /ensureAsaasFamilyCustomer[\s\S]*bindPaymentProviderCustomer[\s\S]*claimProviderPaymentAttempt/,
+  );
+  assert.match(
+    spatialCheckout,
+    /!activePaymentReservation\(localPayment\)[\s\S]*status =?[^\n]*410|!activePaymentReservation\(localPayment\)[\s\S]*}, 410\)/,
+  );
+  assert.match(spatialCheckout, /candidate\.state === "REVIEW_REQUIRED"[\s\S]*precisa de revisão da organização/);
+  assert.match(spatialCheckout, /candidate\.state === "PAYMENT_PENDING"[\s\S]*resume_private_tournament_spatial_addon_checkout[\s\S]*else \{[\s\S]*claim_private_tournament_spatial_addon_checkout/);
+  assert.match(
+    functionSource(tournamentRegisterSource, 'handleSpatialLookup'),
+    /!tournamentOpen && !candidates\.some\(\(candidate\) => candidate\.state === "PAYMENT_PENDING"\)/,
+  );
+  assert.match(
+    sourceSection(tournamentRegisterSource, 'function trackingCheckoutResponse(', 'async function loadTrackedCheckout'),
+    /"REVIEW_REQUIRED"[\s\S]*expirableUnpaidPayment = \["CREATED", "RECONCILING", "PENDING", "FAILED"\][\s\S]*reservationExpired[\s\S]*terminal:[\s\S]*reservationExpired[\s\S]*reservation_expired: reservationExpired/,
+  );
+  assert.match(privateSpatialAddonPageSource, /PAYMENT_TERMINAL = new Set\(\['REVIEW_REQUIRED'/);
+  assert.match(privateSpatialAddonPageSource, /result\.confirmed === false \|\| PAYMENT_TERMINAL\.has\(paymentStatus\(result\)\)/);
+  assert.match(privateSpatialAddonPageSource, /function paymentTerminal\([\s\S]*PAYMENT_TERMINAL\.has\(paymentStatus\(result\)\)[\s\S]*return true/);
+  assert.match(privateSpatialAddonPageSource, /Não pague esta cobrança/);
+  assert.match(privateSpatialAddonPageSource, /providerConfirmed \|\| !\(result\.retryable/);
+  assert.match(privateSpatialAddonPageSource, /function reservationExpired\([\s\S]*!PAYMENT_PENDING\.has\(status\)[\s\S]*expiresAt <= Date\.now\(\)[\s\S]*result\.reservation_active === false/);
+  const mergePaymentResult = vm.runInNewContext(
+    `(${functionSource(privateSpatialAddonPageSource, 'mergePaymentResult')})`,
+    { clean: (value) => value === null || value === undefined ? '' : String(value).trim() },
+  );
+  const futureExpiry = new Date(Date.now() + 60_000).toISOString();
+  const pendingWithPix = {
+    payment: {
+      status: 'PENDING',
+      expires_at: futureExpiry,
+      invoice_url: 'https://provider.invalid/pay',
+      pix_payload: 'active-pix',
+      pix_encoded_image: 'active-qr',
+    },
+  };
+  assert.equal(mergePaymentResult(pendingWithPix, { payment: { status: 'PENDING', expires_at: futureExpiry } }).payment.pix_payload, 'active-pix');
+  const confirmedWithoutInstructions = mergePaymentResult(pendingWithPix, {
+    payment: { status: 'CONFIRMED', expires_at: futureExpiry },
+  });
+  assert.equal(confirmedWithoutInstructions.payment.invoice_url, undefined);
+  assert.equal(confirmedWithoutInstructions.payment.pix_payload, undefined);
+  assert.equal(confirmedWithoutInstructions.payment.pix_encoded_image, undefined);
+  assert.equal(mergePaymentResult(pendingWithPix, { payment: null }).payment, null);
+  assert.match(privateSpatialAddonPageSource, /function expireTrackedPayment\([\s\S]*status: 'OVERDUE'/);
+  assert.match(privateSpatialAddonPageSource, /error instanceof ApiError && \[404, 410\]\.includes\(error\.status\)[\s\S]*expireTrackedPayment/);
+  assert.match(privateSpatialAddonPageSource, /invoiceButton'\)\.hidden = !invoiceUrl \|\| confirmed \|\| terminal \|\| paidButSyncing/);
+  assert.match(privateSpatialAddonPageSource, /pixQr'\)\.hidden = !qrSource \|\| confirmed \|\| terminal \|\| paidButSyncing/);
+  assert.match(privateSpatialAddonPageSource, /expired \? 'Prazo encerrado'/);
+  assert.match(privateSpatialAddonPageSource, /Não pague o QR anterior/);
+  assert.match(asaasWebhookSource, /"tournament-spatial-addon:"/);
+  assert.match(serviceWorkerSource, /\.\/inscricoes\/espacial\/index\.html/);
+  assert.match(serviceWorkerSource, /\^\\\/inscricoes\\\/\[\^\/\]\+\\\/espacial/);
+});
+
+test('limites públicos recusam o IP antes de consumir buckets compartilhados ou tokens aleatórios', () => {
+  const networkRpc = sourceSection(
+    failClosedPublicRateLimitSource,
+    'create or replace function public.consume_tournament_registration_network_rate_limits',
+    '\n$$;',
+  );
+  const trackingRpc = sourceSection(
+    failClosedPublicRateLimitSource,
+    'create or replace function public.consume_tournament_payment_tracking_rate_limits',
+    '\n$$;',
+  );
+  assert.ok(
+    networkRpc.indexOf("'ip:' || p_ip_hash") < networkRpc.indexOf("'global'"),
+    'o bucket do IP deve ser consumido antes do limite global',
+  );
+  assert.match(networkRpc, /v_attempts > 30[\s\S]*return query select false[\s\S]*return;/);
+  assert.ok(
+    trackingRpc.indexOf("'tracking-ip:' || p_ip_hash") < trackingRpc.indexOf("'tracking-token:' || p_tracking_hash"),
+    'o bucket do IP deve ser consumido antes de criar o bucket do token',
+  );
+  assert.match(trackingRpc, /v_attempts > v_ip_max_attempts[\s\S]*return query select false[\s\S]*return;/);
 });
 
 test('valores por perfil e adicional espacial do Ilha Open são editáveis no ADM e validados no backend', () => {
@@ -789,6 +1002,83 @@ test('inscrição online reserva a vaga por duas horas e o ADM permite reenviar 
   assert.match(tournamentPaymentExpirySource, /payments\/\$\{encodeURIComponent\(providerPaymentId\)\}/);
   assert.match(tournamentPaymentExpirySource, /method: "DELETE"/);
   assert.match(tournamentPaymentExpirySource, /EXPIRY_REMOVABLE_PROVIDER_STATUSES = new Set\(\["PENDING", "OVERDUE"\]\)/);
+  assert.match(
+    functionSource(tournamentRegisterSource, 'claimProviderPaymentAttempt'),
+    /\.gt\("expires_at", now\)/,
+    'o claim do checkout deve recusar uma reserva que já venceu no mesmo CAS',
+  );
+  const graceMatch = tournamentPaymentExpirySource.match(
+    /const PROVIDER_ATTEMPT_GRACE_MS = (\d+) \* 60 \* 1000/,
+  );
+  assert.ok(graceMatch, 'o expirador precisa declarar uma janela explícita para a tentativa no provedor');
+  const providerAttemptGraceMs = Number(graceMatch[1]) * 60 * 1000;
+  const registerProviderTimeoutMatch = tournamentRegisterSource.match(
+    /async function asaasRequest\([\s\S]{0,800}?setTimeout\(\(\) => controller\.abort\(\), (\d+)\)/,
+  );
+  assert.ok(registerProviderTimeoutMatch, 'o timeout HTTP do checkout precisa estar explícito');
+  assert.ok(
+    providerAttemptGraceMs > Number(registerProviderTimeoutMatch[1]),
+    'a janela do expirador precisa superar o maior timeout HTTP do checkout',
+  );
+  const providerAttemptIsRecent = vm.runInNewContext(
+    `(() => {
+      const PROVIDER_ATTEMPT_GRACE_MS = ${providerAttemptGraceMs};
+      return (${functionSource(tournamentPaymentExpirySource, 'providerAttemptIsRecent').replace('payment: Row', 'payment')});
+    })()`,
+  );
+  const concurrencyNow = Date.parse('2026-09-03T15:00:00.000Z');
+  const recentAttempt = new Date(concurrencyNow - 30_000).toISOString();
+  const staleAttempt = new Date(concurrencyNow - providerAttemptGraceMs - 1).toISOString();
+  assert.equal(providerAttemptIsRecent({ status: 'CREATED', provider_attempted_at: recentAttempt }, concurrencyNow), true);
+  assert.equal(providerAttemptIsRecent({ status: 'RECONCILING', provider_attempted_at: recentAttempt }, concurrencyNow), true);
+  assert.equal(providerAttemptIsRecent({ status: 'CREATED', updated_at: recentAttempt }, concurrencyNow), true);
+  assert.equal(providerAttemptIsRecent({ status: 'RECONCILING', updated_at: recentAttempt }, concurrencyNow), false);
+  assert.equal(providerAttemptIsRecent({ status: 'PENDING', provider_attempted_at: recentAttempt }, concurrencyNow), false);
+  assert.equal(providerAttemptIsRecent({ status: 'CREATED', provider_attempted_at: staleAttempt }, concurrencyNow), false);
+  const expiryWorker = sourceSection(
+    tournamentPaymentExpirySource,
+    'const processPayment = async (payment: Row) =>',
+    'const worker = async () =>',
+  );
+  const firstInFlightGuard = expiryWorker.indexOf('if (providerAttemptIsRecent(payment))');
+  const remoteLookup = expiryWorker.indexOf('const remote = await findRemotePayment(payment)');
+  const refreshBeforeDestruction = expiryWorker.indexOf('.select(selectColumns)', remoteLookup);
+  const secondInFlightGuard = expiryWorker.indexOf('if (providerAttemptIsRecent(payment))', firstInFlightGuard + 1);
+  const providerDelete = expiryWorker.indexOf('method: "DELETE"');
+  const localArchive = expiryWorker.indexOf('archiveLocally(client, payment)');
+  assert.ok(
+    firstInFlightGuard >= 0 && firstInFlightGuard < remoteLookup,
+    'a tentativa recente deve ser ignorada antes de consultar ou alterar a cobrança',
+  );
+  assert.ok(
+    refreshBeforeDestruction > remoteLookup &&
+      secondInFlightGuard > refreshBeforeDestruction &&
+      providerDelete > secondInFlightGuard &&
+      localArchive > providerDelete,
+    'o expirador deve reler e proteger a tentativa concorrente antes de excluir no Asaas ou arquivar localmente',
+  );
+  assert.doesNotMatch(
+    expiryWorker.slice(firstInFlightGuard, remoteLookup),
+    /scheduleReconciliation/,
+    'a proteção não pode tocar em updated_at durante o CAS do checkout',
+  );
+  const archiveLocallySource = functionSource(tournamentPaymentExpirySource, 'archiveLocally');
+  assert.match(archiveLocallySource, /p_expected_status:\s*payment\.status/);
+  assert.match(archiveLocallySource, /p_expected_updated_at:\s*payment\.updated_at/);
+  const atomicArchiveStart = 'create or replace function public.archive_expired_tournament_payment(\n  p_payment_id uuid,\n  p_expected_status text,';
+  const atomicArchiveSource = sourceSection(privateSpatialAddonCheckoutSource, atomicArchiveStart, '\n$$;');
+  assert.match(atomicArchiveSource, /for update/);
+  assert.match(atomicArchiveSource, /payment_row\.status is distinct from p_expected_status/);
+  assert.match(atomicArchiveSource, /payment_row\.updated_at is distinct from p_expected_updated_at/);
+  assert.match(
+    atomicArchiveSource,
+    /payment_row\.status not in \('CREATED', 'RECONCILING', 'PENDING', 'FAILED', 'OVERDUE'\)/,
+  );
+  assert.match(
+    atomicArchiveSource,
+    /provider_attempted_at > clock_timestamp\(\) - interval '3 minutes'/,
+    'o próprio RPC deve preservar uma tentativa recente mesmo com os argumentos atuais',
+  );
   const expiryDispositionSource = functionSource(tournamentPaymentExpirySource, 'paymentExpiryRemoteDisposition')
     .replace(/:\s*(?:boolean|number|string)/g, '');
   const expiryDisposition = vm.runInNewContext(
@@ -2538,7 +2828,7 @@ test('membro familiar ativo vira aluno operacional e pode receber plano e aula n
   assert.match(adminSource, /data-family-directory-student=/);
   assert.match(adminSource, /Plano individual · cobrança na conta da família/);
   assert.match(adminSource, /if \(studentId && String\(student\.id \|\| ''\) === studentId\) return true/);
-  assert.match(serviceWorkerSource, /ilha-play-v234-announcement-redelivery/);
+  assert.match(serviceWorkerSource, /ilha-play-v235-private-spatial-addon/);
 });
 
 test('grade de aulas usa cartões compactos e filtros responsivos', () => {
@@ -2699,14 +2989,31 @@ test('RPC legado não contorna o acompanhamento protegido do Pix', () => {
 
 test('retomada individual reutiliza a cobrança reservada mesmo após o fechamento das inscrições', () => {
   const retryHandler = functionSource(tournamentRegisterSource, 'handleIndividualPaymentRetry');
+  const spatialResume = functionSource(tournamentRegisterSource, 'resumeTrackedSpatialAddon');
   assert.match(retryHandler, /trackedCheckoutFromPayload/);
   assert.match(retryHandler, /activePaymentReservation\(localPayment\)/);
+  assert.match(retryHandler, /resumeTrackedSpatialAddon/);
   assert.match(retryHandler, /localPayment\.status !== "FAILED" && paymentAge <= 120000/);
   assert.match(retryHandler, /createOrRecoverPayment/);
   assert.ok(
     retryHandler.indexOf('activePaymentReservation(localPayment)') < retryHandler.indexOf('createOrRecoverPayment'),
     'a reserva precisa ser validada antes de qualquer retomada no provedor',
   );
+  for (const providerOperation of [
+    'ensurePaymentProviderEnvironment',
+    'repairExistingPixPayment',
+    'claimProviderPaymentAttempt',
+    'createOrRecoverPayment',
+  ]) {
+    assert.ok(
+      retryHandler.indexOf('resumeTrackedSpatialAddon') < retryHandler.indexOf(providerOperation),
+      `as regras da Espacial devem ser retomadas antes de ${providerOperation}`,
+    );
+  }
+  assert.match(spatialResume, /externalReference !== `tournament-spatial-addon:\$\{registration\.id\}`/);
+  assert.match(spatialResume, /tournamentSettings\(checkout\.tournament\)\.spatial_addons/);
+  assert.match(spatialResume, /\.eq\("athlete_id", registration\.athlete_id\)[\s\S]*\.eq\("status", "CONFIRMED"\)[\s\S]*\.in\("payment_status", \["PAID", "NOT_REQUIRED"\]\)/);
+  assert.match(spatialResume, /resume_private_tournament_spatial_addon_checkout/);
   assert.doesNotMatch(retryHandler, /registration_open|registration_closes_at|registration_opens_at/);
   assert.match(tournamentRegisterSource, /action === "retry_payment"[\s\S]*handleIndividualPaymentRetry/);
 

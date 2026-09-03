@@ -1,0 +1,1158 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#073d46" />
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <title>Classe Espacial | Ilha Open</title>
+  <style>
+    :root {
+      --ink: #102f36;
+      --muted: #60767d;
+      --line: #d7e4e7;
+      --paper: #ffffff;
+      --canvas: #f1f7f7;
+      --deep: #073d46;
+      --teal: #087984;
+      --lime: #a8ef00;
+      --lime-soft: #efffc9;
+      --green: #1ed668;
+      --red: #b52e36;
+      --red-soft: #fff0f1;
+      --amber: #8b6200;
+      --amber-soft: #fff7d7;
+      --shadow: 0 24px 70px rgba(6, 48, 57, .13);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--canvas);
+    }
+
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: var(--canvas); }
+    body { min-height: 100vh; margin: 0; background:
+      radial-gradient(circle at 88% 5%, rgba(168,239,0,.14), transparent 26rem),
+      linear-gradient(180deg, #f8fbfb 0, var(--canvas) 34rem); }
+    button, input { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
+
+    .site-head {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+      border-bottom: 1px solid rgba(16,47,54,.09);
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(18px);
+    }
+    .site-head-inner {
+      width: min(1120px, calc(100% - 32px));
+      min-height: 78px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+    .brand { display: inline-flex; align-items: center; min-width: 0; }
+    .brand img { width: 198px; max-width: 44vw; height: 58px; object-fit: contain; object-position: left center; }
+    .secure-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 38px;
+      padding: 8px 13px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      background: #fff;
+    }
+
+    .page { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 34px 0 64px; }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 28px;
+      min-height: 260px;
+      padding: clamp(28px, 5vw, 58px);
+      border-radius: 34px;
+      color: #fff;
+      background:
+        radial-gradient(circle at 90% 15%, rgba(168,239,0,.22), transparent 21rem),
+        linear-gradient(135deg, #052e36 0%, #075761 68%, #0b7e82 100%);
+      box-shadow: var(--shadow);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -85px;
+      bottom: -140px;
+      width: 360px;
+      height: 360px;
+      border: 2px solid rgba(255,255,255,.11);
+      border-radius: 50%;
+    }
+    .hero-copy, .hero-mark { position: relative; z-index: 1; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 15px;
+      color: var(--lime);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    .hero h1 { max-width: 720px; margin: 0; font-size: clamp(34px, 6vw, 64px); line-height: .98; letter-spacing: -.045em; }
+    .hero p { max-width: 680px; margin: 19px 0 0; color: rgba(255,255,255,.78); font-size: clamp(15px, 2vw, 19px); line-height: 1.55; }
+    .hero-mark {
+      display: grid;
+      place-items: center;
+      width: 112px;
+      aspect-ratio: 1;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 30px;
+      color: var(--ink);
+      background: var(--lime);
+      font-size: 47px;
+      transform: rotate(3deg);
+      box-shadow: 0 18px 45px rgba(0,0,0,.18);
+    }
+
+    .flow-shell {
+      display: grid;
+      grid-template-columns: 250px minmax(0,1fr);
+      gap: 20px;
+      margin-top: 20px;
+      align-items: start;
+    }
+    .steps, .card {
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background: rgba(255,255,255,.96);
+      box-shadow: 0 16px 45px rgba(8,55,63,.07);
+    }
+    .steps { position: sticky; top: 98px; padding: 18px; }
+    .step {
+      display: grid;
+      grid-template-columns: 38px minmax(0,1fr);
+      align-items: center;
+      gap: 11px;
+      min-height: 62px;
+      padding: 10px;
+      border-radius: 16px;
+      color: #829398;
+    }
+    .step + .step { margin-top: 4px; }
+    .step-number { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #edf3f4; font-weight: 900; }
+    .step strong { display: block; font-size: 13px; }
+    .step small { display: block; margin-top: 2px; font-size: 10px; }
+    .step.active { color: var(--ink); background: var(--lime-soft); }
+    .step.active .step-number { color: var(--ink); background: var(--lime); }
+    .step.done { color: #126e3d; }
+    .step.done .step-number { color: #fff; background: #15924d; }
+
+    .card { min-height: 430px; padding: clamp(22px, 4vw, 42px); }
+    .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 26px; }
+    .card-head h2 { margin: 0; font-size: clamp(25px, 4vw, 36px); line-height: 1.08; letter-spacing: -.03em; }
+    .card-head p { max-width: 650px; margin: 10px 0 0; color: var(--muted); line-height: 1.55; }
+    .mini-mark { display: grid; place-items: center; flex: 0 0 auto; width: 54px; height: 54px; border-radius: 17px; background: var(--lime-soft); font-size: 26px; }
+
+    .form-field { display: grid; gap: 8px; }
+    .form-field label, .label { color: #40575d; font-size: 12px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+    .form-field input {
+      width: 100%;
+      min-height: 58px;
+      padding: 13px 16px;
+      border: 1px solid #cadbde;
+      border-radius: 15px;
+      outline: none;
+      color: var(--ink);
+      background: #fff;
+      transition: border-color .18s ease, box-shadow .18s ease;
+    }
+    .form-field input:focus { border-color: var(--teal); box-shadow: 0 0 0 4px rgba(8,121,132,.11); }
+    .form-grid { display: grid; grid-template-columns: minmax(0, 420px); gap: 18px; }
+    .hint { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .captcha-shell { min-height: 70px; }
+    .captcha-status { margin: 7px 0 0; color: var(--muted); font-size: 12px; }
+    .captcha-status.error { color: var(--red); }
+
+    .button-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+    .button {
+      min-height: 50px;
+      padding: 12px 20px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      cursor: pointer;
+      color: var(--ink);
+      background: #fff;
+      font-weight: 900;
+      text-align: center;
+      text-decoration: none;
+      transition: transform .16s ease, opacity .16s ease, box-shadow .16s ease;
+    }
+    .button:hover { transform: translateY(-1px); }
+    .button:focus-visible { outline: 3px solid rgba(8,121,132,.3); outline-offset: 2px; }
+    .button:disabled { cursor: not-allowed; opacity: .55; transform: none; }
+    .button.lime { border-color: var(--lime); background: var(--lime); box-shadow: 0 12px 28px rgba(168,239,0,.22); }
+    .button.primary { border-color: var(--deep); color: #fff; background: var(--deep); }
+    .button.full { width: 100%; }
+
+    .notice {
+      display: grid;
+      grid-template-columns: auto minmax(0,1fr);
+      gap: 10px;
+      margin-top: 24px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      color: var(--muted);
+      background: #f7fafb;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .notice strong { color: var(--ink); }
+    .notice a { color: var(--teal); font-weight: 850; text-underline-offset: 2px; }
+    .error-box, .status-box {
+      margin-bottom: 20px;
+      padding: 14px 16px;
+      border-radius: 15px;
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1.45;
+    }
+    .error-box { border: 1px solid #f0c6ca; color: var(--red); background: var(--red-soft); }
+    .status-box { border: 1px solid #cfe3e5; color: var(--ink); background: #f2f8f8; }
+
+    .candidate-list { display: grid; gap: 12px; }
+    .candidate-card { position: relative; display: block; cursor: pointer; }
+    .candidate-card input { position: absolute; opacity: 0; pointer-events: none; }
+    .candidate-body {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) auto;
+      gap: 14px;
+      padding: 18px;
+      border: 2px solid var(--line);
+      border-radius: 19px;
+      background: #fff;
+      transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+    .candidate-card input:checked + .candidate-body { border-color: #7abd00; background: #f8ffe9; box-shadow: 0 0 0 4px rgba(168,239,0,.13); }
+    .candidate-card input:focus-visible + .candidate-body { outline: 3px solid rgba(8,121,132,.27); outline-offset: 2px; }
+    .candidate-name { margin: 0; font-size: 18px; }
+    .class-route { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-top: 11px; color: var(--muted); font-size: 13px; }
+    .class-pill { display: inline-flex; align-items: center; min-height: 30px; padding: 6px 10px; border-radius: 999px; color: var(--ink); background: #edf4f5; font-weight: 800; }
+    .class-pill.spatial { color: #12632f; background: #ddffc8; }
+    .candidate-price { align-self: center; color: var(--teal); font-size: 23px; font-weight: 950; white-space: nowrap; }
+
+    .selection-summary {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 10px;
+      margin: 20px 0;
+    }
+    .summary-item { min-height: 91px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: #f8fbfb; }
+    .summary-item span { display: block; color: var(--muted); font-size: 10px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; }
+    .summary-item strong { display: block; margin-top: 7px; font-size: 15px; line-height: 1.35; }
+    .summary-item.price { border-color: #b8df68; background: var(--lime-soft); }
+    .summary-item.price strong { font-size: 22px; }
+
+    .consent { display: grid; grid-template-columns: 22px minmax(0,1fr); gap: 10px; align-items: start; padding: 15px; border-radius: 15px; background: #f5f8f9; color: #40575d; font-size: 13px; line-height: 1.5; }
+    .consent input { width: 19px; height: 19px; margin-top: 1px; accent-color: #6fa900; }
+
+    .payment-head { text-align: center; }
+    .success-icon { display: grid; place-items: center; width: 72px; height: 72px; margin: 0 auto 16px; border-radius: 50%; color: var(--ink); background: var(--lime); font-size: 36px; font-weight: 950; }
+    .payment-head h2 { margin: 0; font-size: clamp(28px, 4vw, 39px); letter-spacing: -.035em; }
+    .payment-head p { margin: 10px auto 0; max-width: 660px; color: var(--muted); line-height: 1.5; }
+    .payment-panel { max-width: 700px; margin: 26px auto 0; padding: 20px; border: 1px solid var(--line); border-radius: 20px; background: #f7fafb; }
+    .payment-status-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-bottom: 15px; border-bottom: 1px solid var(--line); }
+    .status-chip { display: inline-flex; min-height: 32px; align-items: center; padding: 6px 11px; border-radius: 999px; color: var(--amber); background: var(--amber-soft); font-size: 11px; font-weight: 950; text-transform: uppercase; }
+    .status-chip.confirmed { color: #126b3b; background: #dcffe8; }
+    .status-chip.error { color: var(--red); background: var(--red-soft); }
+    .payment-amount { font-size: 22px; font-weight: 950; }
+    .payment-class { margin: 16px 0 0; font-weight: 850; }
+    .reservation { display: flex; gap: 9px; margin-top: 14px; padding: 12px 13px; border-radius: 13px; color: var(--red); background: var(--red-soft); font-size: 12px; line-height: 1.45; }
+    .payment-qr { display: block; width: min(320px,100%); margin: 20px auto 12px; padding: 12px; border: 1px solid var(--line); border-radius: 18px; background: #fff; }
+    .pix-code { overflow-wrap: anywhere; margin-top: 12px; padding: 13px; border: 1px solid var(--line); border-radius: 12px; color: #365057; background: #fff; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; line-height: 1.45; }
+    .payment-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .payment-feedback { min-height: 20px; margin: 13px 0 0; color: var(--muted); text-align: center; font-size: 12px; }
+    .payment-feedback.error { color: var(--red); }
+
+    .blocked { max-width: 720px; margin: 28px auto; text-align: center; }
+    .blocked .mini-mark { margin: 0 auto 16px; }
+    .blocked h2 { margin: 0; font-size: 29px; }
+    .blocked p { color: var(--muted); line-height: 1.55; }
+
+    @media (max-width: 780px) {
+      .site-head-inner, .page { width: min(100% - 22px, 680px); }
+      .site-head-inner { min-height: 67px; }
+      .brand img { width: 154px; height: 49px; }
+      .secure-badge span:last-child { display: none; }
+      .secure-badge { width: 38px; min-height: 38px; justify-content: center; padding: 0; }
+      .page { padding-top: 12px; }
+      .hero { grid-template-columns: 1fr; min-height: 0; padding: 25px 21px; border-radius: 24px; }
+      .hero h1 { font-size: clamp(32px,10vw,46px); }
+      .hero p { margin-top: 13px; font-size: 14px; }
+      .hero-mark { display: none; }
+      .flow-shell { grid-template-columns: 1fr; margin-top: 12px; }
+      .steps { position: static; display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; padding: 7px; border-radius: 18px; }
+      .step { grid-template-columns: 30px minmax(0,1fr); gap: 6px; min-height: 49px; padding: 6px; }
+      .step + .step { margin-top: 0; }
+      .step-number { width: 29px; height: 29px; font-size: 11px; }
+      .step strong { font-size: 10px; }
+      .step small { display: none; }
+      .card { min-height: 0; padding: 21px 17px; border-radius: 21px; }
+      .card-head { margin-bottom: 20px; }
+      .mini-mark { width: 46px; height: 46px; border-radius: 14px; font-size: 22px; }
+      .candidate-body { grid-template-columns: 1fr; }
+      .candidate-price { justify-self: start; font-size: 19px; }
+      .selection-summary { grid-template-columns: 1fr; }
+      .summary-item { min-height: 0; }
+      .payment-actions { grid-template-columns: 1fr; }
+      .button-row .button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-head">
+    <div class="site-head-inner">
+      <a class="brand" id="brandLink" href="/torneios" aria-label="Voltar à página do torneio"><img src="/logo.png" alt="Ilha Tênis Colatina" /></a>
+      <div class="secure-badge" role="img" aria-label="Ambiente protegido"><span aria-hidden="true">🔒</span><span>Ambiente protegido</span></div>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="hero" aria-labelledby="pageTitle">
+      <div class="hero-copy">
+        <p class="eyebrow">Ilha Open · inscrição adicional</p>
+        <h1 id="pageTitle">Entre também na Classe Espacial 🚀</h1>
+        <p>Localize a inscrição já confirmada, confira a classe disponível para você e gere um novo Pix de R$ 80,00.</p>
+      </div>
+      <div class="hero-mark" aria-hidden="true">🎾</div>
+    </section>
+
+    <div class="flow-shell" id="flowShell" hidden>
+      <nav class="steps" aria-label="Etapas da inscrição adicional">
+        <div class="step active" data-step-indicator="1"><span class="step-number">1</span><span><strong>Identificação</strong><small>Localize a inscrição</small></span></div>
+        <div class="step" data-step-indicator="2"><span class="step-number">2</span><span><strong>Confirmação</strong><small>Escolha o atleta</small></span></div>
+        <div class="step" data-step-indicator="3"><span class="step-number">3</span><span><strong>Pagamento</strong><small>Conclua pelo Pix</small></span></div>
+      </nav>
+
+      <section class="card" aria-live="polite">
+        <div class="error-box" id="pageError" role="alert" hidden></div>
+
+        <section id="lookupStep">
+          <div class="card-head">
+            <div><h2>Encontre sua inscrição</h2><p>Informe o CPF usado na inscrição principal. Caso ele seja de um responsável, você poderá escolher entre os atletas vinculados.</p></div>
+            <span class="mini-mark" aria-hidden="true">🔎</span>
+          </div>
+          <form id="lookupForm" novalidate>
+            <div class="form-grid">
+              <div class="form-field">
+                <label for="cpfInput">CPF do atleta ou responsável</label>
+                <input id="cpfInput" name="cpf" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00" required />
+                <p class="hint">O CPF não será salvo neste aparelho.</p>
+              </div>
+              <div class="captcha-shell" id="captchaShell">
+                <div id="captchaWidget"></div>
+                <p class="captcha-status" id="captchaStatus" role="status">Carregando proteção anti-robô…</p>
+              </div>
+            </div>
+            <div class="button-row"><button class="button lime" id="lookupButton" type="submit" disabled>Localizar minha inscrição</button></div>
+          </form>
+          <aside class="notice"><span aria-hidden="true">🛡️</span><span><strong>Privacidade:</strong> os dados são usados somente para localizar a inscrição do torneio e, após sua confirmação, gerar o Pix adicional. <a id="privacyLink" target="_blank" rel="noopener">Fale com a organização sobre seus dados.</a></span></aside>
+        </section>
+
+        <section id="candidateStep" hidden>
+          <div class="card-head">
+            <div><h2 id="candidateTitle">Classe Espacial disponível</h2><p id="candidateIntro">Confira os dados abaixo antes de continuar.</p></div>
+            <span class="mini-mark" aria-hidden="true">🚀</span>
+          </div>
+          <form id="checkoutForm" novalidate>
+            <div class="candidate-list" id="candidateList" role="radiogroup" aria-label="Escolha o atleta"></div>
+            <div class="selection-summary" id="selectionSummary" hidden>
+              <div class="summary-item"><span>Classe atual</span><strong id="currentClassSummary"></strong></div>
+              <div class="summary-item"><span>Inscrição adicional</span><strong id="spatialClassSummary"></strong></div>
+              <div class="summary-item price"><span>Novo Pix</span><strong id="amountSummary">R$ 80,00</strong></div>
+            </div>
+            <label class="consent"><input id="checkoutConsent" type="checkbox" required /><span>Confirmo que escolhi o atleta correto e autorizo a geração de um novo Pix exclusivo para a Classe Espacial.</span></label>
+            <div class="button-row">
+              <button class="button" id="backToLookupButton" type="button">Voltar</button>
+              <button class="button lime" id="checkoutButton" type="submit" disabled>Gerar Pix de R$ 80,00</button>
+            </div>
+          </form>
+          <aside class="notice"><span aria-hidden="true">⚠️</span><span>A inscrição principal não será alterada. A vaga na Classe Espacial só será confirmada após a baixa automática deste novo pagamento.</span></aside>
+        </section>
+
+        <section id="paymentStep" hidden>
+          <div class="payment-head">
+            <div class="success-icon" id="paymentIcon" aria-hidden="true">✓</div>
+            <h2 id="paymentTitle">Inscrição adicional recebida!</h2>
+            <p id="paymentCopy">Conclua o Pix para confirmar sua vaga na Classe Espacial.</p>
+          </div>
+          <div class="payment-panel">
+            <div class="payment-status-row"><span class="status-chip" id="paymentStatus">Pendente</span><strong class="payment-amount" id="paymentAmount">R$ 80,00</strong></div>
+            <p class="payment-class" id="paymentClass"></p>
+            <div class="reservation" id="reservationNotice"><span aria-hidden="true">⚠️</span><strong>Sua vaga fica reservada por 2 horas e só é confirmada após o pagamento.</strong></div>
+            <p class="hint" id="paymentDeadline"></p>
+            <a class="button lime full" id="invoiceButton" target="_blank" rel="noopener" hidden>Abrir pagamento</a>
+            <img class="payment-qr" id="pixQr" alt="QR Code para pagamento via Pix" hidden />
+            <div class="pix-code" id="pixCode" hidden></div>
+            <div class="payment-actions">
+              <button class="button" id="copyPixButton" type="button" hidden>Copiar código Pix</button>
+              <button class="button" id="refreshStatusButton" type="button" hidden>Atualizar pagamento</button>
+              <button class="button lime" id="retryPaymentButton" type="button" hidden>Tentar gerar o Pix novamente</button>
+              <a class="button primary" id="tournamentButton" href="/torneios">Ver página do torneio</a>
+            </div>
+            <p class="payment-feedback" id="paymentFeedback" role="status"></p>
+          </div>
+        </section>
+      </section>
+    </div>
+
+    <section class="card blocked" id="blockedState" hidden>
+      <span class="mini-mark" aria-hidden="true">🔐</span>
+      <h2>Link inválido ou incompleto</h2>
+      <p>Abra novamente o link privado enviado pela organização. A chave de acesso não deve ser copiada separadamente.</p>
+      <a class="button primary" id="blockedTournamentButton" href="/torneios">Ver página do torneio</a>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
+      const SUPABASE_ANON_KEY = 'sb_publishable_zcX8te5g99p0bA12xy_E-A_MTyNpJNx';
+      const REGISTRATION_FUNCTION = 'tournament-register';
+      const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const PAYMENT_TERMINAL = new Set(['REVIEW_REQUIRED','PARTIALLY_REFUNDED','REFUNDED','CANCELLED','CHARGEBACK','OVERDUE']);
+      const PAYMENT_PAID = new Set(['PAID','PAGO','RECEIVED','RECEBIDO']);
+      const PAYMENT_PENDING = new Set(['CREATED','RECONCILING','PENDING','PENDENTE','FAILED']);
+      const POLL_DELAYS = [5000, 8000, 12000, 20000, 30000];
+      const $ = (id) => document.getElementById(id);
+      const clean = (value) => value === null || value === undefined ? '' : String(value).trim();
+      const digitsOnly = (value) => clean(value).replace(/\D/g, '');
+
+      const state = {
+        slug: routeSlug(),
+        portalToken: readAndScrubPortalToken(),
+        cpf: '',
+        candidates: [],
+        selectedCandidateIndex: -1,
+        requestTokens: new Map(),
+        captchaToken: '',
+        captchaWidgetId: null,
+        captchaConfig: null,
+        busy: false,
+        trackingToken: '',
+        paymentResult: null,
+        paymentFallback: null,
+        paymentPollTimer: null,
+        paymentExpiryTimer: null,
+        paymentPollAttempt: 0,
+        paymentStatusLoading: false,
+      };
+
+      class ApiError extends Error {
+        constructor(message, status, data) {
+          super(message);
+          this.name = 'ApiError';
+          this.status = status;
+          this.data = data;
+        }
+      }
+
+      function routeSlug() {
+        const parts = location.pathname.split('/').filter(Boolean);
+        const index = parts.indexOf('inscricoes');
+        const slug = index >= 0 && parts[index + 2] === 'espacial' ? decodeURIComponent(parts[index + 1] || '') : '';
+        return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) ? slug : '';
+      }
+
+      function readAndScrubPortalToken() {
+        const fragment = location.hash.startsWith('#') ? location.hash.slice(1) : '';
+        const token = clean(new URLSearchParams(fragment).get('chave'));
+        if (location.hash) history.replaceState(history.state, document.title, location.pathname + location.search);
+        return UUID_PATTERN.test(token) ? token : '';
+      }
+
+      function headers() {
+        return { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' };
+      }
+
+      async function requestJson(url, options) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 18000);
+        try {
+          const response = await fetch(url, Object.assign({}, options || {}, { signal: controller.signal }));
+          const raw = await response.text();
+          let data = null;
+          try { data = raw ? JSON.parse(raw) : null; } catch (_error) { data = null; }
+          if (!response.ok) {
+            const message = data && (data.error || data.message) || 'Não foi possível concluir agora.';
+            throw new ApiError(message, response.status, data);
+          }
+          return data && typeof data === 'object' ? data : {};
+        } catch (error) {
+          if (error && error.name === 'AbortError') throw new ApiError('A conexão demorou demais. Tente novamente.', 408, null);
+          throw error;
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+
+      function postAction(action, payload) {
+        return requestJson(SUPABASE_URL + '/functions/v1/' + REGISTRATION_FUNCTION, {
+          method: 'POST',
+          headers: headers(),
+          body: JSON.stringify(Object.assign({ action, tournament_slug: state.slug }, payload || {})),
+        });
+      }
+
+      function formatCpf(value) {
+        return digitsOnly(value).slice(0, 11)
+          .replace(/(\d{3})(\d)/, '$1.$2')
+          .replace(/(\d{3})(\d)/, '$1.$2')
+          .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+      }
+
+      function isValidCpf(value) {
+        const digits = digitsOnly(value);
+        if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) return false;
+        const digit = (length) => {
+          let total = 0;
+          for (let index = 0; index < length; index += 1) total += Number(digits[index]) * (length + 1 - index);
+          const result = (total * 10) % 11;
+          return result === 10 ? 0 : result;
+        };
+        return digit(9) === Number(digits[9]) && digit(10) === Number(digits[10]);
+      }
+
+      function money(value) {
+        const amount = Number(value);
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number.isFinite(amount) ? amount : 80);
+      }
+
+      function newRequestToken() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+        const bytes = window.crypto.getRandomValues(new Uint8Array(16));
+        bytes[6] = (bytes[6] & 15) | 64;
+        bytes[8] = (bytes[8] & 63) | 128;
+        const hex = Array.from(bytes, (value) => value.toString(16).padStart(2, '0'));
+        return hex.slice(0,4).join('') + '-' + hex.slice(4,6).join('') + '-' + hex.slice(6,8).join('') + '-' + hex.slice(8,10).join('') + '-' + hex.slice(10).join('');
+      }
+
+      function requestTokenForCandidate(index) {
+        if (!state.requestTokens.has(index)) state.requestTokens.set(index, newRequestToken());
+        return state.requestTokens.get(index);
+      }
+
+      function showError(message) {
+        $('pageError').textContent = message;
+        $('pageError').hidden = false;
+        $('pageError').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      function clearError() {
+        $('pageError').textContent = '';
+        $('pageError').hidden = true;
+      }
+
+      function setStep(step) {
+        document.querySelectorAll('[data-step-indicator]').forEach((item) => {
+          const value = Number(item.dataset.stepIndicator);
+          item.classList.toggle('active', value === step);
+          item.classList.toggle('done', value < step);
+          const number = item.querySelector('.step-number');
+          if (number) number.textContent = value < step ? '✓' : String(value);
+        });
+        $('lookupStep').hidden = step !== 1;
+        $('candidateStep').hidden = step !== 2;
+        $('paymentStep').hidden = step !== 3;
+      }
+
+      function setBusy(busy, button, busyLabel, idleLabel) {
+        state.busy = busy;
+        if (!button) return;
+        button.disabled = busy;
+        button.textContent = busy ? busyLabel : idleLabel;
+      }
+
+      let turnstilePromise = null;
+      function loadTurnstile() {
+        if (window.turnstile) return Promise.resolve(window.turnstile);
+        if (turnstilePromise) return turnstilePromise;
+        turnstilePromise = new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+          script.async = true;
+          script.defer = true;
+          script.onload = () => window.turnstile ? resolve(window.turnstile) : reject(new Error('Proteção anti-robô indisponível.'));
+          script.onerror = () => reject(new Error('Não foi possível carregar a proteção anti-robô.'));
+          document.head.appendChild(script);
+        }).catch((error) => { turnstilePromise = null; throw error; });
+        return turnstilePromise;
+      }
+
+      function setCaptchaStatus(message, error) {
+        $('captchaStatus').textContent = message;
+        $('captchaStatus').classList.toggle('error', Boolean(error));
+      }
+
+      function resetCaptcha(message) {
+        state.captchaToken = '';
+        $('lookupButton').disabled = true;
+        setCaptchaStatus(message || 'Confirme novamente para continuar.', false);
+        if (state.captchaWidgetId !== null && window.turnstile) {
+          try { window.turnstile.reset(state.captchaWidgetId); } catch (_error) {}
+        }
+      }
+
+      async function initializeCaptcha() {
+        setCaptchaStatus('Carregando proteção anti-robô…', false);
+        state.captchaConfig = await requestJson(SUPABASE_URL + '/functions/v1/' + REGISTRATION_FUNCTION, { method: 'GET', headers: headers() });
+        const siteKey = clean(state.captchaConfig.captcha_site_key);
+        if (!siteKey) throw new Error('Proteção anti-robô não configurada.');
+        const turnstile = await loadTurnstile();
+        state.captchaWidgetId = turnstile.render('#captchaWidget', {
+          sitekey: siteKey,
+          action: 'tournament_registration',
+          callback: (token) => {
+            state.captchaToken = clean(token);
+            setCaptchaStatus('Validação concluída.', false);
+            if (!state.busy) $('lookupButton').disabled = false;
+          },
+          'expired-callback': () => resetCaptcha('A validação expirou. Confirme novamente.'),
+          'timeout-callback': () => resetCaptcha('A validação expirou. Confirme novamente.'),
+          'error-callback': () => {
+            state.captchaToken = '';
+            $('lookupButton').disabled = true;
+            setCaptchaStatus('Não foi possível validar agora. Recarregue a página e tente novamente.', true);
+          },
+        });
+      }
+
+      function valueFrom(value, fallback) {
+        if (value && typeof value === 'object' && !Array.isArray(value)) return clean(value.name || value.nome || value.label || fallback);
+        return clean(value || fallback);
+      }
+
+      function normalizeCandidates(payload) {
+        let rows = Array.isArray(payload && payload.candidates) ? payload.candidates : [];
+        if (!rows.length && payload && payload.candidate) rows = [payload.candidate];
+        if (!rows.length && payload && payload.candidate_proof) rows = [payload];
+        return rows.map((row) => {
+          const source = row && typeof row === 'object' ? row : {};
+          const proof = clean(source.candidate_proof || source.lookup_proof);
+          const currentClass = valueFrom(source.current_class || source.current_category || source.primary_category, 'Classe principal confirmada');
+          const spatialClass = valueFrom(source.spatial_class || source.spatial_category || source.additional_category, 'Classe Espacial');
+          const configuredAmount = Number(source.amount ?? source.spatial_amount ?? source.fee);
+          return {
+            proof,
+            state: clean(source.state || 'ELIGIBLE').toUpperCase(),
+            athleteName: clean(source.athlete_name || source.full_name || source.name || 'Atleta'),
+            currentClass,
+            spatialClass,
+            amount: Number.isFinite(configuredAmount) && configuredAmount >= 0 ? configuredAmount : 80,
+          };
+        }).filter((candidate) => candidate.proof && candidate.athleteName && candidate.currentClass && candidate.spatialClass);
+      }
+
+      function unavailableCandidatesMessage(payload) {
+        const rows = Array.isArray(payload && payload.candidates) ? payload.candidates : [];
+        const states = new Set(rows.map((row) => clean(row && row.state).toUpperCase()).filter(Boolean));
+        if (states.size === 1 && states.has('ALREADY_REGISTERED')) return 'O atleta encontrado já está inscrito na Classe Espacial.';
+        if (states.size === 1 && states.has('FULL')) return 'A Classe Espacial correspondente já atingiu o limite de vagas.';
+        if (states.has('REVIEW_REQUIRED')) return 'Esta inscrição precisa de revisão da organização antes de adicionar a Classe Espacial.';
+        if (states.has('ALREADY_REGISTERED') || states.has('FULL')) {
+          return 'As inscrições encontradas já possuem Classe Espacial ou a classe correspondente está sem vagas.';
+        }
+        return 'Nenhuma inscrição confirmada e elegível foi encontrada para este CPF.';
+      }
+
+      function renderCandidates() {
+        $('candidateList').replaceChildren();
+        $('candidateTitle').textContent = state.candidates.length > 1 ? 'Escolha quem vai jogar' : 'Classe Espacial disponível';
+        $('candidateIntro').textContent = state.candidates.length > 1
+          ? 'Este CPF é responsável por mais de um atleta elegível. Selecione uma inscrição para continuar.'
+          : 'Encontramos a inscrição principal confirmada. Confira os dados antes de gerar o novo Pix.';
+
+        state.candidates.forEach((candidate, index) => {
+          const label = document.createElement('label');
+          label.className = 'candidate-card';
+          const input = document.createElement('input');
+          input.type = 'radio';
+          input.name = 'candidate';
+          input.value = String(index);
+          input.checked = index === state.selectedCandidateIndex;
+          input.addEventListener('change', () => selectCandidate(index));
+          const body = document.createElement('span');
+          body.className = 'candidate-body';
+          const copy = document.createElement('span');
+          const name = document.createElement('strong');
+          name.className = 'candidate-name';
+          name.textContent = candidate.athleteName;
+          const route = document.createElement('span');
+          route.className = 'class-route';
+          const current = document.createElement('span');
+          current.className = 'class-pill';
+          current.textContent = candidate.currentClass;
+          const arrow = document.createElement('span');
+          arrow.setAttribute('aria-hidden', 'true');
+          arrow.textContent = '→';
+          const spatial = document.createElement('span');
+          spatial.className = 'class-pill spatial';
+          spatial.textContent = candidate.spatialClass;
+          route.append(current, arrow, spatial);
+          copy.append(name, route);
+          const price = document.createElement('strong');
+          price.className = 'candidate-price';
+          price.textContent = money(candidate.amount);
+          body.append(copy, price);
+          label.append(input, body);
+          $('candidateList').append(label);
+        });
+        updateCandidateSummary();
+      }
+
+      function selectCandidate(index) {
+        state.selectedCandidateIndex = Number(index);
+        updateCandidateSummary();
+      }
+
+      function selectedCandidate() {
+        return state.candidates[state.selectedCandidateIndex] || null;
+      }
+
+      function updateCandidateSummary() {
+        const candidate = selectedCandidate();
+        $('selectionSummary').hidden = !candidate;
+        $('checkoutButton').disabled = !candidate || !$('checkoutConsent').checked || state.busy;
+        if (!candidate) return;
+        $('currentClassSummary').textContent = candidate.currentClass;
+        $('spatialClassSummary').textContent = candidate.spatialClass;
+        $('amountSummary').textContent = money(candidate.amount);
+        $('checkoutButton').textContent = 'Gerar Pix de ' + money(candidate.amount);
+      }
+
+      async function submitLookup(event) {
+        event.preventDefault();
+        if (state.busy) return;
+        clearError();
+        const cpf = digitsOnly($('cpfInput').value);
+        if (!isValidCpf(cpf)) return showError('Informe um CPF válido.');
+        if (!state.captchaToken) return showError('Confirme que você não é um robô.');
+        setBusy(true, $('lookupButton'), 'Localizando inscrição…', 'Localizar minha inscrição');
+        try {
+          const result = await postAction('spatial_lookup', {
+            cpf,
+            portal_token: state.portalToken,
+            captcha_token: state.captchaToken,
+          });
+          const candidates = normalizeCandidates(result);
+          if (!candidates.length) throw new ApiError(unavailableCandidatesMessage(result), 409, null);
+          state.cpf = cpf;
+          state.candidates = candidates;
+          state.selectedCandidateIndex = candidates.length === 1 ? 0 : -1;
+          state.requestTokens.clear();
+          $('cpfInput').value = '';
+          $('checkoutConsent').checked = false;
+          renderCandidates();
+          clearError();
+          setStep(2);
+          window.scrollTo({ top: Math.max(0, $('flowShell').offsetTop - 82), behavior: 'smooth' });
+        } catch (error) {
+          const message = error instanceof ApiError && error.status === 429
+            ? 'Muitas tentativas. Aguarde um pouco e tente novamente.'
+            : error instanceof ApiError && [403, 404, 409].includes(error.status)
+            ? error.message
+            : 'Não foi possível localizar uma inscrição elegível com esses dados.';
+          showError(message);
+          resetCaptcha('Confirme novamente para tentar outra consulta.');
+        } finally {
+          setBusy(false, $('lookupButton'), '', 'Localizar minha inscrição');
+          if (!state.captchaToken) $('lookupButton').disabled = true;
+        }
+      }
+
+      async function submitCheckout(event) {
+        event.preventDefault();
+        if (state.busy) return;
+        clearError();
+        const candidate = selectedCandidate();
+        if (!candidate) return showError('Escolha o atleta que deseja inscrever.');
+        if (!$('checkoutConsent').checked) return showError('Confirme a geração do novo Pix.');
+        const requestToken = requestTokenForCandidate(state.selectedCandidateIndex);
+        setBusy(true, $('checkoutButton'), 'Preparando seu Pix…', 'Gerar Pix de ' + money(candidate.amount));
+        $('backToLookupButton').disabled = true;
+        try {
+          const result = await postAction('spatial_checkout', {
+            cpf: state.cpf,
+            portal_token: state.portalToken,
+            candidate_proof: candidate.proof,
+            lookup_proof: candidate.proof,
+            request_token: requestToken,
+            terms_accepted: true,
+          });
+          state.paymentFallback = { amount: candidate.amount, spatialClass: candidate.spatialClass };
+          state.cpf = '';
+          state.portalToken = '';
+          state.candidates = [];
+          renderPayment(result || {});
+          setStep(3);
+          window.scrollTo({ top: Math.max(0, $('flowShell').offsetTop - 82), behavior: 'smooth' });
+        } catch (error) {
+          showError(error && error.message || 'Não foi possível gerar o Pix agora. Tente novamente.');
+        } finally {
+          setBusy(false, $('checkoutButton'), '', 'Gerar Pix de ' + money(candidate.amount));
+          $('backToLookupButton').disabled = false;
+          updateCandidateSummary();
+        }
+      }
+
+      function paymentStatus(result) {
+        return clean(result && result.payment && result.payment.status || result && result.registration && result.registration.payment_status || 'PENDING').toUpperCase();
+      }
+
+      function registrationConfirmed(result) {
+        if (!result || result.confirmed === false || PAYMENT_TERMINAL.has(paymentStatus(result))) return false;
+        const rows = Array.isArray(result && result.registrations) && result.registrations.length
+          ? result.registrations
+          : [result && result.registration].filter(Boolean);
+        return result.confirmed === true || rows.length > 0 && rows.every((row) =>
+          clean(row.status).toUpperCase() === 'CONFIRMED' && clean(row.payment_status).toUpperCase() === 'PAID'
+        );
+      }
+
+      function paymentTerminal(result) {
+        if (!result) return true;
+        if (PAYMENT_TERMINAL.has(paymentStatus(result))) return true;
+        if (result.terminal === true || reservationExpired(result) || registrationConfirmed(result)) return true;
+        return false;
+      }
+
+      function reservationExpired(result) {
+        const status = paymentStatus(result);
+        if (!result || registrationConfirmed(result) || !PAYMENT_PENDING.has(status) || PAYMENT_PAID.has(status) || PAYMENT_TERMINAL.has(status)) return false;
+        if (result.reservation_expired === true) return true;
+        if (result.reservation_expired === false) return false;
+        const expiresAt = Date.parse(clean(result.payment && result.payment.expires_at));
+        if (Number.isFinite(expiresAt) && expiresAt <= Date.now()) return true;
+        return result.reservation_active === false;
+      }
+
+      function mergePaymentResult(previous, next) {
+        const merged = Object.assign({}, previous || {}, next || {});
+        delete merged.tracking_token;
+        if (next && typeof next === 'object') {
+          for (const field of ['retryable','pix_retryable','warning']) {
+            if (!Object.prototype.hasOwnProperty.call(next, field)) delete merged[field];
+          }
+        }
+        if (next && Object.prototype.hasOwnProperty.call(next, 'payment') && next.payment === null) merged.payment = null;
+        else if ((previous && previous.payment) || (next && next.payment)) merged.payment = Object.assign({}, previous && previous.payment || {}, next && next.payment || {});
+        if (next && next.registration) merged.registration = Object.assign({}, previous && previous.registration || {}, next.registration);
+        if (Array.isArray(next && next.registrations)) merged.registrations = next.registrations;
+        const mergedPayment = merged.payment || {};
+        const mergedStatus = clean(mergedPayment.status).toUpperCase();
+        const mergedExpiry = Date.parse(clean(mergedPayment.expires_at));
+        const instructionsAllowed = mergedStatus === 'PENDING' && Number.isFinite(mergedExpiry) && mergedExpiry > Date.now();
+        if (!instructionsAllowed) {
+          for (const field of ['invoice_url','payment_url','checkout_url','pix_payload','pix_copy_paste','payload','pix_encoded_image','pix_image','encoded_image','pix_expires_at']) {
+            delete mergedPayment[field];
+          }
+        }
+        return merged;
+      }
+
+      function safePaymentUrl(value) {
+        try {
+          const url = new URL(clean(value));
+          return url.protocol === 'https:' ? url.href : '';
+        } catch (_error) { return ''; }
+      }
+
+      function safeQrSource(value) {
+        const encoded = clean(value);
+        return encoded && encoded.length < 600000 && /^[A-Za-z0-9+/=]+$/.test(encoded) ? 'data:image/png;base64,' + encoded : '';
+      }
+
+      function renderPayment(incoming, preserveFeedback) {
+        clearPaymentPoll();
+        clearPaymentExpiry();
+        const receivedToken = clean(incoming && incoming.tracking_token);
+        if (UUID_PATTERN.test(receivedToken)) state.trackingToken = receivedToken;
+        state.paymentResult = mergePaymentResult(state.paymentResult, incoming || {});
+        const result = state.paymentResult;
+        const payment = result.payment || {};
+        const status = paymentStatus(result);
+        const confirmed = registrationConfirmed(result);
+        const expired = reservationExpired(result);
+        const terminal = paymentTerminal(result);
+        const failed = status === 'FAILED';
+        const reviewRequired = status === 'REVIEW_REQUIRED';
+        const pending = PAYMENT_PENDING.has(status);
+        const paidButSyncing = PAYMENT_PAID.has(status) && !confirmed;
+        const providerConfirmed = status === 'CONFIRMED' && !confirmed;
+        const labels = {
+          CREATED: 'Preparando Pix', RECONCILING: 'Conferindo cobrança', PENDING: 'Pendente', PENDENTE: 'Pendente',
+          FAILED: 'Falha ao gerar', RECEIVED: 'Pago', RECEBIDO: 'Pago', PAID: 'Pago', PAGO: 'Pago', CONFIRMED: 'Em análise',
+          REVIEW_REQUIRED: 'Em revisão', PARTIALLY_REFUNDED: 'Estorno parcial', REFUNDED: 'Estornado', CANCELLED: 'Cancelado',
+          CHARGEBACK: 'Contestado', OVERDUE: 'Prazo encerrado', NOT_REQUIRED: 'Confirmado',
+        };
+        $('paymentStatus').textContent = confirmed ? 'Confirmada' : (expired ? 'Prazo encerrado' : (paidButSyncing ? 'Pix recebido' : (labels[status] || status)));
+        $('paymentStatus').className = 'status-chip' + (confirmed ? ' confirmed' : (expired || failed || PAYMENT_TERMINAL.has(status) ? ' error' : ''));
+        $('paymentIcon').textContent = confirmed ? '✓' : (expired || failed || PAYMENT_TERMINAL.has(status) ? '!' : '⌛');
+        $('paymentTitle').textContent = confirmed ? 'Classe Espacial confirmada!' : (expired ? 'A reserva expirou' : (reviewRequired ? 'Pagamento em revisão' : (paidButSyncing ? 'Confirmando sua vaga' : (providerConfirmed ? 'Pagamento em confirmação' : (failed ? 'Sua inscrição foi salva' : 'Inscrição adicional recebida!')))));
+        $('paymentCopy').textContent = confirmed
+          ? 'Pagamento identificado e vaga confirmada. Nos vemos em quadra!'
+          : expired
+          ? 'Não pague o QR anterior. Abra novamente o link privado e consulte o CPF após a liberação da tentativa expirada.'
+          : reviewRequired
+          ? 'Não pague esta cobrança. Ela precisa ser conferida pela organização antes de qualquer nova tentativa.'
+          : paidButSyncing
+          ? 'O Pix foi recebido. A baixa automática está concluindo a confirmação da vaga; não gere outro pagamento.'
+          : providerConfirmed
+          ? 'O Asaas confirmou a cobrança e a baixa automática continua em andamento. Não gere nem pague outro Pix.'
+          : failed
+          ? 'A cobrança não ficou pronta, mas você pode retomar a mesma inscrição sem criar outra.'
+          : PAYMENT_TERMINAL.has(status)
+          ? 'Este pagamento não pode mais ser utilizado. Fale com a organização antes de tentar uma nova inscrição.'
+          : 'Conclua o Pix abaixo para confirmar sua vaga na Classe Espacial.';
+
+        const paymentAmount = Number(payment.amount);
+        const fallbackAmount = state.paymentFallback && Number(state.paymentFallback.amount);
+        $('paymentAmount').textContent = money(Number.isFinite(paymentAmount) ? paymentAmount : (Number.isFinite(fallbackAmount) ? fallbackAmount : 80));
+        const candidateClass = clean(result.spatial_class || result.spatial_class_name || result.registration && result.registration.category_name);
+        $('paymentClass').textContent = candidateClass || clean(state.paymentFallback && state.paymentFallback.spatialClass) || 'Classe Espacial · Ilha Open';
+        $('reservationNotice').hidden = confirmed || terminal || paidButSyncing || providerConfirmed;
+        const expiresAt = clean(payment.expires_at || payment.pix_expires_at);
+        const parsedExpiry = Date.parse(expiresAt);
+        $('paymentDeadline').textContent = !terminal && Number.isFinite(parsedExpiry)
+          ? 'Prazo para pagar: ' + new Date(parsedExpiry).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+          : '';
+
+        const invoiceUrl = safePaymentUrl(payment.invoice_url || payment.payment_url || payment.checkout_url);
+        $('invoiceButton').hidden = !invoiceUrl || confirmed || terminal || paidButSyncing || providerConfirmed;
+        if (invoiceUrl) $('invoiceButton').href = invoiceUrl;
+        else $('invoiceButton').removeAttribute('href');
+
+        const qrSource = safeQrSource(payment.pix_encoded_image || payment.pix_image || payment.encoded_image);
+        $('pixQr').hidden = !qrSource || confirmed || terminal || paidButSyncing || providerConfirmed;
+        if (qrSource) $('pixQr').src = qrSource;
+        else $('pixQr').removeAttribute('src');
+        const pix = clean(payment.pix_payload || payment.pix_copy_paste || payment.payload);
+        $('pixCode').hidden = !pix || confirmed || terminal || paidButSyncing || providerConfirmed;
+        $('pixCode').textContent = pix;
+        $('copyPixButton').hidden = !pix || confirmed || terminal || paidButSyncing || providerConfirmed;
+        $('copyPixButton').dataset.pix = pix;
+        const canTrack = Boolean(state.trackingToken) && !terminal;
+        $('refreshStatusButton').hidden = !canTrack;
+        $('retryPaymentButton').hidden = !canTrack || providerConfirmed || !(result.retryable === true || failed || (pending && !invoiceUrl && !pix));
+        $('tournamentButton').href = '/torneios/' + encodeURIComponent(state.slug);
+        const providerWarning = clean(result.warning);
+        if (!preserveFeedback) {
+          setPaymentFeedback(providerWarning || (canTrack ? 'O status será atualizado automaticamente após o Pix.' : ''), Boolean(providerWarning));
+        }
+        if (canTrack) {
+          schedulePaymentPoll();
+          schedulePaymentExpiry();
+        }
+      }
+
+      function setPaymentFeedback(message, error) {
+        $('paymentFeedback').textContent = message;
+        $('paymentFeedback').classList.toggle('error', Boolean(error));
+      }
+
+      function clearPaymentPoll() {
+        if (state.paymentPollTimer) clearTimeout(state.paymentPollTimer);
+        state.paymentPollTimer = null;
+      }
+
+      function clearPaymentExpiry() {
+        if (state.paymentExpiryTimer) clearTimeout(state.paymentExpiryTimer);
+        state.paymentExpiryTimer = null;
+      }
+
+      function schedulePaymentExpiry() {
+        clearPaymentExpiry();
+        if (!state.trackingToken || paymentTerminal(state.paymentResult) || !PAYMENT_PENDING.has(paymentStatus(state.paymentResult))) return;
+        const expiresAt = Date.parse(clean(state.paymentResult && state.paymentResult.payment && state.paymentResult.payment.expires_at));
+        if (!Number.isFinite(expiresAt)) return;
+        const delay = expiresAt - Date.now();
+        if (delay <= 0) {
+          expireTrackedPayment('O prazo desta reserva terminou. Não pague o QR anterior.');
+          return;
+        }
+        state.paymentExpiryTimer = setTimeout(() => {
+          expireTrackedPayment('O prazo desta reserva terminou. Não pague o QR anterior.');
+        }, Math.min(delay + 100, 2147483000));
+      }
+
+      function expireTrackedPayment(message) {
+        clearPaymentPoll();
+        clearPaymentExpiry();
+        const priorPayment = Object.assign({}, state.paymentResult && state.paymentResult.payment || {});
+        renderPayment({
+          confirmed: false,
+          terminal: true,
+          reservation_active: false,
+          reservation_expired: true,
+          payment: Object.assign(priorPayment, { status: 'OVERDUE' }),
+        }, true);
+        setPaymentFeedback(message || 'A reserva expirou. Abra novamente o link privado para consultar outra tentativa.', true);
+      }
+
+      function schedulePaymentPoll() {
+        if (!state.trackingToken || paymentTerminal(state.paymentResult)) return;
+        clearPaymentPoll();
+        const delay = document.hidden ? 30000 : POLL_DELAYS[Math.min(state.paymentPollAttempt, POLL_DELAYS.length - 1)];
+        state.paymentPollTimer = setTimeout(() => refreshPaymentStatus(false), delay);
+      }
+
+      async function refreshPaymentStatus(manual) {
+        if (!state.trackingToken || state.paymentStatusLoading) return;
+        state.paymentStatusLoading = true;
+        clearPaymentPoll();
+        $('refreshStatusButton').disabled = true;
+        setPaymentFeedback(manual ? 'Consultando o pagamento…' : 'Atualizando o pagamento…', false);
+        try {
+          const result = await postAction('payment_status', { tracking_token: state.trackingToken });
+          state.paymentPollAttempt += 1;
+          renderPayment(result || {}, true);
+          if (!paymentTerminal(state.paymentResult)) setPaymentFeedback('Ainda aguardando a confirmação do Pix. A atualização continuará automaticamente.', false);
+          else if (registrationConfirmed(state.paymentResult)) setPaymentFeedback('Pagamento confirmado automaticamente.', false);
+          else if (paymentStatus(state.paymentResult) === 'REVIEW_REQUIRED') setPaymentFeedback('Não pague este Pix. Fale com a organização para concluir a revisão.', true);
+          else setPaymentFeedback('', false);
+        } catch (error) {
+          if (error instanceof ApiError && [404, 410].includes(error.status)) {
+            expireTrackedPayment('A reserva expirou e o QR anterior não deve mais ser pago.');
+            return;
+          }
+          state.paymentPollAttempt += 1;
+          setPaymentFeedback(error && error.message || 'Não foi possível consultar o pagamento agora.', true);
+          schedulePaymentPoll();
+        } finally {
+          state.paymentStatusLoading = false;
+          $('refreshStatusButton').disabled = false;
+        }
+      }
+
+      async function retryPayment() {
+        if (!state.trackingToken || state.paymentStatusLoading) return;
+        state.paymentStatusLoading = true;
+        clearPaymentPoll();
+        $('retryPaymentButton').disabled = true;
+        $('retryPaymentButton').textContent = 'Retomando cobrança…';
+        setPaymentFeedback('Retomando a cobrança existente, sem criar outra inscrição…', false);
+        try {
+          const result = await postAction('retry_payment', { tracking_token: state.trackingToken });
+          renderPayment(result || {}, true);
+          const updatedPayment = state.paymentResult && state.paymentResult.payment || {};
+          const hasPayablePix = Boolean(
+            safePaymentUrl(updatedPayment.invoice_url || updatedPayment.payment_url || updatedPayment.checkout_url) ||
+            clean(updatedPayment.pix_payload || updatedPayment.pix_copy_paste || updatedPayment.payload)
+          );
+          const providerWarning = clean(result && result.warning);
+          setPaymentFeedback(
+            providerWarning || (hasPayablePix
+              ? 'Cobrança atualizada. Use o mesmo Pix exibido nesta tela.'
+              : 'Sua vaga segue reservada. Consulte novamente em alguns instantes; não gere outra inscrição.'),
+            Boolean(providerWarning)
+          );
+        } catch (error) {
+          if (error instanceof ApiError && [404, 410].includes(error.status)) {
+            expireTrackedPayment('A reserva expirou e o QR anterior não deve mais ser pago.');
+            return;
+          }
+          setPaymentFeedback(error && error.message || 'Não foi possível retomar a cobrança agora.', true);
+          schedulePaymentPoll();
+        } finally {
+          state.paymentStatusLoading = false;
+          $('retryPaymentButton').disabled = false;
+          $('retryPaymentButton').textContent = 'Tentar gerar o Pix novamente';
+        }
+      }
+
+      async function copyPix() {
+        const value = clean($('copyPixButton').dataset.pix);
+        if (!value) return;
+        try {
+          await navigator.clipboard.writeText(value);
+          $('copyPixButton').textContent = 'Pix copiado!';
+          setTimeout(() => { $('copyPixButton').textContent = 'Copiar código Pix'; }, 2200);
+        } catch (_error) {
+          const range = document.createRange();
+          range.selectNodeContents($('pixCode'));
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          $('copyPixButton').textContent = 'Código selecionado';
+        }
+      }
+
+      function backToLookup() {
+        clearError();
+        clearPaymentPoll();
+        clearPaymentExpiry();
+        state.cpf = '';
+        state.candidates = [];
+        state.selectedCandidateIndex = -1;
+        state.requestTokens.clear();
+        $('checkoutConsent').checked = false;
+        setStep(1);
+        resetCaptcha('Confirme novamente para localizar outra inscrição.');
+        $('cpfInput').focus();
+      }
+
+      async function boot() {
+        const tournamentUrl = state.slug ? '/torneios/' + encodeURIComponent(state.slug) : '/torneios';
+        $('brandLink').href = tournamentUrl;
+        $('tournamentButton').href = tournamentUrl;
+        $('blockedTournamentButton').href = tournamentUrl;
+        $('privacyLink').href = 'https://wa.me/5527999805814?text=' + encodeURIComponent('Olá! Quero tirar uma dúvida sobre o uso dos meus dados na inscrição do torneio.');
+        if (!state.slug || !state.portalToken) {
+          $('blockedState').hidden = false;
+          return;
+        }
+        $('flowShell').hidden = false;
+        setStep(1);
+        try {
+          await initializeCaptcha();
+          const configuredPrivacyUrl = clean(
+            state.captchaConfig && (state.captchaConfig.privacy_url || state.captchaConfig.privacy_policy_url)
+          );
+          const privacyUrl = safePaymentUrl(configuredPrivacyUrl);
+          if (privacyUrl) $('privacyLink').href = privacyUrl;
+        } catch (error) {
+          setCaptchaStatus(error && error.message || 'Proteção anti-robô indisponível.', true);
+          showError('Não foi possível iniciar a inscrição agora. Recarregue a página em alguns instantes.');
+        }
+      }
+
+      $('cpfInput').addEventListener('input', (event) => { event.currentTarget.value = formatCpf(event.currentTarget.value); });
+      $('lookupForm').addEventListener('submit', submitLookup);
+      $('checkoutForm').addEventListener('submit', submitCheckout);
+      $('checkoutConsent').addEventListener('change', updateCandidateSummary);
+      $('backToLookupButton').addEventListener('click', backToLookup);
+      $('copyPixButton').addEventListener('click', copyPix);
+      $('refreshStatusButton').addEventListener('click', () => refreshPaymentStatus(true));
+      $('retryPaymentButton').addEventListener('click', retryPayment);
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && state.trackingToken && !paymentTerminal(state.paymentResult)) refreshPaymentStatus(false);
+      });
+      window.addEventListener('pagehide', () => { clearPaymentPoll(); clearPaymentExpiry(); });
+      boot();
+    })();
+  </script>
+</body>
+</html>

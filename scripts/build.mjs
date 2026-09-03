@@ -3,7 +3,7 @@ import path from 'node:path';
 import { exists, projectRoot } from './project-files.mjs';
 
 const destination = path.join(projectRoot, 'dist');
-const directories = ['adm', 'assets', 'bar', 'clientes', 'icons', 'menu', 'torneios'];
+const directories = ['adm', 'assets', 'bar', 'clientes', 'icons', 'inscricoes', 'menu', 'torneios'];
 const rootExtensions = new Set(['.html', '.js', '.json', '.png', '.jpg', '.jpeg', '.webp', '.mp3']);
 const developmentRootFiles = new Set(['package.json']);
 

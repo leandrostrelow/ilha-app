@@ -254,7 +254,11 @@ async function findTournamentPayment(
     .maybeSingle();
   if (paymentResult.error) throw paymentResult.error;
 
-  const recognizedExternalReference = ["tournament-registration:", "tournament-family:"]
+  const recognizedExternalReference = [
+    "tournament-registration:",
+    "tournament-family:",
+    "tournament-spatial-addon:",
+  ]
     .some((prefix) => externalReference.startsWith(prefix));
   if (!paymentResult.data && recognizedExternalReference) {
     paymentResult = await supabase.from("tournament_payments")
