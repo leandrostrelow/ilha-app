@@ -852,6 +852,135 @@
       line-height: 1.5;
     }
 
+    .club-notifications {
+      margin-top: 22px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: 0 12px 30px rgba(10, 48, 55, .06);
+    }
+
+    .club-notifications-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .club-notifications-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .club-notifications-title h2 { margin: 0 0 3px; }
+
+    .club-notifications-bell {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: var(--navy);
+      color: var(--lime);
+    }
+
+    .club-notifications-bell svg {
+      width: 21px;
+      height: 21px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .club-notification-count {
+      min-width: 24px;
+      height: 24px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 999px;
+      padding: 0 7px;
+      background: var(--lime);
+      color: var(--navy);
+      font-size: 11px;
+      font-weight: 1000;
+    }
+
+    .club-notifications-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 7px;
+    }
+
+    .club-notification-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .club-notification-item {
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 13px;
+      border: 1px solid #e3ecef;
+      border-radius: 12px;
+      background: #fbfdfe;
+    }
+
+    .club-notification-item.unread {
+      border-color: rgba(181, 229, 0, .72);
+      background: linear-gradient(135deg, rgba(181, 229, 0, .12), #ffffff 56%);
+    }
+
+    .club-notification-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: #bfd0d5;
+    }
+
+    .club-notification-item.unread .club-notification-dot {
+      background: #86bd00;
+      box-shadow: 0 0 0 4px rgba(181, 229, 0, .16);
+    }
+
+    .club-notification-copy {
+      min-width: 0;
+      display: grid;
+      gap: 3px;
+    }
+
+    .club-notification-copy strong { font-size: 14px; }
+
+    .club-notification-copy span,
+    .club-notification-copy time {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .club-notification-row-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .club-notification-empty {
+      padding: 26px 16px;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
     @media (max-width: 720px) {
       .club-shortcut-grid {
         grid-template-columns: 1fr;
@@ -867,6 +996,21 @@
       .club-shortcut-icon {
         width: 42px;
         height: 42px;
+      }
+
+      .club-notifications-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .club-notifications-actions { justify-content: flex-start; }
+
+      .club-notification-item { grid-template-columns: 10px minmax(0, 1fr); }
+
+      .club-notification-row-actions {
+        grid-column: 2;
+        justify-content: flex-start;
+        flex-wrap: wrap;
       }
     }
 
@@ -19789,14 +19933,22 @@
       <section class="club-shortcuts" aria-labelledby="clubShortcutsTitle">
         <div class="club-shortcuts-head">
           <span class="club-shortcuts-kicker">Acesso rápido</span>
-          <h2 id="clubShortcutsTitle">Ilha Open 2026</h2>
-          <p>Gerencie o torneio e acompanhe as movimentações em um só lugar.</p>
+          <h2 id="clubShortcutsTitle">Atalhos importantes</h2>
+          <p>Acesse as áreas mais usadas do ADM sem precisar procurar no menu.</p>
         </div>
         <div class="club-shortcut-grid">
+          <button class="club-shortcut-card" type="button" data-home-module="club-clients" data-club-permission="clients.read">
+            <span class="club-shortcut-icon" aria-hidden="true"><svg><use href="#admin-icon-users"></use></svg></span>
+            <span class="club-shortcut-copy">
+              <strong>Alunos</strong>
+              <small>Consulte cadastros, planos e libere novos acessos.</small>
+            </span>
+            <span class="club-shortcut-arrow" aria-hidden="true">›</span>
+          </button>
           <button class="club-shortcut-card primary" type="button" data-home-tournament-tab="settings" data-club-permission="tournaments">
             <span class="club-shortcut-icon" aria-hidden="true"><svg><use href="#admin-icon-trophy"></use></svg></span>
             <span class="club-shortcut-copy">
-              <strong>Gerenciar torneio</strong>
+              <strong>Torneio</strong>
               <small>Edite classes, inscrições, agenda e configurações.</small>
             </span>
             <span class="club-shortcut-arrow" aria-hidden="true">›</span>
@@ -19804,13 +19956,42 @@
           <button class="club-shortcut-card primary" type="button" data-home-tournament-tab="dashboard" data-club-permission="tournaments">
             <span class="club-shortcut-icon" aria-hidden="true"><svg><use href="#admin-icon-calendar"></use></svg></span>
             <span class="club-shortcut-copy">
-              <strong>Info / histórico</strong>
+              <strong>Info do torneio</strong>
               <small>Acompanhe as últimas inscrições e movimentações.</small>
+            </span>
+            <span class="club-shortcut-arrow" aria-hidden="true">›</span>
+          </button>
+          <button class="club-shortcut-card" type="button" data-home-module="club-announcements" data-club-permission="announcements">
+            <span class="club-shortcut-icon" aria-hidden="true"><svg><use href="#admin-icon-megaphone"></use></svg></span>
+            <span class="club-shortcut-copy">
+              <strong>Comunicados</strong>
+              <small>Crie avisos e escolha exatamente quem deve recebê-los.</small>
             </span>
             <span class="club-shortcut-arrow" aria-hidden="true">›</span>
           </button>
         </div>
         <div class="club-shortcuts-empty" id="clubShortcutsUnavailable" hidden>Use o menu lateral para acessar os módulos liberados para o seu perfil.</div>
+      </section>
+
+      <section class="club-notifications" aria-labelledby="homeNotificationsTitle" data-club-permission="communication">
+        <div class="club-notifications-head">
+          <div class="club-notifications-title">
+            <span class="club-notifications-bell" aria-hidden="true"><svg><use href="#admin-icon-bell"></use></svg></span>
+            <div>
+              <h2 id="homeNotificationsTitle">Notificações</h2>
+              <div class="muted">Novas inscrições e avisos importantes do ADM.</div>
+            </div>
+            <span class="club-notification-count" id="homeNotificationUnread" hidden>0</span>
+          </div>
+          <div class="club-notifications-actions">
+            <button class="ghost-btn" type="button" id="homeNotificationsRefreshBtn">Atualizar</button>
+            <button class="ghost-btn" type="button" id="homeNotificationsReadAllBtn">Marcar como lidas</button>
+            <button class="danger-btn" type="button" id="homeNotificationsClearBtn">Limpar notificações</button>
+          </div>
+        </div>
+        <div class="club-notification-list" id="homeNotificationList" aria-live="polite">
+          <div class="club-notification-empty">Carregando notificações...</div>
+        </div>
       </section>
 
     </section>
@@ -28353,6 +28534,9 @@
     let adminNotificationRealtimeClient = null;
     let adminNotificationRealtimeChannel = null;
     let adminNotificationSoundEnabled = safeLocalStorageGet('ilha-admin-notification-sound') !== 'false';
+    let homeNotifications = [];
+    let homeNotificationsLoaded = false;
+    let homeNotificationsLoadPromise = null;
     let adminRealtimeClient = null;
 
     function beginBarAction(key, form) {
@@ -29677,7 +29861,176 @@
     }
 
     function renderHomeDashboard() {
-      // A tela inicial agora contém apenas atalhos e não depende dos datasets operacionais.
+      renderHomeNotifications();
+    }
+
+    function mapHomeNotificationRow(row) {
+      return {
+        id: row.id || '',
+        title: row.title || 'Novo aviso',
+        body: row.body || '',
+        linkUrl: row.link_url || '',
+        eventType: String(row.event_type || 'GERAL').toUpperCase(),
+        readAt: row.read_at || '',
+        createdAt: row.created_at || ''
+      };
+    }
+
+    function demoHomeNotifications() {
+      return [
+        mapHomeNotificationRow({
+          id: 'demo-tournament-registration',
+          title: 'Nova inscrição no torneio',
+          body: 'Uma nova inscrição foi recebida no Ilha Open 2026. Abra o torneio para conferir.',
+          event_type: 'TORNEIO_INSCRICAO',
+          created_at: new Date().toISOString()
+        }),
+        mapHomeNotificationRow({
+          id: 'demo-client-access',
+          title: 'Novo aluno aguardando análise',
+          body: 'Confira os dados do cadastro e libere o acesso quando estiver tudo certo.',
+          event_type: 'CLIENTE_NOVO',
+          created_at: new Date(Date.now() - 35 * 60000).toISOString()
+        })
+      ];
+    }
+
+    function homeNotificationDateLabel(value) {
+      const date = new Date(value || '');
+      if (Number.isNaN(date.getTime())) return 'Agora';
+      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: CLUB_TIME_ZONE }) +
+        ' às ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: CLUB_TIME_ZONE });
+    }
+
+    function homeNotificationOpenLabel(notification) {
+      if (notification.eventType === 'TORNEIO_INSCRICAO') return 'Ver torneio';
+      if (notification.eventType.indexOf('CLIENTE') === 0) return 'Ver alunos';
+      return '';
+    }
+
+    function renderHomeNotifications() {
+      const list = $('homeNotificationList');
+      if (!list) return;
+      const unread = homeNotifications.filter(function (notification) { return !notification.readAt; }).length;
+      const badge = $('homeNotificationUnread');
+      badge.textContent = unread;
+      badge.hidden = unread === 0;
+      $('homeNotificationsReadAllBtn').disabled = unread === 0;
+      $('homeNotificationsClearBtn').disabled = homeNotifications.length === 0;
+      list.innerHTML = homeNotifications.length ? homeNotifications.map(function (notification) {
+        const openLabel = homeNotificationOpenLabel(notification);
+        return '<article class="club-notification-item' + (!notification.readAt ? ' unread' : '') + '" data-home-notification-id="' + escapeHtml(notification.id) + '">' +
+          '<span class="club-notification-dot" aria-hidden="true"></span>' +
+          '<div class="club-notification-copy"><strong>' + escapeHtml(notification.title) + '</strong>' +
+          (notification.body ? '<span>' + escapeHtml(notification.body) + '</span>' : '') +
+          '<time datetime="' + escapeHtml(notification.createdAt) + '">' + escapeHtml(homeNotificationDateLabel(notification.createdAt)) + '</time></div>' +
+          '<div class="club-notification-row-actions">' +
+          (openLabel ? '<button class="small-btn" type="button" data-home-notification-open="' + escapeHtml(notification.id) + '">' + escapeHtml(openLabel) + '</button>' : '') +
+          (!notification.readAt ? '<button class="small-btn" type="button" data-home-notification-read="' + escapeHtml(notification.id) + '">Marcar como lida</button>' : '') +
+          '<button class="small-btn" type="button" data-home-notification-delete="' + escapeHtml(notification.id) + '">Limpar</button>' +
+          '</div></article>';
+      }).join('') : '<div class="club-notification-empty">Tudo limpo por aqui. As novas notificações aparecerão automaticamente.</div>';
+    }
+
+    async function loadHomeNotifications(force) {
+      if (!canUseClubPermission('communication') || !adminSession || !adminSession.user) return;
+      if (isAdminDemoMode()) {
+        if (!homeNotificationsLoaded || force) homeNotifications = demoHomeNotifications();
+        homeNotificationsLoaded = true;
+        renderHomeNotifications();
+        return homeNotifications;
+      }
+      if (homeNotificationsLoaded && !force) {
+        renderHomeNotifications();
+        return homeNotifications;
+      }
+      if (homeNotificationsLoadPromise) return homeNotificationsLoadPromise;
+      $('homeNotificationList').innerHTML = '<div class="club-notification-empty">Carregando notificações...</div>';
+      const userId = encodeURIComponent(adminSession.user.id || '');
+      const task = supabaseRest('app_client_notifications?select=id,title,body,link_url,event_type,read_at,created_at&user_id=eq.' + userId + '&event_type=neq.COMUNICADO&order=created_at.desc&limit=50')
+        .then(function (rows) {
+          homeNotifications = (Array.isArray(rows) ? rows : []).map(mapHomeNotificationRow);
+          homeNotificationsLoaded = true;
+          renderHomeNotifications();
+          return homeNotifications;
+        }).catch(function (error) {
+          $('homeNotificationList').innerHTML = '<div class="club-notification-empty">Não foi possível carregar as notificações agora. Toque em Atualizar para tentar novamente.</div>';
+          throw error;
+        }).finally(function () {
+          if (homeNotificationsLoadPromise === task) homeNotificationsLoadPromise = null;
+        });
+      homeNotificationsLoadPromise = task;
+      return task;
+    }
+
+    async function markHomeNotificationRead(id) {
+      const notification = homeNotifications.find(function (item) { return String(item.id) === String(id); });
+      if (!notification || notification.readAt) return;
+      const readAt = new Date().toISOString();
+      if (!isAdminDemoMode()) {
+        requireClubPermission('communication');
+        await supabaseRest('app_client_notifications?id=eq.' + encodeURIComponent(notification.id) + '&user_id=eq.' + encodeURIComponent(adminSession.user.id), {
+          method: 'PATCH',
+          body: { read_at: readAt },
+          prefer: 'return=minimal'
+        });
+      }
+      notification.readAt = readAt;
+      renderHomeNotifications();
+    }
+
+    async function markAllHomeNotificationsRead() {
+      const unread = homeNotifications.filter(function (notification) { return !notification.readAt; });
+      if (!unread.length) return;
+      const readAt = new Date().toISOString();
+      if (!isAdminDemoMode()) {
+        requireClubPermission('communication');
+        await supabaseRest('app_client_notifications?user_id=eq.' + encodeURIComponent(adminSession.user.id) + '&event_type=neq.COMUNICADO&read_at=is.null', {
+          method: 'PATCH',
+          body: { read_at: readAt },
+          prefer: 'return=minimal'
+        });
+      }
+      unread.forEach(function (notification) { notification.readAt = readAt; });
+      renderHomeNotifications();
+      toast('Notificações marcadas como lidas.');
+    }
+
+    async function deleteHomeNotification(id) {
+      const notification = homeNotifications.find(function (item) { return String(item.id) === String(id); });
+      if (!notification) return;
+      if (!isAdminDemoMode()) {
+        requireClubPermission('communication');
+        await supabaseRest('app_client_notifications?id=eq.' + encodeURIComponent(notification.id) + '&user_id=eq.' + encodeURIComponent(adminSession.user.id), {
+          method: 'DELETE',
+          prefer: 'return=minimal'
+        });
+      }
+      homeNotifications = homeNotifications.filter(function (item) { return String(item.id) !== String(id); });
+      renderHomeNotifications();
+    }
+
+    async function clearHomeNotifications() {
+      if (!homeNotifications.length) return;
+      if (!window.confirm('Limpar todas as notificações desta conta?')) return;
+      if (!isAdminDemoMode()) {
+        requireClubPermission('communication');
+        await supabaseRest('app_client_notifications?user_id=eq.' + encodeURIComponent(adminSession.user.id) + '&event_type=neq.COMUNICADO', {
+          method: 'DELETE',
+          prefer: 'return=minimal'
+        });
+      }
+      homeNotifications = [];
+      renderHomeNotifications();
+      toast('Notificações limpas.');
+    }
+
+    async function openHomeNotification(id) {
+      const notification = homeNotifications.find(function (item) { return String(item.id) === String(id); });
+      if (!notification) return;
+      try { await markHomeNotificationRead(id); } catch (error) { reportActionError(error); }
+      if (notification.eventType === 'TORNEIO_INSCRICAO') openTournamentModule('dashboard');
+      else if (notification.eventType.indexOf('CLIENTE') === 0) openClientsModule();
     }
 
     function formatDays(days) {
@@ -32638,10 +32991,14 @@
       if (String(notification.event_type || '').toUpperCase() === 'COMUNICADO') return;
       playAdminNotificationSound(false);
       toast([notification.title, notification.body].filter(Boolean).join(' — ') || 'Novo aviso no ADM.');
+      if (adminSession && adminSession.user && String(notification.user_id || '') === String(adminSession.user.id || '')) {
+        const mapped = mapHomeNotificationRow(notification);
+        homeNotifications = [mapped].concat(homeNotifications.filter(function (item) { return String(item.id) !== String(mapped.id); })).slice(0, 50);
+        homeNotificationsLoaded = true;
+        renderHomeNotifications();
+      }
       if (document.body.classList.contains('club-clients')) {
         loadOpsData(true).then(renderClientsModule).catch(function () {});
-      } else if (document.body.classList.contains('club-home')) {
-        loadOpsData(true).then(renderHomeDashboard).catch(function () {});
       }
     }
 
@@ -39954,7 +40311,9 @@
       document.querySelectorAll('[data-club-permission]').forEach(function (element) {
         element.hidden = !canUseClubPermission(element.dataset.clubPermission, adminProfile);
       });
-      if ($('clubShortcutsUnavailable')) $('clubShortcutsUnavailable').hidden = canUseClubPermission('tournaments', adminProfile);
+      if ($('clubShortcutsUnavailable')) {
+        $('clubShortcutsUnavailable').hidden = Array.from(document.querySelectorAll('.club-shortcut-card')).some(function (card) { return !card.hidden; });
+      }
       document.querySelectorAll('[data-home-action]').forEach(function (button) {
         button.hidden = !canUseClubPermission('dashboard', adminProfile);
       });
@@ -40156,6 +40515,9 @@
       if (courtRealtimeClient && courtRealtimeChannel) courtRealtimeClient.removeChannel(courtRealtimeChannel);
       if (lessonRealtimeClient && lessonRealtimeChannel) lessonRealtimeClient.removeChannel(lessonRealtimeChannel);
       adminNotificationRealtimeChannel = null;
+      homeNotifications = [];
+      homeNotificationsLoaded = false;
+      homeNotificationsLoadPromise = null;
       courtRealtimeChannel = null;
       lessonRealtimeChannel = null;
       localStorage.removeItem(ADMIN_SESSION_KEY);
@@ -40832,6 +41194,10 @@
 
     function showClubHome() {
       if (!setClubMode('club-home')) return;
+      renderHomeNotifications();
+      loadHomeNotifications(false).catch(function (error) {
+        console.warn('Não foi possível carregar as notificações do ADM.', error && error.message);
+      });
     }
 
     function openTournamentModule(preferredTab) {
@@ -42733,6 +43099,39 @@
         btn.addEventListener('click', function () {
           openTournamentModule(btn.dataset.homeTournamentTab || 'dashboard');
         });
+      });
+      document.querySelectorAll('[data-home-module]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const actions = {
+            'club-clients': openClientsModule,
+            'club-announcements': openAnnouncementsModule
+          };
+          const action = actions[btn.dataset.homeModule];
+          if (action) action();
+        });
+      });
+      $('homeNotificationsRefreshBtn').addEventListener('click', function () {
+        loadHomeNotifications(true).catch(reportActionError);
+      });
+      $('homeNotificationsReadAllBtn').addEventListener('click', function () {
+        markAllHomeNotificationsRead().catch(reportActionError);
+      });
+      $('homeNotificationsClearBtn').addEventListener('click', function () {
+        clearHomeNotifications().catch(reportActionError);
+      });
+      $('homeNotificationList').addEventListener('click', function (event) {
+        const openButton = event.target.closest('[data-home-notification-open]');
+        if (openButton) {
+          openHomeNotification(openButton.dataset.homeNotificationOpen);
+          return;
+        }
+        const readButton = event.target.closest('[data-home-notification-read]');
+        if (readButton) {
+          markHomeNotificationRead(readButton.dataset.homeNotificationRead).catch(reportActionError);
+          return;
+        }
+        const deleteButton = event.target.closest('[data-home-notification-delete]');
+        if (deleteButton) deleteHomeNotification(deleteButton.dataset.homeNotificationDelete).catch(reportActionError);
       });
       document.querySelectorAll('[data-home-action]').forEach(function (btn) {
         btn.addEventListener('click', function () {

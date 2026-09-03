@@ -2099,18 +2099,28 @@ test('ADM organiza links públicos, Classe Espacial e convites dentro do torneio
   assert.match(functionSource(adminSource, 'copyTournamentLink'), /navigator\.clipboard\.writeText\(value\)/);
 });
 
-test('inicio do ADM Ilha fica leve e destaca somente torneio e historico', () => {
+test('inicio do ADM Ilha reúne atalhos importantes e uma central privada de notificações', () => {
   const home = sourceSection(adminSource, '<section class="club-home"', '<section class="ops-module clients-module"');
-  assert.match(home, /data-home-tournament-tab="settings"[\s\S]*Gerenciar torneio/);
-  assert.match(home, /data-home-tournament-tab="dashboard"[\s\S]*Info \/ histórico/);
+  assert.match(home, /data-home-module="club-clients"[\s\S]*Alunos/);
+  assert.match(home, /data-home-tournament-tab="settings"[\s\S]*Torneio/);
+  assert.match(home, /data-home-tournament-tab="dashboard"[\s\S]*Info do torneio/);
+  assert.match(home, /data-home-module="club-announcements"[\s\S]*Comunicados/);
+  assert.match(home, /id="homeNotificationList"[\s\S]*Carregando notificações/);
+  assert.match(home, /id="homeNotificationsReadAllBtn"[\s\S]*id="homeNotificationsClearBtn"/);
   assert.match(home, /id="clubShortcutsUnavailable"/);
   assert.doesNotMatch(home, /club-metrics|homeClientsMetric|homeFinanceList|welcome-admin/);
   const showHome = functionSource(adminSource, 'showClubHome');
-  assert.doesNotMatch(showHome, /loadOpsData|renderHomeDashboard/);
+  assert.doesNotMatch(showHome, /loadOpsData/);
+  assert.match(showHome, /loadHomeNotifications\(false\)/);
+  const loadNotifications = functionSource(adminSource, 'loadHomeNotifications');
+  assert.match(loadNotifications, /app_client_notifications\?select=/);
+  assert.match(loadNotifications, /user_id=eq\.[\s\S]*event_type=neq\.COMUNICADO/);
+  assert.match(functionSource(adminSource, 'markAllHomeNotificationsRead'), /method: 'PATCH'[\s\S]*read_at: readAt/);
+  assert.match(functionSource(adminSource, 'clearHomeNotifications'), /window\.confirm[\s\S]*method: 'DELETE'/);
   const openTournament = functionSource(adminSource, 'openTournamentModule');
   assert.match(openTournament, /state\.tournamentDraftDirty[\s\S]*showTab\('settings'\)/);
   assert.match(openTournament, /showTab\(preferredTab \|\| 'dashboard'\)/);
-  assert.match(functionSource(adminSource, 'applyClubAccessVisibility'), /clubShortcutsUnavailable[\s\S]*canUseClubPermission\('tournaments'/);
+  assert.match(functionSource(adminSource, 'applyClubAccessVisibility'), /clubShortcutsUnavailable[\s\S]*\.club-shortcut-card/);
 });
 
 test('pagina publica iguala os modos de inscricao e repete o CTA nos pontos principais', () => {
