@@ -1602,6 +1602,29 @@
       const addon = athlete.spatial && spatialAddonRule(category) ? spatialAddonFee() : 0;
       return (Number.isFinite(base) && base >= 0 ? base : 0) + addon;
     }
+    function updateFamilyRegistrationConsent(rows) {
+      const athletes = Array.isArray(rows) ? rows : state.familyAthletes;
+      const hasMinor = athletes.some((athlete) => athlete.isMinor);
+      const singleAdultPayer = athletes.length === 1 && athletes[0]?.isPayer && !hasMinor;
+      const athleteLabel = athletes.length === 1 ? 'do atleta' : 'dos atletas';
+      const registrationLabel = athletes.length === 1 ? 'a inscrição' : 'as inscrições';
+      let text = '';
+      if (hasMinor) {
+        text = state.inviteMode
+          ? 'Confirmo que sou responsável pelos menores informados, que os dados estão corretos e autorizo a inscrição pelo convite.'
+          : 'Confirmo que sou responsável pelos menores informados, que os dados estão corretos e autorizo a inscrição e a cobrança única do valor total.';
+      } else if (singleAdultPayer) {
+        text = state.inviteMode
+          ? 'Confirmo que meus dados estão corretos e autorizo minha inscrição pelo convite.'
+          : 'Confirmo que meus dados estão corretos e autorizo minha inscrição e a cobrança do valor total.';
+      } else {
+        text = state.inviteMode
+          ? 'Confirmo que os dados ' + athleteLabel + ' estão corretos e autorizo ' + registrationLabel + ' pelo convite.'
+          : 'Confirmo que os dados ' + athleteLabel + ' estão corretos e autorizo ' + registrationLabel + ' e a cobrança única do valor total.';
+      }
+      $('familyRegistrationConsentText').textContent = text;
+      return hasMinor;
+    }
     function familyAthleteCardHtml(athlete,index) {
       const payerName = $('familyPayerName').value.trim();
       if (athlete.isPayer) {
@@ -1647,6 +1670,7 @@
     }
     function updateFamilyRegistrationSummary() {
       const rows = captureFamilyAthletes();
+      updateFamilyRegistrationConsent(rows);
       const summaryRows = rows.map((athlete,index) => {
         const category = categories().find((row) => categoryId(row) === String(athlete.categoryId));
         const rule = athlete.spatial ? spatialAddonRule(category) : null;
@@ -1699,9 +1723,6 @@
       $('familyCheckoutHint').textContent = state.inviteMode
         ? 'O convite será utilizado uma única vez e nenhuma cobrança será gerada.'
         : 'Todas as vagas serão reservadas juntas por duas horas.';
-      $('familyRegistrationConsentText').textContent = state.inviteMode
-        ? 'Confirmo que sou responsável pelos menores informados, que os dados estão corretos e autorizo a inscrição pelo convite.'
-        : 'Confirmo que sou responsável pelos menores informados, que os dados estão corretos e autorizo a inscrição e a cobrança única do valor total.';
       $('familyEligibilityWarning').innerHTML = state.inviteMode
         ? '<strong>🎾 Equilíbrio técnico:</strong> a organização poderá alterar a classe escolhida para preservar a competitividade do torneio.'
         : '<strong>⚠️ Atenção:</strong> os perfis CINCATE e Aluno Ilha Tênis serão conferidos. A organização poderá ajustar ou cancelar a inscrição se o vínculo não for confirmado e também poderá alterar a classe para preservar o equilíbrio técnico.';
@@ -2021,7 +2042,10 @@
           partner_name: athlete.partnerName || null
         });
       }
-      if (!$('familyRegistrationConsent').checked) return showRegistrationError('Confirme a responsabilidade e a autorização da inscrição.');
+      const hasMinor = athletes.some((athlete) => athlete.isMinor);
+      if (!$('familyRegistrationConsent').checked) return showRegistrationError(hasMinor
+        ? 'Confirme a responsabilidade e a autorização da inscrição.'
+        : 'Confirme os dados e a autorização da inscrição.');
       let familyRequestKey = '';
       let familyRequestTokenValue = '';
       try {
