@@ -233,6 +233,10 @@ const barTvPortableValidatorMigrationSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260903140805_make_bar_tv_media_validator_environment_safe.sql'),
   'utf8'
 );
+const barTvScopedValidatorMigrationSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260903142124_scope_bar_tv_media_to_official_project.sql'),
+  'utf8'
+);
 const securityOperationsSource = await readFile(path.join(projectRoot, 'SECURITY_OPERATIONS.md'), 'utf8');
 const gitignoreSource = await readFile(path.join(projectRoot, '.gitignore'), 'utf8');
 const sqlFiles = (await readdir(path.join(projectRoot, 'supabase'), { recursive: true }))
@@ -2048,8 +2052,13 @@ test('TV do Bar alterna cardapio, imagens e videos MP4 com tempo individual', ()
   assert.match(barTvVideoMediaMigrationSource, /bar menu staff uploads tv media[\s\S]*to authenticated[\s\S]*has_bar_permission\('bar\.menu'\)/i);
   assert.match(barTvVideoMediaMigrationSource, /'media_type'[\s\S]*'media_url'/i);
   assert.match(barTvVideoMediaMigrationSource, /when slide\.value ->> 'media_type' = 'video'[\s\S]*bar-tv-media\/eventos/i);
+  assert.doesNotMatch(barTvVideoMediaMigrationSource, /lkqtgptebkgfwguykxhv/i);
   assert.match(barTvPortableValidatorMigrationSource, /https:\/\/\[a-z0-9\]\{20\}\[\.\]supabase\[\.\]co[\s\S]*bar-tv-media\/eventos/i);
   assert.doesNotMatch(barTvPortableValidatorMigrationSource, /lkqtgptebkgfwguykxhv/i);
+  assert.match(barTvScopedValidatorMigrationSource, /is_valid_bar_tv_slides\(slides, 'lkqtgptebkgfwguykxhv'\)/i);
+  assert.match(barTvScopedValidatorMigrationSource, /create function public\.is_valid_bar_tv_slides\([\s\S]*allowed_project_ref text[\s\S]*'\^https:\/\/' \|\| allowed_project_ref/i);
+  assert.match(barTvScopedValidatorMigrationSource, /drop function if exists public\.is_valid_bar_tv_slides\(jsonb\)/i);
+  assert.doesNotMatch(barTvScopedValidatorMigrationSource, /https:\/\/\[a-z0-9\]\{20\}\[\.\]supabase/i);
   assert.match(adminSource, /id="barTvMenuDuration"[^>]*min="3"[^>]*max="300"/i);
   assert.match(adminSource, /id="barTvEventArtList"/i);
   assert.match(adminSource, /id="barTvEventArtFile"[^>]*accept="[^"]*video\/mp4/i);
@@ -2065,7 +2074,7 @@ test('TV do Bar alterna cardapio, imagens e videos MP4 com tempo individual', ()
   assert.equal(slideshowDelay(1), 3000);
   assert.match(menuSource, /\.menu-event-art \{[\s\S]*transition: opacity \.65s ease/);
   assert.match(menuSource, /\.menu-event-art-media\.is-fading \{[\s\S]*opacity: 0/);
-  assert.match(menuSource, /id="menuEventArtVideo"[^>]*muted autoplay playsinline/);
+  assert.match(menuSource, /id="menuEventArtVideo"[^>]*muted autoplay playsinline preload="auto"/);
   assert.match(functionSource(menuSource, 'loadEventArt'), /new Image\(\)[\s\S]*preload\.src = slide\.mediaUrl/);
   assert.match(menuSource, /const EVENT_MEDIA_RETRY_MS = 60000/);
   assert.match(functionSource(menuSource, 'canRetryEventMedia'), /failedEventMediaAt\.delete\(mediaUrl\)/);
@@ -2073,6 +2082,9 @@ test('TV do Bar alterna cardapio, imagens e videos MP4 com tempo individual', ()
   const showSlide = functionSource(menuSource, 'showEventArtSlide');
   assert.match(showSlide, /image\.onload = reveal/);
   assert.match(showSlide, /video\.onended = function[\s\S]*showNextEventSlideshowItem/);
+  assert.match(showSlide, /video\.onloadedmetadata = startVideoPlayback/);
+  assert.match(showSlide, /video\.onplaying = reveal/);
+  assert.match(showSlide, /playResult\.then\(reveal\)\.catch\(fail\)/);
   assert.match(showSlide, /video\.onerror = fail/);
   assert.match(showSlide, /failedEventMediaAt\.set\(slide\.mediaUrl, Date\.now\(\)\)/);
   assert.match(showSlide, /scheduleEventSlideshow\(slide\.durationSeconds\)/);

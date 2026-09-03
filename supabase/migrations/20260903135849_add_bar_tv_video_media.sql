@@ -107,12 +107,12 @@ as $$
          or jsonb_typeof(slide.value -> 'media_url') <> 'string'
          or case
               when slide.value ->> 'media_type' = 'image' then not (
-                (slide.value ->> 'media_url') ~* '^https://lkqtgptebkgfwguykxhv[.]supabase[.]co/storage/v1/object/public/bar-tv-media/eventos/[A-Za-z0-9._~!$&''()*+,;=:@%/-]+[.](jpg|jpeg|png|webp)$'
-                or (slide.value ->> 'media_url') ~* '^https://lkqtgptebkgfwguykxhv[.]supabase[.]co/storage/v1/object/public/bar-products/eventos/[A-Za-z0-9._~!$&''()*+,;=:@%/-]+[.](jpg|jpeg|png|webp)$'
+                (slide.value ->> 'media_url') ~* '^https://[a-z0-9]{20}[.]supabase[.]co/storage/v1/object/public/bar-tv-media/eventos/[A-Za-z0-9._~!$&''()*+,;=:@%/-]+[.](jpg|jpeg|png|webp)$'
+                or (slide.value ->> 'media_url') ~* '^https://[a-z0-9]{20}[.]supabase[.]co/storage/v1/object/public/bar-products/eventos/[A-Za-z0-9._~!$&''()*+,;=:@%/-]+[.](jpg|jpeg|png|webp)$'
                 or (slide.value ->> 'media_url') ~* '^https://app[.]ilhatenis[.]com/assets/bar-events/[A-Za-z0-9._~!$&''()*+,;=:@%/-]+[.](jpg|jpeg|png|webp)$'
               )
               when slide.value ->> 'media_type' = 'video' then not (
-                (slide.value ->> 'media_url') ~* '^https://lkqtgptebkgfwguykxhv[.]supabase[.]co/storage/v1/object/public/bar-tv-media/eventos/[A-Za-z0-9._~!$&''()*+,;=:@%/-]+[.]mp4$'
+                (slide.value ->> 'media_url') ~* '^https://[a-z0-9]{20}[.]supabase[.]co/storage/v1/object/public/bar-tv-media/eventos/[A-Za-z0-9._~!$&''()*+,;=:@%/-]+[.]mp4$'
               )
               else true
             end
@@ -137,8 +137,8 @@ alter table public.bar_tv_event_art
 alter table public.bar_tv_event_art
   add constraint bar_tv_event_art_image_url_check check (
     image_url = ''
-    or image_url ~* '^https://lkqtgptebkgfwguykxhv[.]supabase[.]co/storage/v1/object/public/bar-tv-media/eventos/[A-Za-z0-9._~!$&''()*+,;=:@%/-]+[.](jpg|jpeg|png|webp)$'
-    or image_url ~* '^https://lkqtgptebkgfwguykxhv[.]supabase[.]co/storage/v1/object/public/bar-products/eventos/[A-Za-z0-9._~!$&''()*+,;=:@%/-]+[.](jpg|jpeg|png|webp)$'
+    or image_url ~* '^https://[a-z0-9]{20}[.]supabase[.]co/storage/v1/object/public/bar-tv-media/eventos/[A-Za-z0-9._~!$&''()*+,;=:@%/-]+[.](jpg|jpeg|png|webp)$'
+    or image_url ~* '^https://[a-z0-9]{20}[.]supabase[.]co/storage/v1/object/public/bar-products/eventos/[A-Za-z0-9._~!$&''()*+,;=:@%/-]+[.](jpg|jpeg|png|webp)$'
     or image_url ~* '^https://app[.]ilhatenis[.]com/assets/bar-events/[A-Za-z0-9._~!$&''()*+,;=:@%/-]+[.](jpg|jpeg|png|webp)$'
   );
 

@@ -1224,7 +1224,7 @@
 
   <div class="menu-event-art" id="menuEventArt" role="dialog" aria-modal="true" aria-label="Mídia vertical do evento" hidden>
     <img class="menu-event-art-media" id="menuEventArtImage" alt="Arte do evento no Ilha Bar" hidden />
-    <video class="menu-event-art-media" id="menuEventArtVideo" aria-label="Vídeo do evento no Ilha Bar" muted autoplay playsinline preload="metadata" hidden></video>
+    <video class="menu-event-art-media" id="menuEventArtVideo" aria-label="Vídeo do evento no Ilha Bar" muted autoplay playsinline preload="auto" hidden></video>
     <button class="menu-event-art-close" type="button" id="menuEventArtClose" aria-label="Fechar mídia do evento" title="Voltar ao cardápio">×</button>
   </div>
 
@@ -1649,7 +1649,9 @@
         image.hidden = true;
         image.removeAttribute('src');
         video.onloadeddata = null;
+        video.onloadedmetadata = null;
         video.oncanplay = null;
+        video.onplaying = null;
         video.onended = null;
         video.onerror = null;
         video.classList.add('is-fading');
@@ -1733,6 +1735,16 @@
           if (transitionEpoch !== eventSlideshowTransitionEpoch) return;
           resetEventArtMedia();
           let revealed = false;
+          let playbackRequested = false;
+          const startVideoPlayback = function () {
+            if (playbackRequested || transitionEpoch !== eventSlideshowTransitionEpoch) return;
+            playbackRequested = true;
+            try { video.currentTime = 0; } catch (error) {}
+            const playResult = video.play();
+            if (playResult && typeof playResult.then === 'function') {
+              playResult.then(reveal).catch(fail);
+            }
+          };
           const reveal = function () {
             if (revealed || transitionEpoch !== eventSlideshowTransitionEpoch) return;
             revealed = true;
@@ -1744,11 +1756,6 @@
               if (transitionEpoch !== eventSlideshowTransitionEpoch) return;
               overlay.classList.add('is-visible');
               nextMedia.classList.remove('is-fading');
-              if (slide.mediaType === 'video') {
-                video.currentTime = 0;
-                const playResult = video.play();
-                if (playResult && typeof playResult.catch === 'function') playResult.catch(fail);
-              }
             });
             eventSlideshowTransitionTimer = setTimeout(function () {
               if (transitionEpoch === eventSlideshowTransitionEpoch) scheduleEventSlideshow(slide.durationSeconds);
@@ -1758,16 +1765,17 @@
             video.muted = true;
             video.autoplay = true;
             video.playsInline = true;
-            video.preload = 'metadata';
-            video.onloadeddata = reveal;
-            video.oncanplay = reveal;
+            video.preload = 'auto';
+            video.onloadedmetadata = startVideoPlayback;
+            video.oncanplay = startVideoPlayback;
+            video.onplaying = reveal;
             video.onended = function () {
               if (transitionEpoch === eventSlideshowTransitionEpoch) showNextEventSlideshowItem();
             };
             video.onerror = fail;
             video.src = slide.mediaUrl;
             video.load();
-            if (video.readyState >= 2) Promise.resolve().then(reveal);
+            if (video.readyState >= 1) Promise.resolve().then(startVideoPlayback);
           } else {
             image.onload = reveal;
             image.onerror = fail;
