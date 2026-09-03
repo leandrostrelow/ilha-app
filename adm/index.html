@@ -3392,6 +3392,21 @@
     .invite-manager-status.revoked, .invite-manager-status.expired { color: #9c2f2f; background: #fee9e9; }
     .invite-manager-actions { display: flex; justify-content: flex-end; gap: 8px; }
     .invite-manager-empty { padding: 26px; border: 1px dashed var(--line); border-radius: 16px; text-align: center; color: var(--muted); }
+    .tournament-history-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 10px; margin: 16px 0; }
+    .tournament-history-list { position: relative; display: grid; gap: 0; padding-left: 18px; }
+    .tournament-history-list::before { content: ''; position: absolute; top: 18px; bottom: 18px; left: 7px; width: 2px; border-radius: 2px; background: #dce8ea; }
+    .tournament-history-row { position: relative; display: grid; grid-template-columns: 112px minmax(0, 1fr) auto; align-items: center; gap: 16px; min-width: 0; padding: 14px 14px 14px 20px; border-bottom: 1px solid var(--line); }
+    .tournament-history-row:last-child { border-bottom: 0; }
+    .tournament-history-row::before { content: ''; position: absolute; left: -17px; width: 12px; height: 12px; border: 3px solid #fff; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 1px #b9d1d5; }
+    .tournament-history-when { display: grid; gap: 2px; color: var(--dark); font-size: 13px; font-weight: 900; }
+    .tournament-history-when span { color: var(--muted); font-size: 12px; font-weight: 750; }
+    .tournament-history-person { min-width: 0; display: grid; gap: 5px; }
+    .tournament-history-person strong { overflow: hidden; color: var(--dark); font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+    .tournament-history-person small { color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .tournament-history-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tournament-history-payment { display: grid; justify-items: end; gap: 5px; text-align: right; }
+    .tournament-history-payment strong { color: var(--dark); font-size: 14px; }
+    .tournament-history-payment small { max-width: 180px; color: var(--muted); font-size: 11px; line-height: 1.35; }
 
     /* Todos os editores devem surgir no centro da janela, inclusive no celular. */
     .admin-modal-overlay.show { place-items: center; }
@@ -6244,6 +6259,9 @@
       .invite-manager-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .invite-manager-toolbar, .invite-manager-row { grid-template-columns: 1fr; }
       .invite-manager-actions { justify-content: flex-start; }
+      .tournament-history-toolbar, .tournament-history-row { grid-template-columns: 1fr; }
+      .tournament-history-row { gap: 8px; padding-left: 18px; }
+      .tournament-history-payment { justify-items: start; text-align: left; }
       .bar-product-modal .modal-actions > * {
         flex: 1 1 100%;
       }
@@ -21864,7 +21882,7 @@
         <button class="tab-btn" type="button" data-tab="schedule">Agenda</button>
         <button class="tab-btn" type="button" data-tab="results">Resultados</button>
         <button class="tab-btn" type="button" data-tab="settings">Torneio</button>
-        <button class="tab-btn" type="button" data-tab="dashboard">Informações</button>
+        <button class="tab-btn" type="button" data-tab="dashboard">Info / histórico</button>
       </div>
     </div>
 
@@ -21891,6 +21909,26 @@
         <div class="card span-4">
           <h2>Publicação</h2>
           <p class="muted">Na aba Chaves, use "Imagem Instagram" para baixar a arte da categoria atual em alta qualidade.</p>
+        </div>
+        <div class="card span-12">
+          <div class="card-title">
+            <div>
+              <h2>Histórico de inscrições</h2>
+              <div class="muted" id="tournamentHistoryHint">Veja quem entrou por último no torneio.</div>
+            </div>
+            <button class="ghost-btn" type="button" onclick="reloadTournamentManually()">Atualizar</button>
+          </div>
+          <div class="tournament-history-toolbar">
+            <input id="tournamentHistorySearch" placeholder="Buscar atleta, classe, cidade ou origem" />
+            <select id="tournamentHistoryStatusFilter">
+              <option value="">Todos os pagamentos</option>
+              <option value="PAGO">Pagos</option>
+              <option value="ISENTO">Isentos</option>
+              <option value="PENDENTE">Pendentes</option>
+              <option value="CANCELADO">Cancelados</option>
+            </select>
+          </div>
+          <div class="tournament-history-list" id="tournamentRegistrationHistory"></div>
         </div>
       </div>
     </section>
@@ -22800,6 +22838,7 @@
       renderPlayerFilters();
       renderPlayers();
       renderRegistrationInvites();
+      renderTournamentRegistrationHistory();
       renderCategories();
       renderCategoryStrip();
       renderBracket();
@@ -23086,6 +23125,107 @@
             '<button class="small-btn" type="button" data-edit-player="' + escapeHtml(player.jogador_id) + '">Editar</button>' +
             '</div></div>';
         }).join('') || '<div class="empty">Nenhum jogador cadastrado.</div>';
+    }
+
+    function tournamentHistoryDateParts(value) {
+      const date = new Date(value || '');
+      if (Number.isNaN(date.getTime())) return { date: 'Data não informada', time: '' };
+      return {
+        date: date.toLocaleDateString('pt-BR', { timeZone: CLUB_TIME_ZONE, day: '2-digit', month: 'short', year: 'numeric' }).replace('.', ''),
+        time: date.toLocaleTimeString('pt-BR', { timeZone: CLUB_TIME_ZONE, hour: '2-digit', minute: '2-digit' })
+      };
+    }
+
+    function tournamentHistoryPaymentLabel(value) {
+      const status = String(value || 'PENDENTE').toUpperCase();
+      const labels = {
+        PAGO: 'Pago', PAID: 'Pago', RECEIVED: 'Pago', RECEIVED_IN_CASH: 'Pago',
+        ISENTO: 'Isento', NOT_REQUIRED: 'Isento', WAIVED: 'Isento',
+        CANCELADO: 'Cancelado', CANCELLED: 'Cancelado', REFUNDED: 'Estornado',
+        PENDENTE: 'Pendente', PENDING: 'Pendente', CREATED: 'Aguardando Pix',
+        FAILED: 'Falha na cobrança', OVERDUE: 'Vencido', CONFIRMED: 'Em análise',
+        REVIEW_REQUIRED: 'Revisão manual', PARTIALLY_REFUNDED: 'Estorno parcial'
+      };
+      return labels[status] || status.replaceAll('_', ' ').toLowerCase();
+    }
+
+    function tournamentRegistrationHistoryRows() {
+      if (!state.data) return [];
+      const registrations = Array.isArray(state.data.inscricoes) ? state.data.inscricoes : [];
+      const players = new Map((state.data.jogadores || []).map(function (player) { return [String(player.jogador_id), player]; }));
+      const payments = new Map((state.data.pagamentos_online || []).map(function (payment) { return [String(payment.inscricao_id), payment]; }));
+      const paymentsByGroup = new Map((state.data.pagamentos_online || []).filter(function (payment) { return payment.grupo_id; }).map(function (payment) { return [String(payment.grupo_id), payment]; }));
+      const invitesByGroup = new Map((state.data.convites || []).filter(function (invite) { return invite.used_registration_group_id; }).map(function (invite) { return [String(invite.used_registration_group_id), invite]; }));
+      const groupCounts = new Map();
+      registrations.forEach(function (registration) {
+        const groupId = String(registration.grupo_id || '');
+        if (groupId) groupCounts.set(groupId, (groupCounts.get(groupId) || 0) + 1);
+      });
+      return registrations.map(function (registration) {
+        const player = players.get(String(registration.jogador_id)) || {};
+        const groupId = String(registration.grupo_id || '');
+        const payment = payments.get(String(registration.inscricao_id)) || paymentsByGroup.get(groupId) || {};
+        const invite = invitesByGroup.get(groupId);
+        const source = invite ? 'Convite' : (groupId && groupCounts.get(groupId) > 1 ? 'Família' : (payment.id ? 'Site' : 'ADM'));
+        const paymentStatus = String(payment.status || registration.status_pagamento || 'PENDENTE').toUpperCase();
+        return {
+          registration: registration,
+          player: player,
+          payment: payment,
+          source: source,
+          paymentStatus: paymentStatus,
+          createdAt: registration.criado_em || registration.data_inscricao || ''
+        };
+      }).sort(function (a, b) {
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      });
+    }
+
+    function renderTournamentRegistrationHistory() {
+      const all = tournamentRegistrationHistoryRows();
+      const query = normalizeSearch($('tournamentHistorySearch').value);
+      const statusFilter = String($('tournamentHistoryStatusFilter').value || '').toUpperCase();
+      const visible = all.filter(function (row) {
+        const normalizedPayment = tournamentHistoryPaymentLabel(row.paymentStatus).toUpperCase();
+        if (statusFilter === 'PAGO' && normalizedPayment !== 'PAGO') return false;
+        if (statusFilter === 'ISENTO' && normalizedPayment !== 'ISENTO') return false;
+        if (statusFilter === 'CANCELADO' && !['CANCELADO', 'ESTORNADO'].includes(normalizedPayment)) return false;
+        if (statusFilter === 'PENDENTE' && ['PAGO', 'ISENTO', 'CANCELADO', 'ESTORNADO'].includes(normalizedPayment)) return false;
+        if (!query) return true;
+        return normalizeSearch([
+          row.player.nome,
+          row.player.cidade,
+          getCategoryName(row.registration.categoria_id),
+          row.source,
+          tournamentHistoryPaymentLabel(row.paymentStatus)
+        ].join(' ')).includes(query);
+      });
+      $('tournamentHistoryHint').textContent = all.length
+        ? all.length + ' inscrição(ões) registradas · mais recentes primeiro.'
+        : 'As novas inscrições aparecerão aqui automaticamente.';
+      const list = $('tournamentRegistrationHistory');
+      if (!visible.length) {
+        list.innerHTML = '<div class="invite-manager-empty">' + (all.length ? 'Nenhuma inscrição corresponde aos filtros.' : 'Nenhuma inscrição registrada neste torneio.') + '</div>';
+        return;
+      }
+      list.innerHTML = visible.slice(0, 100).map(function (row) {
+        const when = tournamentHistoryDateParts(row.createdAt);
+        const category = getCategoryName(row.registration.categoria_id) || 'Classe não informada';
+        const personType = row.player.menor_de_idade ? 'Menor de idade' : 'Adulto';
+        const paymentLabel = tournamentHistoryPaymentLabel(row.paymentStatus);
+        const paidAt = row.payment.pago_em ? tournamentHistoryDateParts(row.payment.pago_em) : null;
+        const paymentDetail = paidAt
+          ? 'Recebido em ' + paidAt.date + ' às ' + paidAt.time
+          : (row.payment.reserva_expira_em ? 'Reserva até ' + registrationInviteDateTime(row.payment.reserva_expira_em) : 'Status atual da inscrição');
+        return '<article class="tournament-history-row">' +
+          '<div class="tournament-history-when">' + escapeHtml(when.date) + '<span>' + escapeHtml(when.time ? 'às ' + when.time : '') + '</span></div>' +
+          '<div class="tournament-history-person"><strong>' + escapeHtml(row.player.nome || row.registration.nome_publico || 'Atleta não identificado') + '</strong>' +
+            '<small>' + escapeHtml(category) + (row.player.cidade ? ' · ' + escapeHtml(row.player.cidade) : '') + '</small>' +
+            '<div class="tournament-history-tags"><span class="mini-tag">' + escapeHtml(row.source) + '</span><span class="mini-tag">' + escapeHtml(personType) + '</span>' +
+            (row.registration.parceiro ? '<span class="mini-tag">Dupla: ' + escapeHtml(row.registration.parceiro) + '</span>' : '') + '</div></div>' +
+          '<div class="tournament-history-payment"><strong>' + escapeHtml(paymentLabel) + ' · ' + escapeHtml(money(row.registration.valor || row.payment.valor || 0)) + '</strong><small>' + escapeHtml(paymentDetail) + '</small></div>' +
+        '</article>';
+      }).join('');
     }
 
     function ilhaCardCategory() {
@@ -43897,6 +44037,10 @@
     ['playerSearch', 'playerCategoryFilter', 'playerStatusFilter', 'playerGenderFilter'].forEach(function (id) {
       $(id).addEventListener('input', renderPlayers);
       $(id).addEventListener('change', renderPlayers);
+    });
+    ['tournamentHistorySearch', 'tournamentHistoryStatusFilter'].forEach(function (id) {
+      $(id).addEventListener('input', renderTournamentRegistrationHistory);
+      $(id).addEventListener('change', renderTournamentRegistrationHistory);
     });
     ['agendaDayFilter', 'agendaCourtFilter', 'agendaCategoryFilter'].forEach(function (id) {
       $(id).addEventListener('change', renderAgenda);

@@ -1075,6 +1075,28 @@ test('aceite do convite menciona responsabilidade apenas quando existe menor', (
   assert.match(submit, /hasMinor[\s\S]*Confirme a responsabilidade[\s\S]*Confirme os dados e a autorização/);
 });
 
+test('ADM do torneio exibe histórico cronológico e privado das inscrições', () => {
+  assert.match(adminSource, /data-tab="dashboard">Info \/ histórico/);
+  assert.match(adminSource, /id="tournamentRegistrationHistory"/);
+  assert.match(adminSource, /id="tournamentHistorySearch"/);
+  assert.match(adminSource, /id="tournamentHistoryStatusFilter"/);
+  const rows = functionSource(adminSource, 'tournamentRegistrationHistoryRows');
+  assert.match(rows, /state\.data\.inscricoes/);
+  assert.match(rows, /invitesByGroup/);
+  assert.match(rows, /groupCounts/);
+  assert.match(rows, /new Date\(b\.createdAt/);
+  const render = functionSource(adminSource, 'renderTournamentRegistrationHistory');
+  assert.match(render, /tournamentHistoryDateParts/);
+  assert.match(render, /getCategoryName/);
+  assert.match(render, /Menor de idade/);
+  assert.match(render, /payment\.pago_em/);
+  assert.match(tournamentAdminSource, /criado_em: row\.created_at/);
+  assert.match(tournamentAdminSource, /grupo_id: includeCapabilities \? row\.registration_group_id/);
+  assert.match(tournamentAdminSource, /registration_id,registration_group_id,status/);
+  assert.match(functionSource(tournamentAdminSource, 'mapOnlinePayment'), /grupo_id: row\.registration_group_id/);
+  assert.match(rows, /paymentsByGroup\.get\(groupId\)/);
+});
+
 test('convite isento é único, limitado e consumido atomicamente com a inscrição', () => {
   assert.match(adminSource, /id="registrationInviteBtn"[^>]*>Gerar convite</);
   assert.doesNotMatch(adminSource, /id="courtesyTournamentLink"/);

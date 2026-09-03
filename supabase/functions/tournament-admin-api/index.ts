@@ -593,6 +593,11 @@ function mapRegistration(row: Row, includeCapabilities = false, registrationOrde
     status: row.status || "PENDING",
     valor: Number(row.total_amount || 0),
     data_inscricao: row.created_at ? String(row.created_at).slice(0, 10) : "",
+    criado_em: row.created_at || "",
+    atualizado_em: row.updated_at || "",
+    confirmado_em: row.confirmed_at || "",
+    cancelado_em: row.cancelled_at || "",
+    grupo_id: includeCapabilities ? row.registration_group_id || "" : "",
     confirmado: row.status === "CONFIRMED",
     observacoes: includeCapabilities ? row.notes || "" : "",
     cobranca_status: includeCapabilities ? registrationOrder.billing_status || "" : "",
@@ -608,6 +613,7 @@ function mapOnlinePayment(row: Row) {
     id: row.id,
     torneio_id: row.tournament_id,
     inscricao_id: row.registration_id,
+    grupo_id: row.registration_group_id || "",
     status: row.status || "CREATED",
     forma_pagamento: row.billing_type || "",
     valor: Number(row.amount || 0),
@@ -616,6 +622,7 @@ function mapOnlinePayment(row: Row) {
     pix_expira_em: row.pix_expires_at || "",
     reserva_expira_em: row.expires_at || "",
     pago_em: row.paid_at || "",
+    criado_em: row.created_at || "",
   };
 }
 
@@ -715,7 +722,7 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", incl
     client.from("tournament_registrations").select("*").eq("tournament_id", id).order("created_at"),
     client.from("tournament_registration_orders").select("*").eq("tournament_id", id).order("created_at"),
     includeCapabilities
-      ? client.from("tournament_payments").select("id,tournament_id,registration_id,status,billing_type,amount,invoice_url,pix_payload,pix_expires_at,expires_at,paid_at").eq("tournament_id", id).order("created_at")
+      ? client.from("tournament_payments").select("id,tournament_id,registration_id,registration_group_id,status,billing_type,amount,invoice_url,pix_payload,pix_expires_at,expires_at,paid_at,created_at").eq("tournament_id", id).order("created_at")
       : Promise.resolve({ data: [], error: null }),
     client.from("tournament_matches").select("*").eq("tournament_id", id).order("category_id").order("round_no").order("match_no"),
     client.from("tournament_courts").select("*").eq("tournament_id", id).order("sort_order").order("name"),
