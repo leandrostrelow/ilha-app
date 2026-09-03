@@ -43,6 +43,15 @@ function rewrittenPath(pathname) {
 }
 
 async function resolveFile(pathname) {
+  const direct = path.resolve(root, `.${pathname}`);
+  if (direct !== root && direct.startsWith(`${root}${path.sep}`) && await exists(direct)) {
+    const directDetails = await stat(direct);
+    if (directDetails.isFile()) return direct;
+    if (directDetails.isDirectory()) {
+      const directIndex = path.join(direct, 'index.html');
+      if (await exists(directIndex)) return directIndex;
+    }
+  }
   let candidate = rewrittenPath(pathname);
   if (candidate.endsWith('/')) candidate += 'index.html';
   const absolute = path.resolve(root, `.${candidate}`);
@@ -73,7 +82,7 @@ const server = http.createServer(async (request, response) => {
   }
 
   const extension = path.extname(file).toLowerCase();
-  const noCache = new Set(['/service-worker.js', '/auto-update.js', '/app-version.json', '/', '/adm', '/admbar', '/bar', '/menu', '/torneios', '/quadras']);
+  const noCache = new Set(['/service-worker.js', '/torneios/service-worker.js', '/torneios/manifest.json', '/auto-update.js', '/app-version.json', '/', '/adm', '/admbar', '/bar', '/menu', '/torneios', '/quadras']);
   response.writeHead(200, {
     'Content-Type': contentTypes.get(extension) || 'application/octet-stream',
     'Cache-Control': noCache.has(pathname) ? 'no-cache, no-store, must-revalidate' : 'no-cache'

@@ -11,6 +11,8 @@ o deploy:
   `asaas-payment-webhook` (segredo do provedor), `bar-order-push` (capacidade da
   comanda), `client-notification-dispatch` (segredo de despacho),
   `tournament-payment-expiry` (segredo interno do cron),
+  `tournament-public-push` (origin, chave publicável e assinatura Web Push no
+  cadastro; JWT e permissão de torneios no envio),
   `tournament-register` (token de cortesia/acompanhamento quando aplicável) e
   `protected-access-recovery` (resposta genérica, allowlist, cooldown e limites
   de tentativa).
@@ -76,6 +78,20 @@ cobrança. O limite persistente é atômico no Postgres e guarda apenas HMACs de
 IP e identidade, nunca IP, e-mail ou telefone em claro. Global e IP são
 contabilizados antes do CAPTCHA; identidade somente depois da validação, para
 que tokens falsos não bloqueiem uma vítima.
+
+## App público do torneio
+
+`tournament-public-push` aceita cadastro público somente para torneios
+publicados, exige origin permitida, chave publicável e uma assinatura Web Push
+HTTPS válida. O segredo aleatório criado no aparelho é armazenado apenas como
+SHA-256 e permite remover a própria assinatura. Endpoints e chaves de push
+ficam em tabela com RLS forçada, sem privilégios para `anon` ou
+`authenticated`; somente a Function com `service_role` acessa esses dados.
+
+As ações administrativas `status` e `broadcast` repetem no handler a
+autorização por JWT e `has_club_permission('tournaments')`. A chave VAPID
+privada nunca é enviada ao navegador. Assinaturas expiradas (HTTP 404/410) são
+apagadas durante o envio.
 
 ## Reconciliação de pagamentos do torneio
 
