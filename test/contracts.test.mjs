@@ -225,6 +225,10 @@ const barTvSlideshowMigrationSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260902185344_add_bar_tv_slideshow.sql'),
   'utf8'
 );
+const barTvVideoMediaMigrationSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260903135849_add_bar_tv_video_media.sql'),
+  'utf8'
+);
 const securityOperationsSource = await readFile(path.join(projectRoot, 'SECURITY_OPERATIONS.md'), 'utf8');
 const gitignoreSource = await readFile(path.join(projectRoot, '.gitignore'), 'utf8');
 const sqlFiles = (await readdir(path.join(projectRoot, 'supabase'), { recursive: true }))
@@ -2031,25 +2035,56 @@ test('cardapio publico libera o polling quando a rede nao responde', () => {
   assert.match(menuSource, /const MENU_REFRESH_INTERVAL = 15000/);
 });
 
-test('TV do Bar alterna o cardapio com ate cinco imagens e tempo individual', () => {
+test('TV do Bar alterna cardapio, imagens e videos MP4 com tempo individual', () => {
   assert.match(barTvSlideshowMigrationSource, /add column if not exists slides jsonb not null default '\[\]'::jsonb/i);
-  assert.match(barTvSlideshowMigrationSource, /jsonb_array_length\(candidate\) > 5 then false/i);
+  assert.match(barTvVideoMediaMigrationSource, /jsonb_array_length\(candidate\) > 5 then false/i);
   assert.match(barTvSlideshowMigrationSource, /menu_duration_seconds between 3 and 300/i);
   assert.match(barTvSlideshowMigrationSource, /public reads active bar tv event art[\s\S]*to anon[\s\S]*active is true/i);
+  assert.match(barTvVideoMediaMigrationSource, /'bar-tv-media'[\s\S]*52428800[\s\S]*'video\/mp4'/i);
+  assert.match(barTvVideoMediaMigrationSource, /bar menu staff uploads tv media[\s\S]*to authenticated[\s\S]*has_bar_permission\('bar\.menu'\)/i);
+  assert.match(barTvVideoMediaMigrationSource, /'media_type'[\s\S]*'media_url'/i);
+  assert.match(barTvVideoMediaMigrationSource, /when slide\.value ->> 'media_type' = 'video'[\s\S]*bar-tv-media\/eventos/i);
   assert.match(adminSource, /id="barTvMenuDuration"[^>]*min="3"[^>]*max="300"/i);
   assert.match(adminSource, /id="barTvEventArtList"/i);
+  assert.match(adminSource, /id="barTvEventArtFile"[^>]*accept="[^"]*video\/mp4/i);
+  assert.match(functionSource(adminSource, 'prepareBarTvVideo'), /50 \* 1024 \* 1024[\s\S]*duration > 300/);
+  assert.match(functionSource(adminSource, 'uploadBarTvMedia'), /bar-tv-media[\s\S]*120000/);
+  assert.match(functionSource(adminSource, 'uploadBarTvMedia'), /cache-control'\] = 'max-age=31536000'/);
   assert.match(functionSource(adminSource, 'saveBarTvEventArt'), /slides:\s*savedArt\.slides\.map/);
+  assert.match(functionSource(adminSource, 'saveBarTvEventArt'), /media_type:\s*slide\.mediaType[\s\S]*media_url:\s*slide\.mediaUrl/);
   assert.match(functionSource(menuSource, 'startEventSlideshow'), /eventSlideshowIndex = 0[\s\S]*showMenuSlideshowItem/);
   assert.match(functionSource(menuSource, 'showNextEventSlideshowItem'), /currentEventSlides\.length \+ 1[\s\S]*showMenuSlideshowItem/);
   const slideshowDelay = loadFunction(menuSource, 'eventSlideshowDelayMs');
   assert.equal(slideshowDelay(10), 10000);
   assert.equal(slideshowDelay(1), 3000);
   assert.match(menuSource, /\.menu-event-art \{[\s\S]*transition: opacity \.65s ease/);
-  assert.match(menuSource, /\.menu-event-art img\.is-fading \{[\s\S]*opacity: 0/);
-  assert.match(functionSource(menuSource, 'loadEventArt'), /new Image\(\)[\s\S]*preload\.src = slide\.imageUrl/);
+  assert.match(menuSource, /\.menu-event-art-media\.is-fading \{[\s\S]*opacity: 0/);
+  assert.match(menuSource, /id="menuEventArtVideo"[^>]*muted autoplay playsinline/);
+  assert.match(functionSource(menuSource, 'loadEventArt'), /new Image\(\)[\s\S]*preload\.src = slide\.mediaUrl/);
+  assert.match(menuSource, /const EVENT_MEDIA_RETRY_MS = 60000/);
+  assert.match(functionSource(menuSource, 'canRetryEventMedia'), /failedEventMediaAt\.delete\(mediaUrl\)/);
+  assert.match(functionSource(menuSource, 'loadEventArt'), /!configuredSlides\.length[\s\S]*row\.image_url/);
   const showSlide = functionSource(menuSource, 'showEventArtSlide');
-  assert.match(showSlide, /addEventListener\('load', reveal/);
+  assert.match(showSlide, /image\.onload = reveal/);
+  assert.match(showSlide, /video\.onended = function[\s\S]*showNextEventSlideshowItem/);
+  assert.match(showSlide, /video\.onerror = fail/);
+  assert.match(showSlide, /failedEventMediaAt\.set\(slide\.mediaUrl, Date\.now\(\)\)/);
   assert.match(showSlide, /scheduleEventSlideshow\(slide\.durationSeconds\)/);
+  assert.match(adminSource, /@media \(max-width: 760px\)[\s\S]*\.bar-tv-event-art-card \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/);
+});
+
+test('inicio do ADM Ilha fica leve e destaca somente torneio e historico', () => {
+  const home = sourceSection(adminSource, '<section class="club-home"', '<section class="ops-module clients-module"');
+  assert.match(home, /data-home-tournament-tab="settings"[\s\S]*Gerenciar torneio/);
+  assert.match(home, /data-home-tournament-tab="dashboard"[\s\S]*Info \/ histórico/);
+  assert.match(home, /id="clubShortcutsUnavailable"/);
+  assert.doesNotMatch(home, /club-metrics|homeClientsMetric|homeFinanceList|welcome-admin/);
+  const showHome = functionSource(adminSource, 'showClubHome');
+  assert.doesNotMatch(showHome, /loadOpsData|renderHomeDashboard/);
+  const openTournament = functionSource(adminSource, 'openTournamentModule');
+  assert.match(openTournament, /state\.tournamentDraftDirty[\s\S]*showTab\('settings'\)/);
+  assert.match(openTournament, /showTab\(preferredTab \|\| 'dashboard'\)/);
+  assert.match(functionSource(adminSource, 'applyClubAccessVisibility'), /clubShortcutsUnavailable[\s\S]*canUseClubPermission\('tournaments'/);
 });
 
 test('pagina publica iguala os modos de inscricao e repete o CTA nos pontos principais', () => {
