@@ -298,10 +298,13 @@
     .field-control { width: 100%; min-height: 46px; border: 1px solid var(--line); border-radius: 14px; padding: 10px 13px; outline: none; background: #fff; color: var(--ink); }
     .field-control:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(7,138,148,.11); }
     .registration-list { display: grid; gap: 8px; }
-    .registration-row { min-width: 0; display: grid; grid-template-columns: 44px minmax(0,1fr) auto; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 15px; }
-    .avatar { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; background: var(--navy); color: var(--lime); font-size: 13px; font-weight: 950; }
-    .registration-row strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .registration-row small { display: block; margin-top: 3px; color: var(--muted); font-weight: 650; }
+    .registration-row { min-width: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 15px; }
+    .registration-row-copy { min-width: 0; }
+    .registration-row-title { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .registration-row-title strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .registration-row small { display: block; margin-top: 4px; overflow: hidden; color: var(--muted); font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+    .registration-status { flex: 0 0 auto; }
+    .registration-status.confirmed { border: 1px solid #9fdbad; background: #e4f7e8; color: #176d2b; }
 
     .filter-strip { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 16px; padding-bottom: 4px; scrollbar-width: none; }
     .filter-strip::-webkit-scrollbar { display: none; }
@@ -579,8 +582,8 @@
       .panel { padding: 15px; border-radius: 19px; }
       .panel-head { align-items: start; }
       .search-row { grid-template-columns: 1fr; }
-      .registration-row { grid-template-columns: 40px minmax(0,1fr); }
-      .registration-row > .mini-chip { grid-column: 2; justify-self: start; }
+      .registration-row { padding: 11px 12px; }
+      .registration-row-title { gap: 8px; }
       .agenda-card { grid-template-columns: 66px minmax(0,1fr); gap: 10px; padding: 10px; }
       .agenda-card .court-chip { grid-column: 2; justify-self: start; }
       .result-card { grid-template-columns: 1fr; gap: 8px; text-align: center; }
@@ -1228,7 +1231,7 @@
         }
         return true;
       }).sort((a,b) => registrationName(a).localeCompare(registrationName(b),'pt-BR'));
-      return rows.map((row) => { const waitlist = ['WAITLIST','LISTA_ESPERA'].includes(clean(field(row,'status','registration_status')).toUpperCase()); return '<article class="registration-row"><span class="avatar">' + escapeHtml(initials(registrationName(row))) + '</span><div><strong>' + escapeHtml(registrationName(row)) + '</strong><small>' + escapeHtml(registrationCategoryNames(row)) + '</small></div><span class="mini-chip">' + (waitlist ? 'Lista de espera' : 'Confirmado') + '</span></article>'; }).join('') || '<div class="empty-state">Nenhum atleta encontrado.</div>';
+      return rows.map((row) => { const waitlist = ['WAITLIST','LISTA_ESPERA'].includes(clean(field(row,'status','registration_status')).toUpperCase()); return '<article class="registration-row"><div class="registration-row-copy"><div class="registration-row-title"><strong>' + escapeHtml(registrationName(row)) + '</strong><span class="mini-chip registration-status ' + (waitlist ? 'waitlist' : 'confirmed') + '">' + (waitlist ? 'Lista de espera' : 'Confirmado') + '</span></div><small>' + escapeHtml(registrationCategoryNames(row)) + '</small></div></article>'; }).join('') || '<div class="empty-state">Nenhum atleta encontrado.</div>';
     }
 
     function roundNumber(row) { return Number(field(row,'round_no','round_number','round','rodada') || 1); }
