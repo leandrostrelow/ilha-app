@@ -1093,7 +1093,7 @@
       display: none;
     }
 
-    .menu-event-art img {
+    .menu-event-art-media {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -1108,12 +1108,16 @@
       will-change: opacity;
     }
 
-    .menu-event-art img.is-fading {
+    .menu-event-art-media[hidden] {
+      display: none;
+    }
+
+    .menu-event-art-media.is-fading {
       opacity: 0;
     }
 
     @media (min-width: 720px) and (orientation: landscape) {
-      body[data-menu-layout="vertical"] .menu-event-art img {
+      body[data-menu-layout="vertical"] .menu-event-art-media {
         inset: auto;
         top: 50%;
         left: 50%;
@@ -1218,9 +1222,10 @@
 
   </div>
 
-  <div class="menu-event-art" id="menuEventArt" role="dialog" aria-modal="true" aria-label="Arte vertical do evento" hidden>
-    <img id="menuEventArtImage" alt="Arte do evento no Ilha Bar" />
-    <button class="menu-event-art-close" type="button" id="menuEventArtClose" aria-label="Fechar arte do evento" title="Voltar ao cardápio">×</button>
+  <div class="menu-event-art" id="menuEventArt" role="dialog" aria-modal="true" aria-label="Mídia vertical do evento" hidden>
+    <img class="menu-event-art-media" id="menuEventArtImage" alt="Arte do evento no Ilha Bar" hidden />
+    <video class="menu-event-art-media" id="menuEventArtVideo" aria-label="Vídeo do evento no Ilha Bar" muted autoplay playsinline preload="auto" hidden></video>
+    <button class="menu-event-art-close" type="button" id="menuEventArtClose" aria-label="Fechar mídia do evento" title="Voltar ao cardápio">×</button>
   </div>
 
   <script>
@@ -1236,6 +1241,7 @@
       const MENU_REFRESH_INTERVAL = 15000;
       const MENU_REQUEST_TIMEOUT_MS = 12000;
       const EVENT_ART_FADE_MS = 650;
+      const EVENT_MEDIA_RETRY_MS = 60000;
       const APP_SYNC_CHANNEL = 'ilha-app-sync-v1';
       const APP_SYNC_STORAGE_KEY = 'ilha-app:last-change';
       const appSyncSource = Math.random().toString(36).slice(2);
@@ -1256,8 +1262,10 @@
       let eventSlideshowIndex = 0;
       let eventSlideshowTimer = 0;
       let eventSlideshowTransitionTimer = 0;
+      let eventSlideshowLoadTimer = 0;
       let eventSlideshowTransitionEpoch = 0;
       let lastEventSlideshowPayload = '';
+      const failedEventMediaAt = new Map();
       let eventArtOpenedFullscreen = false;
 
       function escapeHtml(value) {
@@ -1268,6 +1276,14 @@
 
       function normalize(value) {
         return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+      }
+
+      function canRetryEventMedia(mediaUrl) {
+        const failedAt = failedEventMediaAt.get(mediaUrl);
+        if (!failedAt) return true;
+        if (Date.now() - failedAt < EVENT_MEDIA_RETRY_MS) return false;
+        failedEventMediaAt.delete(mediaUrl);
+        return true;
       }
 
       function money(value) {
@@ -1584,27 +1600,31 @@
           const configuredSlides = row && Array.isArray(row.slides) ? row.slides : [];
           currentEventSlides = configuredSlides.map(function (slide) {
             return {
-              imageUrl: String(slide && slide.image_url || '').trim(),
+              mediaType: slide && slide.media_type === 'video' ? 'video' : 'image',
+              mediaUrl: String(slide && (slide.media_url || slide.image_url) || '').trim(),
               durationSeconds: Math.min(300, Math.max(3, Number(slide && slide.duration_seconds || 10))),
               active: Boolean(slide && slide.active !== false)
             };
-          }).filter(function (slide) { return slide.imageUrl && slide.active; }).slice(0, 5);
-          if (!currentEventSlides.length && row && row.image_url) {
-            currentEventSlides = [{ imageUrl: String(row.image_url).trim(), durationSeconds: 10, active: true }];
+          }).filter(function (slide) {
+            return slide.mediaUrl && slide.active && canRetryEventMedia(slide.mediaUrl);
+          }).slice(0, 5);
+          if (!configuredSlides.length && row && row.image_url && canRetryEventMedia(String(row.image_url).trim())) {
+            currentEventSlides = [{ mediaType: 'image', mediaUrl: String(row.image_url).trim(), durationSeconds: 10, active: true }];
           }
           menuSlideDurationSeconds = Math.min(300, Math.max(3, Number(row && row.menu_duration_seconds || 10)));
         } catch (error) {
           currentEventSlides = [];
           menuSlideDurationSeconds = 10;
         }
-        currentEventArtUrl = currentEventSlides[0] && currentEventSlides[0].imageUrl || '';
+        currentEventArtUrl = currentEventSlides[0] && currentEventSlides[0].mediaUrl || '';
         document.getElementById('menuEventArtBtn').hidden = !currentEventSlides.length;
         const nextPayload = JSON.stringify([menuSlideDurationSeconds, currentEventSlides]);
         if (nextPayload !== lastEventSlideshowPayload) {
           lastEventSlideshowPayload = nextPayload;
           currentEventSlides.forEach(function (slide) {
+            if (slide.mediaType !== 'image') return;
             const preload = new Image();
-            preload.src = slide.imageUrl;
+            preload.src = slide.mediaUrl;
           });
           startEventSlideshow();
         }
@@ -1620,18 +1640,43 @@
         eventSlideshowTimer = setTimeout(showNextEventSlideshowItem, eventSlideshowDelayMs(seconds));
       }
 
+      function resetEventArtMedia() {
+        const image = document.getElementById('menuEventArtImage');
+        const video = document.getElementById('menuEventArtVideo');
+        image.onload = null;
+        image.onerror = null;
+        image.classList.add('is-fading');
+        image.hidden = true;
+        image.removeAttribute('src');
+        video.onloadeddata = null;
+        video.onloadedmetadata = null;
+        video.oncanplay = null;
+        video.onplaying = null;
+        video.onended = null;
+        video.onerror = null;
+        video.classList.add('is-fading');
+        video.hidden = true;
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+      }
+
       function showMenuSlideshowItem() {
         const overlay = document.getElementById('menuEventArt');
         const image = document.getElementById('menuEventArtImage');
+        const video = document.getElementById('menuEventArtVideo');
         const transitionEpoch = ++eventSlideshowTransitionEpoch;
         clearTimeout(eventSlideshowTransitionTimer);
+        clearTimeout(eventSlideshowLoadTimer);
         overlay.classList.remove('is-visible');
         image.classList.add('is-fading');
+        video.classList.add('is-fading');
+        video.pause();
         document.body.classList.remove('is-event-art-open');
         const finish = function () {
           if (transitionEpoch !== eventSlideshowTransitionEpoch) return;
           overlay.hidden = true;
-          image.removeAttribute('src');
+          resetEventArtMedia();
           scheduleEventSlideshow(menuSlideDurationSeconds);
         };
         if (overlay.hidden) finish();
@@ -1650,44 +1695,98 @@
       function startEventSlideshow() {
         clearTimeout(eventSlideshowTimer);
         clearTimeout(eventSlideshowTransitionTimer);
+        clearTimeout(eventSlideshowLoadTimer);
         eventSlideshowIndex = 0;
         showMenuSlideshowItem();
       }
 
       function showEventArtSlide(slide) {
-        if (!slide || !slide.imageUrl) return showMenuSlideshowItem();
+        if (!slide || !slide.mediaUrl) return showMenuSlideshowItem();
         const overlay = document.getElementById('menuEventArt');
         const image = document.getElementById('menuEventArtImage');
+        const video = document.getElementById('menuEventArtVideo');
+        const nextMedia = slide.mediaType === 'video' ? video : image;
         const transitionEpoch = ++eventSlideshowTransitionEpoch;
         const wasVisible = !overlay.hidden && overlay.classList.contains('is-visible');
         clearTimeout(eventSlideshowTimer);
         clearTimeout(eventSlideshowTransitionTimer);
+        clearTimeout(eventSlideshowLoadTimer);
         image.classList.add('is-fading');
+        video.classList.add('is-fading');
+        video.pause();
 
-        const swapImage = function () {
+        const fail = function () {
           if (transitionEpoch !== eventSlideshowTransitionEpoch) return;
+          clearTimeout(eventSlideshowLoadTimer);
+          clearTimeout(eventSlideshowTransitionTimer);
+          resetEventArtMedia();
+          overlay.classList.remove('is-visible');
+          overlay.hidden = true;
+          document.body.classList.remove('is-event-art-open');
+          failedEventMediaAt.set(slide.mediaUrl, Date.now());
+          currentEventSlides = currentEventSlides.filter(function (item) { return item.mediaUrl !== slide.mediaUrl; });
+          currentEventArtUrl = currentEventSlides[0] && currentEventSlides[0].mediaUrl || '';
+          document.getElementById('menuEventArtBtn').hidden = !currentEventSlides.length;
+          eventSlideshowIndex = Math.max(0, eventSlideshowIndex - 1);
+          showNextEventSlideshowItem();
+        };
+
+        const swapMedia = function () {
+          if (transitionEpoch !== eventSlideshowTransitionEpoch) return;
+          resetEventArtMedia();
           let revealed = false;
+          let playbackRequested = false;
+          const startVideoPlayback = function () {
+            if (playbackRequested || transitionEpoch !== eventSlideshowTransitionEpoch) return;
+            playbackRequested = true;
+            try { video.currentTime = 0; } catch (error) {}
+            const playResult = video.play();
+            if (playResult && typeof playResult.then === 'function') {
+              playResult.then(reveal).catch(fail);
+            }
+          };
           const reveal = function () {
             if (revealed || transitionEpoch !== eventSlideshowTransitionEpoch) return;
             revealed = true;
+            clearTimeout(eventSlideshowLoadTimer);
             overlay.hidden = false;
+            nextMedia.hidden = false;
             document.body.classList.add('is-event-art-open');
             requestAnimationFrame(function () {
               if (transitionEpoch !== eventSlideshowTransitionEpoch) return;
               overlay.classList.add('is-visible');
-              image.classList.remove('is-fading');
+              nextMedia.classList.remove('is-fading');
             });
             eventSlideshowTransitionTimer = setTimeout(function () {
               if (transitionEpoch === eventSlideshowTransitionEpoch) scheduleEventSlideshow(slide.durationSeconds);
             }, EVENT_ART_FADE_MS);
           };
-          image.addEventListener('load', reveal, { once: true });
-          image.src = slide.imageUrl;
-          if (image.complete && image.naturalWidth > 0) Promise.resolve().then(reveal);
+          if (slide.mediaType === 'video') {
+            video.muted = true;
+            video.autoplay = true;
+            video.playsInline = true;
+            video.preload = 'auto';
+            video.onloadedmetadata = startVideoPlayback;
+            video.oncanplay = startVideoPlayback;
+            video.onplaying = reveal;
+            video.onended = function () {
+              if (transitionEpoch === eventSlideshowTransitionEpoch) showNextEventSlideshowItem();
+            };
+            video.onerror = fail;
+            video.src = slide.mediaUrl;
+            video.load();
+            if (video.readyState >= 1) Promise.resolve().then(startVideoPlayback);
+          } else {
+            image.onload = reveal;
+            image.onerror = fail;
+            image.src = slide.mediaUrl;
+            if (image.complete && image.naturalWidth > 0) Promise.resolve().then(reveal);
+          }
+          eventSlideshowLoadTimer = setTimeout(fail, MENU_REQUEST_TIMEOUT_MS);
         };
 
-        if (wasVisible) eventSlideshowTransitionTimer = setTimeout(swapImage, EVENT_ART_FADE_MS);
-        else swapImage();
+        if (wasVisible) eventSlideshowTransitionTimer = setTimeout(swapMedia, EVENT_ART_FADE_MS);
+        else swapMedia();
       }
 
       async function openEventArt() {
@@ -1752,13 +1851,6 @@
       });
       document.getElementById('menuEventArtBtn').addEventListener('click', openEventArt);
       document.getElementById('menuEventArtClose').addEventListener('click', function () { closeEventArt(); });
-      document.getElementById('menuEventArtImage').addEventListener('error', function () {
-        const failedUrl = this.getAttribute('src') || '';
-        currentEventSlides = currentEventSlides.filter(function (slide) { return slide.imageUrl !== failedUrl; });
-        currentEventArtUrl = currentEventSlides[0] && currentEventSlides[0].imageUrl || '';
-        document.getElementById('menuEventArtBtn').hidden = !currentEventSlides.length;
-        startEventSlideshow();
-      });
       document.getElementById('menuFullscreenBtn').addEventListener('click', toggleFullscreen);
       document.getElementById('menuMobileCategories').addEventListener('click', function (event) {
         const button = event.target.closest('[data-menu-category-filter]');
@@ -1799,10 +1891,22 @@
           loadMenu();
           loadEventArt();
           startEventSlideshow();
-        } else clearTimeout(eventSlideshowTimer);
+        } else {
+          clearTimeout(eventSlideshowTimer);
+          clearTimeout(eventSlideshowTransitionTimer);
+          clearTimeout(eventSlideshowLoadTimer);
+          document.getElementById('menuEventArtVideo').pause();
+        }
       });
-      window.addEventListener('focus', loadMenu);
-      window.addEventListener('online', loadMenu);
+      window.addEventListener('focus', function () {
+        loadMenu();
+        loadEventArt();
+      });
+      window.addEventListener('online', function () {
+        failedEventMediaAt.clear();
+        loadMenu();
+        loadEventArt();
+      });
     })();
   </script>
   <script src="/auto-update.js?v=210"></script>

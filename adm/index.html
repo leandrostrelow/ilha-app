@@ -722,6 +722,154 @@
       flex-wrap: wrap;
     }
 
+    .club-shortcuts {
+      display: grid;
+      gap: 18px;
+    }
+
+    .club-shortcuts-head {
+      max-width: 720px;
+    }
+
+    .club-shortcuts-kicker {
+      display: block;
+      margin-bottom: 6px;
+      color: #087f8c;
+      font-size: 11px;
+      font-weight: 1000;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .club-shortcuts-head h2 {
+      margin: 0 0 7px;
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.08;
+    }
+
+    .club-shortcuts-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 750;
+      line-height: 1.5;
+    }
+
+    .club-shortcut-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .club-shortcut-card {
+      min-width: 0;
+      min-height: 132px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      display: grid;
+      grid-template-columns: 46px minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      background: #ffffff;
+      color: var(--text);
+      text-align: left;
+      box-shadow: 0 12px 30px rgba(10, 48, 55, .06);
+      transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+
+    .club-shortcut-card:hover,
+    .club-shortcut-card:focus-visible {
+      border-color: #89b8bf;
+      transform: translateY(-2px);
+      box-shadow: 0 16px 34px rgba(10, 48, 55, .11);
+    }
+
+    .club-shortcut-card.primary {
+      border-color: rgba(181, 229, 0, .72);
+      background:
+        linear-gradient(135deg, rgba(181, 229, 0, .18), transparent 58%),
+        #ffffff;
+    }
+
+    .club-shortcut-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: #eaf2f4;
+      color: var(--navy);
+    }
+
+    .club-shortcut-card.primary .club-shortcut-icon {
+      background: var(--navy);
+      color: var(--lime);
+    }
+
+    .club-shortcut-icon svg {
+      width: 23px;
+      height: 23px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .club-shortcut-copy {
+      min-width: 0;
+      display: grid;
+      gap: 5px;
+    }
+
+    .club-shortcut-copy strong {
+      font-size: 17px;
+      line-height: 1.2;
+    }
+
+    .club-shortcut-copy small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.4;
+    }
+
+    .club-shortcut-arrow {
+      color: #087f8c;
+      font-size: 24px;
+      font-weight: 900;
+    }
+
+    .club-shortcuts-empty {
+      padding: 18px;
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      background: #ffffff;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 720px) {
+      .club-shortcut-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .club-shortcut-card {
+        min-height: 112px;
+        padding: 15px;
+        grid-template-columns: 42px minmax(0, 1fr) auto;
+        gap: 12px;
+      }
+
+      .club-shortcut-icon {
+        width: 42px;
+        height: 42px;
+      }
+    }
+
     .welcome-admin {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
@@ -15890,6 +16038,7 @@
     }
 
     .bar-tv-event-art-preview {
+      position: relative;
       width: 72px;
       aspect-ratio: 9 / 16;
       overflow: hidden;
@@ -15901,12 +16050,26 @@
       color: #d8e4ea;
     }
 
-    .bar-tv-event-art-preview img {
+    .bar-tv-event-art-preview img,
+    .bar-tv-event-art-preview video {
       width: 100%;
       height: 100%;
       display: block;
       object-fit: contain;
       background: #000000;
+    }
+
+    .bar-tv-event-art-preview span {
+      position: absolute;
+      right: 4px;
+      bottom: 4px;
+      padding: 3px 5px;
+      border-radius: 5px;
+      background: rgba(3, 45, 55, .86);
+      color: #ffffff;
+      font-size: 7px;
+      font-weight: 1000;
+      letter-spacing: .06em;
     }
 
     .bar-tv-event-art-preview svg {
@@ -17293,12 +17456,12 @@
       }
 
       .bar-tv-event-art-card {
-        grid-template-columns: 82px minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr);
         gap: 11px;
       }
 
       .bar-tv-event-art-preview {
-        width: 82px;
+        width: 62px;
       }
 
       .bar-tv-event-art-actions {
@@ -19563,56 +19726,32 @@
         </div>
       </div>
 
-      <section class="welcome-admin">
-        <div>
-          <h2>Bem-vindo ao painel do clube</h2>
-          <p>Acompanhe alunos, equipe e financeiro em uma rotina simples para a secretaria.</p>
+      <section class="club-shortcuts" aria-labelledby="clubShortcutsTitle">
+        <div class="club-shortcuts-head">
+          <span class="club-shortcuts-kicker">Acesso rápido</span>
+          <h2 id="clubShortcutsTitle">Ilha Open 2026</h2>
+          <p>Gerencie o torneio e acompanhe as movimentações em um só lugar.</p>
         </div>
-        <div class="welcome-actions">
-          <button class="primary-btn" type="button" data-admin-nav="club-clients">Ver alunos</button>
-          <button class="ghost-btn" type="button" data-admin-nav="club-team">Equipe</button>
-          <button class="ghost-btn" type="button" data-admin-nav="club-finance">Financeiro</button>
+        <div class="club-shortcut-grid">
+          <button class="club-shortcut-card primary" type="button" data-home-tournament-tab="settings" data-club-permission="tournaments">
+            <span class="club-shortcut-icon" aria-hidden="true"><svg><use href="#admin-icon-trophy"></use></svg></span>
+            <span class="club-shortcut-copy">
+              <strong>Gerenciar torneio</strong>
+              <small>Edite classes, inscrições, agenda e configurações.</small>
+            </span>
+            <span class="club-shortcut-arrow" aria-hidden="true">›</span>
+          </button>
+          <button class="club-shortcut-card primary" type="button" data-home-tournament-tab="dashboard" data-club-permission="tournaments">
+            <span class="club-shortcut-icon" aria-hidden="true"><svg><use href="#admin-icon-calendar"></use></svg></span>
+            <span class="club-shortcut-copy">
+              <strong>Info / histórico</strong>
+              <small>Acompanhe as últimas inscrições e movimentações.</small>
+            </span>
+            <span class="club-shortcut-arrow" aria-hidden="true">›</span>
+          </button>
         </div>
+        <div class="club-shortcuts-empty" id="clubShortcutsUnavailable" hidden>Use o menu lateral para acessar os módulos liberados para o seu perfil.</div>
       </section>
-
-      <div class="club-metrics">
-        <div class="club-metric" data-club-permission="clients.read"><strong id="homeClientsMetric">0</strong><span>alunos cadastrados</span></div>
-        <div class="club-metric" data-club-permission="clients.read"><strong id="homeStudentsMetric">0</strong><span>alunos ativos</span></div>
-        <div class="club-metric" data-club-permission="plans"><strong id="homeAgendaMetric">0</strong><span>planos cadastrados</span></div>
-        <div class="club-metric" data-club-permission="finance.read"><strong id="homeFinanceMetric">R$ 0</strong><span>em aberto</span></div>
-      </div>
-
-      <div class="club-home-grid">
-        <section class="club-panel span-12" data-club-permission="clients.read">
-          <div class="club-panel-head">
-            <div>
-              <h2>Alunos cadastrados</h2>
-              <div class="muted">Cadastros criados no portal.</div>
-            </div>
-            <button class="ghost-btn" type="button" data-admin-nav="club-clients">Abrir</button>
-          </div>
-          <div class="club-feed" id="homeClientsList"></div>
-        </section>
-        <section class="club-panel span-12" data-club-permission="finance.read">
-          <div class="club-panel-head">
-            <div>
-              <h2>Financeiro</h2>
-              <div class="muted">Recebíveis e pendências financeiras.</div>
-            </div>
-            <button class="ghost-btn" type="button" data-admin-nav="club-finance">Abrir</button>
-          </div>
-          <div class="club-feed" id="homeFinanceList"></div>
-        </section>
-        <section class="club-panel span-12" data-club-permission="plans">
-          <div class="club-panel-head">
-            <div>
-              <h2>Planos do clube</h2>
-              <div class="muted">Base usada pelo ADM para vincular cada aluno.</div>
-            </div>
-          </div>
-          <div class="club-feed" id="homeSystemList"></div>
-        </section>
-      </div>
 
     </section>
 
@@ -20661,16 +20800,16 @@
                 <div class="bar-tv-slideshow-head">
                   <div class="bar-tv-event-art-copy">
                     <h3 id="barTvEventArtTitle">Sequência da TV</h3>
-                    <p>O cardápio e até 5 imagens ficam rodando em loop. As artes são ajustadas automaticamente para o formato vertical 1080 × 1920.</p>
+                    <p>O cardápio e até 5 imagens ou vídeos MP4 ficam rodando em loop. As imagens são ajustadas para o formato vertical 1080 × 1920; cada mídia pode ter seu próprio tempo.</p>
                     <small id="barTvEventArtStatus">Somente o cardápio está na sequência</small>
                   </div>
                   <div class="bar-tv-event-art-actions">
                     <label class="bar-tv-duration-field" for="barTvMenuDuration">Cardápio <input id="barTvMenuDuration" type="number" min="3" max="300" step="1" value="10" /> segundos</label>
-                    <button type="button" id="barTvEventArtPickBtn">＋ Adicionar imagem</button>
+                    <button type="button" id="barTvEventArtPickBtn">＋ Adicionar mídia</button>
                   </div>
                 </div>
                 <div class="bar-tv-slideshow-list" id="barTvEventArtList"></div>
-                <input id="barTvEventArtFile" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+                <input id="barTvEventArtFile" type="file" accept="image/jpeg,image/png,image/webp,video/mp4" hidden />
               </section>
 
               <div class="bar-menu-admin-metrics">
@@ -28715,19 +28854,22 @@
     function mapBarTvEventArtRow(row) {
       const rawSlides = row && Array.isArray(row.slides) ? row.slides : [];
       const fallbackSlides = !rawSlides.length && row && row.image_url
-        ? [{ image_url: row.image_url, duration_seconds: 10, active: row.active !== false }]
+        ? [{ media_type: 'image', media_url: row.image_url, duration_seconds: 10, active: row.active !== false }]
         : [];
       return {
         imageUrl: row && row.image_url || '',
         active: Boolean(row && row.active),
         menuDurationSeconds: Math.min(300, Math.max(3, Number(row && row.menu_duration_seconds || 10))),
         slides: (rawSlides.length ? rawSlides : fallbackSlides).slice(0, 5).map(function (slide) {
+          const mediaUrl = String(slide && (slide.media_url || slide.image_url) || '');
+          const mediaType = slide && slide.media_type === 'video' || /[.]mp4(?:$|[?#])/i.test(mediaUrl) ? 'video' : 'image';
           return {
-            imageUrl: String(slide && slide.image_url || ''),
+            mediaType: mediaType,
+            mediaUrl: mediaUrl,
             durationSeconds: Math.min(300, Math.max(3, Number(slide && slide.duration_seconds || 10))),
             active: Boolean(slide && slide.active !== false)
           };
-        }).filter(function (slide) { return Boolean(slide.imageUrl); }),
+        }).filter(function (slide) { return Boolean(slide.mediaUrl); }),
         updatedAt: row && row.updated_at || ''
       };
     }
@@ -29394,30 +29536,7 @@
     }
 
     function renderHomeDashboard() {
-      if (!$('homeClientsMetric')) return;
-      const directoryClients = clubClientDirectory();
-      const activeClients = directoryClients.filter(function (client) { return client.status === 'ATIVO'; });
-      const pendingFinance = opsData.finance.filter(function (item) { return !isFinancePaid(item); });
-      const pendingAmount = pendingFinance.reduce(function (sum, item) { return sum + Number(item.amount || 0); }, 0);
-      $('homeClientsMetric').textContent = directoryClients.length;
-      $('homeStudentsMetric').textContent = activeClients.length;
-      $('homeAgendaMetric').textContent = opsData.plans.length;
-      $('homeFinanceMetric').textContent = money(pendingAmount);
-      if ($('homeCommandSummary')) $('homeCommandSummary').textContent = '';
-
-      $('homeClientsList').innerHTML = directoryClients.slice(0, 3).map(function (client) {
-        const detail = client.familyMemberId ? 'Família de ' + client.familyResponsibleName : (client.email || 'Sem e-mail');
-        return '<article class="club-task"><div class="client-line">' + clientAvatar(client) + '<div><strong>' + escapeHtml(client.name) + '</strong><div class="muted">' + escapeHtml(detail) + '</div></div></div><div class="ops-meta">' + statusPill(client.status) + whatsappLink(client.phone) + '</div></article>';
-      }).join('') || '<div class="lesson-empty-state">Nenhum cliente no app ainda.</div>';
-
-      $('homeFinanceList').innerHTML = pendingFinance.slice(0, 3).map(function (item) {
-        return '<article class="club-task"><strong>' + escapeHtml(item.source) + '</strong><div class="muted">' + escapeHtml(item.counterparty || item.student) + ' | ' + escapeHtml(financeDateLabel(item.due)) + '</div><div class="finance-total">' + money(item.amount) + '</div></article>';
-      }).join('') || '<div class="lesson-empty-state">Sem pendências financeiras.</div>';
-
-      $('homeSystemList').innerHTML = opsData.plans.slice(0, 5).map(function (plan) {
-        const detail = plan.description || (plan.weeklyLessons ? plan.weeklyLessons + 'x por semana' : plan.type || 'Plano');
-        return '<article class="club-task"><strong>' + escapeHtml(plan.name) + '</strong><div class="muted">' + escapeHtml(detail) + '</div><div class="ops-meta">' + statusPill(plan.active === false ? 'INATIVO' : 'ATIVO') + '<span class="finance-total">' + money(plan.amount) + '</span></div></article>';
-      }).join('') || '<div class="lesson-empty-state">Nenhum plano cadastrado.</div>';
+      // A tela inicial agora contém apenas atalhos e não depende dos datasets operacionais.
     }
 
     function formatDays(days) {
@@ -33324,7 +33443,7 @@
       const objectPath = String(userId) + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 7) + '.webp';
       const headers = supabaseHeaders(true);
       headers['Content-Type'] = blob.type || 'image/webp';
-      headers['cache-control'] = '31536000';
+      headers['cache-control'] = 'max-age=31536000';
       const response = await fetchWithAdminTimeout(supabaseBaseUrl() + '/storage/v1/object/bar-profiles/' + encodeStoragePath(objectPath), { method: 'POST', headers: headers, body: blob }, 60000);
       const data = await response.json().catch(function () { return {}; });
       if (!response.ok) throw new Error(data.message || data.error || 'Não consegui enviar a foto do perfil.');
@@ -33743,16 +33862,23 @@
       if (!list) return;
       const art = opsData.barTvEventArt || mapBarTvEventArtRow(null);
       const slides = Array.isArray(art.slides) ? art.slides : [];
+      const activeSlides = slides.filter(function (slide) { return slide.active; });
       $('barTvMenuDuration').value = String(art.menuDurationSeconds || 10);
       $('barTvEventArtPickBtn').disabled = slides.length >= 5;
-      $('barTvEventArtPickBtn').textContent = slides.length >= 5 ? 'Limite de 5 imagens' : '＋ Adicionar imagem';
+      $('barTvEventArtPickBtn').textContent = slides.length >= 5 ? 'Limite de 5 mídias' : '＋ Adicionar mídia';
       $('barTvEventArtStatus').textContent = slides.length
-        ? slides.filter(function (slide) { return slide.active; }).length + ' imagem(ns) ativa(s) + cardápio no loop'
+        ? activeSlides.length + ' mídia(s) ativa(s) + cardápio no loop'
         : 'Somente o cardápio está na sequência';
       list.innerHTML = slides.map(function (slide, index) {
+        const isVideo = slide.mediaType === 'video';
+        const mediaPreview = isVideo
+          ? '<video src="' + escapeHtml(slide.mediaUrl) + '" muted playsinline preload="metadata" aria-label="Prévia do vídeo ' + (index + 1) + ' da TV"></video><span>VÍDEO</span>'
+          : '<img src="' + escapeHtml(slide.mediaUrl) + '" alt="Prévia da imagem ' + (index + 1) + ' da TV" />';
+        const mediaLabel = isVideo ? 'Vídeo' : 'Imagem';
+        const mediaDescription = isVideo ? 'Será exibido entre as passagens do cardápio.' : 'Será exibida entre as passagens do cardápio.';
         return '<article class="bar-tv-slide-row" data-bar-tv-slide="' + index + '">' +
-          '<div class="bar-tv-event-art-preview"><img src="' + escapeHtml(slide.imageUrl) + '" alt="Prévia da imagem ' + (index + 1) + ' da TV" /></div>' +
-          '<div class="bar-tv-event-art-copy"><h3>Imagem ' + (index + 1) + '</h3><p>Será exibida entre as passagens do cardápio.</p></div>' +
+          '<div class="bar-tv-event-art-preview">' + mediaPreview + '</div>' +
+          '<div class="bar-tv-event-art-copy"><h3>' + mediaLabel + ' ' + (index + 1) + '</h3><p>' + mediaDescription + '</p></div>' +
           '<div class="bar-tv-event-art-actions">' +
             '<label class="bar-tv-duration-field">Tempo <input type="number" min="3" max="300" step="1" value="' + escapeHtml(slide.durationSeconds) + '" data-bar-tv-slide-duration="' + index + '" /> segundos</label>' +
             '<label class="bar-tv-event-art-toggle"><input type="checkbox" data-bar-tv-slide-active="' + index + '" ' + (slide.active ? 'checked' : '') + ' />Mostrar na TV</label>' +
@@ -36599,7 +36725,7 @@
                 reject(new Error('Não consegui preparar essa arte.'));
                 return;
               }
-              resolve({ blob: blob, previewUrl: previewUrl });
+              resolve({ blob: blob, previewUrl: previewUrl, mediaType: 'image', durationSeconds: 10, extension: 'webp', contentType: 'image/webp' });
             }, 'image/webp', .9);
           };
           image.onerror = function () { reject(new Error('Não consegui abrir essa arte.')); };
@@ -36608,6 +36734,77 @@
         reader.onerror = function () { reject(new Error('Não consegui ler essa arte.')); };
         reader.readAsDataURL(file);
       });
+    }
+
+    function prepareBarTvVideo(file) {
+      return new Promise(function (resolve, reject) {
+        if (!file) {
+          resolve(null);
+          return;
+        }
+        if (file.type !== 'video/mp4' && !/[.]mp4$/i.test(file.name || '')) {
+          reject(new Error('Para garantir compatibilidade com a TV, use um vídeo MP4.'));
+          return;
+        }
+        if (file.size > 50 * 1024 * 1024) {
+          reject(new Error('O vídeo precisa ter no máximo 50 MB.'));
+          return;
+        }
+        const previewUrl = URL.createObjectURL(file);
+        const video = document.createElement('video');
+        let settled = false;
+        const timeout = setTimeout(function () {
+          fail(new Error('O vídeo demorou demais para abrir. Tente outro arquivo MP4.'));
+        }, 15000);
+        const cleanup = function () {
+          clearTimeout(timeout);
+          video.onloadedmetadata = null;
+          video.onerror = null;
+          video.removeAttribute('src');
+          video.load();
+        };
+        const fail = function (error) {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          URL.revokeObjectURL(previewUrl);
+          reject(error);
+        };
+        video.preload = 'metadata';
+        video.muted = true;
+        video.playsInline = true;
+        video.onloadedmetadata = function () {
+          if (settled) return;
+          const duration = Number(video.duration || 0);
+          if (!Number.isFinite(duration) || duration <= 0) {
+            fail(new Error('Não consegui identificar a duração desse vídeo.'));
+            return;
+          }
+          if (duration > 300) {
+            fail(new Error('O vídeo pode ter no máximo 5 minutos.'));
+            return;
+          }
+          settled = true;
+          cleanup();
+          resolve({
+            blob: file,
+            previewUrl: previewUrl,
+            mediaType: 'video',
+            durationSeconds: Math.min(300, Math.max(3, Math.ceil(duration))),
+            extension: 'mp4',
+            contentType: 'video/mp4'
+          });
+        };
+        video.onerror = function () {
+          fail(new Error('Não consegui abrir esse vídeo. Confirme se ele está em MP4.'));
+        };
+        video.src = previewUrl;
+      });
+    }
+
+    function prepareBarTvMedia(file) {
+      if (file && (file.type === 'video/mp4' || /[.]mp4$/i.test(file.name || ''))) return prepareBarTvVideo(file);
+      return resizeBarTvEventImage(file);
     }
 
     function barProductImageSlug(name) {
@@ -36624,7 +36821,7 @@
       const objectPath = 'catalogo/' + Date.now() + '-' + barProductImageSlug(productName) + '-' + Math.random().toString(36).slice(2, 7) + '.webp';
       const headers = supabaseHeaders(true);
       headers['Content-Type'] = blob.type || 'image/webp';
-      headers['cache-control'] = '31536000';
+      headers['cache-control'] = 'max-age=31536000';
       const response = await fetchWithAdminTimeout(supabaseBaseUrl() + '/storage/v1/object/bar-products/' + encodeStoragePath(objectPath), {
         method: 'POST',
         headers: headers,
@@ -36639,25 +36836,26 @@
       return supabaseBaseUrl() + '/storage/v1/object/public/bar-products/' + encodeStoragePath(objectPath);
     }
 
-    async function uploadBarTvEventImage(blob) {
-      if (!blob) return '';
+    async function uploadBarTvMedia(prepared) {
+      if (!prepared || !prepared.blob) return '';
       requireAdminSession();
-      const objectPath = 'eventos/' + Date.now() + '-arte-tv-' + Math.random().toString(36).slice(2, 7) + '.webp';
+      const extension = prepared.mediaType === 'video' ? 'mp4' : 'webp';
+      const objectPath = 'eventos/' + Date.now() + '-midia-tv-' + Math.random().toString(36).slice(2, 7) + '.' + extension;
       const headers = supabaseHeaders(true);
-      headers['Content-Type'] = blob.type || 'image/webp';
-      headers['cache-control'] = '31536000';
-      const response = await fetchWithAdminTimeout(supabaseBaseUrl() + '/storage/v1/object/bar-products/' + encodeStoragePath(objectPath), {
+      headers['Content-Type'] = prepared.contentType || prepared.blob.type || (prepared.mediaType === 'video' ? 'video/mp4' : 'image/webp');
+      headers['cache-control'] = 'max-age=31536000';
+      const response = await fetchWithAdminTimeout(supabaseBaseUrl() + '/storage/v1/object/bar-tv-media/' + encodeStoragePath(objectPath), {
         method: 'POST',
         headers: headers,
-        body: blob
-      }, 60000);
+        body: prepared.blob
+      }, 120000);
       const text = await response.text();
       let data = null;
       try { data = text ? JSON.parse(text) : null; } catch (error) { data = null; }
       if (!response.ok) {
-        throw new Error(data && (data.message || data.error) || 'Não consegui enviar a arte da TV.');
+        throw new Error(data && (data.message || data.error) || 'Não consegui enviar a mídia da TV.');
       }
-      return supabaseBaseUrl() + '/storage/v1/object/public/bar-products/' + encodeStoragePath(objectPath);
+      return supabaseBaseUrl() + '/storage/v1/object/public/bar-tv-media/' + encodeStoragePath(objectPath);
     }
 
     function barProductStoragePath(imageUrl) {
@@ -36678,6 +36876,34 @@
       }, ADMIN_REQUEST_TIMEOUT_MS);
       if (!response.ok && response.status !== 404) {
         console.info('A foto antiga do produto não pôde ser removida.');
+      }
+    }
+
+    function barTvMediaStorageObject(mediaUrl) {
+      const value = String(mediaUrl || '');
+      const buckets = ['bar-tv-media', 'bar-products'];
+      for (let index = 0; index < buckets.length; index += 1) {
+        const bucket = buckets[index];
+        const marker = '/storage/v1/object/public/' + bucket + '/';
+        const markerIndex = value.indexOf(marker);
+        if (markerIndex < 0) continue;
+        const objectPath = value.slice(markerIndex + marker.length).split('/').map(function (part) {
+          try { return decodeURIComponent(part); } catch (error) { return part; }
+        }).join('/');
+        return objectPath ? { bucket: bucket, objectPath: objectPath } : null;
+      }
+      return null;
+    }
+
+    async function deleteBarTvMedia(mediaUrl) {
+      const object = barTvMediaStorageObject(mediaUrl);
+      if (!object || !adminSession || !adminSession.access_token) return;
+      const response = await fetchWithAdminTimeout(supabaseBaseUrl() + '/storage/v1/object/' + encodeURIComponent(object.bucket) + '/' + encodeStoragePath(object.objectPath), {
+        method: 'DELETE',
+        headers: supabaseHeaders(true)
+      }, ADMIN_REQUEST_TIMEOUT_MS);
+      if (!response.ok && response.status !== 404) {
+        console.info('A mídia antiga da TV não pôde ser removida.');
       }
     }
 
@@ -36751,23 +36977,25 @@
     async function saveBarTvEventArt(nextArt) {
       let savedArt = Object.assign({}, opsData.barTvEventArt || mapBarTvEventArtRow(null), nextArt || {});
       savedArt.slides = (Array.isArray(savedArt.slides) ? savedArt.slides : []).slice(0, 5).map(function (slide) {
+        const mediaUrl = String(slide && (slide.mediaUrl || slide.imageUrl) || '');
         return {
-          imageUrl: String(slide && slide.imageUrl || ''),
+          mediaType: slide && slide.mediaType === 'video' || /[.]mp4(?:$|[?#])/i.test(mediaUrl) ? 'video' : 'image',
+          mediaUrl: mediaUrl,
           durationSeconds: Math.min(300, Math.max(3, Number(slide && slide.durationSeconds || 10))),
           active: Boolean(slide && slide.active)
         };
-      }).filter(function (slide) { return Boolean(slide.imageUrl); });
+      }).filter(function (slide) { return Boolean(slide.mediaUrl); });
       savedArt.menuDurationSeconds = Math.min(300, Math.max(3, Number(savedArt.menuDurationSeconds || 10)));
-      const firstSlide = savedArt.slides[0] || null;
+      const firstImageSlide = savedArt.slides.find(function (slide) { return slide.mediaType === 'image'; }) || null;
       const hasActiveSlide = savedArt.slides.some(function (slide) { return slide.active; });
       if (barCanPersist()) {
         const saved = await supabaseRest('bar_tv_event_art?id=eq.true', {
           method: 'PATCH',
           body: {
-            image_url: firstSlide ? firstSlide.imageUrl : '',
+            image_url: firstImageSlide ? firstImageSlide.mediaUrl : '',
             active: hasActiveSlide,
             slides: savedArt.slides.map(function (slide) {
-              return { image_url: slide.imageUrl, duration_seconds: slide.durationSeconds, active: slide.active };
+              return { media_type: slide.mediaType, media_url: slide.mediaUrl, duration_seconds: slide.durationSeconds, active: slide.active };
             }),
             menu_duration_seconds: savedArt.menuDurationSeconds,
             updated_by: adminProfile && adminProfile.id || null,
@@ -36784,24 +37012,33 @@
     }
 
     async function selectBarTvEventArt(file) {
-      const prepared = await resizeBarTvEventImage(file);
+      const prepared = await prepareBarTvMedia(file);
       if (!prepared) return;
       const currentSlides = (opsData.barTvEventArt && opsData.barTvEventArt.slides || []).slice();
-      if (currentSlides.length >= 5) throw new Error('Você pode cadastrar no máximo 5 imagens na sequência da TV.');
+      if (currentSlides.length >= 5) {
+        if (/^blob:/i.test(prepared.previewUrl || '')) URL.revokeObjectURL(prepared.previewUrl);
+        throw new Error('Você pode cadastrar no máximo 5 mídias na sequência da TV.');
+      }
       const pickButton = $('barTvEventArtPickBtn');
       let uploadedUrl = prepared.previewUrl;
       try {
         requireAdminSession();
         pickButton.disabled = true;
         pickButton.textContent = 'Enviando...';
-        if (barCanPersist()) uploadedUrl = await uploadBarTvEventImage(prepared.blob);
-        currentSlides.push({ imageUrl: uploadedUrl, durationSeconds: 10, active: true });
+        if (barCanPersist()) uploadedUrl = await uploadBarTvMedia(prepared);
+        currentSlides.push({
+          mediaType: prepared.mediaType || 'image',
+          mediaUrl: uploadedUrl,
+          durationSeconds: prepared.durationSeconds || 10,
+          active: true
+        });
         await saveBarTvEventArt({ slides: currentSlides });
-        toast('Imagem adicionada à sequência da TV.');
+        toast(prepared.mediaType === 'video' ? 'Vídeo adicionado à sequência da TV.' : 'Imagem adicionada à sequência da TV.');
       } catch (error) {
-        if (barCanPersist() && uploadedUrl && uploadedUrl !== prepared.previewUrl) deleteBarProductImage(uploadedUrl);
+        if (barCanPersist() && uploadedUrl && uploadedUrl !== prepared.previewUrl) deleteBarTvMedia(uploadedUrl);
         throw error;
       } finally {
+        if (barCanPersist() && /^blob:/i.test(prepared.previewUrl || '')) URL.revokeObjectURL(prepared.previewUrl);
         pickButton.disabled = false;
         $('barTvEventArtFile').value = '';
         renderBarTvEventArt();
@@ -36817,12 +37054,15 @@
 
     async function removeBarTvEventArt(index) {
       const slides = (opsData.barTvEventArt && opsData.barTvEventArt.slides || []).slice();
-      const previousUrl = String(slides[index] && slides[index].imageUrl || '');
-      if (!previousUrl || !window.confirm('Remover esta imagem da sequência da TV?')) return;
+      const previousSlide = slides[index] || null;
+      const previousUrl = String(previousSlide && (previousSlide.mediaUrl || previousSlide.imageUrl) || '');
+      const mediaLabel = previousSlide && previousSlide.mediaType === 'video' ? 'vídeo' : 'imagem';
+      if (!previousUrl || !window.confirm('Remover este ' + mediaLabel + ' da sequência da TV?')) return;
       slides.splice(index, 1);
       await saveBarTvEventArt({ slides: slides });
-      if (barCanPersist()) deleteBarProductImage(previousUrl);
-      toast('Imagem removida da sequência da TV.');
+      if (barCanPersist()) deleteBarTvMedia(previousUrl);
+      else if (/^blob:/i.test(previousUrl)) URL.revokeObjectURL(previousUrl);
+      toast((mediaLabel === 'vídeo' ? 'Vídeo removido' : 'Imagem removida') + ' da sequência da TV.');
     }
 
     function resetBarProductForm() {
@@ -38446,7 +38686,7 @@
       const objectPath = 'catalogo/' + Date.now() + '-' + barProductImageSlug(productName) + '-' + Math.random().toString(36).slice(2, 7) + '.webp';
       const headers = supabaseHeaders(true);
       headers['Content-Type'] = blob.type || 'image/webp';
-      headers['cache-control'] = '31536000';
+      headers['cache-control'] = 'max-age=31536000';
       const response = await fetchWithAdminTimeout(supabaseBaseUrl() + '/storage/v1/object/ilha-store-products/' + encodeStoragePath(objectPath), {
         method: 'POST', headers: headers, body: blob
       }, 60000);
@@ -39573,6 +39813,7 @@
       document.querySelectorAll('[data-club-permission]').forEach(function (element) {
         element.hidden = !canUseClubPermission(element.dataset.clubPermission, adminProfile);
       });
+      if ($('clubShortcutsUnavailable')) $('clubShortcutsUnavailable').hidden = canUseClubPermission('tournaments', adminProfile);
       document.querySelectorAll('[data-home-action]').forEach(function (button) {
         button.hidden = !canUseClubPermission('dashboard', adminProfile);
       });
@@ -40450,17 +40691,15 @@
 
     function showClubHome() {
       if (!setClubMode('club-home')) return;
-      renderHomeDashboard();
-      loadOpsData(false).then(renderHomeDashboard).catch(reportActionError);
     }
 
-    function openTournamentModule() {
+    function openTournamentModule(preferredTab) {
       if (!setClubMode('club-tournament')) return;
       if (state.tournamentDraftDirty && state.data) {
         showTab('settings');
         toast('Seu rascunho foi preservado. Salve quando terminar.');
       } else {
-        showTab('dashboard');
+        showTab(preferredTab || 'dashboard');
         loadData(false);
       }
       if (!window.__adminRefreshTimer) {
@@ -42349,6 +42588,11 @@
           if (action) action();
         });
       });
+      document.querySelectorAll('[data-home-tournament-tab]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          openTournamentModule(btn.dataset.homeTournamentTab || 'dashboard');
+        });
+      });
       document.querySelectorAll('[data-home-action]').forEach(function (btn) {
         btn.addEventListener('click', function () {
           if (IS_BAR_ADMIN_SURFACE) {
@@ -43115,14 +43359,14 @@
           const duration = Math.min(300, Math.max(3, Number(durationInput.value || 10)));
           durationInput.value = String(duration);
           updateBarTvEventArtSlide(index, { durationSeconds: duration }).then(function () {
-            toast('Tempo da imagem atualizado.');
+            toast('Tempo da mídia atualizado.');
           }).catch(reportActionError);
           return;
         }
         const activeInput = event.target.closest('[data-bar-tv-slide-active]');
         if (activeInput) {
           updateBarTvEventArtSlide(Number(activeInput.dataset.barTvSlideActive), { active: activeInput.checked }).then(function () {
-            toast(activeInput.checked ? 'Imagem liberada na TV.' : 'Imagem pausada.');
+            toast(activeInput.checked ? 'Mídia liberada na TV.' : 'Mídia pausada.');
           }).catch(reportActionError);
         }
       });
