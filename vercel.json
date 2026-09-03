@@ -14,6 +14,7 @@
     { "source": "/admin", "destination": "/adm", "permanent": false }
   ],
   "rewrites": [
+    { "source": "/inscricoes/:slug/espacial", "destination": "/inscricoes/espacial/index.html" },
     { "source": "/inscricoes/:slug", "destination": "/torneios" },
     { "source": "/inscricoes/:slug/:path*", "destination": "/torneios" },
     { "source": "/torneios", "destination": "/torneios" },
@@ -95,6 +96,13 @@
       "source": "/torneios",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/inscricoes/:slug/espacial",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
       ]
     },
     {

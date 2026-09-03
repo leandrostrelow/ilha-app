@@ -8,6 +8,10 @@ const MAX_BATCH = 12;
 const MAX_CONCURRENCY = 3;
 const MAX_RUNTIME_MS = 20_000;
 const PROVIDER_TIMEOUT_MS = 4_000;
+// tournament-register allows 15 seconds per Asaas request and can make
+// multiple sequential requests after claiming the local payment. Keep a
+// recent claim untouched long enough for that critical section to finish.
+const PROVIDER_ATTEMPT_GRACE_MS = 3 * 60 * 1000;
 const CONFIRMED_REVIEW_WINDOW_MS = 72 * 60 * 60 * 1000;
 const reconciliationDelaysSeconds = [300, 600, 1_800, 3_600, 10_800, 21_600];
 const EXPIRY_REMOVABLE_PROVIDER_STATUSES = new Set(["PENDING", "OVERDUE"]);
@@ -133,6 +137,17 @@ function isoAfter(seconds: number) {
 function isExpired(payment: Row, now = Date.now()) {
   const expiresAt = Date.parse(String(payment.expires_at || ""));
   return Number.isFinite(expiresAt) && expiresAt <= now;
+}
+
+function providerAttemptIsRecent(payment: Row, now = Date.now()) {
+  const status = String(payment.status || "").trim().toUpperCase();
+  if (!["CREATED", "RECONCILING"].includes(status)) return false;
+  const attemptedAt = Date.parse(String(payment.provider_attempted_at || ""));
+  if (Number.isFinite(attemptedAt) && attemptedAt > now - PROVIDER_ATTEMPT_GRACE_MS) return true;
+  // A retry briefly moves a payment back to CREATED immediately before the
+  // atomic provider-attempt claim. updated_at closes that pre-claim window.
+  const updatedAt = Date.parse(String(payment.updated_at || ""));
+  return status === "CREATED" && Number.isFinite(updatedAt) && updatedAt > now - PROVIDER_ATTEMPT_GRACE_MS;
 }
 
 function paidAt(payment: Row) {
@@ -378,7 +393,11 @@ async function quarantineProviderEnvironment(
 
 async function archiveLocally(client: DbClient, payment: Row) {
   if (!isExpired(payment)) return false;
-  const result = await client.rpc("archive_expired_tournament_payment", { p_payment_id: payment.id });
+  const result = await client.rpc("archive_expired_tournament_payment", {
+    p_payment_id: payment.id,
+    p_expected_status: payment.status,
+    p_expected_updated_at: payment.updated_at,
+  });
   if (result.error) throw result.error;
   return result.data === true;
 }
@@ -480,6 +499,12 @@ Deno.serve(async (request) => {
         summary.review_required += 1;
         return;
       }
+      // Do not mutate updated_at or next_reconciliation_at here: the checkout
+      // uses that version as a CAS when persisting the newly created charge.
+      if (providerAttemptIsRecent(payment)) {
+        summary.deferred += 1;
+        return;
+      }
       const remote = await findRemotePayment(payment);
       if (!remote.ok && remote.status !== 404) {
         await scheduleReconciliation(client, payment);
@@ -513,7 +538,7 @@ Deno.serve(async (request) => {
         }
       }
       const status = providerStatus(remotePayment);
-      const remoteDisposition = paymentExpiryRemoteDisposition(
+      let remoteDisposition = paymentExpiryRemoteDisposition(
         Boolean(String(payment.provider_payment_id || "").trim()),
         remote.ok,
         remote.status,
@@ -597,6 +622,39 @@ Deno.serve(async (request) => {
         summary.deferred += 1;
         return;
       }
+
+      // The checkout may have claimed this payment after the batch query or
+      // while the remote lookup was running. Re-read immediately before the
+      // destructive branch and fail closed on every concurrent state change
+      // that can represent a provider request in flight.
+      const latest = await client.from("tournament_payments")
+        .select(selectColumns)
+        .eq("id", payment.id)
+        .maybeSingle();
+      if (latest.error) throw latest.error;
+      if (!latest.data) return;
+      payment = latest.data as Row;
+      if (providerAttemptIsRecent(payment)) {
+        summary.deferred += 1;
+        return;
+      }
+      if (!isExpired(payment)) {
+        summary.deferred += 1;
+        return;
+      }
+      const latestStatus = String(payment.status || "").trim().toUpperCase();
+      if (!["CREATED", "RECONCILING", "PENDING", "FAILED", "OVERDUE"].includes(latestStatus)) {
+        summary.deferred += 1;
+        return;
+      }
+      remoteDisposition = paymentExpiryRemoteDisposition(
+        Boolean(String(payment.provider_payment_id || "").trim()),
+        remote.ok,
+        remote.status,
+        Object.keys(remotePayment).length === 0,
+        recoveredProviderPaymentId,
+        status,
+      );
 
       if (!["DELETE_THEN_ARCHIVE", "ARCHIVE_REMOTE_ABSENT"].includes(remoteDisposition)) {
         await scheduleReconciliation(client, payment);

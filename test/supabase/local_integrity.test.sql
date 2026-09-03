@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(120);
+select plan(144);
 
 select has_table(
   'public',
@@ -1968,6 +1968,62 @@ select
 from public.tournament_registrations as registration
 where registration.id = '21000000-0000-4000-8000-000000000010'::uuid;
 
+create temporary table ci_expiry_archive_snapshot on commit drop as
+select payment.status, payment.updated_at
+from public.tournament_payments as payment
+where payment.id = '21000000-0000-4000-8000-000000000008'::uuid;
+
+update public.tournament_payments
+set status = 'RECONCILING',
+    provider_attempted_at = clock_timestamp(),
+    updated_at = clock_timestamp()
+where id = '21000000-0000-4000-8000-000000000008'::uuid;
+
+select ok(
+  not public.archive_expired_tournament_payment(
+    '21000000-0000-4000-8000-000000000008'::uuid,
+    (select status from ci_expiry_archive_snapshot),
+    (select updated_at from ci_expiry_archive_snapshot)
+  )
+    and exists (
+      select 1
+      from public.tournament_payments
+      where id = '21000000-0000-4000-8000-000000000008'::uuid
+        and status = 'RECONCILING'
+    )
+    and exists (
+      select 1
+      from public.tournament_registrations
+      where id = '21000000-0000-4000-8000-000000000005'::uuid
+    ),
+  'o arquivamento CAS recusa a versão capturada antes de um claim concorrente'
+);
+
+select ok(
+  not public.archive_expired_tournament_payment(
+    '21000000-0000-4000-8000-000000000008'::uuid,
+    'RECONCILING',
+    (
+      select payment.updated_at
+      from public.tournament_payments as payment
+      where payment.id = '21000000-0000-4000-8000-000000000008'::uuid
+    )
+  )
+    and exists (
+      select 1
+      from public.tournament_payments
+      where id = '21000000-0000-4000-8000-000000000008'::uuid
+        and provider_attempted_at > clock_timestamp() - interval '3 minutes'
+    ),
+  'o arquivamento preserva sob lock uma tentativa recente no provedor'
+);
+
+update public.tournament_payments
+set status = 'PENDING',
+    provider_attempted_at = null,
+    updated_at = clock_timestamp()
+where id = '21000000-0000-4000-8000-000000000008'::uuid;
+
 create temporary table ci_stale_reconciliation_result on commit drop as
 select public.apply_tournament_payment_reconciliation(
   '21000000-0000-4000-8000-000000000008'::uuid,
@@ -2841,6 +2897,97 @@ select is(
   'a sexta retomada da mesma cobrança na janela é bloqueada'
 );
 
+insert into public.public_registration_rate_limits (
+  scope_key,
+  window_started_at,
+  attempts,
+  expires_at,
+  updated_at
+)
+values
+  (
+    'ip:' || repeat('a', 64),
+    to_timestamp(floor(extract(epoch from clock_timestamp()) / 600) * 600),
+    30,
+    to_timestamp(floor(extract(epoch from clock_timestamp()) / 600) * 600) + interval '10 minutes',
+    clock_timestamp()
+  ),
+  (
+    'global',
+    to_timestamp(floor(extract(epoch from clock_timestamp()) / 60) * 60),
+    42,
+    to_timestamp(floor(extract(epoch from clock_timestamp()) / 60) * 60) + interval '1 minute',
+    clock_timestamp()
+  )
+on conflict (scope_key, window_started_at) do update
+set attempts = excluded.attempts,
+    expires_at = excluded.expires_at,
+    updated_at = excluded.updated_at;
+
+select is(
+  (
+    select allowed
+    from public.consume_tournament_registration_network_rate_limits(repeat('a', 64))
+  ),
+  false,
+  'um IP acima do limite é recusado antes de alcançar o bucket global'
+);
+
+select is(
+  (
+    select attempts
+    from public.public_registration_rate_limits
+    where scope_key = 'global'
+      and window_started_at = to_timestamp(floor(extract(epoch from clock_timestamp()) / 60) * 60)
+  ),
+  42,
+  'uma tentativa recusada pelo IP não consome o limite global das inscrições'
+);
+
+delete from public.public_registration_rate_limits
+where scope_key = 'tracking-token:' || repeat('b', 64);
+
+insert into public.public_registration_rate_limits (
+  scope_key,
+  window_started_at,
+  attempts,
+  expires_at,
+  updated_at
+)
+values (
+  'tracking-ip:' || repeat('c', 64),
+  to_timestamp(floor(extract(epoch from clock_timestamp()) / 600) * 600),
+  20,
+  to_timestamp(floor(extract(epoch from clock_timestamp()) / 600) * 600) + interval '10 minutes',
+  clock_timestamp()
+)
+on conflict (scope_key, window_started_at) do update
+set attempts = excluded.attempts,
+    expires_at = excluded.expires_at,
+    updated_at = excluded.updated_at;
+
+select is(
+  (
+    select allowed
+    from public.consume_tournament_payment_tracking_rate_limits(
+      repeat('b', 64),
+      repeat('c', 64),
+      'retry_payment'
+    )
+  ),
+  false,
+  'um IP bloqueado não alcança o bucket de token do acompanhamento Pix'
+);
+
+select ok(
+  not exists (
+    select 1
+    from public.public_registration_rate_limits
+    where scope_key = 'tracking-token:' || repeat('b', 64)
+  ),
+  'UUIDs aleatórios de um IP bloqueado não criam linhas de acompanhamento'
+);
+
 select ok(
   not has_function_privilege(
     'anon',
@@ -2858,6 +3005,851 @@ select ok(
     'EXECUTE'
   ),
   'o status legado do torneio é acessível somente pelo backend'
+);
+
+-- O adicional privado é uma nova inscrição standalone: ele compartilha o
+-- athlete_id com a inscrição principal, mas possui request token, cobrança e
+-- ciclo financeiro próprios. As fixtures ficam dentro desta transação e são
+-- removidas pelo rollback final.
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.claim_private_tournament_spatial_addon_checkout(uuid,uuid,uuid,uuid,text,text)',
+    'EXECUTE'
+  )
+    and not has_function_privilege(
+      'anon',
+      'public.claim_private_tournament_spatial_addon_checkout(uuid,uuid,uuid,uuid,text,text)',
+      'EXECUTE'
+    )
+    and not has_function_privilege(
+      'authenticated',
+      'public.claim_private_tournament_spatial_addon_checkout(uuid,uuid,uuid,uuid,text,text)',
+      'EXECUTE'
+    )
+    and has_function_privilege(
+      'service_role',
+      'public.resume_private_tournament_spatial_addon_checkout(uuid,uuid,uuid,uuid,text)',
+      'EXECUTE'
+    )
+    and not has_function_privilege(
+      'anon',
+      'public.resume_private_tournament_spatial_addon_checkout(uuid,uuid,uuid,uuid,text)',
+      'EXECUTE'
+    )
+    and not has_function_privilege(
+      'authenticated',
+      'public.resume_private_tournament_spatial_addon_checkout(uuid,uuid,uuid,uuid,text)',
+      'EXECUTE'
+    ),
+  'a criação e a retomada privadas da Espacial só podem ser chamadas pelo backend confiável'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.lookup_private_tournament_spatial_addon_athlete_ids(uuid,text)',
+    'EXECUTE'
+  )
+    and not has_function_privilege(
+      'anon',
+      'public.lookup_private_tournament_spatial_addon_athlete_ids(uuid,text)',
+      'EXECUTE'
+    )
+    and not has_function_privilege(
+      'authenticated',
+      'public.lookup_private_tournament_spatial_addon_athlete_ids(uuid,text)',
+      'EXECUTE'
+    ),
+  'a consulta de CPF da Espacial é executável somente pelo backend confiável'
+);
+
+insert into public.tournaments (
+  id,
+  name,
+  slug,
+  status,
+  registration_open,
+  is_published,
+  default_fee,
+  allowed_payment_methods,
+  settings
+)
+values (
+  '24000000-0000-4000-8000-000000000001'::uuid,
+  'Torneio Adicional Espacial Sintético',
+  'ci-private-spatial-addon',
+  'REGISTRATION_OPEN',
+  true,
+  true,
+  100,
+  '["PIX"]'::jsonb,
+  jsonb_build_object(
+    'registration_limits', jsonb_build_object('default_max_categories_per_athlete', 1),
+    'spatial_addon_fee', 80,
+    'spatial_addon_portal', jsonb_build_object('enabled', true, 'fee', 80),
+    'spatial_addons', jsonb_build_object(
+      'M2', jsonb_build_object('category_code', 'ESP-A-M', 'fee', 80),
+      'M5', jsonb_build_object('category_code', 'ESP-B-M', 'fee', 80)
+    )
+  )
+);
+
+insert into public.tournament_categories (
+  id,
+  tournament_id,
+  code,
+  name,
+  gender,
+  registration_fee,
+  registration_open,
+  max_entries,
+  sort_order,
+  settings
+)
+values
+  (
+    '24000000-0000-4000-8000-000000000002'::uuid,
+    '24000000-0000-4000-8000-000000000001'::uuid,
+    'M2',
+    '2ª Classe Masculina',
+    'MALE',
+    100,
+    true,
+    8,
+    1,
+    '{}'::jsonb
+  ),
+  (
+    '24000000-0000-4000-8000-000000000003'::uuid,
+    '24000000-0000-4000-8000-000000000001'::uuid,
+    'M5',
+    '5ª Classe Masculina',
+    'MALE',
+    100,
+    true,
+    8,
+    2,
+    '{}'::jsonb
+  ),
+  (
+    '24000000-0000-4000-8000-000000000004'::uuid,
+    '24000000-0000-4000-8000-000000000001'::uuid,
+    'ESP-A-M',
+    'Espacial A Masculino',
+    'MALE',
+    80,
+    true,
+    8,
+    3,
+    jsonb_build_object(
+      'registration_rule', jsonb_build_object(
+        'requires_existing_codes', jsonb_build_array('M2', 'M3', 'M4'),
+        'max_total_registrations', 2
+      )
+    )
+  ),
+  (
+    '24000000-0000-4000-8000-000000000005'::uuid,
+    '24000000-0000-4000-8000-000000000001'::uuid,
+    'ESP-B-M',
+    'Espacial B Masculino',
+    'MALE',
+    80,
+    true,
+    8,
+    4,
+    jsonb_build_object(
+      'registration_rule', jsonb_build_object(
+        'requires_existing_codes', jsonb_build_array('M5', 'M6', 'M7'),
+        'max_total_registrations', 2
+      )
+    )
+  );
+
+insert into public.tournament_athletes (
+  id,
+  source_key,
+  full_name,
+  email,
+  phone,
+  gender,
+  status,
+  active
+)
+values
+  (
+    '24000000-0000-4000-8000-000000000006'::uuid,
+    'ci-private-spatial-m2',
+    'Atleta Espacial M2 Sintético',
+    'ci-spatial-m2@tests.invalid',
+    '27999999994',
+    'MALE',
+    'ACTIVE',
+    true
+  ),
+  (
+    '24000000-0000-4000-8000-000000000007'::uuid,
+    'ci-private-spatial-m5',
+    'Atleta Espacial M5 Sintético',
+    'ci-spatial-m5@tests.invalid',
+    '27999999993',
+    'MALE',
+    'ACTIVE',
+    true
+  ),
+  (
+    '24000000-0000-4000-8000-000000000014'::uuid,
+    'ci-private-spatial-legacy-child',
+    'Atleta Espacial Legado Sintético',
+    'ci-spatial-legacy-child@tests.invalid',
+    '27999999992',
+    'MALE',
+    'ACTIVE',
+    true
+  );
+
+insert into public.tournament_registrations (
+  id,
+  tournament_id,
+  category_id,
+  athlete_id,
+  public_name,
+  status,
+  payment_status,
+  total_amount,
+  paid_amount,
+  source,
+  confirmed_at
+)
+values
+  (
+    '24000000-0000-4000-8000-000000000008'::uuid,
+    '24000000-0000-4000-8000-000000000001'::uuid,
+    '24000000-0000-4000-8000-000000000002'::uuid,
+    '24000000-0000-4000-8000-000000000006'::uuid,
+    'Atleta Espacial M2 Sintético',
+    'CONFIRMED',
+    'PAID',
+    100,
+    100,
+    'ADMIN',
+    now()
+  ),
+  (
+    '24000000-0000-4000-8000-000000000009'::uuid,
+    '24000000-0000-4000-8000-000000000001'::uuid,
+    '24000000-0000-4000-8000-000000000003'::uuid,
+    '24000000-0000-4000-8000-000000000007'::uuid,
+    'Atleta Espacial M5 Sintético',
+    'CONFIRMED',
+    'PAID',
+    100,
+    100,
+    'ADMIN',
+    now()
+  ),
+  (
+    '24000000-0000-4000-8000-000000000015'::uuid,
+    '24000000-0000-4000-8000-000000000001'::uuid,
+    '24000000-0000-4000-8000-000000000002'::uuid,
+    '24000000-0000-4000-8000-000000000014'::uuid,
+    'Atleta Espacial Legado Sintético',
+    'CONFIRMED',
+    'PAID',
+    100,
+    100,
+    'ADMIN',
+    now()
+  );
+
+insert into public.tournament_registrations (
+  id,
+  tournament_id,
+  category_id,
+  athlete_id,
+  parent_registration_id,
+  public_name,
+  request_token,
+  status,
+  payment_status,
+  total_amount,
+  source
+)
+values (
+  '24000000-0000-4000-8000-000000000016'::uuid,
+  '24000000-0000-4000-8000-000000000001'::uuid,
+  '24000000-0000-4000-8000-000000000004'::uuid,
+  '24000000-0000-4000-8000-000000000014'::uuid,
+  '24000000-0000-4000-8000-000000000015'::uuid,
+  'Atleta Espacial Legado Sintético',
+  '24000000-0000-4000-8000-000000000017'::uuid,
+  'PENDING',
+  'PENDING',
+  80,
+  'PUBLIC'
+);
+
+insert into public.tournament_payments (
+  id,
+  tournament_id,
+  registration_id,
+  provider,
+  provider_environment,
+  provider_payment_id,
+  external_reference,
+  billing_type,
+  status,
+  amount,
+  paid_at
+)
+values
+  (
+    '24000000-0000-4000-8000-000000000010'::uuid,
+    '24000000-0000-4000-8000-000000000001'::uuid,
+    '24000000-0000-4000-8000-000000000008'::uuid,
+    'ASAAS',
+    'SANDBOX',
+    'pay_ci_spatial_primary_m2',
+    'ci:tournament-spatial-primary-m2',
+    'PIX',
+    'RECEIVED',
+    100,
+    now()
+  ),
+  (
+    '24000000-0000-4000-8000-000000000013'::uuid,
+    '24000000-0000-4000-8000-000000000001'::uuid,
+    '24000000-0000-4000-8000-000000000009'::uuid,
+    'ASAAS',
+    'SANDBOX',
+    'pay_ci_spatial_primary_m5',
+    'ci:tournament-spatial-primary-m5',
+    'PIX',
+    'RECEIVED',
+    100,
+    now()
+  ),
+  (
+    '24000000-0000-4000-8000-000000000018'::uuid,
+    '24000000-0000-4000-8000-000000000001'::uuid,
+    '24000000-0000-4000-8000-000000000015'::uuid,
+    'ASAAS',
+    'SANDBOX',
+    'pay_ci_spatial_primary_legacy_child',
+    'ci:tournament-spatial-primary-legacy-child',
+    'PIX',
+    'RECEIVED',
+    100,
+    now()
+  );
+
+select set_config('request.jwt.claim.role', 'service_role', true);
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"10000000-0000-4000-8000-000000000001","role":"service_role"}',
+  true
+);
+
+select throws_ok(
+  $sql$
+    select public.claim_private_tournament_spatial_addon_checkout(
+      '24000000-0000-4000-8000-000000000001'::uuid,
+      '24000000-0000-4000-8000-000000000019'::uuid,
+      '24000000-0000-4000-8000-000000000014'::uuid,
+      '24000000-0000-4000-8000-000000000015'::uuid,
+      'PIX',
+      'SANDBOX'
+    )
+  $sql$,
+  'P0001',
+  'Esta inscrição precisa ser revisada pela organização.',
+  'o portal privado recusa uma Espacial legada vinculada como inscrição filha'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.tournament_registrations as registration
+    where registration.id = '24000000-0000-4000-8000-000000000015'::uuid
+      and registration.status = 'CONFIRMED'
+      and registration.payment_status = 'PAID'
+      and registration.total_amount = 100
+      and registration.paid_amount = 100
+  )
+    and exists (
+      select 1
+      from public.tournament_registrations as registration
+      where registration.id = '24000000-0000-4000-8000-000000000016'::uuid
+        and registration.parent_registration_id = '24000000-0000-4000-8000-000000000015'::uuid
+        and registration.status = 'PENDING'
+        and registration.payment_status = 'PENDING'
+    )
+    and not exists (
+      select 1
+      from public.tournament_payments as payment
+      where payment.registration_id = '24000000-0000-4000-8000-000000000016'::uuid
+    ),
+  'recusar o legado preserva a principal e não cria cobrança para a inscrição filha'
+);
+
+create temporary table ci_private_spatial_m2_created_result on commit drop as
+select public.claim_private_tournament_spatial_addon_checkout(
+  '24000000-0000-4000-8000-000000000001'::uuid,
+  '24000000-0000-4000-8000-000000000011'::uuid,
+  '24000000-0000-4000-8000-000000000006'::uuid,
+  '24000000-0000-4000-8000-000000000008'::uuid,
+  'PIX',
+  'SANDBOX'
+) as result;
+
+select ok(
+  (
+    select result #>> '{primary_category,code}' = 'M2'
+      and result #>> '{category,code}' = 'ESP-A-M'
+      and (result ->> 'payment_created')::boolean
+      and (result ->> 'total_amount')::numeric = 80
+    from ci_private_spatial_m2_created_result
+  )
+    and exists (
+      select 1
+      from public.tournament_registrations as registration
+      where registration.id = (
+          select (result #>> '{registration,id}')::uuid
+          from ci_private_spatial_m2_created_result
+        )
+        and registration.athlete_id = '24000000-0000-4000-8000-000000000006'::uuid
+        and registration.category_id = '24000000-0000-4000-8000-000000000004'::uuid
+        and registration.parent_registration_id is null
+        and registration.request_token = '24000000-0000-4000-8000-000000000011'::uuid
+        and registration.status = 'PENDING'
+        and registration.payment_status = 'PENDING'
+        and registration.total_amount = 80
+    ),
+  'M2 recebe a Espacial A como inscrição standalone de R$ 80'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.tournament_payments as payment
+    where payment.id = (
+        select (result #>> '{payment,id}')::uuid
+        from ci_private_spatial_m2_created_result
+      )
+      and payment.registration_id = (
+        select (result #>> '{registration,id}')::uuid
+        from ci_private_spatial_m2_created_result
+      )
+      and payment.external_reference = 'tournament-spatial-addon:' || payment.registration_id::text
+      and payment.provider_environment = 'SANDBOX'
+      and payment.billing_type = 'PIX'
+      and payment.status = 'CREATED'
+      and payment.amount = 80
+  ),
+  'a Espacial A recebe cobrança própria, Pix e valor definido pelo servidor'
+);
+
+update public.tournaments
+set status = 'REGISTRATION_CLOSED', registration_open = false
+where id = '24000000-0000-4000-8000-000000000001'::uuid;
+
+create temporary table ci_private_spatial_m2_resumed_result on commit drop as
+select public.resume_private_tournament_spatial_addon_checkout(
+  '24000000-0000-4000-8000-000000000001'::uuid,
+  '24000000-0000-4000-8000-000000000006'::uuid,
+  '24000000-0000-4000-8000-000000000008'::uuid,
+  (
+    select (result #>> '{registration,id}')::uuid
+    from ci_private_spatial_m2_created_result
+  ),
+  'SANDBOX'
+) as result;
+
+select ok(
+  (
+    select result #>> '{registration,id}'
+    from ci_private_spatial_m2_resumed_result
+  ) = (
+    select result #>> '{registration,id}'
+    from ci_private_spatial_m2_created_result
+  )
+    and (
+      select result #>> '{payment,id}'
+      from ci_private_spatial_m2_resumed_result
+    ) = (
+      select result #>> '{payment,id}'
+      from ci_private_spatial_m2_created_result
+    )
+    and not (
+      select (result ->> 'payment_created')::boolean
+      from ci_private_spatial_m2_resumed_result
+    ),
+  'uma cobrança Espacial ativa pode ser retomada com os mesmos IDs após o fechamento das inscrições'
+);
+
+update public.tournament_payments
+set amount = 79
+where id = (
+  select (result #>> '{payment,id}')::uuid
+  from ci_private_spatial_m2_created_result
+);
+
+select throws_ok(
+  format(
+    $sql$
+      select public.resume_private_tournament_spatial_addon_checkout(
+        '24000000-0000-4000-8000-000000000001'::uuid,
+        '24000000-0000-4000-8000-000000000006'::uuid,
+        '24000000-0000-4000-8000-000000000008'::uuid,
+        %L::uuid,
+        'SANDBOX'
+      )
+    $sql$,
+    (
+      select result #>> '{registration,id}'
+      from ci_private_spatial_m2_created_result
+    )
+  ),
+  'P0001',
+  'A cobrança desta inscrição precisa ser revisada pela organização.',
+  'a retomada falha fechada quando o valor da cobrança diverge dos R$ 80'
+);
+
+update public.tournament_payments
+set amount = 80
+where id = (
+  select (result #>> '{payment,id}')::uuid
+  from ci_private_spatial_m2_created_result
+);
+
+update public.tournament_payments
+set expires_at = now() - interval '1 second'
+where id = (
+  select (result #>> '{payment,id}')::uuid
+  from ci_private_spatial_m2_created_result
+);
+
+select throws_ok(
+  format(
+    $sql$
+      select public.resume_private_tournament_spatial_addon_checkout(
+        '24000000-0000-4000-8000-000000000001'::uuid,
+        '24000000-0000-4000-8000-000000000006'::uuid,
+        '24000000-0000-4000-8000-000000000008'::uuid,
+        %L::uuid,
+        'SANDBOX'
+      )
+    $sql$,
+    (
+      select result #>> '{registration,id}'
+      from ci_private_spatial_m2_created_result
+    )
+  ),
+  'P0001',
+  'A cobrança desta inscrição precisa ser revisada pela organização.',
+  'a retomada falha fechada quando a reserva da cobrança expirou'
+);
+
+update public.tournament_payments
+set expires_at = now() + interval '2 hours'
+where id = (
+  select (result #>> '{payment,id}')::uuid
+  from ci_private_spatial_m2_created_result
+);
+
+update public.tournaments
+set status = 'REGISTRATION_OPEN', registration_open = true
+where id = '24000000-0000-4000-8000-000000000001'::uuid;
+
+select ok(
+  exists (
+    select 1
+    from public.tournament_registrations as registration
+    where registration.id = '24000000-0000-4000-8000-000000000008'::uuid
+      and registration.parent_registration_id is null
+      and registration.request_token is null
+      and registration.status = 'CONFIRMED'
+      and registration.payment_status = 'PAID'
+      and registration.total_amount = 100
+      and registration.paid_amount = 100
+  )
+    and exists (
+      select 1
+      from public.tournament_payments as payment
+      where payment.id = '24000000-0000-4000-8000-000000000010'::uuid
+        and payment.registration_id = '24000000-0000-4000-8000-000000000008'::uuid
+        and payment.status = 'RECEIVED'
+        and payment.amount = 100
+    ),
+  'criar o adicional não altera a inscrição nem a cobrança principal da M2'
+);
+
+create temporary table ci_private_spatial_m2_replayed_result on commit drop as
+select public.claim_private_tournament_spatial_addon_checkout(
+  '24000000-0000-4000-8000-000000000001'::uuid,
+  '24000000-0000-4000-8000-000000000011'::uuid,
+  '24000000-0000-4000-8000-000000000006'::uuid,
+  '24000000-0000-4000-8000-000000000008'::uuid,
+  'PIX',
+  'SANDBOX'
+) as result;
+
+select ok(
+  not (
+    select (result ->> 'payment_created')::boolean
+    from ci_private_spatial_m2_replayed_result
+  )
+    and (
+      select result #>> '{registration,id}'
+      from ci_private_spatial_m2_replayed_result
+    ) = (
+      select result #>> '{registration,id}'
+      from ci_private_spatial_m2_created_result
+    )
+    and (
+      select result #>> '{payment,id}'
+      from ci_private_spatial_m2_replayed_result
+    ) = (
+      select result #>> '{payment,id}'
+      from ci_private_spatial_m2_created_result
+    )
+    and (
+      select count(*)
+      from public.tournament_registrations
+      where athlete_id = '24000000-0000-4000-8000-000000000006'::uuid
+        and tournament_id = '24000000-0000-4000-8000-000000000001'::uuid
+    ) = 2,
+  'repetir o request_token devolve a mesma inscrição e a mesma cobrança Espacial'
+);
+
+update public.tournament_payments
+set billing_type = null
+where id = (
+  select (result #>> '{payment,id}')::uuid
+  from ci_private_spatial_m2_created_result
+);
+
+select throws_ok(
+  format(
+    $sql$
+      select public.resume_private_tournament_spatial_addon_checkout(
+        '24000000-0000-4000-8000-000000000001'::uuid,
+        '24000000-0000-4000-8000-000000000006'::uuid,
+        '24000000-0000-4000-8000-000000000008'::uuid,
+        %L::uuid,
+        'SANDBOX'
+      )
+    $sql$,
+    (
+      select result #>> '{registration,id}'
+      from ci_private_spatial_m2_created_result
+    )
+  ),
+  'P0001',
+  'A cobrança desta inscrição precisa ser revisada pela organização.',
+  'a retomada falha fechada quando o tipo da cobrança está nulo'
+);
+
+select throws_ok(
+  $sql$
+    select public.claim_private_tournament_spatial_addon_checkout(
+      '24000000-0000-4000-8000-000000000001'::uuid,
+      '24000000-0000-4000-8000-000000000011'::uuid,
+      '24000000-0000-4000-8000-000000000006'::uuid,
+      '24000000-0000-4000-8000-000000000008'::uuid,
+      'PIX',
+      'SANDBOX'
+    )
+  $sql$,
+  '55000',
+  'A cobrança local do adicional é divergente.',
+  'o replay do checkout falha fechado quando o tipo da cobrança está nulo'
+);
+
+update public.tournament_payments
+set billing_type = 'PIX'
+where id = (
+  select (result #>> '{payment,id}')::uuid
+  from ci_private_spatial_m2_created_result
+);
+
+insert into public.tournament_registration_groups (
+  id,
+  tournament_id,
+  request_token,
+  public_token,
+  payer_name,
+  payer_email,
+  payer_phone,
+  payer_cpf,
+  status,
+  total_amount
+)
+values (
+  '24000000-0000-4000-8000-000000000020'::uuid,
+  '24000000-0000-4000-8000-000000000001'::uuid,
+  '24000000-0000-4000-8000-000000000021'::uuid,
+  '24000000-0000-4000-8000-000000000022'::uuid,
+  'Responsável Espacial Sintético',
+  'ci-spatial-group@tests.invalid',
+  '27999999991',
+  '98765432100',
+  'PENDING',
+  80
+);
+
+update public.tournament_payments
+set registration_group_id = '24000000-0000-4000-8000-000000000020'::uuid
+where id = (
+  select (result #>> '{payment,id}')::uuid
+  from ci_private_spatial_m2_created_result
+);
+
+select throws_ok(
+  $sql$
+    select public.claim_private_tournament_spatial_addon_checkout(
+      '24000000-0000-4000-8000-000000000001'::uuid,
+      '24000000-0000-4000-8000-000000000011'::uuid,
+      '24000000-0000-4000-8000-000000000006'::uuid,
+      '24000000-0000-4000-8000-000000000008'::uuid,
+      'PIX',
+      'SANDBOX'
+    )
+  $sql$,
+  '55000',
+  'A cobrança local do adicional é divergente.',
+  'o replay recusa cobrança Espacial indevidamente associada a um grupo familiar'
+);
+
+update public.tournament_payments
+set registration_group_id = null
+where id = (
+  select (result #>> '{payment,id}')::uuid
+  from ci_private_spatial_m2_created_result
+);
+
+select throws_ok(
+  $sql$
+    select public.claim_private_tournament_spatial_addon_checkout(
+      '24000000-0000-4000-8000-000000000001'::uuid,
+      '24000000-0000-4000-8000-000000000011'::uuid,
+      '24000000-0000-4000-8000-000000000007'::uuid,
+      '24000000-0000-4000-8000-000000000009'::uuid,
+      'PIX',
+      'SANDBOX'
+    )
+  $sql$,
+  '42501',
+  'Esta tentativa não corresponde ao adicional informado.',
+  'um request_token da M2 não pode assumir o checkout de outro atleta'
+);
+
+create temporary table ci_private_spatial_m5_created_result on commit drop as
+select public.claim_private_tournament_spatial_addon_checkout(
+  '24000000-0000-4000-8000-000000000001'::uuid,
+  '24000000-0000-4000-8000-000000000012'::uuid,
+  '24000000-0000-4000-8000-000000000007'::uuid,
+  '24000000-0000-4000-8000-000000000009'::uuid,
+  'PIX',
+  'SANDBOX'
+) as result;
+
+select ok(
+  (
+    select result #>> '{primary_category,code}' = 'M5'
+      and result #>> '{category,code}' = 'ESP-B-M'
+      and (result ->> 'payment_created')::boolean
+      and (result ->> 'total_amount')::numeric = 80
+    from ci_private_spatial_m5_created_result
+  )
+    and exists (
+      select 1
+      from public.tournament_registrations as registration
+      join public.tournament_payments as payment
+        on payment.registration_id = registration.id
+      where registration.id = (
+          select (result #>> '{registration,id}')::uuid
+          from ci_private_spatial_m5_created_result
+        )
+        and registration.athlete_id = '24000000-0000-4000-8000-000000000007'::uuid
+        and registration.category_id = '24000000-0000-4000-8000-000000000005'::uuid
+        and registration.parent_registration_id is null
+        and registration.request_token = '24000000-0000-4000-8000-000000000012'::uuid
+        and registration.total_amount = 80
+        and payment.external_reference = 'tournament-spatial-addon:' || registration.id::text
+        and payment.amount = 80
+    ),
+  'M5 recebe a Espacial B standalone com sua própria cobrança de R$ 80'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.tournament_registrations as registration
+    where registration.id = '24000000-0000-4000-8000-000000000009'::uuid
+      and registration.parent_registration_id is null
+      and registration.request_token is null
+      and registration.status = 'CONFIRMED'
+      and registration.payment_status = 'PAID'
+      and registration.total_amount = 100
+      and registration.paid_amount = 100
+  )
+    and exists (
+      select 1
+      from public.tournament_payments as payment
+      where payment.id = '24000000-0000-4000-8000-000000000013'::uuid
+        and payment.registration_id = '24000000-0000-4000-8000-000000000009'::uuid
+        and payment.status = 'RECEIVED'
+        and payment.amount = 100
+    ),
+  'criar o adicional não altera a inscrição nem a cobrança principal da M5'
+);
+
+create temporary table ci_private_spatial_sync_result on commit drop as
+select public.sync_tournament_registration_payment_group(
+  (
+    select (result #>> '{registration,id}')::uuid
+    from ci_private_spatial_m2_created_result
+  ),
+  'CONFIRMED',
+  'PAID',
+  80,
+  now(),
+  null
+) as updated_count;
+
+select ok(
+  (select updated_count = 1 from ci_private_spatial_sync_result)
+    and exists (
+      select 1
+      from public.tournament_registrations as registration
+      where registration.id = (
+          select (result #>> '{registration,id}')::uuid
+          from ci_private_spatial_m2_created_result
+        )
+        and registration.status = 'CONFIRMED'
+        and registration.payment_status = 'PAID'
+        and registration.total_amount = 80
+        and registration.paid_amount = 80
+    )
+    and exists (
+      select 1
+      from public.tournament_registrations as registration
+      where registration.id = '24000000-0000-4000-8000-000000000008'::uuid
+        and registration.status = 'CONFIRMED'
+        and registration.payment_status = 'PAID'
+        and registration.total_amount = 100
+        and registration.paid_amount = 100
+    )
+    and exists (
+      select 1
+      from public.tournament_payments as payment
+      where payment.id = '24000000-0000-4000-8000-000000000010'::uuid
+        and payment.status = 'RECEIVED'
+        and payment.amount = 100
+    ),
+  'reconciliar o pagamento standalone confirma só a Espacial e preserva a principal'
 );
 
 select * from finish();
