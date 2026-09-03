@@ -22,6 +22,11 @@ const barUserAccessSource = await readFile(path.join(projectRoot, 'supabase', 'f
 const asaasWebhookSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'asaas-payment-webhook', 'index.ts'), 'utf8');
 const clientBroadcastPushSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'client-broadcast-push', 'index.ts'), 'utf8');
 const clientNotificationDispatchSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'client-notification-dispatch', 'index.ts'), 'utf8');
+const tournamentPublicPushSource = await readFile(path.join(projectRoot, 'supabase', 'functions', 'tournament-public-push', 'index.ts'), 'utf8');
+const tournamentPushSubscriptionsSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260903175550_add_tournament_push_subscriptions.sql'),
+  'utf8'
+);
 const atomicClientBroadcastSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260828105000_atomic_client_broadcast_enqueue.sql'),
   'utf8'
@@ -2743,6 +2748,42 @@ test('manifesto PWA aponta para icone 512x512 real', async () => {
   assert.equal(icon.readUInt32BE(20), 512);
 });
 
+test('Ilha Open possui PWA próprio, atalhos, Push protegido e somente patrocinadores configurados', async () => {
+  const manifest = JSON.parse(await readFile(path.join(projectRoot, 'torneios', 'manifest.json'), 'utf8'));
+  assert.equal(manifest.id, '/torneios/ilha-open-2026');
+  assert.equal(manifest.name, 'Ilha Open 2026');
+  assert.equal(manifest.display, 'standalone');
+  assert.equal(manifest.scope, '/torneios/');
+  assert.match(manifest.start_url, /^\/torneios\/ilha-open-2026/);
+  assert.ok(manifest.shortcuts.some((shortcut) => shortcut.url.includes('tab=categories')));
+  assert.ok(manifest.shortcuts.some((shortcut) => shortcut.url.includes('tab=registrations')));
+  for (const icon of manifest.icons) {
+    const image = await readFile(path.join(projectRoot, icon.src.replace(/^\//, '')));
+    const [width, height] = icon.sizes.split('x').map(Number);
+    assert.equal(image.readUInt32BE(16), width);
+    assert.equal(image.readUInt32BE(20), height);
+  }
+
+  assert.match(tournamentSource, /id="tournamentAppManifest"/);
+  assert.match(tournamentSource, /Instalar app/);
+  assert.match(tournamentSource, /Ativar notificações/);
+  assert.match(tournamentSource, /serviceWorker\.register\('\/torneios\/service-worker\.js'/);
+  assert.match(functionSource(tournamentSource, 'allSponsors'), /const rows = configuredSponsors\(\)/);
+  assert.doesNotMatch(functionSource(tournamentSource, 'allSponsors'), /sponsors\(\)\.concat/);
+
+  assert.match(tournamentPushSubscriptionsSource, /alter table public\.tournament_push_subscriptions enable row level security/i);
+  assert.match(tournamentPushSubscriptionsSource, /alter table public\.tournament_push_subscriptions force row level security/i);
+  assert.match(tournamentPushSubscriptionsSource, /revoke all on table public\.tournament_push_subscriptions from anon, authenticated/i);
+  assert.match(tournamentPushSubscriptionsSource, /where enabled = true/i);
+  assert.match(tournamentPublicPushSource, /has_club_permission[\s\S]*tournaments/);
+  assert.match(tournamentPublicPushSource, /request\.headers\.get\("apikey"\) !== anonKey/);
+  assert.match(tournamentPublicPushSource, /subscription_token_hash: tokenHash/);
+  assert.match(tournamentPublicPushSource, /statusCode === 404 \|\| statusCode === 410/);
+  assert.match(adminSource, /id="sendTournamentPushBtn"/);
+  assert.match(adminSource, /id="tournamentPushAudienceStatus"/);
+  assert.match(supabaseConfigSource, /\[functions\.tournament-public-push\][\s\S]*verify_jwt = false/);
+});
+
 test('PWAs do ADM do Clube e do ADM Bar possuem identidades e escopos isolados', async () => {
   const clubManifest = JSON.parse(await readFile(path.join(projectRoot, 'adm-manifest.json'), 'utf8'));
   const barManifest = JSON.parse(await readFile(path.join(projectRoot, 'admbar-manifest.json'), 'utf8'));
@@ -2921,7 +2962,7 @@ test('membro familiar ativo vira aluno operacional e pode receber plano e aula n
   assert.match(adminSource, /data-family-directory-student=/);
   assert.match(adminSource, /Plano individual · cobrança na conta da família/);
   assert.match(adminSource, /if \(studentId && String\(student\.id \|\| ''\) === studentId\) return true/);
-  assert.match(serviceWorkerSource, /ilha-play-v235-private-spatial-addon/);
+  assert.match(serviceWorkerSource, /ilha-play-v236-tournament-pwa/);
 });
 
 test('grade de aulas usa cartões compactos e filtros responsivos', () => {

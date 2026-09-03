@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'ilha-play-v';
-const CACHE_NAME = 'ilha-play-v235-private-spatial-addon';
+const CACHE_NAME = 'ilha-play-v236-tournament-pwa';
 const CORE_ASSETS = [
   '/',
   '/index.html',
@@ -35,6 +35,10 @@ const OPTIONAL_ASSETS = [
   './bar/manifest.json',
   './torneios/',
   './torneios/index.html',
+  './torneios/manifest.json',
+  './icons/ilha-open-180.png',
+  './icons/ilha-open-192.png',
+  './icons/ilha-open-512.png',
   './inscricoes/espacial/index.html',
   './publico.html',
   './bannerviafor.jpg',

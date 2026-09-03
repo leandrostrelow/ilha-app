@@ -5,8 +5,23 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#0a3440" />
   <meta name="description" content="Torneios, inscrições, chaves, horários e resultados do Ilha Tênis." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Ilha Open" />
+  <link id="tournamentAppManifest" />
+  <link id="tournamentAppleTouchIcon" />
   <link rel="icon" type="image/png" sizes="512x512" href="/icon.png" />
   <title>Torneios | Ilha Tênis</title>
+  <script>
+    if (/^\/torneios\/ilha-open-2026(?:\/|$)/.test(location.pathname)) {
+      const manifest = document.getElementById('tournamentAppManifest');
+      const touchIcon = document.getElementById('tournamentAppleTouchIcon');
+      manifest.rel = 'manifest';
+      manifest.href = '/torneios/manifest.json';
+      touchIcon.rel = 'apple-touch-icon';
+      touchIcon.href = '/icons/ilha-open-180.png';
+    }
+  </script>
   <style>
     :root {
       --ink: #102b32;
@@ -294,6 +309,29 @@
     .about-partners .sponsor { min-height: 82px; background: #fff; }
     .about-partners .sponsor-invite { color: rgba(255,255,255,.78); }
 
+    .install-shell { overflow: hidden; padding: 0; }
+    .install-hero { display: grid; grid-template-columns: minmax(0,1fr) 210px; align-items: center; gap: 28px; padding: clamp(24px,4vw,42px); color: #fff; background: radial-gradient(circle at 85% 16%,rgba(168,233,0,.23),transparent 16rem),linear-gradient(135deg,#082f3a,#08747d); }
+    .install-hero h2 { margin: 0; font-size: clamp(30px,5vw,50px); line-height: 1; letter-spacing: -.05em; }
+    .install-hero p { max-width: 620px; margin: 14px 0 0; color: rgba(255,255,255,.78); font-size: 15px; line-height: 1.55; }
+    .install-app-icon { width: 180px; height: 180px; justify-self: end; border-radius: 38px; box-shadow: 0 20px 48px rgba(0,0,0,.24); }
+    .install-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+    .install-actions .button { min-width: 190px; }
+    .install-actions .button.secondary { border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.10); color: #fff; }
+    .install-status { min-height: 22px; margin: 12px 0 0; color: #dfffa0; font-size: 12px; font-weight: 800; }
+    .install-content { display: grid; gap: 22px; padding: clamp(20px,4vw,36px); }
+    .install-section h3 { margin: 0; font-size: 21px; letter-spacing: -.025em; }
+    .install-section > p { margin: 6px 0 0; color: var(--muted); font-size: 13px; font-weight: 650; line-height: 1.5; }
+    .install-step-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin-top: 14px; }
+    .install-step { min-width: 0; min-height: 128px; padding: 16px; border: 1px solid var(--line); border-radius: 17px; background: #f8fbfb; }
+    .install-step b { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; background: var(--navy); color: var(--lime); }
+    .install-step strong { display: block; margin-top: 13px; }
+    .install-step span { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .install-shortcuts { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin-top: 14px; }
+    .install-shortcut { min-height: 88px; display: grid; align-content: center; gap: 5px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: #fff; color: var(--ink); text-align: left; }
+    .install-shortcut:hover { border-color: var(--teal); background: #f4fbfb; }
+    .install-shortcut span { font-size: 22px; }
+    .install-shortcut strong { font-size: 13px; }
+
     .search-row { display: grid; grid-template-columns: minmax(0,1fr) minmax(160px,.35fr); gap: 10px; margin-bottom: 16px; }
     .field-control { width: 100%; min-height: 46px; border: 1px solid var(--line); border-radius: 14px; padding: 10px 13px; outline: none; background: #fff; color: var(--ink); }
     .field-control:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(7,138,148,.11); }
@@ -575,6 +613,16 @@
       .public-price-grid { grid-template-columns: 1fr; gap: 7px; }
       .public-price-card { padding: 12px 14px; }
       .about-contact-list { grid-template-columns: 1fr; }
+      .install-hero { grid-template-columns: 1fr; text-align: center; }
+      .install-hero p { margin-left: auto; margin-right: auto; }
+      .install-app-icon { width: 138px; height: 138px; grid-row: 1; justify-self: center; border-radius: 30px; }
+      .install-actions { justify-content: center; }
+      .install-actions .button { width: 100%; }
+      .install-step-grid { grid-template-columns: 1fr; }
+      .install-step { min-height: 0; display: grid; grid-template-columns: 30px minmax(0,1fr); column-gap: 11px; }
+      .install-step strong, .install-step span { grid-column: 2; margin-top: 0; }
+      .install-step span { margin-top: 4px; }
+      .install-shortcuts { grid-template-columns: repeat(2,minmax(0,1fr)); }
       .tournament-card { grid-template-rows: 160px auto; }
       .summary-grid { gap: 8px; }
       .summary-card { min-height: 100px; padding: 15px; }
@@ -729,6 +777,9 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_zcX8te5g99p0bA12xy_E-A_MTyNpJNx';
     const PUBLIC_SNAPSHOT_RPC = 'tournament_public_snapshot';
     const REGISTRATION_FUNCTION = 'tournament-register';
+    const TOURNAMENT_PUSH_FUNCTION = 'tournament-public-push';
+    const TOURNAMENT_PUSH_VAPID_KEY = 'BJtga8GuviTBc3mzDwBkr0kKw-kV02hVSwu6DjgZgSgAhFuvPZNj88WfTwyV7mXgJJnxKD5ZiJCRW8nv7ndx-RU';
+    const TOURNAMENT_PUSH_TOKEN_KEY = 'ilha-open-2026:push-token';
     const routeParts = location.pathname.split('/').filter(Boolean);
     const courtesySegmentIndex = routeParts.indexOf('cortesia');
     const inviteSegmentIndex = routeParts.indexOf('convite');
@@ -762,7 +813,10 @@
       paymentStatusLoading: false,
       paymentStatusPollAttempt: 0,
       activeTrackingToken: '',
-      lastRegistrationResult: null
+      lastRegistrationResult: null,
+      deferredInstallPrompt: null,
+      tournamentServiceWorker: null,
+      tournamentNotificationsEnabled: false
     };
     const PUBLIC_TAB_DEFAULTS = {
       categories: true,
@@ -770,7 +824,8 @@
       brackets: true,
       schedule: true,
       results: true,
-      about: true
+      about: true,
+      install: true
     };
     const PUBLIC_TAB_LABELS = {
       categories: 'Classes',
@@ -778,7 +833,8 @@
       brackets: 'Chaves',
       schedule: 'Agenda',
       results: 'Resultados',
-      about: 'Sobre o evento'
+      about: 'Sobre o evento',
+      install: 'Instalar app'
     };
     let turnstileScriptPromise = null;
 
@@ -984,7 +1040,7 @@
     }
     function visiblePublicTabs() {
       const configured = publicTabs();
-      return Object.keys(PUBLIC_TAB_LABELS).filter((id) => configured[id] !== false);
+      return Object.keys(PUBLIC_TAB_LABELS).filter((id) => configured[id] !== false && (id !== 'install' || state.slug === 'ilha-open-2026'));
     }
     function aboutEventSettings() {
       const value = tournamentSettings().about_event;
@@ -1101,7 +1157,9 @@
       const name = field(item,'name','nome') || 'Torneio Ilha';
       document.title = name + ' | Ilha Tênis';
       const visibleTabs = visiblePublicTabs();
+      const requestedTab = clean(new URLSearchParams(location.search).get('tab'));
       state.activeTab = visibleTabs.includes('categories') ? 'categories' : (visibleTabs[0] || '');
+      if (visibleTabs.includes(requestedTab)) state.activeTab = requestedTab;
       const open = isRegistrationOpen(item);
       $('tournamentHeadActions').hidden = false;
       $('headRegisterBtn').hidden = !open;
@@ -1119,6 +1177,7 @@
         (visibleTabs.length ? '<nav class="event-nav" aria-label="Seções do torneio">' + visibleTabs.map((id) => tabButton(id,PUBLIC_TAB_LABELS[id])).join('') + '</nav>' : '') +
         visibleTabs.map((id) => '<section class="tab-panel ' + (id === state.activeTab ? 'active' : '') + '" data-panel="' + id + '">' + publicTabHtml(id) + '</section>').join('') + siteFooter();
       bindTournamentEvents();
+      updateTournamentPwaUi().catch(() => {});
     }
 
     function renderRegistrationOnly() {
@@ -1147,6 +1206,7 @@
       if (id === 'schedule') return scheduleHtml();
       if (id === 'results') return resultsHtml();
       if (id === 'about') return aboutHtml();
+      if (id === 'install') return installAppHtml();
       return '';
     }
     function tournamentTitleHtml(item,name) {
@@ -1307,7 +1367,7 @@
     }
 
     function allSponsors() {
-      const rows = sponsors().concat(configuredSponsors());
+      const rows = configuredSponsors();
       const seen = new Set();
       return rows.filter((row) => {
         const key = clean(field(row,'id','name','nome','logo_url')).toLowerCase();
@@ -1324,11 +1384,178 @@
       const content = '<div class="panel-head"><div><h3>Parceiros</h3></div></div>' + cards + '<p class="sponsor-invite">' + escapeHtml(sponsorText) + '</p><a class="button full sponsor-cta" href="https://wa.me/5527999805814?text=' + message + '" target="_blank" rel="noopener" aria-label="Falar pelo WhatsApp para patrocinar o torneio">💬 Seja um patrocinador do torneio</a>';
       return insideAbout ? content : '<div class="panel">' + content + '</div>';
     }
+
+    function installAppHtml() {
+      return '<div class="panel install-shell"><section class="install-hero"><div><p class="eyebrow">Ilha Open no seu celular</p><h2>Tenha o torneio sempre à mão.</h2><p>Instale o aplicativo para abrir classes, inscritos e informações do evento direto pela tela inicial.</p><div class="install-actions"><button class="button lime" id="installTournamentAppBtn" type="button">Instalar Ilha Open</button><button class="button secondary" id="enableTournamentNotificationsBtn" type="button">Ativar notificações</button></div><p class="install-status" id="tournamentPwaStatus" role="status">Confira abaixo como instalar.</p></div><img class="install-app-icon" src="/icons/ilha-open-512.png" alt="Ícone do aplicativo Ilha Open 2026" /></section>' +
+        '<div class="install-content"><section class="install-section"><h3>Como instalar</h3><p>Leva menos de um minuto e não ocupa espaço como um aplicativo comum.</p><div class="install-step-grid"><article class="install-step"><b>1</b><strong>No iPhone</strong><span>Abra no Safari, toque em Compartilhar e escolha “Adicionar à Tela de Início”.</span></article><article class="install-step"><b>2</b><strong>No Android</strong><span>Toque em “Instalar Ilha Open”. Se não aparecer, abra o menu ⋮ e escolha “Instalar app”.</span></article><article class="install-step"><b>3</b><strong>Receba novidades</strong><span>Abra o app instalado e toque em “Ativar notificações” para acompanhar avisos do torneio.</span></article></div></section>' +
+        '<section class="install-section"><h3>Atalhos do torneio</h3><p>Você também pode acessar rapidamente as áreas mais importantes.</p><div class="install-shortcuts"><button class="install-shortcut" type="button" data-install-shortcut="categories"><span>🎾</span><strong>Classes</strong></button><button class="install-shortcut" type="button" data-install-shortcut="registrations"><span>👥</span><strong>Inscritos</strong></button><button class="install-shortcut" type="button" data-install-shortcut="about"><span>ℹ️</span><strong>Sobre o evento</strong></button><button class="install-shortcut" type="button" data-install-shortcut="registration"><span>✅</span><strong>Fazer inscrição</strong></button></div></section></div></div>';
+    }
+
+    function tournamentAppInstalled() {
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    function tournamentUsesIos() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    function tournamentPushToken() {
+      let token = '';
+      try { token = localStorage.getItem(TOURNAMENT_PUSH_TOKEN_KEY) || ''; } catch (error) {}
+      if (token) return token;
+      if (!window.crypto || typeof window.crypto.getRandomValues !== 'function') throw new Error('Atualize o navegador para ativar as notificações.');
+      const bytes = crypto.getRandomValues(new Uint8Array(32));
+      token = Array.from(bytes,(value) => value.toString(16).padStart(2,'0')).join('');
+      try { localStorage.setItem(TOURNAMENT_PUSH_TOKEN_KEY,token); } catch (error) {}
+      return token;
+    }
+
+    function tournamentUrlBase64ToBytes(value) {
+      const padding = '='.repeat((4 - value.length % 4) % 4);
+      const raw = atob((value + padding).replace(/-/g,'+').replace(/_/g,'/'));
+      return Uint8Array.from(raw,(character) => character.charCodeAt(0));
+    }
+
+    async function ensureTournamentServiceWorker() {
+      if (!('serviceWorker' in navigator) || state.slug !== 'ilha-open-2026') return null;
+      if (state.tournamentServiceWorker && state.tournamentServiceWorker.active) return state.tournamentServiceWorker;
+      const registration = await navigator.serviceWorker.register('/torneios/service-worker.js',{scope:'/torneios/',updateViaCache:'none'});
+      state.tournamentServiceWorker = registration;
+      if (registration.waiting) registration.waiting.postMessage({type:'SKIP_WAITING'});
+      if (!registration.active) {
+        const worker = registration.installing || registration.waiting;
+        if (worker) await new Promise((resolve,reject) => {
+          const timer = setTimeout(() => reject(new Error('A instalação demorou demais. Tente novamente.')),10000);
+          worker.addEventListener('statechange',() => {
+            if (worker.state === 'activated') { clearTimeout(timer); resolve(); }
+            if (worker.state === 'redundant') { clearTimeout(timer); reject(new Error('Não foi possível preparar o aplicativo.')); }
+          });
+        });
+      }
+      return registration;
+    }
+
+    async function saveTournamentPushSubscription(subscription) {
+      const json = subscription.toJSON();
+      if (!json.endpoint || !json.keys || !json.keys.p256dh || !json.keys.auth) throw new Error('O navegador retornou uma assinatura incompleta.');
+      return requestJson(SUPABASE_URL + '/functions/v1/' + TOURNAMENT_PUSH_FUNCTION,{
+        method:'POST',
+        headers:headers(),
+        body:JSON.stringify({
+          action:'subscribe',
+          tournament_slug:state.slug,
+          endpoint:json.endpoint,
+          p256dh:json.keys.p256dh,
+          auth_key:json.keys.auth,
+          subscription_token:tournamentPushToken(),
+          user_agent:navigator.userAgent
+        })
+      });
+    }
+
+    async function enableTournamentNotifications() {
+      const status = $('tournamentPwaStatus');
+      const button = $('enableTournamentNotificationsBtn');
+      if (tournamentUsesIos() && !tournamentAppInstalled()) {
+        if (status) status.textContent = 'No iPhone, adicione primeiro à Tela de Início e abra o aplicativo instalado.';
+        return;
+      }
+      if (!('Notification' in window) || !('PushManager' in window)) {
+        if (status) status.textContent = 'Este navegador não oferece notificações. Atualize-o ou use Safari/Chrome.';
+        return;
+      }
+      if (Notification.permission === 'denied') {
+        if (status) status.textContent = 'As notificações estão bloqueadas. Libere o Ilha Open nas configurações do aparelho.';
+        return;
+      }
+      if (button) { button.disabled = true; button.textContent = 'Ativando…'; }
+      try {
+        const registration = await ensureTournamentServiceWorker();
+        if (!registration) throw new Error('Não foi possível preparar o aplicativo.');
+        const permission = Notification.permission === 'default' ? await Notification.requestPermission() : Notification.permission;
+        if (permission !== 'granted') throw new Error('A permissão de notificações não foi concedida.');
+        let subscription = await registration.pushManager.getSubscription();
+        if (!subscription) subscription = await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:tournamentUrlBase64ToBytes(TOURNAMENT_PUSH_VAPID_KEY)});
+        await saveTournamentPushSubscription(subscription);
+        state.tournamentNotificationsEnabled = true;
+        await registration.showNotification('Notificações ativadas!',{body:'Você receberá os avisos do Ilha Open 2026 por aqui.',icon:'/icons/ilha-open-192.png',badge:'/icons/ilha-open-192.png',tag:'ilha-open-2026-ativado',data:{url:publicUrl(state.slug)}});
+        if (status) status.textContent = 'Notificações ativadas neste aparelho.';
+      } catch (error) {
+        if (status) status.textContent = error && error.message || 'Não foi possível ativar as notificações.';
+      } finally {
+        if (button) button.disabled = false;
+        updateTournamentPwaUi().catch(() => {});
+      }
+    }
+
+    async function installTournamentApp() {
+      const status = $('tournamentPwaStatus');
+      if (tournamentAppInstalled()) {
+        if (status) status.textContent = 'O Ilha Open já está instalado neste aparelho.';
+        return;
+      }
+      if (state.deferredInstallPrompt) {
+        state.deferredInstallPrompt.prompt();
+        const choice = await state.deferredInstallPrompt.userChoice;
+        state.deferredInstallPrompt = null;
+        if (status) status.textContent = choice && choice.outcome === 'accepted' ? 'Aplicativo instalado com sucesso.' : 'Você pode instalar quando quiser.';
+        updateTournamentPwaUi().catch(() => {});
+        return;
+      }
+      if (status) status.textContent = tournamentUsesIos()
+        ? 'No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.'
+        : 'Abra o menu do navegador e escolha “Instalar app” ou “Adicionar à tela inicial”.';
+      document.querySelector('.install-step-grid')?.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+
+    async function updateTournamentPwaUi() {
+      const installButton = $('installTournamentAppBtn');
+      const notificationButton = $('enableTournamentNotificationsBtn');
+      const status = $('tournamentPwaStatus');
+      if (!installButton || !notificationButton) return;
+      const installed = tournamentAppInstalled();
+      installButton.disabled = installed;
+      installButton.textContent = installed ? 'Ilha Open instalado' : (tournamentUsesIos() && !state.deferredInstallPrompt ? 'Como instalar no iPhone' : 'Instalar Ilha Open');
+      if (!('Notification' in window) || !('PushManager' in window)) {
+        notificationButton.disabled = true;
+        notificationButton.textContent = 'Notificações indisponíveis';
+        return;
+      }
+      let subscribed = state.tournamentNotificationsEnabled;
+      try {
+        const registration = await navigator.serviceWorker.getRegistration('/torneios/');
+        subscribed = Boolean(registration && await registration.pushManager.getSubscription() && tournamentPushToken());
+      } catch (error) {}
+      state.tournamentNotificationsEnabled = subscribed && Notification.permission === 'granted';
+      notificationButton.disabled = Notification.permission === 'denied';
+      notificationButton.textContent = state.tournamentNotificationsEnabled ? 'Notificações ativas' : (Notification.permission === 'denied' ? 'Notificações bloqueadas' : 'Ativar notificações');
+      if (state.tournamentNotificationsEnabled && status) status.textContent = 'App pronto e notificações ativas neste aparelho.';
+    }
+
+    function initTournamentPwa() {
+      window.addEventListener('beforeinstallprompt',(event) => {
+        if (state.slug !== 'ilha-open-2026') return;
+        event.preventDefault();
+        state.deferredInstallPrompt = event;
+        updateTournamentPwaUi().catch(() => {});
+      });
+      window.addEventListener('appinstalled',() => {
+        state.deferredInstallPrompt = null;
+        updateTournamentPwaUi().catch(() => {});
+      });
+      if (state.slug === 'ilha-open-2026') ensureTournamentServiceWorker().catch(() => {});
+    }
     function siteFooter() { return '<footer>Ilha Tênis Colatina · Torneios, chaves e resultados</footer>'; }
 
     function bindTournamentEvents() {
       document.querySelectorAll('[data-tab]').forEach((button) => button.addEventListener('click', () => showTab(button.dataset.tab)));
       document.querySelectorAll('[data-open-registration]').forEach((button) => button.addEventListener('click', openRegistration));
+      document.querySelectorAll('[data-install-shortcut]').forEach((button) => button.addEventListener('click',() => {
+        if (button.dataset.installShortcut === 'registration') openRegistration();
+        else showTab(button.dataset.installShortcut);
+      }));
+      $('installTournamentAppBtn')?.addEventListener('click',installTournamentApp);
+      $('enableTournamentNotificationsBtn')?.addEventListener('click',enableTournamentNotifications);
       document.querySelectorAll('[data-bracket-category]').forEach((button) => button.addEventListener('click', () => { state.bracketCategory = button.dataset.bracketCategory; document.querySelectorAll('[data-bracket-category]').forEach((item) => item.classList.toggle('active', item === button)); $('bracketContent').innerHTML = bracketBoardHtml(state.bracketCategory); }));
       document.querySelectorAll('[data-agenda-category]').forEach((button) => button.addEventListener('click', () => { state.agendaCategory = button.dataset.agendaCategory; document.querySelectorAll('[data-agenda-category]').forEach((item) => item.classList.toggle('active', item === button)); $('agendaContent').innerHTML = agendaRowsHtml(state.agendaCategory); }));
       const search = $('registrationSearch'), category = $('registrationCategoryFilter');
@@ -1412,6 +1639,10 @@
       state.activeTab = tab;
       document.querySelectorAll('[data-tab]').forEach((button) => button.classList.toggle('active',button.dataset.tab===tab));
       document.querySelectorAll('[data-panel]').forEach((panel) => panel.classList.toggle('active',panel.dataset.panel===tab));
+      const url = new URL(location.href);
+      if (tab === 'categories') url.searchParams.delete('tab'); else url.searchParams.set('tab',tab);
+      history.replaceState(null,'',url.pathname + url.search + url.hash);
+      if (tab === 'install') updateTournamentPwaUi().catch(() => {});
       const nav = document.querySelector('.event-nav'); if (nav) window.scrollTo({top:Math.max(0,nav.offsetTop-86),behavior:'smooth'});
     }
 
@@ -2485,6 +2716,7 @@
     $('familyRegistrationForm').addEventListener('submit',submitFamilyRegistration);
     document.addEventListener('keydown',handleRegistrationModalKeydown);
 
+    initTournamentPwa();
     loadPage();
   </script>
   <script src="/auto-update.js?v=210"></script>

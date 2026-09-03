@@ -22722,6 +22722,7 @@
             <label class="public-tab-toggle"><input id="publicTabSchedule" type="checkbox" /><span>Agenda<small>Dias e horários</small></span></label>
             <label class="public-tab-toggle"><input id="publicTabResults" type="checkbox" /><span>Resultados<small>Placares finalizados</small></span></label>
             <label class="public-tab-toggle"><input id="publicTabAbout" type="checkbox" /><span>Sobre o evento<small>Texto, imagem e parceiros</small></span></label>
+            <label class="public-tab-toggle"><input id="publicTabInstall" type="checkbox" /><span>Instalar app<small>Instruções, atalhos e notificações</small></span></label>
           </div>
           <div class="public-about-grid">
             <div>
@@ -22745,6 +22746,28 @@
             <textarea id="tournamentSponsorText" maxlength="1000" rows="3" placeholder="Convide empresas e marcas para apoiar o torneio."></textarea>
           </div>
           <div class="about-sponsor-list" id="aboutSponsorList"></div>
+        </div>
+        <div class="card span-12">
+          <div class="card-title">
+            <div>
+              <h2>Notificações do app do torneio</h2>
+              <div class="muted">Envie avisos somente para os aparelhos que ativaram as notificações na aba “Instalar app”.</div>
+            </div>
+            <span class="status-pill" id="tournamentPushAudienceStatus">Consultando aparelhos…</span>
+          </div>
+          <div class="form-grid" style="margin-top:14px">
+            <div class="field">
+              <label>Título</label>
+              <input id="tournamentPushTitle" maxlength="90" placeholder="Ilha Open 2026" />
+            </div>
+            <div class="field full">
+              <label>Mensagem</label>
+              <textarea id="tournamentPushBody" maxlength="280" rows="3" placeholder="Ex.: A agenda de jogos foi atualizada. Confira no app do torneio."></textarea>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="primary-btn" type="button" id="sendTournamentPushBtn">Enviar notificação</button>
+          </div>
         </div>
       </div>
     </section>
@@ -22989,6 +23012,7 @@
 
     const CLUB_TIME_ZONE = 'America/Sao_Paulo';
     const TOURNAMENT_API_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co/functions/v1/tournament-admin-api';
+    const TOURNAMENT_PUSH_API_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co/functions/v1/tournament-public-push';
     const DRAW_ROW_STEP = 58;
     const DRAW_TITLE_SPACE = 36;
     const DRAW_MATCH_HEIGHT = 70;
@@ -23438,13 +23462,14 @@
       const spatialFee = Number(storedSpatialFee ?? (spatialRule && spatialRule.fee));
       $('tournamentPriceSpatialAddon').value = Number.isFinite(spatialFee) ? spatialFee.toFixed(2) : '';
       $('tournamentNotes').value = t.observacoes || '';
-      const tabs = Object.assign({ categories: true, registrations: false, brackets: true, schedule: true, results: true, about: true }, settings.public_tabs || {});
+      const tabs = Object.assign({ categories: true, registrations: false, brackets: true, schedule: true, results: true, about: true, install: true }, settings.public_tabs || {});
       $('publicTabCategories').checked = tabs.categories !== false;
       $('publicTabRegistrations').checked = tabs.registrations !== false;
       $('publicTabBrackets').checked = tabs.brackets !== false;
       $('publicTabSchedule').checked = tabs.schedule !== false;
       $('publicTabResults').checked = tabs.results !== false;
       $('publicTabAbout').checked = tabs.about !== false;
+      $('publicTabInstall').checked = tabs.install !== false;
       const about = settings.about_event || {};
       $('tournamentAboutTitle').value = about.title || '';
       $('tournamentAboutText').value = about.text || '';
@@ -23455,6 +23480,78 @@
         return { name: sponsor.name || '', logo_url: sponsor.logo_url || '', link_url: sponsor.link_url || '' };
       }) : [];
       renderAboutSponsorsEditor();
+      $('tournamentPushTitle').value = $('tournamentPushTitle').value || t.nome || 'Ilha Open';
+      loadTournamentPushStatus().catch(function () {
+        $('tournamentPushAudienceStatus').textContent = 'Não foi possível consultar';
+      });
+    }
+
+    async function tournamentPushApi(payload) {
+      requireClubPermission('tournaments');
+      if (!adminSession || !adminSession.access_token) throw new Error('Entre novamente para administrar o torneio.');
+      if (!state.selectedTournamentId || !/^[0-9a-f-]{36}$/i.test(state.selectedTournamentId)) throw new Error('Selecione um torneio publicado.');
+      const controller = new AbortController();
+      const timer = setTimeout(function () { controller.abort(); }, 30000);
+      try {
+        const response = await fetch(TOURNAMENT_PUSH_API_URL, {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            apikey: LESSONS_SUPABASE_ANON_KEY,
+            Authorization: 'Bearer ' + adminSession.access_token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(Object.assign({}, payload, { tournament_id: state.selectedTournamentId }))
+        });
+        const data = await response.json().catch(function () { return {}; });
+        if (!response.ok || data.ok === false) throw new Error(data.error || 'Não foi possível acessar as notificações.');
+        return data;
+      } catch (error) {
+        if (error && error.name === 'AbortError') throw new Error('Tempo esgotado ao acessar as notificações.');
+        throw error;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function loadTournamentPushStatus() {
+      const status = $('tournamentPushAudienceStatus');
+      if (!status || !adminSession || !state.selectedTournamentId || !/^[0-9a-f-]{36}$/i.test(state.selectedTournamentId)) return;
+      status.textContent = 'Consultando aparelhos…';
+      const data = await tournamentPushApi({ action: 'status' });
+      const total = Number(data.subscribers || 0);
+      status.textContent = total + (total === 1 ? ' aparelho ativo' : ' aparelhos ativos');
+    }
+
+    async function sendTournamentPushNotification() {
+      const button = $('sendTournamentPushBtn');
+      const title = $('tournamentPushTitle').value.trim();
+      const body = $('tournamentPushBody').value.trim();
+      if (!title || !body) {
+        toast('Informe o título e a mensagem.');
+        return;
+      }
+      button.disabled = true;
+      button.textContent = 'Enviando…';
+      try {
+        const data = await tournamentPushApi({
+          action: 'broadcast',
+          title: title,
+          body: body,
+          url: '/torneios/' + encodeURIComponent((state.data.torneio || {}).slug || 'ilha-open-2026')
+        });
+        const sent = Number(data.sent || 0);
+        const failed = Number(data.failed || 0);
+        $('tournamentPushBody').value = '';
+        $('tournamentPushAudienceStatus').textContent = Number(data.subscribers || 0) + ' aparelhos ativos';
+        toast(sent ? 'Notificação enviada para ' + sent + (sent === 1 ? ' aparelho.' : ' aparelhos.') : 'Nenhum aparelho ativou as notificações ainda.');
+        if (failed) toast(sent + ' enviadas e ' + failed + ' falharam.');
+      } catch (error) {
+        toast(error.message || 'Não foi possível enviar a notificação.');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Enviar notificação';
+      }
     }
 
     function renderCategoryOptions() {
@@ -25527,7 +25624,8 @@
           brackets: $('publicTabBrackets').checked,
           schedule: $('publicTabSchedule').checked,
           results: $('publicTabResults').checked,
-          about: $('publicTabAbout').checked
+          about: $('publicTabAbout').checked,
+          install: $('publicTabInstall').checked
         };
         const aboutEvent = {
           title: $('tournamentAboutTitle').value.trim(),
@@ -44846,6 +44944,7 @@
       trapPlayerEditorFocus(event);
     });
     $('tournamentForm').addEventListener('submit', saveTournament);
+    $('sendTournamentPushBtn').addEventListener('click', sendTournamentPushNotification);
     $('settings').addEventListener('input', function (event) {
       if (event.isTrusted && event.target.matches('input, select, textarea')) markTournamentDraftDirty();
     });
