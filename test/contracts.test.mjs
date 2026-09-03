@@ -2069,6 +2069,7 @@ test('TV do Bar alterna cardapio, imagens e videos MP4 com tempo individual', ()
   assert.match(functionSource(adminSource, 'saveBarTvEventArt'), /media_type:\s*slide\.mediaType[\s\S]*media_url:\s*slide\.mediaUrl/);
   assert.match(functionSource(menuSource, 'startEventSlideshow'), /eventSlideshowIndex = 0[\s\S]*showMenuSlideshowItem/);
   assert.match(functionSource(menuSource, 'showNextEventSlideshowItem'), /currentEventSlides\.length \+ 1[\s\S]*showMenuSlideshowItem/);
+  assert.match(functionSource(menuSource, 'showMenuSlideshowItem'), /clearTimeout\(eventSlideshowTimer\)[\s\S]*scheduleEventSlideshow\(menuSlideDurationSeconds\)/);
   const slideshowDelay = loadFunction(menuSource, 'eventSlideshowDelayMs');
   assert.equal(slideshowDelay(10), 10000);
   assert.equal(slideshowDelay(1), 3000);
@@ -2089,6 +2090,13 @@ test('TV do Bar alterna cardapio, imagens e videos MP4 com tempo individual', ()
   assert.match(showSlide, /failedEventMediaAt\.set\(slide\.mediaUrl, Date\.now\(\)\)/);
   assert.match(showSlide, /scheduleEventSlideshow\(slide\.durationSeconds\)/);
   assert.match(adminSource, /@media \(max-width: 760px\)[\s\S]*\.bar-tv-event-art-card \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/);
+});
+
+test('ADM organiza links públicos, Classe Espacial e convites dentro do torneio', () => {
+  assert.match(adminSource, /data-tab="links">Links</);
+  assert.match(adminSource, /id="links"[\s\S]*id="registrationTournamentLink"[\s\S]*id="spatialTournamentLink"[\s\S]*id="publicTournamentLink"[\s\S]*id="registrationInviteBtn"/);
+  assert.match(functionSource(adminSource, 'renderTournamentPicker'), /'\.\.\/inscricoes\/' \+ encodeURIComponent\(slug\) \+ '\/espacial'/);
+  assert.match(functionSource(adminSource, 'copyTournamentLink'), /navigator\.clipboard\.writeText\(value\)/);
 });
 
 test('inicio do ADM Ilha fica leve e destaca somente torneio e historico', () => {
