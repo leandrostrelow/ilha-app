@@ -2767,6 +2767,12 @@ test('Ilha Open possui PWA próprio, atalhos, Push protegido e somente patrocina
   assert.match(tournamentSource, /id="tournamentAppManifest"/);
   assert.match(tournamentSource, /Instalar app/);
   assert.match(tournamentSource, /Ativar notificações/);
+  assert.match(tournamentSource, /--safe-top: env\(safe-area-inset-top, 0px\)/);
+  assert.match(tournamentSource, /padding-top: var\(--safe-top\)/);
+  assert.match(tournamentSource, /top: calc\(66px \+ var\(--safe-top\)\)/);
+  assert.match(tournamentSource, /100dvh - 20px - var\(--safe-top\) - var\(--safe-bottom\)/);
+  assert.match(tournamentSource, /<div class="brand-link"><img/);
+  assert.doesNotMatch(tournamentSource, /<a class="brand-link"/);
   assert.match(tournamentSource, /TOURNAMENT_PUSH_REGISTERED_KEY/);
   assert.match(tournamentSource, /markTournamentPushRegistered\(\)/);
   assert.match(functionSource(tournamentSource, 'updateTournamentPwaUi'), /tournamentPushRegistered\(\)/);
