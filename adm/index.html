@@ -14779,7 +14779,7 @@
         overscroll-behavior-y: contain;
       }
 
-      .bar-pull-refresh {
+      body.bar-admin-surface .bar-pull-refresh {
         display: flex;
       }
 
@@ -17809,6 +17809,11 @@
     }
 
     @media (max-width: 700px) {
+      body.bar-admin-surface .admin-sidebar-brand {
+        position: relative;
+        padding-inline: 58px;
+      }
+
       body.bar-admin-surface .admin-sidebar-brand .bar-brand-logo-dark {
         display: none !important;
       }
@@ -17818,6 +17823,22 @@
         width: min(132px, 42vw);
         max-height: 42px;
         object-position: center;
+      }
+
+      body.bar-admin-surface #barSurfaceLogoutBtn {
+        position: absolute;
+        right: 3px;
+        min-width: 48px;
+        min-height: 34px;
+        display: inline-grid;
+        place-items: center;
+        padding: 6px 9px;
+        border: 1px solid rgba(255, 255, 255, .24);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, .1);
+        color: #ffffff;
+        font-size: 10px;
+        font-weight: 900;
       }
     }
 
@@ -19676,6 +19697,62 @@
       max-height: calc(100dvh - 24px);
       border-radius: 18px;
     }
+
+    /* Manutenção mobile: mantém o editor de horários rolável e as ações visíveis. */
+    #lessonSlotEditorModal .lesson-editor-dialog {
+      display: flex;
+      min-height: 0;
+      max-height: calc(100dvh - 24px);
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #lessonSlotEditorForm {
+      display: flex;
+      min-height: 0;
+      flex: 1 1 auto;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #lessonSlotEditorModal .admin-modal-head,
+    #lessonSlotEditorModal .lesson-editor-actions {
+      flex: 0 0 auto;
+    }
+
+    #lessonSlotEditorModal .admin-modal-body {
+      min-height: 0;
+      flex: 1 1 auto;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    @media (max-width: 760px) {
+      body.bar-admin-surface .bar-command-modal .bar-checkout-grid:has(#barCheckoutSingleMethodField[hidden]) {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .topbar .top-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+      }
+
+      .topbar .top-actions > * {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+      }
+
+      .topbar .top-actions > .status {
+        height: auto;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+    }
   </style>
 </head>
 <body class="adm-locked">
@@ -19937,6 +20014,7 @@
         <img class="admin-brand-logo-default" src="../logo.png" alt="Ilha Tênis" />
         <img class="bar-brand-logo bar-brand-logo-dark" src="../assets/branding/ilha-bar-logo-dark.png" alt="Ilha Bar" />
         <img class="bar-brand-logo bar-brand-logo-light" src="../assets/branding/ilha-bar-logo-light.png" alt="" aria-hidden="true" />
+        <button class="bar-surface-logout" type="button" id="barSurfaceLogoutBtn" data-bar-surface-only aria-label="Sair do ADM Bar">Sair</button>
       </div>
       <nav class="admin-sidebar-nav">
         <button class="admin-nav-btn active" type="button" data-admin-nav="club-home"><span class="admin-nav-icon"><svg><use href="#admin-icon-home"></use></svg></span><span>Início</span></button>
@@ -20175,7 +20253,7 @@
     </section>
 
     <div class="admin-modal-overlay" id="clientModal" aria-hidden="true">
-      <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="clientModalTitle">
+      <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="clientModalTitle" tabindex="-1">
         <div class="admin-modal-head">
           <div class="client-line">
             <span class="client-avatar" id="clientModalAvatar">IL</span>
@@ -20768,7 +20846,7 @@
     </section>
 
     <div class="admin-modal-overlay" id="courtSlotModal" aria-hidden="true">
-      <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="courtSlotModalTitle">
+      <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="courtSlotModalTitle" tabindex="-1">
         <div class="admin-modal-head">
           <div>
             <h2 id="courtSlotModalTitle">Horário da quadra</h2>
@@ -21955,7 +22033,7 @@
     </section>
 
     <div class="admin-modal-overlay lesson-editor-modal" id="lessonSlotEditorModal" aria-hidden="true">
-      <div class="admin-modal lesson-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="lessonSlotEditorTitle">
+      <div class="admin-modal lesson-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="lessonSlotEditorTitle" tabindex="-1">
         <div class="admin-modal-head">
           <div>
             <h2 id="lessonSlotEditorTitle">Novo horário</h2>
@@ -22001,7 +22079,7 @@
     </div>
 
     <div class="admin-modal-overlay lesson-editor-modal" id="lessonStudentEditorModal" aria-hidden="true">
-      <div class="admin-modal lesson-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="lessonStudentEditorTitle">
+      <div class="admin-modal lesson-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="lessonStudentEditorTitle" tabindex="-1">
         <div class="admin-modal-head">
           <div>
             <h2 id="lessonStudentEditorTitle">Adicionar aluno</h2>
@@ -23140,6 +23218,84 @@
 
     function $(id) {
       return document.getElementById(id);
+    }
+
+    const clubAdminModalOpeners = new WeakMap();
+    const clubAdminModalIds = ['clientModal', 'courtSlotModal', 'lessonSlotEditorModal', 'lessonStudentEditorModal'];
+
+    function showClubAdminModal(modalId, initialFocusId) {
+      const modal = $(modalId);
+      if (!modal) return;
+      const opener = document.activeElement;
+      if (opener instanceof HTMLElement && opener !== document.body) clubAdminModalOpeners.set(modal, opener);
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden', 'false');
+      window.setTimeout(function () {
+        if (!modal.classList.contains('show')) return;
+        const initialFocus = initialFocusId && $(initialFocusId);
+        const dialog = modal.querySelector('[role="dialog"]');
+        (initialFocus || dialog || modal).focus();
+      }, 0);
+    }
+
+    function hideClubAdminModal(modalId) {
+      const modal = $(modalId);
+      if (!modal) return;
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden', 'true');
+      const opener = clubAdminModalOpeners.get(modal);
+      clubAdminModalOpeners.delete(modal);
+      if (opener instanceof HTMLElement && opener.isConnected) {
+        window.setTimeout(function () { opener.focus(); }, 0);
+      }
+    }
+
+    function activeClubAdminModal() {
+      return clubAdminModalIds.map(function (id) { return $(id); }).find(function (modal) {
+        return modal && modal.classList.contains('show');
+      }) || null;
+    }
+
+    function trapClubAdminModalFocus(event, modal) {
+      if (event.key !== 'Tab' || !modal) return;
+      const dialog = modal.querySelector('[role="dialog"]');
+      if (!dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+      )).filter(function (element) {
+        return !element.hidden && element.getAttribute('aria-hidden') !== 'true' && element.offsetParent !== null;
+      });
+      if (!focusable.length) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!dialog.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    function handleClubAdminModalKeyboard(event) {
+      const modal = activeClubAdminModal();
+      if (!modal) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        if (modal.id === 'lessonSlotEditorModal') closeLessonSlotEditor();
+        else if (modal.id === 'lessonStudentEditorModal') closeLessonStudentEditor();
+        else if (modal.id === 'courtSlotModal') closeCourtSlotModal();
+        else if (modal.id === 'clientModal') closeClientModal();
+        return;
+      }
+      trapClubAdminModalFocus(event, modal);
     }
 
     function escapeHtml(value) {
@@ -28185,14 +28341,11 @@
       $('lessonSlotEditorCourt').innerHTML = lessonSelectOptions(lessonState.courts, selectedCourt && (selectedCourt.id || selectedCourt.name));
       $('lessonSlotEditorLevel').value = slot && slot.level || '';
       $('lessonSlotDeleteBtn').hidden = !slot;
-      $('lessonSlotEditorModal').classList.add('show');
-      $('lessonSlotEditorModal').setAttribute('aria-hidden', 'false');
-      setTimeout(function () { $('lessonSlotEditorTime').focus(); }, 0);
+      showClubAdminModal('lessonSlotEditorModal', 'lessonSlotEditorTime');
     }
 
     function closeLessonSlotEditor() {
-      $('lessonSlotEditorModal').classList.remove('show');
-      $('lessonSlotEditorModal').setAttribute('aria-hidden', 'true');
+      hideClubAdminModal('lessonSlotEditorModal');
       $('lessonSlotEditorForm').reset();
       $('lessonSlotEditorId').value = '';
     }
@@ -28318,8 +28471,7 @@
     }
 
     function closeLessonStudentEditor() {
-      $('lessonStudentEditorModal').classList.remove('show');
-      $('lessonStudentEditorModal').setAttribute('aria-hidden', 'true');
+      hideClubAdminModal('lessonStudentEditorModal');
       $('lessonStudentAddPanel').hidden = false;
       $('lessonStudentMoveForm').hidden = true;
       $('lessonStudentPickerSearch').value = '';
@@ -28372,9 +28524,7 @@
       $('lessonStudentAddPanel').hidden = false;
       $('lessonStudentMoveForm').hidden = true;
       renderLessonStudentPicker();
-      $('lessonStudentEditorModal').classList.add('show');
-      $('lessonStudentEditorModal').setAttribute('aria-hidden', 'false');
-      setTimeout(function () { $('lessonStudentPickerSearch').focus(); }, 0);
+      showClubAdminModal('lessonStudentEditorModal', 'lessonStudentPickerSearch');
     }
 
     function lessonStudentHasTimeConflict(studentId, targetSlot, ignoredEnrollmentId) {
@@ -28458,8 +28608,7 @@
         return '<option value="' + escapeHtml(slot.id) + '">' + escapeHtml(lessonSlotLabel(slot)) + ' · ' + lessonStudentsForSlot(slot.id).length + '/' + lessonSlotCapacity(slot) + '</option>';
       }).join('') || '<option value="">Nenhum horário compatível com vaga</option>';
       $('lessonStudentMoveSave').disabled = !targets.length;
-      $('lessonStudentEditorModal').classList.add('show');
-      $('lessonStudentEditorModal').setAttribute('aria-hidden', 'false');
+      showClubAdminModal('lessonStudentEditorModal', 'lessonMoveTargetSlot');
     }
 
     async function moveLessonEnrollmentAction(event) {
@@ -31399,8 +31548,7 @@
       $('clientInvoiceForm').hidden = Boolean(familyContext.memberLink) || !canUseClubPermission('finance.write');
       renderClientInvoices(familyInvoiceClient);
       applyClientInvoiceFamilyRules(familyInvoiceClient, familyContext.memberLink ? familyContextForClient(familyInvoiceClient) : familyContext);
-      $('clientModal').classList.add('show');
-      $('clientModal').setAttribute('aria-hidden', 'false');
+      showClubAdminModal('clientModal', 'clientEditName');
       if (!canManageLessons) return;
       loadLessonsData().then(function () {
         const activeClient = findClientByKey(opsState.selectedClientId);
@@ -31416,8 +31564,7 @@
     function closeClientModal() {
       clientLessonEditEnrollmentId = '';
       closeFamilyEditor();
-      $('clientModal').classList.remove('show');
-      $('clientModal').setAttribute('aria-hidden', 'true');
+      hideClubAdminModal('clientModal');
     }
 
     function clientPreviewFamilyPayload(client) {
@@ -32611,13 +32758,11 @@
       $('courtSlotOpponent').value = booking && booking.opponent || '';
       $('courtSlotNotes').value = booking && booking.notes || '';
       $('courtSlotCancelBtn').style.display = booking ? 'inline-flex' : 'none';
-      $('courtSlotModal').classList.add('show');
-      $('courtSlotModal').setAttribute('aria-hidden', 'false');
+      showClubAdminModal('courtSlotModal', 'courtSlotStatus');
     }
 
     function closeCourtSlotModal() {
-      $('courtSlotModal').classList.remove('show');
-      $('courtSlotModal').setAttribute('aria-hidden', 'true');
+      hideClubAdminModal('courtSlotModal');
       opsState.selectedCourtSlot = null;
     }
 
@@ -36081,7 +36226,7 @@
     function openBarCustomerDetail(customerKey) {
       const customer = barCustomerSummaries().find(function (item) { return item.customerKey === customerKey; });
       if (!customer) return;
-      opsState.selectedBarCustomerKey = phoneKey;
+      opsState.selectedBarCustomerKey = customerKey;
       $('barCustomerDetailTitle').textContent = customer.name;
       $('barCustomerDetailBody').innerHTML = barCustomerDetailMarkup(customer);
       $('barCustomerDetailModal').classList.add('show');
@@ -43167,6 +43312,7 @@
     }
 
     function initBarPullToRefresh() {
+      if (!IS_BAR_ADMIN_SURFACE) return;
       const indicator = $('barPullRefresh');
       if (!indicator) return;
 
@@ -43403,6 +43549,7 @@
 
       $('homeLogoutBtn').addEventListener('click', lockAdmin);
       $('sidebarLogoutBtn').addEventListener('click', lockAdmin);
+      $('barSurfaceLogoutBtn').addEventListener('click', lockAdmin);
       [
         ['openTournamentModule', openTournamentModule],
         ['openClientsModule', openClientsModule],
@@ -43955,6 +44102,7 @@
         const pickerStudent = event.target.closest('[data-lesson-picker-student]');
         if (pickerStudent) addExistingStudentToLessonSlotAction(pickerStudent.dataset.lessonPickerStudent);
       });
+      document.addEventListener('keydown', handleClubAdminModalKeyboard);
       $('studentCenterModule').addEventListener('click', function (event) {
         const editPlanBtn = event.target.closest('[data-student-plan-edit]');
         if (editPlanBtn) {
