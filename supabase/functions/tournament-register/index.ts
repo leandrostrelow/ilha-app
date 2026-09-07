@@ -60,6 +60,7 @@ const publicRegistrationRuleErrors = new Set([
   "Esta classe não permite inscrição adicional na Classe Espacial.",
   "A Classe Espacial selecionada não corresponde à sua classe principal.",
   "A Classe Espacial selecionada atingiu o limite de vagas.",
+  "Esta classe atingiu o limite de vagas. Escolha outra classe ou aguarde a organização abrir novas vagas.",
 ]);
 
 type JsonRecord = Record<string, unknown>;

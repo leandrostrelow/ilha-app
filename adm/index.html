@@ -22434,6 +22434,7 @@
               <option value="">Todos os pagamentos</option>
               <option value="PAGO">Pagos</option>
               <option value="ISENTO">Isentos</option>
+              <option value="LISTA_ESPERA">Lista de espera</option>
               <option value="PENDENTE">Pendentes</option>
               <option value="CANCELADO">Cancelados</option>
             </select>
@@ -24105,6 +24106,7 @@
       const labels = {
         PAGO: 'Pago', PAID: 'Pago', RECEIVED: 'Pago', RECEIVED_IN_CASH: 'Pago',
         ISENTO: 'Isento', NOT_REQUIRED: 'Isento', WAIVED: 'Isento',
+        WAITLIST: 'Lista de espera', LISTA_ESPERA: 'Lista de espera',
         CANCELADO: 'Cancelado', CANCELLED: 'Cancelado', REFUNDED: 'Estornado',
         PENDENTE: 'Pendente', PENDING: 'Pendente', CREATED: 'Aguardando Pix',
         FAILED: 'Falha na cobrança', OVERDUE: 'Vencido', CONFIRMED: 'Em análise',
@@ -24130,13 +24132,23 @@
         const groupId = String(registration.grupo_id || '');
         const payment = payments.get(String(registration.inscricao_id)) || paymentsByGroup.get(groupId) || {};
         const invite = invitesByGroup.get(groupId);
-        const source = invite ? 'Convite' : (groupId && groupCounts.get(groupId) > 1 ? 'Família' : (payment.id ? 'Site' : 'ADM'));
-        const paymentStatus = String(payment.status || registration.status_pagamento || 'PENDENTE').toUpperCase();
+        const registrationStatus = String(registration.status || '').toUpperCase();
+        const waitlist = ['WAITLIST', 'LISTA_ESPERA'].includes(registrationStatus);
+        const registrationSource = String(registration.source || registration.origem || '').toUpperCase();
+        const source = invite
+          ? 'Convite'
+          : (groupId && groupCounts.get(groupId) > 1
+            ? 'Família'
+            : (registrationSource === 'PUBLIC' || payment.id || waitlist ? 'Site' : 'ADM'));
+        const paymentStatus = waitlist
+          ? 'WAITLIST'
+          : String(payment.status || registration.status_pagamento || 'PENDENTE').toUpperCase();
         return {
           registration: registration,
           player: player,
           payment: payment,
           source: source,
+          waitlist: waitlist,
           paymentStatus: paymentStatus,
           createdAt: registration.criado_em || registration.data_inscricao || ''
         };
@@ -24153,8 +24165,9 @@
         const normalizedPayment = tournamentHistoryPaymentLabel(row.paymentStatus).toUpperCase();
         if (statusFilter === 'PAGO' && normalizedPayment !== 'PAGO') return false;
         if (statusFilter === 'ISENTO' && normalizedPayment !== 'ISENTO') return false;
+        if (statusFilter === 'LISTA_ESPERA' && normalizedPayment !== 'LISTA DE ESPERA') return false;
         if (statusFilter === 'CANCELADO' && !['CANCELADO', 'ESTORNADO'].includes(normalizedPayment)) return false;
-        if (statusFilter === 'PENDENTE' && ['PAGO', 'ISENTO', 'CANCELADO', 'ESTORNADO'].includes(normalizedPayment)) return false;
+        if (statusFilter === 'PENDENTE' && ['PAGO', 'ISENTO', 'LISTA DE ESPERA', 'CANCELADO', 'ESTORNADO'].includes(normalizedPayment)) return false;
         if (!query) return true;
         return normalizeSearch([
           row.player.nome,
@@ -24178,7 +24191,9 @@
         const personType = row.player.menor_de_idade ? 'Menor de idade' : 'Adulto';
         const paymentLabel = tournamentHistoryPaymentLabel(row.paymentStatus);
         const paidAt = row.payment.pago_em ? tournamentHistoryDateParts(row.payment.pago_em) : null;
-        const paymentDetail = paidAt
+        const paymentDetail = row.waitlist
+          ? 'Aguardando abertura de vaga · nenhuma cobrança foi gerada'
+          : paidAt
           ? 'Recebido em ' + paidAt.date + ' às ' + paidAt.time
           : (row.payment.reserva_expira_em ? 'Reserva até ' + registrationInviteDateTime(row.payment.reserva_expira_em) : 'Status atual da inscrição');
         return '<article class="tournament-history-row">' +

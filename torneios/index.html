@@ -423,9 +423,14 @@
     .category-checks { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
     .category-check { min-height: 62px; display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 10px; padding: 11px; border: 1px solid var(--line); border-radius: 14px; cursor: pointer; }
     .category-check:has(input:checked) { border-color: var(--lime); background: var(--lime-soft); }
+    .category-check:has(input:disabled) { border-color: #e4c7c7; background: #fff7f7; cursor: not-allowed; opacity: .76; }
     .category-check input { width: 19px; height: 19px; accent-color: var(--teal); }
     .category-check strong { display: block; font-size: 13px; }
     .category-check small { display: block; margin-top: 4px; color: var(--teal); font-size: 11px; font-weight: 850; }
+    .category-check:has(input:disabled) small { color: #a62f35; }
+    .category-capacity { border-color: #b9d6da; background: #f1f8f9; color: #315f66; }
+    .category-capacity.low { border-color: #e8cc71; background: #fff8dd; color: #72540b; }
+    .category-capacity.full { border-color: #efb4b8; background: #fff0f1; color: #a62f35; }
     .spatial-addon-copy { display: grid; gap: 5px; margin: 0 0 10px; padding: 12px 13px; border: 1px solid #ead05e; border-radius: 14px; background: #fff8cb; color: #55470b; font-size: 12px; font-weight: 750; line-height: 1.45; }
     .spatial-addon-copy strong { color: #352d08; font-size: 13px; }
     .spatial-addon-option { border-color: #68bd76; background: #e9f8ec; box-shadow: 0 5px 16px rgba(42,139,65,.09); }
@@ -1123,6 +1128,54 @@
     function categoryId(row) { return String(field(row,'id','category_id','categoria_id')); }
     function categoryCode(row) { return clean(field(row,'code','codigo')).toUpperCase(); }
     function categoryName(id) { const row = categories().find((item) => categoryId(item) === String(id)); return row ? field(row,'name','nome') : ''; }
+    function categoryCapacity(row) {
+      const maxRaw = field(row || {},'max_entries','max_inscritos');
+      const occupiedRaw = field(row || {},'occupied_count','ocupadas','registration_count','quantidade_inscritos');
+      const remainingRaw = field(row || {},'remaining_entries','vagas_restantes');
+      const fullRaw = field(row || {},'is_full','lotada');
+      const parsedMax = maxRaw === '' ? NaN : Number(maxRaw);
+      const parsedOccupied = occupiedRaw === '' ? NaN : Number(occupiedRaw);
+      const parsedRemaining = remainingRaw === '' ? NaN : Number(remainingRaw);
+      const maxEntries = Number.isFinite(parsedMax) && parsedMax > 0 ? Math.floor(parsedMax) : null;
+      const occupiedCount = Number.isFinite(parsedOccupied) && parsedOccupied >= 0 ? Math.floor(parsedOccupied) : null;
+      const explicitRemaining = Number.isFinite(parsedRemaining) && parsedRemaining >= 0 ? Math.floor(parsedRemaining) : null;
+      const remainingEntries = maxEntries === null
+        ? null
+        : (explicitRemaining !== null
+          ? Math.max(0, explicitRemaining)
+          : (occupiedCount === null ? null : Math.max(0, maxEntries - occupiedCount)));
+      return {
+        maxEntries: maxEntries,
+        occupiedCount: occupiedCount,
+        remainingEntries: remainingEntries,
+        isFull: fullRaw === true || String(fullRaw).toLowerCase() === 'true' || remainingEntries === 0
+      };
+    }
+    function categoryIsFull(row) { return categoryCapacity(row).isFull; }
+    function categoryAcceptsRegistration(row) {
+      if (!row) return false;
+      const status = clean(field(row,'status')).toUpperCase();
+      const active = field(row,'active','ativo');
+      const open = field(row,'registration_open','inscricoes_abertas');
+      if (['CLOSED','ENCERRADA','INATIVA'].includes(status)) return false;
+      if (active === false || String(active).toLowerCase() === 'false') return false;
+      return open !== false && String(open).toLowerCase() !== 'false';
+    }
+    function categoryCapacityLabel(row) {
+      const capacity = categoryCapacity(row);
+      if (capacity.maxEntries === null || capacity.remainingEntries === null) return '';
+      if (capacity.isFull) return 'Lotada';
+      if (capacity.remainingEntries === 1) return 'Última vaga';
+      return 'Restam ' + capacity.remainingEntries + ' vagas';
+    }
+    function categoryFullMessage(row) {
+      const name = clean(field(row || {},'name','nome'));
+      return (name ? 'A classe ' + name : 'Esta classe') + ' está lotada. Escolha outra classe ou aguarde a organização abrir novas vagas.';
+    }
+    function categoryClosedMessage(row) {
+      const name = clean(field(row || {},'name','nome'));
+      return (name ? 'A classe ' + name : 'Esta classe') + ' está com as inscrições encerradas.';
+    }
     function categoryRegistrationAmount(row) {
       const configured = Number(field(row || {},'registration_fee','valor','amount'));
       if (Number.isFinite(configured) && configured >= 0) return configured;
@@ -1157,14 +1210,22 @@
       $('spatialAddonField').hidden = !available;
       if (!available) {
         $('spatialAddon').checked = false;
+        $('spatialAddon').disabled = false;
         $('spatialAddon').value = '';
         return;
       }
       const fee = spatialAddonFee();
+      const full = categoryIsFull(additional);
+      const closed = !categoryAcceptsRegistration(additional);
+      const blocked = full || closed;
+      if (blocked) $('spatialAddon').checked = false;
+      $('spatialAddon').disabled = blocked;
       $('spatialAddon').value = categoryId(additional);
       $('spatialAddonPeriod').textContent = 'Essa classe acontece de ' + spatialAddonPeriodLabel() + '.';
       $('spatialAddonTitle').textContent = 'SIM, quero participar da ' + clean(rule.label || field(additional,'name','nome'));
-      $('spatialAddonDescription').textContent = 'Adicione por mais ' + money(fee) + ' no mesmo pagamento.';
+      $('spatialAddonDescription').textContent = full
+        ? 'Lotada no momento.'
+        : (closed ? 'Inscrições encerradas no momento.' : 'Adicione por mais ' + money(fee) + ' no mesmo pagamento.');
     }
     function playerName(match, slot) { return field(match, 'side' + slot + '_name', 'player' + slot + '_name', 'jogador' + slot + '_nome') || field(match['player' + slot],'name','nome') || 'A definir'; }
     function matchCategoryId(row) { return String(field(row,'category_id','categoria_id')); }
@@ -1281,7 +1342,11 @@
         const spatialPrice = spatialAddonCodes().has(categoryCode(row))
           ? '<span class="mini-chip">Adicional ' + escapeHtml(money(spatialAddonFee())) + '</span>'
           : '';
-        return '<article class="category-card"><div><h3>' + escapeHtml(field(row,'name','nome') || 'Classe') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || field(row,'gender','genero') || 'Categoria do torneio') + '</p></div><div class="category-card-foot"><span class="mini-chip">' + count + ' inscritos</span>' + spatialPrice + '<span class="mini-chip">' + escapeHtml(field(row,'draw_size','tamanho_chave') || 'Chave auto') + '</span></div></article>';
+        const capacity = categoryCapacity(row);
+        const capacityLabel = categoryCapacityLabel(row);
+        const capacityClass = capacity.isFull ? ' full' : (capacity.remainingEntries !== null && capacity.remainingEntries <= 2 ? ' low' : '');
+        const capacityChip = capacityLabel ? '<span class="mini-chip category-capacity' + capacityClass + '">' + escapeHtml(capacityLabel) + '</span>' : '';
+        return '<article class="category-card"><div><h3>' + escapeHtml(field(row,'name','nome') || 'Classe') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || field(row,'gender','genero') || 'Categoria do torneio') + '</p></div><div class="category-card-foot"><span class="mini-chip">' + count + ' inscritos</span>' + capacityChip + spatialPrice + '<span class="mini-chip">' + escapeHtml(field(row,'draw_size','tamanho_chave') || 'Chave auto') + '</span></div></article>';
       }).join('') || '<div class="empty-state" style="grid-column:1/-1">As classes serão publicadas em breve.</div>') + '</div></div>';
     }
 
@@ -1850,11 +1915,7 @@
     function familyCategoryRows(gender) {
       return categories().filter((row) => {
         const categoryGender = clean(field(row,'gender','genero')).toUpperCase();
-        const status = clean(field(row,'status')).toUpperCase();
-        const open = field(row,'registration_open','inscricoes_abertas');
-        const active = field(row,'active','ativo');
-        return !spatialAddonCodes().has(categoryCode(row)) && !['CLOSED','ENCERRADA','INATIVA'].includes(status) &&
-          active !== false && String(active).toLowerCase() !== 'false' && open !== false && String(open).toLowerCase() !== 'false' &&
+        return !spatialAddonCodes().has(categoryCode(row)) && categoryAcceptsRegistration(row) &&
           (!gender || categoryGender === gender || ['MIXED','OPEN','MISTO','LIVRE',''].includes(categoryGender));
       });
     }
@@ -1897,11 +1958,14 @@
         athlete.isMinor = false;
       }
       const availableCategories = familyCategoryRows(athlete.gender);
-      if (athlete.categoryId && !availableCategories.some((row) => categoryId(row) === String(athlete.categoryId))) athlete.categoryId = '';
+      if (athlete.categoryId && !availableCategories.some((row) => categoryId(row) === String(athlete.categoryId) && !categoryIsFull(row))) athlete.categoryId = '';
       const selectedCategory = categories().find((row) => categoryId(row) === String(athlete.categoryId));
       const addonRule = spatialAddonRule(selectedCategory);
       const addonCategory = addonRule && categories().find((row) => categoryCode(row) === clean(addonRule.category_code).toUpperCase());
-      if (!addonCategory) athlete.spatial = false;
+      const addonFull = Boolean(addonCategory && categoryIsFull(addonCategory));
+      const addonClosed = Boolean(addonCategory && !categoryAcceptsRegistration(addonCategory));
+      const addonBlocked = addonFull || addonClosed;
+      if (!addonCategory || addonBlocked) athlete.spatial = false;
       const doubles = clean(field(selectedCategory,'event_type','tipo')).toUpperCase() === 'DOUBLES';
       const label = athlete.isPayer ? (payerName || 'Responsável') : (athlete.fullName || 'Atleta ' + (index + 1));
       const lockedMinor = athlete.isPayer || state.registrationMode === 'minor';
@@ -1911,7 +1975,13 @@
           '<div class="form-field"><label>Data de nascimento' + (athlete.isMinor ? '' : ' (opcional)') + '</label><input data-family-field="birth_date" type="date" value="' + escapeHtml(athlete.birthDate) + '" ' + (athlete.isMinor ? 'required' : '') + ' /></div>' +
           '<div class="form-field"><label>CPF do atleta' + (athlete.isMinor ? ' (opcional)' : '') + '</label><input data-family-field="cpf" inputmode="numeric" maxlength="14" placeholder="' + (athlete.isMinor ? 'Opcional para menor' : '000.000.000-00') + '" value="' + escapeHtml(formatCpf(athlete.cpf)) + '" ' + (athlete.isMinor ? '' : 'required') + ' /></div>' +
           '<div class="form-field full"><label>Telefone do atleta' + (athlete.isMinor ? ' (opcional)' : '') + '</label><input data-family-field="phone" type="tel" inputmode="tel" maxlength="15" placeholder="' + (athlete.isMinor ? 'Preencha somente se ele tiver' : '(27) 99999-9999') + '" value="' + escapeHtml(formatPhone(athlete.phone)) + '" ' + (athlete.isMinor ? '' : 'required') + ' /></div>';
-      const categoryOptions = '<option value="">Escolha a classe</option>' + availableCategories.map((row) => '<option value="' + escapeHtml(categoryId(row)) + '" ' + (categoryId(row) === String(athlete.categoryId) ? 'selected' : '') + '>' + escapeHtml(field(row,'name','nome')) + '</option>').join('');
+      const categoryOptions = '<option value="">Escolha a classe</option>' + availableCategories.map((row) => {
+        const full = categoryIsFull(row);
+        return '<option value="' + escapeHtml(categoryId(row)) + '" ' +
+          (categoryId(row) === String(athlete.categoryId) ? 'selected ' : '') +
+          (full ? 'disabled ' : '') + '>' + escapeHtml(field(row,'name','nome')) +
+          (full ? ' — Lotada' : '') + '</option>';
+      }).join('');
       const participantOptions = [['','Escolha o perfil'],['CINCATE','CINCATE'],['ILHA_STUDENT','Aluno Ilha Tênis'],['NON_MEMBER','Não associado']].map(([value,labelText]) => '<option value="' + value + '" ' + (athlete.participantType === value ? 'selected' : '') + '>' + labelText + (value && registrationPricing()[value] !== undefined ? ' · ' + money(registrationPricing()[value]) : '') + '</option>').join('');
       const participantFieldHtml = state.inviteMode
         ? '<input data-family-field="participant_type" type="hidden" value="COURTESY" /><div class="eligibility-warning"><strong>✓ Convite isento:</strong> nenhuma cobrança será gerada para este atleta.</div>'
@@ -1925,7 +1995,7 @@
         participantFieldHtml +
         '<div class="form-field"><label>Sexo</label><select data-family-field="gender" required>' + genderOptions + '</select></div>' +
         '<div class="form-field full"><label>Classe</label><select data-family-field="category_id" required ' + (!athlete.gender ? 'disabled' : '') + '>' + categoryOptions + '</select></div>' +
-        (addonCategory ? '<label class="family-spatial-option full"><input data-family-field="spatial" type="checkbox" ' + (athlete.spatial ? 'checked' : '') + ' /><span><strong>Adicionar ' + escapeHtml(clean(addonRule.label || field(addonCategory,'name','nome'))) + '</strong><small>Mais ' + escapeHtml(money(spatialAddonFee())) + ' no mesmo Pix.</small></span></label>' : '') +
+        (addonCategory ? '<label class="family-spatial-option full"><input data-family-field="spatial" type="checkbox" ' + (athlete.spatial ? 'checked ' : '') + (addonBlocked ? 'disabled ' : '') + '/><span><strong>Adicionar ' + escapeHtml(clean(addonRule.label || field(addonCategory,'name','nome'))) + '</strong><small>' + (addonFull ? 'Lotada no momento.' : (addonClosed ? 'Inscrições encerradas no momento.' : 'Mais ' + escapeHtml(money(spatialAddonFee())) + ' no mesmo Pix.')) + '</small></span></label>' : '') +
         '<div class="form-field full"><label>Dias em que pode jogar</label><div class="family-athlete-days">' + days + '</div><p class="field-hint">Sexta-feira e sábado são obrigatórios; as finais acontecem no domingo.</p></div>' +
         '<div class="form-field"><label>Qual é a sua cidade?</label><input data-family-field="city" autocomplete="address-level2" value="' + escapeHtml(athlete.city || 'Colatina') + '" /></div>' +
         (doubles ? '<div class="form-field"><label>Nome da dupla</label><input data-family-field="partner_name" maxlength="120" value="' + escapeHtml(athlete.partnerName) + '" required /></div>' : '') +
@@ -2082,11 +2152,7 @@
       const registrationSubtitle = internal ? 'Informe nome e telefone e escolha até duas classes.' : (state.inviteMode ? 'Convite exclusivo e de uso único.' : (state.courtesyMode ? 'Inscrição isenta para professor ou parceiro.' : ''));
       $('registrationSubtitle').textContent = registrationSubtitle;
       $('registrationSubtitle').hidden = !registrationSubtitle;
-      state.registrationCategories = categories().filter((row) => {
-        const status = clean(field(row,'status')).toUpperCase();
-        const open = field(row,'registration_open','inscricoes_abertas');
-        return !['CLOSED','ENCERRADA','INATIVA'].includes(status) && open !== false && String(open).toLowerCase() !== 'false';
-      });
+      state.registrationCategories = categories().filter((row) => categoryAcceptsRegistration(row));
       $('categoryField').hidden = !internal;
       $('registrationCategories').innerHTML = '';
       $('spatialAddonField').hidden = true;
@@ -2187,7 +2253,11 @@
           const categoryGender = clean(field(row,'gender','genero')).toUpperCase();
           return categoryGender === gender || ['MIXED','OPEN','MISTO','LIVRE',''].includes(categoryGender);
         });
-        $('registrationCategories').innerHTML = filtered.map((row) => '<label class="category-check"><input type="checkbox" name="category_id" value="' + escapeHtml(categoryId(row)) + '" data-event-type="' + escapeHtml(field(row,'event_type','tipo')) + '" /><span><strong>' + escapeHtml(field(row,'name','nome')) + '</strong><small>' + escapeHtml(field(row,'description','descricao') || '') + '</small></span></label>').join('') || '<div class="empty-state">Nenhuma classe disponível para esta opção.</div>';
+        $('registrationCategories').innerHTML = filtered.map((row) => {
+          const full = categoryIsFull(row);
+          const detail = [categoryCapacityLabel(row), field(row,'description','descricao')].filter(Boolean).join(' · ');
+          return '<label class="category-check"><input type="checkbox" name="category_id" value="' + escapeHtml(categoryId(row)) + '" data-event-type="' + escapeHtml(field(row,'event_type','tipo')) + '" ' + (full ? 'disabled aria-disabled="true"' : '') + ' /><span><strong>' + escapeHtml(field(row,'name','nome')) + '</strong><small>' + escapeHtml(detail) + '</small></span></label>';
+        }).join('') || '<div class="empty-state">Nenhuma classe disponível para esta opção.</div>';
         $('registrationCategories').querySelectorAll('input[name="category_id"]').forEach((input) => input.addEventListener('change',() => {
           const selected = selectedCategoryIds();
           if (selected.length > 2) {
@@ -2208,7 +2278,11 @@
         const categoryGender = clean(field(row,'gender','genero')).toUpperCase();
         return !spatialAddonCodes().has(categoryCode(row)) && (categoryGender === gender || ['MIXED','OPEN','MISTO','LIVRE',''].includes(categoryGender));
       });
-      $('registrationCategories').innerHTML = filtered.map((row) => '<label class="category-check"><input type="radio" name="category_id" value="' + escapeHtml(categoryId(row)) + '" data-event-type="' + escapeHtml(field(row,'event_type','tipo')) + '" /><span><strong>' + escapeHtml(field(row,'name','nome')) + '</strong><small>' + escapeHtml(field(row,'description','descricao') || '') + '</small></span></label>').join('') || '<div class="empty-state">Nenhuma classe disponível para esta opção.</div>';
+      $('registrationCategories').innerHTML = filtered.map((row) => {
+        const full = categoryIsFull(row);
+        const detail = [categoryCapacityLabel(row), field(row,'description','descricao')].filter(Boolean).join(' · ');
+        return '<label class="category-check"><input type="radio" name="category_id" value="' + escapeHtml(categoryId(row)) + '" data-event-type="' + escapeHtml(field(row,'event_type','tipo')) + '" ' + (full ? 'disabled aria-disabled="true"' : '') + ' /><span><strong>' + escapeHtml(field(row,'name','nome')) + '</strong><small>' + escapeHtml(detail) + '</small></span></label>';
+      }).join('') || '<div class="empty-state">Nenhuma classe disponível para esta opção.</div>';
       $('registrationCategories').querySelectorAll('input[name="category_id"]').forEach((input) => input.addEventListener('change',() => { updatePartnerField(); updateSpatialAddonField(); updateRegistrationPrice(); }));
       updateSpatialAddonField();
       updatePartnerField();
@@ -2262,6 +2336,7 @@
       if (athletes.length > athleteLimit) return showRegistrationError('Este formulário permite no máximo ' + athleteLimit + ' atleta(s).');
       const payloadAthletes = [];
       const cpfs = new Set();
+      const requestedCategoryCounts = new Map();
       for (let index = 0; index < athletes.length; index += 1) {
         const athlete = athletes[index];
         const name = athlete.isPayer ? payer.full_name : athlete.fullName;
@@ -2285,8 +2360,28 @@
         if (!athlete.categoryId) return showRegistrationError('Escolha a classe de ' + name + '.');
         if (!athlete.availabilityDays.length) return showRegistrationError('Marque os dias disponíveis de ' + name + '.');
         const category = categories().find((row) => categoryId(row) === String(athlete.categoryId));
+        if (!category) return showRegistrationError('A classe escolhida para ' + name + ' não está mais disponível.');
+        if (!categoryAcceptsRegistration(category)) return showRegistrationError(categoryClosedMessage(category));
+        const primaryCapacity = categoryCapacity(category);
+        const primaryRequested = (requestedCategoryCounts.get(categoryId(category)) || 0) + 1;
+        if (primaryCapacity.isFull) return showRegistrationError(categoryFullMessage(category));
+        if (primaryCapacity.remainingEntries !== null && primaryRequested > primaryCapacity.remainingEntries) {
+          return showRegistrationError('A classe ' + clean(field(category,'name','nome')) + ' não possui vagas suficientes para todos os atletas desta inscrição.');
+        }
+        requestedCategoryCounts.set(categoryId(category),primaryRequested);
         const rule = athlete.spatial ? spatialAddonRule(category) : null;
         const additional = rule && categories().find((row) => categoryCode(row) === clean(rule.category_code).toUpperCase());
+        if (athlete.spatial) {
+          if (!additional) return showRegistrationError('A Classe Espacial escolhida não está mais disponível.');
+          if (!categoryAcceptsRegistration(additional)) return showRegistrationError(categoryClosedMessage(additional));
+          const additionalCapacity = categoryCapacity(additional);
+          const additionalRequested = (requestedCategoryCounts.get(categoryId(additional)) || 0) + 1;
+          if (additionalCapacity.isFull) return showRegistrationError(categoryFullMessage(additional));
+          if (additionalCapacity.remainingEntries !== null && additionalRequested > additionalCapacity.remainingEntries) {
+            return showRegistrationError('A classe ' + clean(field(additional,'name','nome')) + ' não possui vagas suficientes para todos os atletas desta inscrição.');
+          }
+          requestedCategoryCounts.set(categoryId(additional),additionalRequested);
+        }
         const doubles = clean(field(category,'event_type','tipo')).toUpperCase() === 'DOUBLES';
         if (doubles && !athlete.partnerName) return showRegistrationError('Informe a dupla de ' + name + '.');
         payloadAthletes.push({
@@ -2340,6 +2435,12 @@
       const categoryIdValue = selectedIds[0] || '';
       if (!categoryIdValue) return showRegistrationError('Escolha pelo menos uma classe.');
       if (internal && selectedIds.length > 2) return showRegistrationError('Escolha no máximo duas classes.');
+      const selectedCategories = selectedIds.map((id) => categories().find((row) => categoryId(row) === String(id)));
+      if (selectedCategories.some((row) => !row)) return showRegistrationError('Uma das classes escolhidas não está mais disponível.');
+      const closedSelectedCategory = selectedCategories.find((row) => !categoryAcceptsRegistration(row));
+      if (closedSelectedCategory) return showRegistrationError(categoryClosedMessage(closedSelectedCategory));
+      const fullSelectedCategory = selectedCategories.find((row) => categoryIsFull(row));
+      if (fullSelectedCategory) return showRegistrationError(categoryFullMessage(fullSelectedCategory));
       const form = new FormData($('registrationForm'));
       const availabilityDays = form.getAll('availability_days').map(clean).filter(Boolean);
       const payload = {
@@ -2361,6 +2462,12 @@
         terms_accepted: $('registrationConsent').checked,
         captcha_token: state.captchaToken
       };
+      if (payload.additional_category_id) {
+        const additionalCategory = categories().find((row) => categoryId(row) === String(payload.additional_category_id));
+        if (!additionalCategory) return showRegistrationError('A Classe Espacial escolhida não está mais disponível.');
+        if (!categoryAcceptsRegistration(additionalCategory)) return showRegistrationError(categoryClosedMessage(additionalCategory));
+        if (categoryIsFull(additionalCategory)) return showRegistrationError(categoryFullMessage(additionalCategory));
+      }
       if (internal) {
         const internalPayload = {
           tournament_slug: state.slug,

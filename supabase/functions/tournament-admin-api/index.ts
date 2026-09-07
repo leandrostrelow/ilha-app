@@ -646,6 +646,8 @@ function mapRegistration(row: Row, includeCapabilities = false, registrationOrde
     jogador_id: row.athlete_id,
     nome_publico: row.public_name || "",
     parceiro: row.partner_name || "",
+    source: row.source || "",
+    origem: row.source || "",
     status_pagamento: legacyOrderPaymentStatus(registrationOrder, row.payment_status),
     status: row.status || "PENDING",
     valor: Number(row.total_amount || 0),
