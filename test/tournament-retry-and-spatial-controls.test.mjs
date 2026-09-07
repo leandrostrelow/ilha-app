@@ -12,7 +12,7 @@ const [registerSource, adminSource, publicPageSource, spatialPageSource, adminPa
   readProjectFile('torneios/index.html'),
   readProjectFile('inscricoes/espacial/index.html'),
   readProjectFile('adm/index.html'),
-  readProjectFile('supabase/migrations/20260907011704_release_expired_tournament_athlete_cpf.sql'),
+  readProjectFile('supabase/migrations/20260907015950_release_expired_tournament_athlete_cpf.sql'),
 ]);
 
 function sourceSection(source, start, end) {
