@@ -36,6 +36,10 @@ const writeActions = new Set([
   "getRegistrationInviteShareLink",
   "revokeRegistrationInvite",
   "deleteRegistrationInvite",
+  "getSpatialPortalShareLink",
+  "rotateSpatialPortalShareLink",
+  "setSpatialPortalOpen",
+  "deleteIncompleteTournamentAthlete",
   "setLiveState",
 ]);
 
@@ -139,6 +143,43 @@ async function decryptRegistrationInviteToken(ciphertext: string) {
     return new TextDecoder().decode(decrypted);
   } catch (_error) {
     throw new ApiError("Não foi possível recuperar o link protegido deste convite.", 500);
+  }
+}
+
+async function spatialPortalEncryptionKey() {
+  const secret = serviceRoleKey();
+  if (!secret) throw new ApiError("Configuração segura da Classe Espacial indisponível.", 500);
+  const material = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(`ilha-tournament-spatial-portal:${secret}`),
+  );
+  return crypto.subtle.importKey("raw", material, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+}
+
+async function encryptSpatialPortalToken(token: string) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    await spatialPortalEncryptionKey(),
+    new TextEncoder().encode(token),
+  );
+  return `${base64UrlEncode(iv)}.${base64UrlEncode(new Uint8Array(encrypted))}`;
+}
+
+async function decryptSpatialPortalToken(ciphertext: string) {
+  const [ivValue, encryptedValue, ...rest] = text(ciphertext, 500).split(".");
+  if (!ivValue || !encryptedValue || rest.length) {
+    throw new ApiError("O link protegido da Classe Espacial é inválido.", 500);
+  }
+  try {
+    const decrypted = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: base64UrlDecode(ivValue) },
+      await spatialPortalEncryptionKey(),
+      base64UrlDecode(encryptedValue),
+    );
+    return new TextDecoder().decode(decrypted);
+  } catch (_error) {
+    throw new ApiError("Não foi possível recuperar o link protegido da Classe Espacial.", 500);
   }
 }
 
@@ -483,7 +524,21 @@ function sanitizeTournamentSettings(value: unknown) {
       delete settings[key];
     }
   }
+  const spatialPortal = { ...firstObject(settings.spatial_addon_portal) };
+  if (Object.keys(spatialPortal).length) {
+    delete spatialPortal.token;
+    delete spatialPortal.token_hash;
+    delete spatialPortal.token_ciphertext;
+    settings.spatial_addon_portal = spatialPortal;
+  }
   return settings;
+}
+
+function tournamentAuditData(value: unknown) {
+  const row = { ...firstObject(value) };
+  delete row.spatial_portal_token_ciphertext;
+  row.settings = sanitizeTournamentSettings(row.settings);
+  return row;
 }
 
 function mapTournament(row: Row, _includeCapabilities = false) {
@@ -522,6 +577,7 @@ function mapTournament(row: Row, _includeCapabilities = false) {
     registration_open: row.registration_open === true,
     publicado: row.is_published === true,
     is_published: row.is_published === true,
+    spatial_portal_share_ready: Boolean(row.spatial_portal_token_ciphertext),
     settings,
   };
 }
@@ -550,7 +606,7 @@ function mapCategory(row: Row) {
   };
 }
 
-function mapAthlete(row: Row, includePrivate = false, registrationOrder: Row = {}) {
+function mapAthlete(row: Row, includePrivate = false, registrationOrder: Row = {}, incomplete = false) {
   return {
     jogador_id: row.id,
     id: row.id,
@@ -577,6 +633,7 @@ function mapAthlete(row: Row, includePrivate = false, registrationOrder: Row = {
     cobranca_inscricao_valor: includePrivate ? Number(registrationOrder.amount || 0) : 0,
     cobranca_inscricao_mes: includePrivate ? registrationOrder.billing_month || "" : "",
     cliente_vinculado: includePrivate ? Boolean(registrationOrder.app_client_id) : false,
+    tentativa_incompleta: includePrivate && incomplete,
   };
 }
 
@@ -716,7 +773,7 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", incl
   if (!tournament) return empty;
 
   const id = tournament.id;
-  const [categoriesResult, athletesResult, registrationsResult, ordersResult, paymentsResult, matchesResult, courtsResult, eventsResult, invitesResult, registrationGroupsResult, liveResult] = await Promise.all([
+  const [categoriesResult, athletesResult, registrationsResult, ordersResult, paymentsResult, matchesResult, courtsResult, eventsResult, invitesResult, registrationGroupsResult, incompleteAthletesResult, liveResult] = await Promise.all([
     client.from("tournament_categories").select("*").eq("tournament_id", id).order("sort_order").order("name"),
     client.from("tournament_athletes").select("*").order("full_name"),
     client.from("tournament_registrations").select("*").eq("tournament_id", id).order("created_at"),
@@ -733,14 +790,20 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", incl
     includeCapabilities
       ? client.from("tournament_registration_groups").select("id,payer_name,payer_email,payer_phone,status,created_at").eq("tournament_id", id)
       : Promise.resolve({ data: [], error: null }),
+    includeCapabilities
+      ? client.rpc("list_incomplete_tournament_athlete_ids", { p_tournament_id: id })
+      : Promise.resolve({ data: [], error: null }),
     client.from("tournament_live_state").select("*").eq("tournament_id", id).maybeSingle(),
   ]);
-  [categoriesResult, athletesResult, registrationsResult, ordersResult, paymentsResult, matchesResult, courtsResult, eventsResult, invitesResult, registrationGroupsResult, liveResult].forEach((result) => assertNoError(result.error));
+  [categoriesResult, athletesResult, registrationsResult, ordersResult, paymentsResult, matchesResult, courtsResult, eventsResult, invitesResult, registrationGroupsResult, incompleteAthletesResult, liveResult].forEach((result) => assertNoError(result.error));
 
   const categories = ((categoriesResult.data || []) as Row[]).filter((row) => row.active !== false);
   const visibleCategoryIds = new Set(categories.map((row) => String(row.id)));
   const registrations = ((registrationsResult.data || []) as Row[]).filter((row) => visibleCategoryIds.has(String(row.category_id)));
   const matches = ((matchesResult.data || []) as Row[]).filter((row) => visibleCategoryIds.has(String(row.category_id)));
+  const incompleteAthleteIds = new Set(
+    ((incompleteAthletesResult.data || []) as Row[]).map((row) => String(row.athlete_id || "")).filter(Boolean),
+  );
   const relevantAthleteIds = new Set<string>();
   registrations.forEach((row) => relevantAthleteIds.add(String(row.athlete_id || "")));
   ((ordersResult.data || []) as Row[]).forEach((row) => relevantAthleteIds.add(String(row.athlete_id || "")));
@@ -749,6 +812,7 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", incl
     relevantAthleteIds.add(String(row.side2_athlete_id || ""));
     relevantAthleteIds.add(String(row.winner_athlete_id || ""));
   });
+  incompleteAthleteIds.forEach((athleteId) => relevantAthleteIds.add(athleteId));
   relevantAthleteIds.delete("");
   const athletes = ((athletesResult.data || []) as Row[])
     .filter((row) => relevantAthleteIds.has(String(row.id)));
@@ -784,7 +848,12 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", incl
   return {
     torneio: mapTournament(tournament, includeCapabilities),
     categorias: categories.map(mapCategory),
-    jogadores: athletes.map((row) => mapAthlete(row, includeCapabilities, activeOrderByAthlete.get(String(row.id)) || {})),
+    jogadores: athletes.map((row) => mapAthlete(
+      row,
+      includeCapabilities,
+      activeOrderByAthlete.get(String(row.id)) || {},
+      incompleteAthleteIds.has(String(row.id)),
+    )),
     inscricoes: registrations.map((row) => mapRegistration(row, includeCapabilities, orderMap.get(String(row.registration_order_id)) || {})),
     pagamentos_online: includeCapabilities ? ((paymentsResult.data || []) as Row[]).map(mapOnlinePayment) : [],
     convites: includeCapabilities ? ((invitesResult.data || []) as Row[]).map((invite) => {
@@ -848,6 +917,153 @@ async function audit(client: DbClient, actorId: string, tournamentId: string, en
     new_data: newData || null,
   });
   if (error) console.error("tournament audit failure", { action, code: String(error.code || "database_error") });
+}
+
+function spatialPortalUrl(tournament: Row, rawToken: string) {
+  const slug = text(tournament.slug, 100);
+  if (!slug || !uuid(rawToken)) throw new ApiError("O torneio ainda não possui um link válido para a Classe Espacial.", 409);
+  return `https://app.ilhatenis.com/inscricoes/${encodeURIComponent(slug)}/espacial#chave=${encodeURIComponent(rawToken)}`;
+}
+
+async function getSpatialPortalShareLink(client: DbClient, actorId: string, payload: Row, forceRotate = false) {
+  const tournament = await currentTournament(client, payload);
+  if (!text(tournament.slug, 100)) throw new ApiError("Defina o endereço do torneio antes de gerar este link.", 409);
+
+  const settings = { ...firstObject(tournament.settings) };
+  const portal = { ...firstObject(settings.spatial_addon_portal) };
+  const storedCiphertext = text(tournament.spatial_portal_token_ciphertext, 500);
+  let rawToken = "";
+  const rotated = forceRotate || !storedCiphertext;
+
+  if (!rotated) {
+    rawToken = await decryptSpatialPortalToken(storedCiphertext);
+    const storedHash = text(portal.token_hash, 64).toLowerCase();
+    if (!uuid(rawToken) || !/^[0-9a-f]{64}$/.test(storedHash) || await sha256Hex(rawToken) !== storedHash) {
+      throw new ApiError("A proteção do link da Classe Espacial não pôde ser validada. Renove o link.", 500);
+    }
+  } else {
+    rawToken = crypto.randomUUID();
+    const tokenHash = await sha256Hex(rawToken);
+    const tokenCiphertext = await encryptSpatialPortalToken(rawToken);
+    const updatedAt = new Date().toISOString();
+    const updatedSettings = {
+      ...settings,
+      spatial_addon_portal: { ...portal, token_hash: tokenHash },
+    };
+    const updateResult = await client.from("tournaments")
+      .update({
+        settings: updatedSettings,
+        spatial_portal_token_ciphertext: tokenCiphertext,
+        updated_by: actorId,
+        updated_at: updatedAt,
+      })
+      .eq("id", tournament.id)
+      .eq("updated_at", tournament.updated_at)
+      .select("id,slug,name,settings,spatial_portal_token_ciphertext,updated_at")
+      .maybeSingle();
+    assertNoError(updateResult.error);
+    if (!updateResult.data) {
+      throw new ApiError("O torneio foi alterado por outra operação. Atualize a página e tente novamente.", 409);
+    }
+    await audit(
+      client,
+      actorId,
+      tournament.id,
+      "spatial_addon_portal",
+      tournament.id,
+      "ROTATE_SHARE_LINK",
+      { enabled: portal.enabled === true, share_ready: Boolean(storedCiphertext) },
+      { enabled: portal.enabled === true, share_ready: true },
+    );
+  }
+
+  return {
+    tournament_id: tournament.id,
+    portal_open: portal.enabled === true,
+    share_ready: true,
+    rotated,
+    portal_url: spatialPortalUrl(tournament, rawToken),
+  };
+}
+
+async function setSpatialPortalOpen(client: DbClient, actorId: string, payload: Row) {
+  const requestedOpen = ownField(payload, "open", "enabled");
+  if (!requestedOpen.present) throw new ApiError("Informe se as inscrições da Classe Espacial devem ficar abertas ou fechadas.");
+  const open = booleanValue(requestedOpen.value, false);
+  const tournament = await currentTournament(client, payload);
+  const settings = { ...firstObject(tournament.settings) };
+  const portal = { ...firstObject(settings.spatial_addon_portal) };
+  const previousOpen = portal.enabled === true;
+  const updatedAt = new Date().toISOString();
+  const updateResult = await client.from("tournaments")
+    .update({
+      settings: {
+        ...settings,
+        spatial_addon_portal: { ...portal, enabled: open },
+      },
+      updated_by: actorId,
+      updated_at: updatedAt,
+    })
+    .eq("id", tournament.id)
+    .eq("updated_at", tournament.updated_at)
+    .select("id,spatial_portal_token_ciphertext")
+    .maybeSingle();
+  assertNoError(updateResult.error);
+  if (!updateResult.data) {
+    throw new ApiError("O torneio foi alterado por outra operação. Atualize a página e tente novamente.", 409);
+  }
+  await audit(
+    client,
+    actorId,
+    tournament.id,
+    "spatial_addon_portal",
+    tournament.id,
+    open ? "OPEN" : "CLOSE",
+    { enabled: previousOpen },
+    { enabled: open },
+  );
+  return {
+    tournament_id: tournament.id,
+    portal_open: open,
+    share_ready: Boolean(updateResult.data.spatial_portal_token_ciphertext),
+  };
+}
+
+async function deleteIncompleteTournamentAthlete(client: DbClient, actorId: string, payload: Row) {
+  const tournament = await currentTournament(client, payload);
+  const athleteId = uuid(payload.athlete_id || payload.jogador_id || payload.id);
+  if (!athleteId) throw new ApiError("Jogador inválido.");
+
+  const athleteResult = await client.from("tournament_athletes")
+    .select("id,full_name")
+    .eq("id", athleteId)
+    .maybeSingle();
+  assertNoError(athleteResult.error);
+  if (!athleteResult.data) throw new ApiError("Jogador não encontrado.", 404);
+
+  const deletionResult = await client.rpc("delete_incomplete_tournament_athlete", {
+    p_tournament_id: tournament.id,
+    p_athlete_id: athleteId,
+  });
+  assertNoError(deletionResult.error);
+  if (deletionResult.data !== true) {
+    throw new ApiError(
+      "Este jogador já possui inscrição, cobrança ou vínculo protegido e não pode ser excluído por esta ação.",
+      409,
+    );
+  }
+
+  await audit(
+    client,
+    actorId,
+    tournament.id,
+    "incomplete_tournament_athlete",
+    athleteId,
+    "DELETE",
+    { id: athleteId, full_name: athleteResult.data.full_name || "", incomplete: true },
+    null,
+  );
+  return { tournament_id: tournament.id, athlete_id: athleteId, deleted: true };
 }
 
 async function createRegistrationInvite(client: DbClient, actorId: string, payload: Row) {
@@ -1051,6 +1267,8 @@ function tournamentPayload(input: Row, current: Row = {}) {
   if (name.length < 3) throw new ApiError("Informe o nome do torneio.");
   const rawStatus = input.status || current.status || "DRAFT";
   const registrationOpen = booleanValue(input.inscricoes_abertas ?? input.registration_open, current.registration_open === true);
+  const currentPrivateSettings = firstObject(current.settings);
+  const currentPrivateSpatialPortal = firstObject(currentPrivateSettings.spatial_addon_portal);
   const currentSettings = sanitizeTournamentSettings(current.settings);
   const requestedSettings = sanitizeTournamentSettings(firstObject(input.settings, currentSettings));
   const currentPricing = firstObject(currentSettings.registration_pricing);
@@ -1101,6 +1319,14 @@ function tournamentPayload(input: Row, current: Row = {}) {
     image_url: nullableText(requestedAboutEvent.image_url, 1000),
     sponsors: aboutSponsors,
   };
+  const requestedSpatialPortal = {
+    ...firstObject(currentSettings.spatial_addon_portal),
+    ...firstObject(requestedSettings.spatial_addon_portal),
+  };
+  const protectedSpatialTokenHash = text(currentPrivateSpatialPortal.token_hash, 64).toLowerCase();
+  if (/^[0-9a-f]{64}$/.test(protectedSpatialTokenHash)) {
+    requestedSpatialPortal.token_hash = protectedSpatialTokenHash;
+  }
   return {
     name,
     year: integerValue(input.ano ?? input.year, current.year || new Date().getFullYear()),
@@ -1120,6 +1346,7 @@ function tournamentPayload(input: Row, current: Row = {}) {
       registration_pricing: registrationPricing,
       spatial_addon_fee: spatialAddonFee,
       spatial_addons: spatialAddons,
+      ...(Object.keys(requestedSpatialPortal).length ? { spatial_addon_portal: requestedSpatialPortal } : {}),
       public_tabs: publicTabs,
       about_event: aboutEvent,
     },
@@ -1150,8 +1377,17 @@ async function saveTournament(client: DbClient, actorId: string, payload: Row, c
     assertNoError(result.error);
     saved = result.data;
   }
-  await audit(client, actorId, saved.id, "tournament", saved.id, current.id ? "UPDATE" : "CREATE", current.id ? current : null, saved);
-  return saved;
+  await audit(
+    client,
+    actorId,
+    saved.id,
+    "tournament",
+    saved.id,
+    current.id ? "UPDATE" : "CREATE",
+    current.id ? tournamentAuditData(current) : null,
+    tournamentAuditData(saved),
+  );
+  return tournamentAuditData(saved);
 }
 
 async function saveCategory(client: DbClient, actorId: string, payload: Row) {
@@ -1953,6 +2189,22 @@ Deno.serve(async (request) => {
     }
     else if (action === "getRegistrationInviteShareLink") {
       result = await getRegistrationInviteShareLink(trustedClient, profile.id, payload);
+      responseTournamentId = (result as Row).tournament_id;
+    }
+    else if (action === "getSpatialPortalShareLink") {
+      result = await getSpatialPortalShareLink(trustedClient, profile.id, payload, false);
+      responseTournamentId = (result as Row).tournament_id;
+    }
+    else if (action === "rotateSpatialPortalShareLink") {
+      result = await getSpatialPortalShareLink(trustedClient, profile.id, payload, true);
+      responseTournamentId = (result as Row).tournament_id;
+    }
+    else if (action === "setSpatialPortalOpen") {
+      result = await setSpatialPortalOpen(trustedClient, profile.id, payload);
+      responseTournamentId = (result as Row).tournament_id;
+    }
+    else if (action === "deleteIncompleteTournamentAthlete") {
+      result = await deleteIncompleteTournamentAthlete(trustedClient, profile.id, payload);
       responseTournamentId = (result as Row).tournament_id;
     }
     else if (action === "deleteRegistrationInvite") {

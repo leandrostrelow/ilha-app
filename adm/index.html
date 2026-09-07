@@ -3892,6 +3892,60 @@
 
     .tournament-link-card .actions { margin-top: auto; }
 
+    .spatial-portal-control {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #ffffff;
+    }
+
+    .spatial-portal-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: #8b2f2f;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .spatial-portal-status::before {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: #dc6b6b;
+      content: '';
+    }
+
+    .spatial-portal-status.open { color: #087447; }
+    .spatial-portal-status.open::before { background: #21bb70; }
+
+    .spatial-portal-hint {
+      margin: -4px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .tournament-link-card .actions .danger-link-btn {
+      color: #a52e2e;
+      border-color: #efc9c9;
+      background: #fff7f7;
+    }
+
+    .tournament-link-card button:disabled,
+    .tournament-link-card a[aria-disabled="true"] {
+      opacity: .5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
     .span-3 { grid-column: span 3; }
     .span-4 { grid-column: span 4; }
     .span-5 { grid-column: span 5; }
@@ -22339,10 +22393,16 @@
               <h3>Adicionar Classe Espacial</h3>
               <p>Envie somente para quem já está inscrito e pediu para adicionar a Espacial A ou B por R$ 80,00.</p>
             </div>
+            <div class="spatial-portal-control">
+              <span class="spatial-portal-status" id="spatialPortalStatus" aria-live="polite">Inscrições fechadas</span>
+              <button class="ghost-btn" id="spatialPortalToggleBtn" type="button">Abrir inscrições</button>
+            </div>
             <div class="tournament-link-address" id="spatialTournamentLinkText" aria-live="polite"></div>
+            <p class="spatial-portal-hint" id="spatialPortalHint">O endereço completo é protegido e só aparece ao solicitar.</p>
             <div class="actions">
-              <a class="primary-btn" id="spatialTournamentLink" href="../inscricoes/ilha-open-2026-teste/espacial" target="_blank" rel="noopener">Abrir Classe Espacial</a>
+              <a class="primary-btn" id="spatialTournamentLink" href="#" target="_blank" rel="noopener">Abrir Classe Espacial</a>
               <button class="ghost-btn" type="button" data-copy-tournament-link="spatialTournamentLink">Copiar link</button>
+              <button class="ghost-btn danger-link-btn" id="spatialPortalRenewBtn" type="button">Renovar link</button>
             </div>
           </article>
 
@@ -23027,6 +23087,9 @@
       liveScoreSaveTimer: null,
       aboutSponsors: [],
       registrationInvite: null,
+      spatialPortalUrl: '',
+      spatialPortalTournamentId: '',
+      spatialPortalBusy: false,
       tournamentDraftDirty: false
     };
 
@@ -23397,11 +23460,16 @@
         return '<option value="' + escapeHtml(tournament.torneio_id) + '">' + escapeHtml(tournament.nome || 'Torneio') + '</option>';
       }).join('') || '<option value="">Nenhum torneio</option>';
       picker.value = state.data.torneio.torneio_id || state.selectedTournamentId || '';
+      if (state.spatialPortalTournamentId && state.spatialPortalTournamentId !== picker.value) {
+        state.spatialPortalUrl = '';
+        state.spatialPortalTournamentId = '';
+      }
       state.selectedTournamentId = picker.value;
       const slug = state.data.torneio.slug || '';
       const publicLink = $('publicTournamentLink');
       const registrationLink = $('registrationTournamentLink');
-      const spatialLink = $('spatialTournamentLink');
+      const spatialPortalPath = slug ? '../inscricoes/' + encodeURIComponent(slug) + '/espacial' : '';
+      $('spatialTournamentLink').dataset.portalPath = spatialPortalPath;
       if (publicLink) {
         publicLink.href = slug ? '../torneios/' + encodeURIComponent(slug) : '../torneios';
         publicLink.hidden = !slug;
@@ -23412,14 +23480,169 @@
         registrationLink.hidden = !slug;
         $('registrationTournamentLinkText').textContent = slug ? new URL(registrationLink.href, location.href).href : 'Torneio sem endereço de inscrição.';
       }
-      if (spatialLink) {
-        spatialLink.href = slug ? '../inscricoes/' + encodeURIComponent(slug) + '/espacial' : '../torneios';
-        spatialLink.hidden = !slug;
-        $('spatialTournamentLinkText').textContent = slug ? new URL(spatialLink.href, location.href).href : 'Torneio sem endereço da Classe Espacial.';
+      renderSpatialPortalControls();
+    }
+
+    function spatialPortalOpen() {
+      const tournament = state.data && state.data.torneio || {};
+      const settings = tournament.settings || {};
+      const portal = settings.spatial_addon_portal || {};
+      return portal.enabled === true;
+    }
+
+    function renderSpatialPortalControls() {
+      const tournament = state.data && state.data.torneio || {};
+      const tournamentId = String(tournament.torneio_id || tournament.id || '');
+      const slug = String(tournament.slug || '');
+      const open = spatialPortalOpen();
+      const shareReady = tournament.spatial_portal_share_ready === true;
+      const currentUrl = state.spatialPortalTournamentId === tournamentId ? state.spatialPortalUrl : '';
+      const busy = state.spatialPortalBusy === true;
+      const status = $('spatialPortalStatus');
+      const toggle = $('spatialPortalToggleBtn');
+      const link = $('spatialTournamentLink');
+      const address = $('spatialTournamentLinkText');
+      const hint = $('spatialPortalHint');
+      const renew = $('spatialPortalRenewBtn');
+      const copy = document.querySelector('[data-copy-tournament-link="spatialTournamentLink"]');
+      if (!status || !toggle || !link || !address || !hint || !renew) return;
+
+      status.textContent = open ? 'Inscrições abertas' : 'Inscrições fechadas';
+      status.classList.toggle('open', open);
+      toggle.textContent = busy ? 'Aguarde…' : (open ? 'Fechar inscrições' : 'Abrir inscrições');
+      toggle.disabled = !slug || busy;
+      renew.disabled = !slug || busy;
+      if (copy) copy.disabled = !slug || busy;
+
+      link.hidden = !slug;
+      link.setAttribute('aria-disabled', String(!slug || busy));
+      link.href = currentUrl || '#';
+      address.textContent = !slug
+        ? 'Torneio sem endereço da Classe Espacial.'
+        : currentUrl
+          ? currentUrl
+          : shareReady
+            ? 'Link protegido pronto — clique em Copiar link ou Abrir Classe Espacial.'
+            : 'Clique em Copiar link ou Abrir Classe Espacial para preparar o acesso protegido.';
+      hint.textContent = !slug
+        ? 'Defina o endereço do torneio para liberar este recurso.'
+        : currentUrl
+          ? (open ? 'Acesso privado ativo. Envie somente este endereço completo.' : 'O link está pronto, mas novas inscrições estão fechadas.')
+          : shareReady
+            ? 'A chave está guardada com segurança e só é exibida quando você solicitar.'
+            : 'Na primeira solicitação será criada uma nova chave; qualquer link antigo deixará de funcionar.';
+    }
+
+    async function loadSpatialPortalShareLink(forceRotate) {
+      const tournament = state.data && state.data.torneio || {};
+      const tournamentId = String(tournament.torneio_id || tournament.id || state.selectedTournamentId || '');
+      if (!tournamentId || !tournament.slug) throw new Error('Defina o endereço do torneio antes de gerar este link.');
+      if (!forceRotate && state.spatialPortalTournamentId === tournamentId && state.spatialPortalUrl) {
+        return { url: state.spatialPortalUrl, rotated: false };
+      }
+
+      state.spatialPortalBusy = true;
+      renderSpatialPortalControls();
+      try {
+        const result = await apiPost({
+          action: forceRotate ? 'rotateSpatialPortalShareLink' : 'getSpatialPortalShareLink',
+          tournament_id: tournamentId
+        }, { returnData: true, silent: true });
+        const url = String(result && result.portal_url || '');
+        if (!url || url.indexOf('#chave=') === -1) throw new Error('O servidor não devolveu o link protegido completo.');
+        state.spatialPortalUrl = url;
+        state.spatialPortalTournamentId = String(result.tournament_id || tournamentId);
+        return { url: url, rotated: result.rotated === true };
+      } finally {
+        state.spatialPortalBusy = false;
+        renderSpatialPortalControls();
+      }
+    }
+
+    async function copySpatialPortalLink() {
+      try {
+        const result = await loadSpatialPortalShareLink(false);
+        let copied = false;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          try {
+            await navigator.clipboard.writeText(result.url);
+            copied = true;
+          } catch (error) {
+            copied = false;
+          }
+        }
+        if (!copied) window.prompt('Copie o link protegido:', result.url);
+        toast(result.rotated ? 'Novo link protegido criado.' : (copied ? 'Link protegido copiado.' : 'Link protegido pronto para copiar.'));
+      } catch (error) {
+        toast(error.message || 'Não foi possível obter o link protegido.');
+      }
+    }
+
+    async function openSpatialPortalLink(event) {
+      if (event) event.preventDefault();
+      if (state.spatialPortalBusy) return;
+      const popup = window.open('about:blank', '_blank');
+      if (popup) popup.opener = null;
+      try {
+        const result = await loadSpatialPortalShareLink(false);
+        if (popup && !popup.closed) {
+          popup.location.replace(result.url);
+          if (result.rotated) toast('Novo link protegido criado; o endereço anterior foi invalidado.');
+          return;
+        }
+        let copied = false;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          try {
+            await navigator.clipboard.writeText(result.url);
+            copied = true;
+          } catch (error) {
+            copied = false;
+          }
+        }
+        if (!copied) window.prompt('Copie o link protegido:', result.url);
+        toast(copied
+          ? 'O navegador bloqueou a nova aba. O link protegido foi copiado.'
+          : 'O navegador bloqueou a nova aba. Copie o link exibido.');
+      } catch (error) {
+        if (popup && !popup.closed) popup.close();
+        toast(error.message || 'Não foi possível abrir o link protegido.');
+      }
+    }
+
+    async function toggleSpatialPortalOpen() {
+      if (state.spatialPortalBusy) return;
+      const wasOpen = spatialPortalOpen();
+      if (wasOpen && !confirm('Fechar as inscrições separadas da Classe Espacial? O link continuará existindo, mas não aceitará novas inscrições.')) return;
+      state.spatialPortalBusy = true;
+      renderSpatialPortalControls();
+      try {
+        await apiPost({
+          action: 'setSpatialPortalOpen',
+          tournament_id: state.selectedTournamentId,
+          open: !wasOpen
+        }, { returnData: true, silent: true });
+        toast(wasOpen ? 'Inscrições da Classe Espacial fechadas.' : 'Inscrições da Classe Espacial abertas.');
+      } catch (error) {
+        toast(error.message || 'Não foi possível alterar as inscrições da Classe Espacial.');
+      } finally {
+        state.spatialPortalBusy = false;
+        renderSpatialPortalControls();
+      }
+    }
+
+    async function rotateSpatialPortalLink() {
+      if (state.spatialPortalBusy) return;
+      if (!confirm('Renovar o link privado da Classe Espacial? O endereço anterior deixará de funcionar imediatamente.')) return;
+      try {
+        await loadSpatialPortalShareLink(true);
+        toast('Novo link protegido gerado. O endereço anterior foi invalidado.');
+      } catch (error) {
+        toast(error.message || 'Não foi possível renovar o link protegido.');
       }
     }
 
     async function copyTournamentLink(linkId) {
+      if (linkId === 'spatialTournamentLink') return copySpatialPortalLink();
       const link = $(linkId);
       if (!link || link.hidden) return toast('Este torneio ainda não possui esse link.');
       const value = new URL(link.href, location.href).href;
@@ -23662,6 +23885,7 @@
             (cats || '<span class="mini-tag warn">sem classe</span>') +
             '<span class="mini-tag' + statusClass + '">' + escapeHtml(player.status || 'ATIVO') + '</span>' +
             (courtesy ? '<span class="mini-tag">CORTESIA</span>' : '') +
+            (player.tentativa_incompleta ? '<span class="mini-tag off">TENTATIVA INCOMPLETA</span>' : '') +
             (payment ? '<span class="mini-tag warn">' + escapeHtml(payment) + '</span>' : '') +
             (onlinePending ? '<span class="mini-tag warn">PAGAMENTO ONLINE · ' + escapeHtml(money(onlinePayment.valor)) + '</span>' : '') +
             (onlineReview ? '<span class="mini-tag warn">PAGAMENTO EM ANÁLISE · ' + escapeHtml(money(onlinePayment.valor)) + '</span>' : '') +
@@ -23680,9 +23904,35 @@
               ? '<button class="small-btn" type="button" data-tournament-payment-pix="' + escapeHtml(onlinePayment.id) + '">Copiar Pix</button>'
               : '') +
             (onlinePending && onlineExpiry ? '<small>Reserva até ' + escapeHtml(onlineExpiry) + '</small>' : '') +
+            (player.tentativa_incompleta
+              ? '<button class="danger-btn" type="button" data-delete-incomplete-player="' + escapeHtml(player.jogador_id) + '">Excluir tentativa</button>'
+              : '') +
             '<button class="small-btn" type="button" data-edit-player="' + escapeHtml(player.jogador_id) + '">Editar</button>' +
             '</div></div>';
         }).join('') || '<div class="empty">Nenhum jogador cadastrado.</div>';
+    }
+
+    async function deleteIncompleteTournamentPlayer(playerId) {
+      const player = state.data && state.data.jogadores.find(function (item) {
+        return String(item.jogador_id) === String(playerId);
+      });
+      if (!player || player.tentativa_incompleta !== true) {
+        return toast('Este jogador não é uma tentativa incompleta removível.');
+      }
+      if (!confirm(
+        'Excluir a tentativa incompleta de ' + (player.nome || 'este jogador') + '?\n\n' +
+        'Esta ação só será aceita se não existir inscrição, cobrança, chave ou outro vínculo protegido.'
+      )) return;
+      try {
+        await apiPost({
+          action: 'deleteIncompleteTournamentAthlete',
+          tournament_id: state.selectedTournamentId,
+          athlete_id: playerId
+        }, { returnData: true });
+        toast('Tentativa incompleta excluída. O CPF foi liberado para uma nova inscrição.');
+      } catch (error) {
+        toast(error.message || 'Não foi possível excluir esta tentativa.');
+      }
     }
 
     function tournamentHistoryDateParts(value) {
@@ -44747,6 +44997,9 @@
     document.querySelectorAll('[data-copy-tournament-link]').forEach(function (btn) {
       btn.addEventListener('click', function () { copyTournamentLink(btn.dataset.copyTournamentLink); });
     });
+    $('spatialTournamentLink').addEventListener('click', openSpatialPortalLink);
+    $('spatialPortalToggleBtn').addEventListener('click', toggleSpatialPortalOpen);
+    $('spatialPortalRenewBtn').addEventListener('click', rotateSpatialPortalLink);
     document.addEventListener('change', function (event) {
       const resultCheckbox = event.target.closest('[data-result-match]');
       if (resultCheckbox) {
@@ -44802,6 +45055,12 @@
       const editPlayerBtn = event.target.closest('[data-edit-player]');
       if (editPlayerBtn) {
         editPlayer(editPlayerBtn.dataset.editPlayer);
+        return;
+      }
+
+      const deleteIncompletePlayerBtn = event.target.closest('[data-delete-incomplete-player]');
+      if (deleteIncompletePlayerBtn) {
+        deleteIncompleteTournamentPlayer(deleteIncompletePlayerBtn.dataset.deleteIncompletePlayer);
         return;
       }
 

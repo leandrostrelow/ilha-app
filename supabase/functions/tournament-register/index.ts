@@ -2284,11 +2284,11 @@ async function loadSpatialTournament(supabase: DbClient, tournamentSlug: string)
 }
 
 function spatialTournamentIsOpen(tournament: JsonRecord) {
-  const now = Date.now();
-  const opensAt = tournament.registration_opens_at ? Date.parse(String(tournament.registration_opens_at)) : null;
-  const closesAt = tournament.registration_closes_at ? Date.parse(String(tournament.registration_closes_at)) : null;
-  return tournament.is_published === true && tournament.status === "REGISTRATION_OPEN" &&
-    tournament.registration_open === true && (!opensAt || now >= opensAt) && (!closesAt || now <= closesAt);
+  // The private add-on has its own explicit open/closed switch. It must remain
+  // usable after the main registration window closes, but never for a draft,
+  // finished or archived tournament.
+  return tournament.is_published === true &&
+    ["REGISTRATION_OPEN", "REGISTRATION_CLOSED", "IN_PROGRESS"].includes(String(tournament.status || ""));
 }
 
 async function consumeSpatialNetworkLimit(
@@ -3120,11 +3120,30 @@ Deno.serve(async (request) => {
 
     failureStage = "athlete_upsert";
     const sourceKey = await publicAthleteSourceKey(email, phone);
-    let { data: athlete, error: athleteError } = await supabase.from("tournament_athletes")
+    const sourceAthleteResult = await supabase.from("tournament_athletes")
       .select("*")
       .eq("source_key", sourceKey)
       .maybeSingle();
-    if (athleteError) throw athleteError;
+    if (sourceAthleteResult.error) throw sourceAthleteResult.error;
+    const cpfAthleteResult = submittedCpf
+      ? await supabase.from("tournament_athletes")
+        .select("*")
+        .eq("cpf", submittedCpf)
+        .maybeSingle()
+      : { data: null, error: null };
+    if (cpfAthleteResult.error) throw cpfAthleteResult.error;
+    const sourceAthlete = sourceAthleteResult.data as JsonRecord | null;
+    const cpfAthlete = cpfAthleteResult.data as JsonRecord | null;
+    if (sourceAthlete?.id && cpfAthlete?.id && sourceAthlete.id !== cpfAthlete.id) {
+      return json(request, {
+        error: "Este CPF está vinculado a um cadastro diferente do e-mail e telefone informados. Confira os dados ou fale com a organização.",
+      }, 409);
+    }
+    // CPF can identify an orphaned checkout even when the contact fingerprint
+    // changed. Existing registrations remain protected by the original source
+    // binding and the per-registration request/public tokens below.
+    let athlete = cpfAthlete || sourceAthlete;
+    const resolvedByCpfOnly = Boolean(cpfAthlete?.id && !sourceAthlete?.id);
     let registration: JsonRecord | null = null;
     let additionalRegistration: JsonRecord | null = null;
     let localPayment: JsonRecord | null = null;
@@ -3166,6 +3185,16 @@ Deno.serve(async (request) => {
       }
     }
 
+    // CPF can recover a checkout that expired before leaving a registration,
+    // but it is not an ownership token for an athlete that is already enrolled
+    // in another category. In that case the original contact/source binding (or
+    // the request/public token for this exact registration above) must match.
+    if (resolvedByCpfOnly && !registration && athleteHasAnyRegistration) {
+      return json(request, {
+        error: "Este CPF já possui uma inscrição com outros dados de contato. Repita os dados usados anteriormente ou fale com a organização.",
+      }, 409);
+    }
+
     const storedCpf = digits(athlete?.cpf);
     if (athlete && storedCpf && submittedCpf && storedCpf !== submittedCpf) {
       return json(request, { error: "Os dados não correspondem ao participante já cadastrado. Fale com a organização." }, 409);
@@ -3187,16 +3216,6 @@ Deno.serve(async (request) => {
         return json(request, { error: "Confirme o CPF já cadastrado ou fale com a organização." }, 409);
       }
     }
-    if (submittedCpf) {
-      const cpfLookup = await supabase.from("tournament_athletes")
-        .select("*")
-        .eq("cpf", submittedCpf)
-        .maybeSingle();
-      if (cpfLookup.error) throw cpfLookup.error;
-      if (cpfLookup.data && (!athlete || cpfLookup.data.id !== athlete.id)) {
-        return json(request, { error: "Este CPF já está vinculado a outro participante. Fale com a organização." }, 409);
-      }
-    }
     const effectiveCpf = participantType === "COURTESY" ? submittedCpf || storedCpf : submittedCpf;
     const athleteValues = {
       full_name: fullName,
@@ -3211,9 +3230,36 @@ Deno.serve(async (request) => {
       updated_at: new Date().toISOString(),
     };
     if (athlete) {
-      const updated = await supabase.from("tournament_athletes").update(athleteValues).eq("id", athlete.id).select("*").single();
-      if (updated.error) throw updated.error;
-      athlete = updated.data;
+      if (resolvedByCpfOnly && !registration) {
+        const claimed = await supabase.rpc("claim_incomplete_tournament_athlete", {
+          p_athlete_id: athlete.id,
+          p_cpf: effectiveCpf,
+          p_new_source_key: sourceKey,
+          p_full_name: fullName,
+          p_email: email,
+          p_phone: phone,
+          p_gender: gender,
+          p_city: city,
+        });
+        if (claimed.error?.code === "23505") {
+          return json(request, { error: "Já existe um cadastro com estes dados. Confira o CPF, o e-mail e o telefone." }, 409);
+        }
+        if (claimed.error) throw claimed.error;
+        const claimedAthlete = Array.isArray(claimed.data) ? claimed.data[0] : claimed.data;
+        if (!claimedAthlete?.id) {
+          return json(request, {
+            error: "Este CPF já possui um vínculo protegido. Repita os dados usados anteriormente ou fale com a organização.",
+          }, 409);
+        }
+        athlete = claimedAthlete as JsonRecord;
+      } else {
+        const updated = await supabase.from("tournament_athletes").update(athleteValues).eq("id", athlete.id).select("*").single();
+        if (updated.error?.code === "23505") {
+          return json(request, { error: "Já existe um cadastro com estes dados. Confira o CPF, o e-mail e o telefone." }, 409);
+        }
+        if (updated.error) throw updated.error;
+        athlete = updated.data;
+      }
     } else {
       const result = await supabase.from("tournament_athletes").insert(athleteValues).select("*").single();
       if (result.error?.code === "23505") {
@@ -3221,6 +3267,7 @@ Deno.serve(async (request) => {
       } else if (result.error) throw result.error;
       else athlete = result.data;
     }
+    if (!athlete) throw new Error("Não foi possível preparar o cadastro do atleta.");
 
     if (!registrationChecked) {
       failureStage = "registration_lookup";
@@ -3408,7 +3455,7 @@ Deno.serve(async (request) => {
     }
     if (!ownsPaymentCreation) {
       return json(request, {
-        error: "A cobrança desta inscrição ainda está sendo preparada. Tente novamente em alguns segundos.",
+        error: "A cobrança desta inscrição já está sendo preparada. Aguarde alguns instantes e atualize esta mesma tentativa; não faça outra inscrição.",
         registration: safeRegistration(registration),
         additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
         payment: safePayment(localPayment),
@@ -3422,7 +3469,7 @@ Deno.serve(async (request) => {
       const latest = await supabase.from("tournament_payments").select("*").eq("id", localPayment.id).single();
       if (latest.error) throw latest.error;
       return json(request, {
-        error: "A cobrança desta inscrição ainda está sendo preparada. Tente novamente em alguns segundos.",
+        error: "A cobrança desta inscrição já está sendo preparada. Aguarde alguns instantes e atualize esta mesma tentativa; não faça outra inscrição.",
         registration: safeRegistration(registration),
         additional_registration: additionalRegistration ? safeRegistration(additionalRegistration) : null,
         payment: safePayment(latest.data as JsonRecord),

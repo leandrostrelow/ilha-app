@@ -437,6 +437,10 @@
       const PAYMENT_PAID = new Set(['PAID','PAGO','RECEIVED','RECEBIDO']);
       const PAYMENT_PENDING = new Set(['CREATED','RECONCILING','PENDING','PENDENTE','FAILED']);
       const POLL_DELAYS = [5000, 8000, 12000, 20000, 30000];
+      const DEFAULT_REQUEST_TIMEOUT_MS = 18000;
+      // A primeira cobrança pode precisar criar o cliente e o Pix no Asaas em
+      // chamadas sequenciais. Damos margem sem alongar as consultas comuns.
+      const CHECKOUT_REQUEST_TIMEOUT_MS = 90000;
       const $ = (id) => document.getElementById(id);
       const clean = (value) => value === null || value === undefined ? '' : String(value).trim();
       const digitsOnly = (value) => clean(value).replace(/\D/g, '');
@@ -488,9 +492,12 @@
         return { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' };
       }
 
-      async function requestJson(url, options) {
+      async function requestJson(url, options, timeoutMs) {
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 18000);
+        const requestTimeoutMs = Number.isFinite(timeoutMs) && timeoutMs > 0
+          ? timeoutMs
+          : DEFAULT_REQUEST_TIMEOUT_MS;
+        const timer = setTimeout(() => controller.abort(), requestTimeoutMs);
         try {
           const response = await fetch(url, Object.assign({}, options || {}, { signal: controller.signal }));
           const raw = await response.text();
@@ -502,19 +509,24 @@
           }
           return data && typeof data === 'object' ? data : {};
         } catch (error) {
-          if (error && error.name === 'AbortError') throw new ApiError('A conexão demorou demais. Tente novamente.', 408, null);
+          if (error && error.name === 'AbortError') {
+            const message = requestTimeoutMs === CHECKOUT_REQUEST_TIMEOUT_MS
+              ? 'A preparação demorou mais que o esperado, mas pode continuar sendo processada. Tente novamente com os mesmos dados e não faça outra inscrição.'
+              : 'A conexão demorou demais. Tente novamente.';
+            throw new ApiError(message, 408, null);
+          }
           throw error;
         } finally {
           clearTimeout(timer);
         }
       }
 
-      function postAction(action, payload) {
+      function postAction(action, payload, timeoutMs) {
         return requestJson(SUPABASE_URL + '/functions/v1/' + REGISTRATION_FUNCTION, {
           method: 'POST',
           headers: headers(),
           body: JSON.stringify(Object.assign({ action, tournament_slug: state.slug }, payload || {})),
-        });
+        }, timeoutMs);
       }
 
       function formatCpf(value) {
@@ -801,7 +813,7 @@
             lookup_proof: candidate.proof,
             request_token: requestToken,
             terms_accepted: true,
-          });
+          }, CHECKOUT_REQUEST_TIMEOUT_MS);
           state.paymentFallback = { amount: candidate.amount, spatialClass: candidate.spatialClass };
           state.cpf = '';
           state.portalToken = '';
@@ -1055,7 +1067,11 @@
         $('retryPaymentButton').textContent = 'Retomando cobrança…';
         setPaymentFeedback('Retomando a cobrança existente, sem criar outra inscrição…', false);
         try {
-          const result = await postAction('retry_payment', { tracking_token: state.trackingToken });
+          const result = await postAction(
+            'retry_payment',
+            { tracking_token: state.trackingToken },
+            CHECKOUT_REQUEST_TIMEOUT_MS
+          );
           renderPayment(result || {}, true);
           const updatedPayment = state.paymentResult && state.paymentResult.payment || {};
           const hasPayablePix = Boolean(
