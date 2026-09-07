@@ -843,6 +843,10 @@
       install: 'Instalar app'
     };
     let turnstileScriptPromise = null;
+    const DEFAULT_REQUEST_TIMEOUT_MS = 18000;
+    // New Asaas customers can require several sequential provider calls before
+    // the Pix is returned. Keep the browser deadline above that I/O budget.
+    const CHECKOUT_REQUEST_TIMEOUT_MS = 90000;
 
     const $ = (id) => document.getElementById(id);
     const list = (value) => Array.isArray(value) ? value : [];
@@ -895,9 +899,12 @@
     function publicUrl(slug) { return '/torneios/' + encodeURIComponent(slug); }
     function headers() { return { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }; }
 
-    async function requestJson(url, options) {
+    async function requestJson(url, options, timeoutMs) {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 18000);
+      const requestTimeoutMs = Number.isFinite(timeoutMs) && timeoutMs > 0
+        ? timeoutMs
+        : DEFAULT_REQUEST_TIMEOUT_MS;
+      const timer = setTimeout(() => controller.abort(), requestTimeoutMs);
       try {
         const response = await fetch(url, Object.assign({}, options || {}, { signal: controller.signal }));
         const raw = await response.text();
@@ -909,7 +916,12 @@
         }
         return data;
       } catch (error) {
-        if (error && error.name === 'AbortError') throw new Error('A conexão demorou demais. Tente novamente.');
+        if (error && error.name === 'AbortError') {
+          if (requestTimeoutMs === CHECKOUT_REQUEST_TIMEOUT_MS) {
+            throw new Error('A preparação demorou mais que o esperado, mas sua inscrição pode continuar sendo processada. Tente novamente com os mesmos dados e não faça outra inscrição.');
+          }
+          throw new Error('A conexão demorou demais. Tente novamente.');
+        }
         throw error;
       } finally { clearTimeout(timer); }
     }
@@ -2395,11 +2407,17 @@
     async function submitRegistrationPayload(payload, functionName, idleLabel, trackingKey) {
       state.submitting = true;
       $('submitRegistrationBtn').disabled = true;
-      $('submitRegistrationBtn').textContent = 'Criando inscrição…';
+      $('submitRegistrationBtn').textContent = state.inviteMode || isInternalRegistration()
+        ? 'Confirmando inscrição…'
+        : 'Preparando inscrição e Pix…';
       $('registrationError').hidden = true;
       let succeeded = false;
       try {
-        const result = await requestJson(SUPABASE_URL + '/functions/v1/' + functionName, {method:'POST',headers:headers(),body:JSON.stringify(payload)});
+        const result = await requestJson(
+          SUPABASE_URL + '/functions/v1/' + functionName,
+          {method:'POST',headers:headers(),body:JSON.stringify(payload)},
+          CHECKOUT_REQUEST_TIMEOUT_MS
+        );
         if (trackingKey && result && result.tracking_token) {
           try { localStorage.setItem(trackingKey,result.tracking_token); } catch (error) {}
         }
@@ -2510,7 +2528,7 @@
         retryButton.disabled = true;
         retryButton.textContent = 'Retomando a cobrança…';
       }
-      setPaymentStatusFeedback('Retomando a cobrança já reservada, sem criar outra inscrição…',false);
+      setPaymentStatusFeedback('Retomando a cobrança já reservada. Aguarde até um minuto e não faça outra inscrição.',false);
       try {
         const retryResult = await requestJson(SUPABASE_URL + '/functions/v1/' + REGISTRATION_FUNCTION, {
           method: 'POST',
@@ -2520,7 +2538,7 @@
             tournament_slug: state.slug,
             tracking_token: state.activeTrackingToken,
           }),
-        });
+        }, CHECKOUT_REQUEST_TIMEOUT_MS);
         const merged = mergePaymentStatusResult(state.lastRegistrationResult,retryResult);
         renderRegistrationSuccess(merged,true);
       } catch (error) {
