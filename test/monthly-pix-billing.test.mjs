@@ -136,6 +136,15 @@ test('customer mensal reutiliza CPF/CNPJ exato sem criar duplicata', () => {
     /async function syncAsaasCustomerContact\([\s\S]*?\n}\n\nasync function ensureAsaasCustomer/
   )?.[0] || '';
   assert.doesNotMatch(customerSync, /externalReference,/);
+  assert.match(customerSync, /try \{[\s\S]*asaasRequest[\s\S]*updatedCpf[\s\S]*catch \(error\)[\s\S]*return false/);
+  assert.match(customerSync, /catch \(error\)[\s\S]*error instanceof ProviderInvariantError\) throw error[\s\S]*return false/);
+  assert.doesNotMatch(customerSync, /throw new AmbiguousProviderResultError/);
+  const recoveredCustomerTail = functionBody.slice(functionBody.indexOf('const customerId = text(customer.id, 120)'));
+  assert.ok(
+    recoveredCustomerTail.indexOf('save_app_payment_customer') <
+      recoveredCustomerTail.indexOf('if (reusedCustomer)'),
+    'o ID remoto recuperado precisa ser salvo antes do PUT best-effort'
+  );
 });
 
 test('retry e reconciliação periódica consultam a cobrança existente sem abrir outra', () => {

@@ -177,7 +177,7 @@ insert into public.app_clients (
 
 insert into public.app_family_members (
   id, billing_responsible_id, member_client_id, full_name, relationship,
-  contact_responsible_name, monthly_amount, status, reviewed_at,
+  cpf, contact_responsible_name, monthly_amount, status, reviewed_at,
   responsible_confirmation_required, responsible_confirmed_at
 ) values
   (
@@ -186,6 +186,7 @@ insert into public.app_family_members (
     '71000000-0000-4000-8000-000000000003'::uuid,
     'Dependente Familiar Sintético',
     'filho',
+    '12345678909',
     'Responsável Familiar Sintético',
     50,
     'ATIVO',
@@ -199,6 +200,7 @@ insert into public.app_family_members (
     null,
     'Membro Sem Valor Sintético',
     'filho',
+    '39053344705',
     'Responsável Familiar Sintético',
     null,
     'ATIVO',

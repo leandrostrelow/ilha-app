@@ -366,25 +366,41 @@ async function syncAsaasCustomerContact(
   cpf: string,
   environment: string,
 ) {
-  const updated = await asaasRequest(
-    `/customers/${encodeURIComponent(customerId)}`,
-    {
-      method: "PUT",
-      body: JSON.stringify({
-        name: text(client.full_name, 120),
-        cpfCnpj: cpf,
-        email: text(client.email, 160) || undefined,
-        mobilePhone: text(client.phone, 20).replace(/\D/g, "") || undefined,
-        // Production delivery remains enabled at Asaas. We intentionally do
-        // not overwrite externalReference on customers discovered by CPF.
-        notificationDisabled: environment !== "PRODUCTION",
-      }),
-    },
-  );
-  if (text(updated.id, 120) !== customerId) {
-    throw new ProviderInvariantError(
-      "O Asaas não confirmou a atualização do customer reutilizado.",
+  try {
+    const updated = await asaasRequest(
+      `/customers/${encodeURIComponent(customerId)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify({
+          name: text(client.full_name, 120),
+          cpfCnpj: cpf,
+          email: text(client.email, 160) || undefined,
+          mobilePhone: text(client.phone, 20).replace(/\D/g, "") || undefined,
+          // Production delivery remains enabled at Asaas. We intentionally do
+          // not overwrite externalReference on customers discovered by CPF.
+          notificationDisabled: environment !== "PRODUCTION",
+        }),
+      },
     );
+    const updatedCpf = text(updated.cpfCnpj, 20).replace(/\D/g, "");
+    if (
+      text(updated.id, 120) !== customerId ||
+      (updatedCpf && updatedCpf !== cpf)
+    ) {
+      throw new ProviderInvariantError(
+        "O Asaas não confirmou a atualização do customer reutilizado.",
+      );
+    }
+    return true;
+  } catch (error) {
+    if (error instanceof ProviderInvariantError) throw error;
+    // Contact synchronization is idempotent and best-effort. It must never be
+    // mistaken for an ambiguous payment creation: the in-app invoice and its
+    // own notification remain the delivery fallback.
+    console.warn("monthly billing customer contact sync deferred", {
+      error_type: error instanceof Error ? error.name : "UnknownError",
+    });
+    return false;
   }
 }
 
@@ -488,10 +504,8 @@ async function ensureAsaasCustomer(
       "O Asaas não retornou o cliente da cobrança.",
     );
   }
-  if (reusedCustomer) {
-    await syncAsaasCustomerContact(customerId, client, cpf, environment);
-  }
-
+  // Persist a recovered remote ID before any best-effort contact PUT. If the
+  // PUT times out, the next run can still reuse this exact customer safely.
   const saved = await adminClient.rpc("save_app_payment_customer", {
     p_client_id: clientId,
     p_provider_environment: environment,
@@ -501,6 +515,9 @@ async function ensureAsaasCustomer(
     p_resolution_token: resolutionToken,
   });
   if (saved.error) throw saved.error;
+  if (reusedCustomer) {
+    await syncAsaasCustomerContact(customerId, client, cpf, environment);
+  }
   return customerId;
 }
 

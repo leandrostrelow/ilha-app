@@ -142,6 +142,12 @@ O cron varre cobranças a cada 15 minutos. Para reduzir chamadas ao Asaas, cada
 Pix em estado normal fica elegível a uma nova consulta no máximo uma vez por
 hora; `RECONCILING` usa a janela curta de recuperação definida no backend.
 
+Ao reutilizar um customer, a função tenta sincronizar nome e contatos por
+`PUT /customers/{id}`. Essa atualização é idempotente e best-effort: sua falha
+não é tratada como criação ambígua de pagamento. O vínculo recuperado é salvo
+antes do PUT, e a fatura/notificação dentro do Ilha Play permanece como canal
+de entrega de contingência.
+
 O navegador só pode chamar ações administrativas com um JWT válido e a
 permissão `finance.write`. O cron usa o cabeçalho
 `x-monthly-billing-token`; o valor é gerado e guardado somente no Vault, e o
