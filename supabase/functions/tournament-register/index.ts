@@ -1631,7 +1631,7 @@ async function resumeTrackedSpatialAddon(
     return { spatial: true, payment: localPayment, error: "A Classe Espacial desta cobrança não foi encontrada." };
   }
 
-  const addonMap = record(tournamentSettings(checkout.tournament).spatial_addons);
+  const addonMap = privateSpatialAddonMap(checkout.tournament);
   const eligiblePrimaryCodes = Object.entries(addonMap)
     .filter(([, value]) => text(record(value).category_code, 40) === spatialCode)
     .map(([code]) => code);
@@ -2267,6 +2267,15 @@ function tournamentSettings(tournament: JsonRecord) {
     : {};
 }
 
+function privateSpatialAddonMap(tournament: JsonRecord) {
+  const settings = tournamentSettings(tournament);
+  const portal = record(settings.spatial_addon_portal);
+  return {
+    ...record(portal.eligibility_overrides),
+    ...record(settings.spatial_addons),
+  };
+}
+
 async function spatialPortalAuthorized(tournament: JsonRecord, rawToken: string) {
   if (!isUuid(rawToken)) return false;
   const portal = record(tournamentSettings(tournament).spatial_addon_portal);
@@ -2387,7 +2396,7 @@ async function loadSpatialAddonCandidates(
   const categoryById = new Map(categories.map((category) => [String(category.id), category]));
   const categoryByCode = new Map(categories.map((category) => [String(category.code), category]));
   const settings = tournamentSettings(tournament);
-  const addonMap = record(settings.spatial_addons);
+  const addonMap = privateSpatialAddonMap(tournament);
   const configuredFee = Number(settings.spatial_addon_fee);
   const candidates: SpatialAddonCandidate[] = [];
 

@@ -3154,7 +3154,7 @@ test('retomada individual reutiliza a cobrança reservada mesmo após o fechamen
     );
   }
   assert.match(spatialResume, /externalReference !== `tournament-spatial-addon:\$\{registration\.id\}`/);
-  assert.match(spatialResume, /tournamentSettings\(checkout\.tournament\)\.spatial_addons/);
+  assert.match(spatialResume, /privateSpatialAddonMap\(checkout\.tournament\)/);
   assert.match(spatialResume, /\.eq\("athlete_id", registration\.athlete_id\)[\s\S]*\.eq\("status", "CONFIRMED"\)[\s\S]*\.in\("payment_status", \["PAID", "NOT_REQUIRED"\]\)/);
   assert.match(spatialResume, /resume_private_tournament_spatial_addon_checkout/);
   assert.doesNotMatch(retryHandler, /registration_open|registration_closes_at|registration_opens_at/);

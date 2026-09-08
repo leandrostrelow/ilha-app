@@ -2,17 +2,27 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
+import vm from 'node:vm';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
 const readProjectFile = (file) => readFile(path.join(projectRoot, file), 'utf8');
 
-const [registerSource, adminSource, publicPageSource, spatialPageSource, adminPageSource, migrationSource] = await Promise.all([
+const [
+  registerSource,
+  adminSource,
+  publicPageSource,
+  spatialPageSource,
+  adminPageSource,
+  migrationSource,
+  privateM1MigrationSource,
+] = await Promise.all([
   readProjectFile('supabase/functions/tournament-register/index.ts'),
   readProjectFile('supabase/functions/tournament-admin-api/index.ts'),
   readProjectFile('torneios/index.html'),
   readProjectFile('inscricoes/espacial/index.html'),
   readProjectFile('adm/index.html'),
   readProjectFile('supabase/migrations/20260907015950_release_expired_tournament_athlete_cpf.sql'),
+  readProjectFile('supabase/migrations/20260908125449_allow_m1_private_spatial_a.sql'),
 ]);
 
 function sourceSection(source, start, end) {
@@ -127,6 +137,73 @@ test('Classe Espacial tem link recuperável, rotação e abertura independente',
   assert.match(portalGuard, /IN_PROGRESS/);
   assert.doesNotMatch(portalGuard, /registration_open|registration_opens_at|registration_closes_at/);
   assert.match(registerSource, /portal\.enabled !== true[\s\S]*token_hash/);
+});
+
+test('portal privado aceita a rota 1ª Masculina para Espacial A sem ampliar a inscrição pública', () => {
+  const privateAddonMap = sourceSection(
+    registerSource,
+    'function privateSpatialAddonMap(',
+    '\n\nasync function spatialPortalAuthorized(',
+  );
+  assert.match(privateAddonMap, /spatial_addon_portal/);
+  assert.match(privateAddonMap, /eligibility_overrides/);
+  assert.match(privateAddonMap, /spatial_addons/);
+  assert.ok(
+    privateAddonMap.indexOf('portal.eligibility_overrides') < privateAddonMap.indexOf('settings.spatial_addons'),
+    'a regra pública deve prevalecer se uma classe aparecer nos dois mapas',
+  );
+  assert.ok(
+    (registerSource.match(/privateSpatialAddonMap\(/g) || []).length >= 3,
+    'lookup, checkout e retomada por tracking devem compartilhar a mesma regra privada',
+  );
+
+  assert.match(privateM1MigrationSource, /spatial_addon_portal,eligibility_overrides/);
+  assert.match(privateM1MigrationSource, /'M1'[\s\S]*'category_code', 'ESP-A-M'[\s\S]*'fee', 80/);
+  assert.match(privateM1MigrationSource, /spatial_addons,M1[\s\S]*is not null[\s\S]*oferta pública/);
+  assert.match(privateM1MigrationSource, /app\.private_spatial_addon_claim/);
+  assert.match(privateM1MigrationSource, /current_setting\('app\.private_spatial_addon_claim', true\)/);
+  assert.match(privateM1MigrationSource, /primary_registration\.status = 'CONFIRMED'/);
+  assert.match(privateM1MigrationSource, /primary_registration\.payment_status in \('PAID', 'NOT_REQUIRED'\)/);
+  assert.match(privateM1MigrationSource, /new\.total_amount = 80/);
+  assert.match(privateM1MigrationSource, /lower\(wrapper_definition\) like '%spatial_addon_portal%'/);
+
+  const valueFrom = sourceSection(
+    spatialPageSource,
+    'function valueFrom(',
+    '\n      function normalizeCandidates(',
+  );
+  const normalizeCandidates = sourceSection(
+    spatialPageSource,
+    'function normalizeCandidates(',
+    '\n      function unavailableCandidatesMessage(',
+  );
+  const sandbox = {};
+  vm.runInNewContext(`
+    const clean = (value) => value === null || value === undefined ? '' : String(value).trim();
+    ${valueFrom}
+    ${normalizeCandidates}
+    result = normalizeCandidates({ candidates: [{
+      candidate_proof: 'prova-assinada-pelo-servidor',
+      state: 'ELIGIBLE',
+      athlete_name: 'Atleta de teste',
+      current_class: '1ª Classe Masculina',
+      spatial_class: 'Espacial A Masculino 🚀',
+      amount: 80,
+    }] });
+  `, sandbox);
+
+  assert.equal(sandbox.result.length, 1);
+  assert.equal(sandbox.result[0].currentClass, '1ª Classe Masculina');
+  assert.equal(sandbox.result[0].spatialClass, 'Espacial A Masculino 🚀');
+  assert.equal(sandbox.result[0].amount, 80);
+
+  const publicSpatialMap = sourceSection(
+    publicPageSource,
+    'function spatialAddonMap(',
+    '\n    function spatialAddonCodes(',
+  );
+  assert.match(publicSpatialMap, /tournamentSettings\(\)\.spatial_addons/);
+  assert.doesNotMatch(publicSpatialMap, /spatial_addon_portal|eligibility_overrides/);
 });
 
 test('checkout tem margem de rede sem alongar chamadas comuns', () => {
