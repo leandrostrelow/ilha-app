@@ -3933,6 +3933,24 @@
       line-height: 1.4;
     }
 
+    .spatial-courtesy-recipient {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #ffffff;
+    }
+
+    .spatial-courtesy-recipient label { margin-bottom: 7px; }
+    .spatial-courtesy-recipient select { font-weight: 800; }
+    .spatial-courtesy-recipient small {
+      display: block;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
     .tournament-link-card .actions .danger-link-btn {
       color: #a52e2e;
       border-color: #efc9c9;
@@ -22486,6 +22504,28 @@
           </article>
 
           <article class="tournament-link-card">
+            <span class="tournament-link-kind private">Uso único · isento</span>
+            <div>
+              <h3>Gerar convite isento — Classe Espacial</h3>
+              <p>Crie um acesso individual para quem já está inscrito e receberá a Classe Espacial sem cobrança.</p>
+            </div>
+            <div class="spatial-courtesy-recipient">
+              <label for="spatialCourtesyInviteRegistration">Pessoa e classe</label>
+              <select id="spatialCourtesyInviteRegistration">
+                <option value="">Selecione uma inscrição confirmada</option>
+              </select>
+              <small id="spatialCourtesyInviteEligibilityHint">Carregando inscrições elegíveis…</small>
+            </div>
+            <div class="tournament-link-address" id="spatialCourtesyInviteLinkText" aria-live="polite">Clique em Gerar convite para criar um endereço protegido.</div>
+            <p class="spatial-portal-hint" id="spatialCourtesyInviteHint">Cada link confirma uma única inscrição e deixa de funcionar depois do uso.</p>
+            <div class="actions">
+              <button class="primary-btn" id="spatialCourtesyInviteGenerateBtn" type="button">Gerar convite</button>
+              <button class="ghost-btn" id="spatialCourtesyInviteCopyBtn" type="button" disabled>Copiar link</button>
+              <button class="ghost-btn" id="spatialCourtesyInviteWhatsappBtn" type="button" disabled>WhatsApp</button>
+            </div>
+          </article>
+
+          <article class="tournament-link-card">
             <span class="tournament-link-kind">Público</span>
             <div>
               <h3>Página do torneio</h3>
@@ -23169,6 +23209,10 @@
       spatialPortalUrl: '',
       spatialPortalTournamentId: '',
       spatialPortalBusy: false,
+      spatialCourtesyInviteUrl: '',
+      spatialCourtesyInviteTournamentId: '',
+      spatialCourtesyInvitePrimaryRegistrationId: '',
+      spatialCourtesyInviteBusy: false,
       tournamentDraftDirty: false
     };
 
@@ -23621,6 +23665,11 @@
         state.spatialPortalUrl = '';
         state.spatialPortalTournamentId = '';
       }
+      if (state.spatialCourtesyInviteTournamentId && state.spatialCourtesyInviteTournamentId !== picker.value) {
+        state.spatialCourtesyInviteUrl = '';
+        state.spatialCourtesyInviteTournamentId = '';
+        state.spatialCourtesyInvitePrimaryRegistrationId = '';
+      }
       state.selectedTournamentId = picker.value;
       const slug = state.data.torneio.slug || '';
       const publicLink = $('publicTournamentLink');
@@ -23638,6 +23687,7 @@
         $('registrationTournamentLinkText').textContent = slug ? new URL(registrationLink.href, location.href).href : 'Torneio sem endereço de inscrição.';
       }
       renderSpatialPortalControls();
+      renderSpatialCourtesyInviteControls();
     }
 
     function spatialPortalOpen() {
@@ -23796,6 +23846,210 @@
       } catch (error) {
         toast(error.message || 'Não foi possível renovar o link protegido.');
       }
+    }
+
+    function spatialCourtesyAddonRules() {
+      const tournament = state.data && state.data.torneio || {};
+      const settings = tournament.settings && typeof tournament.settings === 'object' ? tournament.settings : {};
+      const paidPortal = settings.spatial_addon_portal && typeof settings.spatial_addon_portal === 'object'
+        ? settings.spatial_addon_portal
+        : {};
+      const privateOverrides = paidPortal.eligibility_overrides && typeof paidPortal.eligibility_overrides === 'object'
+        ? paidPortal.eligibility_overrides
+        : {};
+      const publicRules = settings.spatial_addons && typeof settings.spatial_addons === 'object'
+        ? settings.spatial_addons
+        : {};
+      return Object.assign({}, privateOverrides, publicRules);
+    }
+
+    function spatialCourtesyEligibleRegistrations() {
+      if (!state.data) return [];
+      const registrations = Array.isArray(state.data.inscricoes) ? state.data.inscricoes : [];
+      const categories = Array.isArray(state.data.categorias) ? state.data.categorias : [];
+      const athletes = new Map((state.data.jogadores || []).map(function (athlete) {
+        return [String(athlete.jogador_id), athlete];
+      }));
+      const categoriesById = new Map(categories.map(function (category) {
+        return [String(category.categoria_id), category];
+      }));
+      const categoriesByCode = new Map(categories.map(function (category) {
+        return [String(category.codigo || category.code || ''), category];
+      }));
+      const rules = spatialCourtesyAddonRules();
+      const occupiedByCategory = new Map();
+      registrations.forEach(function (registration) {
+        const status = String(registration.status || '').toUpperCase();
+        const paymentStatus = String(registration.status_pagamento || '').toUpperCase();
+        if (!['PENDING', 'CONFIRMED'].includes(status) || ['CANCELADO', 'CANCELLED', 'ESTORNADO', 'REFUNDED'].includes(paymentStatus)) return;
+        const categoryId = String(registration.categoria_id || '');
+        occupiedByCategory.set(categoryId, (occupiedByCategory.get(categoryId) || 0) + 1);
+      });
+
+      return registrations.map(function (registration) {
+        const status = String(registration.status || '').toUpperCase();
+        const paymentStatus = String(registration.status_pagamento || '').toUpperCase();
+        if (status !== 'CONFIRMED' || !['PAGO', 'PAID', 'ISENTO', 'NOT_REQUIRED'].includes(paymentStatus)) return null;
+        const athlete = athletes.get(String(registration.jogador_id || ''));
+        if (!athlete || athlete.active !== true || String(athlete.database_status || '').toUpperCase() !== 'ACTIVE') return null;
+        const primaryCategory = categoriesById.get(String(registration.categoria_id || ''));
+        if (!primaryCategory) return null;
+        const primaryCode = String(primaryCategory.codigo || primaryCategory.code || '');
+        const rule = rules[primaryCode] && typeof rules[primaryCode] === 'object' ? rules[primaryCode] : {};
+        const spatialCategory = categoriesByCode.get(String(rule.category_code || ''));
+        if (!spatialCategory || String(spatialCategory.status || 'ATIVA').toUpperCase() === 'INATIVA' || spatialCategory.inscricoes_abertas === false) return null;
+        const alreadyRegistered = registrations.some(function (item) {
+          return String(item.jogador_id || '') === String(registration.jogador_id || '') &&
+            String(item.categoria_id || '') === String(spatialCategory.categoria_id || '');
+        });
+        if (alreadyRegistered) return null;
+        const maxValue = spatialCategory.max_inscritos;
+        const maxEntries = maxValue === '' || maxValue === null || maxValue === undefined ? null : Number(maxValue);
+        if (Number.isFinite(maxEntries) && (occupiedByCategory.get(String(spatialCategory.categoria_id)) || 0) >= maxEntries) return null;
+        return {
+          primaryRegistrationId: String(registration.inscricao_id || registration.id || ''),
+          athleteName: String(athlete.nome || athlete.full_name || registration.nome_publico || 'Atleta'),
+          currentClass: String(primaryCategory.nome || primaryCategory.name || primaryCode),
+          spatialClass: String(spatialCategory.nome || spatialCategory.name || rule.category_code || 'Classe Espacial')
+        };
+      }).filter(function (candidate) {
+        return candidate && candidate.primaryRegistrationId;
+      }).sort(function (left, right) {
+        return left.athleteName.localeCompare(right.athleteName, 'pt-BR');
+      });
+    }
+
+    function renderSpatialCourtesyInviteOptions() {
+      const select = $('spatialCourtesyInviteRegistration');
+      const hint = $('spatialCourtesyInviteEligibilityHint');
+      if (!select || !hint) return [];
+      const previous = select.value;
+      const candidates = spatialCourtesyEligibleRegistrations();
+      select.innerHTML = '<option value="">Selecione uma inscrição confirmada</option>' + candidates.map(function (candidate) {
+        return '<option value="' + escapeHtml(candidate.primaryRegistrationId) + '">' +
+          escapeHtml(candidate.athleteName + ' · ' + candidate.currentClass + ' → ' + candidate.spatialClass) + '</option>';
+      }).join('');
+      select.value = candidates.some(function (candidate) { return candidate.primaryRegistrationId === previous; }) ? previous : '';
+      hint.textContent = candidates.length
+        ? candidates.length + ' inscrição(ões) confirmada(s) e elegível(is).'
+        : 'Nenhuma inscrição elegível: confirme pagamento, regra da classe e disponibilidade de vagas.';
+      return candidates;
+    }
+
+    function renderSpatialCourtesyInviteControls() {
+      const tournament = state.data && state.data.torneio || {};
+      const tournamentId = String(tournament.torneio_id || tournament.id || '');
+      const slug = String(tournament.slug || '');
+      const candidates = renderSpatialCourtesyInviteOptions();
+      const registrationId = String($('spatialCourtesyInviteRegistration').value || '');
+      const currentUrl = state.spatialCourtesyInviteTournamentId === tournamentId &&
+        state.spatialCourtesyInvitePrimaryRegistrationId === registrationId
+        ? state.spatialCourtesyInviteUrl
+        : '';
+      const busy = state.spatialCourtesyInviteBusy === true;
+      const address = $('spatialCourtesyInviteLinkText');
+      const hint = $('spatialCourtesyInviteHint');
+      const generate = $('spatialCourtesyInviteGenerateBtn');
+      const copy = $('spatialCourtesyInviteCopyBtn');
+      const whatsapp = $('spatialCourtesyInviteWhatsappBtn');
+      if (!address || !hint || !generate || !copy || !whatsapp) return;
+
+      generate.textContent = busy ? 'Gerando…' : (currentUrl ? 'Gerar outro' : 'Gerar convite');
+      $('spatialCourtesyInviteRegistration').disabled = !slug || !candidates.length || busy;
+      generate.disabled = !slug || !registrationId || busy;
+      copy.disabled = !currentUrl || busy;
+      whatsapp.disabled = !currentUrl || busy;
+      if (!slug) address.textContent = 'Torneio sem endereço do convite isento.';
+      else if (!candidates.length) address.textContent = 'Nenhuma inscrição confirmada está elegível neste momento.';
+      else if (!registrationId) address.textContent = 'Selecione a pessoa e a classe antes de gerar o convite.';
+      else address.textContent = currentUrl || 'Clique em Gerar convite para criar um endereço protegido.';
+      hint.textContent = !slug
+        ? 'Defina o endereço do torneio para liberar este recurso.'
+        : currentUrl
+          ? 'Pronto para enviar. Este link confirma uma única inscrição e deixa de funcionar depois do uso.'
+          : 'Cada link confirma uma única inscrição e deixa de funcionar depois do uso.';
+    }
+
+    async function createSpatialCourtesyInvite() {
+      const tournament = state.data && state.data.torneio || {};
+      const tournamentId = String(tournament.torneio_id || tournament.id || state.selectedTournamentId || '');
+      const primaryRegistrationId = String($('spatialCourtesyInviteRegistration').value || '');
+      if (!tournamentId || !tournament.slug) throw new Error('Defina o endereço do torneio antes de gerar este convite.');
+      if (!primaryRegistrationId) throw new Error('Selecione a pessoa que receberá o convite.');
+      state.spatialCourtesyInviteBusy = true;
+      renderSpatialCourtesyInviteControls();
+      try {
+        const result = await apiPost({
+          action: 'createSpatialCourtesyInvite',
+          tournament_id: tournamentId,
+          primary_registration_id: primaryRegistrationId
+        }, { returnData: true, silent: true });
+        const url = String(result && (result.invite_url || result.portal_url) || '');
+        if (!url || url.indexOf('/espacial-convite#chave=') === -1) throw new Error('O servidor não devolveu o convite protegido completo.');
+        state.spatialCourtesyInviteUrl = url;
+        state.spatialCourtesyInviteTournamentId = String(result.tournament_id || tournamentId);
+        state.spatialCourtesyInvitePrimaryRegistrationId = primaryRegistrationId;
+        toast('Novo convite isento criado.');
+        return url;
+      } finally {
+        state.spatialCourtesyInviteBusy = false;
+        renderSpatialCourtesyInviteControls();
+      }
+    }
+
+    async function generateSpatialCourtesyInvite() {
+      if (!confirm(
+        'Gerar um novo convite? Se já houver um link ativo para esta pessoa, ele deixará de funcionar.'
+      )) return;
+      try {
+        await createSpatialCourtesyInvite();
+      } catch (error) {
+        toast(error.message || 'Não foi possível criar o convite isento.');
+      }
+    }
+
+    function currentSpatialCourtesyInviteUrl() {
+      const tournament = state.data && state.data.torneio || {};
+      const tournamentId = String(tournament.torneio_id || tournament.id || '');
+      const primaryRegistrationId = String($('spatialCourtesyInviteRegistration').value || '');
+      return state.spatialCourtesyInviteTournamentId === tournamentId &&
+        state.spatialCourtesyInvitePrimaryRegistrationId === primaryRegistrationId
+        ? state.spatialCourtesyInviteUrl
+        : '';
+    }
+
+    function selectSpatialCourtesyInviteRecipient() {
+      if (state.spatialCourtesyInvitePrimaryRegistrationId !== String($('spatialCourtesyInviteRegistration').value || '')) {
+        state.spatialCourtesyInviteUrl = '';
+        state.spatialCourtesyInviteTournamentId = '';
+        state.spatialCourtesyInvitePrimaryRegistrationId = '';
+      }
+      renderSpatialCourtesyInviteControls();
+    }
+
+    async function copySpatialCourtesyInvite() {
+      const url = currentSpatialCourtesyInviteUrl();
+      if (!url) return toast('Gere um convite antes de copiar.');
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(url);
+          toast('Convite isento copiado.');
+        } else {
+          window.prompt('Copie o convite protegido:', url);
+        }
+      } catch (_error) {
+        window.prompt('Copie o convite protegido:', url);
+      }
+    }
+
+    function shareSpatialCourtesyInviteWhatsapp() {
+      const url = currentSpatialCourtesyInviteUrl();
+      if (!url) return toast('Gere um convite antes de enviar.');
+      const tournament = state.data && state.data.torneio || {};
+      const tournamentName = String(tournament.nome || tournament.name || 'Ilha Open');
+      const message = 'Olá! Você recebeu um convite isento para adicionar a Classe Espacial no ' + tournamentName + '.\n\n' +
+        'Abra o link abaixo, informe o CPF usado na inscrição principal e confirme sua vaga. Nenhuma cobrança será gerada. Este convite é de uso único.\n\n' + url;
+      window.open('https://wa.me/?text=' + encodeURIComponent(message), '_blank', 'noopener');
     }
 
     async function copyTournamentLink(linkId) {
@@ -45163,6 +45417,10 @@
     $('spatialTournamentLink').addEventListener('click', openSpatialPortalLink);
     $('spatialPortalToggleBtn').addEventListener('click', toggleSpatialPortalOpen);
     $('spatialPortalRenewBtn').addEventListener('click', rotateSpatialPortalLink);
+    $('spatialCourtesyInviteRegistration').addEventListener('change', selectSpatialCourtesyInviteRecipient);
+    $('spatialCourtesyInviteGenerateBtn').addEventListener('click', generateSpatialCourtesyInvite);
+    $('spatialCourtesyInviteCopyBtn').addEventListener('click', copySpatialCourtesyInvite);
+    $('spatialCourtesyInviteWhatsappBtn').addEventListener('click', shareSpatialCourtesyInviteWhatsapp);
     document.addEventListener('change', function (event) {
       const resultCheckbox = event.target.closest('[data-result-match]');
       if (resultCheckbox) {

@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(144);
+select plan(157);
 
 select has_table(
   'public',
@@ -3066,6 +3066,67 @@ select ok(
   'a consulta de CPF da Espacial é executável somente pelo backend confiável'
 );
 
+select has_table(
+  'public',
+  'tournament_spatial_courtesy_invites',
+  'a capability de cortesia Espacial possui tabela própria'
+);
+
+select ok(
+  (
+    select relation.relrowsecurity and relation.relforcerowsecurity
+    from pg_catalog.pg_class as relation
+    where relation.oid = 'public.tournament_spatial_courtesy_invites'::regclass
+  ),
+  'a tabela de convites Espaciais isentos força RLS'
+);
+
+select ok(
+  not has_table_privilege('anon', 'public.tournament_spatial_courtesy_invites', 'SELECT')
+    and not has_table_privilege('anon', 'public.tournament_spatial_courtesy_invites', 'INSERT')
+    and not has_table_privilege('authenticated', 'public.tournament_spatial_courtesy_invites', 'SELECT')
+    and not has_table_privilege('authenticated', 'public.tournament_spatial_courtesy_invites', 'INSERT')
+    and has_table_privilege('service_role', 'public.tournament_spatial_courtesy_invites', 'SELECT')
+    and has_table_privilege('service_role', 'public.tournament_spatial_courtesy_invites', 'INSERT')
+    and has_table_privilege('service_role', 'public.tournament_spatial_courtesy_invites', 'UPDATE')
+    and has_table_privilege('service_role', 'public.tournament_spatial_courtesy_invites', 'DELETE'),
+  'somente o backend confiável acessa os convites Espaciais isentos'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.create_private_tournament_spatial_courtesy_invite(uuid,uuid,text,text,uuid,timestamptz)',
+    'EXECUTE'
+  )
+    and has_function_privilege(
+      'service_role',
+      'public.lookup_private_tournament_spatial_courtesy(uuid,text,text)',
+      'EXECUTE'
+    )
+    and has_function_privilege(
+      'service_role',
+      'public.claim_private_tournament_spatial_courtesy(uuid,uuid,text,text,boolean)',
+      'EXECUTE'
+    )
+    and not has_function_privilege(
+      'anon',
+      'public.create_private_tournament_spatial_courtesy_invite(uuid,uuid,text,text,uuid,timestamptz)',
+      'EXECUTE'
+    )
+    and not has_function_privilege(
+      'authenticated',
+      'public.lookup_private_tournament_spatial_courtesy(uuid,text,text)',
+      'EXECUTE'
+    )
+    and not has_function_privilege(
+      'anon',
+      'public.claim_private_tournament_spatial_courtesy(uuid,uuid,text,text,boolean)',
+      'EXECUTE'
+    ),
+  'as três RPCs da cortesia Espacial são exclusivas do service_role'
+);
+
 insert into public.tournaments (
   id,
   name,
@@ -3089,7 +3150,13 @@ values (
   jsonb_build_object(
     'registration_limits', jsonb_build_object('default_max_categories_per_athlete', 1),
     'spatial_addon_fee', 80,
-    'spatial_addon_portal', jsonb_build_object('enabled', true, 'fee', 80),
+    'spatial_addon_portal', jsonb_build_object(
+      'enabled', true,
+      'fee', 80,
+      'eligibility_overrides', jsonb_build_object(
+        'M1', jsonb_build_object('category_code', 'ESP-A-M', 'fee', 80)
+      )
+    ),
     'spatial_addons', jsonb_build_object(
       'M2', jsonb_build_object('category_code', 'ESP-A-M', 'fee', 80),
       'M5', jsonb_build_object('category_code', 'ESP-B-M', 'fee', 80)
@@ -3132,6 +3199,18 @@ values
     true,
     8,
     2,
+    '{}'::jsonb
+  ),
+  (
+    '24000000-0000-4000-8000-000000000023'::uuid,
+    '24000000-0000-4000-8000-000000000001'::uuid,
+    'M1',
+    '1ª Classe Masculina',
+    'MALE',
+    100,
+    true,
+    8,
+    5,
     '{}'::jsonb
   ),
   (
@@ -3211,6 +3290,29 @@ values
     true
   );
 
+insert into public.tournament_athletes (
+  id,
+  source_key,
+  full_name,
+  email,
+  phone,
+  cpf,
+  gender,
+  status,
+  active
+)
+values (
+  '24000000-0000-4000-8000-000000000024'::uuid,
+  'ci-private-spatial-courtesy-m1',
+  'Atleta Cortesia Espacial M1 Sintético',
+  'ci-spatial-courtesy-m1@tests.invalid',
+  '27999999990',
+  '12345678909',
+  'MALE',
+  'ACTIVE',
+  true
+);
+
 insert into public.tournament_registrations (
   id,
   tournament_id,
@@ -3264,6 +3366,33 @@ values
     'ADMIN',
     now()
   );
+
+insert into public.tournament_registrations (
+  id,
+  tournament_id,
+  category_id,
+  athlete_id,
+  public_name,
+  status,
+  payment_status,
+  total_amount,
+  paid_amount,
+  source,
+  confirmed_at
+)
+values (
+  '24000000-0000-4000-8000-000000000025'::uuid,
+  '24000000-0000-4000-8000-000000000001'::uuid,
+  '24000000-0000-4000-8000-000000000023'::uuid,
+  '24000000-0000-4000-8000-000000000024'::uuid,
+  'Atleta Cortesia Espacial M1 Sintético',
+  'CONFIRMED',
+  'PAID',
+  100,
+  100,
+  'ADMIN',
+  now()
+);
 
 insert into public.tournament_registrations (
   id,
@@ -3852,6 +3981,229 @@ select ok(
         and payment.amount = 100
     ),
   'reconciliar o pagamento standalone confirma só a Espacial e preserva a principal'
+);
+
+-- O segundo link privado concede uma única cortesia Espacial, vinculada no
+-- servidor a uma inscrição principal já confirmada. O fluxo abaixo usa apenas
+-- IDs, CPF e contatos sintéticos e confirma a transição ACTIVE -> USED sem Pix.
+create temporary table ci_spatial_courtesy_created_result on commit drop as
+select public.create_private_tournament_spatial_courtesy_invite(
+  '24000000-0000-4000-8000-000000000001'::uuid,
+  '24000000-0000-4000-8000-000000000025'::uuid,
+  repeat('c', 64),
+  'AAAAAAAAAAAAAAAA.' || repeat('B', 60),
+  '10000000-0000-4000-8000-000000000001'::uuid,
+  null
+) as result;
+
+select ok(
+  (
+    select result #>> '{invitation,status}' = 'ACTIVE'
+      and (result ->> 'athlete_id')::uuid = '24000000-0000-4000-8000-000000000024'::uuid
+      and (result ->> 'primary_registration_id')::uuid = '24000000-0000-4000-8000-000000000025'::uuid
+      and result #>> '{primary_category,code}' = 'M1'
+      and result #>> '{target_category,code}' = 'ESP-A-M'
+    from ci_spatial_courtesy_created_result
+  )
+    and exists (
+      select 1
+      from public.tournament_spatial_courtesy_invites as invitation
+      where invitation.id = (
+          select (result #>> '{invitation,id}')::uuid
+          from ci_spatial_courtesy_created_result
+        )
+        and invitation.tournament_id = '24000000-0000-4000-8000-000000000001'::uuid
+        and invitation.primary_registration_id = '24000000-0000-4000-8000-000000000025'::uuid
+        and invitation.athlete_id = '24000000-0000-4000-8000-000000000024'::uuid
+        and invitation.target_category_id = '24000000-0000-4000-8000-000000000004'::uuid
+        and invitation.status = 'ACTIVE'
+        and invitation.used_registration_id is null
+    ),
+  'o ADM cria uma capability ACTIVE vinculada ao atleta M1 e à Espacial A'
+);
+
+select throws_ok(
+  $sql$
+    select public.lookup_private_tournament_spatial_courtesy(
+      '24000000-0000-4000-8000-000000000001'::uuid,
+      repeat('c', 64),
+      '00000000191'
+    )
+  $sql$,
+  'P0001',
+  'Este convite ou CPF não é válido.',
+  'um CPF diferente do destinatário recebe o mesmo erro genérico de capability inválida'
+);
+
+update public.tournaments
+set settings = jsonb_set(settings, '{spatial_addon_portal,enabled}', 'false'::jsonb, true)
+where id = '24000000-0000-4000-8000-000000000001'::uuid;
+
+create temporary table ci_spatial_courtesy_lookup_result on commit drop as
+select public.lookup_private_tournament_spatial_courtesy(
+  '24000000-0000-4000-8000-000000000001'::uuid,
+  repeat('c', 64),
+  '123.456.789-09'
+) as result;
+
+select ok(
+  (
+    select result #>> '{invitation,status}' = 'ACTIVE'
+      and (result #>> '{athlete,id}')::uuid = '24000000-0000-4000-8000-000000000024'::uuid
+      and (result #>> '{primary_registration,id}')::uuid = '24000000-0000-4000-8000-000000000025'::uuid
+      and result #>> '{primary_category,code}' = 'M1'
+      and result #>> '{target_category,code}' = 'ESP-A-M'
+      and (result ->> 'amount')::numeric = 0
+      and result ->> 'state' = 'ELIGIBLE'
+    from ci_spatial_courtesy_lookup_result
+  )
+    and (
+      select (settings #>> '{spatial_addon_portal,enabled}')::boolean is false
+      from public.tournaments
+      where id = '24000000-0000-4000-8000-000000000001'::uuid
+    ),
+  'a cortesia bound continua elegível sem expor busca ampla e independe do toggle do portal pago'
+);
+
+update public.tournament_athletes
+set active = false
+where id = '24000000-0000-4000-8000-000000000024'::uuid;
+
+select throws_ok(
+  $sql$
+    select public.claim_private_tournament_spatial_courtesy(
+      '24000000-0000-4000-8000-000000000001'::uuid,
+      '24000000-0000-4000-8000-000000000026'::uuid,
+      repeat('c', 64),
+      '12345678909',
+      true
+    )
+  $sql$,
+  'P0001',
+  'Este convite ou CPF não é válido.',
+  'o claim revalida o atleta ACTIVE depois do lookup e falha fechado se ele for desativado'
+);
+
+update public.tournament_athletes
+set active = true
+where id = '24000000-0000-4000-8000-000000000024'::uuid;
+
+create temporary table ci_spatial_courtesy_claimed_result on commit drop as
+select public.claim_private_tournament_spatial_courtesy(
+  '24000000-0000-4000-8000-000000000001'::uuid,
+  '24000000-0000-4000-8000-000000000026'::uuid,
+  repeat('c', 64),
+  '12345678909',
+  true
+) as result;
+
+select ok(
+  (
+    select not (result ->> 'idempotent')::boolean
+      and (result ->> 'courtesy')::boolean
+      and (result ->> 'courtesy_applied')::boolean
+      and (result ->> 'primary_registration_id')::uuid = '24000000-0000-4000-8000-000000000025'::uuid
+      and result #>> '{category,code}' = 'ESP-A-M'
+      and result #>> '{invitation,status}' = 'USED'
+    from ci_spatial_courtesy_claimed_result
+  ),
+  'o claim confirma a Espacial A isenta e devolve o vínculo explícito à inscrição principal'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.tournament_registrations as registration
+    where registration.id = (
+        select (result #>> '{registration,id}')::uuid
+        from ci_spatial_courtesy_claimed_result
+      )
+      and registration.tournament_id = '24000000-0000-4000-8000-000000000001'::uuid
+      and registration.athlete_id = '24000000-0000-4000-8000-000000000024'::uuid
+      and registration.category_id = '24000000-0000-4000-8000-000000000004'::uuid
+      and registration.request_token = '24000000-0000-4000-8000-000000000026'::uuid
+      and registration.status = 'CONFIRMED'
+      and registration.payment_status = 'NOT_REQUIRED'
+      and registration.total_amount = 0
+      and registration.paid_amount = 0
+      and registration.source = 'PUBLIC'
+      and registration.parent_registration_id is null
+      and registration.registration_group_id is null
+      and registration.registration_order_id is null
+      and registration.terms_accepted_at is not null
+      and registration.confirmed_at is not null
+  )
+    and not exists (
+      select 1
+      from public.tournament_payments as payment
+      where payment.registration_id = (
+        select (result #>> '{registration,id}')::uuid
+        from ci_spatial_courtesy_claimed_result
+      )
+    ),
+  'a nova categoria usa o mesmo athlete_id, é NOT_REQUIRED e não cria pagamento ou Pix'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.tournament_spatial_courtesy_invites as invitation
+    where invitation.id = (
+        select (result #>> '{invitation,id}')::uuid
+        from ci_spatial_courtesy_claimed_result
+      )
+      and invitation.status = 'USED'
+      and invitation.used_at is not null
+      and invitation.used_registration_id = (
+        select (result #>> '{registration,id}')::uuid
+        from ci_spatial_courtesy_claimed_result
+      )
+  ),
+  'a capability muda atomicamente de ACTIVE para USED e aponta para a inscrição criada'
+);
+
+create temporary table ci_spatial_courtesy_replayed_result on commit drop as
+select public.claim_private_tournament_spatial_courtesy(
+  '24000000-0000-4000-8000-000000000001'::uuid,
+  '24000000-0000-4000-8000-000000000026'::uuid,
+  repeat('c', 64),
+  '12345678909',
+  true
+) as result;
+
+select ok(
+  (
+    select (result ->> 'idempotent')::boolean
+      and result #>> '{registration,id}' = (
+        select result #>> '{registration,id}'
+        from ci_spatial_courtesy_claimed_result
+      )
+      and (result ->> 'primary_registration_id')::uuid = '24000000-0000-4000-8000-000000000025'::uuid
+    from ci_spatial_courtesy_replayed_result
+  )
+    and (
+      select count(*)
+      from public.tournament_registrations as registration
+      where registration.tournament_id = '24000000-0000-4000-8000-000000000001'::uuid
+        and registration.athlete_id = '24000000-0000-4000-8000-000000000024'::uuid
+        and registration.category_id = '24000000-0000-4000-8000-000000000004'::uuid
+    ) = 1,
+  'repetir exatamente o mesmo request devolve a mesma inscrição sem duplicá-la'
+);
+
+select throws_ok(
+  $sql$
+    select public.claim_private_tournament_spatial_courtesy(
+      '24000000-0000-4000-8000-000000000001'::uuid,
+      '24000000-0000-4000-8000-000000000027'::uuid,
+      repeat('c', 64),
+      '12345678909',
+      true
+    )
+  $sql$,
+  'P0001',
+  'Este convite isento já foi utilizado.',
+  'um request diferente não consegue reutilizar a capability já consumida'
 );
 
 select * from finish();

@@ -256,6 +256,69 @@ async function verifySpatialCandidateProof(
   return parsed;
 }
 
+type SpatialCourtesyProof = {
+  v: 1;
+  s: string;
+  i: string;
+  r: string;
+  x: string;
+  c: string;
+  t: string;
+  e: number;
+};
+
+async function createSpatialCourtesyProof(
+  config: PublicRegistrationSecurityConfig,
+  tournamentSlug: string,
+  inviteToken: string,
+  cpf: string,
+  inviteId: string,
+  primaryRegistrationId: string,
+  targetCategoryId: string,
+) {
+  const proof: SpatialCourtesyProof = {
+    v: 1,
+    s: tournamentSlug,
+    i: inviteId,
+    r: primaryRegistrationId,
+    x: targetCategoryId,
+    c: await hmacSha256(config.rateLimitSalt, `spatial-courtesy-proof-cpf:${cpf}`),
+    t: await hmacSha256(config.rateLimitSalt, `spatial-courtesy-proof-token:${inviteToken}`),
+    e: Date.now() + 15 * 60 * 1000,
+  };
+  const encoded = base64UrlEncode(JSON.stringify(proof));
+  const signature = await hmacSha256(config.rateLimitSalt, `spatial-courtesy-proof:${encoded}`);
+  return `${encoded}.${signature}`;
+}
+
+async function verifySpatialCourtesyProof(
+  config: PublicRegistrationSecurityConfig,
+  proofValue: string,
+  tournamentSlug: string,
+  inviteToken: string,
+  cpf: string,
+) {
+  const [encoded, signature, extra] = proofValue.split(".");
+  if (!encoded || !signature || extra || !/^[A-Za-z0-9_-]+$/.test(encoded) || !/^[0-9a-f]{64}$/.test(signature)) {
+    return null;
+  }
+  const expected = await hmacSha256(config.rateLimitSalt, `spatial-courtesy-proof:${encoded}`);
+  if (!secureStringEquals(signature, expected)) return null;
+  let parsed: SpatialCourtesyProof;
+  try {
+    parsed = JSON.parse(base64UrlDecode(encoded)) as SpatialCourtesyProof;
+  } catch (_error) {
+    return null;
+  }
+  const expectedCpf = await hmacSha256(config.rateLimitSalt, `spatial-courtesy-proof-cpf:${cpf}`);
+  const expectedToken = await hmacSha256(config.rateLimitSalt, `spatial-courtesy-proof-token:${inviteToken}`);
+  if (parsed.v !== 1 || parsed.s !== tournamentSlug || !isUuid(parsed.i) || !isUuid(parsed.r) || !isUuid(parsed.x) ||
+    !/^[0-9a-f]{64}$/.test(parsed.c) || !secureStringEquals(parsed.c, expectedCpf) ||
+    !/^[0-9a-f]{64}$/.test(parsed.t) || !secureStringEquals(parsed.t, expectedToken) ||
+    !Number.isFinite(parsed.e) || parsed.e < Date.now() || parsed.e > Date.now() + 16 * 60 * 1000) return null;
+  return parsed;
+}
+
 async function verifyTurnstile(
   request: Request,
   token: string,
@@ -2813,6 +2876,195 @@ async function handleSpatialCheckout(
   return json(request, responseBody(localPayment, deferredPixRepairResponse(localPayment)), deferredPix ? 202 : 201);
 }
 
+async function handleSpatialCourtesyLookup(
+  request: Request,
+  payload: JsonRecord,
+  config: PublicRegistrationSecurityConfig,
+) {
+  const tournamentSlug = text(payload.tournament_slug, 100).toLowerCase();
+  const inviteToken = text(payload.portal_token || payload.invite_token, 80);
+  const cpf = digits(payload.cpf);
+  const captchaToken = text(payload.captcha_token, 2048);
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tournamentSlug) || !isUuid(inviteToken)) {
+    return json(request, { error: "Este convite ou CPF não é válido." }, 403);
+  }
+  if (!isValidCpf(cpf)) return json(request, { error: "Informe um CPF válido." }, 400);
+  if (!captchaToken) return json(request, { error: "Confirme que você não é um robô." }, 400);
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  const supabaseKey = serviceRoleKey();
+  if (!supabaseUrl || !supabaseKey) throw new Error("Configuração do Supabase ausente.");
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const networkLimit = await consumeSpatialNetworkLimit(request, supabase, config, "courtesy-lookup");
+  if (!networkLimit.allowed) {
+    return json(request, { error: "Muitas tentativas. Aguarde um pouco e tente novamente." }, 429, {
+      "Retry-After": String(networkLimit.retryAfter),
+    });
+  }
+  let captchaAccepted = false;
+  try {
+    captchaAccepted = await verifyTurnstile(request, captchaToken, config);
+  } catch (_error) {
+    return json(request, { error: "Não foi possível validar a proteção anti-robô agora. Tente novamente." }, 503);
+  }
+  if (!captchaAccepted) {
+    return json(request, { error: "A validação anti-robô expirou ou não foi aceita. Tente novamente." }, 400);
+  }
+
+  const identityLimit = await consumeSpatialIdentityLimit(supabase, config, "courtesy-lookup", inviteToken, cpf);
+  if (!identityLimit.allowed) {
+    return json(request, { error: "Muitas tentativas para este convite. Aguarde um pouco e tente novamente." }, 429, {
+      "Retry-After": String(identityLimit.retryAfter),
+    });
+  }
+  const tournament = await loadSpatialTournament(supabase, tournamentSlug);
+  if (!tournament || tournament.is_published !== true) {
+    return json(request, { error: "Este convite ou CPF não é válido." }, 403);
+  }
+
+  const lookup = await supabase.rpc("lookup_private_tournament_spatial_courtesy", {
+    p_tournament_id: tournament.id,
+    p_invite_token_hash: await sha256Hex(inviteToken),
+    p_cpf: cpf,
+  });
+  if (lookup.error) {
+    const code = String(lookup.error.code || "");
+    const message = String(lookup.error.message || "");
+    if (code === "P0001" && message === "Este convite ou CPF não é válido.") {
+      return json(request, { error: message }, 403);
+    }
+    if (["P0001", "P0002", "42501"].includes(code)) {
+      return json(request, { error: message || "Este convite não está disponível." }, 409);
+    }
+    throw lookup.error;
+  }
+
+  const candidate = record(lookup.data);
+  const invitation = record(candidate.invitation);
+  const athlete = record(candidate.athlete);
+  const primaryRegistration = record(candidate.primary_registration);
+  const primaryCategory = record(candidate.primary_category);
+  const targetCategory = record(candidate.target_category);
+  if (!isUuid(String(invitation.id || "")) || !isUuid(String(primaryRegistration.id || "")) ||
+    !isUuid(String(targetCategory.id || "")) || !text(athlete.full_name, 120)) {
+    throw new Error("A consulta do convite isento retornou dados incompletos.");
+  }
+  const candidateProof = await createSpatialCourtesyProof(
+    config,
+    tournamentSlug,
+    inviteToken,
+    cpf,
+    String(invitation.id),
+    String(primaryRegistration.id),
+    String(targetCategory.id),
+  );
+  return json(request, {
+    tournament_name: tournament.name,
+    invitation: { status: "ACTIVE", expires_at: invitation.expires_at || null },
+    candidates: [{
+      athlete_name: athlete.full_name,
+      current_class: primaryCategory.name,
+      spatial_class: targetCategory.name,
+      amount: 0,
+      state: "ELIGIBLE",
+      candidate_proof: candidateProof,
+    }],
+  });
+}
+
+async function handleSpatialCourtesyClaim(
+  request: Request,
+  payload: JsonRecord,
+  config: PublicRegistrationSecurityConfig,
+) {
+  const tournamentSlug = text(payload.tournament_slug, 100).toLowerCase();
+  const inviteToken = text(payload.portal_token || payload.invite_token, 80);
+  const cpf = digits(payload.cpf);
+  const candidateProof = text(payload.candidate_proof, 2048);
+  const requestToken = text(payload.request_token, 80);
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(tournamentSlug) || !isUuid(inviteToken)) {
+    return json(request, { error: "Este convite ou CPF não é válido." }, 403);
+  }
+  if (!isValidCpf(cpf) || !isUuid(requestToken) || !candidateProof || payload.terms_accepted !== true) {
+    return json(request, { error: "Confirme os dados antes de concluir a inscrição isenta." }, 400);
+  }
+  const verifiedProof = await verifySpatialCourtesyProof(
+    config,
+    candidateProof,
+    tournamentSlug,
+    inviteToken,
+    cpf,
+  );
+  if (!verifiedProof) {
+    return json(request, { error: "Sua confirmação expirou. Consulte o CPF novamente." }, 403);
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  const supabaseKey = serviceRoleKey();
+  if (!supabaseUrl || !supabaseKey) throw new Error("Configuração do Supabase ausente.");
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const networkLimit = await consumeSpatialNetworkLimit(request, supabase, config, "courtesy-claim");
+  if (!networkLimit.allowed) {
+    return json(request, { error: "Muitas tentativas. Aguarde um pouco e tente novamente." }, 429, {
+      "Retry-After": String(networkLimit.retryAfter),
+    });
+  }
+  const identityLimit = await consumeSpatialIdentityLimit(supabase, config, "courtesy-claim", inviteToken, cpf);
+  if (!identityLimit.allowed) {
+    return json(request, { error: "Muitas tentativas para este convite. Aguarde um pouco e tente novamente." }, 429, {
+      "Retry-After": String(identityLimit.retryAfter),
+    });
+  }
+  const tournament = await loadSpatialTournament(supabase, tournamentSlug);
+  if (!tournament || tournament.is_published !== true) {
+    return json(request, { error: "Este convite ou CPF não é válido." }, 403);
+  }
+
+  const claim = await supabase.rpc("claim_private_tournament_spatial_courtesy", {
+    p_tournament_id: tournament.id,
+    p_request_token: requestToken,
+    p_invite_token_hash: await sha256Hex(inviteToken),
+    p_cpf: cpf,
+    p_terms_accepted: true,
+  });
+  if (claim.error) {
+    const code = String(claim.error.code || "");
+    const message = String(claim.error.message || "");
+    if (code === "P0001" && message === "Este convite ou CPF não é válido.") {
+      return json(request, { error: message }, 403);
+    }
+    if (["P0001", "P0002", "42501"].includes(code)) {
+      return json(request, { error: message || "Este convite não está disponível." }, 409);
+    }
+    throw claim.error;
+  }
+  const outcome = record(claim.data);
+  const invitation = record(outcome.invitation);
+  const registration = record(outcome.registration);
+  const category = record(outcome.category);
+  if (String(invitation.id || "") !== verifiedProof.i ||
+    String(outcome.primary_registration_id || "") !== verifiedProof.r ||
+    String(registration.category_id || "") !== verifiedProof.x ||
+    !registration.id || !category.id) {
+    throw new Error("A confirmação do convite isento retornou dados divergentes.");
+  }
+  const response = {
+    registration: safeRegistration(registration),
+    category: { id: category.id, code: category.code, name: category.name },
+    athlete_name: registration.public_name,
+    spatial_class: category.name,
+    courtesy: true,
+    invitation_status: "USED",
+    idempotent: outcome.idempotent === true,
+  };
+  return json(request, response, outcome.idempotent === true ? 200 : 201);
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(request) });
   const securityConfig = publicRegistrationSecurityConfig();
@@ -2896,6 +3148,14 @@ Deno.serve(async (request) => {
     }
 
     const action = text(payload.action, 40).toLowerCase();
+    if (action === "spatial_courtesy_lookup") {
+      failureStage = "spatial_courtesy_lookup";
+      return await handleSpatialCourtesyLookup(request, payload, securityConfig);
+    }
+    if (action === "spatial_courtesy_claim") {
+      failureStage = "spatial_courtesy_claim";
+      return await handleSpatialCourtesyClaim(request, payload, securityConfig);
+    }
     if (action === "spatial_lookup") {
       failureStage = "spatial_lookup";
       return await handleSpatialLookup(request, payload, securityConfig);

@@ -331,9 +331,9 @@
   <main class="page">
     <section class="hero" aria-labelledby="pageTitle">
       <div class="hero-copy">
-        <p class="eyebrow">Ilha Open · inscrição adicional</p>
+        <p class="eyebrow" id="heroEyebrow">Ilha Open · inscrição adicional</p>
         <h1 id="pageTitle">Entre também na Classe Espacial 🚀</h1>
-        <p>Localize a inscrição já confirmada, confira a classe disponível para você e gere um novo Pix de R$ 80,00.</p>
+        <p id="heroCopy">Localize a inscrição já confirmada, confira a classe disponível para você e gere um novo Pix de R$ 80,00.</p>
       </div>
       <div class="hero-mark" aria-hidden="true">🎾</div>
     </section>
@@ -342,7 +342,7 @@
       <nav class="steps" aria-label="Etapas da inscrição adicional">
         <div class="step active" data-step-indicator="1"><span class="step-number">1</span><span><strong>Identificação</strong><small>Localize a inscrição</small></span></div>
         <div class="step" data-step-indicator="2"><span class="step-number">2</span><span><strong>Confirmação</strong><small>Escolha o atleta</small></span></div>
-        <div class="step" data-step-indicator="3"><span class="step-number">3</span><span><strong>Pagamento</strong><small>Conclua pelo Pix</small></span></div>
+        <div class="step" data-step-indicator="3"><span class="step-number">3</span><span><strong id="finalStepTitle">Pagamento</strong><small id="finalStepCopy">Conclua pelo Pix</small></span></div>
       </nav>
 
       <section class="card" aria-live="polite">
@@ -367,7 +367,7 @@
             </div>
             <div class="button-row"><button class="button lime" id="lookupButton" type="submit" disabled>Localizar minha inscrição</button></div>
           </form>
-          <aside class="notice"><span aria-hidden="true">🛡️</span><span><strong>Privacidade:</strong> os dados são usados somente para localizar a inscrição do torneio e, após sua confirmação, gerar o Pix adicional. <a id="privacyLink" target="_blank" rel="noopener">Fale com a organização sobre seus dados.</a></span></aside>
+          <aside class="notice"><span aria-hidden="true">🛡️</span><span><strong>Privacidade:</strong> <span id="privacyPurpose">os dados são usados somente para localizar a inscrição do torneio e, após sua confirmação, gerar o Pix adicional.</span> <a id="privacyLink" target="_blank" rel="noopener">Fale com a organização sobre seus dados.</a></span></aside>
         </section>
 
         <section id="candidateStep" hidden>
@@ -380,15 +380,15 @@
             <div class="selection-summary" id="selectionSummary" hidden>
               <div class="summary-item"><span>Classe atual</span><strong id="currentClassSummary"></strong></div>
               <div class="summary-item"><span>Inscrição adicional</span><strong id="spatialClassSummary"></strong></div>
-              <div class="summary-item price"><span>Novo Pix</span><strong id="amountSummary">R$ 80,00</strong></div>
+              <div class="summary-item price"><span id="amountSummaryLabel">Novo Pix</span><strong id="amountSummary">R$ 80,00</strong></div>
             </div>
-            <label class="consent"><input id="checkoutConsent" type="checkbox" required /><span>Confirmo que escolhi o atleta correto e autorizo a geração de um novo Pix exclusivo para a Classe Espacial.</span></label>
+            <label class="consent"><input id="checkoutConsent" type="checkbox" required /><span id="checkoutConsentCopy">Confirmo que escolhi o atleta correto e autorizo a geração de um novo Pix exclusivo para a Classe Espacial.</span></label>
             <div class="button-row">
               <button class="button" id="backToLookupButton" type="button">Voltar</button>
               <button class="button lime" id="checkoutButton" type="submit" disabled>Gerar Pix de R$ 80,00</button>
             </div>
           </form>
-          <aside class="notice"><span aria-hidden="true">⚠️</span><span>A inscrição principal não será alterada. A vaga na Classe Espacial só será confirmada após a baixa automática deste novo pagamento.</span></aside>
+          <aside class="notice"><span aria-hidden="true">⚠️</span><span id="candidateNoticeCopy">A inscrição principal não será alterada. A vaga na Classe Espacial só será confirmada após a baixa automática deste novo pagamento.</span></aside>
         </section>
 
         <section id="paymentStep" hidden>
@@ -447,6 +447,7 @@
 
       const state = {
         slug: routeSlug(),
+        courtesyMode: routePortalKind() === 'espacial-convite',
         portalToken: readAndScrubPortalToken(),
         cpf: '',
         candidates: [],
@@ -477,8 +478,37 @@
       function routeSlug() {
         const parts = location.pathname.split('/').filter(Boolean);
         const index = parts.indexOf('inscricoes');
-        const slug = index >= 0 && parts[index + 2] === 'espacial' ? decodeURIComponent(parts[index + 1] || '') : '';
+        const portalKind = index >= 0 ? clean(parts[index + 2]) : '';
+        const slug = ['espacial', 'espacial-convite'].includes(portalKind) ? decodeURIComponent(parts[index + 1] || '') : '';
         return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) ? slug : '';
+      }
+
+      function routePortalKind() {
+        const parts = location.pathname.split('/').filter(Boolean);
+        const index = parts.indexOf('inscricoes');
+        return index >= 0 ? clean(parts[index + 2]) : '';
+      }
+
+      function checkoutButtonLabel(candidate) {
+        return state.courtesyMode
+          ? 'Confirmar inscrição isenta'
+          : 'Gerar Pix de ' + money(candidate && candidate.amount);
+      }
+
+      function configurePortalMode() {
+        if (!state.courtesyMode) return;
+        document.title = 'Convite isento · Classe Espacial | Ilha Open';
+        $('heroEyebrow').textContent = 'Ilha Open · convite privado';
+        $('pageTitle').textContent = 'Convite isento para a Classe Espacial';
+        $('heroCopy').textContent = 'Localize sua inscrição já confirmada, confira a Classe Espacial disponível e use este convite único sem cobrança.';
+        $('finalStepTitle').textContent = 'Conclusão';
+        $('finalStepCopy').textContent = 'Confirme sua vaga';
+        $('privacyPurpose').textContent = 'os dados são usados somente para localizar a inscrição do torneio e confirmar este convite isento.';
+        $('amountSummaryLabel').textContent = 'Cobrança';
+        $('amountSummary').textContent = 'Sem cobrança';
+        $('checkoutConsentCopy').textContent = 'Confirmo que escolhi o atleta correto e autorizo a inscrição isenta na Classe Espacial.';
+        $('checkoutButton').textContent = 'Confirmar inscrição isenta';
+        $('candidateNoticeCopy').textContent = 'A inscrição principal não será alterada e nenhuma cobrança será gerada. Este convite confirma apenas a Classe Espacial indicada e deixa de funcionar depois do uso.';
       }
 
       function readAndScrubPortalToken() {
@@ -695,6 +725,8 @@
         $('candidateTitle').textContent = state.candidates.length > 1 ? 'Escolha quem vai jogar' : 'Classe Espacial disponível';
         $('candidateIntro').textContent = state.candidates.length > 1
           ? 'Este CPF é responsável por mais de um atleta elegível. Selecione uma inscrição para continuar.'
+          : state.courtesyMode
+          ? 'Encontramos a inscrição principal confirmada. Confira os dados antes de aceitar o convite isento.'
           : 'Encontramos a inscrição principal confirmada. Confira os dados antes de gerar o novo Pix.';
 
         state.candidates.forEach((candidate, index) => {
@@ -727,7 +759,7 @@
           copy.append(name, route);
           const price = document.createElement('strong');
           price.className = 'candidate-price';
-          price.textContent = money(candidate.amount);
+          price.textContent = state.courtesyMode ? 'Isento' : money(candidate.amount);
           body.append(copy, price);
           label.append(input, body);
           $('candidateList').append(label);
@@ -751,8 +783,8 @@
         if (!candidate) return;
         $('currentClassSummary').textContent = candidate.currentClass;
         $('spatialClassSummary').textContent = candidate.spatialClass;
-        $('amountSummary').textContent = money(candidate.amount);
-        $('checkoutButton').textContent = 'Gerar Pix de ' + money(candidate.amount);
+        $('amountSummary').textContent = state.courtesyMode ? 'Sem cobrança' : money(candidate.amount);
+        $('checkoutButton').textContent = checkoutButtonLabel(candidate);
       }
 
       async function submitLookup(event) {
@@ -764,7 +796,7 @@
         if (!state.captchaToken) return showError('Confirme que você não é um robô.');
         setBusy(true, $('lookupButton'), 'Localizando inscrição…', 'Localizar minha inscrição');
         try {
-          const result = await postAction('spatial_lookup', {
+          const result = await postAction(state.courtesyMode ? 'spatial_courtesy_lookup' : 'spatial_lookup', {
             cpf,
             portal_token: state.portalToken,
             captcha_token: state.captchaToken,
@@ -784,7 +816,7 @@
         } catch (error) {
           const message = error instanceof ApiError && error.status === 429
             ? 'Muitas tentativas. Aguarde um pouco e tente novamente.'
-            : error instanceof ApiError && [403, 404, 409].includes(error.status)
+            : error instanceof ApiError && [403, 404, 409, 410].includes(error.status)
             ? error.message
             : 'Não foi possível localizar uma inscrição elegível com esses dados.';
           showError(message);
@@ -801,33 +833,69 @@
         clearError();
         const candidate = selectedCandidate();
         if (!candidate) return showError('Escolha o atleta que deseja inscrever.');
-        if (!$('checkoutConsent').checked) return showError('Confirme a geração do novo Pix.');
+        if (!$('checkoutConsent').checked) return showError(state.courtesyMode ? 'Confirme a inscrição isenta.' : 'Confirme a geração do novo Pix.');
         const requestToken = requestTokenForCandidate(state.selectedCandidateIndex);
-        setBusy(true, $('checkoutButton'), 'Preparando seu Pix…', 'Gerar Pix de ' + money(candidate.amount));
+        const idleLabel = checkoutButtonLabel(candidate);
+        setBusy(true, $('checkoutButton'), state.courtesyMode ? 'Confirmando inscrição…' : 'Preparando seu Pix…', idleLabel);
         $('backToLookupButton').disabled = true;
         try {
-          const result = await postAction('spatial_checkout', {
+          const result = await postAction(state.courtesyMode ? 'spatial_courtesy_claim' : 'spatial_checkout', {
             cpf: state.cpf,
             portal_token: state.portalToken,
             candidate_proof: candidate.proof,
             lookup_proof: candidate.proof,
             request_token: requestToken,
             terms_accepted: true,
-          }, CHECKOUT_REQUEST_TIMEOUT_MS);
-          state.paymentFallback = { amount: candidate.amount, spatialClass: candidate.spatialClass };
+          }, state.courtesyMode ? DEFAULT_REQUEST_TIMEOUT_MS : CHECKOUT_REQUEST_TIMEOUT_MS);
           state.cpf = '';
           state.portalToken = '';
           state.candidates = [];
-          renderPayment(result || {});
+          if (state.courtesyMode) renderCourtesySuccess(result || {}, candidate);
+          else {
+            state.paymentFallback = { amount: candidate.amount, spatialClass: candidate.spatialClass };
+            renderPayment(result || {});
+          }
           setStep(3);
           window.scrollTo({ top: Math.max(0, $('flowShell').offsetTop - 82), behavior: 'smooth' });
         } catch (error) {
-          showError(error && error.message || 'Não foi possível gerar o Pix agora. Tente novamente.');
+          showError(error && error.message || (state.courtesyMode
+            ? 'Não foi possível confirmar o convite agora. Tente novamente.'
+            : 'Não foi possível gerar o Pix agora. Tente novamente.'));
         } finally {
-          setBusy(false, $('checkoutButton'), '', 'Gerar Pix de ' + money(candidate.amount));
+          setBusy(false, $('checkoutButton'), '', idleLabel);
           $('backToLookupButton').disabled = false;
           updateCandidateSummary();
         }
+      }
+
+      function renderCourtesySuccess(result, candidate) {
+        clearPaymentPoll();
+        clearPaymentExpiry();
+        state.paymentResult = null;
+        state.trackingToken = '';
+        $('paymentIcon').textContent = '✓';
+        $('paymentStatus').textContent = 'Confirmada';
+        $('paymentStatus').className = 'status-chip confirmed';
+        $('paymentTitle').textContent = 'Classe Espacial confirmada!';
+        $('paymentCopy').textContent = 'Seu convite isento foi utilizado e a nova classe já está vinculada à sua inscrição.';
+        $('paymentAmount').textContent = 'Isenta';
+        $('paymentClass').textContent = valueFrom(
+          result && (result.category || result.spatial_class || result.registration && result.registration.category_name),
+          candidate && candidate.spatialClass || 'Classe Espacial'
+        );
+        $('reservationNotice').hidden = true;
+        $('paymentDeadline').textContent = '';
+        $('invoiceButton').hidden = true;
+        $('invoiceButton').removeAttribute('href');
+        $('pixQr').hidden = true;
+        $('pixQr').removeAttribute('src');
+        $('pixCode').hidden = true;
+        $('pixCode').textContent = '';
+        $('copyPixButton').hidden = true;
+        $('refreshStatusButton').hidden = true;
+        $('retryPaymentButton').hidden = true;
+        $('tournamentButton').href = '/torneios/' + encodeURIComponent(state.slug);
+        setPaymentFeedback('Nenhum pagamento foi gerado.', false);
       }
 
       function paymentStatus(result) {
@@ -1131,6 +1199,7 @@
       }
 
       async function boot() {
+        configurePortalMode();
         const tournamentUrl = state.slug ? '/torneios/' + encodeURIComponent(state.slug) : '/torneios';
         $('brandLink').href = tournamentUrl;
         $('tournamentButton').href = tournamentUrl;
