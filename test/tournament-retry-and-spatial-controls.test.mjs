@@ -22,7 +22,7 @@ const [
   readProjectFile('inscricoes/espacial/index.html'),
   readProjectFile('adm/index.html'),
   readProjectFile('supabase/migrations/20260907015950_release_expired_tournament_athlete_cpf.sql'),
-  readProjectFile('supabase/migrations/20260908125449_allow_m1_private_spatial_a.sql'),
+  readProjectFile('supabase/migrations/20260908131406_allow_m1_private_spatial_a.sql'),
 ]);
 
 function sourceSection(source, start, end) {

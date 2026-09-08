@@ -7,7 +7,7 @@ const projectRoot = path.resolve(import.meta.dirname, '..');
 const readProjectFile = (file) => readFile(path.join(projectRoot, file), 'utf8');
 
 const [migrationSource, registerSource] = await Promise.all([
-  readProjectFile('supabase/migrations/20260908125449_allow_m1_private_spatial_a.sql'),
+  readProjectFile('supabase/migrations/20260908131406_allow_m1_private_spatial_a.sql'),
   readProjectFile('supabase/functions/tournament-register/index.ts'),
 ]);
 
