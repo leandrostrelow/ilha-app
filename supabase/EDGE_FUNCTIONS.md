@@ -10,6 +10,8 @@ o deploy:
 - `false`: callbacks públicos que se autenticam no próprio handler:
   `asaas-payment-webhook` (segredo do provedor), `bar-order-push` (capacidade da
   comanda), `client-notification-dispatch` (segredo de despacho),
+  `app-monthly-billing` (JWT de operador com `finance.write` ou segredo interno
+  exclusivo do agendador),
   `tournament-payment-expiry` (segredo interno do cron),
   `tournament-public-push` (origin, chave publicável e assinatura Web Push no
   cadastro; JWT e permissão de torneios no envio),
@@ -19,7 +21,8 @@ o deploy:
 
 Segredos obrigatórios são configurados somente no ambiente de deploy; nunca em
 arquivos versionados: `SUPABASE_URL`, chave secreta/service role,
-`ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN`, `TOURNAMENT_PAYMENT_EXPIRY_TOKEN`,
+`ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN`,
+`TOURNAMENT_PAYMENT_EXPIRY_TOKEN`,
 chaves VAPID, segredo de despacho,
 `TURNSTILE_SECRET_KEY` e `PUBLIC_REGISTRATION_RATE_LIMIT_SALT`. A configuração
 pública `TURNSTILE_SITE_KEY` também é fornecida pelo ambiente para evitar
@@ -125,3 +128,29 @@ mostra o saldo líquido somente quando os itens de estorno `DONE` estiverem
 disponíveis; sem eles a rotina consulta novamente em cinco minutos. Chargeback
 é apresentado como `CANCELLED` e continua em reconciliação periódica enquanto
 o estado remoto ainda puder ser revertido.
+
+## Mensalidades Pix do Ilha Play
+
+`app-monthly-billing` emite uma cobrança Pix avulsa por competência. Não usa
+assinatura recorrente do provedor: o valor, o plano e a composição familiar são
+congelados no momento da emissão e podem mudar somente nas competências
+seguintes. Uma repetição, timeout ou execução concorrente reutiliza a mesma
+`externalReference`; nunca deve criar uma segunda cobrança para o mesmo aluno e
+mês.
+
+O navegador só pode chamar ações administrativas com um JWT válido e a
+permissão `finance.write`. O cron usa o cabeçalho
+`x-monthly-billing-token`; o valor é gerado e guardado somente no Vault, e o
+handler o valida por RPC exclusiva do `service_role`. A chave publicável enviada
+pelo `pg_net` não autoriza a emissão por si só. A função permanece com
+`verify_jwt = false` justamente porque o agendador usa chave publicável atual,
+e o handler repete toda a autenticação.
+
+O responsável familiar recebe uma única fatura; membros ativos nunca recebem
+cobranças separadas. Se algum membro ativo ainda aguarda confirmação, toda a
+composição familiar falha fechada e nenhuma cobrança é emitida. Depois de
+vinculada ao Asaas, a fatura não pode ter valor,
+competência, vencimento ou itens alterados pelo frontend. Apenas
+`PAYMENT_RECEIVED`/`PAYMENT_RECEIVED_IN_CASH` efetua a baixa; confirmação,
+atraso, estorno, disputa e divergência ficam em estados próprios para não produzir
+um falso pagamento.

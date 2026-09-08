@@ -83,7 +83,10 @@ test('nova inscrição identifica o atleta no ADM sem copiar dados sensíveis', 
 });
 
 test('evento de inscrição usa somente subscriptions do ADM e Ilha Play o ignora', () => {
-  assert.match(dispatcher, /adminOnlyEvents = new Set\(\["NOVO_ALUNO", "TORNEIO_INSCRICAO"\]\)/);
+  assert.match(
+    dispatcher,
+    /adminOnlyEvents = new Set\(\[[\s\S]*"NOVO_ALUNO"[\s\S]*"TORNEIO_INSCRICAO"[\s\S]*"FATURA_MENSAL_FALHA"[\s\S]*\]\)/,
+  );
   assert.match(dispatcher, /notificationSurface\(dispatch\.event_type\)/);
   assert.match(dispatcher, /subscriptionSurface === "ADM" \? "ilha-adm" : "ilha-play"/);
   assert.match(client, /\['NOVO_ALUNO', 'TORNEIO_INSCRICAO', 'COMUNICADO'\]/);

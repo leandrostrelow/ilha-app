@@ -1633,6 +1633,10 @@
     .pill.status-open { background: #fef3c7; color: #92400e; }
     .pill.status-late { background: #fee2e2; color: #991b1b; }
     .pill.status-paid { background: #dcfce7; color: #166534; }
+    .pill.status-waiting { background: #fef3c7; color: #78350f; }
+    .pill.status-generating { background: #e0f2fe; color: #075985; }
+    .pill.status-failed { background: #fee2e2; color: #991b1b; }
+    .pill.status-cancelled { background: #e2e8f0; color: #334155; }
 
     .plan-grid {
       display: grid;
@@ -2281,6 +2285,21 @@
       background: #fff8f8;
     }
 
+    .invoice-card.is-generating {
+      border-left: 5px solid #0ea5e9;
+      background: #f4fbff;
+    }
+
+    .invoice-card.is-failed {
+      border-left: 5px solid #dc2626;
+      background: #fff7f7;
+    }
+
+    .invoice-card.is-cancelled {
+      border-left: 5px solid #94a3b8;
+      background: #f8fafc;
+    }
+
     .invoice-title {
       display: flex;
       align-items: center;
@@ -2337,6 +2356,39 @@
       display: grid;
       gap: 8px;
       justify-items: end;
+    }
+
+    .invoice-actions button {
+      min-height: 44px;
+    }
+
+    .invoice-provider-note,
+    .invoice-load-message {
+      margin-top: 9px;
+      padding: 9px 10px;
+      border: 1px solid #cce4e8;
+      border-radius: 10px;
+      background: #f2fafb;
+      color: #31535b;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.4;
+    }
+
+    .invoice-provider-note.is-error,
+    .invoice-load-message.is-error {
+      border-color: #fecaca;
+      background: #fff1f2;
+      color: #991b1b;
+    }
+
+    .invoice-load-message {
+      margin: 0 0 10px;
+    }
+
+    .invoice-load-message button {
+      min-height: 44px;
+      margin-top: 8px;
     }
 
     .pix-box {
@@ -2613,7 +2665,7 @@
       z-index: 120;
       display: grid;
       place-items: center;
-      padding: 20px;
+      padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
       background: rgba(16, 39, 44, .45);
     }
 
@@ -2628,6 +2680,7 @@
       border-radius: 18px;
       background: #ffffff;
       box-shadow: 0 24px 70px rgba(16, 39, 44, .22);
+      overscroll-behavior: contain;
     }
 
     .pix-modal-head {
@@ -2644,7 +2697,7 @@
     }
 
     .pix-modal-close {
-      min-height: 38px;
+      min-height: 44px;
       border: 1px solid var(--line);
       border-radius: 12px;
       padding: 0 14px;
@@ -2702,6 +2755,13 @@
       line-height: 1.35;
       font-weight: 800;
       word-break: break-all;
+    }
+
+    .pix-modal-code:focus-visible,
+    .pix-modal-close:focus-visible,
+    .pix-modal-card .primary-btn:focus-visible {
+      outline: 3px solid rgba(0, 111, 120, .32);
+      outline-offset: 2px;
     }
 
     .form-grid {
@@ -3670,7 +3730,7 @@
         justify-items: end;
       }
       .invoice-actions .primary-btn {
-        min-height: 34px;
+        min-height: 44px;
         border-radius: 10px;
         padding: 0 10px;
         font-size: 12px;
@@ -3697,7 +3757,7 @@
       }
       .pix-modal {
         place-items: center;
-        padding: 16px;
+        padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
       }
       .external-modal {
         align-items: center;
@@ -5173,8 +5233,8 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <div class="pix-modal" id="pixModal" hidden role="dialog" aria-modal="true" aria-labelledby="pixModalTitle">
-    <div class="pix-modal-card">
+  <div class="pix-modal" id="pixModal" hidden role="dialog" aria-modal="true" aria-labelledby="pixModalTitle" aria-describedby="pixModalSubtitle">
+    <div class="pix-modal-card" tabindex="-1">
       <div class="pix-modal-head">
         <div>
           <h2 id="pixModalTitle">Pagamento Pix</h2>
@@ -5270,10 +5330,13 @@
     let sessionRestoreAttempt = 0;
     let pendingAccessRefreshTimer = 0;
     let clientDataLoadError = null;
+    let paymentInvoicesLoadError = null;
     let clientDataWarningAt = 0;
     let activePlanTab = 'aluno';
     let paymentFilter = { month: 'all', year: 'all' };
     let activePixPayload = '';
+    let pixModalReturnFocus = null;
+    let pixModalPreviousBodyOverflow = '';
     const pullRefreshState = {
       active: false,
       ready: false,
@@ -6777,8 +6840,11 @@
       const value = String(status || '');
       const upper = value.toUpperCase();
       if (upper === 'PAGA' || upper === 'PAGO') return '<span class="pill status-paid">PAGO</span>';
-      if (upper === 'VENCIDA' || upper === 'ATRASADA') return '<span class="pill status-late">ATRASADA</span>';
-      if (upper === 'ABERTA' || upper === 'AGUARDANDO' || upper === 'EM ABERTO') return '<span class="pill status-open">ABERTA</span>';
+      if (upper === 'VENCIDA' || upper === 'ATRASADA') return '<span class="pill status-late">VENCIDA</span>';
+      if (upper === 'GERANDO') return '<span class="pill status-generating">GERANDO</span>';
+      if (upper === 'FALHA') return '<span class="pill status-failed">FALHA</span>';
+      if (upper === 'CANCELADA' || upper === 'CANCELADO') return '<span class="pill status-cancelled">CANCELADA</span>';
+      if (upper === 'ABERTA' || upper === 'AGUARDANDO' || upper === 'EM ABERTO') return '<span class="pill status-waiting">AGUARDANDO</span>';
       const kind = upper.includes('CONFIRM') || upper.includes('ATIVO') ? ' good' :
         (upper.includes('PEND') || upper.includes('BREVE') || upper.includes('COMBINAR') ? ' warn' : '');
       return '<span class="pill' + kind + '">' + escapeHtml(value) + '</span>';
@@ -7278,10 +7344,34 @@
         payment_method: row.payment_method || '',
         paid_at: row.paid_at || '',
         pix_payload: row.pix_payload || '',
+        family_billing: row.family_billing === true,
+        provider_status: row.provider_status || '',
+        pix_expires_at: row.pix_expires_at || '',
+        last_payment_error: row.last_payment_error || '',
+        issued_at: row.issued_at || '',
         notes: row.notes || '',
         created_at: row.created_at || '',
         generated: Boolean(row.generated)
       };
+    }
+
+    const CLIENT_PAYMENT_INVOICE_BASE_FIELDS = 'id,client_id,invoice_month,description,plan_code,plan_name,amount,due_date,status,payment_method,paid_at,pix_payload,notes,created_at';
+    const CLIENT_PAYMENT_INVOICE_FAMILY_FIELDS = CLIENT_PAYMENT_INVOICE_BASE_FIELDS + ',family_billing';
+    const CLIENT_PAYMENT_INVOICE_SAFE_FIELDS = CLIENT_PAYMENT_INVOICE_FAMILY_FIELDS + ',provider_status,pix_expires_at,last_payment_error,issued_at';
+
+    async function loadClientPaymentInvoices() {
+      const suffix = '&client_id=eq.' + encodeURIComponent(session.user.id) + '&order=invoice_month.desc';
+      try {
+        return await rest('app_payment_invoices?select=' + CLIENT_PAYMENT_INVOICE_SAFE_FIELDS + suffix, { auth: true });
+      } catch (error) {
+        if (!looksLikeMissingSchema(error)) throw error;
+      }
+      try {
+        return await rest('app_payment_invoices?select=' + CLIENT_PAYMENT_INVOICE_FAMILY_FIELDS + suffix, { auth: true });
+      } catch (error) {
+        if (!looksLikeMissingSchema(error)) throw error;
+      }
+      return rest('app_payment_invoices?select=' + CLIENT_PAYMENT_INVOICE_BASE_FIELDS + suffix, { auth: true });
     }
 
     function hasLessonPlan() {
@@ -7331,7 +7421,7 @@
         storeProducts = storeProductSeed.map(mapStoreProductRow);
         planRequests = readStored(storageKey('ilha-client-plan-requests'), []);
         storeRequests = readStored(storageKey('ilha-client-store-requests'), []);
-        paymentInvoices = readStored(storageKey('ilha-client-payment-invoices'), []);
+        paymentInvoices = readStored(storageKey('ilha-client-payment-invoices'), []).map(mapPaymentInvoiceRow);
         familyInvoiceItems = readStored(storageKey('ilha-client-family-invoice-items'), []);
         announcements = [];
         familySummary = readStored(storageKey('ilha-client-family-summary'), {
@@ -7344,6 +7434,7 @@
           members: []
         });
         familyLoadError = null;
+        paymentInvoicesLoadError = null;
         dismissedNotificationKeys = new Set(readStored(storageKey('ilha-client-dismissed-notifications'), []).map(String));
         await loadMyLessons();
         clientDataLoadError = null;
@@ -7355,12 +7446,12 @@
         rest('app_plan_requests?select=*&client_id=eq.' + encodeURIComponent(session.user.id) + '&order=created_at.desc', { auth: true }),
         rest('app_store_requests?select=*&client_id=eq.' + encodeURIComponent(session.user.id) + '&order=created_at.desc', { auth: true }),
         rest('app_announcements?select=*&active=eq.true&order=published_at.desc', { auth: true }),
-        rest('app_payment_invoices?select=*&client_id=eq.' + encodeURIComponent(session.user.id) + '&order=invoice_month.desc', { auth: true }),
+        loadClientPaymentInvoices(),
         rest('app_client_notifications?select=*&user_id=eq.' + encodeURIComponent(session.user.id) + '&order=created_at.desc', { auth: true }),
         rest('app_notification_dismissals?select=source_type,source_id&user_id=eq.' + encodeURIComponent(session.user.id), { auth: true }),
         rest('app_store_products?select=*&active=eq.true&order=display_order.asc,name.asc', { auth: true }),
         rest('rpc/get_my_family_summary', { method: 'POST', body: {} }),
-        rest('app_family_invoice_items?select=*&order=created_at.asc', { auth: true })
+        rest('app_family_invoice_items?select=id,invoice_id,family_member_id,beneficiary_client_id,item_type,description,amount,created_at&order=created_at.asc', { auth: true })
       ]);
       const errors = results.filter(function (result) { return result.status === 'rejected'; }).map(function (result) { return result.reason; });
       const fulfilled = function (index) { return results[index].status === 'fulfilled'; };
@@ -7390,7 +7481,12 @@
         })));
       }
       if (fulfilled(7)) storeProducts = value(7).map(mapStoreProductRow).filter(storeProductAvailable);
-      if (fulfilled(4)) paymentInvoices = value(4).map(mapPaymentInvoiceRow);
+      if (fulfilled(4)) {
+        paymentInvoices = value(4).map(mapPaymentInvoiceRow);
+        paymentInvoicesLoadError = null;
+      } else {
+        paymentInvoicesLoadError = results[4].reason || new Error('Não foi possível atualizar suas faturas.');
+      }
       if (fulfilled(8)) {
         familySummary = value(8) && !Array.isArray(value(8)) ? value(8) : (value(8)[0] || null);
         familyLoadError = null;
@@ -8744,14 +8840,47 @@
     }
 
     function invoiceEffectiveStatus(invoice) {
-      const status = String(invoice.status || 'ABERTA').toUpperCase();
-      if (status === 'PAGA' || status === 'CANCELADA') return status;
+      const status = String(invoice && invoice.status || 'ABERTA').trim().toUpperCase();
+      const providerStatus = String(invoice && invoice.provider_status || '').trim().toUpperCase();
+      if (['FAILED', 'ERROR', 'REVIEW_REQUIRED', 'REFUND_PENDING', 'CHARGEBACK', 'DISPUTED', 'PARTIALLY_REFUNDED'].includes(providerStatus)) return 'FALHA';
+      if (['DELETED', 'REFUNDED'].includes(providerStatus)) return 'CANCELADA';
+      if (['RECEIVED', 'RECEIVED_IN_CASH'].includes(providerStatus)) return 'PAGA';
+      if (providerStatus === 'RECONCILING') return 'GERANDO';
+      if (providerStatus === 'CONFIRMED') return 'AGUARDANDO';
+      if (['PAGA', 'PAGO'].includes(status)) return 'PAGA';
+      if (['CANCELADA', 'CANCELADO'].includes(status)) return 'CANCELADA';
+      if (['FALHA', 'FAILED', 'ERRO'].includes(status)) return 'FALHA';
+      if (['GERANDO', 'PROCESSANDO', 'PENDING_CREATION'].includes(status) || invoice && invoice.issued_at && !invoice.pix_payload && !providerStatus) return 'GERANDO';
+      if (providerStatus === 'OVERDUE') return 'VENCIDA';
       if (invoice.due_date && String(invoice.due_date).slice(0, 10) < localDateString()) return 'VENCIDA';
-      return status;
+      if (invoicePixExpired(invoice)) return 'FALHA';
+      if (invoice && invoice.last_payment_error && !invoice.pix_payload) return 'FALHA';
+      return 'AGUARDANDO';
+    }
+
+    function invoiceProviderNeedsReview(invoice) {
+      return ['REVIEW_REQUIRED', 'REFUND_PENDING', 'CHARGEBACK', 'DISPUTED', 'PARTIALLY_REFUNDED'].includes(String(invoice && invoice.provider_status || '').trim().toUpperCase());
+    }
+
+    function invoicePixExpired(invoice) {
+      const expiresAt = invoice && invoice.pix_expires_at ? new Date(invoice.pix_expires_at).getTime() : 0;
+      return Boolean(expiresAt && Number.isFinite(expiresAt) && expiresAt <= Date.now());
+    }
+
+    function invoicePaymentActionAllowed(invoice) {
+      const providerStatus = String(invoice && invoice.provider_status || '').trim().toUpperCase();
+      return ['PENDING', 'OVERDUE'].includes(providerStatus) && Boolean(invoicePixText(invoice)) && !invoicePixExpired(invoice);
+    }
+
+    function hasFamilyBillingInvoice() {
+      const itemInvoiceIds = new Set((familyInvoiceItems || []).map(function (item) { return String(item.invoice_id || ''); }).filter(Boolean));
+      return paymentInvoices.some(function (invoice) {
+        return invoice.family_billing === true || itemInvoiceIds.has(String(invoice.id || ''));
+      });
     }
 
     function buildMonthlyInvoices() {
-      if (isExemptClientPlan()) return [];
+      if (isExemptClientPlan() && !hasFamilyBillingInvoice()) return [];
       return paymentInvoices.slice().sort(function (a, b) {
         return String(b.invoice_month || b.due_date || '').localeCompare(String(a.invoice_month || a.due_date || ''));
       });
@@ -8792,29 +8921,79 @@
       const familyDetails = familyItems.length ? '<div class="invoice-family-items" aria-label="Composição da mensalidade">' + familyItems.map(function (item) {
         return '<div class="invoice-family-item"><span>' + escapeHtml(item.description || (item.item_type === 'RESPONSAVEL' ? 'Responsável' : 'Membro')) + '</span><strong>' + money(item.amount || 0) + '</strong></div>';
       }).join('') + '</div>' : '';
-      return '<article class="invoice-card ' + (paid ? 'is-paid' : status === 'VENCIDA' ? 'is-late' : 'is-open') + '">' +
+      const cardClass = paid ? 'is-paid' : status === 'VENCIDA' ? 'is-late' : status === 'GERANDO' ? 'is-generating' : status === 'FALHA' ? 'is-failed' : status === 'CANCELADA' ? 'is-cancelled' : 'is-open';
+      const providerNote = invoiceProviderNeedsReview(invoice)
+        ? '<div class="invoice-provider-note is-error">Este pagamento está em revisão. Não pague novamente; atualize a fatura ou fale com o clube.</div>'
+        : invoicePixExpired(invoice) && status !== 'PAGA'
+          ? '<div class="invoice-provider-note is-error">O código Pix expirou. Atualize a fatura para consultar uma via válida.</div>'
+          : String(invoice.provider_status || '').toUpperCase() === 'CONFIRMED'
+            ? '<div class="invoice-provider-note">Pagamento identificado. Estamos aguardando a liquidação pelo Asaas.</div>'
+            : status === 'GERANDO'
+              ? '<div class="invoice-provider-note">Estamos preparando o seu Pix. Atualize em instantes para acompanhar.</div>'
+              : status === 'FALHA'
+                ? '<div class="invoice-provider-note is-error">O Pix não ficou disponível. Atualize a fatura; se continuar assim, fale com o clube.</div>' : '';
+      const expiry = invoice.pix_expires_at && !invoicePixExpired(invoice)
+        ? '<span>Pix disponível até ' + escapeHtml(new Date(invoice.pix_expires_at).toLocaleString('pt-BR')) + '</span>' : '';
+      const familyPill = invoice.family_billing || familyItems.length ? '<span class="pill good">Conta familiar</span>' : '';
+      let action = '';
+      if (paid) action = '<span class="pill status-paid">PAGO</span>';
+      else if (status === 'CANCELADA') action = '';
+      else if (status === 'GERANDO' || status === 'FALHA' || !invoicePaymentActionAllowed(invoice)) {
+        action = '<button class="ghost-btn" type="button" data-refresh-invoice="' + escapeHtml(invoice.id || '') + '">Atualizar fatura</button>';
+      } else {
+        action = '<button class="primary-btn" type="button" data-open-pix="' + escapeHtml(invoice.id) + '">Ver Pix</button>';
+      }
+      return '<article class="invoice-card ' + cardClass + '">' +
         '<div>' +
-          '<div class="invoice-title"><h3>Fatura de ' + escapeHtml(invoiceMonthLabel(invoice.invoice_month)) + '</h3>' + pill(status) + '</div>' +
-          '<div class="invoice-meta"><span>' + escapeHtml(invoice.plan_name || invoice.description || 'Mensalidade') + '</span><span>Vencimento ' + escapeHtml(dueText) + '</span>' + (invoice.paid_at ? '<span>Pago em ' + escapeHtml(formatShortDate(invoice.paid_at)) + '</span>' : '') + '</div>' +
+          '<div class="invoice-title"><h3>Fatura de ' + escapeHtml(invoiceMonthLabel(invoice.invoice_month)) + '</h3>' + pill(status) + familyPill + '</div>' +
+          '<div class="invoice-meta"><span>' + escapeHtml(invoice.plan_name || invoice.description || 'Mensalidade') + '</span><span>Vencimento ' + escapeHtml(dueText) + '</span>' + (invoice.paid_at ? '<span>Pago em ' + escapeHtml(formatShortDate(invoice.paid_at)) + '</span>' : '') + expiry + '</div>' +
           (invoice.notes ? '<div class="invoice-meta">' + escapeHtml(invoice.notes) + '</div>' : '') +
+          providerNote +
           familyDetails +
         '</div>' +
         '<div class="invoice-actions">' +
           '<div class="invoice-value">' + money(invoice.amount) + '</div>' +
-          (paid
-            ? '<span class="pill status-paid">PAGO</span>'
-            : status === 'CANCELADA'
-              ? ''
-              : invoice.pix_payload
-              ? '<button class="primary-btn" type="button" data-open-pix="' + escapeHtml(invoice.id) + '">Ver Pix</button>'
-              : '<span class="pill warn">Segunda via no clube</span>') +
+          action +
         '</div>' +
       '</article>';
     }
 
+    async function copyTextWithFallback(value, fallbackElement) {
+      const text = String(value || '');
+      if (!text) throw new Error('O código Pix ainda não está disponível.');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (error) {
+          // A seleção abaixo mantém a cópia disponível em navegadores restritivos.
+        }
+      }
+      const input = document.createElement('textarea');
+      input.value = text;
+      input.readOnly = true;
+      input.setAttribute('aria-hidden', 'true');
+      input.style.position = 'fixed';
+      input.style.opacity = '0';
+      document.body.appendChild(input);
+      input.select();
+      let copied = false;
+      try { copied = document.execCommand('copy'); } catch (error) { copied = false; }
+      input.remove();
+      if (!copied && fallbackElement) {
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(fallbackElement);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        fallbackElement.focus();
+      }
+      return copied;
+    }
+
     function openPixModal(invoice) {
       const pix = invoicePixText(invoice);
-      if (!pix) {
+      if (!pix || invoicePixExpired(invoice) || ['FALHA', 'CANCELADA'].includes(invoiceEffectiveStatus(invoice))) {
         toast('A segunda via desta cobrança ainda não foi disponibilizada pelo clube.');
         return;
       }
@@ -8828,18 +9007,50 @@
         }
       } catch (error) {}
       activePixPayload = pix;
+      pixModalReturnFocus = document.activeElement;
+      pixModalPreviousBodyOverflow = document.body.style.overflow;
       $('pixModalSubtitle').textContent = 'Fatura de ' + invoiceMonthLabel(invoice.invoice_month);
       $('pixModalBody').innerHTML =
         '<div class="pix-modal-total"><span>Valor da fatura</span><strong>' + money(invoice.amount) + '</strong></div>' +
         '<div class="invoice-meta"><span>' + escapeHtml(invoice.plan_name || invoice.description || 'Mensalidade') + '</span><span>Vencimento ' + escapeHtml(invoice.due_date ? formatShortDate(invoice.due_date) : 'a definir') + '</span>' + pill(invoiceEffectiveStatus(invoice)) + '</div>' +
-        '<div class="pix-modal-qr">' + (qrUrl ? '<img src="' + qrUrl + '" alt="QR Code Pix" />' : '') + '<div class="pix-modal-code">' + escapeHtml(pix) + '</div></div>' +
+        '<div class="pix-modal-qr">' + (qrUrl ? '<img src="' + qrUrl + '" alt="QR Code Pix da fatura de ' + escapeHtml(invoiceMonthLabel(invoice.invoice_month)) + '" />' : '') + '<div class="pix-modal-code" tabindex="0" role="textbox" aria-readonly="true" aria-label="Código Pix copia e cola">' + escapeHtml(pix) + '</div></div>' +
         '<button class="primary-btn" type="button" data-copy-modal-pix>Copiar código Pix</button>';
       $('pixModal').hidden = false;
+      document.body.style.overflow = 'hidden';
+      const card = $('pixModal').querySelector('.pix-modal-card');
+      card.scrollTop = 0;
+      requestAnimationFrame(function () {
+        const closeButton = $('pixModal').querySelector('[data-close-pix]');
+        if (closeButton) closeButton.focus();
+      });
     }
 
     function closePixModal() {
+      if ($('pixModal').hidden) return;
       activePixPayload = '';
       $('pixModal').hidden = true;
+      document.body.style.overflow = pixModalPreviousBodyOverflow;
+      pixModalPreviousBodyOverflow = '';
+      const returnFocus = pixModalReturnFocus;
+      pixModalReturnFocus = null;
+      if (returnFocus && returnFocus.isConnected) returnFocus.focus();
+    }
+
+    function trapPixModalFocus(event) {
+      if (event.key !== 'Tab' || $('pixModal').hidden) return;
+      const focusable = Array.from($('pixModal').querySelectorAll('button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])')).filter(function (element) {
+        return !element.hidden && element.getAttribute('aria-hidden') !== 'true';
+      });
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
 
     function renderPayments() {
@@ -8850,7 +9061,7 @@
         $('paymentList').innerHTML = '<div class="empty"><strong>Cobrança familiar</strong><br />As cobranças desta conta ficam centralizadas com ' + escapeHtml(responsible && responsible.full_name || 'o responsável financeiro') + '.</div>';
         return;
       }
-      if (isExemptClientPlan()) {
+      if (isExemptClientPlan() && !hasFamilyBillingInvoice() && !paymentInvoicesLoadError) {
         if (toolbar) toolbar.hidden = true;
         $('paymentList').innerHTML = '<div class="empty"><strong>Plano isento</strong><br />Não há mensalidades ou vencimentos para este plano.</div>';
         return;
@@ -8859,9 +9070,12 @@
       const invoices = buildMonthlyInvoices();
       renderPaymentFilters(invoices);
       const list = filteredInvoices();
-      $('paymentList').innerHTML = list.length
-        ? list.map(invoiceCard).join('')
-        : '<div class="empty"><strong>Nenhuma cobrança emitida</strong><br />As faturas oficiais disponibilizadas pelo clube aparecerão aqui.</div>';
+      const loadWarning = paymentInvoicesLoadError
+        ? '<div class="invoice-load-message is-error" role="alert">Não foi possível atualizar suas faturas. Os dados já carregados foram mantidos.<br /><button class="ghost-btn" type="button" data-refresh-invoices>Tentar atualizar</button></div>' : '';
+      const empty = invoices.length
+        ? '<div class="empty"><strong>Nenhuma cobrança neste filtro</strong><br />Escolha outro período ou veja todas.<br /><button class="ghost-btn" type="button" data-clear-invoice-filter>Ver todas</button></div>'
+        : '<div class="empty"><strong>Nenhuma cobrança emitida</strong><br />As faturas oficiais disponibilizadas pelo clube aparecerão aqui.<br /><button class="ghost-btn" type="button" data-refresh-invoices>Atualizar</button></div>';
+      $('paymentList').innerHTML = loadWarning + (list.length ? list.map(invoiceCard).join('') : empty);
     }
 
     function renderStore() {
@@ -9297,6 +9511,19 @@
         }
       });
       $('paymentList').addEventListener('click', function (event) {
+        const refreshBtn = event.target.closest('[data-refresh-invoice], [data-refresh-invoices]');
+        if (refreshBtn) {
+          runButtonTask(refreshBtn, function () { return refresh(false); }).catch(function () {
+            toast('Não consegui atualizar a fatura agora. Tente novamente em instantes.');
+          });
+          return;
+        }
+        const clearFilterBtn = event.target.closest('[data-clear-invoice-filter]');
+        if (clearFilterBtn) {
+          paymentFilter = { month: 'all', year: 'all' };
+          renderPayments();
+          return;
+        }
         const pixBtn = event.target.closest('[data-open-pix]');
         if (!pixBtn) return;
         const invoice = buildMonthlyInvoices().find(function (item) { return String(item.id) === String(pixBtn.dataset.openPix); });
@@ -9307,14 +9534,16 @@
           closePixModal();
           return;
         }
-        if (event.target.closest('[data-copy-modal-pix]')) {
-          if (navigator.clipboard && activePixPayload) {
-            navigator.clipboard.writeText(activePixPayload).then(function () { toast('Código Pix copiado.'); }).catch(function () { toast('Código Pix pronto para copiar.'); });
-          } else {
-            toast('Código Pix pronto para copiar.');
-          }
+        const copyButton = event.target.closest('[data-copy-modal-pix]');
+        if (copyButton) {
+          runButtonTask(copyButton, function () {
+            return copyTextWithFallback(activePixPayload, $('pixModal').querySelector('.pix-modal-code')).then(function (copied) {
+              toast(copied ? 'Código Pix copiado.' : 'Código selecionado. Use a opção Copiar do aparelho.');
+            });
+          }).catch(function () { toast('Não consegui copiar automaticamente. Selecione o código acima.'); });
         }
       });
+      $('pixModal').addEventListener('keydown', trapPixModalFocus);
       $('externalModal').addEventListener('click', function (event) {
         if (event.target === $('externalModal') || event.target.closest('[data-close-external]')) {
           closeExternalModal();

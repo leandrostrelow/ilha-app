@@ -22,6 +22,9 @@ const paymentEventStatuses: Record<string, string> = {
   PAYMENT_CREDIT_CARD_CAPTURE_REFUSED: "FAILED",
 };
 
+const monthlyInvoiceExternalReferencePattern =
+  /^ilha-monthly-invoice:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -61,6 +64,38 @@ function asaasConfig() {
 
 function text(value: unknown, maxLength: number) {
   return String(value || "").trim().slice(0, maxLength);
+}
+
+function isMonthlyInvoiceExternalReference(value: string) {
+  return monthlyInvoiceExternalReferencePattern.test(value);
+}
+
+function monthlyProviderStatus(eventType: string, payment: JsonRecord) {
+  const eventStatuses: Record<string, string> = {
+    PAYMENT_CREATED: "PENDING",
+    PAYMENT_UPDATED: "PENDING",
+    PAYMENT_CONFIRMED: "CONFIRMED",
+    PAYMENT_RECEIVED: "RECEIVED",
+    PAYMENT_RECEIVED_IN_CASH: "RECEIVED_IN_CASH",
+    PAYMENT_OVERDUE: "OVERDUE",
+    PAYMENT_REFUNDED: "REFUNDED",
+    PAYMENT_PARTIALLY_REFUNDED: "PARTIALLY_REFUNDED",
+    PAYMENT_REFUND_IN_PROGRESS: "REFUND_PENDING",
+    PAYMENT_DELETED: "DELETED",
+    PAYMENT_CHARGEBACK_REQUESTED: "CHARGEBACK",
+    PAYMENT_CHARGEBACK_DISPUTE: "CHARGEBACK",
+    PAYMENT_AWAITING_CHARGEBACK_REVERSAL: "DISPUTED",
+    PAYMENT_REPROVED_BY_RISK_ANALYSIS: "FAILED",
+    PAYMENT_CREDIT_CARD_CAPTURE_REFUSED: "FAILED",
+  };
+  if (eventType !== "PAYMENT_CREATED" && eventType !== "PAYMENT_UPDATED") {
+    return eventStatuses[eventType] || "";
+  }
+
+  const providerStatus = text(payment.status, 40).toUpperCase();
+  if (!providerStatus) return "PENDING";
+  if (providerStatus === "REFUND_IN_PROGRESS") return "REFUND_PENDING";
+  return providerStatus;
 }
 
 async function secureEquals(left: string, right: string) {
@@ -273,6 +308,37 @@ async function findTournamentPayment(
   return paymentResult.data as JsonRecord | null;
 }
 
+async function findMonthlyInvoicePayment(
+  supabase: DbClient,
+  providerEnvironment: string,
+  providerPaymentId: string,
+  externalReference: string,
+) {
+  const selectedColumns =
+    "id,invoice_id,provider_environment,provider_payment_id,external_reference,status";
+  let paymentResult = await supabase.from("app_invoice_provider_payments")
+    .select(selectedColumns)
+    .eq("provider", "ASAAS")
+    .eq("provider_environment", providerEnvironment)
+    .eq("provider_payment_id", providerPaymentId)
+    .maybeSingle();
+  if (paymentResult.error) throw paymentResult.error;
+
+  // external_reference is globally unique. Deliberately do not constrain its
+  // fallback by environment: the reconciliation RPC must see and quarantine a
+  // valid local reference delivered from the wrong Asaas environment.
+  if (!paymentResult.data && isMonthlyInvoiceExternalReference(externalReference)) {
+    paymentResult = await supabase.from("app_invoice_provider_payments")
+      .select(selectedColumns)
+      .eq("provider", "ASAAS")
+      .eq("external_reference", externalReference)
+      .maybeSingle();
+    if (paymentResult.error) throw paymentResult.error;
+  }
+
+  return paymentResult.data as JsonRecord | null;
+}
+
 Deno.serve(async (request) => {
   if (request.method !== "POST") return json({ error: "Método inválido." }, 405);
   const contentLength = Number(request.headers.get("content-length") || 0);
@@ -373,6 +439,75 @@ Deno.serve(async (request) => {
       providerPaymentId,
       externalReference,
     );
+    if (!localPayment) {
+      const monthlyInvoicePayment = await findMonthlyInvoicePayment(
+        supabase,
+        providerEnvironment,
+        providerPaymentId,
+        externalReference,
+      );
+      if (monthlyInvoicePayment) {
+        failureStage = "monthly_invoice_reconciliation";
+        const providerStatus = monthlyProviderStatus(eventType, providerPayment);
+        const reconciliation = await supabase.rpc("apply_app_invoice_payment_reconciliation", {
+          p_provider_payment_id: providerPaymentId,
+          p_provider_environment: providerEnvironment,
+          p_provider_status: providerStatus,
+          p_external_reference: externalReference,
+          p_expected_amount: finiteNumber(providerPayment.value),
+          p_paid_at: ["RECEIVED", "RECEIVED_IN_CASH"].includes(providerStatus)
+            ? paidAt(providerPayment)
+            : null,
+          p_event_id: eventId,
+          p_snapshot: safeEventSnapshot,
+        });
+        if (reconciliation.error) throw reconciliation.error;
+        const result = reconciliation.data && typeof reconciliation.data === "object" &&
+            !Array.isArray(reconciliation.data)
+          ? reconciliation.data as JsonRecord
+          : {};
+        const rawReason = text(result.reason, 60);
+        const rawStatus = text(result.status, 40);
+        const resultInvoiceId = text(result.invoice_id, 80);
+        const expectedInvoiceId = text(monthlyInvoicePayment.invoice_id, 80);
+        const resultProviderPaymentId = text(result.provider_payment_id, 120);
+        if (
+          typeof result.applied !== "boolean" || !rawReason || !rawStatus ||
+          (result.applied === true && (
+            resultInvoiceId !== expectedInvoiceId || resultProviderPaymentId !== providerPaymentId
+          ))
+        ) {
+          throw new Error("O resultado da reconciliação da mensalidade é inválido.");
+        }
+
+        const applied = result.applied === true;
+        const reason = rawReason.toUpperCase().replace(/[^A-Z0-9_-]/g, "_");
+        const status = rawStatus.toUpperCase().replace(/[^A-Z0-9_-]/g, "_");
+        const reviewRequired = status === "REVIEW_REQUIRED";
+        failureStage = "event_complete";
+        const completed = await supabase.from("asaas_webhook_events").update({
+          status: applied || reviewRequired ? "PROCESSED" : "IGNORED",
+          processed_at: new Date().toISOString(),
+          error: reviewRequired
+            ? `Mensalidade enviada para revisão: ${reason}`
+            : applied
+            ? null
+            : `Mensalidade ignorada: ${reason}`,
+          processing_token: null,
+          processing_started_at: null,
+        }).eq("event_id", eventId).eq("processing_token", processingToken).select("id").maybeSingle();
+        if (completed.error) throw completed.error;
+        if (!completed.data) throw new Error("A posse do processamento do evento foi perdida.");
+        return json({
+          received: true,
+          monthly_invoice: true,
+          applied,
+          status,
+          reason,
+          review_required: reviewRequired,
+        });
+      }
+    }
     if (!localPayment) {
       const ignored = await supabase.from("asaas_webhook_events").update({
         status: "IGNORED",

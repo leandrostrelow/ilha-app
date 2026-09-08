@@ -25,6 +25,35 @@ As duas entregas não autenticadas provam somente que o webhook falha fechado.
 Elas **não** comprovam a idempotência de uma entrega válida, pois o evento é
 recusado antes de chegar à reserva atômica no banco.
 
+## Gate das mensalidades Pix do Ilha Play
+
+Mensalidades usam cobranças Pix avulsas, uma por responsável e competência. A
+assinatura recorrente do Asaas não é usada, pois o plano e o valor podem mudar
+no mês seguinte. O teste automático deve executar com fixtures sintéticas e
+Asaas Sandbox; nunca emite ou liquida cobrança de aluno real.
+
+Antes da primeira emissão de cada mês:
+
+1. confira que a prévia lista somente clientes ativos, não isentos, com valor,
+   CPF e vencimento válidos;
+2. confira que cada família aparece uma vez no responsável e nenhum dependente
+   recebe fatura própria;
+3. confirme que membros aguardando aceite não entraram na composição;
+4. execute duas gerações/retries em paralelo e exija uma única fatura, uma única
+   `externalReference` e um único ID de pagamento no provedor;
+5. simule `PAYMENT_RECEIVED` no Sandbox e exija baixa automática; repita o mesmo
+   webhook e exija que nenhum estado, lançamento ou notificação seja duplicado;
+6. entregue eventos antigos depois do recebimento e confirme que não ocorre
+   regressão; estorno, chargeback, valor, ambiente ou referência divergente
+   devem ir para revisão, nunca para pago;
+7. desligue a configuração de geração e confirme que o cron fica sem efeito.
+
+Na produção, execute primeiro `preview`. A resposta deve informar elegíveis,
+existentes, excluídos e total sem criar cobrança. Faça um canário com uma fatura
+real que já seria devida naquele mês, consulte-a no Asaas e no Ilha Play e só
+então processe as demais. O retry sempre busca a `externalReference` antes de um
+novo POST, inclusive depois de timeout ou erro 5xx ambíguo.
+
 ## 2. E2E financeiro válido em staging
 
 Este é o roteiro operacional completo. Ele usa somente o projeto Supabase

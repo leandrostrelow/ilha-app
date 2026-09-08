@@ -98,7 +98,54 @@ Referências oficiais:
 - <https://supabase.com/docs/guides/functions/secrets>
 - <https://supabase.com/docs/guides/database/vault>
 
-## 3. Login pendente e recuperação de senha do Ilha Play
+## 3. Mensalidades Pix automáticas
+
+O agendamento cria no Vault, sem expor o valor, um token interno aleatório em
+`app_monthly_billing_internal_token`. Quando a configuração do torneio existe,
+ele deriva `app_monthly_billing_url` de `tournament_payment_expiry_url`, exige o
+hash oficial antes de persistir `app_monthly_billing_url_sha256` e copia, dentro
+do próprio banco, a chave publicável já validada de
+`tournament_payment_expiry_publishable_key` para
+`app_monthly_billing_publishable_key`. Local e staging não recebem jobs de
+mensalidade; somente a URL oficial aprovada passa pelo gate de agendamento.
+
+- `app_monthly_billing_url`: URL HTTPS exata do projeto do ambiente;
+- `app_monthly_billing_url_sha256`: hash fixado da URL anterior;
+- `app_monthly_billing_publishable_key`: chave `sb_publishable_` do mesmo projeto.
+
+Não reutilize a chave do Asaas, token do webhook, chave secreta do Supabase ou
+token de outro ambiente. A URL e a chave publicável servem apenas para o
+transporte pelo `pg_net`; a autorização efetiva é o token interno. A ausência ou
+divergência de qualquer configuração deve falhar fechada, sem emitir faturas.
+
+Antes de ativar o ciclo, valide somente nomes e formato, sem imprimir valores:
+
+```sql
+select name
+from vault.secrets
+where name in (
+  'app_monthly_billing_url',
+  'app_monthly_billing_url_sha256',
+  'app_monthly_billing_publishable_key',
+  'app_monthly_billing_internal_token'
+)
+order by name;
+
+select jobname, schedule, active
+from cron.job
+where jobname in (
+  'ilha-play-generate-monthly-pix',
+  'ilha-play-reconcile-monthly-pix'
+)
+order by jobname;
+```
+
+Execute primeiro a prévia do mês no ADM. Corrija valores zerados, CPF/vencimento
+inválido e vínculos familiares pendentes. Só então habilite a geração. Para
+rollback, desabilite a configuração/cron; não apague histórico e não cancele no
+Asaas fora da ação explícita de cancelamento.
+
+## 4. Login pendente e recuperação de senha do Ilha Play
 
 Em **Authentication > Sign In / Providers > Email**, mantenha cadastro e login
 por e-mail habilitados e desative a confirmação obrigatória de e-mail. A

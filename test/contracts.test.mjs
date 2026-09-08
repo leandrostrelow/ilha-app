@@ -566,6 +566,162 @@ test('financeiro do Play exibe somente faturas oficiais e Pix fornecido pelo bac
   assert.doesNotMatch(indexSource, /data-view="payments"[^>]*disabled/);
 });
 
+test('ADM oferece prévia mensal, geração confirmada e retentativa isolada por fatura', () => {
+  assert.match(adminSource, /data-finance-view="monthly"[^>]*>Mensalidades</);
+  for (const id of [
+    'monthlyBillingMonth', 'monthlyBillingEligibleMetric', 'monthlyBillingGeneratedMetric',
+    'monthlyBillingPaidMetric', 'monthlyBillingOverdueMetric', 'monthlyBillingFailedMetric',
+    'monthlyBillingSkippedMetric', 'monthlyBillingTotalMetric', 'monthlyBillingRows',
+    'monthlyBillingGenerateBtn', 'monthlyBillingRetryBtn', 'monthlyBillingSettingsStatus',
+    'monthlyBillingSettingsSchedule', 'monthlyBillingGenerationDay', 'monthlyBillingSaveDayBtn',
+    'monthlyBillingToggleBtn', 'monthlyBillingSettingsMessage'
+  ]) assert.match(adminSource, new RegExp(`id="${id}"`));
+
+  const request = functionSource(adminSource, 'monthlyBillingRequest');
+  assert.match(request, /\/functions\/v1\/app-monthly-billing/);
+  assert.match(request, /method:\s*'POST'/);
+  assert.match(request, /supabaseHeaders\(true\)/);
+  assert.match(request, /action:\s*action,\s*invoiceMonth:\s*monthlyBillingInvoiceMonth\(\)/);
+  assert.match(request, /body\.invoiceId\s*=\s*invoiceId/);
+  assert.match(request, /MONTHLY_BILLING_REQUEST_TIMEOUT_MS/);
+  assert.match(adminSource, /const MONTHLY_BILLING_REQUEST_TIMEOUT_MS = 120000/);
+  assert.ok(request.indexOf('isAdminDemoMode()') < request.indexOf('fetchWithAdminTimeout('), 'modo demo precisa sair antes da chamada remota');
+
+  const normalizer = functionSource(adminSource, 'normalizeMonthlyBillingResponse');
+  assert.match(normalizer, /data\.summary/);
+  assert.match(normalizer, /data\.candidates/);
+  assert.match(normalizer, /data\.results/);
+  assert.match(normalizer, /eligible:[\s\S]*existing:[\s\S]*ready:[\s\S]*paid:[\s\S]*overdue:[\s\S]*failed:[\s\S]*skipped:[\s\S]*total:/);
+  assert.match(functionSource(adminSource, 'generateMonthlyBilling'), /window\.confirm/);
+  assert.match(functionSource(adminSource, 'retryMonthlyBillingFailures'), /window\.confirm[\s\S]*monthlyBillingRequest\('retry', invoiceId\)/);
+  assert.match(adminSource, /Conta familiar/);
+  assert.match(adminSource, /monthlyBillingReasonLabel\(candidate\.reason\)/);
+  assert.match(adminSource, /Processamento parcial/);
+
+  const settingsRequest = functionSource(adminSource, 'monthlyBillingSettingsRequest');
+  assert.match(settingsRequest, /requireClubPermission\(nextSettings \? 'finance\.write' : 'finance\.read'\)/);
+  assert.match(settingsRequest, /admin_set_app_monthly_billing_settings/);
+  assert.match(settingsRequest, /admin_get_app_monthly_billing_settings/);
+  assert.match(settingsRequest, /p_enabled:[\s\S]*p_generation_day:[\s\S]*p_max_batch_size:/);
+  const updateSettings = functionSource(adminSource, 'updateMonthlyBillingSettings');
+  assert.match(updateSettings, /requireClubPermission\('finance\.write'\)/);
+  assert.match(updateSettings, /window\.confirm\(confirmation\)/);
+  assert.match(updateSettings, /cobranças Pix reais somente para os responsáveis elegíveis/);
+  assert.match(updateSettings, /Faturas já emitidas e a baixa automática dos pagamentos continuarão funcionando/);
+  assert.match(functionSource(adminSource, 'loadMonthlyBillingWorkspace'), /loadMonthlyBillingPreview[\s\S]*loadMonthlyBillingSettings/);
+  assert.match(adminSource, /opsState\.financeView === 'monthly'\) loadMonthlyBillingWorkspace\(false\)/);
+
+  const reasonLabel = functionSource(adminSource, 'monthlyBillingReasonLabel');
+  assert.match(reasonLabel, /FAMILY_MEMBER_CONFIRMATION_PENDING:[\s\S]*Confirme os dados de todos os membros ativos/);
+  assert.match(reasonLabel, /DRAFT_SNAPSHOT_MISMATCH:[\s\S]*composição familiar mudou/);
+  assert.match(reasonLabel, /MISSING_VALID_CPF:[\s\S]*CPF ou CNPJ/);
+  assert.match(reasonLabel, /EXEMPT_PLAN:[\s\S]*Plano isento/);
+  assert.match(reasonLabel, /NO_BILLABLE_AMOUNT:[\s\S]*Plano sem valor mensal configurado/);
+  const tabs = functionSource(adminSource, 'setPanelTabs');
+  assert.match(tabs, /aria-selected/);
+  assert.match(tabs, /role', 'tabpanel/);
+  assert.match(tabs, /panel\.hidden = !active \|\| Boolean\(permission && !canUseClubPermission\(permission\)\)/);
+  assert.match(adminSource, /financeSectionTabs'[\s\S]*ArrowLeft[\s\S]*ArrowRight[\s\S]*tabs\[next\]\.click\(\)/);
+});
+
+test('ADM impede mudança manual do estado financeiro de cobrança gerenciada pelo Asaas', () => {
+  const providerRules = functionSource(adminSource, 'applyClientInvoiceProviderRules');
+  assert.match(providerRules, /clientInvoiceStatus'\)\.disabled\s*=\s*managed/);
+  assert.match(providerRules, /alterar somente a observação/);
+  assert.match(providerRules, /data-client-invoice-pix/);
+
+  const save = functionSource(adminSource, 'saveClientInvoiceAction');
+  const providerBranch = sourceSection(save, 'if (invoiceIsProviderManaged(existing))', 'const payload =');
+  assert.match(providerBranch, /body:\s*\{\s*notes:\s*notes\s*\}/);
+  assert.doesNotMatch(providerBranch, /status:|paid_at:|amount:|due_date:/);
+  assert.match(adminSource, /provider_status/);
+  assert.match(adminSource, /last_payment_error/);
+
+  const usablePix = functionSource(adminSource, 'clientInvoiceHasUsablePix');
+  assert.match(usablePix, /\['PENDING', 'OVERDUE'\]\.includes\(providerStatus\)/);
+  assert.match(usablePix, /Date\.parse[\s\S]*expiresAt > Date\.now\(\)/);
+  assert.match(providerRules, /clientInvoiceHasUsablePix\(invoice\)/);
+  assert.match(functionSource(adminSource, 'renderClientInvoices'), /clientInvoiceHasUsablePix\(invoice\)/);
+
+  const canRetry = functionSource(adminSource, 'monthlyBillingCandidateCanRetry');
+  assert.match(canRetry, /candidate\.state === 'FAILED'/);
+  assert.match(canRetry, /providerStatus[^\n]*=== 'FAILED'/);
+  assert.match(functionSource(adminSource, 'retryMonthlyBillingFailures'), /monthlyBillingCandidateCanRetry\(candidate\)/);
+  const canSync = functionSource(adminSource, 'monthlyBillingCandidateCanSync');
+  assert.match(canSync, /'RECONCILING'/);
+
+  const needsGeneration = functionSource(adminSource, 'monthlyBillingCandidateNeedsGeneration');
+  assert.match(needsGeneration, /\['ELIGIBLE', 'ELIGIBLE_WITH_WARNING', 'READY'\]\.includes\(candidate\.state\)/);
+  assert.match(needsGeneration, /candidate\.state === 'EXISTING'[\s\S]*!String\(candidate\.providerStatus/);
+  assert.match(functionSource(adminSource, 'generateMonthlyBilling'), /filter\(monthlyBillingCandidateNeedsGeneration\)/);
+
+  const mapFinance = functionSource(adminSource, 'mapFinanceRow');
+  assert.match(mapFinance, /appPaymentInvoiceId:\s*row\.app_payment_invoice_id/);
+  const renderFinance = functionSource(adminSource, 'renderFinanceItem');
+  assert.match(renderFinance, /providerManaged\s*=\s*Boolean\(item\.appPaymentInvoiceId\)/);
+  assert.match(renderFinance, /Sincronizado pelo Asaas/);
+  assert.match(renderFinance, /providerManaged \|\| isFinanceCancelled\(item\)/);
+  assert.match(functionSource(adminSource, 'isFinanceOverdue'), /!isFinanceCancelled\(item\)/);
+});
+
+test('Ilha Play lê campos seguros e mantém cobrança familiar visível para plano-base isento', () => {
+  const loader = functionSource(indexSource, 'loadClientPaymentInvoices');
+  assert.doesNotMatch(loader, /select=\*/);
+  assert.match(indexSource, /CLIENT_PAYMENT_INVOICE_SAFE_FIELDS[\s\S]{0,180}provider_status,pix_expires_at,last_payment_error,issued_at/);
+  assert.match(loader, /CLIENT_PAYMENT_INVOICE_SAFE_FIELDS/);
+  assert.match(loader, /CLIENT_PAYMENT_INVOICE_FAMILY_FIELDS/);
+  assert.match(loader, /looksLikeMissingSchema/);
+  assert.match(indexSource, /app_family_invoice_items\?select=id,invoice_id,family_member_id,beneficiary_client_id,item_type,description,amount,created_at/);
+
+  const invoices = functionSource(indexSource, 'buildMonthlyInvoices');
+  assert.match(invoices, /isExemptClientPlan\(\)\s*&&\s*!hasFamilyBillingInvoice\(\)/);
+  assert.match(functionSource(indexSource, 'renderPayments'), /isExemptClientPlan\(\)\s*&&\s*!hasFamilyBillingInvoice\(\)/);
+  const familyInvoices = functionSource(indexSource, 'hasFamilyBillingInvoice');
+  assert.match(familyInvoices, /family_billing/);
+  assert.match(familyInvoices, /familyInvoiceItems/);
+});
+
+test('Ilha Play apresenta todos os estados mensais e atualização segura sem reenviar ao provedor', () => {
+  const status = functionSource(indexSource, 'invoiceEffectiveStatus');
+  for (const value of ['GERANDO', 'AGUARDANDO', 'PAGA', 'VENCIDA', 'CANCELADA', 'FALHA']) {
+    assert.match(status, new RegExp(`['"]${value}['"]`));
+  }
+  assert.match(status, /provider_status/);
+  assert.match(status, /invoicePixExpired/);
+  assert.match(status, /\['RECEIVED', 'RECEIVED_IN_CASH'\]/);
+  assert.doesNotMatch(status, /\['RECEIVED', 'CONFIRMED'/);
+  assert.match(status, /providerStatus === 'RECONCILING'\) return 'GERANDO'/);
+  assert.match(status, /providerStatus === 'CONFIRMED'\) return 'AGUARDANDO'/);
+  for (const providerState of ['REVIEW_REQUIRED', 'CHARGEBACK', 'DISPUTED', 'PARTIALLY_REFUNDED']) {
+    assert.match(status, new RegExp(providerState));
+  }
+  assert.ok(status.indexOf("['FAILED', 'ERROR', 'REVIEW_REQUIRED'") < status.indexOf("['PAGA', 'PAGO'].includes(status)"), 'revisão do provedor precisa prevalecer sobre um status local pago antigo');
+  const card = functionSource(indexSource, 'invoiceCard');
+  assert.match(card, /data-refresh-invoice/);
+  assert.match(card, /data-open-pix/);
+  assert.match(card, /Conta familiar/);
+  const paymentAction = functionSource(indexSource, 'invoicePaymentActionAllowed');
+  assert.match(paymentAction, /\['PENDING', 'OVERDUE'\]\.includes\(providerStatus\)/);
+  assert.doesNotMatch(paymentAction, /CONFIRMED/);
+  assert.match(card, /!invoicePaymentActionAllowed\(invoice\)/);
+  const paymentClick = sourceSection(indexSource, "$('paymentList').addEventListener('click'", "$('pixModal').addEventListener('click'");
+  assert.match(paymentClick, /data-refresh-invoice/);
+  assert.match(paymentClick, /refresh\(false\)/);
+  assert.doesNotMatch(paymentClick, /app-monthly-billing|action:\s*'retry'/);
+  assert.match(functionSource(indexSource, 'renderPayments'), /paymentInvoicesLoadError[\s\S]*data-refresh-invoices/);
+});
+
+test('modal Pix do Ilha Play controla foco, rolagem e cópia alternativa no celular', () => {
+  assert.match(indexSource, /id="pixModal"[^>]*aria-describedby="pixModalSubtitle"/);
+  assert.match(indexSource, /class="pix-modal-card" tabindex="-1"/);
+  assert.match(indexSource, /\.invoice-actions button\s*\{[\s\S]*?min-height:\s*44px/);
+  assert.match(indexSource, /\.pix-modal-close\s*\{[\s\S]*?min-height:\s*44px/);
+  assert.match(functionSource(indexSource, 'openPixModal'), /pixModalReturnFocus[\s\S]*document\.body\.style\.overflow\s*=\s*'hidden'[\s\S]*\.focus\(\)/);
+  assert.match(functionSource(indexSource, 'closePixModal'), /pixModalPreviousBodyOverflow[\s\S]*returnFocus\.focus\(\)/);
+  assert.match(functionSource(indexSource, 'trapPixModalFocus'), /event\.key\s*!==\s*'Tab'[\s\S]*event\.preventDefault/);
+  assert.match(functionSource(indexSource, 'copyTextWithFallback'), /navigator\.clipboard[\s\S]*document\.execCommand\('copy'\)[\s\S]*range\.selectNodeContents/);
+});
+
 test('inscricao paga envia CPF ao backend e cortesia permanece opcional', () => {
   assert.match(tournamentSource, /id="athleteCpf"/);
   assert.match(tournamentSource, /cpf:\s*digitsOnly\(form\.get\('cpf'\)\)/);
@@ -2971,7 +3127,7 @@ test('membro familiar ativo vira aluno operacional e pode receber plano e aula n
   assert.match(adminSource, /data-family-directory-student=/);
   assert.match(adminSource, /Plano individual · cobrança na conta da família/);
   assert.match(adminSource, /if \(studentId && String\(student\.id \|\| ''\) === studentId\) return true/);
-  assert.match(serviceWorkerSource, /ilha-play-v236-tournament-pwa/);
+  assert.match(serviceWorkerSource, /ilha-play-v237-monthly-pix/);
 });
 
 test('grade de aulas usa cartões compactos e filtros responsivos', () => {

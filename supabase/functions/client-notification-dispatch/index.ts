@@ -23,7 +23,7 @@ function notificationTtlSeconds(eventType: string) {
 }
 
 function notificationSurface(eventType: string) {
-  const adminOnlyEvents = new Set(["NOVO_ALUNO", "TORNEIO_INSCRICAO"]);
+  const adminOnlyEvents = new Set(["NOVO_ALUNO", "TORNEIO_INSCRICAO", "FATURA_MENSAL_FALHA"]);
   return adminOnlyEvents.has(String(eventType || "").toUpperCase()) ? "ADM" : "ILHA_PLAY";
 }
 
