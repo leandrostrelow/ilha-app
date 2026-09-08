@@ -646,6 +646,12 @@ test('ADM impede mudança manual do estado financeiro de cobrança gerenciada pe
   assert.match(providerRules, /clientInvoiceHasUsablePix\(invoice\)/);
   assert.match(functionSource(adminSource, 'renderClientInvoices'), /clientInvoiceHasUsablePix\(invoice\)/);
 
+  assert.match(adminSource, /<details class="client-invoice-editor" id="clientInvoiceEditor"/);
+  assert.match(adminSource, /Adicionar registro manual \(sem Pix automático\)/);
+  assert.match(adminSource, /Esta opção não cria Pix e não envia cobrança ao aluno/);
+  assert.match(adminSource, /id="clientInvoiceOpenFinanceBtn"[^>]*>Abrir Mensalidades</);
+  assert.match(adminSource, /clientInvoiceOpenFinanceBtn[\s\S]*opsState\.financeView = 'monthly'[\s\S]*openFinanceModule\(\)/);
+
   const canRetry = functionSource(adminSource, 'monthlyBillingCandidateCanRetry');
   assert.match(canRetry, /candidate\.state === 'FAILED'/);
   assert.match(canRetry, /providerStatus[^\n]*=== 'FAILED'/);

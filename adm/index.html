@@ -3723,6 +3723,66 @@
       line-height: 1.4;
     }
 
+    .client-invoice-guide {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 12px 13px;
+      border: 1px solid #cfe3e7;
+      border-radius: 12px;
+      background: #f4fbfc;
+    }
+
+    .client-invoice-guide strong,
+    .client-invoice-guide span {
+      display: block;
+    }
+
+    .client-invoice-guide span {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+      line-height: 1.4;
+    }
+
+    .client-invoice-editor {
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .client-invoice-editor summary {
+      padding: 13px 15px;
+      color: var(--dark);
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      list-style-position: inside;
+    }
+
+    .client-invoice-editor[open] summary {
+      border-bottom: 1px solid var(--line);
+      background: #f8fbfc;
+    }
+
+    .client-invoice-editor-copy {
+      margin: 0;
+      padding: 12px 15px 0;
+      color: #785414;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .client-invoice-editor .form-grid {
+      padding: 12px 15px 15px;
+    }
+
     .client-invoice-provider-state {
       grid-column: 1 / -1;
       padding: 10px 12px;
@@ -20845,11 +20905,21 @@
             <div class="ops-panel client-invoices-panel" id="clientInvoicesPanel" data-club-permission="finance.read" style="margin-top:12px">
               <div class="ops-panel-head">
                 <div>
-                  <h2 id="clientInvoicesTitle">Faturas do aluno</h2>
-                  <div class="muted" id="clientInvoicesSubtitle">Controle mês a mês do que aparece no pagamento do aluno.</div>
+                  <h2 id="clientInvoicesTitle">Histórico financeiro do aluno</h2>
+                  <div class="muted" id="clientInvoicesSubtitle">Cobranças e pagamentos registrados para este aluno.</div>
                 </div>
               </div>
-              <div class="form-grid" id="clientInvoiceForm" data-club-permission="finance.write">
+              <div class="client-invoice-guide">
+                <div>
+                  <strong>Mensalidade Pix pelo Asaas</strong>
+                  <span>Ative a cobrança acima e gere o Pix na área de Mensalidades.</span>
+                </div>
+                <button class="ghost-btn" type="button" id="clientInvoiceOpenFinanceBtn">Abrir Mensalidades</button>
+              </div>
+              <details class="client-invoice-editor" id="clientInvoiceEditor" data-club-permission="finance.write">
+                <summary id="clientInvoiceEditorSummary">Adicionar registro manual (sem Pix automático)</summary>
+                <p class="client-invoice-editor-copy" id="clientInvoiceEditorCopy">Use somente para registrar uma cobrança antiga ou recebida fora do Asaas. Esta opção não cria Pix e não envia cobrança ao aluno.</p>
+                <div class="form-grid" id="clientInvoiceForm">
                 <div class="field">
                   <label for="clientInvoiceMonth">Mês</label>
                   <input id="clientInvoiceMonth" type="month" />
@@ -20865,10 +20935,10 @@
                 <div class="field">
                   <label for="clientInvoiceStatus">Status</label>
                   <select id="clientInvoiceStatus">
-                    <option value="ABERTA">Aberta</option>
-                    <option value="AGUARDANDO">Aguardando pagamento</option>
-                    <option value="PAGA">Paga</option>
-                    <option value="VENCIDA">Vencida</option>
+                    <option value="ABERTA">Aberta — registro interno</option>
+                    <option value="AGUARDANDO">Aguardando — registro interno</option>
+                    <option value="PAGA">Paga fora do Asaas</option>
+                    <option value="VENCIDA">Vencida — registro interno</option>
                     <option value="CANCELADA">Cancelada</option>
                   </select>
                 </div>
@@ -20883,9 +20953,10 @@
                   <input id="clientInvoiceNotes" placeholder="Ex.: mês só jogou, aula avulsa, reposição, desconto." />
                 </div>
                 <div class="field full">
-                  <button class="primary-btn" type="button" id="clientInvoiceSaveBtn">Salvar fatura</button>
+                  <button class="primary-btn" type="button" id="clientInvoiceSaveBtn">Salvar registro manual</button>
                 </div>
-              </div>
+                </div>
+              </details>
               <div class="ops-list" id="clientInvoiceList" style="margin-top:12px"></div>
             </div>
           </div>
@@ -31419,6 +31490,8 @@
       const invoice = client && findClientInvoice(client, $('clientInvoiceMonth').value);
       const managed = invoiceIsProviderManaged(invoice);
       const state = $('clientInvoiceProviderState');
+      const editorSummary = $('clientInvoiceEditorSummary');
+      const editorCopy = $('clientInvoiceEditorCopy');
       state.hidden = !managed;
       $('clientInvoiceStatus').disabled = managed || !canUseClubPermission('finance.write');
       $('clientInvoiceDue').readOnly = managed;
@@ -31432,7 +31505,11 @@
       providerError.textContent = managed && invoice.lastPaymentError ? 'Última falha: ' + invoice.lastPaymentError : '';
       $('clientInvoiceProviderActions').innerHTML = managed && clientInvoiceHasUsablePix(invoice)
         ? '<button class="small-btn" type="button" data-client-invoice-pix="' + escapeHtml(invoice.id || '') + '">Copiar Pix</button>' : '';
-      $('clientInvoiceSaveBtn').textContent = managed ? 'Salvar observação' : 'Salvar fatura';
+      if (editorSummary) editorSummary.textContent = managed ? 'Editar observação da fatura do Asaas' : 'Adicionar registro manual (sem Pix automático)';
+      if (editorCopy) editorCopy.textContent = managed
+        ? 'Esta cobrança já é gerenciada pelo Asaas. Aqui você pode alterar somente a observação; valor, vencimento e status continuam protegidos.'
+        : 'Use somente para registrar uma cobrança antiga ou recebida fora do Asaas. Esta opção não cria Pix e não envia cobrança ao aluno.';
+      $('clientInvoiceSaveBtn').textContent = managed ? 'Salvar observação' : 'Salvar registro manual';
     }
 
     async function copyAdminTextWithFallback(value) {
@@ -31945,11 +32022,12 @@
       const invoiceClient = context.memberLink ? (familyClientById(context.responsibleId) || client) : client;
       const hasFamily = Boolean(context.memberLink || context.rows.length);
       renderClientFamilyPanel(client);
-      $('clientInvoicesTitle').textContent = hasFamily ? 'Faturas da família' : 'Faturas do aluno';
+      $('clientInvoicesTitle').textContent = hasFamily ? 'Histórico financeiro da família' : 'Histórico financeiro do aluno';
       $('clientInvoicesSubtitle').textContent = context.memberLink
         ? 'Este membro não recebe cobranças. As faturas abaixo pertencem a ' + (context.responsible.name || 'seu responsável financeiro') + '.'
-        : (context.rows.length ? 'Cobrança consolidada do responsável e de todos os membros ativos.' : 'Controle mês a mês do que aparece no pagamento do aluno.');
-      $('clientInvoiceForm').hidden = Boolean(context.memberLink) || !canUseClubPermission('finance.write');
+        : (context.rows.length ? 'Cobranças consolidadas do responsável e de todos os membros ativos.' : 'Cobranças e pagamentos registrados para este aluno.');
+      $('clientInvoiceEditor').hidden = Boolean(context.memberLink) || !canUseClubPermission('finance.write');
+      $('clientInvoiceEditor').open = false;
       renderClientInvoices(invoiceClient);
       applyClientInvoiceFamilyRules(invoiceClient, context.memberLink ? familyContextForClient(invoiceClient) : context);
     }
@@ -32337,11 +32415,12 @@
         : '<div class="lesson-empty-state">Sem pedido registrado pelo aluno. Defina o plano manualmente.</div>';
       const familyInvoiceClient = familyContext.memberLink ? (familyClientById(familyContext.responsibleId) || client) : client;
       const hasFamily = Boolean(familyContext.memberLink || familyContext.rows.length);
-      $('clientInvoicesTitle').textContent = hasFamily ? 'Faturas da família' : 'Faturas do aluno';
+      $('clientInvoicesTitle').textContent = hasFamily ? 'Histórico financeiro da família' : 'Histórico financeiro do aluno';
       $('clientInvoicesSubtitle').textContent = familyContext.memberLink
         ? 'Este membro não recebe cobranças. As faturas abaixo pertencem a ' + (familyContext.responsible.name || 'seu responsável financeiro') + '.'
-        : (familyContext.rows.length ? 'Cobrança consolidada do responsável e de todos os membros ativos.' : 'Controle mês a mês do que aparece no pagamento do aluno.');
-      $('clientInvoiceForm').hidden = Boolean(familyContext.memberLink) || !canUseClubPermission('finance.write');
+        : (familyContext.rows.length ? 'Cobranças consolidadas do responsável e de todos os membros ativos.' : 'Cobranças e pagamentos registrados para este aluno.');
+      $('clientInvoiceEditor').hidden = Boolean(familyContext.memberLink) || !canUseClubPermission('finance.write');
+      $('clientInvoiceEditor').open = false;
       renderClientInvoices(familyInvoiceClient);
       applyClientInvoiceFamilyRules(familyInvoiceClient, familyContext.memberLink ? familyContextForClient(familyInvoiceClient) : familyContext);
       showClubAdminModal('clientModal', 'clientEditName');
@@ -43968,7 +44047,7 @@
           button.disabled = false;
           const currentClient = findClientByKey(opsState.selectedClientId);
           const currentInvoice = currentClient && findClientInvoice(currentClient, $('clientInvoiceMonth').value);
-          button.textContent = invoiceIsProviderManaged(currentInvoice) ? 'Salvar observação' : 'Salvar fatura';
+          button.textContent = invoiceIsProviderManaged(currentInvoice) ? 'Salvar observação' : 'Salvar registro manual';
         }
       }
     }
@@ -45286,6 +45365,11 @@
         }
       });
       $('clientInvoiceSaveBtn').addEventListener('click', saveClientInvoiceAction);
+      $('clientInvoiceOpenFinanceBtn').addEventListener('click', function () {
+        closeClientModal();
+        opsState.financeView = 'monthly';
+        openFinanceModule();
+      });
       $('clientEditPlan').addEventListener('change', applyPlanToClientForm);
       $('clientEditFrequency').addEventListener('change', function () { renderClientLessonDrafts(); });
       $('clientEditMinor').addEventListener('change', updateClientMinorFields);
