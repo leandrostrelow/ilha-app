@@ -129,6 +129,13 @@ test('customer mensal reutiliza CPF/CNPJ exato sem criar duplicata', () => {
   assert.match(migration, /resolution_started_at[\s\S]*interval '3 minutes'/i);
   assert.match(migration, /resolution_token = p_resolution_token/i);
   assert.match(migration, /provider_create_attempted_at[\s\S]*resultado ambíguo e exige revisão/i);
+  assert.match(edgeFunction, /async function syncAsaasCustomerContact[\s\S]*method: "PUT"[\s\S]*notificationDisabled: environment !== "PRODUCTION"/i);
+  assert.match(edgeFunction, /status === "ACTIVE" && mappedId[\s\S]*syncAsaasCustomerContact/i);
+  assert.match(functionBody, /let reusedCustomer = Boolean\(customer\)[\s\S]*if \(reusedCustomer\)[\s\S]*syncAsaasCustomerContact/i);
+  const customerSync = edgeFunction.match(
+    /async function syncAsaasCustomerContact\([\s\S]*?\n}\n\nasync function ensureAsaasCustomer/
+  )?.[0] || '';
+  assert.doesNotMatch(customerSync, /externalReference,/);
 });
 
 test('retry e reconciliação periódica consultam a cobrança existente sem abrir outra', () => {
@@ -179,6 +186,8 @@ test('autorização separa preview, escrita e execução interna agendada', () =
   assert.match(edgeFunction, /timeZone: "America\/Sao_Paulo"/);
   assert.match(edgeFunction, /MAX_SCHEDULED_CLAIMS = 50/);
   assert.match(migration, /action in \('GENERATE', 'RETRY', 'SCHEDULED', 'RECONCILE'\)/);
+  assert.match(migration, /grant execute on function public\.generate_app_monthly_pix_billing\(date, uuid, text\)\s+to service_role/i);
+  assert.doesNotMatch(migration, /grant execute on function public\.generate_app_monthly_pix_billing\(date, uuid, text\)\s+to authenticated/i);
   assert.match(edgeFunction, /p_include_ready: action === "retry" \|\| shouldGenerate/);
   assert.match(edgeFunction, /request\.text\(\)[\s\S]*TextEncoder\(\)\.encode\(rawBody\)\.byteLength[\s\S]*JSON\.parse\(rawBody\)/);
 });
@@ -242,6 +251,13 @@ test('configuração operacional começa pausada, exige permissão e deixa audit
   assert.match(migration, /authorization_kind[\s\S]*case when is_service then 'INTERNAL' else 'USER' end/i);
   assert.match(edgeFunction, /action === "generate" && !billingEnabled/);
   assert.match(edgeFunction, /action === "scheduled" && billingEnabled && generationDayReached/);
+  assert.match(migration, /'reconciliationIntervalMinutes', 15[\s\S]*'paymentPollingIntervalMinutes', 60/);
+});
+
+test('vencimento efetivo e conflito no razão falham antes de chamar o Asaas', () => {
+  assert.match(migration, /then greatest\([\s\S]*monthly_billing_due_date[\s\S]*America\/Sao_Paulo'\)::date \+ 1/i);
+  assert.match(migration, /then 'DUE_DATE_IN_PAST'/i);
+  assert.match(migration, /exception[\s\S]*when check_violation or unique_violation[\s\S]*REVIEW_REQUIRED[\s\S]*LEDGER_CONFLICT_REQUIRES_REVIEW[\s\S]*continue;/i);
 });
 
 test('estados de revisão e reversão alertam somente a equipe financeira autorizada', () => {

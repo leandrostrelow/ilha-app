@@ -309,7 +309,8 @@ begin
     'generationTime', '09:05',
     'timezone', 'America/Sao_Paulo',
     'maxBatchSize', settings_row.max_batch_size,
-    'reconciliationIntervalMinutes', 60,
+    'reconciliationIntervalMinutes', 15,
+    'paymentPollingIntervalMinutes', 60,
     'updatedAt', settings_row.updated_at,
     'updatedBy', settings_row.updated_by
   );
@@ -390,7 +391,8 @@ begin
     'generationTime', '09:05',
     'timezone', 'America/Sao_Paulo',
     'maxBatchSize', settings_row.max_batch_size,
-    'reconciliationIntervalMinutes', 60,
+    'reconciliationIntervalMinutes', 15,
+    'paymentPollingIntervalMinutes', 60,
     'updatedAt', settings_row.updated_at,
     'updatedBy', settings_row.updated_by
   );
@@ -651,18 +653,31 @@ as $$
   ), resolved as (
     select
       base.*,
-      private.monthly_billing_due_date(
-        p_invoice_month,
-        coalesce(base.due_day, base.default_due_day, 10)
-      ) as calculated_due_date,
+      case
+        when date_trunc('month', p_invoice_month::timestamp)::date =
+          date_trunc(
+            'month',
+            now() at time zone 'America/Sao_Paulo'
+          )::date then greatest(
+            private.monthly_billing_due_date(
+              p_invoice_month,
+              coalesce(base.due_day, base.default_due_day, 10)
+            ),
+            (now() at time zone 'America/Sao_Paulo')::date + 1
+          )
+        else private.monthly_billing_due_date(
+          p_invoice_month,
+          coalesce(base.due_day, base.default_due_day, 10)
+        )
+      end as calculated_due_date,
       invoice.id as existing_invoice_id,
       invoice.amount as existing_amount,
       invoice.due_date as existing_due_date,
       invoice.status as invoice_status,
       invoice.family_billing as existing_family_billing,
       invoice.pix_payload as existing_pix_payload,
-      payment.status as payment_status,
-      payment.last_error as payment_last_error,
+      coalesce(payment.status, invoice.provider_status) as payment_status,
+      coalesce(payment.last_error, invoice.last_payment_error) as payment_last_error,
       payment.id as provider_row_id,
       coalesce((
         select jsonb_object_agg(
@@ -745,6 +760,11 @@ as $$
         when upper(coalesce(resolved.status, '')) <> 'ATIVO' then 'CLIENT_NOT_ACTIVE'
         when resolved.registration_completed_at is null then 'REGISTRATION_INCOMPLETE'
         when resolved.unconfirmed_family_count > 0 then 'FAMILY_MEMBER_CONFIRMATION_PENDING'
+        when date_trunc('month', p_invoice_month::timestamp)::date <
+          date_trunc(
+            'month',
+            now() at time zone 'America/Sao_Paulo'
+          )::date then 'DUE_DATE_IN_PAST'
         when lower(coalesce(resolved.official_plan_code, '')) = 'isento'
           and resolved.included_family_amount <= 0 then 'EXEMPT_PLAN'
         when lower(coalesce(resolved.catalog_plan_type, '')) = 'avulso'
@@ -928,11 +948,8 @@ declare
   invoice_row public.app_payment_invoices%rowtype;
   result_rows jsonb := '[]'::jsonb;
 begin
-  if not is_service and (
-    (select auth.uid()) is null
-    or not coalesce(public.has_club_permission('finance.write'), false)
-  ) then
-    raise exception 'Seu acesso não permite gerar cobranças.' using errcode = '42501';
+  if not is_service then
+    raise exception 'Esta operação exige a função de serviço.' using errcode = '42501';
   end if;
   if p_invoice_month is null then
     raise exception 'Informe a competência da cobrança.' using errcode = '22023';
@@ -1059,7 +1076,36 @@ begin
        for update;
     end if;
 
-    perform private.ensure_app_invoice_financial_transaction(invoice_row.id);
+    begin
+      perform private.ensure_app_invoice_financial_transaction(invoice_row.id);
+    exception
+      when check_violation or unique_violation then
+        -- A legacy ledger mismatch belongs to this responsible only. Keep the
+        -- invoice auditable, block provider dispatch and continue the batch.
+        update public.app_invoice_provider_payments
+           set status = 'REVIEW_REQUIRED',
+               last_error = 'Conflito com lançamento financeiro preexistente.',
+               next_reconciliation_at = null,
+               updated_at = now()
+         where invoice_id = invoice_row.id;
+        update public.app_payment_invoices
+           set provider_status = 'REVIEW_REQUIRED',
+               last_payment_error = 'Conflito com lançamento financeiro preexistente.',
+               updated_at = now()
+         where id = invoice_row.id;
+        perform private.notify_monthly_billing_finance_review(
+          invoice_row.id,
+          'REVIEW_REQUIRED'
+        );
+        result_rows := result_rows || jsonb_build_array(jsonb_build_object(
+          'invoiceId', invoice_row.id,
+          'clientId', invoice_row.client_id,
+          'state', 'FAILED',
+          'providerStatus', 'REVIEW_REQUIRED',
+          'error', 'LEDGER_CONFLICT_REQUIRES_REVIEW'
+        ));
+        continue;
+    end;
 
     insert into public.app_invoice_provider_payments (
       invoice_id,
@@ -1099,7 +1145,7 @@ $$;
 revoke all on function public.generate_app_monthly_pix_billing(date, uuid, text)
   from public, anon, authenticated, service_role;
 grant execute on function public.generate_app_monthly_pix_billing(date, uuid, text)
-  to authenticated, service_role;
+  to service_role;
 
 create or replace function public.claim_app_invoice_provider_dispatch(
   p_invoice_id uuid default null,

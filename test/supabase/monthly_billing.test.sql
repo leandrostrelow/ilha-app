@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(74);
+select plan(79);
 
 select has_table('public', 'app_invoice_provider_payments', 'há snapshot privado 1:1 da cobrança mensal');
 select has_table('public', 'app_payment_customers', 'há mapeamento privado de customer por ambiente');
@@ -37,6 +37,18 @@ select ok(
     'EXECUTE'
   ),
   'reconciliação mensal é exclusiva do service_role'
+);
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.generate_app_monthly_pix_billing(date,uuid,text)',
+    'EXECUTE'
+  ) and has_function_privilege(
+    'service_role',
+    'public.generate_app_monthly_pix_billing(date,uuid,text)',
+    'EXECUTE'
+  ),
+  'geração mensal só pode ser invocada pela Edge com service_role'
 );
 select is(
   (select enabled from public.app_monthly_billing_settings where singleton),
@@ -991,15 +1003,49 @@ insert into public.financial_transactions (
   'RECEBIDO',
   now()
 );
-select throws_ok(
+update public.app_family_members
+   set responsible_confirmed_at = coalesce(responsible_confirmed_at, now())
+ where billing_responsible_id = '71000000-0000-4000-8000-000000000002'::uuid
+   and status = 'ATIVO';
+select lives_ok(
   $$select public.generate_app_monthly_pix_billing(
       date '2027-01-01',
-      '71000000-0000-4000-8000-000000000001'::uuid,
+      null,
       'SANDBOX'
     )$$,
-  '23514',
-  'O lançamento legado correspondente já foi baixado ou encerrado.',
-  'lançamento legado já recebido bloqueia nova cobrança em vez de ser duplicado'
+  'conflito legado de um cliente não interrompe o restante do lote'
+);
+select is(
+  (select provider_status from public.app_payment_invoices
+    where client_id = '71000000-0000-4000-8000-000000000001'::uuid
+      and invoice_month = date '2027-01-01'),
+  'REVIEW_REQUIRED',
+  'lançamento legado encerrado isola somente a fatura conflitante para revisão'
+);
+select is(
+  (select count(*)::integer from public.app_invoice_provider_payments as payment
+    join public.app_payment_invoices as invoice on invoice.id = payment.invoice_id
+    where invoice.client_id = '71000000-0000-4000-8000-000000000001'::uuid
+      and invoice.invoice_month = date '2027-01-01'),
+  0,
+  'fatura com conflito no razão não chega à fila do Asaas'
+);
+select is(
+  (select count(*)::integer from public.app_invoice_provider_payments as payment
+    join public.app_payment_invoices as invoice on invoice.id = payment.invoice_id
+    where invoice.client_id = '71000000-0000-4000-8000-000000000002'::uuid
+      and invoice.invoice_month = date '2027-01-01'),
+  1,
+  'outro responsável elegível do lote continua até READY'
+);
+
+select is(
+  (select reason from private.monthly_billing_candidates(
+    date '2020-01-01',
+    '71000000-0000-4000-8000-000000000001'::uuid
+  )),
+  'DUE_DATE_IN_PAST',
+  'competência passada sem provider nunca é enviada retroativamente ao Asaas'
 );
 
 select lives_ok(

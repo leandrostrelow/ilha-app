@@ -138,6 +138,10 @@ seguintes. Uma repetição, timeout ou execução concorrente reutiliza a mesma
 `externalReference`; nunca deve criar uma segunda cobrança para o mesmo aluno e
 mês.
 
+O cron varre cobranças a cada 15 minutos. Para reduzir chamadas ao Asaas, cada
+Pix em estado normal fica elegível a uma nova consulta no máximo uma vez por
+hora; `RECONCILING` usa a janela curta de recuperação definida no backend.
+
 O navegador só pode chamar ações administrativas com um JWT válido e a
 permissão `finance.write`. O cron usa o cabeçalho
 `x-monthly-billing-token`; o valor é gerado e guardado somente no Vault, e o

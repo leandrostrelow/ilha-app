@@ -360,6 +360,34 @@ function validateRemotePayment(
   }
 }
 
+async function syncAsaasCustomerContact(
+  customerId: string,
+  client: JsonRecord,
+  cpf: string,
+  environment: string,
+) {
+  const updated = await asaasRequest(
+    `/customers/${encodeURIComponent(customerId)}`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        name: text(client.full_name, 120),
+        cpfCnpj: cpf,
+        email: text(client.email, 160) || undefined,
+        mobilePhone: text(client.phone, 20).replace(/\D/g, "") || undefined,
+        // Production delivery remains enabled at Asaas. We intentionally do
+        // not overwrite externalReference on customers discovered by CPF.
+        notificationDisabled: environment !== "PRODUCTION",
+      }),
+    },
+  );
+  if (text(updated.id, 120) !== customerId) {
+    throw new ProviderInvariantError(
+      "O Asaas não confirmou a atualização do customer reutilizado.",
+    );
+  }
+}
+
 async function ensureAsaasCustomer(
   adminClient: DbClient,
   client: JsonRecord,
@@ -391,7 +419,10 @@ async function ensureAsaasCustomer(
       "O CPF do responsável mudou e o vínculo Asaas exige revisão.",
     );
   }
-  if (resolutionState.status === "ACTIVE" && mappedId) return mappedId;
+  if (resolutionState.status === "ACTIVE" && mappedId) {
+    await syncAsaasCustomerContact(mappedId, client, cpf, environment);
+    return mappedId;
+  }
   if (resolutionState.claimed !== true) {
     throw new AmbiguousProviderResultError(
       new Error("Outro lote está resolvendo este cliente Asaas."),
@@ -407,6 +438,7 @@ async function ensureAsaasCustomer(
 
   let customer = await findAsaasCustomer(externalReference);
   if (!customer) customer = await findAsaasCustomerByDocument(cpf);
+  let reusedCustomer = Boolean(customer);
   if (!customer) {
     if (!allowProviderCreate) {
       throw new ProviderInvariantError(
@@ -447,6 +479,7 @@ async function ensureAsaasCustomer(
         await findAsaasCustomerByDocument(cpf).catch(() => null);
       if (!recovered) throw new AmbiguousProviderResultError(error);
       customer = recovered;
+      reusedCustomer = true;
     }
   }
   const customerId = text(customer.id, 120);
@@ -454,6 +487,9 @@ async function ensureAsaasCustomer(
     throw new ProviderInvariantError(
       "O Asaas não retornou o cliente da cobrança.",
     );
+  }
+  if (reusedCustomer) {
+    await syncAsaasCustomerContact(customerId, client, cpf, environment);
   }
 
   const saved = await adminClient.rpc("save_app_payment_customer", {
