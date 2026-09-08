@@ -363,7 +363,7 @@ select is(
 );
 
 update public.app_clients
-   set status = 'INATIVO'
+   set status = 'BLOQUEADO'
  where id = '71000000-0000-4000-8000-000000000001'::uuid;
 select is(
   (select state
@@ -937,7 +937,7 @@ insert into public.app_payment_invoices (
   date '2026-12-31'
 );
 update public.app_clients
-   set status = 'INATIVO'
+   set status = 'BLOQUEADO'
  where id = '71000000-0000-4000-8000-000000000001'::uuid;
 select is(
   (select state
