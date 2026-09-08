@@ -8,7 +8,7 @@ const readProjectFile = (file) => readFile(path.join(projectRoot, file), 'utf8')
 
 const [migrationSource, usedScopeIndexMigrationSource, registerSource, adminSource] = await Promise.all([
   readProjectFile('supabase/migrations/20260908145509_add_private_spatial_courtesy_invites.sql'),
-  readProjectFile('supabase/migrations/20260908150157_cover_spatial_courtesy_used_scope_fk.sql'),
+  readProjectFile('supabase/migrations/20260908150434_cover_spatial_courtesy_used_scope_fk.sql'),
   readProjectFile('supabase/functions/tournament-register/index.ts'),
   readProjectFile('supabase/functions/tournament-admin-api/index.ts'),
 ]);
