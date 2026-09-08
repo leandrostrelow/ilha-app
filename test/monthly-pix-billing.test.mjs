@@ -17,6 +17,12 @@ const scheduleMigrationPath = path.join(
   'migrations',
   '20260908174852_schedule_app_monthly_billing.sql'
 );
+const serviceReadMigrationPath = path.join(
+  projectRoot,
+  'supabase',
+  'migrations',
+  '20260908201500_grant_monthly_billing_service_reads.sql'
+);
 const dispatcherPath = path.join(
   projectRoot,
   'supabase',
@@ -24,12 +30,20 @@ const dispatcherPath = path.join(
   'client-notification-dispatch',
   'index.ts'
 );
-const [migration, scheduleMigration, edgeFunction, dispatcher] = await Promise.all([
+const [migration, scheduleMigration, serviceReadMigration, edgeFunction, dispatcher] = await Promise.all([
   readFile(migrationPath, 'utf8'),
   readFile(scheduleMigrationPath, 'utf8'),
+  readFile(serviceReadMigrationPath, 'utf8'),
   readFile(functionPath, 'utf8'),
   readFile(dispatcherPath, 'utf8')
 ]);
+
+test('worker mensal recebe somente as leituras legadas necessárias', () => {
+  assert.match(serviceReadMigration, /grant select on table public\.app_payment_invoices to service_role/i);
+  assert.match(serviceReadMigration, /grant select on table public\.app_clients to service_role/i);
+  assert.doesNotMatch(serviceReadMigration, /grant\s+(?:insert|update|delete|truncate|all)\b/i);
+  assert.doesNotMatch(serviceReadMigration, /\bto\s+(?:anon|authenticated|public)\b/i);
+});
 
 test('financeiro mensal mantém provider, customer, runs e settings fora do acesso do app', () => {
   for (const table of [
@@ -154,6 +168,8 @@ test('retry e reconciliação periódica consultam a cobrança existente sem abr
   assert.match(edgeFunction, /createOrRecoverPayment\(claim, invoice, customerId\)[\s\S]*fetchPix\(paymentId\)/);
   assert.match(edgeFunction, /reusableStoredPix\(claim\) \|\| await fetchPix\(paymentId\)/);
   assert.match(migration, /stored_pix_payload text[\s\S]*stored_pix_expires_at timestamptz/i);
+  assert.match(edgeFunction, /const capacityReached = action !== "retry" && results\.length >= maxClaims/);
+  assert.match(edgeFunction, /failedCount \|\| partialCount \|\| actionableReady \|\|[\s\S]*capacityReached \|\| deadlineReached/);
 });
 
 test('geração drena lotes somente dentro do orçamento global e informa trabalho remanescente', () => {
@@ -165,7 +181,7 @@ test('geração drena lotes somente dentro do orçamento global e informa trabal
   assert.match(edgeFunction, /EXECUTION_BUDGET_MS = 105_000/);
   assert.match(edgeFunction, /MIN_SAFE_BATCH_BUDGET_MS = 72_000/);
   assert.match(edgeFunction, /Date\.now\(\) \+ MIN_SAFE_BATCH_BUDGET_MS > executionDeadline/);
-  assert.match(edgeFunction, /const reconciliationMayRemain = isInternalAction[\s\S]*reconciliationMayRemain,/);
+  assert.match(edgeFunction, /const reconciliationMayRemain = isInternalOnlyAction[\s\S]*reconciliationMayRemain,/);
 });
 
 test('retry reconcilia estados terminais sem exigir QR Code', () => {
@@ -183,12 +199,15 @@ test('retry reconcilia estados terminais sem exigir QR Code', () => {
   assert.doesNotMatch(edgeFunction, /return error\.message\.slice/);
 });
 
-test('autorização separa preview, escrita e execução interna agendada', () => {
+test('autorização separa preview, escrita, execução agendada e retry interno individual', () => {
   assert.match(edgeFunction, /p_permission: "finance\.read"/);
   assert.match(edgeFunction, /p_permission: "finance\.write"/);
   assert.match(edgeFunction, /action !== "preview" && !auth\.canWrite/);
   assert.match(edgeFunction, /new Set\(\["preview", "generate", "retry", "scheduled", "reconcile"\]\)/);
-  assert.match(edgeFunction, /const isInternalAction = \["scheduled", "reconcile"\]\.includes\(action\)/);
+  assert.match(edgeFunction, /const isInternalOnlyAction = \["scheduled", "reconcile"\]\.includes\(action\)/);
+  assert.match(edgeFunction, /const isInternalAllowedAction = \["scheduled", "reconcile", "retry"\][\s\S]*\.includes\(action\)/);
+  assert.match(edgeFunction, /auth\.kind === "INTERNAL" && !isInternalAllowedAction/);
+  assert.match(edgeFunction, /auth\.kind !== "INTERNAL" && isInternalOnlyAction/);
   assert.match(edgeFunction, /verify_app_monthly_billing_internal_token/);
   assert.doesNotMatch(edgeFunction, /MONTHLY_BILLING_INTERNAL_TOKEN/);
   assert.match(edgeFunction, /x-monthly-billing-token/);

@@ -852,6 +852,7 @@ async function authenticate(
 
 Deno.serve(async (request: Request) => {
   const executionDeadline = Date.now() + EXECUTION_BUDGET_MS;
+  let executionStage = "REQUEST";
   if (request.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders(request) });
   }
@@ -917,14 +918,16 @@ Deno.serve(async (request: Request) => {
     ) {
       return json(request, { error: "Ação inválida." }, 400);
     }
-    const isInternalAction = ["scheduled", "reconcile"].includes(action);
-    if (auth.kind === "INTERNAL" && !isInternalAction) {
+    const isInternalOnlyAction = ["scheduled", "reconcile"].includes(action);
+    const isInternalAllowedAction = ["scheduled", "reconcile", "retry"]
+      .includes(action);
+    if (auth.kind === "INTERNAL" && !isInternalAllowedAction) {
       return json(request, {
         error:
-          "O token interno aceita somente geração agendada ou reconciliação.",
+          "O token interno aceita somente geração agendada, reconciliação ou retentativa individual.",
       }, 403);
     }
-    if (auth.kind !== "INTERNAL" && isInternalAction) {
+    if (auth.kind !== "INTERNAL" && isInternalOnlyAction) {
       return json(request, {
         error: "A execução interna exige o token de cobrança mensal.",
       }, 403);
@@ -935,7 +938,7 @@ Deno.serve(async (request: Request) => {
       }, 403);
     }
     const currentCycle = saoPauloCycle();
-    const requestedMonth = isInternalAction
+    const requestedMonth = isInternalOnlyAction
       ? currentCycle.month
       : invoiceMonth(body.invoiceMonth);
     const requestedInvoiceId = text(body.invoiceId, 60);
@@ -963,6 +966,7 @@ Deno.serve(async (request: Request) => {
       return json(request, { action, ...record(preview.data), results: [] });
     }
 
+    executionStage = "SETTINGS";
     const settings = await adminClient.from("app_monthly_billing_settings")
       .select("enabled, generation_day, max_batch_size")
       .eq("singleton", true)
@@ -985,6 +989,7 @@ Deno.serve(async (request: Request) => {
 
     let month = requestedMonth;
     if (action === "retry") {
+      executionStage = "INVOICE_LOOKUP";
       const invoiceResult = await adminClient.from("app_payment_invoices")
         .select("invoice_month")
         .eq("id", requestedInvoiceId)
@@ -993,6 +998,7 @@ Deno.serve(async (request: Request) => {
       month = String(invoiceResult.data.invoice_month || "").slice(0, 10);
     }
 
+    executionStage = "RUN_START";
     const run = await adminClient.from("app_monthly_billing_runs").insert({
       action: action.toUpperCase(),
       invoice_month: month,
@@ -1004,6 +1010,7 @@ Deno.serve(async (request: Request) => {
     if (run.error) throw run.error;
     runId = String(run.data.id || "");
 
+    executionStage = "PROVIDER_CONFIG";
     const config = asaasConfig();
     if (shouldGenerate) {
       const generated = await adminClient.rpc(
@@ -1019,7 +1026,7 @@ Deno.serve(async (request: Request) => {
 
     const results: JsonRecord[] = [];
     let deadlineReached = false;
-    const maxClaims = isInternalAction
+    const maxClaims = isInternalOnlyAction
       ? MAX_SCHEDULED_CLAIMS
       : action === "generate"
       ? MAX_MANUAL_CLAIMS
@@ -1039,6 +1046,7 @@ Deno.serve(async (request: Request) => {
         remainingCapacity,
         MAX_CONCURRENCY,
       );
+      executionStage = "CLAIM";
       const claimed = await adminClient.rpc(
         "claim_app_invoice_provider_dispatch",
         {
@@ -1053,10 +1061,12 @@ Deno.serve(async (request: Request) => {
         ? claimed.data.map(record)
         : [];
       if (!claims.length) break;
+      executionStage = "PROVIDER_DISPATCH";
       results.push(...await processInBatches(adminClient, claims));
       if (action === "retry" || claims.length < claimLimit) break;
     } while (results.length < maxClaims);
 
+    executionStage = "FINAL_PREVIEW";
     const preview = await adminClient.rpc("preview_app_monthly_pix_billing", {
       p_invoice_month: month,
       p_client_id: requestedClientId || null,
@@ -1074,11 +1084,12 @@ Deno.serve(async (request: Request) => {
     const actionableReady = action === "generate" || shouldGenerate
       ? remainingReady
       : 0;
+    const capacityReached = action !== "retry" && results.length >= maxClaims;
     const isPartial = Boolean(
       failedCount || partialCount || actionableReady ||
-        results.length >= maxClaims || deadlineReached,
+        capacityReached || deadlineReached,
     );
-    const reconciliationMayRemain = isInternalAction &&
+    const reconciliationMayRemain = isInternalOnlyAction &&
       (deadlineReached || results.length >= maxClaims);
     const payload = {
       action,
@@ -1093,6 +1104,7 @@ Deno.serve(async (request: Request) => {
         ? "GENERATION_DAY_NOT_REACHED"
         : null,
     };
+    executionStage = "RUN_COMPLETE";
     const completedRun = await adminClient.from("app_monthly_billing_runs")
       .update({
         status: isPartial ? "PARTIAL" : "SUCCEEDED",
@@ -1122,6 +1134,8 @@ Deno.serve(async (request: Request) => {
     }
     return json(request, {
       error: "Não foi possível concluir o financeiro mensal agora.",
+      code: "MONTHLY_BILLING_OPERATION_FAILED",
+      stage: executionStage,
     }, 500);
   }
 });
