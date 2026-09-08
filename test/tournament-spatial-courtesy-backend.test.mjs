@@ -6,8 +6,9 @@ import test from 'node:test';
 const projectRoot = path.resolve(import.meta.dirname, '..');
 const readProjectFile = (file) => readFile(path.join(projectRoot, file), 'utf8');
 
-const [migrationSource, registerSource, adminSource] = await Promise.all([
+const [migrationSource, usedScopeIndexMigrationSource, registerSource, adminSource] = await Promise.all([
   readProjectFile('supabase/migrations/20260908145509_add_private_spatial_courtesy_invites.sql'),
+  readProjectFile('supabase/migrations/20260908150157_cover_spatial_courtesy_used_scope_fk.sql'),
   readProjectFile('supabase/functions/tournament-register/index.ts'),
   readProjectFile('supabase/functions/tournament-admin-api/index.ts'),
 ]);
@@ -31,6 +32,11 @@ test('convite espacial isento é uma capability dedicada, vinculada e de uso ún
   assert.match(migrationSource, /foreign key \(primary_registration_id, tournament_id, athlete_id\)/);
   assert.match(migrationSource, /foreign key \(target_category_id, tournament_id\)/);
   assert.match(migrationSource, /foreign key \(used_registration_id, tournament_id, athlete_id, target_category_id\)/);
+  assert.match(
+    usedScopeIndexMigrationSource,
+    /tournament_spatial_courtesy_invites_used_scope_idx[\s\S]*used_registration_id,[\s\S]*tournament_id,[\s\S]*athlete_id,[\s\S]*target_category_id/,
+  );
+  assert.match(usedScopeIndexMigrationSource, /commit;\s*$/);
   assert.match(migrationSource, /tournament_spatial_courtesy_invites_primary_scope_idx[\s\S]*primary_registration_id,[\s\S]*tournament_id,[\s\S]*athlete_id/);
   assert.match(migrationSource, /tournament_spatial_courtesy_invites_athlete_idx[\s\S]*\(athlete_id\)/);
   assert.match(migrationSource, /tournament_spatial_courtesy_invites_target_scope_idx[\s\S]*\(target_category_id, tournament_id\)/);

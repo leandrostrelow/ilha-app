@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(157);
+select plan(158);
 
 select has_table(
   'public',
@@ -3079,6 +3079,20 @@ select ok(
     where relation.oid = 'public.tournament_spatial_courtesy_invites'::regclass
   ),
   'a tabela de convites Espaciais isentos força RLS'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_catalog.pg_index as index_row
+    where index_row.indexrelid =
+        'public.tournament_spatial_courtesy_invites_used_scope_idx'::regclass
+      and index_row.indrelid = 'public.tournament_spatial_courtesy_invites'::regclass
+      and index_row.indisvalid
+      and pg_catalog.pg_get_indexdef(index_row.indexrelid) like
+        '%(used_registration_id, tournament_id, athlete_id, target_category_id)%'
+  ),
+  'a FK do registro utilizado possui índice composto no lado filho'
 );
 
 select ok(
