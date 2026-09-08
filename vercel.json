@@ -14,6 +14,7 @@
     { "source": "/admin", "destination": "/adm", "permanent": false }
   ],
   "rewrites": [
+    { "source": "/inscricoes/:slug/espacial-convite", "destination": "/inscricoes/espacial" },
     { "source": "/inscricoes/:slug/espacial", "destination": "/inscricoes/espacial" },
     { "source": "/inscricoes/:slug", "destination": "/torneios" },
     { "source": "/inscricoes/:slug/:path*", "destination": "/torneios" },
@@ -102,6 +103,13 @@
       "source": "/torneios/:path*",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/inscricoes/:slug/espacial-convite",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
       ]
     },
     {

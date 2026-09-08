@@ -184,7 +184,7 @@ self.addEventListener('fetch', event => {
           if (url.pathname === '/bar' || url.pathname.startsWith('/bar/')) {
             return caches.match('./bar/index.html');
           }
-          if (/^\/inscricoes\/[^/]+\/espacial\/?$/.test(url.pathname)) {
+          if (/^\/inscricoes\/[^/]+\/espacial(?:-convite)?\/?$/.test(url.pathname)) {
             return caches.match('./inscricoes/espacial/index.html');
           }
           if (url.pathname === '/torneios' || url.pathname.startsWith('/torneios/') || url.pathname === '/inscricoes' || url.pathname.startsWith('/inscricoes/')) {

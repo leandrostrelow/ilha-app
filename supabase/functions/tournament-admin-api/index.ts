@@ -39,6 +39,7 @@ const writeActions = new Set([
   "getSpatialPortalShareLink",
   "rotateSpatialPortalShareLink",
   "setSpatialPortalOpen",
+  "createSpatialCourtesyInvite",
   "deleteIncompleteTournamentAthlete",
   "setLiveState",
 ]);
@@ -183,6 +184,26 @@ async function decryptSpatialPortalToken(ciphertext: string) {
   }
 }
 
+async function spatialCourtesyInviteEncryptionKey() {
+  const secret = serviceRoleKey();
+  if (!secret) throw new ApiError("Configuração segura do convite isento indisponível.", 500);
+  const material = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(`ilha-tournament-spatial-courtesy-invite:${secret}`),
+  );
+  return crypto.subtle.importKey("raw", material, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+}
+
+async function encryptSpatialCourtesyInviteToken(token: string) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    await spatialCourtesyInviteEncryptionKey(),
+    new TextEncoder().encode(token),
+  );
+  return `${base64UrlEncode(iv)}.${base64UrlEncode(new Uint8Array(encrypted))}`;
+}
+
 function isValidCpf(value: string) {
   if (!/^\d{11}$/.test(value) || /^(\d)\1{10}$/.test(value)) return false;
   const digit = (length: number) => {
@@ -324,7 +345,9 @@ function databaseGender(value: unknown) {
 }
 
 function legacyAthleteStatus(row: Row) {
-  return row.active === false || row.status === "INACTIVE" ? "INATIVO" : "ATIVO";
+  const status = text(row.status, 30).toUpperCase();
+  if (status === "SUSPENDED") return "SUSPENSO";
+  return row.active === false || status === "INACTIVE" ? "INATIVO" : "ATIVO";
 }
 
 function databaseAthleteStatus(value: unknown) {
@@ -622,6 +645,8 @@ function mapAthlete(row: Row, includePrivate = false, registrationOrder: Row = {
     ranking: row.ranking || "",
     seed: row.seed || "",
     status: legacyAthleteStatus(row),
+    database_status: text(row.status, 30).toUpperCase() || "ACTIVE",
+    active: row.active !== false,
     observacoes: includePrivate ? row.notes || "" : "",
     menor_de_idade: includePrivate ? row.is_minor === true : false,
     is_minor: includePrivate ? row.is_minor === true : false,
@@ -1028,6 +1053,76 @@ async function setSpatialPortalOpen(client: DbClient, actorId: string, payload: 
     tournament_id: tournament.id,
     portal_open: open,
     share_ready: Boolean(updateResult.data.spatial_portal_token_ciphertext),
+  };
+}
+
+async function createSpatialCourtesyInvite(client: DbClient, actorId: string, payload: Row) {
+  const tournament = await currentTournament(client, payload);
+  const primaryRegistrationId = uuid(payload.primary_registration_id);
+  if (!primaryRegistrationId) {
+    throw new ApiError("Escolha a inscrição principal que receberá o convite isento.");
+  }
+  if (!text(tournament.slug, 100)) {
+    throw new ApiError("Defina o endereço do torneio antes de gerar este convite.", 409);
+  }
+
+  const rawToken = crypto.randomUUID();
+  const tokenHash = await sha256Hex(rawToken);
+  const tokenCiphertext = await encryptSpatialCourtesyInviteToken(rawToken);
+  const claim = await client.rpc("create_private_tournament_spatial_courtesy_invite", {
+    p_tournament_id: tournament.id,
+    p_primary_registration_id: primaryRegistrationId,
+    p_token_hash: tokenHash,
+    p_token_ciphertext: tokenCiphertext,
+    p_created_by: actorId,
+    p_expires_at: null,
+  });
+  if (["P0001", "P0002"].includes(String(claim.error?.code || ""))) {
+    throw new ApiError(String(claim.error?.message || "Não foi possível gerar este convite isento."), 409);
+  }
+  assertNoError(claim.error);
+  const created = firstObject(claim.data);
+  const invitation = firstObject(created.invitation);
+  const primaryCategory = firstObject(created.primary_category);
+  const targetCategory = firstObject(created.target_category);
+  const inviteId = uuid(invitation.id);
+  const athleteId = uuid(created.athlete_id);
+  if (!inviteId || !athleteId || !uuid(created.primary_registration_id) || !uuid(targetCategory.id)) {
+    throw new ApiError("O convite isento retornou dados incompletos.", 500);
+  }
+
+  const athleteResult = await client.from("tournament_athletes")
+    .select("id,full_name")
+    .eq("id", athleteId)
+    .maybeSingle();
+  assertNoError(athleteResult.error);
+  const athleteName = text(athleteResult.data?.full_name, 120) || "Atleta";
+  await audit(
+    client,
+    actorId,
+    tournament.id,
+    "spatial_courtesy_invite",
+    inviteId,
+    "CREATE",
+    null,
+    {
+      primary_registration_id: primaryRegistrationId,
+      athlete_id: athleteId,
+      target_category_id: targetCategory.id,
+      expires_at: invitation.expires_at || null,
+      token: "[protected]",
+    },
+  );
+
+  return {
+    tournament_id: tournament.id,
+    invite_id: inviteId,
+    invite_url: `https://app.ilhatenis.com/inscricoes/${encodeURIComponent(String(tournament.slug))}/espacial-convite#chave=${encodeURIComponent(rawToken)}`,
+    status: "ACTIVE",
+    expires_at: invitation.expires_at || "",
+    athlete_name: athleteName,
+    current_class: primaryCategory.name || "",
+    spatial_class: targetCategory.name || "",
   };
 }
 
@@ -2203,6 +2298,10 @@ Deno.serve(async (request) => {
     }
     else if (action === "setSpatialPortalOpen") {
       result = await setSpatialPortalOpen(trustedClient, profile.id, payload);
+      responseTournamentId = (result as Row).tournament_id;
+    }
+    else if (action === "createSpatialCourtesyInvite") {
+      result = await createSpatialCourtesyInvite(trustedClient, profile.id, payload);
       responseTournamentId = (result as Row).tournament_id;
     }
     else if (action === "deleteIncompleteTournamentAthlete") {
