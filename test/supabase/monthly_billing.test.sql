@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(79);
+select plan(80);
 
 select has_table('public', 'app_invoice_provider_payments', 'há snapshot privado 1:1 da cobrança mensal');
 select has_table('public', 'app_payment_customers', 'há mapeamento privado de customer por ambiente');
@@ -502,6 +502,17 @@ select set_config(
   'request.jwt.claims',
   '{"sub":"71000000-0000-4000-8000-000000000001","role":"authenticated"}',
   true
+);
+select throws_ok(
+  $$update public.app_family_invoice_items set amount = amount + 1
+     where invoice_id = (
+       select id from public.app_payment_invoices
+        where client_id = '71000000-0000-4000-8000-000000000002'::uuid
+          and invoice_month = date '2026-09-01'
+     )$$,
+  '23514',
+  'A composição familiar fica congelada após a emissão.',
+  'finance.write também não altera itens familiares emitidos'
 );
 select throws_ok(
   $$update public.app_payment_invoices

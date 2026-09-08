@@ -2287,8 +2287,7 @@ set search_path = ''
 as $$
 declare
   trusted_write boolean :=
-    coalesce(current_setting('ilha.monthly_billing_write', true), '') = '1'
-    or coalesce((select auth.jwt() ->> 'role'), '') = 'service_role';
+    coalesce(current_setting('ilha.monthly_billing_write', true), '') = '1';
 begin
   if not trusted_write and exists (
     select 1
