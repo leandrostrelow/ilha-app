@@ -973,11 +973,6 @@ Deno.serve(async (request: Request) => {
       .single();
     if (settings.error) throw settings.error;
     const billingEnabled = settings.data.enabled === true;
-    if (action === "generate" && !billingEnabled) {
-      return json(request, {
-        error: "A emissão mensal está pausada com segurança.",
-      }, 503);
-    }
     const generationDayReached = currentCycle.day >=
       Number(settings.data.generation_day || 1);
     const shouldGenerate = action === "generate" ||
@@ -1012,9 +1007,11 @@ Deno.serve(async (request: Request) => {
 
     executionStage = "PROVIDER_CONFIG";
     const config = asaasConfig();
+    let generatedInvoiceId = "";
+    let individualGenerationFailure: JsonRecord | null = null;
     if (shouldGenerate) {
       const generated = await adminClient.rpc(
-        "generate_app_monthly_pix_billing",
+        "generate_enrolled_app_monthly_pix_billing",
         {
           p_invoice_month: month,
           p_client_id: requestedClientId || null,
@@ -1022,13 +1019,39 @@ Deno.serve(async (request: Request) => {
         },
       );
       if (generated.error) throw generated.error;
+      if (action === "generate" && requestedClientId) {
+        const generatedResults = Array.isArray(record(generated.data).results)
+          ? record(generated.data).results as unknown[]
+          : [];
+        const generatedForClient = generatedResults.map(record).find((item) =>
+          text(item.clientId || item.client_id, 60) === requestedClientId
+        );
+        generatedInvoiceId = text(
+          generatedForClient?.invoiceId || generatedForClient?.invoice_id,
+          60,
+        );
+        if (!isUuid(generatedInvoiceId)) {
+          individualGenerationFailure = {
+            invoiceId: "",
+            clientId: requestedClientId,
+            state: "FAILED",
+            providerStatus: "",
+            error: text(
+              generatedForClient?.error,
+              300,
+            ) || "O cadastro deixou de estar elegível antes da emissão.",
+          };
+        }
+      }
     }
 
-    const results: JsonRecord[] = [];
+    const results: JsonRecord[] = individualGenerationFailure
+      ? [individualGenerationFailure]
+      : [];
     let deadlineReached = false;
     const maxClaims = isInternalOnlyAction
       ? MAX_SCHEDULED_CLAIMS
-      : action === "generate"
+      : action === "generate" && !requestedClientId
       ? MAX_MANUAL_CLAIMS
       : 1;
     do {
@@ -1050,8 +1073,12 @@ Deno.serve(async (request: Request) => {
       const claimed = await adminClient.rpc(
         "claim_app_invoice_provider_dispatch",
         {
-          p_invoice_id: action === "retry" ? requestedInvoiceId : null,
-          p_invoice_month: action === "generate" ? month : null,
+          p_invoice_id: action === "retry"
+            ? requestedInvoiceId
+            : generatedInvoiceId || null,
+          p_invoice_month: action === "generate" && !generatedInvoiceId
+            ? month
+            : null,
           p_batch_limit: claimLimit,
           p_include_ready: action === "retry" || shouldGenerate,
         },

@@ -23,6 +23,12 @@ const serviceReadMigrationPath = path.join(
   'migrations',
   '20260908201500_grant_monthly_billing_service_reads.sql'
 );
+const enrollmentMigrationPath = path.join(
+  projectRoot,
+  'supabase',
+  'migrations',
+  '20260908212812_add_monthly_billing_enrollments.sql'
+);
 const dispatcherPath = path.join(
   projectRoot,
   'supabase',
@@ -30,10 +36,11 @@ const dispatcherPath = path.join(
   'client-notification-dispatch',
   'index.ts'
 );
-const [migration, scheduleMigration, serviceReadMigration, edgeFunction, dispatcher] = await Promise.all([
+const [migration, scheduleMigration, serviceReadMigration, enrollmentMigration, edgeFunction, dispatcher] = await Promise.all([
   readFile(migrationPath, 'utf8'),
   readFile(scheduleMigrationPath, 'utf8'),
   readFile(serviceReadMigrationPath, 'utf8'),
+  readFile(enrollmentMigrationPath, 'utf8'),
   readFile(functionPath, 'utf8'),
   readFile(dispatcherPath, 'utf8')
 ]);
@@ -43,6 +50,22 @@ test('worker mensal recebe somente as leituras legadas necessárias', () => {
   assert.match(serviceReadMigration, /grant select on table public\.app_clients to service_role/i);
   assert.doesNotMatch(serviceReadMigration, /grant\s+(?:insert|update|delete|truncate|all)\b/i);
   assert.doesNotMatch(serviceReadMigration, /\bto\s+(?:anon|authenticated|public)\b/i);
+});
+
+test('ativação manual é privada, auditada e bloqueia geração fora da allowlist', () => {
+  assert.match(enrollmentMigration, /create table public\.app_monthly_billing_enrollments/i);
+  assert.match(enrollmentMigration, /enabled boolean not null default false/i);
+  assert.match(enrollmentMigration, /enable row level security[\s\S]*force row level security/i);
+  assert.match(enrollmentMigration, /revoke all on table public\.app_monthly_billing_enrollments[\s\S]*from public, anon, authenticated, service_role/i);
+  assert.match(enrollmentMigration, /has_club_permission\('finance\.write'\)/i);
+  assert.match(enrollmentMigration, /app_monthly_billing_enrollment_audit/i);
+  assert.match(enrollmentMigration, /validation_month[\s\S]*interval '1 month'/i);
+  assert.match(enrollmentMigration, /candidate\.state = 'SKIPPED'/i);
+  assert.match(enrollmentMigration, /where client_id = p_client_id[\s\S]*and enabled[\s\S]*for share/i);
+  assert.match(enrollmentMigration, /where enabled[\s\S]*order by client_id[\s\S]*for share/i);
+  assert.match(enrollmentMigration, /generate_app_monthly_pix_billing\([\s\S]*enrollment\.client_id/i);
+  assert.match(edgeFunction, /"generate_enrolled_app_monthly_pix_billing"/i);
+  assert.doesNotMatch(edgeFunction, /\.rpc\(\s*"generate_app_monthly_pix_billing"/i);
 });
 
 test('financeiro mensal mantém provider, customer, runs e settings fora do acesso do app', () => {
@@ -170,6 +193,11 @@ test('retry e reconciliação periódica consultam a cobrança existente sem abr
   assert.match(migration, /stored_pix_payload text[\s\S]*stored_pix_expires_at timestamptz/i);
   assert.match(edgeFunction, /const capacityReached = action !== "retry" && results\.length >= maxClaims/);
   assert.match(edgeFunction, /failedCount \|\| partialCount \|\| actionableReady \|\|[\s\S]*capacityReached \|\| deadlineReached/);
+  assert.match(edgeFunction, /let generatedInvoiceId = ""/);
+  assert.match(edgeFunction, /action === "generate" && requestedClientId[\s\S]*generatedInvoiceId = text/);
+  assert.match(edgeFunction, /p_invoice_id: action === "retry"[\s\S]*generatedInvoiceId \|\| null/);
+  assert.match(edgeFunction, /p_invoice_month: action === "generate" && !generatedInvoiceId/);
+  assert.match(edgeFunction, /action === "generate" && !requestedClientId[\s\S]*MAX_MANUAL_CLAIMS/);
 });
 
 test('geração drena lotes somente dentro do orçamento global e informa trabalho remanescente', () => {
@@ -277,7 +305,8 @@ test('configuração operacional começa pausada, exige permissão e deixa audit
   assert.match(migration, /admin_set_app_monthly_billing_settings/);
   assert.match(migration, /app_monthly_billing_settings_audit/);
   assert.match(migration, /authorization_kind[\s\S]*case when is_service then 'INTERNAL' else 'USER' end/i);
-  assert.match(edgeFunction, /action === "generate" && !billingEnabled/);
+  assert.doesNotMatch(edgeFunction, /action === "generate" && !billingEnabled/);
+  assert.match(edgeFunction, /generate_enrolled_app_monthly_pix_billing/);
   assert.match(edgeFunction, /action === "scheduled" && billingEnabled && generationDayReached/);
   assert.match(migration, /'reconciliationIntervalMinutes', 15[\s\S]*'paymentPollingIntervalMinutes', 60/);
 });

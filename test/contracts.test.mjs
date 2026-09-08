@@ -570,11 +570,13 @@ test('ADM oferece prévia mensal, geração confirmada e retentativa isolada por
   assert.match(adminSource, /data-finance-view="monthly"[^>]*>Mensalidades</);
   for (const id of [
     'monthlyBillingMonth', 'monthlyBillingEligibleMetric', 'monthlyBillingGeneratedMetric',
+    'monthlyBillingEnabledMetric',
     'monthlyBillingPaidMetric', 'monthlyBillingOverdueMetric', 'monthlyBillingFailedMetric',
     'monthlyBillingSkippedMetric', 'monthlyBillingTotalMetric', 'monthlyBillingRows',
     'monthlyBillingGenerateBtn', 'monthlyBillingRetryBtn', 'monthlyBillingSettingsStatus',
     'monthlyBillingSettingsSchedule', 'monthlyBillingGenerationDay', 'monthlyBillingSaveDayBtn',
-    'monthlyBillingToggleBtn', 'monthlyBillingSettingsMessage'
+    'monthlyBillingToggleBtn', 'monthlyBillingSettingsMessage',
+    'clientMonthlyBillingControl', 'clientMonthlyBillingStatus', 'clientMonthlyBillingToggleBtn'
   ]) assert.match(adminSource, new RegExp(`id="${id}"`));
 
   const request = functionSource(adminSource, 'monthlyBillingRequest');
@@ -583,6 +585,7 @@ test('ADM oferece prévia mensal, geração confirmada e retentativa isolada por
   assert.match(request, /supabaseHeaders\(true\)/);
   assert.match(request, /action:\s*action,\s*invoiceMonth:\s*monthlyBillingInvoiceMonth\(\)/);
   assert.match(request, /body\.invoiceId\s*=\s*invoiceId/);
+  assert.match(request, /body\.clientId\s*=\s*clientId/);
   assert.match(request, /MONTHLY_BILLING_REQUEST_TIMEOUT_MS/);
   assert.match(adminSource, /const MONTHLY_BILLING_REQUEST_TIMEOUT_MS = 120000/);
   assert.ok(request.indexOf('isAdminDemoMode()') < request.indexOf('fetchWithAdminTimeout('), 'modo demo precisa sair antes da chamada remota');
@@ -608,7 +611,7 @@ test('ADM oferece prévia mensal, geração confirmada e retentativa isolada por
   assert.match(updateSettings, /window\.confirm\(confirmation\)/);
   assert.match(updateSettings, /cobranças Pix reais somente para os responsáveis elegíveis/);
   assert.match(updateSettings, /Faturas já emitidas e a baixa automática dos pagamentos continuarão funcionando/);
-  assert.match(functionSource(adminSource, 'loadMonthlyBillingWorkspace'), /loadMonthlyBillingPreview[\s\S]*loadMonthlyBillingSettings/);
+  assert.match(functionSource(adminSource, 'loadMonthlyBillingWorkspace'), /loadMonthlyBillingPreview[\s\S]*loadMonthlyBillingSettings[\s\S]*loadMonthlyBillingEnrollments/);
   assert.match(adminSource, /opsState\.financeView === 'monthly'\) loadMonthlyBillingWorkspace\(false\)/);
 
   const reasonLabel = functionSource(adminSource, 'monthlyBillingReasonLabel');
@@ -651,9 +654,25 @@ test('ADM impede mudança manual do estado financeiro de cobrança gerenciada pe
   assert.match(canSync, /'RECONCILING'/);
 
   const needsGeneration = functionSource(adminSource, 'monthlyBillingCandidateNeedsGeneration');
+  assert.match(needsGeneration, /!candidate\.billingEnabled/);
   assert.match(needsGeneration, /\['ELIGIBLE', 'ELIGIBLE_WITH_WARNING', 'READY'\]\.includes\(candidate\.state\)/);
   assert.match(needsGeneration, /candidate\.state === 'EXISTING'[\s\S]*!String\(candidate\.providerStatus/);
-  assert.match(functionSource(adminSource, 'generateMonthlyBilling'), /filter\(monthlyBillingCandidateNeedsGeneration\)/);
+  const generateMonthly = functionSource(adminSource, 'generateMonthlyBilling');
+  assert.match(generateMonthly, /monthlyBillingCandidateNeedsGeneration\(candidate\)/);
+  assert.match(generateMonthly, /money\(total\)/);
+  assert.match(generateMonthly, /monthlyBillingRequest\('generate', '', false, clientId\)/);
+
+  const enrollmentRequest = functionSource(adminSource, 'monthlyBillingEnrollmentsRequest');
+  assert.match(enrollmentRequest, /admin_set_app_monthly_billing_enrollment/);
+  assert.match(enrollmentRequest, /admin_get_app_monthly_billing_enrollments/);
+  assert.match(enrollmentRequest, /p_client_id:[\s\S]*p_enabled:/);
+  const updateEnrollment = functionSource(adminSource, 'updateMonthlyBillingEnrollment');
+  assert.match(updateEnrollment, /window\.confirm\(confirmation\)/);
+  assert.match(updateEnrollment, /Nenhuma cobrança será criada agora/);
+  assert.match(updateEnrollment, /Faturas que já existem continuarão válidas/);
+  assert.match(functionSource(adminSource, 'renderClientMonthlyBillingControl'), /Gerenciada pelo responsável/);
+  assert.match(adminSource, /data-monthly-billing-enrollment/);
+  assert.match(adminSource, /data-monthly-billing-generate/);
 
   const mapFinance = functionSource(adminSource, 'mapFinanceRow');
   assert.match(mapFinance, /appPaymentInvoiceId:\s*row\.app_payment_invoice_id/);

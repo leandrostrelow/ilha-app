@@ -3520,7 +3520,7 @@
 
     .monthly-billing-summary {
       display: grid;
-      grid-template-columns: repeat(7, minmax(105px, 1fr));
+      grid-template-columns: repeat(8, minmax(105px, 1fr));
       gap: 8px;
       overflow-x: auto;
       padding-bottom: 2px;
@@ -3682,6 +3682,45 @@
 
     .monthly-billing-table-row .small-btn {
       min-height: 38px;
+    }
+
+    .monthly-billing-row-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+      min-width: 150px;
+    }
+
+    .monthly-billing-row-actions .small-btn.is-enabled {
+      border-color: #86c91f;
+      background: #f4fbdc;
+      color: #315b12;
+    }
+
+    .client-monthly-billing-control {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 13px;
+      border: 1px solid #cfe3e7;
+      border-radius: 12px;
+      background: #f4fbfc;
+    }
+
+    .client-monthly-billing-control strong,
+    .client-monthly-billing-control span {
+      display: block;
+    }
+
+    .client-monthly-billing-control span {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+      line-height: 1.4;
     }
 
     .client-invoice-provider-state {
@@ -20641,6 +20680,15 @@
                 <label for="clientEditAmount">Valor mensal</label>
                 <input id="clientEditAmount" inputmode="decimal" placeholder="220,00" />
               </div>
+              <div class="field full" data-club-permission="finance.write">
+                <div class="client-monthly-billing-control" id="clientMonthlyBillingControl">
+                  <div>
+                    <strong>Cobrança mensal Pix</strong>
+                    <span id="clientMonthlyBillingStatus">Consultando a ativação...</span>
+                  </div>
+                  <button class="ghost-btn" type="button" id="clientMonthlyBillingToggleBtn" disabled>Carregando...</button>
+                </div>
+              </div>
               <div class="field">
                 <label for="clientEditFrequency">Aulas por semana</label>
                 <select id="clientEditFrequency">
@@ -22573,18 +22621,19 @@
                   <input id="monthlyBillingMonth" type="month" />
                 </div>
                 <button class="ghost-btn" type="button" id="monthlyBillingPreviewBtn">Atualizar prévia</button>
-                <button class="primary-btn" type="button" id="monthlyBillingGenerateBtn" data-club-permission="finance.write">Gerar faltantes</button>
+                <button class="primary-btn" type="button" id="monthlyBillingGenerateBtn" data-club-permission="finance.write">Gerar ativadas</button>
                 <button class="ghost-btn" type="button" id="monthlyBillingRetryBtn" data-club-permission="finance.write">Retentar falhas</button>
               </div>
               <div class="monthly-billing-message" id="monthlyBillingMessage" hidden role="status" aria-live="polite"></div>
               <div class="monthly-billing-summary" aria-label="Resumo das mensalidades">
                 <div class="monthly-billing-kpi"><strong id="monthlyBillingEligibleMetric">0</strong><span>Elegíveis</span></div>
+                <div class="monthly-billing-kpi"><strong id="monthlyBillingEnabledMetric">0</strong><span>Ativadas</span></div>
                 <div class="monthly-billing-kpi"><strong id="monthlyBillingGeneratedMetric">0</strong><span>Geradas</span></div>
                 <div class="monthly-billing-kpi"><strong id="monthlyBillingPaidMetric">0</strong><span>Pagas</span></div>
                 <div class="monthly-billing-kpi"><strong id="monthlyBillingOverdueMetric">0</strong><span>Vencidas</span></div>
                 <div class="monthly-billing-kpi"><strong id="monthlyBillingFailedMetric">0</strong><span>Falhas</span></div>
                 <div class="monthly-billing-kpi"><strong id="monthlyBillingSkippedMetric">0</strong><span>Excluídas</span></div>
-                <div class="monthly-billing-kpi total"><strong id="monthlyBillingTotalMetric">R$ 0,00</strong><span>Total elegível</span></div>
+                <div class="monthly-billing-kpi total"><strong id="monthlyBillingTotalMetric">R$ 0,00</strong><span>Total ativado</span></div>
               </div>
               <div class="monthly-billing-table-wrap">
                 <div class="monthly-billing-table" role="table" aria-label="Prévia das mensalidades">
@@ -29360,6 +29409,10 @@
       monthlyBillingSettingsLoading: false,
       monthlyBillingSettingsMessage: '',
       monthlyBillingSettingsMessageKind: '',
+      monthlyBillingEnrollments: {},
+      monthlyBillingEnrollmentsLoaded: false,
+      monthlyBillingEnrollmentsLoading: false,
+      monthlyBillingEnrollmentSavingClientId: '',
       teamTab: 'list',
       barAccessUsersLoaded: false,
       barAccessUsersLoading: false,
@@ -32264,6 +32317,10 @@
       $('clientEditAmount').disabled = isExemptPlan(selectedPlan);
       $('clientEditDueDay').disabled = isExemptPlan(selectedPlan);
       $('clientEditNotes').value = client.notes || '';
+      renderClientMonthlyBillingControl(client);
+      if (!opsState.monthlyBillingEnrollmentsLoaded && (canUseClubPermission('finance.read') || canUseClubPermission('finance.write'))) {
+        loadMonthlyBillingEnrollments(false);
+      }
       applyClientModalAccess();
       closeFamilyEditor();
       renderClientFamilyPanel(client);
@@ -41436,8 +41493,9 @@
 
     function normalizeMonthlyBillingCandidate(row) {
       row = row && typeof row === 'object' ? row : {};
+      const clientId = row.clientId || row.client_id || '';
       return {
-        clientId: row.clientId || row.client_id || '',
+        clientId: clientId,
         clientName: row.clientName || row.client_name || row.name || 'Aluno não identificado',
         invoiceId: row.invoiceId || row.invoice_id || '',
         amount: Number(row.amount || 0),
@@ -41446,8 +41504,134 @@
         state: String(row.state || row.status || 'SKIPPED').trim().toUpperCase(),
         reason: row.reason || row.exclusionReason || row.exclusion_reason || '',
         providerStatus: row.providerStatus || row.provider_status || '',
-        lastError: row.lastError || row.last_error || row.error || ''
+        lastError: row.lastError || row.last_error || row.error || '',
+        billingEnabled: row.billingEnabled === true || row.billing_enabled === true || Boolean(opsState.monthlyBillingEnrollments[String(clientId)])
       };
+    }
+
+    function normalizeMonthlyBillingEnrollments(payload) {
+      if (Array.isArray(payload)) payload = payload[0];
+      payload = payload && typeof payload === 'object' ? payload : {};
+      return monthlyBillingList(payload.rows || payload.data).reduce(function (result, row) {
+        const clientId = String(row && (row.clientId || row.client_id) || '');
+        if (clientId && (row.enabled === true || row.enabled === 'true')) result[clientId] = true;
+        return result;
+      }, {});
+    }
+
+    function applyMonthlyBillingEnrollmentsToPayload() {
+      const payload = opsState.monthlyBillingPayload;
+      if (!payload || !Array.isArray(payload.candidates)) return;
+      payload.candidates.forEach(function (candidate) {
+        candidate.billingEnabled = Boolean(opsState.monthlyBillingEnrollments[String(candidate.clientId || '')]);
+      });
+    }
+
+    async function monthlyBillingEnrollmentsRequest(nextEnrollment) {
+      if (nextEnrollment) requireClubPermission('finance.write');
+      else if (!canUseClubPermission('finance.read') && !canUseClubPermission('finance.write')) requireClubPermission('finance.read');
+      if (isAdminDemoMode()) {
+        if (nextEnrollment) return { clientId: nextEnrollment.clientId, enabled: nextEnrollment.enabled === true };
+        return { rows: Object.keys(opsState.monthlyBillingEnrollments).map(function (clientId) {
+          return { clientId: clientId, enabled: true };
+        }) };
+      }
+      return supabaseRest('rpc/' + (nextEnrollment ? 'admin_set_app_monthly_billing_enrollment' : 'admin_get_app_monthly_billing_enrollments'), {
+        method: 'POST',
+        body: nextEnrollment ? {
+          p_client_id: nextEnrollment.clientId,
+          p_enabled: nextEnrollment.enabled === true
+        } : {},
+        prefer: 'return=representation'
+      });
+    }
+
+    async function loadMonthlyBillingEnrollments(showFeedback) {
+      if (opsState.monthlyBillingEnrollmentsLoading) return;
+      opsState.monthlyBillingEnrollmentsLoading = true;
+      if (showFeedback) setMonthlyBillingMessage('Consultando quem está ativado para receber mensalidade...', '');
+      try {
+        opsState.monthlyBillingEnrollments = normalizeMonthlyBillingEnrollments(await monthlyBillingEnrollmentsRequest());
+        opsState.monthlyBillingEnrollmentsLoaded = true;
+        applyMonthlyBillingEnrollmentsToPayload();
+      } catch (error) {
+        opsState.monthlyBillingEnrollmentsLoaded = false;
+        if (showFeedback) setMonthlyBillingMessage(error && error.message || 'Não foi possível consultar as ativações de mensalidade.', 'error');
+      } finally {
+        opsState.monthlyBillingEnrollmentsLoading = false;
+        renderMonthlyBilling();
+        const client = findClientByKey(opsState.selectedClientId);
+        if (client && $('clientModal').classList.contains('show')) renderClientMonthlyBillingControl(client);
+      }
+    }
+
+    function renderClientMonthlyBillingControl(client) {
+      const status = $('clientMonthlyBillingStatus');
+      const button = $('clientMonthlyBillingToggleBtn');
+      if (!status || !button || !client) return;
+      const family = familyContextForClient(client);
+      if (family.memberLink) {
+        status.textContent = 'Este membro está incluído na cobrança de ' + (family.responsible && family.responsible.name || 'seu responsável financeiro') + '.';
+        button.textContent = 'Gerenciada pelo responsável';
+        button.disabled = true;
+        button.className = 'ghost-btn';
+        return;
+      }
+      const clientId = String(client.id || '');
+      const loaded = opsState.monthlyBillingEnrollmentsLoaded;
+      const saving = opsState.monthlyBillingEnrollmentSavingClientId === clientId;
+      const enabled = Boolean(opsState.monthlyBillingEnrollments[clientId]);
+      status.textContent = !loaded
+        ? 'Consultando a ativação segura...'
+        : enabled
+          ? 'Ativada. Este responsável poderá receber a mensalidade Pix automática.'
+          : 'Desativada. Nenhuma nova mensalidade automática será emitida para este responsável.';
+      button.textContent = saving ? 'Salvando...' : !loaded ? 'Carregando...' : enabled ? 'Desativar cobrança' : 'Ativar cobrança';
+      button.disabled = !loaded || saving || !clientId || !canUseClubPermission('finance.write');
+      button.className = enabled ? 'ghost-btn' : 'primary-btn';
+      button.dataset.monthlyBillingClient = clientId;
+      button.dataset.monthlyBillingEnabled = enabled ? 'true' : 'false';
+    }
+
+    async function updateMonthlyBillingEnrollment(clientId, nextEnabled) {
+      clientId = String(clientId || '');
+      if (!clientId || opsState.monthlyBillingEnrollmentSavingClientId) return false;
+      requireClubPermission('finance.write');
+      const candidate = opsState.monthlyBillingPayload && opsState.monthlyBillingPayload.candidates.find(function (item) {
+        return String(item.clientId || '') === clientId;
+      });
+      const client = findClientByKey(clientId);
+      const clientName = candidate && candidate.clientName || client && client.name || 'este responsável';
+      const confirmation = nextEnabled
+        ? 'Ativar a cobrança mensal Pix para ' + clientName + '? Nenhuma cobrança será criada agora; use “Gerar agora” quando quiser emitir a deste mês.'
+        : 'Desativar novas mensalidades automáticas para ' + clientName + '? Faturas que já existem continuarão válidas e serão conciliadas normalmente.';
+      if (!window.confirm(confirmation)) return false;
+      opsState.monthlyBillingEnrollmentSavingClientId = clientId;
+      renderMonthlyBilling();
+      if (client) renderClientMonthlyBillingControl(client);
+      try {
+        const saved = await monthlyBillingEnrollmentsRequest({ clientId: clientId, enabled: nextEnabled });
+        const row = Array.isArray(saved) ? saved[0] : saved;
+        const enabled = Boolean(row && (row.enabled === true || row.enabled === 'true'));
+        if (enabled) opsState.monthlyBillingEnrollments[clientId] = true;
+        else delete opsState.monthlyBillingEnrollments[clientId];
+        opsState.monthlyBillingEnrollmentsLoaded = true;
+        applyMonthlyBillingEnrollmentsToPayload();
+        setMonthlyBillingMessage(enabled
+          ? clientName + ' foi ativado para receber mensalidades. A cobrança deste mês ainda não foi gerada.'
+          : clientName + ' foi desativado para novas mensalidades.', '');
+        toast(enabled ? 'Cobrança mensal ativada.' : 'Cobrança mensal desativada.');
+        return true;
+      } catch (error) {
+        setMonthlyBillingMessage(error && error.message || 'Não foi possível alterar a ativação da mensalidade.', 'error');
+        reportActionError(error);
+        return false;
+      } finally {
+        opsState.monthlyBillingEnrollmentSavingClientId = '';
+        renderMonthlyBilling();
+        const activeClient = findClientByKey(opsState.selectedClientId);
+        if (activeClient && $('clientModal').classList.contains('show')) renderClientMonthlyBillingControl(activeClient);
+      }
     }
 
     function normalizeMonthlyBillingResponse(payload) {
@@ -41523,7 +41707,7 @@
     }
 
     function monthlyBillingCandidateNeedsGeneration(candidate) {
-      if (!candidate) return false;
+      if (!candidate || !candidate.billingEnabled) return false;
       if (['ELIGIBLE', 'ELIGIBLE_WITH_WARNING', 'READY'].includes(candidate.state)) return true;
       return candidate.state === 'EXISTING' && !String(candidate.providerStatus || '').trim();
     }
@@ -41550,12 +41734,16 @@
       const candidates = payload && payload.candidates || [];
       if ($('monthlyBillingMonth')) $('monthlyBillingMonth').value = opsState.monthlyBillingMonth;
       $('monthlyBillingEligibleMetric').textContent = monthlyBillingCount(summary.eligible);
+      const enabledCandidates = candidates.filter(function (candidate) { return candidate.billingEnabled; });
+      $('monthlyBillingEnabledMetric').textContent = enabledCandidates.length;
       $('monthlyBillingGeneratedMetric').textContent = monthlyBillingGeneratedCount(payload);
       $('monthlyBillingPaidMetric').textContent = monthlyBillingCount(summary.paid);
       $('monthlyBillingOverdueMetric').textContent = monthlyBillingCount(summary.overdue);
       $('monthlyBillingFailedMetric').textContent = monthlyBillingCount(summary.failed);
       $('monthlyBillingSkippedMetric').textContent = monthlyBillingCount(summary.skipped);
-      $('monthlyBillingTotalMetric').textContent = money(summary.total || 0);
+      $('monthlyBillingTotalMetric').textContent = money(enabledCandidates.filter(function (candidate) {
+        return candidate.state !== 'SKIPPED';
+      }).reduce(function (total, candidate) { return total + Number(candidate.amount || 0); }, 0));
       const message = $('monthlyBillingMessage');
       message.hidden = !opsState.monthlyBillingMessage;
       message.className = 'monthly-billing-message' + (opsState.monthlyBillingMessageKind ? ' ' + opsState.monthlyBillingMessageKind : '');
@@ -41576,12 +41764,19 @@
         return;
       }
       $('monthlyBillingRows').innerHTML = candidates.map(function (candidate) {
-        const detail = [monthlyBillingReasonLabel(candidate.reason), candidate.providerStatus ? 'Asaas: ' + candidate.providerStatus : '', monthlyBillingReasonLabel(candidate.lastError)].filter(Boolean);
-        let retry = '<span aria-hidden="true">—</span>';
+        const detail = [!candidate.billingEnabled && !candidate.invoiceId ? 'Cobrança mensal desativada.' : '', monthlyBillingReasonLabel(candidate.reason), candidate.providerStatus ? 'Asaas: ' + candidate.providerStatus : '', monthlyBillingReasonLabel(candidate.lastError)].filter(Boolean);
+        const actions = [];
         if (candidate.invoiceId && canUseClubPermission('finance.write')) {
-          if (monthlyBillingCandidateCanRetry(candidate)) retry = '<button class="small-btn" type="button" data-monthly-billing-retry="' + escapeHtml(candidate.invoiceId) + '">Retentar</button>';
-          else if (monthlyBillingCandidateCanSync(candidate)) retry = '<button class="small-btn" type="button" data-monthly-billing-sync="' + escapeHtml(candidate.invoiceId) + '">Consultar Asaas</button>';
-          else if (candidate.state === 'FAILED') retry = '<span class="muted">Revisão manual</span>';
+          if (monthlyBillingCandidateCanRetry(candidate)) actions.push('<button class="small-btn" type="button" data-monthly-billing-retry="' + escapeHtml(candidate.invoiceId) + '">Retentar</button>');
+          else if (monthlyBillingCandidateCanSync(candidate)) actions.push('<button class="small-btn" type="button" data-monthly-billing-sync="' + escapeHtml(candidate.invoiceId) + '">Consultar Asaas</button>');
+          else if (candidate.state === 'FAILED') actions.push('<span class="muted">Revisão manual</span>');
+        }
+        if (canUseClubPermission('finance.write') && candidate.clientId && (candidate.state !== 'SKIPPED' || candidate.billingEnabled)) {
+          const savingEnrollment = opsState.monthlyBillingEnrollmentSavingClientId === String(candidate.clientId);
+          actions.push('<button class="small-btn' + (candidate.billingEnabled ? ' is-enabled' : '') + '" type="button" data-monthly-billing-enrollment="' + escapeHtml(candidate.clientId) + '" data-monthly-billing-enabled="' + (candidate.billingEnabled ? 'true' : 'false') + '"' + (savingEnrollment ? ' disabled' : '') + '>' + (savingEnrollment ? 'Salvando...' : candidate.billingEnabled ? 'Desativar' : 'Ativar') + '</button>');
+        }
+        if (canUseClubPermission('finance.write') && monthlyBillingCandidateNeedsGeneration(candidate)) {
+          actions.push('<button class="primary-btn small-btn" type="button" data-monthly-billing-generate="' + escapeHtml(candidate.clientId) + '">Gerar agora</button>');
         }
         return '<div class="monthly-billing-table-row ' + monthlyBillingRowClass(candidate.state) + '" role="row">' +
           '<div class="monthly-billing-payer" role="cell"><strong>' + escapeHtml(candidate.clientName) + '</strong><small>' + escapeHtml(candidate.clientId ? 'Cadastro ' + candidate.clientId : 'Cadastro não informado') + '</small>' + (candidate.familyBilling ? '<span class="monthly-billing-family">Conta familiar</span>' : '') + '</div>' +
@@ -41589,7 +41784,7 @@
           '<div class="monthly-billing-detail" role="cell"><strong>' + escapeHtml(candidate.dueDate ? financeDateLabel(candidate.dueDate) : 'A definir') + '</strong></div>' +
           '<div role="cell"><strong>' + escapeHtml(money(candidate.amount || 0)) + '</strong></div>' +
           '<div class="monthly-billing-detail" role="cell"><span>' + escapeHtml(detail.join(' · ') || 'Pronta para processamento.') + '</span></div>' +
-          '<div role="cell">' + retry + '</div></div>';
+          '<div class="monthly-billing-row-actions" role="cell">' + (actions.join('') || '<span aria-hidden="true">—</span>') + '</div></div>';
       }).join('') || '<div class="lesson-empty-state">Nenhum pagador encontrado para este mês.</div>';
     }
 
@@ -41760,15 +41955,17 @@
       const tasks = [];
       if (!opsState.monthlyBillingLoaded) tasks.push(loadMonthlyBillingPreview(showFeedback));
       if (!opsState.monthlyBillingSettingsLoaded) tasks.push(loadMonthlyBillingSettings(showFeedback));
+      if (!opsState.monthlyBillingEnrollmentsLoaded) tasks.push(loadMonthlyBillingEnrollments(showFeedback));
       return Promise.all(tasks);
     }
 
-    async function monthlyBillingRequest(action, invoiceId, retried) {
+    async function monthlyBillingRequest(action, invoiceId, retried, clientId) {
       requireClubPermission(action === 'preview' ? 'finance.read' : 'finance.write');
       if (isAdminDemoMode()) return demoMonthlyBillingResponse(action, invoiceId);
       if (!adminSession || !adminSession.access_token) throw new Error('Sessão expirada. Entre novamente.');
       const body = { action: action, invoiceMonth: monthlyBillingInvoiceMonth() };
       if (invoiceId) body.invoiceId = invoiceId;
+      if (clientId) body.clientId = clientId;
       const headers = supabaseHeaders(true);
       headers['Content-Type'] = 'application/json';
       const response = await fetchWithAdminTimeout(supabaseBaseUrl() + '/functions/v1/app-monthly-billing', {
@@ -41778,7 +41975,7 @@
       }, MONTHLY_BILLING_REQUEST_TIMEOUT_MS);
       if (response.status === 401 && !retried) {
         await refreshAdminSession(adminSession);
-        return monthlyBillingRequest(action, invoiceId, true);
+        return monthlyBillingRequest(action, invoiceId, true, clientId);
       }
       const text = await response.text();
       let data = {};
@@ -41814,18 +42011,29 @@
       });
     }
 
-    async function generateMonthlyBilling() {
+    async function generateMonthlyBilling(clientId) {
       const preview = opsState.monthlyBillingPayload;
-      const pending = (preview && preview.candidates || []).filter(monthlyBillingCandidateNeedsGeneration).length;
+      const candidates = (preview && preview.candidates || []).filter(function (candidate) {
+        return monthlyBillingCandidateNeedsGeneration(candidate) && (!clientId || String(candidate.clientId) === String(clientId));
+      });
+      const pending = candidates.length;
       if (!pending) return;
-      if (!window.confirm('Gerar ou concluir ' + pending + ' cobrança(s) Pix referente(s) a ' + invoiceMonthLabel(monthlyBillingInvoiceMonth()) + '?')) return;
+      const total = candidates.reduce(function (sum, candidate) { return sum + Number(candidate.amount || 0); }, 0);
+      const names = candidates.slice(0, 3).map(function (candidate) { return candidate.clientName; }).join(', ');
+      const suffix = candidates.length > 3 ? ' e mais ' + (candidates.length - 3) : '';
+      if (!window.confirm('Gerar ' + pending + ' cobrança(s) Pix de ' + money(total) + ' referente(s) a ' + invoiceMonthLabel(monthlyBillingInvoiceMonth()) + ' para ' + names + suffix + '?')) return;
       opsState.monthlyBillingLoading = true;
       setMonthlyBillingMessage('Gerando as cobranças faltantes...', '');
       renderMonthlyBilling();
       try {
-        const payload = normalizeMonthlyBillingResponse(await monthlyBillingRequest('generate'));
-        opsState.monthlyBillingPayload = payload;
-        opsState.monthlyBillingLoaded = true;
+        const payload = normalizeMonthlyBillingResponse(await monthlyBillingRequest('generate', '', false, clientId));
+        if (clientId) {
+          opsState.monthlyBillingLoading = false;
+          await loadMonthlyBillingPreview(false);
+        } else {
+          opsState.monthlyBillingPayload = payload;
+          opsState.monthlyBillingLoaded = true;
+        }
         const failures = monthlyBillingResultFailures(payload);
         const failureCount = Math.max(failures.length, monthlyBillingCount(payload.summary.failed));
         const remaining = payload.candidates.filter(monthlyBillingCandidateNeedsGeneration).length;
@@ -45053,6 +45261,12 @@
       });
       $('clientModalClose').addEventListener('click', closeClientModal);
       $('clientModalCancel').addEventListener('click', closeClientModal);
+      $('clientMonthlyBillingToggleBtn').addEventListener('click', function () {
+        updateMonthlyBillingEnrollment(
+          this.dataset.monthlyBillingClient,
+          this.dataset.monthlyBillingEnabled !== 'true'
+        );
+      });
       $('clientAreaPreviewBtn').addEventListener('click', openClientAreaPreview);
       $('clientPasswordRecoveryBtn').addEventListener('click', function () {
         sendClientPasswordRecovery().catch(reportActionError);
@@ -45561,6 +45775,19 @@
         tabs[next].click();
       });
       $('financeModule').addEventListener('click', function (event) {
+        const enrollmentBtn = event.target.closest('[data-monthly-billing-enrollment]');
+        if (enrollmentBtn) {
+          updateMonthlyBillingEnrollment(
+            enrollmentBtn.dataset.monthlyBillingEnrollment,
+            enrollmentBtn.dataset.monthlyBillingEnabled !== 'true'
+          );
+          return;
+        }
+        const generateMonthlyBtn = event.target.closest('[data-monthly-billing-generate]');
+        if (generateMonthlyBtn) {
+          generateMonthlyBilling(generateMonthlyBtn.dataset.monthlyBillingGenerate);
+          return;
+        }
         const syncMonthlyBtn = event.target.closest('[data-monthly-billing-sync]');
         if (syncMonthlyBtn) {
           syncMonthlyBillingInvoice(syncMonthlyBtn.dataset.monthlyBillingSync);
