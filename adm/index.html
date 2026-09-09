@@ -3344,12 +3344,114 @@
       color: var(--teal);
     }
 
+    .finance-period-control {
+      display: grid;
+      gap: 3px;
+      min-width: 150px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .finance-period-control input {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--dark);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .finance-summary {
+      grid-template-columns: repeat(6, minmax(130px, 1fr));
+      overflow-x: auto;
+      padding-bottom: 3px;
+    }
+
+    .finance-summary .ops-card {
+      min-width: 130px;
+      border-top: 4px solid #cbdcdf;
+      background: linear-gradient(180deg, #fff 0%, #f9fcfc 100%);
+    }
+
+    .finance-summary .finance-kpi-positive {
+      border-top-color: #22c55e;
+      background: #f2fbf5;
+    }
+    .finance-summary .finance-kpi-negative {
+      border-top-color: #ef4444;
+      background: #fff6f4;
+    }
+    .finance-summary .finance-kpi-result {
+      border-top-color: var(--teal);
+      background: #effafb;
+    }
+    .finance-summary .finance-kpi-alert {
+      border-top-color: #f59e0b;
+      background: #fffbeb;
+    }
+
+    .finance-kpi-positive strong { color: #15803d; }
+    .finance-kpi-negative strong { color: #b91c1c; }
+    .finance-kpi-result strong { color: var(--teal); }
+
     .finance-workspace {
       align-items: start;
     }
 
     .finance-form-card {
       position: static;
+    }
+
+    .finance-form-actions,
+    .finance-recurring-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .finance-processing-options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .finance-processing-option {
+      display: grid;
+      gap: 4px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: #f7fafb;
+    }
+
+    .finance-processing-option strong,
+    .finance-processing-option small {
+      display: block;
+    }
+
+    .finance-processing-option small {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 750;
+      line-height: 1.4;
+    }
+
+    .finance-processing-option.active {
+      border-color: #77cbd0;
+      background: #effafb;
+    }
+
+    .finance-processing-option.disabled {
+      border-style: dashed;
+      opacity: .72;
     }
 
     .finance-list-head {
@@ -3428,9 +3530,130 @@
       gap: 6px;
     }
 
+    .finance-provider-label,
+    .finance-origin-label {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 4px 7px;
+      border-radius: 999px;
+      background: #eef5f6;
+      color: #43626a;
+      font-size: 9px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
     .finance-mini-list {
       display: grid;
       gap: 8px;
+    }
+
+    .finance-recurring-panel {
+      display: grid;
+      gap: 14px;
+    }
+
+    .finance-recurring-head {
+      align-items: center;
+    }
+
+    .finance-safety-note {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 8px 12px;
+      align-items: center;
+      padding: 12px 14px;
+      border: 1px solid #c7e9d0;
+      border-radius: 11px;
+      background: #f2fbf4;
+      color: #28513a;
+    }
+
+    .finance-safety-note strong {
+      font-size: 12px;
+    }
+
+    .finance-safety-note span {
+      font-size: 11px;
+      font-weight: 750;
+      line-height: 1.4;
+    }
+
+    .finance-recurring-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .finance-recurring-card {
+      display: grid;
+      gap: 12px;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-top: 4px solid var(--lime);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .finance-recurring-card.expense {
+      border-top-color: #ef4444;
+    }
+
+    .finance-recurring-card.paused {
+      border-top-color: #94a3b8;
+      background: #f8fafc;
+    }
+
+    .finance-recurring-card-head,
+    .finance-recurring-card-footer {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .finance-recurring-card-title strong,
+    .finance-recurring-card-title small {
+      display: block;
+    }
+
+    .finance-recurring-card-title small {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 750;
+    }
+
+    .finance-recurring-card-value {
+      color: var(--teal);
+      font-size: 20px;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    .finance-recurring-card.expense .finance-recurring-card-value {
+      color: #b91c1c;
+    }
+
+    .finance-recurring-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .monthly-billing-filters {
+      display: grid;
+      grid-template-columns: minmax(220px, 1.4fr) repeat(2, minmax(170px, .7fr));
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .monthly-billing-filters .field {
+      min-width: 0;
     }
 
     .monthly-billing-panel {
@@ -3587,7 +3810,7 @@
     }
 
     .monthly-billing-table {
-      min-width: 760px;
+      min-width: 0;
       display: grid;
       gap: 7px;
     }
@@ -10405,6 +10628,19 @@
       .finance-form-card {
         position: static;
       }
+      .finance-summary {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+      }
+      .finance-summary .ops-card {
+        flex: 0 0 154px;
+        scroll-snap-align: start;
+      }
+      .finance-period-control {
+        flex: 1 1 155px;
+      }
       .finance-list-head {
         display: grid;
       }
@@ -10429,6 +10665,53 @@
       }
       .monthly-billing-settings-message {
         grid-column: auto;
+      }
+      .monthly-billing-filters,
+      .finance-recurring-grid,
+      .finance-processing-options {
+        grid-template-columns: 1fr;
+      }
+      .monthly-billing-table-wrap {
+        overflow: visible;
+      }
+      .monthly-billing-table-head {
+        display: none;
+      }
+      .monthly-billing-table-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 12px;
+        padding: 13px;
+      }
+      .monthly-billing-table-row > [role="cell"] {
+        min-width: 0;
+      }
+      .monthly-billing-table-row > [role="cell"]::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 4px;
+        color: var(--muted);
+        font-size: 8px;
+        font-weight: 950;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+      }
+      .monthly-billing-table-row > .monthly-billing-payer,
+      .monthly-billing-table-row > .monthly-billing-detail-copy,
+      .monthly-billing-row-actions {
+        grid-column: 1 / -1;
+      }
+      .monthly-billing-row-actions {
+        min-width: 0;
+        justify-content: flex-start;
+      }
+      .finance-recurring-head,
+      .finance-recurring-card-head,
+      .finance-recurring-card-footer {
+        display: grid;
+      }
+      .finance-recurring-actions,
+      .finance-form-actions {
+        justify-content: flex-start;
       }
       .client-monthly-billing-control {
         grid-template-columns: 1fr;
@@ -10526,6 +10809,64 @@
       }
       .club-module {
         min-height: 142px;
+      }
+      .monthly-billing-toolbar,
+      .monthly-billing-settings-actions,
+      .finance-recurring-actions,
+      .finance-form-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        width: 100%;
+      }
+      .finance-summary {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: visible;
+      }
+      .finance-summary .ops-card {
+        min-width: 0;
+        flex: initial;
+      }
+      .monthly-billing-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: visible;
+      }
+      .monthly-billing-kpi {
+        min-width: 0;
+      }
+      #financeSectionTabs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px;
+        padding: 7px;
+        overflow: visible;
+      }
+      #financeSectionTabs .ops-tab-btn {
+        width: 100%;
+        min-width: 0;
+        white-space: normal;
+      }
+      #financeSectionTabs .ops-tab-btn:last-child {
+        grid-column: 1 / -1;
+      }
+      .monthly-billing-toolbar .field,
+      .monthly-billing-toolbar button,
+      .monthly-billing-settings-actions .field,
+      .monthly-billing-settings-actions button,
+      .finance-recurring-actions button,
+      .finance-form-actions button {
+        width: 100%;
+      }
+      .monthly-billing-table-row {
+        grid-template-columns: 1fr;
+      }
+      .monthly-billing-table-row > .monthly-billing-payer,
+      .monthly-billing-table-row > .monthly-billing-detail-copy,
+      .monthly-billing-row-actions {
+        grid-column: auto;
+      }
+      .finance-safety-note {
+        grid-template-columns: 1fr;
       }
       .lesson-content {
         padding: 10px;
@@ -22671,27 +23012,35 @@
       <div class="module-shell">
         <div class="module-head">
           <div>
-            <h1>Financeiro</h1>
-            <div class="muted">Caixa, recebíveis e despesas.</div>
+            <h1>Financeiro do clube</h1>
+            <div class="muted">Receitas, custos, mensalidades e compromissos recorrentes em uma visão segura.</div>
           </div>
           <div class="module-actions">
             <button class="ghost-btn" type="button" data-home-action>Início</button>
+            <label class="finance-period-control" for="financePeriodMonth">
+              <span>Competência</span>
+              <input id="financePeriodMonth" type="month" />
+            </label>
+            <button class="ghost-btn" type="button" id="financeRefreshBtn">Atualizar</button>
             <button class="ghost-btn" type="button" id="financeExportBtn">Exportar</button>
             <button class="primary-btn" type="button" id="financeNewBtn" data-club-permission="finance.write">Lançar agora</button>
           </div>
         </div>
         <div class="ops-content">
-          <div class="ops-summary">
-            <div class="ops-card"><strong id="financeBalanceMetric">R$ 0</strong><span>saldo atual</span></div>
-            <div class="ops-card"><strong id="financeReceivableMetric">R$ 0</strong><span>a receber</span></div>
-            <div class="ops-card"><strong id="financePayableMetric">R$ 0</strong><span>a pagar</span></div>
-            <div class="ops-card"><strong id="financeOverdueMetric">0</strong><span>vencidos</span></div>
+          <div class="ops-summary finance-summary">
+            <div class="ops-card finance-kpi-positive"><strong id="financeReceivedMetric">R$ 0</strong><span>recebido no mês</span></div>
+            <div class="ops-card finance-kpi-negative"><strong id="financePaidMetric">R$ 0</strong><span>pago no mês</span></div>
+            <div class="ops-card finance-kpi-result"><strong id="financeBalanceMetric">R$ 0</strong><span>resultado do mês</span></div>
+            <div class="ops-card"><strong id="financeReceivableMetric">R$ 0</strong><span>a receber no mês</span></div>
+            <div class="ops-card"><strong id="financePayableMetric">R$ 0</strong><span>a pagar no mês</span></div>
+            <div class="ops-card finance-kpi-alert"><strong id="financeOverdueMetric">0</strong><span>vencidos em aberto</span></div>
           </div>
           <div class="ops-tabs" id="financeSectionTabs" role="tablist" aria-label="Financeiro">
-            <button class="ops-tab-btn active" type="button" data-finance-view="list">Movimentação</button>
+            <button class="ops-tab-btn active" type="button" data-finance-view="list">Visão geral</button>
             <button class="ops-tab-btn" type="button" data-finance-view="monthly">Mensalidades</button>
-            <button class="ops-tab-btn" type="button" data-finance-view="form" data-club-permission="finance.write">Lançar</button>
-            <button class="ops-tab-btn" type="button" data-finance-view="due">Vencidos</button>
+            <button class="ops-tab-btn" type="button" data-finance-view="recurring">Fixos e recorrentes</button>
+            <button class="ops-tab-btn" type="button" data-finance-view="due">Vencimentos</button>
+            <button class="ops-tab-btn" type="button" data-finance-view="form" data-club-permission="finance.write">Novo lançamento</button>
           </div>
           <div class="ops-grid finance-workspace">
             <div class="ops-panel span-12 monthly-billing-panel" data-finance-panel="monthly">
@@ -22701,7 +23050,7 @@
                   <div class="muted">Prévia segura das cobranças Pix do mês, agrupadas por responsável financeiro.</div>
                 </div>
               </div>
-              <div class="monthly-billing-settings" aria-label="Automação das mensalidades">
+              <div class="monthly-billing-settings" role="group" aria-label="Automação das mensalidades">
                 <div class="monthly-billing-settings-copy">
                   <div class="monthly-billing-settings-title">
                     <strong>Geração automática</strong>
@@ -22729,8 +23078,34 @@
                 <button class="ghost-btn" type="button" id="monthlyBillingGenerateManualBtn" data-club-permission="finance.write">Gerar Pix clube/dinheiro</button>
                 <button class="ghost-btn" type="button" id="monthlyBillingRetryBtn" data-club-permission="finance.write">Retentar falhas</button>
               </div>
+              <div class="monthly-billing-filters" role="group" aria-label="Filtros das mensalidades">
+                <label class="field" for="monthlyBillingSearch">
+                  <span>Buscar aluno ou responsável</span>
+                  <input id="monthlyBillingSearch" type="search" placeholder="Digite um nome" autocomplete="off" />
+                </label>
+                <label class="field" for="monthlyBillingStatusFilter">
+                  <span>Status</span>
+                  <select id="monthlyBillingStatusFilter">
+                    <option value="todos">Todos</option>
+                    <option value="abertos">Em aberto</option>
+                    <option value="pagos">Pagos</option>
+                    <option value="vencidos">Vencidos</option>
+                    <option value="falhas">Com falha</option>
+                    <option value="excluidos">Não elegíveis</option>
+                  </select>
+                </label>
+                <label class="field" for="monthlyBillingMethodFilter">
+                  <span>Forma de recebimento</span>
+                  <select id="monthlyBillingMethodFilter">
+                    <option value="todos">Todas</option>
+                    <option value="ASAAS_PIX">Pix Asaas</option>
+                    <option value="CLUB_PIX">Pix do clube</option>
+                    <option value="CASH">Dinheiro</option>
+                  </select>
+                </label>
+              </div>
               <div class="monthly-billing-message" id="monthlyBillingMessage" hidden role="status" aria-live="polite"></div>
-              <div class="monthly-billing-summary" aria-label="Resumo das mensalidades">
+              <div class="monthly-billing-summary" role="group" aria-label="Resumo das mensalidades">
                 <div class="monthly-billing-kpi"><strong id="monthlyBillingEligibleMetric">0</strong><span>Elegíveis</span></div>
                 <div class="monthly-billing-kpi"><strong id="monthlyBillingEnabledMetric">0</strong><span>Ativadas</span></div>
                 <div class="monthly-billing-kpi"><strong id="monthlyBillingGeneratedMetric">0</strong><span>Geradas</span></div>
@@ -22754,14 +23129,38 @@
                 </div>
               </div>
             </div>
+            <div class="ops-panel span-12 finance-recurring-panel" data-finance-panel="recurring">
+              <div class="ops-panel-head finance-recurring-head">
+                <div>
+                  <h2>Recebimentos e custos recorrentes</h2>
+                  <div class="muted">Aluguéis, contratos, equipe e demais valores que se repetem todo mês.</div>
+                </div>
+                <div class="finance-recurring-actions" data-club-permission="finance.write">
+                  <button class="ghost-btn" type="button" id="financeGenerateRecurringBtn">Gerar competência</button>
+                  <button class="primary-btn" type="button" id="financeNewRecurringBtn">Nova recorrência</button>
+                </div>
+              </div>
+              <div class="finance-safety-note">
+                <strong>Histórico protegido</strong>
+                <span>Editar ou pausar altera somente os próximos meses. Lançamentos já gerados permanecem intactos.</span>
+              </div>
+              <div class="finance-recurring-grid" id="financeRecurringRows"></div>
+            </div>
             <div class="ops-panel span-12 finance-form-card" data-finance-panel="form" data-club-permission="finance.write">
               <div class="ops-panel-head">
                 <div>
-                  <h2>Novo lançamento</h2>
-                  <div class="muted">Receita ou despesa do clube.</div>
+                  <h2 id="financeFormTitle">Novo lançamento</h2>
+                  <div class="muted" id="financeFormHint">Registre uma receita ou despesa avulsa.</div>
                 </div>
               </div>
               <form class="form-grid" id="financeForm">
+                <div class="field">
+                  <label for="financeFrequency">Repetição</label>
+                  <select id="financeFrequency">
+                    <option value="ONCE">Somente este lançamento</option>
+                    <option value="MONTHLY">Todo mês</option>
+                  </select>
+                </div>
                 <div class="field">
                   <label for="financeType">Tipo</label>
                   <select id="financeType">
@@ -22770,12 +23169,20 @@
                   </select>
                 </div>
                 <div class="field">
+                  <label for="financeClassification">Classificação</label>
+                  <select id="financeClassification">
+                    <option value="VARIAVEL">Variável</option>
+                    <option value="FIXO">Fixo</option>
+                  </select>
+                </div>
+                <div class="field" id="financeStatusField">
                   <label for="financeStatus">Status</label>
                   <select id="financeStatus">
                     <option value="ABERTO">Em aberto</option>
                     <option value="RECEBIDO">Recebido</option>
                     <option value="PAGO">Pago</option>
                     <option value="VENCIDO">Vencido</option>
+                    <option value="CANCELADO">Cancelado</option>
                   </select>
                 </div>
                 <div class="field full">
@@ -22790,9 +23197,21 @@
                   <label for="financeAmount">Valor</label>
                   <input id="financeAmount" inputmode="decimal" placeholder="220,00" />
                 </div>
-                <div class="field">
+                <div class="field" id="financeDueField">
                   <label for="financeDue">Vencimento</label>
                   <input id="financeDue" type="date" />
+                </div>
+                <div class="field finance-recurring-only" id="financeDueDayField" hidden>
+                  <label for="financeDueDay">Dia do vencimento</label>
+                  <input id="financeDueDay" type="number" min="1" max="28" inputmode="numeric" value="10" />
+                </div>
+                <div class="field finance-recurring-only" id="financeStartMonthField" hidden>
+                  <label for="financeStartMonth">Começa em</label>
+                  <input id="financeStartMonth" type="month" />
+                </div>
+                <div class="field finance-recurring-only" id="financeEndMonthField" hidden>
+                  <label for="financeEndMonth">Termina em (opcional)</label>
+                  <input id="financeEndMonth" type="month" />
                 </div>
                 <div class="field">
                   <label for="financeCategory">Categoria</label>
@@ -22803,6 +23222,9 @@
                     <option value="Loja">Loja</option>
                     <option value="Torneio">Torneio</option>
                     <option value="Equipe">Equipe</option>
+                    <option value="Aluguel">Aluguel</option>
+                    <option value="Fornecedor">Fornecedor</option>
+                    <option value="Impostos">Impostos</option>
                     <option value="Manutenção">Manutenção</option>
                     <option value="Operação">Operação</option>
                   </select>
@@ -22811,25 +23233,33 @@
                   <label for="financeMethod">Pagamento</label>
                   <select id="financeMethod">
                     <option value="">A definir</option>
-                    <option value="PIX">PIX</option>
-                    <option value="Cartão">Cartão</option>
-                    <option value="Dinheiro">Dinheiro</option>
-                    <option value="Transferência">Transferência</option>
+                    <option value="CLUB_PIX">Pix do clube</option>
+                    <option value="CASH">Dinheiro</option>
+                    <option value="TRANSFERENCIA">Transferência</option>
+                    <option value="CARTAO">Cartão</option>
                   </select>
+                </div>
+                <div class="field full finance-processing-field">
+                  <label>Processamento</label>
+                  <div class="finance-processing-options">
+                    <span class="finance-processing-option active"><strong>Manual</strong><small>Baixa feita pelo ADM.</small></span>
+                    <span class="finance-processing-option disabled" aria-disabled="true"><strong>Asaas automático</strong><small>Preparado para uma próxima etapa, após validar o pagador.</small></span>
+                  </div>
                 </div>
                 <div class="field full">
                   <label for="financeNotes">Observações</label>
                   <textarea id="financeNotes" placeholder="Combinado, parcela, professor, turma ou detalhe importante."></textarea>
                 </div>
-                <div class="field full">
-                  <button class="primary-btn" type="submit">Salvar lançamento</button>
+                <div class="field full finance-form-actions">
+                  <button class="ghost-btn" type="button" id="financeCancelEditBtn" hidden>Cancelar edição</button>
+                  <button class="primary-btn" type="submit" id="financeSaveBtn">Salvar lançamento</button>
                 </div>
               </form>
             </div>
             <div class="ops-panel span-12 active-tab-panel" data-finance-panel="list">
               <div class="finance-list-head">
                 <div class="finance-list-title">
-                  <strong>Movimentação</strong>
+                  <strong id="financeListTitle">Movimentação da competência</strong>
                   <span id="financeListHint">Lançamentos do clube.</span>
                 </div>
                 <div class="lesson-filters" id="financeFilters"></div>
@@ -29503,7 +29933,15 @@
       agendaType: 'todos',
       financeFilter: 'abertos',
       financeView: 'list',
+      financePeriodMonth: localDateString(new Date()).slice(0, 7),
+      financeEditingId: '',
+      financeRecurringEditingId: '',
+      financeSaving: false,
+      financeRecurringGenerating: false,
       monthlyBillingMonth: localDateString(new Date()).slice(0, 7),
+      monthlyBillingSearch: '',
+      monthlyBillingStatusFilter: 'todos',
+      monthlyBillingMethodFilter: 'todos',
       monthlyBillingLoading: false,
       monthlyBillingLoaded: false,
       monthlyBillingPayload: null,
@@ -29722,6 +30160,10 @@
         { student: 'Ilha Store', source: 'Bolinhas e encordoamento', type: 'RECEITA', amount: 160, due: '2026-06-22', status: 'RECEBIDO', category: 'Loja' },
         { student: 'Professor Demo A', source: 'Repasse aulas', type: 'DESPESA', amount: 650, due: '2026-06-30', status: 'ABERTO', category: 'Equipe' },
         { student: 'Fornecedor', source: 'Bolas e material de quadra', type: 'DESPESA', amount: 420, due: '2026-06-28', status: 'ABERTO', category: 'Operação' }
+      ],
+      financeRecurringRules: [
+        { id: 'finance_rule_demo_1', counterparty: 'Locatário Demo', description: 'Aluguel mensal de terceiro', category: 'Aluguel', type: 'RECEITA', classification: 'FIXO', amount: 900, dueDay: 10, paymentMethod: 'CLUB_PIX', processingMethod: 'MANUAL', startsOn: localDateString().slice(0, 7) + '-01', endsOn: '', active: true, notes: '' },
+        { id: 'finance_rule_demo_2', counterparty: 'Fornecedor Demo', description: 'Manutenção preventiva', category: 'Manutenção', type: 'DESPESA', classification: 'FIXO', amount: 280, dueDay: 15, paymentMethod: 'TRANSFERENCIA', processingMethod: 'MANUAL', startsOn: localDateString().slice(0, 7) + '-01', endsOn: '', active: true, notes: '' }
       ],
       team: [
         { name: 'Administrador Demo', email: 'demo@ilhatenis.com', role: 'admin', active: true, permissions: roleDefaultPermissions.admin, notes: 'Gestao geral do clube.' }
@@ -30194,10 +30636,16 @@
       return {
         id: row.id,
         appPaymentInvoiceId: row.app_payment_invoice_id || '',
+        recurringRuleId: row.recurring_rule_id || '',
+        recurringRuleVersion: Number(row.recurring_rule_version || 0),
+        competenceMonth: row.competence_month || '',
         student: counterparty,
         counterparty: counterparty,
         source: row.description || 'Lancamento',
         type: row.type || 'RECEITA',
+        classification: row.classification || 'VARIAVEL',
+        processingMethod: row.processing_method || (row.app_payment_invoice_id ? 'ASAAS' : 'MANUAL'),
+        ledgerOrigin: row.ledger_origin || (row.app_payment_invoice_id ? 'APP_MONTHLY_INVOICE' : row.recurring_rule_id ? 'RECURRENCE' : 'LEGACY'),
         amount: Number(row.amount || 0),
         due: row.due_date || '',
         status: row.status || 'ABERTO',
@@ -30205,6 +30653,29 @@
         paidAt: row.paid_at || '',
         paymentMethod: row.payment_method || '',
         notes: row.notes || ''
+      };
+    }
+
+    function mapFinanceRecurringRule(row) {
+      return {
+        id: row.id,
+        counterparty: row.counterparty || '',
+        description: row.description || 'Recorrência',
+        category: row.category || 'Operação',
+        type: row.type || 'RECEITA',
+        classification: row.classification || 'FIXO',
+        amount: Number(row.amount || 0),
+        dueDay: Number(row.due_day || 10),
+        paymentMethod: row.payment_method || '',
+        processingMethod: row.processing_method || 'MANUAL',
+        startsOn: row.starts_on || '',
+        endsOn: row.ends_on || '',
+        active: row.active !== false,
+        pausedAt: row.paused_at || '',
+        archivedAt: row.archived_at || '',
+        notes: row.notes || '',
+        version: Number(row.version || 1),
+        updatedAt: row.updated_at || ''
       };
     }
 
@@ -31013,6 +31484,7 @@
       opsData.students = [];
       opsData.agenda = [];
       opsData.finance = [];
+      opsData.financeRecurringRules = [];
       opsData.team = [];
       opsData.audiences = [];
       opsData.campaigns = [];
@@ -31084,7 +31556,10 @@
                 console.warn('Não foi possível carregar os backups de clientes.', error && error.message);
                 return [];
               })
-            : Promise.resolve([])
+            : Promise.resolve([]),
+          allowed('finance.read', function () {
+            return supabaseRestAll('financial_recurring_rules?select=*&archived_at=is.null&order=active.desc,due_day.asc,description.asc,id.asc');
+          }).catch(function () { return []; })
         ]);
         if (loadEpoch !== adminSessionEpoch) return;
         opsData.clients = results[0].map(mapClientRow);
@@ -31107,6 +31582,7 @@
         opsData.familyMembers = (results[16] || []).map(mapFamilyMemberRow);
         opsData.familyInvoiceItems = (results[17] || []).map(mapFamilyInvoiceItemRow);
         opsData.clientBackups = (results[18] || []).map(mapClientBackupRow);
+        opsData.financeRecurringRules = (results[19] || []).map(mapFinanceRecurringRule);
         const defaultTemplate = opsData.templates.find(function (template) { return template.active !== false && template.body; });
         if (defaultTemplate) opsData.message = defaultTemplate.body;
         opsState.loaded = true;
@@ -41492,23 +41968,86 @@
       });
     }
 
+    function financePaymentMethodLabel(value) {
+      const method = String(value || '').trim().toUpperCase();
+      return ({
+        PIX_CLUBE: 'Pix do clube',
+        PIX: 'Pix',
+        DINHEIRO: 'Dinheiro',
+        CASH: 'Dinheiro',
+        TRANSFERENCIA: 'Transferência',
+        'TRANSFERÊNCIA': 'Transferência',
+        CARTAO: 'Cartão',
+        'CARTÃO': 'Cartão',
+        ASAAS_PIX: 'Pix Asaas'
+      })[method] || value || 'A definir';
+    }
+
+    function financePeriodMatches(item, month) {
+      month = String(month || '').slice(0, 7);
+      if (!month) return true;
+      const reference = String(item.competenceMonth || item.due || '').slice(0, 7);
+      return reference === month;
+    }
+
+    function financeSettlementMatches(item, month) {
+      month = String(month || '').slice(0, 7);
+      if (!month) return true;
+      const reference = String(item.paidAt || item.due || '').slice(0, 7);
+      return reference === month;
+    }
+
     function renderFinanceItem(item, compact) {
       const paid = isFinancePaid(item);
       const status = financeDisplayStatus(item);
       const isExpense = item.type === 'DESPESA';
       const providerManaged = Boolean(item.appPaymentInvoiceId);
+      const asaasManaged = item.processingMethod === 'ASAAS';
+      const recurringManaged = Boolean(item.recurringRuleId);
       const actionLabel = isExpense ? 'Marcar pago' : 'Marcar recebido';
       const meta = [
         item.source,
         item.category,
+        item.classification === 'FIXO' ? 'Fixo' : 'Variável',
         financeDateLabel(item.due),
-        item.paymentMethod || ''
+        financePaymentMethodLabel(item.paymentMethod)
       ].filter(Boolean).join(' | ');
+      const canWrite = canUseClubPermission('finance.write');
+      const canEdit = canWrite && !providerManaged && !asaasManaged && !recurringManaged;
+      const canSettle = canWrite && !paid && !providerManaged && !asaasManaged && !isFinanceCancelled(item);
+      const canCancel = canWrite && !(providerManaged || isFinanceCancelled(item)) && !asaasManaged && !paid;
+      const actions = [
+        statusPill(status),
+        asaasManaged ? '<span class="finance-provider-label">Sincronizado pelo Asaas · baixa automática</span>' : providerManaged ? '<span class="finance-provider-label">Mensalidade interna</span>' : '',
+        recurringManaged ? '<span class="finance-origin-label">Recorrente</span>' : '',
+        canSettle && !compact ? '<button class="small-btn" type="button" data-finance-paid="' + escapeHtml(item.id || '') + '">' + actionLabel + '</button>' : '',
+        canEdit && !compact ? '<button class="small-btn" type="button" data-finance-edit="' + escapeHtml(item.id || '') + '">Editar</button>' : '',
+        canCancel && !compact ? '<button class="small-btn danger" type="button" data-finance-cancel="' + escapeHtml(item.id || '') + '">Cancelar</button>' : ''
+      ].filter(Boolean).join('');
       return '<article class="ops-list-card finance-item ' + (isExpense ? 'expense' : 'income') + '">' +
         '<div class="finance-item-main"><strong>' + escapeHtml(item.counterparty || item.student || 'Lançamento') + '</strong><small>' + escapeHtml(meta) + '</small></div>' +
         '<div class="finance-item-side"><span class="finance-amount ' + (isExpense ? 'expense' : '') + '">' + (isExpense ? '-' : '+') + money(item.amount) + '</span>' +
-        '<div class="finance-action-row">' + statusPill(status) + (providerManaged ? '<span class="muted">Sincronizado pelo Asaas</span>' : '') + (paid || compact || providerManaged || isFinanceCancelled(item) || !canUseClubPermission('finance.write') ? '' : '<button class="small-btn" type="button" data-finance-paid="' + escapeHtml(item.id || '') + '">' + actionLabel + '</button>') + '</div></div>' +
+        '<div class="finance-action-row">' + actions + '</div></div>' +
         '</article>';
+    }
+
+    function renderFinanceRecurringRules() {
+      const rows = (opsData.financeRecurringRules || []).filter(function (rule) { return !rule.archivedAt; });
+      const canWrite = canUseClubPermission('finance.write');
+      $('financeGenerateRecurringBtn').disabled = opsState.financeRecurringGenerating || !rows.some(function (rule) { return rule.active; });
+      $('financeGenerateRecurringBtn').textContent = opsState.financeRecurringGenerating ? 'Gerando...' : 'Gerar competência';
+      $('financeRecurringRows').innerHTML = rows.map(function (rule) {
+        const isExpense = rule.type === 'DESPESA';
+        const state = rule.active ? 'ATIVA' : 'PAUSADA';
+        const period = 'Todo dia ' + rule.dueDay + ' · desde ' + financeDateLabel(rule.startsOn) + (rule.endsOn ? ' até ' + financeDateLabel(rule.endsOn) : ' · sem data final');
+        return '<article class="finance-recurring-card ' + (isExpense ? 'expense ' : '') + (rule.active ? '' : 'paused') + '">' +
+          '<div class="finance-recurring-card-head"><div class="finance-recurring-card-title"><strong>' + escapeHtml(rule.description) + '</strong><small>' + escapeHtml(rule.counterparty) + '</small></div>' +
+          '<span class="finance-recurring-card-value">' + (isExpense ? '-' : '+') + escapeHtml(money(rule.amount)) + '</span></div>' +
+          '<div class="finance-recurring-meta">' + statusPill(state) + '<span class="finance-origin-label">' + escapeHtml(rule.category) + '</span><span class="finance-origin-label">' + escapeHtml(rule.classification === 'FIXO' ? 'Fixo' : 'Variável') + '</span><span class="finance-origin-label">' + escapeHtml(financePaymentMethodLabel(rule.paymentMethod)) + '</span></div>' +
+          '<small class="muted">' + escapeHtml(period) + '</small>' +
+          '<div class="finance-recurring-card-footer"><span class="muted">Alterações valem só para os próximos lançamentos.</span>' + (canWrite ? '<div class="finance-action-row"><button class="small-btn" type="button" data-finance-recurring-edit="' + escapeHtml(rule.id) + '">Editar</button><button class="small-btn" type="button" data-finance-recurring-toggle="' + escapeHtml(rule.id) + '" data-finance-recurring-active="' + (rule.active ? 'true' : 'false') + '">' + (rule.active ? 'Pausar' : 'Retomar') + '</button><button class="small-btn danger" type="button" data-finance-recurring-archive="' + escapeHtml(rule.id) + '">Arquivar</button></div>' : '') + '</div>' +
+          '</article>';
+      }).join('') || '<div class="lesson-empty-state"><strong>Nenhuma recorrência cadastrada.</strong><span>Use “Nova recorrência” para aluguel, contratos, equipe e custos fixos.</span></div>';
     }
 
     function monthlyBillingInvoiceMonth() {
@@ -41570,7 +42109,8 @@
         FINANCIAL_STATE_PRESERVED: 'Estado financeiro confirmado foi preservado.',
         UNSUPPORTED_STATUS: 'Status do Asaas ainda não reconhecido. Revisão manual necessária.',
         DUPLICATE_EVENT: 'Evento repetido do Asaas ignorado com segurança.',
-        INVOICE_ALREADY_MANAGED_BY_ASAAS: 'A mensalidade deste mês já pertence ao Asaas e não pode ser convertida em pagamento manual.'
+        INVOICE_ALREADY_MANAGED_BY_ASAAS: 'A mensalidade deste mês já pertence ao Asaas e não pode ser convertida em pagamento manual.',
+        DUE_DATE_IN_PAST: 'O vencimento ficou no passado. Atualize o dia de vencimento antes de gerar a cobrança.'
       };
       if (labels[code]) return labels[code];
       return original;
@@ -41942,6 +42482,9 @@
       const summary = payload && payload.summary || {};
       const candidates = payload && payload.candidates || [];
       if ($('monthlyBillingMonth')) $('monthlyBillingMonth').value = opsState.monthlyBillingMonth;
+      if ($('monthlyBillingSearch') && document.activeElement !== $('monthlyBillingSearch')) $('monthlyBillingSearch').value = opsState.monthlyBillingSearch;
+      if ($('monthlyBillingStatusFilter')) $('monthlyBillingStatusFilter').value = opsState.monthlyBillingStatusFilter;
+      if ($('monthlyBillingMethodFilter')) $('monthlyBillingMethodFilter').value = opsState.monthlyBillingMethodFilter;
       $('monthlyBillingEligibleMetric').textContent = monthlyBillingCount(summary.eligible);
       const enabledCandidates = candidates.filter(function (candidate) { return candidate.billingEnabled; });
       $('monthlyBillingEnabledMetric').textContent = enabledCandidates.length;
@@ -41973,8 +42516,23 @@
         $('monthlyBillingRows').innerHTML = '<div class="lesson-empty-state">Montando a prévia dos responsáveis financeiros...</div>';
         return;
       }
-      $('monthlyBillingRows').innerHTML = candidates.map(function (candidate) {
+      const search = String(opsState.monthlyBillingSearch || '').trim().toLocaleLowerCase('pt-BR');
+      const visibleCandidates = candidates.filter(function (candidate) {
+        if (search && !String(candidate.clientName || '').toLocaleLowerCase('pt-BR').includes(search)) return false;
+        const state = String(candidate.state || '').toUpperCase();
+        const statusFilter = opsState.monthlyBillingStatusFilter;
+        if (statusFilter === 'pagos' && state !== 'PAID') return false;
+        if (statusFilter === 'vencidos' && state !== 'OVERDUE') return false;
+        if (statusFilter === 'falhas' && state !== 'FAILED') return false;
+        if (statusFilter === 'excluidos' && state !== 'SKIPPED') return false;
+        if (statusFilter === 'abertos' && ['PAID', 'SKIPPED'].includes(state)) return false;
+        const method = normalizeMonthlyBillingMethod(candidate.invoiceId ? candidate.invoicePaymentMethod : candidate.billingMethod);
+        return opsState.monthlyBillingMethodFilter === 'todos' || method === opsState.monthlyBillingMethodFilter;
+      });
+      $('monthlyBillingRows').innerHTML = visibleCandidates.map(function (candidate) {
         const manual = monthlyBillingMethodIsManual(candidate.billingMethod);
+        const client = findClientByKey(candidate.clientId);
+        const payerMeta = [client && (client.planName || client.plan), client && client.phone].filter(Boolean).join(' · ') || 'Responsável financeiro';
         const detail = [
           !candidate.billingEnabled && !candidate.invoiceId ? 'Cobrança mensal desativada.' : '',
           candidate.billingEnabled && manual ? 'Cobrança interna; o Asaas não será acionado.' : '',
@@ -42002,13 +42560,13 @@
           actions.push('<button class="primary-btn small-btn" type="button" data-monthly-billing-confirm-manual="' + escapeHtml(candidate.invoiceId) + '" data-monthly-billing-client="' + escapeHtml(candidate.clientId) + '">Confirmar recebimento</button>');
         }
         return '<div class="monthly-billing-table-row ' + monthlyBillingRowClass(candidate.state) + '" role="row">' +
-          '<div class="monthly-billing-payer" role="cell"><strong>' + escapeHtml(candidate.clientName) + '</strong><small>' + escapeHtml(candidate.clientId ? 'Cadastro ' + candidate.clientId : 'Cadastro não informado') + '</small><span class="monthly-billing-family">' + escapeHtml(monthlyBillingMethodLabel(candidate.invoiceId ? candidate.invoicePaymentMethod : candidate.billingMethod)) + '</span>' + (candidate.familyBilling ? '<span class="monthly-billing-family">Conta familiar</span>' : '') + '</div>' +
-          '<div role="cell">' + monthlyBillingStatePill(candidate.state) + '</div>' +
-          '<div class="monthly-billing-detail" role="cell"><strong>' + escapeHtml(candidate.dueDate ? financeDateLabel(candidate.dueDate) : 'A definir') + '</strong></div>' +
-          '<div role="cell"><strong>' + escapeHtml(money(candidate.amount || 0)) + '</strong></div>' +
-          '<div class="monthly-billing-detail" role="cell"><span>' + escapeHtml(detail.join(' · ') || 'Pronta para processamento.') + '</span></div>' +
-          '<div class="monthly-billing-row-actions" role="cell">' + (actions.join('') || '<span aria-hidden="true">—</span>') + '</div></div>';
-      }).join('') || '<div class="lesson-empty-state">Nenhum pagador encontrado para este mês.</div>';
+          '<div class="monthly-billing-payer" role="cell" data-label="Pagador"><strong>' + escapeHtml(candidate.clientName) + '</strong><small>' + escapeHtml(payerMeta) + '</small><span class="monthly-billing-family">' + escapeHtml(monthlyBillingMethodLabel(candidate.invoiceId ? candidate.invoicePaymentMethod : candidate.billingMethod)) + '</span>' + (candidate.familyBilling ? '<span class="monthly-billing-family">Conta familiar</span>' : '') + '</div>' +
+          '<div role="cell" data-label="Estado">' + monthlyBillingStatePill(candidate.state) + '</div>' +
+          '<div class="monthly-billing-detail" role="cell" data-label="Vencimento"><strong>' + escapeHtml(candidate.dueDate ? financeDateLabel(candidate.dueDate) : 'A definir') + '</strong></div>' +
+          '<div role="cell" data-label="Valor"><strong>' + escapeHtml(money(candidate.amount || 0)) + '</strong></div>' +
+          '<div class="monthly-billing-detail monthly-billing-detail-copy" role="cell" data-label="Detalhe"><span>' + escapeHtml(detail.join(' · ') || 'Pronta para processamento.') + '</span></div>' +
+          '<div class="monthly-billing-row-actions" role="cell" data-label="Ações">' + (actions.join('') || '<span aria-hidden="true">—</span>') + '</div></div>';
+      }).join('') || '<div class="lesson-empty-state">Nenhum pagador corresponde aos filtros deste mês.</div>';
     }
 
     function demoMonthlyBillingResponse(action, invoiceId) {
@@ -42403,11 +42961,19 @@
     function renderFinanceModule() {
       setPanelTabs('[data-finance-view]', '[data-finance-panel]', opsState.financeView, 'data-finance-panel');
       renderMonthlyBilling();
-      const receivables = opsData.finance.filter(function (item) { return item.type !== 'DESPESA'; });
-      const payables = opsData.finance.filter(function (item) { return item.type === 'DESPESA'; });
-      const received = receivables.filter(isFinancePaid).reduce(function (sum, item) { return sum + item.amount; }, 0);
+      renderFinanceRecurringRules();
+      const period = opsState.financePeriodMonth || localDateString().slice(0, 7);
+      if ($('financePeriodMonth')) $('financePeriodMonth').value = period;
+      const periodRows = opsData.finance.filter(function (item) { return financePeriodMatches(item, period); });
+      const receivables = periodRows.filter(function (item) { return item.type !== 'DESPESA'; });
+      const payables = periodRows.filter(function (item) { return item.type === 'DESPESA'; });
+      const received = opsData.finance.filter(function (item) {
+        return item.type !== 'DESPESA' && isFinancePaid(item) && financeSettlementMatches(item, period);
+      }).reduce(function (sum, item) { return sum + item.amount; }, 0);
       const toReceive = receivables.filter(function (item) { return !isFinancePaid(item) && !isFinanceCancelled(item); }).reduce(function (sum, item) { return sum + item.amount; }, 0);
-      const paid = payables.filter(isFinancePaid).reduce(function (sum, item) { return sum + item.amount; }, 0);
+      const paid = opsData.finance.filter(function (item) {
+        return item.type === 'DESPESA' && isFinancePaid(item) && financeSettlementMatches(item, period);
+      }).reduce(function (sum, item) { return sum + item.amount; }, 0);
       const toPay = payables.filter(function (item) { return !isFinancePaid(item) && !isFinanceCancelled(item); }).reduce(function (sum, item) { return sum + item.amount; }, 0);
       const overdue = opsData.finance.filter(isFinanceOverdue);
       const today = financeDateValue(localDateString());
@@ -42416,9 +42982,11 @@
         const due = financeDateValue(item.due);
         return !isFinancePaid(item) && !isFinanceCancelled(item) && due && due >= today && due <= nextWeek;
       }));
-      const visibleRows = sortFinanceRows(opsData.finance.filter(function (item) {
+      const visibleRows = sortFinanceRows(periodRows.filter(function (item) {
         return financeMatchesFilter(item, opsState.financeFilter);
       }));
+      $('financeReceivedMetric').textContent = money(received);
+      $('financePaidMetric').textContent = money(paid);
       $('financeBalanceMetric').textContent = money(received - paid);
       $('financeReceivableMetric').textContent = money(toReceive);
       $('financePayableMetric').textContent = money(toPay);
@@ -42433,7 +43001,9 @@
       ].map(function (item) {
         return '<button class="lesson-filter-btn' + (opsState.financeFilter === item[0] ? ' active' : '') + '" type="button" data-finance-filter="' + item[0] + '">' + item[1] + '</button>';
       }).join('');
-      $('financeListHint').textContent = visibleRows.length + ' lançamento(s) ' + financeFilterLabel(opsState.financeFilter) + '.';
+      const periodLabel = new Date(period + '-01T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      $('financeListTitle').textContent = 'Movimentação de ' + periodLabel;
+      $('financeListHint').textContent = visibleRows.length + ' lançamento(s) ' + financeFilterLabel(opsState.financeFilter) + ' nesta competência.';
       $('financeRows').innerHTML = visibleRows.map(function (item) { return renderFinanceItem(item, false); }).join('') || '<div class="lesson-empty-state">Nenhum lançamento para este filtro.</div>';
       $('financeOverdueList').innerHTML = sortFinanceRows(overdue).slice(0, 6).map(function (item) { return renderFinanceItem(item, true); }).join('') || '<div class="lesson-empty-state">Nada vencido agora.</div>';
       $('financeUpcomingList').innerHTML = upcoming.slice(0, 6).map(function (item) { return renderFinanceItem(item, true); }).join('') || '<div class="lesson-empty-state">Nada previsto para os próximos dias.</div>';
@@ -44645,7 +45215,21 @@
 
         await supabaseInsertMany('students', studentRows);
         await supabaseInsertMany('club_agenda_events', agendaRows);
-        await supabaseInsertMany('financial_transactions', financeRows);
+        for (const item of financeRows) {
+          await financeRpc('rpc/admin_save_financial_transaction', {
+            p_transaction_id: null,
+            p_type: item.type,
+            p_classification: 'VARIAVEL',
+            p_counterparty: item.counterparty,
+            p_description: item.description,
+            p_category: item.category,
+            p_amount: item.amount,
+            p_due_date: item.due_date,
+            p_status: item.status,
+            p_payment_method: null,
+            p_notes: 'Importado pela base inicial protegida.'
+          });
+        }
         await supabaseInsertMany('communication_audiences', audienceRows);
         await supabaseInsertMany('communication_campaigns', campaignRows);
         opsState.loaded = false;
@@ -44710,30 +45294,153 @@
       }
     }
 
+    function financeRpc(path, body) {
+      return supabaseRest(path, {
+        method: 'POST',
+        body: body || {},
+        prefer: 'return=representation'
+      });
+    }
+
+    async function loadFinanceData(showFeedback) {
+      if (isAdminDemoMode()) {
+        renderFinanceModule();
+        return;
+      }
+      const results = await Promise.all([
+        supabaseRestAll('financial_transactions?select=*,students(name)&order=due_date.asc,id.asc'),
+        supabaseRestAll('financial_recurring_rules?select=*&archived_at=is.null&order=active.desc,due_day.asc,description.asc,id.asc')
+      ]);
+      opsData.finance = (results[0] || []).map(mapFinanceRow);
+      opsData.financeRecurringRules = (results[1] || []).map(mapFinanceRecurringRule);
+      renderFinanceModule();
+      renderHomeDashboard();
+      if (showFeedback) toast('Financeiro atualizado.');
+    }
+
     function resetFinanceForm() {
       $('financeForm').reset();
+      opsState.financeEditingId = '';
+      opsState.financeRecurringEditingId = '';
+      $('financeFrequency').disabled = false;
+      $('financeFrequency').value = 'ONCE';
       $('financeType').value = 'RECEITA';
+      $('financeClassification').value = 'VARIAVEL';
+      $('financeClassification').disabled = false;
       $('financeStatus').value = 'ABERTO';
       $('financeCategory').value = 'Mensalidade';
       $('financeDue').value = localDateString();
+      $('financeDueDay').value = '10';
+      $('financeStartMonth').value = opsState.financePeriodMonth || localDateString().slice(0, 7);
+      $('financeEndMonth').value = '';
+      updateFinanceFormMode();
+    }
+
+    function updateFinanceFormMode() {
+      const recurring = $('financeFrequency').value === 'MONTHLY';
+      $('financeDueField').hidden = recurring;
+      $('financeStatusField').hidden = recurring;
+      $('financeDueDayField').hidden = !recurring;
+      $('financeStartMonthField').hidden = !recurring;
+      $('financeEndMonthField').hidden = !recurring;
+      $('financeStatus').disabled = recurring;
+      if (recurring) {
+        $('financeClassification').value = 'FIXO';
+        $('financeClassification').disabled = true;
+      } else {
+        $('financeClassification').disabled = false;
+      }
+      const editingRecurring = Boolean(opsState.financeRecurringEditingId);
+      const editingTransaction = Boolean(opsState.financeEditingId);
+      $('financeFormTitle').textContent = editingRecurring ? 'Editar recorrência' : editingTransaction ? 'Editar lançamento' : recurring ? 'Nova recorrência mensal' : 'Novo lançamento';
+      $('financeFormHint').textContent = recurring
+        ? 'A alteração vale somente para competências ainda não geradas; o histórico fica preservado.'
+        : 'Registre uma receita ou despesa avulsa do clube.';
+      $('financeCancelEditBtn').hidden = !editingRecurring && !editingTransaction;
+      $('financeSaveBtn').textContent = editingRecurring || editingTransaction ? 'Salvar alterações' : recurring ? 'Criar recorrência' : 'Salvar lançamento';
     }
 
     function updateFinanceTypeDefaults() {
       if ($('financeType').value === 'DESPESA') {
-        if ($('financeCategory').value === 'Mensalidade' || $('financeCategory').value === 'Aulas') $('financeCategory').value = 'Operação';
+        if (['Mensalidade', 'Aulas'].includes($('financeCategory').value)) $('financeCategory').value = 'Operação';
         if ($('financeStatus').value === 'RECEBIDO') $('financeStatus').value = 'PAGO';
-      } else if ($('financeCategory').value === 'Operação') {
-        $('financeCategory').value = 'Mensalidade';
-        if ($('financeStatus').value === 'PAGO') $('financeStatus').value = 'RECEBIDO';
+      } else if ($('financeStatus').value === 'PAGO') {
+        $('financeStatus').value = 'RECEBIDO';
       }
     }
 
-    function focusFinanceFormAction() {
+    function focusFinanceFormAction(options) {
       resetFinanceForm();
+      options = options || {};
+      if (options.recurring) {
+        $('financeFrequency').value = 'MONTHLY';
+        $('financeCategory').value = options.category || 'Aluguel';
+        $('financeClassification').value = 'FIXO';
+      }
+      updateFinanceFormMode();
       opsState.financeView = 'form';
       renderFinanceModule();
       $('financeDescription').focus();
-      toast('Preencha o lançamento financeiro.');
+    }
+
+    function editFinanceTransactionAction(id) {
+      const item = opsData.finance.find(function (row) { return String(row.id) === String(id); });
+      if (!item || item.appPaymentInvoiceId || item.recurringRuleId || item.processingMethod === 'ASAAS') return;
+      resetFinanceForm();
+      opsState.financeEditingId = item.id;
+      $('financeFrequency').disabled = true;
+      $('financeType').value = item.type;
+      $('financeClassification').value = item.classification || 'VARIAVEL';
+      $('financeStatus').value = financeDisplayStatus(item);
+      $('financeCounterparty').value = item.counterparty || item.student || '';
+      $('financeDescription').value = item.source || '';
+      $('financeAmount').value = Number(item.amount || 0).toFixed(2).replace('.', ',');
+      $('financeDue').value = item.due || localDateString();
+      $('financeCategory').value = item.category || 'Operação';
+      $('financeMethod').value = String(item.paymentMethod || '').toUpperCase();
+      $('financeNotes').value = item.notes || '';
+      updateFinanceFormMode();
+      opsState.financeView = 'form';
+      renderFinanceModule();
+      $('financeDescription').focus();
+    }
+
+    function editFinanceRecurringRuleAction(id) {
+      const rule = (opsData.financeRecurringRules || []).find(function (row) { return String(row.id) === String(id); });
+      if (!rule) return;
+      resetFinanceForm();
+      opsState.financeRecurringEditingId = rule.id;
+      $('financeFrequency').value = 'MONTHLY';
+      $('financeFrequency').disabled = true;
+      $('financeType').value = rule.type;
+      $('financeClassification').value = 'FIXO';
+      $('financeCounterparty').value = rule.counterparty || '';
+      $('financeDescription').value = rule.description || '';
+      $('financeAmount').value = Number(rule.amount || 0).toFixed(2).replace('.', ',');
+      $('financeDueDay').value = String(rule.dueDay || 10);
+      $('financeStartMonth').value = String(rule.startsOn || '').slice(0, 7);
+      $('financeEndMonth').value = String(rule.endsOn || '').slice(0, 7);
+      $('financeCategory').value = rule.category || 'Operação';
+      $('financeMethod').value = String(rule.paymentMethod || '').toUpperCase();
+      $('financeNotes').value = rule.notes || '';
+      updateFinanceFormMode();
+      opsState.financeView = 'form';
+      renderFinanceModule();
+      $('financeDescription').focus();
+    }
+
+    function demoMaterializeFinanceRecurring(month, onlyRuleId) {
+      const normalized = String(month || '').slice(0, 7);
+      let generated = 0;
+      (opsData.financeRecurringRules || []).forEach(function (rule) {
+        if (!rule.active || rule.archivedAt || (onlyRuleId && String(rule.id) !== String(onlyRuleId))) return;
+        if (String(rule.startsOn || '').slice(0, 7) > normalized || (rule.endsOn && String(rule.endsOn).slice(0, 7) < normalized)) return;
+        if (opsData.finance.some(function (item) { return String(item.recurringRuleId) === String(rule.id) && String(item.competenceMonth).slice(0, 7) === normalized; })) return;
+        const dueDay = String(rule.dueDay || 10).padStart(2, '0');
+        opsData.finance.push(mapFinanceRow({ id: localId('finance'), recurring_rule_id: rule.id, recurring_rule_version: rule.version || 1, competence_month: normalized + '-01', counterparty: rule.counterparty, description: rule.description, category: rule.category, type: rule.type, classification: 'FIXO', amount: rule.amount, due_date: normalized + '-' + dueDay, status: 'ABERTO', payment_method: rule.paymentMethod, processing_method: 'MANUAL', ledger_origin: 'RECURRENCE' }));
+        generated += 1;
+      });
+      return generated;
     }
 
     async function createFinanceAction(event) {
@@ -44741,83 +45448,133 @@
       const submitButton = event && event.submitter;
       try {
         requireClubPermission('finance.write');
-        if (submitButton && submitButton.disabled) return;
+        if (opsState.financeSaving) return;
+        opsState.financeSaving = true;
         if (submitButton) {
           submitButton.disabled = true;
           submitButton.textContent = 'Salvando...';
         }
+        const recurring = $('financeFrequency').value === 'MONTHLY';
         const type = $('financeType').value === 'DESPESA' ? 'DESPESA' : 'RECEITA';
         const counterparty = $('financeCounterparty').value.trim();
         const description = $('financeDescription').value.trim();
         const amount = parseMoneyInput($('financeAmount').value);
-        const dueDate = $('financeDue').value || localDateString();
         const category = $('financeCategory').value || (type === 'DESPESA' ? 'Operação' : 'Mensalidade');
+        const paymentMethod = $('financeMethod').value || null;
+        const notes = $('financeNotes').value.trim();
+        if (counterparty.length < 2) throw new Error('Informe quem vai pagar ou receber.');
+        if (description.length < 2) throw new Error('Informe a descrição do lançamento.');
+        if (!Number.isFinite(amount) || amount <= 0) throw new Error('Informe um valor maior que zero.');
+
+        if (recurring) {
+          const dueDay = Number($('financeDueDay').value || 0);
+          const startsOn = ($('financeStartMonth').value || opsState.financePeriodMonth) + '-01';
+          const endsOn = $('financeEndMonth').value ? $('financeEndMonth').value + '-01' : null;
+          if (dueDay < 1 || dueDay > 28) throw new Error('O dia de vencimento deve ficar entre 1 e 28.');
+          const existingRule = (opsData.financeRecurringRules || []).find(function (rule) { return String(rule.id) === String(opsState.financeRecurringEditingId); });
+          if (isAdminDemoMode()) {
+            const savedRule = Object.assign(existingRule || {}, {
+              id: existingRule && existingRule.id || localId('finance_rule'), counterparty: counterparty, description: description,
+              category: category, type: type, classification: 'FIXO', amount: amount, dueDay: dueDay,
+              paymentMethod: paymentMethod || '', processingMethod: 'MANUAL', startsOn: startsOn, endsOn: endsOn || '',
+              notes: notes, active: existingRule ? existingRule.active : true, version: Number(existingRule && existingRule.version || 0) + 1
+            });
+            if (!existingRule) opsData.financeRecurringRules.push(savedRule);
+            demoMaterializeFinanceRecurring(opsState.financePeriodMonth, savedRule.id);
+          } else {
+            await financeRpc('rpc/admin_save_financial_recurring_rule', {
+              p_rule_id: existingRule ? existingRule.id : null,
+              p_type: type,
+              p_classification: 'FIXO',
+              p_counterparty: counterparty,
+              p_description: description,
+              p_category: category,
+              p_amount: amount,
+              p_due_day: dueDay,
+              p_payment_method: paymentMethod,
+              p_processing_method: 'MANUAL',
+              p_starts_on: startsOn,
+              p_ends_on: endsOn,
+              p_notes: notes || null,
+              p_expected_version: existingRule ? existingRule.version : null,
+              p_generate_current: true
+            });
+            await loadFinanceData(false);
+          }
+          resetFinanceForm();
+          opsState.financeView = 'recurring';
+          renderFinanceModule();
+          toast(existingRule ? 'Recorrência atualizada para os próximos lançamentos.' : 'Recorrência criada e competência atual conferida.');
+          return;
+        }
+
         let status = $('financeStatus').value || 'ABERTO';
         if (type === 'DESPESA' && status === 'RECEBIDO') status = 'PAGO';
         if (type !== 'DESPESA' && status === 'PAGO') status = 'RECEBIDO';
-        const paymentMethod = $('financeMethod').value;
-        const notes = $('financeNotes').value.trim();
-        if (!description) throw new Error('Informe a descrição do lançamento.');
-        if (!counterparty) throw new Error('Informe o aluno ou fornecedor.');
-        const paidAt = (status === 'RECEBIDO' || status === 'PAGO') ? new Date().toISOString() : null;
-        const localItem = {
-          id: localId('finance'),
-          student: counterparty,
-          counterparty: counterparty,
-          source: description,
-          type: type,
-          amount: amount,
-          due: dueDate,
-          status: status,
-          category: category,
-          paidAt: paidAt || '',
-          paymentMethod: paymentMethod,
-          notes: notes
+        const existingItem = opsData.finance.find(function (item) { return String(item.id) === String(opsState.financeEditingId); });
+        const payload = {
+          id: existingItem && existingItem.id || localId('finance'), counterparty: counterparty, description: description,
+          category: category, type: type, classification: $('financeClassification').value || 'VARIAVEL', amount: amount,
+          due_date: $('financeDue').value || localDateString(), status: status, payment_method: paymentMethod,
+          processing_method: 'MANUAL', ledger_origin: 'MANUAL', notes: notes
         };
         if (isAdminDemoMode()) {
-          opsData.finance.unshift(localItem);
-          resetFinanceForm();
-          opsState.financeView = 'list';
-          renderFinanceModule();
-          renderHomeDashboard();
-          toast('Lançamento criado na demonstração.');
-          return;
+          const mapped = mapFinanceRow(payload);
+          if (existingItem) opsData.finance.splice(opsData.finance.indexOf(existingItem), 1, mapped);
+          else opsData.finance.unshift(mapped);
+        } else {
+          await financeRpc('rpc/admin_save_financial_transaction', {
+            p_transaction_id: existingItem ? existingItem.id : null,
+            p_type: type,
+            p_classification: payload.classification,
+            p_counterparty: counterparty,
+            p_description: description,
+            p_category: category,
+            p_amount: amount,
+            p_due_date: payload.due_date,
+            p_status: status,
+            p_payment_method: paymentMethod,
+            p_notes: notes || null
+          });
+          await loadFinanceData(false);
         }
-        const payload = {
-          counterparty: counterparty,
-          description: description,
-          category: category,
-          type: type,
-          amount: amount,
-          due_date: dueDate,
-          status: status,
-          paid_at: paidAt,
-          payment_method: paymentMethod || null,
-          notes: notes
-        };
-        let inserted = null;
-        try {
-          inserted = await supabaseInsert('financial_transactions', payload);
-        } catch (error) {
-          const message = String(error && error.message || '').toLowerCase();
-          if (!(message.includes('counterparty') && (message.includes('column') || message.includes('schema cache')))) throw error;
-          const fallbackPayload = Object.assign({}, payload);
-          delete fallbackPayload.counterparty;
-          inserted = await supabaseInsert('financial_transactions', fallbackPayload);
-        }
-        opsData.finance.push(mapFinanceRow(inserted));
         resetFinanceForm();
         opsState.financeView = 'list';
         renderFinanceModule();
-        renderHomeDashboard();
-        toast('Lançamento salvo no Supabase.');
+        toast(existingItem ? 'Lançamento atualizado.' : 'Lançamento salvo.');
       } catch (error) {
         reportActionError(error);
       } finally {
+        opsState.financeSaving = false;
         if (submitButton && submitButton.isConnected) {
           submitButton.disabled = false;
-          submitButton.textContent = 'Salvar lançamento';
+          updateFinanceFormMode();
         }
+      }
+    }
+
+    async function setFinanceStatusAction(id, nextStatus, confirmation) {
+      try {
+        requireClubPermission('finance.write');
+        const item = opsData.finance.find(function (row) { return String(row.id) === String(id); });
+        if (!item) throw new Error('Lançamento não encontrado.');
+        if (confirmation && !window.confirm(confirmation)) return;
+        if (isAdminDemoMode() || String(item.id || '').startsWith('finance_')) {
+          item.status = nextStatus;
+          item.paidAt = ['PAGO', 'RECEBIDO'].includes(nextStatus) ? new Date().toISOString() : '';
+        } else {
+          await financeRpc('rpc/admin_set_financial_transaction_status', {
+            p_transaction_id: item.id,
+            p_status: nextStatus,
+            p_payment_method: item.paymentMethod || null
+          });
+          await loadFinanceData(false);
+        }
+        renderFinanceModule();
+        renderHomeDashboard();
+        toast(nextStatus === 'CANCELADO' ? 'Lançamento cancelado sem apagar o histórico.' : item.type === 'DESPESA' ? 'Conta marcada como paga.' : 'Recebimento confirmado.');
+      } catch (error) {
+        reportActionError(error);
       }
     }
 
@@ -44827,46 +45584,100 @@
         const item = opsData.finance.find(function (row) { return String(row.id) === String(id); });
         if (!item) throw new Error('Lançamento não encontrado.');
         const nextStatus = item.type === 'DESPESA' ? 'PAGO' : 'RECEBIDO';
-        const paidAt = new Date().toISOString();
         if (isAdminDemoMode() || String(item.id || '').startsWith('finance_')) {
           item.status = nextStatus;
-          item.paidAt = paidAt;
-          renderFinanceModule();
-          renderHomeDashboard();
-          toast(item.type === 'DESPESA' ? 'Conta marcada como paga.' : 'Recebimento marcado.');
-          return;
+          item.paidAt = new Date().toISOString();
+        } else {
+          await financeRpc('rpc/admin_set_financial_transaction_status', {
+            p_transaction_id: item.id,
+            p_status: nextStatus,
+            p_payment_method: item.paymentMethod || null
+          });
+          await loadFinanceData(false);
         }
-        const saved = await supabaseRest('financial_transactions?id=eq.' + encodeURIComponent(item.id), {
-          method: 'PATCH',
-          body: {
-            status: nextStatus,
-            paid_at: paidAt
-          },
-          prefer: 'return=representation'
-        });
-        const mapped = mapFinanceRow(Array.isArray(saved) ? saved[0] : saved);
-        const index = opsData.finance.findIndex(function (row) { return String(row.id) === String(id); });
-        if (index >= 0) opsData.finance.splice(index, 1, mapped);
         renderFinanceModule();
         renderHomeDashboard();
-        toast(item.type === 'DESPESA' ? 'Conta marcada como paga.' : 'Recebimento marcado.');
+        toast(item.type === 'DESPESA' ? 'Conta marcada como paga.' : 'Recebimento confirmado.');
       } catch (error) {
         reportActionError(error);
       }
     }
 
+    async function toggleFinanceRecurringRuleAction(id, currentActive) {
+      try {
+        requireClubPermission('finance.write');
+        const rule = (opsData.financeRecurringRules || []).find(function (row) { return String(row.id) === String(id); });
+        if (!rule) throw new Error('Recorrência não encontrada.');
+        const nextActive = !currentActive;
+        if (!window.confirm((nextActive ? 'Retomar' : 'Pausar') + ' “' + rule.description + '”? Lançamentos anteriores não serão alterados.')) return;
+        if (isAdminDemoMode()) {
+          rule.active = nextActive;
+          rule.pausedAt = nextActive ? '' : new Date().toISOString();
+        } else {
+          await financeRpc('rpc/admin_set_financial_recurring_rule_active', { p_rule_id: rule.id, p_active: nextActive, p_expected_version: rule.version });
+          await loadFinanceData(false);
+        }
+        renderFinanceModule();
+        toast(nextActive ? 'Recorrência retomada.' : 'Recorrência pausada.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function archiveFinanceRecurringRuleAction(id) {
+      try {
+        requireClubPermission('finance.write');
+        const rule = (opsData.financeRecurringRules || []).find(function (row) { return String(row.id) === String(id); });
+        if (!rule || !window.confirm('Arquivar “' + rule.description + '”? O histórico continuará disponível nas movimentações.')) return;
+        if (isAdminDemoMode()) rule.archivedAt = new Date().toISOString();
+        else {
+          await financeRpc('rpc/admin_archive_financial_recurring_rule', { p_rule_id: rule.id, p_expected_version: rule.version });
+          await loadFinanceData(false);
+        }
+        renderFinanceModule();
+        toast('Recorrência arquivada sem apagar o histórico.');
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    async function generateFinanceRecurringAction() {
+      const month = opsState.financePeriodMonth || localDateString().slice(0, 7);
+      if (!window.confirm('Gerar os recebimentos e custos recorrentes de ' + month.split('-').reverse().join('/') + '? Itens já gerados não serão duplicados.')) return;
+      opsState.financeRecurringGenerating = true;
+      renderFinanceRecurringRules();
+      try {
+        requireClubPermission('finance.write');
+        let generated = 0;
+        if (isAdminDemoMode()) generated = demoMaterializeFinanceRecurring(month);
+        else {
+          const result = await financeRpc('rpc/admin_generate_financial_recurring_transactions', { p_month: month + '-01', p_rule_id: null });
+          generated = Number(result && result.generated || Array.isArray(result) && result[0] && result[0].generated || 0);
+          await loadFinanceData(false);
+        }
+        toast(generated ? generated + ' lançamento(s) gerado(s).' : 'Competência já estava em dia; nada foi duplicado.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        opsState.financeRecurringGenerating = false;
+        renderFinanceModule();
+      }
+    }
+
     function exportFinanceAction() {
-      const rows = [['Tipo', 'Cliente/Fornecedor', 'Origem', 'Valor', 'Vencimento', 'Status', 'Categoria']].concat(opsData.finance.map(function (item) {
-        return [item.type || 'RECEITA', item.counterparty || item.student, item.source, item.amount, item.due, financeDisplayStatus(item), item.category];
+      const period = opsState.financePeriodMonth || localDateString().slice(0, 7);
+      const exported = opsData.finance.filter(function (item) { return financePeriodMatches(item, period); });
+      const rows = [['Tipo', 'Classificação', 'Cliente/Fornecedor', 'Descrição', 'Valor', 'Vencimento', 'Status', 'Categoria', 'Pagamento', 'Origem']].concat(exported.map(function (item) {
+        return [item.type || 'RECEITA', item.classification || 'VARIAVEL', item.counterparty || item.student, item.source, item.amount, item.due, financeDisplayStatus(item), item.category, financePaymentMethodLabel(item.paymentMethod), item.appPaymentInvoiceId ? 'Mensalidade' : item.recurringRuleId ? 'Recorrência' : 'Manual'];
       }));
       const csv = rows.map(function (row) { return row.map(quoteCsv).join(';'); }).join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = 'financeiro-ilha.csv';
+      link.download = 'financeiro-ilha-' + period + '.csv';
       link.click();
       URL.revokeObjectURL(link.href);
-      toast('CSV financeiro gerado.');
+      toast('CSV da competência gerado.');
     }
 
     async function createTemplateAction() {
@@ -46062,6 +46873,18 @@
         setMonthlyBillingMessage('', '');
         renderMonthlyBilling();
       });
+      $('monthlyBillingSearch').addEventListener('input', function () {
+        opsState.monthlyBillingSearch = this.value;
+        renderMonthlyBilling();
+      });
+      $('monthlyBillingStatusFilter').addEventListener('change', function () {
+        opsState.monthlyBillingStatusFilter = this.value || 'todos';
+        renderMonthlyBilling();
+      });
+      $('monthlyBillingMethodFilter').addEventListener('change', function () {
+        opsState.monthlyBillingMethodFilter = this.value || 'todos';
+        renderMonthlyBilling();
+      });
       $('monthlyBillingPreviewBtn').addEventListener('click', function () {
         loadMonthlyBillingPreview(true);
       });
@@ -46133,6 +46956,7 @@
         }
         const viewBtn = event.target.closest('[data-finance-view]');
         if (viewBtn) {
+          if (viewBtn.dataset.financeView === 'form' && !opsState.financeEditingId && !opsState.financeRecurringEditingId) resetFinanceForm();
           opsState.financeView = viewBtn.dataset.financeView;
           renderFinanceModule();
           if (opsState.financeView === 'monthly') loadMonthlyBillingWorkspace(false);
@@ -46147,6 +46971,31 @@
         const paidBtn = event.target.closest('[data-finance-paid]');
         if (paidBtn) {
           markFinancePaidAction(paidBtn.dataset.financePaid);
+          return;
+        }
+        const editBtn = event.target.closest('[data-finance-edit]');
+        if (editBtn) {
+          editFinanceTransactionAction(editBtn.dataset.financeEdit);
+          return;
+        }
+        const cancelBtn = event.target.closest('[data-finance-cancel]');
+        if (cancelBtn) {
+          setFinanceStatusAction(cancelBtn.dataset.financeCancel, 'CANCELADO', 'Cancelar este lançamento? Ele continuará no histórico financeiro.');
+          return;
+        }
+        const recurringEditBtn = event.target.closest('[data-finance-recurring-edit]');
+        if (recurringEditBtn) {
+          editFinanceRecurringRuleAction(recurringEditBtn.dataset.financeRecurringEdit);
+          return;
+        }
+        const recurringToggleBtn = event.target.closest('[data-finance-recurring-toggle]');
+        if (recurringToggleBtn) {
+          toggleFinanceRecurringRuleAction(recurringToggleBtn.dataset.financeRecurringToggle, recurringToggleBtn.dataset.financeRecurringActive === 'true');
+          return;
+        }
+        const recurringArchiveBtn = event.target.closest('[data-finance-recurring-archive]');
+        if (recurringArchiveBtn) {
+          archiveFinanceRecurringRuleAction(recurringArchiveBtn.dataset.financeRecurringArchive);
         }
       });
       $('barCommandSearch').addEventListener('input', function () {
@@ -47053,8 +47902,21 @@
       $('agendaNewBtn').addEventListener('click', createAgendaEventAction);
       $('financeExportBtn').addEventListener('click', exportFinanceAction);
       $('financeNewBtn').addEventListener('click', focusFinanceFormAction);
+      $('financeRefreshBtn').addEventListener('click', function () { loadFinanceData(true).catch(reportActionError); });
+      $('financePeriodMonth').addEventListener('change', function () {
+        opsState.financePeriodMonth = this.value || localDateString().slice(0, 7);
+        renderFinanceModule();
+      });
+      $('financeNewRecurringBtn').addEventListener('click', function () { focusFinanceFormAction({ recurring: true }); });
+      $('financeGenerateRecurringBtn').addEventListener('click', generateFinanceRecurringAction);
       $('financeForm').addEventListener('submit', createFinanceAction);
       $('financeType').addEventListener('change', updateFinanceTypeDefaults);
+      $('financeFrequency').addEventListener('change', updateFinanceFormMode);
+      $('financeCancelEditBtn').addEventListener('click', function () {
+        resetFinanceForm();
+        opsState.financeView = 'list';
+        renderFinanceModule();
+      });
       $('communicationTemplatesBtn').addEventListener('click', createTemplateAction);
       $('communicationNewBtn').addEventListener('click', createCampaignAction);
       $('copyMessageBtn').addEventListener('click', function () {
@@ -47065,6 +47927,8 @@
           toast('Mensagem pronta para copiar.');
         }
       });
+
+      resetFinanceForm();
 
       if (!prepareAdminPasswordRecovery()) restoreAdminSession();
     }

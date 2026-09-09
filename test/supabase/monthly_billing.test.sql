@@ -1005,7 +1005,8 @@ insert into public.app_payment_invoices (
   date '2027-01-31'
 );
 insert into public.financial_transactions (
-  counterparty, description, category, type, amount, due_date, status, paid_at
+  counterparty, description, category, type, amount, due_date, status, paid_at,
+  ledger_origin, processing_method
 ) values (
   'Cliente Mensal Sintético',
   'Mensalidade Ilha Tênis',
@@ -1014,7 +1015,9 @@ insert into public.financial_transactions (
   100,
   date '2027-01-31',
   'RECEBIDO',
-  now()
+  now(),
+  'LEGACY',
+  'MANUAL'
 );
 update public.app_family_members
    set responsible_confirmed_at = coalesce(responsible_confirmed_at, now())
