@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(40);
+select plan(42);
 
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
@@ -83,6 +83,7 @@ select ok(
     where order_id = (select order_id from counter_management_state)
       and product_id = '74000000-0000-4000-8000-000000000001'::uuid
       and status = 'ENTREGUE'
+      and requires_production is false
       and counter_revision = 1)
   and
   (select count(*) = 1
@@ -90,8 +91,9 @@ select ok(
     where order_id = (select order_id from counter_management_state)
       and product_id = '74000000-0000-4000-8000-000000000002'::uuid
       and status = 'SOLICITADO'
+      and requires_production is true
       and counter_revision = 1),
-  'item imediato sai entregue e a jantinha entra solicitada na cozinha'
+  'item imediato e jantinha guardam o tipo de preparo imutável da venda'
 );
 
 select ok(
@@ -116,6 +118,10 @@ select is(
   'a criação lança um único recebimento'
 );
 
+update public.bar_products
+   set active = false
+ where id = '74000000-0000-4000-8000-000000000001'::uuid;
+
 select lives_ok(
   $$select public.bar_update_counter_sale(
     (select order_id from counter_management_state),
@@ -129,7 +135,7 @@ select lives_ok(
     (select edit_expected_at from counter_management_state),
     '75000000-0000-4000-8000-000000000002'::uuid
   )$$,
-  'a edição substitui a composição da venda em uma transação'
+  'a edição substitui a composição e permite manter ou reduzir produto arquivado'
 );
 
 select ok(
@@ -195,6 +201,24 @@ select ok(
      from public.bar_products
     where id = '74000000-0000-4000-8000-000000000003'::uuid),
   'a edição devolve a revisão antiga e baixa somente a nova'
+);
+
+select throws_ok(
+  $$select public.bar_update_counter_sale(
+    (select order_id from counter_management_state),
+    '[
+      {"product_id":"74000000-0000-4000-8000-000000000001","quantity":2},
+      {"product_id":"74000000-0000-4000-8000-000000000002","quantity":2},
+      {"product_id":"74000000-0000-4000-8000-000000000003","quantity":1}
+    ]'::jsonb,
+    'PIX',
+    'Tentativa de aumentar arquivado',
+    (select updated_at from public.bar_orders where id = (select order_id from counter_management_state)),
+    '75000000-0000-4000-8000-000000000008'::uuid
+  )$$,
+  '22023',
+  'Um produto foi arquivado. Mantenha a quantidade anterior ou remova esse item da venda.',
+  'produto arquivado não pode ganhar quantidade nova durante uma correção'
 );
 
 select ok(
@@ -369,6 +393,33 @@ select is(
   'a falha de concorrência não altera o item'
 );
 
+select lives_ok(
+  $$select public.bar_update_counter_item_status(
+    (
+      select id from public.bar_order_items
+       where order_id = (select order_id from counter_management_state)
+         and product_id = '74000000-0000-4000-8000-000000000002'::uuid
+         and counter_revision = 2
+         and status = 'PRONTO'
+    ),
+    'ENTREGUE',
+    (
+      select updated_at from public.bar_order_items
+       where order_id = (select order_id from counter_management_state)
+         and product_id = '74000000-0000-4000-8000-000000000002'::uuid
+         and counter_revision = 2
+         and status = 'PRONTO'
+    )
+  )$$,
+  'a comida pronta pode ser entregue antes do cancelamento financeiro'
+);
+
+update counter_management_state
+   set cancel_expected_at = (
+     select updated_at from public.bar_orders
+      where id = counter_management_state.order_id
+   );
+
 select throws_ok(
   $$select public.bar_update_counter_sale(
     (select order_id from counter_management_state),
@@ -432,14 +483,14 @@ select ok(
      from public.bar_products
     where id = '74000000-0000-4000-8000-000000000001'::uuid)
   and
-  (select stock_quantity = 8
+  (select stock_quantity = 6
      from public.bar_products
     where id = '74000000-0000-4000-8000-000000000002'::uuid)
   and
   (select stock_quantity = 6
      from public.bar_products
     where id = '74000000-0000-4000-8000-000000000003'::uuid),
-  'cancelar devolve exatamente o estoque da última revisão ativa'
+  'cancelar devolve os itens retornáveis sem recolocar comida já preparada no estoque'
 );
 
 select ok(
@@ -451,7 +502,7 @@ select ok(
     )
       and type = 'SAIDA')
   and
-  (select count(*) = 5
+  (select count(*) = 4
      from public.bar_inventory_movements
     where order_item_id in (
       select id from public.bar_order_items
@@ -460,14 +511,14 @@ select ok(
       and type = 'ESTORNO'
       and reverses_movement_id is not null)
   and
-  (select count(distinct reverses_movement_id) = 5
+  (select count(distinct reverses_movement_id) = 4
      from public.bar_inventory_movements
     where order_item_id in (
       select id from public.bar_order_items
        where order_id = (select order_id from counter_management_state)
     )
       and type = 'ESTORNO'),
-  'cada saída recebe no máximo um estorno rastreável'
+  'cada item retornável recebe no máximo um estorno rastreável'
 );
 
 select ok(
@@ -475,6 +526,7 @@ select ok(
       and bool_and(action = 'CANCEL')
       and bool_and(reason = 'Cliente desistiu antes da retirada')
       and bool_and(before_state -> 'order' ->> 'status' = 'FECHADA')
+      and bool_and(before_state @> '{"items":[{"status":"ENTREGUE","requires_production":true}]}'::jsonb)
       and bool_and(after_state -> 'order' ->> 'status' = 'CANCELADA')
      from public.bar_counter_sale_mutations
     where order_id = (select order_id from counter_management_state)
@@ -497,7 +549,7 @@ select ok(
      from public.bar_counter_sale_mutations
     where order_id = (select order_id from counter_management_state))
   and
-  (select count(*) = 10
+  (select count(*) = 9
      from public.bar_inventory_movements
     where order_item_id in (
       select id from public.bar_order_items

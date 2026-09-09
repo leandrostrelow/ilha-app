@@ -1,11 +1,70 @@
 -- Evolui a venda rápida do balcão sem apagar o livro-caixa:
 -- 1. todos os produtos podem ser vendidos (itens de preparo seguem para a cozinha);
 -- 2. edições criam uma nova revisão e estornam a anterior;
--- 3. exclusões são cancelamentos auditáveis com devolução de estoque;
+-- 3. exclusões são cancelamentos auditáveis, sem repor comida já preparada;
 -- 4. request_id + lock transacional tornam edit/cancel idempotentes.
 
 alter table public.bar_order_items
-  add column if not exists counter_revision integer not null default 0;
+  add column if not exists counter_revision integer not null default 0,
+  add column if not exists requires_production boolean not null default false;
+
+comment on column public.bar_order_items.requires_production is
+  'Snapshot imutável: o item exigia cozinha quando foi incluído na venda.';
+
+-- A versão anterior da venda rápida aceitava apenas itens imediatos e gravava
+-- tudo como ENTREGUE. Ainda assim, classificamos de forma conservadora qualquer
+-- dado legado atípico (por exemplo, inserido administrativamente) antes de passar
+-- a confiar exclusivamente no snapshot. O GUC por pedido respeita o guard de
+-- integridade já instalado pela migration anterior.
+do $$
+declare
+  legacy_order record;
+begin
+  for legacy_order in
+    select id, counter_request_id
+      from public.bar_orders
+     where source = 'BALCAO'
+       and counter_request_id is not null
+     order by id
+  loop
+    perform pg_catalog.set_config(
+      'ilha.bar_counter_request_id',
+      legacy_order.counter_request_id::text,
+      true
+    );
+
+    update public.bar_order_items as item
+       set counter_revision = 1,
+           requires_production = (
+             item.status in ('SOLICITADO', 'EM_PREPARO', 'PRONTO')
+             or pg_catalog.translate(
+                  pg_catalog.lower(coalesce((
+                    select product.category
+                      from public.bar_products as product
+                     where product.id = item.product_id
+                  ), '')),
+                  'áàâãäéèêëíìîïóòôõöúùûüç',
+                  'aaaaaeeeeiiiiooooouuuuc'
+                ) like any (array[
+                  '%porc%', '%refeic%', '%almoc%', '%frita%', '%petisco%',
+                  '%lanche%', '%sandu%', '%hamburg%', '%torrada%', '%salgad%',
+                  '%comida%', '%janta%', '%prato%', '%pizza%'
+                ])
+             or pg_catalog.translate(
+                  pg_catalog.lower(coalesce(item.product_name, '')),
+                  'áàâãäéèêëíìîïóòôõöúùûüç',
+                  'aaaaaeeeeiiiiooooouuuuc'
+                ) like '%mini pizza%'
+           ),
+           updated_at = item.updated_at
+     where item.order_id = legacy_order.id
+       and item.source = 'BALCAO'
+       and item.counter_revision = 0;
+  end loop;
+
+  perform pg_catalog.set_config('ilha.bar_counter_request_id', '', true);
+end;
+$$;
 
 alter table public.bar_inventory_movements
   add column if not exists reverses_movement_id uuid references public.bar_inventory_movements(id) on delete restrict;
@@ -369,7 +428,7 @@ begin
   loop
     insert into public.bar_order_items (
       order_id, product_id, product_name, quantity, unit_price, cost_price,
-      source, status, notes, added_by, counter_revision, created_at, updated_at
+      source, status, notes, added_by, counter_revision, requires_production, created_at, updated_at
     ) values (
       order_row.id,
       (normalized_item ->> 'product_id')::uuid,
@@ -380,7 +439,7 @@ begin
       'BALCAO',
       case when (normalized_item ->> 'requires_production')::boolean then 'SOLICITADO' else 'ENTREGUE' end,
       nullif(normalized_item ->> 'notes', ''),
-      (select auth.uid()), 1, sale_time, sale_time
+      (select auth.uid()), 1, (normalized_item ->> 'requires_production')::boolean, sale_time, sale_time
     )
     returning * into inserted_item;
 
@@ -443,6 +502,7 @@ declare
   normalized_item jsonb;
   normalized_items jsonb := '[]'::jsonb;
   request_items_canonical jsonb := '[]'::jsonb;
+  previous_item_quantities jsonb := '{}'::jsonb;
   payment_method_value text := pg_catalog.upper(pg_catalog.btrim(coalesce(p_payment_method, '')));
   product_category_key text;
   product_name_key text;
@@ -546,14 +606,9 @@ begin
   if exists (
     select 1
       from public.bar_order_items as item
-      join public.bar_products as product on product.id = item.product_id
      where item.order_id = p_order_id
        and item.status in ('EM_PREPARO', 'PRONTO', 'ENTREGUE')
-       and (
-         pg_catalog.translate(pg_catalog.lower(coalesce(product.category, '')), 'áàâãäéèêëíìîïóòôõöúùûüç', 'aaaaaeeeeiiiiooooouuuuc')
-          ~ '(porc|refeic|almoc|frita|petisco|lanche|sandu|hamburg|torrada|salgad|comida|janta|prato|pizza)'
-         or pg_catalog.translate(pg_catalog.lower(coalesce(product.name, '')), 'áàâãäéèêëíìîïóòôõöúùûüç', 'aaaaaeeeeiiiiooooouuuuc') like '%mini pizza%'
-       )
+       and item.requires_production is true
   ) then
     raise exception 'Uma comida desta venda já entrou em preparo ou foi entregue. Cancele a venda para manter a cozinha correta.'
       using errcode = '22023';
@@ -563,6 +618,19 @@ begin
   end if;
 
   before_snapshot := public.bar_counter_sale_snapshot(p_order_id);
+  select coalesce(
+           pg_catalog.jsonb_object_agg(active_item.product_id::text, active_item.quantity),
+           '{}'::jsonb
+         )
+    into previous_item_quantities
+    from (
+      select item.product_id, pg_catalog.sum(item.quantity) as quantity
+        from public.bar_order_items as item
+       where item.order_id = p_order_id
+         and item.status <> 'CANCELADO'
+         and item.product_id is not null
+       group by item.product_id
+    ) as active_item;
   perform pg_catalog.set_config('ilha.bar_counter_request_id', order_row.counter_request_id::text, true);
   perform pg_catalog.set_config('ilha.bar_counter_mutation_request_id', p_request_id::text, true);
 
@@ -654,11 +722,18 @@ begin
       into product_row
       from public.bar_products as product
      where product.id = requested.product_id
-       and product.active is true
      for update;
 
     if not found then
       raise exception 'Um produto não está mais disponível.' using errcode = '22023';
+    end if;
+    if product_row.active is not true
+       and requested.quantity > coalesce(
+         (previous_item_quantities ->> requested.product_id::text)::numeric,
+         0
+       ) then
+      raise exception 'Um produto foi arquivado. Mantenha a quantidade anterior ou remova esse item da venda.'
+        using errcode = '22023';
     end if;
     if requested.quantity > 999 then
       raise exception 'Quantidade inválida para %.', product_row.name using errcode = '22023';
@@ -717,7 +792,7 @@ begin
   loop
     insert into public.bar_order_items (
       order_id, product_id, product_name, quantity, unit_price, cost_price,
-      source, status, notes, added_by, counter_revision, created_at, updated_at
+      source, status, notes, added_by, counter_revision, requires_production, created_at, updated_at
     ) values (
       p_order_id,
       (normalized_item ->> 'product_id')::uuid,
@@ -728,7 +803,7 @@ begin
       'BALCAO',
       case when (normalized_item ->> 'requires_production')::boolean then 'SOLICITADO' else 'ENTREGUE' end,
       nullif(normalized_item ->> 'notes', ''),
-      (select auth.uid()), next_revision, sale_time, sale_time
+      (select auth.uid()), next_revision, (normalized_item ->> 'requires_production')::boolean, sale_time, sale_time
     )
     returning * into inserted_item;
 
@@ -895,7 +970,11 @@ begin
        and item.status <> 'CANCELADO'
      order by item.id
   loop
-    if old_item.product_id is not null then
+    if old_item.product_id is not null
+       and not (
+         old_item.status in ('EM_PREPARO', 'PRONTO', 'ENTREGUE')
+         and old_item.requires_production is true
+       ) then
       select movement.id
         into original_movement_id
         from public.bar_inventory_movements as movement
@@ -1022,6 +1101,9 @@ begin
 
   if not found or item_row.source <> 'BALCAO' then
     raise exception 'Item de balcão não encontrado.' using errcode = 'P0002';
+  end if;
+  if item_row.requires_production is not true then
+    raise exception 'Este item não pertence à fila da cozinha.' using errcode = '22023';
   end if;
   if item_row.updated_at is distinct from p_expected_updated_at then
     raise exception 'Este item foi atualizado em outro aparelho. Atualize e tente novamente.' using errcode = '40001';

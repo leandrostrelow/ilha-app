@@ -44,6 +44,8 @@ function numericPriorityFor(prioritySource, categoryFragment) {
 }
 
 test('histórico do balcão permanece acessível e expõe edição e cancelamento', () => {
+  const historyLoader = functionSource(adminSource, 'loadBarCounterHistoryData');
+  const historyOpener = functionSource(adminSource, 'openBarCounterHistoryModal');
   assert.match(adminSource, /id="barCounterHistoryBtn"/);
   assert.match(adminSource, /id="barCounterHistoryModal"[^>]*aria-hidden="true"/);
   assert.match(adminSource, /id="barCounterHistoryList"/);
@@ -56,22 +58,30 @@ test('histórico do balcão permanece acessível e expõe edição e cancelament
   assert.match(adminSource, /barFinancePaymentLabel/);
   assert.match(adminSource, /barDateTimeLabel/);
   assert.match(adminSource, /source=eq\.BALCAO[^\n]*(?:CANCELADA|status=in)/);
+  assert.doesNotMatch(historyLoader, /limit=500/);
+  assert.match(historyLoader, /barDatasetRequest\([\s\S]*true/);
+  assert.match(historyOpener, /loadBarCounterHistoryData\(true\)/);
 });
 
 test('catálogo do balcão oferece todos os produtos e ordena comidas no fim', () => {
   const render = functionSource(adminSource, 'renderBarCounterSaleModal');
   const complete = functionSource(adminSource, 'completeBarCounterSaleAction');
   const priority = functionSource(adminSource, 'barProductCategoryPriority');
+  const productPriority = functionSource(adminSource, 'barCounterProductPriority');
+  const requiresProduction = functionSource(adminSource, 'barProductRequiresProduction');
 
   assert.match(render, /data-bar-counter-category="__all__"/);
   assert.match(render, /barCounterCategory[^\n]*__all__|__all__[^\n]*barCounterCategory/);
   assert.doesNotMatch(render, /!barProductRequiresProduction\(product\)/);
   assert.doesNotMatch(complete, /Use a comanda normal para itens que precisam de preparo/);
   assert.match(complete, /barProductRequiresProduction\(entry\.product\) \? 'SOLICITADO' : 'ENTREGUE'/);
+  assert.match(render, /barCounterProductPriority\(a\) - barCounterProductPriority\(b\)/);
+  assert.match(productPriority, /barProductRequiresProduction\(product\)/);
+  assert.match(requiresProduction, /mini pizza/);
 
   const immediatePriorities = ['cervej', 'refriger', 'bebid', 'agua']
     .map((fragment) => numericPriorityFor(priority, fragment));
-  const foodPriorities = ['refeic', 'porc', 'lanche']
+  const foodPriorities = ['refeic', 'porc', 'lanche', 'sandu', 'hamburg', 'torrada', 'salgad', 'frita', 'petisco']
     .map((fragment) => numericPriorityFor(priority, fragment));
   assert.ok(
     Math.min(...foodPriorities) > Math.max(...immediatePriorities),
@@ -86,8 +96,11 @@ test('edição reaproveita a venda existente e usa RPC atômica com concorrênci
   assert.match(adminSource, /p_expected_updated_at/);
   assert.match(adminSource, /p_request_id/);
   assert.match(adminSource, /barCounterEditingOrderId[^\n]*(?:order|sale)|(?:order|sale)[^\n]*barCounterEditingOrderId/i);
+  assert.match(adminSource, /Produto arquivado/);
 
   const updateRpc = latestSqlFunctionSource('bar_update_counter_sale');
+  assert.match(updateRpc, /previous_item_quantities/);
+  assert.match(updateRpc, /product_row\.active is not true/);
   assert.match(updateRpc, /p_order_id\s+uuid/i);
   assert.match(updateRpc, /p_items\s+jsonb/i);
   assert.match(updateRpc, /p_payment_method\s+text/i);
@@ -125,6 +138,8 @@ test('cancelamento do balcão exige confirmação, usa RPC e preserva trilha aud
   assert.match(cancelRpc, /status\s*=\s*'CANCELADO'/i);
   assert.match(cancelRpc, /bar_inventory_movements/i);
   assert.match(cancelRpc, /bar_financial_entries/i);
+  assert.match(cancelRpc, /old_item\.status in \('EM_PREPARO', 'PRONTO', 'ENTREGUE'\)/);
+  assert.match(cancelRpc, /old_item\.requires_production is true/);
   assert.doesNotMatch(cancelRpc, /delete\s+from/i);
 });
 
@@ -134,6 +149,7 @@ test('itens de preparo seguem para produção e itens imediatos saem entregues',
   assert.match(completeRpc, /SOLICITADO/i);
   assert.match(completeRpc, /ENTREGUE/i);
   assert.match(completeRpc, /product_category_key|product_name_key/i);
+  assert.match(completeRpc, /requires_production/i);
   assert.match(completeRpc, /bar_order_items/i);
   assert.match(
     kitchenQueue,
@@ -142,14 +158,35 @@ test('itens de preparo seguem para produção e itens imediatos saem entregues',
   );
 });
 
+test('upgrade preserva e classifica o snapshot dos itens legados de balcão', () => {
+  const managementMigration = migrationSources.find(({ name }) =>
+    name === '20260909170640_manage_counter_sale_history.sql');
+  assert.ok(managementMigration, 'migration de gestão do balcão ausente');
+
+  const legacyBackfill = managementMigration.source.slice(
+    managementMigration.source.indexOf('-- A versão anterior da venda rápida'),
+    managementMigration.source.indexOf('alter table public.bar_inventory_movements'),
+  );
+  assert.match(legacyBackfill, /where source = 'BALCAO'/);
+  assert.match(legacyBackfill, /set_config\([\s\S]*ilha\.bar_counter_request_id/);
+  assert.match(legacyBackfill, /counter_revision = 1/);
+  assert.match(legacyBackfill, /item\.status in \('SOLICITADO', 'EM_PREPARO', 'PRONTO'\)/);
+  assert.match(legacyBackfill, /requires_production/);
+  assert.match(legacyBackfill, /mini pizza/);
+});
+
 test('cozinha preserva pendências do balcão após a virada do dia e o financeiro mantém a data da venda', () => {
   const backlogLoader = functionSource(adminSource, 'fetchBarCounterKitchenBacklogOrders');
+  const liveLoader = functionSource(adminSource, 'loadBarLiveData');
   const signature = functionSource(adminSource, 'barOperationalSignature');
   const salesGroups = functionSource(adminSource, 'barFinanceActiveSaleGroups');
 
   assert.match(backlogLoader, /source=eq\.BALCAO/);
   assert.match(backlogLoader, /status=in\.\(SOLICITADO,EM_PREPARO,PRONTO\)/);
-  assert.match(backlogLoader, /status=eq\.FECHADA/);
+  assert.match(backlogLoader, /status=in\.\(FECHADA,CANCELADA\)/);
+  assert.match(backlogLoader, /additionalOrderIds/);
+  assert.match(liveLoader, /previousPendingCounterOrderIds/);
+  assert.match(liveLoader, /fetchBarCounterKitchenBacklogOrders\(previousPendingCounterOrderIds\)/);
   assert.match(signature, /barCounterPendingKitchenOrderIds/);
   assert.match(salesGroups, /sourceOrder\.closedAt\s*\|\|\s*sourceOrder\.openedAt/);
 });

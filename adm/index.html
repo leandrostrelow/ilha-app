@@ -23107,7 +23107,7 @@
           <div class="bar-counter-history-summary" id="barCounterHistorySummary">Carregando histórico…</div>
           <div class="bar-counter-history-list" id="barCounterHistoryList"></div>
         </div>
-        <div class="bar-counter-history-footnote"><svg aria-hidden="true"><use href="#admin-icon-receipt"></use></svg><span>“Excluir” cancela a venda, devolve o estoque e anula o recebimento interno. O registro continua no histórico para conferência.</span></div>
+        <div class="bar-counter-history-footnote"><svg aria-hidden="true"><use href="#admin-icon-receipt"></use></svg><span>“Excluir” cancela a venda e anula o recebimento interno. Itens que ainda não entraram em preparo voltam ao estoque; o registro continua salvo para conferência.</span></div>
       </div>
     </div>
     <div class="admin-modal-overlay" id="barCounterCancelModal" aria-hidden="true">
@@ -23117,7 +23117,7 @@
           <button class="ghost-btn bar-modal-close" type="button" id="barCounterCancelCloseBtn" aria-label="Fechar cancelamento"><svg><use href="#bar-icon-close"></use></svg><span>Fechar</span></button>
         </div>
         <div class="admin-modal-body bar-counter-cancel-body">
-          <div class="bar-counter-cancel-warning"><strong>O que o sistema fará</strong><span>Devolverá os produtos ao estoque e marcará o recebimento como cancelado. Em pagamentos por Pix ou cartão, faça também a devolução ao cliente pelo banco ou pela maquininha.</span></div>
+          <div class="bar-counter-cancel-warning"><strong>O que o sistema fará</strong><span id="barCounterCancelImpact">Devolverá os produtos ao estoque e marcará o recebimento como cancelado. Em pagamentos por Pix ou cartão, faça também a devolução ao cliente pelo banco ou pela maquininha.</span></div>
           <label class="field" for="barCounterCancelReason"><span>Motivo do cancelamento</span><textarea id="barCounterCancelReason" rows="3" maxlength="500" placeholder="Ex.: produto lançado errado" required></textarea></label>
         </div>
         <div class="modal-actions">
@@ -31797,6 +31797,7 @@
         splitWith: row.split_with || '',
         billingOnly: row.billing_only === true,
         counterRevision: Number(row.counter_revision || 0),
+        requiresProduction: row.requires_production === true,
         created: row.created_at || '',
         updated: row.updated_at || row.created_at || ''
       };
@@ -31971,24 +31972,25 @@
       }).map(function (order) { return String(order.id); }));
     }
 
-    async function fetchBarCounterKitchenBacklogOrders() {
+    async function fetchBarCounterKitchenBacklogOrders(additionalOrderIds) {
       if (!canReadBarDataset('items') || !canReadBarDataset('orders')) return [];
       const itemRows = await barDatasetRequest(
         'items',
         'bar_order_items?select=order_id&source=eq.BALCAO&status=in.(SOLICITADO,EM_PREPARO,PRONTO)&order=created_at.asc,id.asc&limit=500'
       );
-      const chunks = barOrderIdChunks((itemRows || []).map(function (item) { return item.order_id; }));
+      const pendingOrderIds = (itemRows || []).map(function (item) { return item.order_id; });
+      const chunks = barOrderIdChunks(pendingOrderIds.concat(Array.from(additionalOrderIds || [])));
       if (!chunks.length) return [];
       const pages = await Promise.all(chunks.map(function (chunk) {
         return barDatasetRequest(
           'orders',
-          'bar_orders?select=*,bar_tables(number,name)&id=in.(' + chunk.join(',') + ')&source=eq.BALCAO&status=eq.FECHADA&order=opened_at.asc,id.asc'
+          'bar_orders?select=*,bar_tables(number,name)&id=in.(' + chunk.join(',') + ')&source=eq.BALCAO&status=in.(FECHADA,CANCELADA)&order=opened_at.asc,id.asc'
         );
       }));
       return pages.reduce(function (rows, page) { return rows.concat(page || []); }, []);
     }
 
-    async function fetchBarOperationalSnapshot() {
+    async function fetchBarOperationalSnapshot(previousPendingCounterOrderIds) {
       const today = barOperationalDateString();
       const dayStart = encodeURIComponent(today + 'T00:00:00-03:00');
       const baseResults = await Promise.all([
@@ -32004,7 +32006,7 @@
         barDatasetRequest('settings', 'bar_runtime_settings?select=*&id=eq.true&limit=1'),
         barDatasetRequest('settings', 'bar_tv_event_art?select=*&id=eq.true&limit=1'),
         barDatasetRequest('orders', 'bar_orders?select=*,bar_tables(number,name)&source=eq.BALCAO&status=in.(FECHADA,CANCELADA)&closed_at=gte.' + dayStart + '&order=closed_at.desc,id.desc', true),
-        fetchBarCounterKitchenBacklogOrders()
+        fetchBarCounterKitchenBacklogOrders(previousPendingCounterOrderIds)
       ]);
       const orders = barUniqueRows((baseResults[2] || []).concat(baseResults[3] || [], baseResults[11] || [], baseResults[12] || []));
       const orderIds = orders.map(function (order) { return order.id; });
@@ -32048,7 +32050,8 @@
       const loadEpoch = adminSessionEpoch;
       opsState.barDataLoading = true;
       try {
-        const snapshot = await fetchBarOperationalSnapshot();
+        const previousPendingCounterOrderIds = barCounterPendingKitchenOrderIds();
+        const snapshot = await fetchBarOperationalSnapshot(previousPendingCounterOrderIds);
         if (loadEpoch !== adminSessionEpoch) return false;
         if (canReadBarDataset('products')) opsData.barProducts = snapshot.products.map(mapBarProductRow);
         if (canReadBarDataset('tables')) opsData.barTables = snapshot.tables.map(mapBarTableRow);
@@ -32063,7 +32066,9 @@
         const liveOrderIds = new Set(liveOrders.map(function (order) { return String(order.id); }));
         const today = barOperationalDateString();
         const shouldReplaceLiveOrder = function (order) {
-          return liveOrderIds.has(String(order.id)) || barOrderIsOpen(order) ||
+          return liveOrderIds.has(String(order.id))
+            || previousPendingCounterOrderIds.has(String(order.id))
+            || barOrderIsOpen(order) ||
             (String(order.status || '').toUpperCase() === 'FECHADA' && barOperationalDateKey(order.closedAt || order.openedAt) === today);
         };
         if (canReadBarDataset('orders')) {
@@ -32074,21 +32079,27 @@
         if (canReadBarDataset('items')) {
           const liveItems = snapshot.items.map(mapBarOrderItemRow);
           opsData.barOrderItems = opsState.barHistoryLoaded
-            ? mergeBarSnapshotRows(opsData.barOrderItems, liveItems, function (item) { return liveOrderIds.has(String(item.orderId)); })
+            ? mergeBarSnapshotRows(opsData.barOrderItems, liveItems, function (item) {
+              return liveOrderIds.has(String(item.orderId)) || previousPendingCounterOrderIds.has(String(item.orderId));
+            })
             : liveItems;
         }
         if (canReadBarDataset('finance')) {
           const liveFinance = snapshot.finance.map(mapBarFinanceRow);
           opsData.barFinance = opsState.barHistoryLoaded
             ? mergeBarSnapshotRows(opsData.barFinance, liveFinance, function (entry) {
-              return liveOrderIds.has(String(entry.orderId)) || barFinanceEntryDateKey(entry) === today;
+              return liveOrderIds.has(String(entry.orderId))
+                || previousPendingCounterOrderIds.has(String(entry.orderId))
+                || barFinanceEntryDateKey(entry) === today;
             })
             : liveFinance;
         }
         if (canReadBarDataset('paymentParts')) {
           const liveParts = snapshot.paymentParts.map(mapBarOrderPaymentPartRow);
           opsData.barOrderPaymentParts = opsState.barHistoryLoaded
-            ? mergeBarSnapshotRows(opsData.barOrderPaymentParts, liveParts, function (part) { return liveOrderIds.has(String(part.orderId)); })
+            ? mergeBarSnapshotRows(opsData.barOrderPaymentParts, liveParts, function (part) {
+              return liveOrderIds.has(String(part.orderId)) || previousPendingCounterOrderIds.has(String(part.orderId));
+            })
             : liveParts;
         }
         if (canReadBarDataset('service')) opsData.barServiceRequests = snapshot.serviceRequests.map(mapBarServiceRequestRow);
@@ -32164,12 +32175,13 @@
       try {
         const today = barOperationalDateString();
         const dayStart = encodeURIComponent(today + 'T00:00:00-03:00');
+        const previousPendingCounterOrderIds = barCounterPendingKitchenOrderIds();
         const baseResults = await Promise.all([
           barDatasetRequest('orders', 'bar_orders?select=*,bar_tables(number,name)&status=in.(ABERTA,EM_PREPARO,PRONTA)&order=opened_at.desc,id.desc'),
           barDatasetRequest('orders', 'bar_orders?select=*,bar_tables(number,name)&status=eq.FECHADA&closed_at=gte.' + dayStart + '&order=closed_at.desc,id.desc&limit=200'),
           barDatasetRequest('service', 'bar_service_requests?select=*&status=in.(PENDENTE,EM_ATENDIMENTO)&order=created_at.desc&limit=100'),
           barDatasetRequest('orders', 'bar_orders?select=*,bar_tables(number,name)&source=eq.BALCAO&status=in.(FECHADA,CANCELADA)&closed_at=gte.' + dayStart + '&order=closed_at.desc,id.desc', true),
-          fetchBarCounterKitchenBacklogOrders()
+          fetchBarCounterKitchenBacklogOrders(previousPendingCounterOrderIds)
         ]);
         const liveOrders = barUniqueRows((baseResults[0] || []).concat(baseResults[1] || [], baseResults[3] || [], baseResults[4] || [])).map(mapBarOrderRow);
         const liveOrderIds = liveOrders.map(function (order) { return String(order.id); }).filter(Boolean);
@@ -32180,7 +32192,6 @@
           barOrderScopedRows('paymentParts', 'bar_order_payment_parts?select=*', liveOrderIds, '&order=order_id.asc,position.asc').catch(function () { return []; })
         ]);
         if (loadEpoch !== adminSessionEpoch) return false;
-        const previousPendingCounterOrderIds = barCounterPendingKitchenOrderIds();
         const previousLiveOrderIds = new Set((opsData.barOrders || []).filter(function (order) {
           return barOrderIsOpen(order)
             || previousPendingCounterOrderIds.has(String(order.id))
@@ -32285,8 +32296,8 @@
       opsState.barCounterHistoryLoading = true;
       const task = barDatasetRequest(
         'orders',
-        'bar_orders?select=*,bar_tables(number,name)&source=eq.BALCAO&status=in.(FECHADA,CANCELADA)&order=closed_at.desc,id.desc&limit=500',
-        false
+        'bar_orders?select=*,bar_tables(number,name)&source=eq.BALCAO&status=in.(FECHADA,CANCELADA)&order=closed_at.desc,id.desc',
+        true
       ).then(async function (orderRows) {
         if (loadEpoch !== adminSessionEpoch) return false;
         const orders = (orderRows || []).map(mapBarOrderRow);
@@ -35471,6 +35482,9 @@
 
     function barKitchenIsPortionItem(item) {
       if (item && item.billingOnly) return false;
+      if (String(item && item.source || '').toUpperCase() === 'BALCAO' && Number(item && item.counterRevision || 0) > 0) {
+        return item.requiresProduction === true;
+      }
       const product = barProductById(item && item.productId);
       return barProductRequiresProduction({
         name: item && item.productName || product && product.name || '',
@@ -36975,8 +36989,8 @@
       if (value.includes('bebid')) return 2;
       if (value.includes('agua')) return 3;
       if (value.includes('doce')) return 4;
-      if (value.includes('lanche') || value.includes('salgad')) return 90;
-      if (value.includes('porc')) return 91;
+      if (value.includes('lanche') || value.includes('sandu') || value.includes('hamburg') || value.includes('torrada') || value.includes('salgad')) return 90;
+      if (value.includes('porc') || value.includes('frita') || value.includes('petisco')) return 91;
       if (value.includes('refeic') || value.includes('almoc') || value.includes('comida') || value.includes('janta') || value.includes('prato') || value.includes('pizza')) return 92;
       return 5;
     }
@@ -36986,6 +37000,11 @@
       const name = normalizeMatchText(product.name || product.productName || '');
       const category = barProductCategoryKey(product.category);
       return ['portion', 'snack'].includes(category) || name.includes('mini pizza');
+    }
+
+    function barCounterProductPriority(product) {
+      const categoryPriority = barProductCategoryPriority(product && product.category);
+      return barProductRequiresProduction(product) && categoryPriority < 90 ? 90 : categoryPriority;
     }
 
     function barProductCategoryIcon(category) {
@@ -39708,7 +39727,7 @@
           : '';
         const productionStarted = barCounterOrderHasStartedProduction(order);
         const editButton = productionStarted
-          ? '<button type="button" disabled title="A comida já entrou em preparo; cancele a venda para manter a cozinha correta.">Edição bloqueada</button>'
+          ? '<button type="button" disabled title="A comida já entrou em preparo; a venda pode ser cancelada, mas essa comida não volta ao estoque.">Edição bloqueada</button>'
           : '<button type="button" data-bar-counter-sale-edit="' + escapeHtml(order.id) + '">Editar venda</button>';
         const actions = cancelled ? '' : '<div class="bar-counter-history-actions">' + editButton + '<button type="button" data-bar-counter-sale-cancel="' + escapeHtml(order.id) + '">Excluir venda</button></div>';
         return '<article class="bar-counter-history-row' + (cancelled ? ' is-cancelled' : '') + '">' +
@@ -39727,7 +39746,7 @@
       $('barCounterHistoryStatus').value = opsState.barCounterHistoryStatus || 'TODOS';
       renderBarCounterHistoryModal();
       try {
-        await loadBarCounterHistoryData(false);
+        await loadBarCounterHistoryData(true);
         renderBarCounterHistoryModal();
       } catch (error) {
         reportActionError(error);
@@ -39746,6 +39765,9 @@
       opsState.barCounterCancelRequestId = '';
       $('barCounterCancelReason').value = '';
       $('barCounterCancelSaleLabel').textContent = 'Venda #' + (order.commandNumber || String(order.id).slice(-4)) + ' · ' + money(Number(order.total || barOrderTotal(order) || 0));
+      $('barCounterCancelImpact').textContent = barCounterOrderHasStartedProduction(order)
+        ? 'Marcará o recebimento como cancelado e devolverá somente os itens que não entraram em preparo. Comidas já preparadas ou entregues não voltam ao estoque. Em Pix ou cartão, faça também a devolução pelo banco ou pela maquininha.'
+        : 'Devolverá os produtos ao estoque e marcará o recebimento como cancelado. Em pagamentos por Pix ou cartão, faça também a devolução ao cliente pelo banco ou pela maquininha.';
       $('barCounterCancelModal').classList.add('show');
       $('barCounterCancelModal').setAttribute('aria-hidden', 'false');
       window.setTimeout(function () { $('barCounterCancelReason').focus(); }, 50);
@@ -39767,7 +39789,7 @@
       const activeProducts = (opsData.barProducts || []).filter(function (product) {
         return product.active;
       }).sort(function (a, b) {
-        const categoryDifference = barProductCategoryPriority(a.category) - barProductCategoryPriority(b.category);
+        const categoryDifference = barCounterProductPriority(a) - barCounterProductPriority(b);
         return categoryDifference || String(a.category || '').localeCompare(String(b.category || ''), 'pt-BR') || String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR');
       });
       const categories = Array.from(new Set(activeProducts.map(function (product) { return product.category || 'Outros'; }))).sort(function (a, b) {
@@ -39810,7 +39832,7 @@
       opsState.barCounterCart = cart;
       $('barCounterCartList').innerHTML = cart.map(function (item) {
         const product = barProductById(item.productId);
-        return '<div class="bar-counter-cart-row"><div class="bar-counter-cart-row-copy"><strong>' + escapeHtml(product.name) + '</strong><small>' + money(Number(product.salePrice || 0) * Number(item.quantity || 0)) + '</small></div><div class="bar-counter-quantity"><button type="button" data-bar-counter-step="-1" data-bar-counter-product-id="' + escapeHtml(product.id) + '" aria-label="Diminuir ' + escapeHtml(product.name) + '">−</button><output>' + escapeHtml(item.quantity) + '</output><button type="button" data-bar-counter-step="1" data-bar-counter-product-id="' + escapeHtml(product.id) + '" aria-label="Aumentar ' + escapeHtml(product.name) + '">+</button></div></div>';
+        return '<div class="bar-counter-cart-row"><div class="bar-counter-cart-row-copy"><strong>' + escapeHtml(product.name) + '</strong><small>' + money(Number(product.salePrice || 0) * Number(item.quantity || 0)) + (product.active ? '' : ' · Produto arquivado') + '</small></div><div class="bar-counter-quantity"><button type="button" data-bar-counter-step="-1" data-bar-counter-product-id="' + escapeHtml(product.id) + '" aria-label="Diminuir ' + escapeHtml(product.name) + '">−</button><output>' + escapeHtml(item.quantity) + '</output><button type="button" data-bar-counter-step="1" data-bar-counter-product-id="' + escapeHtml(product.id) + '" aria-label="Aumentar ' + escapeHtml(product.name) + '"' + (product.active ? '' : ' disabled title="Produto arquivado: mantenha a quantidade atual ou remova o item."') + '>+</button></div></div>';
       }).join('') || '<div class="bar-counter-cart-empty">Toque nos produtos para adicionar à venda.</div>';
       $('barCounterCartTotal').textContent = money(barCounterCartTotal());
       $('barCounterCompleteBtn').disabled = !cart.length || opsState.barCounterSaving;
@@ -39831,9 +39853,13 @@
     function changeBarCounterProduct(productId, step) {
       if (opsState.barCounterSaving) return;
       const product = barProductById(productId);
-      if (!product || !product.active) return;
+      if (!product) return;
       const current = barCounterCartItem(product.id);
       const nextQuantity = Number(current && current.quantity || 0) + Number(step || 0);
+      if (!product.active && (Number(step || 0) > 0 || !current)) {
+        toast('Esse produto foi arquivado. Você pode manter ou remover a quantidade que já estava na venda.');
+        return;
+      }
       const availableStock = Number(product.stock || 0) + barCounterOriginalQuantity(product.id);
       if (nextQuantity > availableStock) {
         toast('Estoque insuficiente para ' + product.name + '.');
@@ -39922,7 +39948,10 @@
         });
         if (!cart.length) throw new Error('Adicione pelo menos um produto à venda.');
         cart.forEach(function (item) {
-          if (!item.product || !item.product.active) throw new Error('Um produto não está mais disponível.');
+          if (!item.product) throw new Error('Um produto não está mais disponível.');
+          if (!item.product.active && (!editingOrder || item.quantity > barCounterOriginalQuantity(item.product.id))) {
+            throw new Error('Um produto foi arquivado. Mantenha a quantidade anterior ou remova esse item da venda.');
+          }
           if (item.quantity > Number(item.product.stock || 0) + barCounterOriginalQuantity(item.product.id)) throw new Error('Estoque insuficiente para ' + item.product.name + '.');
         });
         const requestId = ensureBarCounterRequest();
@@ -39972,7 +40001,7 @@
               id: localId('bar_counter_item'), orderId: order.id, productId: entry.product.id, productName: entry.product.name,
               productCategory: entry.product.category, quantity: entry.quantity, unitPrice: entry.product.salePrice,
               costPrice: entry.product.costPrice, source: 'BALCAO', status: barProductRequiresProduction(entry.product) ? 'SOLICITADO' : 'ENTREGUE',
-              notes: '', counterRevision: editingOrder ? nextRevision : 1, created: now, updated: now
+              notes: '', counterRevision: editingOrder ? nextRevision : 1, requiresProduction: barProductRequiresProduction(entry.product), created: now, updated: now
             });
           });
           (opsData.barFinance || []).filter(function (entry) {
@@ -40014,6 +40043,7 @@
     async function cancelBarCounterSaleAction() {
       const order = barOrderById(opsState.barCounterCancelOrderId);
       const reason = String($('barCounterCancelReason').value || '').trim();
+      const productionStarted = barCounterOrderHasStartedProduction(order);
       if (!order || String(order.status || '').toUpperCase() !== 'FECHADA') {
         closeBarCounterCancelModal(true);
         toast('Essa venda não está mais disponível para cancelamento.');
@@ -40052,7 +40082,8 @@
           const now = new Date().toISOString();
           barCounterOrderRevisionItems(order).forEach(function (item) {
             const product = barProductById(item.productId);
-            if (product) product.stock = Number(product.stock || 0) + Number(item.quantity || 0);
+            const preparedFood = barKitchenIsPortionItem(item) && ['EM_PREPARO', 'PRONTO', 'ENTREGUE'].includes(String(item.status || '').toUpperCase());
+            if (product && !preparedFood) product.stock = Number(product.stock || 0) + Number(item.quantity || 0);
             item.status = 'CANCELADO';
             item.updated = now;
           });
@@ -40069,7 +40100,9 @@
         closeBarCounterCancelModal(true);
         renderBarModule();
         renderBarCounterHistoryModal();
-        toast('Venda cancelada. Estoque e recebimento interno foram estornados.');
+        toast(productionStarted
+          ? 'Venda cancelada. O recebimento foi anulado e comidas já preparadas não voltaram ao estoque.'
+          : 'Venda cancelada. Estoque e recebimento interno foram estornados.');
       } catch (error) {
         reportActionError(error);
       } finally {
