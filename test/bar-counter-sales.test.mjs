@@ -4,10 +4,12 @@ import path from 'node:path';
 import test from 'node:test';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
-const [adminSource, migrationSource] = await Promise.all([
+const [adminSource, counterMigrationSource, managementMigrationSource] = await Promise.all([
   readFile(path.join(projectRoot, 'adm', 'index.html'), 'utf8'),
   readFile(path.join(projectRoot, 'supabase', 'migrations', '20260909145301_bar_counter_quick_sales.sql'), 'utf8'),
+  readFile(path.join(projectRoot, 'supabase', 'migrations', '20260909170640_manage_counter_sale_history.sql'), 'utf8'),
 ]);
+const migrationSource = `${counterMigrationSource}\n${managementMigrationSource}`;
 
 function functionSource(source, name) {
   const start = source.indexOf(`function ${name}(`);
@@ -20,7 +22,9 @@ test('ADM Bar oferece o balcão como comanda destacada e checkout por categorias
   assert.doesNotMatch(adminSource, /id="barCounterPanel"/);
   assert.doesNotMatch(adminSource, /barCounterNewSaleBtn|id="barCounterCategory"/);
   assert.match(adminSource, /function barCounterCommandCard\(/);
-  assert.match(adminSource, /bar-counter-command-card has-money-value" data-bar-counter-open/);
+  assert.match(adminSource, /bar-counter-command-card has-money-value/);
+  assert.match(adminSource, /data-bar-counter-open/);
+  assert.match(adminSource, /id="barCounterHistoryBtn"[^>]*data-bar-counter-history-open/);
   assert.match(adminSource, /barCounterCommandCard\(\) \+ looseCards/);
   assert.match(adminSource, /id="barCounterSaleModal"/);
   assert.match(adminSource, /id="barCounterCategoryTabs"[^>]*role="group"/);
@@ -52,14 +56,21 @@ test('venda rápida usa uma única RPC e mantém chave idempotente durante falha
   assert.match(functionSource(adminSource, 'renderBarCounterSaleModal'), /barCounterNotes'\)\.disabled = opsState\.barCounterSaving/);
 });
 
-test('balcão evita itens de cozinha e reinicia pelo dia operacional das 06h', () => {
-  assert.match(functionSource(adminSource, 'renderBarCounterSaleModal'), /!barProductRequiresProduction\(product\)/);
-  assert.match(functionSource(adminSource, 'completeBarCounterSaleAction'), /Use a comanda normal para itens que precisam de preparo/);
+test('balcão oferece todos os produtos, envia alimentos à cozinha e reinicia às 06h', () => {
+  const render = functionSource(adminSource, 'renderBarCounterSaleModal');
+  const complete = functionSource(adminSource, 'completeBarCounterSaleAction');
+  const priority = functionSource(adminSource, 'barProductCategoryPriority');
+  assert.match(render, /data-bar-counter-category="__all__"/);
+  assert.doesNotMatch(render, /!barProductRequiresProduction\(product\)/);
+  assert.doesNotMatch(complete, /Use a comanda normal para itens que precisam de preparo/);
+  assert.match(complete, /barProductRequiresProduction\(entry\.product\) \? 'SOLICITADO' : 'ENTREGUE'/);
+  assert.match(priority, /refeic[\s\S]*return\s+\d+/);
+  assert.match(priority, /lanche[\s\S]*return\s+\d+/);
   assert.match(functionSource(adminSource, 'barCounterTodayOrders'), /barOperationalDateString\(\)/);
   assert.match(functionSource(adminSource, 'barCounterCommandCard'), /barCounterTodayOrders\(\)/);
-  assert.equal((adminSource.match(/source=eq\.BALCAO[^\n]*closed_at=gte[^\n]*, true\)/g) || []).length, 2);
   assert.match(migrationSource, /product_category_key like '%lanche%'/);
   assert.match(migrationSource, /product_name_key like '%mini pizza%'/);
+  assert.match(migrationSource, /requires_production[^\n]*then 'SOLICITADO' else 'ENTREGUE'/);
 });
 
 test('migration cria ledger atômico, autorizado e imutável para o balcão', () => {
@@ -76,7 +87,7 @@ test('migration cria ledger atômico, autorizado e imutável para o balcão', ()
   assert.match(migrationSource, /update public\.bar_products/);
   assert.match(migrationSource, /insert into public\.bar_inventory_movements/);
   assert.match(migrationSource, /insert into public\.bar_financial_entries/);
-  assert.match(migrationSource, /'BALCAO', 'ENTREGUE'/);
+  assert.match(migrationSource, /'BALCAO',[\s\S]*case when[^\n]*then 'SOLICITADO' else 'ENTREGUE' end/);
   assert.match(migrationSource, /'RECEBIDO', payment_method_value/);
   assert.match(migrationSource, /revoke all on function public\.bar_complete_counter_sale[\s\S]*from public, anon/);
   assert.match(migrationSource, /grant execute on function public\.bar_complete_counter_sale[\s\S]*to authenticated/);
