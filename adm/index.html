@@ -20532,6 +20532,656 @@
         overflow-wrap: anywhere;
       }
     }
+
+    /* Balcão rápido: a experiência é fixa, mas cada atendimento vira uma venda
+       independente e fechada para preservar estoque, caixa e histórico. */
+    .bar-counter-panel {
+      display: grid;
+      gap: 14px;
+      overflow: hidden;
+      padding: 18px;
+      border-color: rgba(155, 240, 0, .42);
+      background:
+        radial-gradient(circle at 86% -20%, rgba(155, 240, 0, .2), transparent 35%),
+        linear-gradient(135deg, #14213a 0%, #123b4a 100%);
+      color: #fff;
+      box-shadow: 0 18px 42px rgba(17, 42, 51, .13);
+    }
+
+    .bar-counter-head,
+    .bar-counter-heading,
+    .bar-counter-summary,
+    .bar-counter-day-note,
+    .bar-counter-history-row,
+    .bar-counter-cart-head,
+    .bar-counter-modal-footer {
+      display: flex;
+      align-items: center;
+    }
+
+    .bar-counter-head {
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .bar-counter-heading {
+      min-width: 0;
+      gap: 12px;
+    }
+
+    .bar-counter-icon {
+      width: 48px;
+      height: 48px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 15px;
+      background: #9bf000;
+      color: #14213a;
+    }
+
+    .bar-counter-icon svg,
+    .bar-counter-new-sale svg,
+    .bar-counter-complete svg {
+      width: 21px;
+      height: 21px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
+    .bar-counter-kicker {
+      display: block;
+      color: #9bf000;
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .17em;
+    }
+
+    .bar-counter-heading h2,
+    .bar-counter-modal-head h2 {
+      margin: 2px 0 0;
+    }
+
+    .bar-counter-heading p {
+      margin: 2px 0 0;
+      color: rgba(255, 255, 255, .72);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .bar-counter-summary {
+      flex: 0 0 auto;
+      gap: 9px;
+    }
+
+    .bar-counter-summary > span {
+      min-width: 104px;
+      display: grid;
+      gap: 1px;
+      padding: 9px 12px;
+      border: 1px solid rgba(255, 255, 255, .14);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .bar-counter-summary small {
+      color: rgba(255, 255, 255, .64);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .bar-counter-summary strong {
+      color: #fff;
+      font-size: 16px;
+    }
+
+    .bar-counter-new-sale,
+    .bar-counter-complete {
+      min-height: 48px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 13px;
+      background: #9bf000;
+      color: #14213a;
+      font: 950 13px/1 var(--font, inherit);
+      cursor: pointer;
+      box-shadow: 0 10px 22px rgba(155, 240, 0, .18);
+    }
+
+    .bar-counter-new-sale:disabled,
+    .bar-counter-complete:disabled {
+      cursor: not-allowed;
+      opacity: .5;
+      box-shadow: none;
+    }
+
+    .bar-counter-day-note {
+      min-width: 0;
+      gap: 7px;
+      color: rgba(255, 255, 255, .88);
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .bar-counter-day-note small {
+      color: rgba(255, 255, 255, .55);
+      font-size: 10px;
+    }
+
+    .bar-counter-live-dot {
+      width: 8px;
+      height: 8px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: #9bf000;
+      box-shadow: 0 0 0 5px rgba(155, 240, 0, .12);
+    }
+
+    .bar-counter-history {
+      display: grid;
+      gap: 7px;
+    }
+
+    .bar-counter-history-row {
+      min-width: 0;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 255, 255, .11);
+      border-radius: 11px;
+      background: rgba(255, 255, 255, .055);
+    }
+
+    .bar-counter-history-copy {
+      min-width: 0;
+      display: grid;
+      gap: 2px;
+    }
+
+    .bar-counter-history-copy strong {
+      overflow: hidden;
+      color: #fff;
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-counter-history-copy small {
+      overflow: hidden;
+      color: rgba(255, 255, 255, .58);
+      font-size: 10px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-counter-history-side {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .bar-counter-history-side span {
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .1);
+      color: rgba(255, 255, 255, .82);
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .bar-counter-history-side b {
+      min-width: 82px;
+      color: #fff;
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .bar-counter-empty {
+      padding: 11px 12px;
+      border: 1px dashed rgba(255, 255, 255, .18);
+      border-radius: 11px;
+      color: rgba(255, 255, 255, .65);
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .bar-counter-sale-modal {
+      width: min(1120px, 100%);
+      height: min(780px, calc(100dvh - 24px));
+      max-height: calc(100dvh - 24px);
+      display: flex;
+      min-height: 0;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .bar-counter-modal-head,
+    .bar-counter-modal-footer {
+      flex: 0 0 auto;
+    }
+
+    .bar-counter-modal-head .bar-counter-kicker {
+      color: var(--teal);
+    }
+
+    .bar-counter-modal-body {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1.65fr) minmax(310px, .8fr);
+      gap: 16px;
+      overflow: hidden;
+      background: #f4f8f9;
+    }
+
+    .bar-counter-products,
+    .bar-counter-cart {
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .bar-counter-tools {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 190px;
+      gap: 9px;
+      margin-bottom: 12px;
+    }
+
+    .bar-counter-search {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      border: 1px solid #cfdee2;
+      border-radius: 11px;
+      background: #fff;
+    }
+
+    .bar-counter-search:focus-within {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(11, 137, 147, .1);
+    }
+
+    .bar-counter-search svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: var(--muted);
+      stroke-width: 2;
+    }
+
+    .bar-counter-search input {
+      width: 100%;
+      min-width: 0;
+      height: 44px;
+      padding: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+    }
+
+    .bar-counter-category {
+      display: grid;
+      gap: 3px;
+    }
+
+    .bar-counter-category > span,
+    .bar-counter-notes > span {
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .bar-counter-category select {
+      height: 44px;
+      padding: 0 10px;
+      border: 1px solid #cfdee2;
+      border-radius: 11px;
+      background: #fff;
+    }
+
+    .bar-counter-product-grid {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-content: start;
+      gap: 9px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 1px 3px 12px 1px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .bar-counter-product {
+      position: relative;
+      min-width: 0;
+      min-height: 92px;
+      display: grid;
+      align-content: space-between;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid #cfdee2;
+      border-radius: 13px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .bar-counter-product:hover,
+    .bar-counter-product.is-selected {
+      border-color: var(--teal);
+      box-shadow: 0 8px 20px rgba(11, 137, 147, .1);
+    }
+
+    .bar-counter-product:disabled {
+      cursor: not-allowed;
+      opacity: .48;
+    }
+
+    .bar-counter-product strong {
+      overflow: hidden;
+      font-size: 12px;
+      line-height: 1.25;
+      text-overflow: ellipsis;
+    }
+
+    .bar-counter-product-meta {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 7px;
+    }
+
+    .bar-counter-product-meta b {
+      color: var(--teal);
+      font-size: 13px;
+    }
+
+    .bar-counter-product-meta small {
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 800;
+    }
+
+    .bar-counter-product-quantity {
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      min-width: 25px;
+      height: 25px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: #9bf000;
+      color: #14213a;
+      font-size: 10px;
+      font-weight: 950;
+    }
+
+    .bar-counter-cart {
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid #cfdee2;
+      border-radius: 15px;
+      background: #fff;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .bar-counter-cart-head {
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .bar-counter-cart-head span {
+      color: var(--teal);
+      font-size: 9px;
+      font-weight: 950;
+      letter-spacing: .1em;
+    }
+
+    .bar-counter-cart-head h3 {
+      margin: 2px 0 0;
+      font-size: 15px;
+    }
+
+    .bar-counter-cart-head button {
+      border: 0;
+      background: transparent;
+      color: #af3340;
+      font-size: 10px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .bar-counter-cart-list {
+      display: grid;
+      gap: 7px;
+    }
+
+    .bar-counter-cart-empty {
+      padding: 26px 12px;
+      border: 1px dashed #cadbdf;
+      border-radius: 12px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .bar-counter-cart-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      padding: 9px;
+      border: 1px solid #e0eaec;
+      border-radius: 11px;
+      background: #f8fbfc;
+    }
+
+    .bar-counter-cart-row-copy {
+      min-width: 0;
+      display: grid;
+      gap: 2px;
+    }
+
+    .bar-counter-cart-row-copy strong {
+      overflow: hidden;
+      font-size: 11px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-counter-cart-row-copy small {
+      color: var(--teal);
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .bar-counter-quantity {
+      display: grid;
+      grid-template-columns: 30px 30px 30px;
+      align-items: center;
+    }
+
+    .bar-counter-quantity button,
+    .bar-counter-quantity output {
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #cadbdf;
+      background: #fff;
+      color: var(--text);
+      font: 900 13px/1 var(--font, inherit);
+    }
+
+    .bar-counter-quantity button:first-child { border-radius: 8px 0 0 8px; }
+    .bar-counter-quantity button:last-child { border-radius: 0 8px 8px 0; }
+    .bar-counter-quantity output { border-right: 0; border-left: 0; font-size: 10px; }
+
+    .bar-counter-payment {
+      display: grid;
+      gap: 7px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
+    .bar-counter-payment legend,
+    .bar-counter-notes > span {
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .bar-counter-payment-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .bar-counter-payment-grid button {
+      min-height: 38px;
+      padding: 7px;
+      border: 1px solid #cfdee2;
+      border-radius: 9px;
+      background: #fff;
+      color: var(--text);
+      font: 850 10px/1.2 var(--font, inherit);
+      cursor: pointer;
+    }
+
+    .bar-counter-payment-grid button.is-selected {
+      border-color: var(--teal);
+      background: #eaf8f8;
+      color: #08717a;
+      box-shadow: inset 0 0 0 1px var(--teal);
+    }
+
+    .bar-counter-notes {
+      display: grid;
+      gap: 5px;
+    }
+
+    .bar-counter-notes input {
+      min-height: 40px;
+      padding: 0 10px;
+      border: 1px solid #cfdee2;
+      border-radius: 9px;
+      background: #fff;
+    }
+
+    .bar-counter-modal-footer {
+      justify-content: flex-end;
+      gap: 18px;
+      padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+      border-top: 1px solid #dce7e9;
+      background: #fff;
+    }
+
+    .bar-counter-modal-footer > div {
+      display: grid;
+      gap: 1px;
+      text-align: right;
+    }
+
+    .bar-counter-modal-footer span {
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .bar-counter-modal-footer strong {
+      color: var(--text);
+      font-size: 20px;
+    }
+
+    @media (max-width: 760px) {
+      .bar-counter-head,
+      .bar-counter-summary {
+        align-items: stretch;
+      }
+
+      .bar-counter-head {
+        flex-direction: column;
+      }
+
+      .bar-counter-summary {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .bar-counter-new-sale {
+        grid-column: 1 / -1;
+      }
+
+      .bar-counter-sale-modal {
+        width: 100%;
+        height: calc(100dvh - 16px);
+        max-height: calc(100dvh - 16px);
+        border-radius: 16px;
+      }
+
+      .bar-counter-modal-body {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(260px, 1fr) auto;
+        gap: 10px;
+        overflow-y: auto;
+      }
+
+      .bar-counter-products {
+        min-height: 300px;
+      }
+
+      .bar-counter-product-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .bar-counter-cart {
+        flex: 0 0 auto;
+        overflow: visible;
+      }
+
+      .bar-counter-modal-footer {
+        justify-content: space-between;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .bar-counter-panel { padding: 14px; }
+      .bar-counter-heading { align-items: flex-start; }
+      .bar-counter-icon { width: 42px; height: 42px; }
+      .bar-counter-day-note { align-items: flex-start; flex-wrap: wrap; }
+      .bar-counter-day-note small { width: 100%; padding-left: 15px; }
+      .bar-counter-history-row { align-items: flex-start; }
+      .bar-counter-history-side { display: grid; justify-items: end; gap: 4px; }
+      .bar-counter-tools { grid-template-columns: minmax(0, 1fr); }
+      .bar-counter-category { grid-template-columns: 72px minmax(0, 1fr); align-items: center; }
+      .bar-counter-product { min-height: 82px; padding: 10px; }
+      .bar-counter-modal-footer { gap: 10px; padding-right: 12px; padding-left: 12px; }
+      .bar-counter-complete { min-width: 0; padding: 0 13px; }
+    }
   </style>
 </head>
 <body class="adm-locked">
@@ -21864,6 +22514,21 @@
           </div>
 
           <div data-bar-panel="orders">
+            <section class="ops-panel bar-counter-panel" id="barCounterPanel" aria-labelledby="barCounterTitle">
+              <div class="bar-counter-head">
+                <div class="bar-counter-heading">
+                  <span class="bar-counter-icon" aria-hidden="true"><svg><use href="#admin-icon-receipt"></use></svg></span>
+                  <div><span class="bar-counter-kicker">VENDA DIRETA</span><h2 id="barCounterTitle">Balcão rápido</h2><p>Adicione, receba e encerre a venda na hora.</p></div>
+                </div>
+                <div class="bar-counter-summary" aria-label="Resumo do balcão de hoje">
+                  <span><small>Vendas hoje</small><strong id="barCounterSalesCount">0</strong></span>
+                  <span class="has-money-value"><small>Total hoje</small><strong id="barCounterSalesTotal">R$ 0,00</strong></span>
+                  <button class="bar-counter-new-sale" type="button" id="barCounterNewSaleBtn"><svg><use href="#bar-icon-plus"></use></svg><span>Nova venda</span></button>
+                </div>
+              </div>
+              <div class="bar-counter-day-note"><span class="bar-counter-live-dot" aria-hidden="true"></span><span id="barCounterDayLabel">Balcão de hoje</span><small>O movimento reinicia automaticamente às 06h.</small></div>
+              <div class="bar-counter-history" id="barCounterHistory" aria-live="polite"></div>
+            </section>
             <section class="ops-panel bar-command-board-panel" id="barCommandBoardPanel">
               <div class="ops-panel-head">
                 <div class="bar-command-board-actions">
@@ -22384,6 +23049,39 @@
     </div>
 
     <span id="barNewOrderModalHome" hidden></span>
+    <div class="admin-modal-overlay" id="barCounterSaleModal" aria-hidden="true">
+      <div class="admin-modal bar-counter-sale-modal" role="dialog" aria-modal="true" aria-labelledby="barCounterSaleTitle">
+        <div class="admin-modal-head bar-counter-modal-head">
+          <div><span class="bar-counter-kicker">BALCÃO RÁPIDO</span><h2 id="barCounterSaleTitle">Nova venda</h2><div class="muted">Escolha os itens e informe como recebeu.</div></div>
+          <button class="ghost-btn bar-modal-close" type="button" id="barCounterSaleCloseBtn" aria-label="Fechar venda rápida"><svg><use href="#bar-icon-close"></use></svg><span>Fechar</span></button>
+        </div>
+        <div class="admin-modal-body bar-counter-modal-body">
+          <section class="bar-counter-products" aria-labelledby="barCounterProductsTitle">
+            <div class="bar-counter-tools">
+              <label class="bar-counter-search" for="barCounterSearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><input id="barCounterSearch" type="search" placeholder="Buscar produto" autocomplete="off" /></label>
+              <label class="bar-counter-category" for="barCounterCategory"><span>Categoria</span><select id="barCounterCategory"><option value="todos">Todas</option></select></label>
+            </div>
+            <h3 id="barCounterProductsTitle" class="sr-only">Produtos disponíveis</h3>
+            <div class="bar-counter-product-grid" id="barCounterProductGrid" role="listbox" aria-label="Produtos disponíveis no balcão"></div>
+          </section>
+          <aside class="bar-counter-cart" aria-labelledby="barCounterCartTitle">
+            <div class="bar-counter-cart-head"><div><span>VENDA ATUAL</span><h3 id="barCounterCartTitle">Itens do balcão</h3></div><button type="button" id="barCounterClearBtn">Limpar</button></div>
+            <div class="bar-counter-cart-list" id="barCounterCartList"></div>
+            <fieldset class="bar-counter-payment"><legend>Forma de pagamento</legend><div class="bar-counter-payment-grid" id="barCounterPaymentMethods">
+              <button class="is-selected" type="button" data-bar-counter-payment="PIX" aria-pressed="true">Pix recebido</button>
+              <button type="button" data-bar-counter-payment="DINHEIRO" aria-pressed="false">Dinheiro</button>
+              <button type="button" data-bar-counter-payment="CARTAO_DEBITO" aria-pressed="false">Débito</button>
+              <button type="button" data-bar-counter-payment="CARTAO_CREDITO" aria-pressed="false">Crédito</button>
+            </div></fieldset>
+            <label class="bar-counter-notes" for="barCounterNotes"><span>Observação <small>opcional</small></span><input id="barCounterNotes" maxlength="500" placeholder="Ex.: venda do torneio" /></label>
+          </aside>
+        </div>
+        <div class="bar-counter-modal-footer">
+          <div><span>Total da venda</span><strong class="has-money-value" id="barCounterCartTotal">R$ 0,00</strong></div>
+          <button class="bar-counter-complete" type="button" id="barCounterCompleteBtn" disabled><svg><use href="#bar-icon-check"></use></svg><span>Finalizar venda</span></button>
+        </div>
+      </div>
+    </div>
     <div class="admin-modal-overlay" id="barNewOrderModal" aria-hidden="true">
       <div class="admin-modal bar-setup-modal bar-new-order-modal" role="dialog" aria-modal="true" aria-labelledby="barNewOrderModalTitle">
         <div class="admin-modal-head">
@@ -30007,6 +30705,12 @@
       selectedBarCustomerKey: '',
       barOrderCart: [],
       barOrderCartSaving: false,
+      barCounterCart: [],
+      barCounterSearch: '',
+      barCounterCategory: 'todos',
+      barCounterPaymentMethod: 'PIX',
+      barCounterSaving: false,
+      barCounterRequestId: '',
       barCheckoutGroups: [],
       selectedBarCheckoutGroupIndex: -1,
       selectedBarSplitItemId: '',
@@ -31000,6 +31704,7 @@
         customerPhone: row.customer_phone || '',
         publicAccessId: row.public_access_id || '',
         source: row.source || 'EQUIPE',
+        counterRequestId: row.counter_request_id || '',
         status: row.status || 'ABERTA',
         subtotal: Number(row.subtotal || 0),
         serviceCharge: Number(row.service_charge || 0),
@@ -31209,9 +31914,10 @@
         barDatasetRequest('customers', 'bar_customers?select=*&order=last_order_at.desc&limit=500'),
         barDatasetRequest('service', 'bar_service_requests?select=*&order=created_at.desc&limit=200'),
         barDatasetRequest('settings', 'bar_runtime_settings?select=*&id=eq.true&limit=1'),
-        barDatasetRequest('settings', 'bar_tv_event_art?select=*&id=eq.true&limit=1')
+        barDatasetRequest('settings', 'bar_tv_event_art?select=*&id=eq.true&limit=1'),
+        barDatasetRequest('orders', 'bar_orders?select=*,bar_tables(number,name)&source=eq.BALCAO&status=eq.FECHADA&closed_at=gte.' + dayStart + '&order=closed_at.desc,id.desc', true)
       ]);
-      const orders = barUniqueRows((baseResults[2] || []).concat(baseResults[3] || []));
+      const orders = barUniqueRows((baseResults[2] || []).concat(baseResults[3] || [], baseResults[11] || []));
       const orderIds = orders.map(function (order) { return order.id; });
       const detailResults = await Promise.all([
         barOrderScopedRows('items', 'bar_order_items?select=*,bar_products(category)', orderIds, '&order=created_at.desc,id.desc'),
@@ -31369,9 +32075,10 @@
         const baseResults = await Promise.all([
           barDatasetRequest('orders', 'bar_orders?select=*,bar_tables(number,name)&status=in.(ABERTA,EM_PREPARO,PRONTA)&order=opened_at.desc,id.desc'),
           barDatasetRequest('orders', 'bar_orders?select=*,bar_tables(number,name)&status=eq.FECHADA&closed_at=gte.' + dayStart + '&order=closed_at.desc,id.desc&limit=200'),
-          barDatasetRequest('service', 'bar_service_requests?select=*&status=in.(PENDENTE,EM_ATENDIMENTO)&order=created_at.desc&limit=100')
+          barDatasetRequest('service', 'bar_service_requests?select=*&status=in.(PENDENTE,EM_ATENDIMENTO)&order=created_at.desc&limit=100'),
+          barDatasetRequest('orders', 'bar_orders?select=*,bar_tables(number,name)&source=eq.BALCAO&status=eq.FECHADA&closed_at=gte.' + dayStart + '&order=closed_at.desc,id.desc', true)
         ]);
-        const liveOrders = barUniqueRows((baseResults[0] || []).concat(baseResults[1] || [])).map(mapBarOrderRow);
+        const liveOrders = barUniqueRows((baseResults[0] || []).concat(baseResults[1] || [], baseResults[3] || [])).map(mapBarOrderRow);
         const liveOrderIds = liveOrders.map(function (order) { return String(order.id); }).filter(Boolean);
         const detailResults = await Promise.all([
           barOrderScopedRows('items', 'bar_order_items?select=*,bar_products(category)', liveOrderIds, '&order=created_at.desc,id.desc'),
@@ -37711,6 +38418,7 @@
       $('barClosedOrdersTotalBox').title = paymentFilter === 'TODOS'
         ? 'Fechamento do dia'
         : 'Fechamento do dia · ' + barFinancePaymentLabel(paymentFilter);
+      renderBarCounterSummary();
       updateBarOrderBadges();
       updateBarAlertsButton();
       if (!liveOnly || ['overview', 'orders', 'kitchen'].includes(opsState.barTab)) renderBarServiceRequests();
@@ -37730,11 +38438,18 @@
         $('barClosedOrders').innerHTML = filteredDayClosedOrders.map(function (order) {
           const payments = barDayClosingPaymentsForOrder(order, paymentFilter);
           const showParts = barReceivedPaymentsForOrder(order).length > 1;
+          const counterSale = String(order.source || '').toUpperCase() === 'BALCAO';
           const paymentNote = String(order.notes || '').trim();
           const paymentBadges = payments.map(function (payment) {
             return '<span class="bar-closed-order-payment-part">' + barPaymentMethodBadge(payment.paymentMethod) + (showParts ? '<strong>' + money(payment.amount) + '</strong>' : '') + '</span>';
           }).join('');
-          return '<article class="bar-finance-row bar-closed-order-row"><div class="bar-finance-copy"><strong>' + escapeHtml(barTableLabel(order)) + ' | Comanda #' + escapeHtml(order.commandNumber || '') + '</strong><small>' + escapeHtml(barDateTimeLabel(order.closedAt || order.openedAt)) + '</small>' + (paymentNote ? '<small class="bar-closed-order-note"><span>Obs.:</span> ' + escapeHtml(paymentNote) + '</small>' : '') + '</div><div class="bar-row-actions"><span class="bar-closed-order-payment-list">' + paymentBadges + '</span>' + barStatusPill(order.paymentStatus) + '<span class="bar-closed-order-total"><small>Total</small><strong>' + money(barOrderTotal(order)) + '</strong></span><button class="small-btn bar-closed-order-reopen" type="button" data-bar-order-reopen="' + escapeHtml(order.id) + '">Reabrir comanda</button></div></article>';
+          const title = counterSale
+            ? 'Balcão | Venda #' + escapeHtml(order.commandNumber || '')
+            : escapeHtml(barTableLabel(order)) + ' | Comanda #' + escapeHtml(order.commandNumber || '');
+          const trailingAction = counterSale
+            ? '<span class="ops-pill good">Balcão</span>'
+            : '<button class="small-btn bar-closed-order-reopen" type="button" data-bar-order-reopen="' + escapeHtml(order.id) + '">Reabrir comanda</button>';
+          return '<article class="bar-finance-row bar-closed-order-row"><div class="bar-finance-copy"><strong>' + title + '</strong><small>' + escapeHtml(barDateTimeLabel(order.closedAt || order.openedAt)) + '</small>' + (counterSale ? '<small>' + escapeHtml(barCounterOrderItemSummary(order.id) || 'Venda rápida') + '</small>' : '') + (paymentNote ? '<small class="bar-closed-order-note"><span>Obs.:</span> ' + escapeHtml(paymentNote) + '</small>' : '') + '</div><div class="bar-row-actions"><span class="bar-closed-order-payment-list">' + paymentBadges + '</span>' + barStatusPill(order.paymentStatus) + '<span class="bar-closed-order-total"><small>Total</small><strong>' + money(barOrderTotal(order)) + '</strong></span>' + trailingAction + '</div></article>';
         }).join('') || '<div class="lesson-empty-state">Nenhuma comanda fechada hoje para esta forma de pagamento.</div>';
         const dayPaymentMethods = ['PIX', 'DINHEIRO', 'CARTAO_CREDITO', 'CARTAO_DEBITO', 'CONTA_CLIENTE', 'OUTROS'];
         const dayPaymentTotal = dayClosedOrders.reduce(function (sum, order) {
@@ -38696,6 +39411,250 @@
       $('barOrderSubmitLabel').textContent = opsState.barOrderCartSaving
         ? 'Adicionando pedido...'
         : (cart.length ? 'Confirmar ' + totalUnits + (totalUnits === 1 ? ' item' : ' itens') + ' · ' + money(total) : 'Escolha os produtos');
+    }
+
+    const BAR_COUNTER_REQUEST_KEY = 'ilha-bar-counter-request-v1';
+
+    function resetBarCounterRequest() {
+      opsState.barCounterRequestId = '';
+      try { sessionStorage.removeItem(BAR_COUNTER_REQUEST_KEY); } catch (error) { /* armazenamento opcional */ }
+    }
+
+    function ensureBarCounterRequest() {
+      if (opsState.barCounterRequestId) return opsState.barCounterRequestId;
+      try {
+        const savedRequestId = sessionStorage.getItem(BAR_COUNTER_REQUEST_KEY) || '';
+        if (isUuid(savedRequestId)) {
+          opsState.barCounterRequestId = savedRequestId;
+          return savedRequestId;
+        }
+      } catch (error) { /* armazenamento opcional */ }
+      if (!window.crypto || typeof window.crypto.randomUUID !== 'function') {
+        throw new Error('Atualize o navegador para registrar a venda com segurança.');
+      }
+      opsState.barCounterRequestId = window.crypto.randomUUID();
+      try { sessionStorage.setItem(BAR_COUNTER_REQUEST_KEY, opsState.barCounterRequestId); } catch (error) { /* memória da página ainda protege o clique */ }
+      return opsState.barCounterRequestId;
+    }
+
+    function barCounterCartItem(productId) {
+      return (opsState.barCounterCart || []).find(function (item) {
+        return String(item.productId) === String(productId);
+      });
+    }
+
+    function barCounterCartTotal() {
+      return (opsState.barCounterCart || []).reduce(function (sum, item) {
+        const product = barProductById(item.productId);
+        return sum + Number(item.quantity || 0) * Number(product && product.salePrice || 0);
+      }, 0);
+    }
+
+    function barCounterTodayOrders() {
+      const today = barOperationalDateString();
+      return (opsData.barOrders || []).filter(function (order) {
+        return String(order.source || '').toUpperCase() === 'BALCAO'
+          && String(order.status || '').toUpperCase() === 'FECHADA'
+          && barOperationalDateKey(order.closedAt || order.openedAt) === today;
+      }).sort(function (a, b) {
+        return String(b.closedAt || b.openedAt || '').localeCompare(String(a.closedAt || a.openedAt || ''));
+      });
+    }
+
+    function barCounterOrderItemSummary(orderId) {
+      const groups = new Map();
+      (opsData.barOrderItems || []).forEach(function (item) {
+        if (String(item.orderId) !== String(orderId) || String(item.status || '').toUpperCase() === 'CANCELADO') return;
+        const key = String(item.productName || 'Produto');
+        groups.set(key, Number(groups.get(key) || 0) + Number(item.quantity || 0));
+      });
+      return Array.from(groups.entries()).map(function (entry) {
+        return Number(entry[1]).toLocaleString('pt-BR') + 'x ' + entry[0];
+      }).join(' · ');
+    }
+
+    function renderBarCounterSummary() {
+      const history = $('barCounterHistory');
+      if (!history) return;
+      const orders = barCounterTodayOrders();
+      $('barCounterSalesCount').textContent = orders.length.toLocaleString('pt-BR');
+      $('barCounterSalesTotal').textContent = money(orders.reduce(function (sum, order) {
+        return sum + barOrderTotal(order);
+      }, 0));
+      const today = barOperationalDateString();
+      const displayDate = today ? today.split('-').reverse().join('/') : 'hoje';
+      $('barCounterDayLabel').textContent = 'Balcão de ' + displayDate;
+      history.innerHTML = orders.slice(0, 5).map(function (order) {
+        const items = barCounterOrderItemSummary(order.id) || 'Itens registrados';
+        return '<article class="bar-counter-history-row"><div class="bar-counter-history-copy"><strong>Venda #' + escapeHtml(order.commandNumber || '') + ' · ' + escapeHtml(displayTimeFromIso(order.closedAt || order.openedAt)) + '</strong><small>' + escapeHtml(items) + '</small></div><div class="bar-counter-history-side"><span>' + escapeHtml(barFinancePaymentLabel(order.paymentMethod || 'OUTROS')) + '</span><b class="has-money-value">' + money(barOrderTotal(order)) + '</b></div></article>';
+      }).join('') || '<div class="bar-counter-empty">Nenhuma venda rápida hoje. Toque em “Nova venda” para começar.</div>';
+    }
+
+    function renderBarCounterSaleModal() {
+      const grid = $('barCounterProductGrid');
+      if (!grid) return;
+      const query = normalizeMatchText(opsState.barCounterSearch || '');
+      const activeProducts = (opsData.barProducts || []).filter(function (product) {
+        return product.active && !barProductRequiresProduction(product);
+      }).sort(function (a, b) {
+        return String(a.category || '').localeCompare(String(b.category || ''), 'pt-BR') || String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR');
+      });
+      const categories = Array.from(new Set(activeProducts.map(function (product) { return product.category || 'Outros'; }))).sort(function (a, b) {
+        return String(a).localeCompare(String(b), 'pt-BR');
+      });
+      const categorySelect = $('barCounterCategory');
+      categorySelect.innerHTML = '<option value="todos">Todas</option>' + categories.map(function (category) {
+        return '<option value="' + escapeHtml(category) + '">' + escapeHtml(barProductCategoryLabel(category)) + '</option>';
+      }).join('');
+      if (!['todos'].concat(categories).includes(opsState.barCounterCategory)) opsState.barCounterCategory = 'todos';
+      categorySelect.value = opsState.barCounterCategory;
+      const products = activeProducts.filter(function (product) {
+        if (opsState.barCounterCategory !== 'todos' && String(product.category || 'Outros') !== opsState.barCounterCategory) return false;
+        return !query || normalizeMatchText([product.name, product.category, product.sku].filter(Boolean).join(' ')).includes(query);
+      });
+      grid.innerHTML = products.map(function (product) {
+        const cartItem = barCounterCartItem(product.id);
+        const quantity = Number(cartItem && cartItem.quantity || 0);
+        const available = Number(product.stock || 0) > quantity;
+        return '<button class="bar-counter-product' + (quantity ? ' is-selected' : '') + '" type="button" data-bar-counter-product="' + escapeHtml(product.id) + '" role="option" aria-selected="' + (quantity ? 'true' : 'false') + '"' + (available ? '' : ' disabled') + '>' + (quantity ? '<span class="bar-counter-product-quantity">' + escapeHtml(quantity) + '</span>' : '') + '<strong>' + escapeHtml(product.name) + '</strong><span class="bar-counter-product-meta"><b>' + money(product.salePrice) + '</b><small>' + escapeHtml(Number(product.stock || 0).toLocaleString('pt-BR')) + ' em estoque</small></span></button>';
+      }).join('') || '<div class="bar-counter-cart-empty">Nenhum produto disponível para esta busca.<br>Itens de preparo devem usar a comanda normal.</div>';
+
+      const cart = (opsState.barCounterCart || []).filter(function (item) { return Boolean(barProductById(item.productId)); });
+      opsState.barCounterCart = cart;
+      $('barCounterCartList').innerHTML = cart.map(function (item) {
+        const product = barProductById(item.productId);
+        return '<div class="bar-counter-cart-row"><div class="bar-counter-cart-row-copy"><strong>' + escapeHtml(product.name) + '</strong><small>' + money(Number(product.salePrice || 0) * Number(item.quantity || 0)) + '</small></div><div class="bar-counter-quantity"><button type="button" data-bar-counter-step="-1" data-bar-counter-product-id="' + escapeHtml(product.id) + '" aria-label="Diminuir ' + escapeHtml(product.name) + '">−</button><output>' + escapeHtml(item.quantity) + '</output><button type="button" data-bar-counter-step="1" data-bar-counter-product-id="' + escapeHtml(product.id) + '" aria-label="Aumentar ' + escapeHtml(product.name) + '">+</button></div></div>';
+      }).join('') || '<div class="bar-counter-cart-empty">Toque nos produtos para adicionar à venda.</div>';
+      $('barCounterCartTotal').textContent = money(barCounterCartTotal());
+      $('barCounterCompleteBtn').disabled = !cart.length || opsState.barCounterSaving;
+      $('barCounterCompleteBtn').querySelector('span').textContent = opsState.barCounterSaving ? 'Registrando...' : 'Finalizar venda';
+      $('barCounterClearBtn').disabled = !cart.length || opsState.barCounterSaving;
+      $('barCounterSearch').disabled = opsState.barCounterSaving;
+      $('barCounterCategory').disabled = opsState.barCounterSaving;
+      $('barCounterNotes').disabled = opsState.barCounterSaving;
+      document.querySelectorAll('[data-bar-counter-payment]').forEach(function (button) {
+        const selected = button.dataset.barCounterPayment === opsState.barCounterPaymentMethod;
+        button.classList.toggle('is-selected', selected);
+        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+        button.disabled = opsState.barCounterSaving;
+      });
+    }
+
+    function changeBarCounterProduct(productId, step) {
+      if (opsState.barCounterSaving) return;
+      const product = barProductById(productId);
+      if (!product || !product.active || barProductRequiresProduction(product)) return;
+      const current = barCounterCartItem(product.id);
+      const nextQuantity = Number(current && current.quantity || 0) + Number(step || 0);
+      if (nextQuantity > Number(product.stock || 0)) {
+        toast('Estoque insuficiente para ' + product.name + '.');
+        return;
+      }
+      resetBarCounterRequest();
+      if (nextQuantity <= 0) {
+        opsState.barCounterCart = (opsState.barCounterCart || []).filter(function (item) { return String(item.productId) !== String(product.id); });
+      } else if (current) {
+        current.quantity = nextQuantity;
+      } else {
+        (opsState.barCounterCart || (opsState.barCounterCart = [])).push({ productId: product.id, quantity: 1 });
+      }
+      renderBarCounterSaleModal();
+    }
+
+    function openBarCounterSaleModal() {
+      opsState.barCounterCart = [];
+      opsState.barCounterSearch = '';
+      opsState.barCounterCategory = 'todos';
+      opsState.barCounterPaymentMethod = 'PIX';
+      opsState.barCounterSaving = false;
+      $('barCounterSearch').value = '';
+      $('barCounterNotes').value = '';
+      renderBarCounterSaleModal();
+      $('barCounterSaleModal').classList.add('show');
+      $('barCounterSaleModal').setAttribute('aria-hidden', 'false');
+      window.setTimeout(function () { $('barCounterSearch').focus(); }, 50);
+    }
+
+    function closeBarCounterSaleModal(force) {
+      if (opsState.barCounterSaving && !force) return;
+      $('barCounterSaleModal').classList.remove('show');
+      $('barCounterSaleModal').setAttribute('aria-hidden', 'true');
+      opsState.barCounterCart = [];
+      resetBarCounterRequest();
+    }
+
+    async function completeBarCounterSaleAction() {
+      const actionKey = 'counter-sale';
+      if (opsState.barCounterSaving || !beginBarAction(actionKey)) return;
+      let completed = false;
+      try {
+        requireAdminSession();
+        const cart = (opsState.barCounterCart || []).map(function (item) {
+          return {
+            product: barProductById(item.productId),
+            quantity: Math.max(1, Math.floor(Number(item.quantity || 1)))
+          };
+        });
+        if (!cart.length) throw new Error('Adicione pelo menos um produto à venda.');
+        cart.forEach(function (item) {
+          if (!item.product || !item.product.active) throw new Error('Um produto não está mais disponível.');
+          if (barProductRequiresProduction(item.product)) throw new Error('Use a comanda normal para itens que precisam de preparo.');
+          if (item.quantity > Number(item.product.stock || 0)) throw new Error('Estoque insuficiente para ' + item.product.name + '.');
+        });
+        const requestId = ensureBarCounterRequest();
+        const notes = String($('barCounterNotes').value || '').trim();
+        opsState.barCounterSaving = true;
+        renderBarCounterSaleModal();
+        if (barCanPersist() && cart.every(function (item) { return isUuid(item.product.id); })) {
+          await supabaseRest('rpc/bar_complete_counter_sale', {
+            method: 'POST',
+            body: {
+              p_items: cart.map(function (item) { return { product_id: item.product.id, quantity: item.quantity }; }),
+              p_payment_method: opsState.barCounterPaymentMethod,
+              p_request_id: requestId,
+              p_notes: notes || null
+            },
+            prefer: 'return=representation'
+          });
+          completed = true;
+          await loadBarData(true);
+        } else {
+          const now = new Date().toISOString();
+          const commandNumber = (opsData.barOrders || []).reduce(function (max, order) { return Math.max(max, Number(order.commandNumber || 100)); }, 100) + 1;
+          const order = {
+            id: localId('bar_counter_order'), commandNumber: commandNumber, customerName: 'Balcão', source: 'BALCAO',
+            status: 'FECHADA', subtotal: barCounterCartTotal(), serviceCharge: 0, discount: 0, total: barCounterCartTotal(),
+            paymentStatus: 'PAGO', paymentMethod: opsState.barCounterPaymentMethod, notes: notes, openedAt: now, closedAt: now,
+            counterRequestId: requestId
+          };
+          opsData.barOrders.unshift(order);
+          cart.forEach(function (entry) {
+            entry.product.stock = Number(entry.product.stock || 0) - entry.quantity;
+            opsData.barOrderItems.unshift({
+              id: localId('bar_counter_item'), orderId: order.id, productId: entry.product.id, productName: entry.product.name,
+              productCategory: entry.product.category, quantity: entry.quantity, unitPrice: entry.product.salePrice,
+              costPrice: entry.product.costPrice, source: 'BALCAO', status: 'ENTREGUE', notes: '', created: now, updated: now
+            });
+          });
+          opsData.barFinance.unshift({
+            id: localId('bar_counter_finance'), orderId: order.id, type: 'RECEITA', description: 'Venda de balcão #' + commandNumber,
+            counterparty: 'Balcão', category: 'Vendas', amount: order.total, dueDate: localDateString(), status: 'RECEBIDO',
+            paymentMethod: order.paymentMethod, paidAt: now, notes: notes, created: now
+          });
+          completed = true;
+        }
+        opsState.barCounterCart = [];
+        resetBarCounterRequest();
+        closeBarCounterSaleModal(true);
+        renderBarModule();
+        toast('Venda de balcão registrada e encerrada.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        opsState.barCounterSaving = false;
+        finishBarAction(actionKey);
+        if (!completed && $('barCounterSaleModal').classList.contains('show')) renderBarCounterSaleModal();
+      }
     }
 
     function setBarCommandTab(tab) {
@@ -47064,6 +48023,46 @@
         if (event.target.id === 'barEventModal') closeBarEventModal();
       });
       $('barNewLooseOrderBtn').addEventListener('click', function () { openBarNewOrderModal('loose'); });
+      $('barCounterNewSaleBtn').addEventListener('click', openBarCounterSaleModal);
+      $('barCounterSaleCloseBtn').addEventListener('click', function () { closeBarCounterSaleModal(false); });
+      $('barCounterCompleteBtn').addEventListener('click', completeBarCounterSaleAction);
+      $('barCounterClearBtn').addEventListener('click', function () {
+        if (opsState.barCounterSaving) return;
+        opsState.barCounterCart = [];
+        resetBarCounterRequest();
+        renderBarCounterSaleModal();
+      });
+      $('barCounterSearch').addEventListener('input', function () {
+        opsState.barCounterSearch = this.value;
+        renderBarCounterSaleModal();
+      });
+      $('barCounterCategory').addEventListener('change', function () {
+        opsState.barCounterCategory = this.value || 'todos';
+        renderBarCounterSaleModal();
+      });
+      $('barCounterNotes').addEventListener('input', function () {
+        if (!opsState.barCounterSaving) resetBarCounterRequest();
+      });
+      $('barCounterSaleModal').addEventListener('click', function (event) {
+        const productButton = event.target.closest('[data-bar-counter-product]');
+        if (productButton && !productButton.disabled) {
+          changeBarCounterProduct(productButton.dataset.barCounterProduct, 1);
+          return;
+        }
+        const stepButton = event.target.closest('[data-bar-counter-step]');
+        if (stepButton) {
+          changeBarCounterProduct(stepButton.dataset.barCounterProductId, Number(stepButton.dataset.barCounterStep || 0));
+          return;
+        }
+        const paymentButton = event.target.closest('[data-bar-counter-payment]');
+        if (paymentButton && !paymentButton.disabled) {
+          opsState.barCounterPaymentMethod = paymentButton.dataset.barCounterPayment || 'PIX';
+          resetBarCounterRequest();
+          renderBarCounterSaleModal();
+          return;
+        }
+        if (event.target.id === 'barCounterSaleModal') closeBarCounterSaleModal(false);
+      });
       $('barNewTableOrderBtn').addEventListener('click', function () { openBarNewOrderModal('table'); });
       $('barCreateTableBtn').addEventListener('click', function () { openBarTableModal(); });
       $('barQrAddTableBtn').addEventListener('click', function () { openBarTableModal(); });
@@ -47101,6 +48100,9 @@
         syncBarKitchenScreen();
       });
       document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && $('barCounterSaleModal').classList.contains('show')) {
+          closeBarCounterSaleModal(false);
+        }
         if (event.key === 'Escape' && $('barCustomerDetailModal').classList.contains('show')) {
           closeBarCustomerDetail();
         }
