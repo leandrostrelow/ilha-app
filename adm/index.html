@@ -26002,6 +26002,10 @@
               ? '<button class="small-btn" type="button" data-tournament-payment-pix="' + escapeHtml(onlinePayment.id) + '">Copiar Pix</button>'
               : '') +
             (onlinePending && onlineExpiry ? '<small>Reserva até ' + escapeHtml(onlineExpiry) + '</small>' : '') +
+            (onlinePayment && onlinePayment.remocao_permitida
+              ? '<button class="danger-btn" type="button" data-delete-unpaid-registration="' + escapeHtml(onlinePayment.id) + '" data-delete-unpaid-player="' + escapeHtml(player.jogador_id) + '">' +
+                (onlinePayment.grupo_id ? 'Excluir grupo não pago' : 'Excluir inscrição não paga') + '</button>'
+              : '') +
             (player.tentativa_incompleta
               ? '<button class="danger-btn" type="button" data-delete-incomplete-player="' + escapeHtml(player.jogador_id) + '">Excluir tentativa</button>'
               : '') +
@@ -26030,6 +26034,34 @@
         toast('Tentativa incompleta excluída. O CPF foi liberado para uma nova inscrição.');
       } catch (error) {
         toast(error.message || 'Não foi possível excluir esta tentativa.');
+      }
+    }
+
+    async function deleteUnpaidTournamentRegistration(paymentId, playerId) {
+      const payment = tournamentOnlinePayment(paymentId);
+      const player = state.data && state.data.jogadores.find(function (item) {
+        return String(item.jogador_id) === String(playerId);
+      });
+      if (!payment || payment.remocao_permitida !== true) {
+        return toast('Esta inscrição não é uma tentativa não paga removível. Atualize a página.');
+      }
+      const groupWarning = payment.grupo_id
+        ? '\n\nEsta cobrança pertence a uma inscrição em grupo. Todas as inscrições não pagas desse mesmo grupo serão removidas.'
+        : '';
+      if (!confirm(
+        'Excluir a inscrição não paga de ' + (player && player.nome || 'este jogador') + '?\n\n' +
+        'O Pix pendente será cancelado no Asaas e a tentativa ficará arquivada para auditoria.' + groupWarning +
+        '\n\nInscrições pagas ou confirmadas são bloqueadas automaticamente.'
+      )) return;
+      try {
+        await apiPost({
+          action: 'deleteUnpaidTournamentRegistration',
+          tournament_id: state.selectedTournamentId,
+          payment_id: paymentId
+        }, { returnData: true });
+        toast('Inscrição não paga excluída. A cobrança foi cancelada e o CPF foi liberado quando não havia outro vínculo.');
+      } catch (error) {
+        toast(error.message || 'Não foi possível excluir esta inscrição não paga.');
       }
     }
 
@@ -49533,6 +49565,15 @@
       const deleteIncompletePlayerBtn = event.target.closest('[data-delete-incomplete-player]');
       if (deleteIncompletePlayerBtn) {
         deleteIncompleteTournamentPlayer(deleteIncompletePlayerBtn.dataset.deleteIncompletePlayer);
+        return;
+      }
+
+      const deleteUnpaidRegistrationBtn = event.target.closest('[data-delete-unpaid-registration]');
+      if (deleteUnpaidRegistrationBtn) {
+        deleteUnpaidTournamentRegistration(
+          deleteUnpaidRegistrationBtn.dataset.deleteUnpaidRegistration,
+          deleteUnpaidRegistrationBtn.dataset.deleteUnpaidPlayer
+        );
         return;
       }
 

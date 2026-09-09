@@ -41,6 +41,7 @@ const writeActions = new Set([
   "setSpatialPortalOpen",
   "createSpatialCourtesyInvite",
   "deleteIncompleteTournamentAthlete",
+  "deleteUnpaidTournamentRegistration",
   "setLiveState",
 ]);
 
@@ -78,6 +79,108 @@ function serviceRoleKey() {
     return parsed.default || "";
   } catch (_error) {
     return currentKeys.startsWith("sb_secret_") ? currentKeys : "";
+  }
+}
+
+const REMOVABLE_ASAAS_PAYMENT_STATUSES = new Set(["PENDING", "OVERDUE"]);
+const ABSENT_ASAAS_PAYMENT_STATUSES = new Set(["CANCELLED", "DELETED"]);
+const LOCAL_UNPAID_PAYMENT_STATUSES = new Set(["CREATED", "RECONCILING", "PENDING", "FAILED", "OVERDUE", "CANCELLED"]);
+const ASAAS_TIMEOUT_MS = 6_000;
+
+function asaasConfig() {
+  const apiKey = Deno.env.get("ASAAS_API_KEY") || "";
+  const baseUrl = (Deno.env.get("ASAAS_BASE_URL") || "").replace(/\/+$/, "");
+  const environment = baseUrl === "https://api-sandbox.asaas.com/v3"
+    ? "SANDBOX"
+    : baseUrl === "https://api.asaas.com/v3"
+    ? "PRODUCTION"
+    : "UNKNOWN";
+  const keyMatchesEnvironment = environment === "SANDBOX"
+    ? apiKey.startsWith("$aact_hmlg_")
+    : environment === "PRODUCTION"
+    ? apiKey.startsWith("$aact_prod_")
+    : false;
+  if (!apiKey || !keyMatchesEnvironment) {
+    throw new ApiError("Configuração de pagamento indisponível.", 503);
+  }
+  return { apiKey, baseUrl, environment };
+}
+
+async function asaasRequest(path: string, init: RequestInit = {}) {
+  const { apiKey, baseUrl } = asaasConfig();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ASAAS_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${baseUrl}${path}`, {
+      ...init,
+      signal: controller.signal,
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "User-Agent": "IlhaTenis-Torneios/1.0",
+        "access_token": apiKey,
+        ...(init.headers || {}),
+      },
+    });
+    const body = await response.json().catch(() => ({})) as Row;
+    return { ok: response.ok, status: response.status, body };
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new ApiError("O Asaas demorou para responder. Nada foi excluído; tente novamente.", 504);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function normalizedAsaasStatus(payment: Row) {
+  const chargeback = firstObject(payment.chargeback);
+  const chargebackStatus = text(chargeback.status, 40).toUpperCase();
+  if (["REQUESTED", "IN_DISPUTE", "DISPUTE_LOST", "DONE"].includes(chargebackStatus)) return "CHARGEBACK";
+  const status = text(payment.status, 40).toUpperCase();
+  return status === "RECEIVED_IN_CASH" ? "RECEIVED" : status;
+}
+
+function cents(value: unknown) {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? Math.round(amount * 100) : null;
+}
+
+async function findAsaasPayment(payment: Row) {
+  const providerPaymentId = text(payment.provider_payment_id, 120);
+  if (providerPaymentId) {
+    const direct = await asaasRequest(`/payments/${encodeURIComponent(providerPaymentId)}`);
+    if (direct.status !== 404) return direct;
+    // A stale/mistyped provider ID must not be treated as proof that no charge
+    // exists. Confirm the immutable external reference before deleting locally.
+  }
+  const externalReference = text(payment.external_reference, 180);
+  if (!externalReference) return { ok: true, status: 200, body: {} as Row };
+  const result = await asaasRequest(`/payments?externalReference=${encodeURIComponent(externalReference)}&limit=2`);
+  if (!result.ok) return result;
+  const exact = (Array.isArray(result.body.data) ? result.body.data : []).filter((item) =>
+    item && typeof item === "object" && !Array.isArray(item) &&
+    text((item as Row).externalReference, 180) === externalReference
+  ) as Row[];
+  if (exact.length > 1) return { ok: true, status: 200, body: { duplicate_external_reference: true } as Row };
+  return { ok: true, status: 200, body: (exact[0] || {}) as Row };
+}
+
+function assertMatchingAsaasPayment(localPayment: Row, remotePayment: Row) {
+  const remoteId = text(remotePayment.id, 120);
+  const expectedId = text(localPayment.provider_payment_id, 120);
+  if (!remoteId || (expectedId && remoteId !== expectedId)) {
+    throw new ApiError("A cobrança encontrada no Asaas não corresponde à inscrição. A exclusão foi bloqueada.", 409);
+  }
+  if (text(remotePayment.externalReference, 180) !== text(localPayment.external_reference, 180)) {
+    throw new ApiError("A referência da cobrança no Asaas não confere. A exclusão foi bloqueada.", 409);
+  }
+  if (cents(remotePayment.value) !== cents(localPayment.amount)) {
+    throw new ApiError("O valor da cobrança no Asaas não confere. A exclusão foi bloqueada.", 409);
+  }
+  if (text(remotePayment.billingType, 30).toUpperCase() !== "PIX") {
+    throw new ApiError("A forma de pagamento no Asaas não confere. A exclusão foi bloqueada.", 409);
   }
 }
 
@@ -693,12 +796,13 @@ function mapRegistration(row: Row, includeCapabilities = false, registrationOrde
 }
 
 function mapOnlinePayment(row: Row) {
+  const status = text(row.status, 40).toUpperCase() || "CREATED";
   return {
     id: row.id,
     torneio_id: row.tournament_id,
     inscricao_id: row.registration_id,
     grupo_id: row.registration_group_id || "",
-    status: row.status || "CREATED",
+    status,
     forma_pagamento: row.billing_type || "",
     valor: Number(row.amount || 0),
     link_cobranca: row.invoice_url || "",
@@ -707,6 +811,7 @@ function mapOnlinePayment(row: Row) {
     reserva_expira_em: row.expires_at || "",
     pago_em: row.paid_at || "",
     criado_em: row.created_at || "",
+    remocao_permitida: !row.paid_at && LOCAL_UNPAID_PAYMENT_STATUSES.has(status),
   };
 }
 
@@ -1161,6 +1266,103 @@ async function deleteIncompleteTournamentAthlete(client: DbClient, actorId: stri
     null,
   );
   return { tournament_id: tournament.id, athlete_id: athleteId, deleted: true };
+}
+
+async function deleteUnpaidTournamentRegistration(client: DbClient, actorId: string, payload: Row) {
+  const tournament = await currentTournament(client, payload);
+  const paymentId = uuid(payload.payment_id || payload.pagamento_id || payload.id);
+  if (!paymentId) throw new ApiError("Cobrança inválida.");
+
+  const paymentResult = await client.from("tournament_payments")
+    .select("id,tournament_id,registration_id,registration_group_id,provider,provider_environment,provider_payment_id,external_reference,billing_type,status,amount,paid_at,provider_attempted_at,created_at,updated_at")
+    .eq("id", paymentId)
+    .eq("tournament_id", tournament.id)
+    .maybeSingle();
+  assertNoError(paymentResult.error);
+  const payment = firstObject(paymentResult.data);
+  if (!payment.id) throw new ApiError("Cobrança não encontrada. Atualize a página.", 404);
+
+  const localStatus = text(payment.status, 40).toUpperCase();
+  if (
+    payment.paid_at ||
+    !LOCAL_UNPAID_PAYMENT_STATUSES.has(localStatus) ||
+    text(payment.provider, 20).toUpperCase() !== "ASAAS" ||
+    text(payment.billing_type, 20).toUpperCase() !== "PIX"
+  ) {
+    throw new ApiError("Esta inscrição possui pagamento confirmado ou protegido e não pode ser excluída.", 409);
+  }
+  if (["CREATED", "RECONCILING"].includes(localStatus)) {
+    const attemptedAt = Date.parse(String(payment.provider_attempted_at || ""));
+    if (Number.isFinite(attemptedAt) && attemptedAt > Date.now() - 3 * 60 * 1000) {
+      throw new ApiError("A cobrança ainda está sendo criada. Aguarde alguns minutos e tente novamente.", 409);
+    }
+  }
+
+  const providerConfig = asaasConfig();
+  if (text(payment.provider_environment, 20).toUpperCase() !== providerConfig.environment) {
+    throw new ApiError("O ambiente da cobrança não confere com o Asaas atual. A exclusão foi bloqueada.", 409);
+  }
+
+  const remote = await findAsaasPayment(payment);
+  if (!remote.ok && remote.status !== 404) {
+    throw new ApiError("Não foi possível confirmar a cobrança no Asaas. Nada foi excluído.", 502);
+  }
+
+  const remotePayment = remote.ok ? firstObject(remote.body) : {};
+  if (remotePayment.duplicate_external_reference === true) {
+    throw new ApiError("Há mais de uma cobrança com esta referência no Asaas. A exclusão foi bloqueada para revisão.", 409);
+  }
+  const remoteId = text(remotePayment.id, 120);
+  const remoteStatus = normalizedAsaasStatus(remotePayment);
+  if (remoteId) assertMatchingAsaasPayment(payment, remotePayment);
+
+  const remoteIsAbsent = remote.status === 404 || (!remoteId && Object.keys(remotePayment).length === 0) ||
+    ABSENT_ASAAS_PAYMENT_STATUSES.has(remoteStatus);
+  if (!remoteIsAbsent && !REMOVABLE_ASAAS_PAYMENT_STATUSES.has(remoteStatus)) {
+    throw new ApiError("O pagamento já foi confirmado ou entrou em um estado protegido no Asaas. A inscrição não pode ser excluída.", 409);
+  }
+
+  if (REMOVABLE_ASAAS_PAYMENT_STATUSES.has(remoteStatus)) {
+    const removed = await asaasRequest(`/payments/${encodeURIComponent(remoteId)}`, { method: "DELETE" });
+    if (!removed.ok && removed.status !== 404) {
+      throw new ApiError("O Asaas não permitiu cancelar esta cobrança. Nada foi excluído do sistema.", 409);
+    }
+  }
+
+  const deletionResult = await client.rpc("delete_unpaid_tournament_registration", {
+    p_tournament_id: tournament.id,
+    p_payment_id: paymentId,
+    p_expected_provider_payment_id: text(payment.provider_payment_id, 120) || null,
+    p_actor_id: actorId || null,
+  });
+  if (deletionResult.error) {
+    const message = text(deletionResult.error.message, 500) || "Não foi possível excluir a inscrição não paga.";
+    throw new ApiError(message, String(deletionResult.error.code || "") === "P0002" ? 404 : 409);
+  }
+
+  await audit(
+    client,
+    actorId,
+    tournament.id,
+    "unpaid_tournament_registration",
+    paymentId,
+    "DELETE",
+    {
+      payment_id: paymentId,
+      registration_id: payment.registration_id || null,
+      registration_group_id: payment.registration_group_id || null,
+      provider_payment_id: payment.provider_payment_id || null,
+      status: payment.status || null,
+      amount: Number(payment.amount || 0),
+    },
+    firstObject(deletionResult.data),
+  );
+
+  return {
+    tournament_id: tournament.id,
+    payment_id: paymentId,
+    ...firstObject(deletionResult.data),
+  };
 }
 
 async function createRegistrationInvite(client: DbClient, actorId: string, payload: Row) {
@@ -1700,6 +1902,25 @@ async function deleteRegistration(client: DbClient, actorId: string, payload: Ro
   const lookup = await client.from("tournament_registrations").select("*").eq("id", id).maybeSingle();
   assertNoError(lookup.error);
   if (!lookup.data) throw new ApiError("Inscrição não encontrada.", 404);
+  const linkedPayments = await client.from("tournament_payments")
+    .select("id,status,paid_at")
+    .or([
+      `registration_id.eq.${id}`,
+      lookup.data.registration_group_id ? `registration_group_id.eq.${lookup.data.registration_group_id}` : "",
+    ].filter(Boolean).join(","))
+    .limit(1);
+  assertNoError(linkedPayments.error);
+  if ((linkedPayments.data || []).length) {
+    const linkedPayment = firstObject(linkedPayments.data?.[0]);
+    const protectedPayment = Boolean(linkedPayment.paid_at) ||
+      !LOCAL_UNPAID_PAYMENT_STATUSES.has(text(linkedPayment.status, 40).toUpperCase());
+    throw new ApiError(
+      protectedPayment
+        ? "Esta inscrição possui pagamento confirmado ou protegido e não pode ser excluída."
+        : "Esta inscrição possui uma cobrança pendente. Use “Excluir inscrição não paga” para cancelar o Pix com segurança.",
+      409,
+    );
+  }
   const result = await client.from("tournament_registrations").delete().eq("id", id);
   assertNoError(result.error);
   await audit(client, actorId, lookup.data.tournament_id, "registration", id, "DELETE", lookup.data, null);
@@ -2268,7 +2489,7 @@ Deno.serve(async (request) => {
     else if (action === "saveRegistration") {
       result = await saveRegistration(client, profile.id, payload);
       responseTournamentId = (result as Row).tournament_id;
-    } else if (action === "deleteRegistration") result = await deleteRegistration(client, profile.id, payload);
+    } else if (action === "deleteRegistration") result = await deleteRegistration(trustedClient, profile.id, payload);
     else if (action === "generateBracket") result = await generateBracket(client, profile.id, payload);
     else if (action === "saveMatch") result = await saveOneMatch(client, profile.id, payload, firstObject(payload.jogo, payload.match, payload));
     else if (action === "saveMatches") result = await saveMatches(client, profile.id, payload);
@@ -2306,6 +2527,10 @@ Deno.serve(async (request) => {
     }
     else if (action === "deleteIncompleteTournamentAthlete") {
       result = await deleteIncompleteTournamentAthlete(trustedClient, profile.id, payload);
+      responseTournamentId = (result as Row).tournament_id;
+    }
+    else if (action === "deleteUnpaidTournamentRegistration") {
+      result = await deleteUnpaidTournamentRegistration(trustedClient, profile.id, payload);
       responseTournamentId = (result as Row).tournament_id;
     }
     else if (action === "deleteRegistrationInvite") {
