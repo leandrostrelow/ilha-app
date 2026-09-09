@@ -20587,6 +20587,30 @@
       stroke-width: 2;
     }
 
+    .bar-counter-command-actions {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bar-counter-command-action {
+      border: 0;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .bar-counter-command-action.is-history {
+      color: #fff;
+      background: rgba(255, 255, 255, .14);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25);
+    }
+
+    .bar-counter-command-action:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 2px;
+    }
+
     .bar-counter-cart-head,
     .bar-counter-modal-footer {
       display: flex;
@@ -20650,7 +20674,7 @@
     }
 
     .bar-counter-modal-head .bar-counter-kicker {
-      color: var(--teal);
+      color: #b8ff45;
     }
 
     .bar-counter-modal-body {
@@ -20912,6 +20936,226 @@
       font-size: 20px;
     }
 
+    .bar-counter-preparation-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      color: #8c5b00;
+      font-size: 8px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .bar-counter-history-modal {
+      width: min(980px, 100%);
+      max-height: calc(100dvh - 24px);
+      display: flex;
+      min-height: 0;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .bar-counter-history-head,
+    .bar-counter-history-footnote {
+      flex: 0 0 auto;
+    }
+
+    .bar-counter-history-body {
+      min-height: 0;
+      flex: 1 1 auto;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      background: #f4f8f9;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .bar-counter-history-tools {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(170px, .28fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .bar-counter-history-filter {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+      padding: 0 10px;
+      border: 1px solid #cfdee2;
+      border-radius: 11px;
+      background: #fff;
+    }
+
+    .bar-counter-history-filter span {
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .bar-counter-history-filter select {
+      width: 100%;
+      min-width: 0;
+      height: 44px;
+      padding: 0 4px;
+      border: 0;
+      outline: 0;
+      background: #fff;
+      color: var(--text);
+      font: 850 11px/1 var(--font, inherit);
+    }
+
+    .bar-counter-history-summary {
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .bar-counter-history-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .bar-counter-history-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      padding: 14px;
+      border: 1px solid #d8e5e8;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 5px 14px rgba(20, 33, 58, .04);
+    }
+
+    .bar-counter-history-row.is-cancelled {
+      border-color: #efc7cb;
+      background: #fffafa;
+    }
+
+    .bar-counter-history-copy,
+    .bar-counter-history-meta,
+    .bar-counter-history-side {
+      min-width: 0;
+      display: grid;
+      gap: 5px;
+    }
+
+    .bar-counter-history-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .bar-counter-history-heading strong {
+      font-size: 14px;
+    }
+
+    .bar-counter-history-heading time,
+    .bar-counter-history-meta small {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 750;
+    }
+
+    .bar-counter-history-items {
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .bar-counter-history-note {
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.4;
+    }
+
+    .bar-counter-history-cancel-reason {
+      color: #9b2632;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .bar-counter-history-side {
+      align-content: space-between;
+      justify-items: end;
+      text-align: right;
+    }
+
+    .bar-counter-history-total {
+      font-size: 16px;
+      font-weight: 950;
+    }
+
+    .bar-counter-history-actions {
+      display: grid;
+      grid-template-columns: repeat(2, auto);
+      gap: 6px;
+    }
+
+    .bar-counter-history-actions button {
+      min-height: 34px;
+      padding: 0 11px;
+      border: 1px solid #cbdde1;
+      border-radius: 9px;
+      background: #fff;
+      color: var(--text);
+      font: 900 10px/1 var(--font, inherit);
+      cursor: pointer;
+    }
+
+    .bar-counter-history-actions button[data-bar-counter-sale-cancel] {
+      border-color: #f1c2c6;
+      color: #ad2f3b;
+      background: #fff7f7;
+    }
+
+    .bar-counter-history-footnote {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 11px 18px calc(11px + env(safe-area-inset-bottom));
+      border-top: 1px solid #dce7e9;
+      color: var(--muted);
+      background: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .bar-counter-history-footnote svg {
+      width: 17px;
+      height: 17px;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: var(--teal);
+      stroke-width: 2;
+    }
+
+    .bar-counter-cancel-modal { width: min(560px, 100%); }
+    .bar-counter-cancel-body { display: grid; gap: 14px; }
+
+    .bar-counter-cancel-warning {
+      display: grid;
+      gap: 5px;
+      padding: 13px;
+      border: 1px solid #f0c4c8;
+      border-radius: 12px;
+      color: #79232c;
+      background: #fff5f5;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .bar-counter-cancel-body textarea {
+      width: 100%;
+      resize: vertical;
+    }
+
     @media (max-width: 760px) {
       .bar-counter-sale-modal {
         width: 100%;
@@ -20941,12 +21185,28 @@
       .bar-counter-modal-footer {
         justify-content: space-between;
       }
+
+      .bar-counter-history-modal {
+        width: 100%;
+        height: calc(100dvh - 16px);
+        max-height: calc(100dvh - 16px);
+        border-radius: 16px;
+      }
+
+      .bar-counter-history-tools { grid-template-columns: minmax(0, 1fr); }
+      .bar-counter-history-row { grid-template-columns: minmax(0, 1fr); }
+      .bar-counter-history-side { justify-items: stretch; text-align: left; }
+      .bar-counter-history-meta { grid-template-columns: repeat(2, minmax(0, max-content)); align-items: center; }
+      .bar-counter-history-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     @media (max-width: 480px) {
       .bar-counter-product-tabs { margin-right: -2px; }
       .bar-counter-modal-footer { gap: 10px; padding-right: 12px; padding-left: 12px; }
       .bar-counter-complete { min-width: 0; padding: 0 13px; }
+      .bar-counter-command-actions { align-items: stretch; flex-direction: column; }
+      .bar-counter-command-action { justify-content: center; }
+      .bar-counter-history-actions { grid-template-columns: minmax(0, 1fr); }
     }
   </style>
 </head>
@@ -22830,6 +23090,39 @@
         <div class="bar-counter-modal-footer">
           <div><span>Total da venda</span><strong class="has-money-value" id="barCounterCartTotal">R$ 0,00</strong></div>
           <button class="bar-counter-complete" type="button" id="barCounterCompleteBtn" disabled><svg><use href="#bar-icon-check"></use></svg><span>Finalizar venda</span></button>
+        </div>
+      </div>
+    </div>
+    <div class="admin-modal-overlay" id="barCounterHistoryModal" aria-hidden="true">
+      <div class="admin-modal bar-counter-history-modal" role="dialog" aria-modal="true" aria-labelledby="barCounterHistoryTitle">
+        <div class="admin-modal-head bar-counter-history-head">
+          <div><span class="bar-counter-kicker">BALCÃO RÁPIDO</span><h2 id="barCounterHistoryTitle">Histórico de vendas</h2><div class="muted">Consulte, corrija ou cancele uma venda sem apagar o registro.</div></div>
+          <button class="ghost-btn bar-modal-close" type="button" id="barCounterHistoryCloseBtn" aria-label="Fechar histórico do balcão"><svg><use href="#bar-icon-close"></use></svg><span>Fechar</span></button>
+        </div>
+        <div class="admin-modal-body bar-counter-history-body">
+          <div class="bar-counter-history-tools">
+            <label class="bar-counter-search" for="barCounterHistorySearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><input id="barCounterHistorySearch" type="search" placeholder="Buscar por número, item ou observação" autocomplete="off" /></label>
+            <label class="bar-counter-history-filter" for="barCounterHistoryStatus"><span>Status</span><select id="barCounterHistoryStatus"><option value="TODOS">Todas</option><option value="FECHADA">Concluídas</option><option value="CANCELADA">Canceladas</option></select></label>
+          </div>
+          <div class="bar-counter-history-summary" id="barCounterHistorySummary">Carregando histórico…</div>
+          <div class="bar-counter-history-list" id="barCounterHistoryList"></div>
+        </div>
+        <div class="bar-counter-history-footnote"><svg aria-hidden="true"><use href="#admin-icon-receipt"></use></svg><span>“Excluir” cancela a venda e anula o recebimento interno. Itens que ainda não entraram em preparo voltam ao estoque; o registro continua salvo para conferência.</span></div>
+      </div>
+    </div>
+    <div class="admin-modal-overlay" id="barCounterCancelModal" aria-hidden="true">
+      <div class="admin-modal bar-counter-cancel-modal" role="dialog" aria-modal="true" aria-labelledby="barCounterCancelTitle">
+        <div class="admin-modal-head">
+          <div><span class="bar-counter-kicker">CONFIRMAÇÃO</span><h2 id="barCounterCancelTitle">Excluir venda do balcão?</h2><div class="muted" id="barCounterCancelSaleLabel">A venda será cancelada sem apagar o histórico.</div></div>
+          <button class="ghost-btn bar-modal-close" type="button" id="barCounterCancelCloseBtn" aria-label="Fechar cancelamento"><svg><use href="#bar-icon-close"></use></svg><span>Fechar</span></button>
+        </div>
+        <div class="admin-modal-body bar-counter-cancel-body">
+          <div class="bar-counter-cancel-warning"><strong>O que o sistema fará</strong><span id="barCounterCancelImpact">Devolverá os produtos ao estoque e marcará o recebimento como cancelado. Em pagamentos por Pix ou cartão, faça também a devolução ao cliente pelo banco ou pela maquininha.</span></div>
+          <label class="field" for="barCounterCancelReason"><span>Motivo do cancelamento</span><textarea id="barCounterCancelReason" rows="3" maxlength="500" placeholder="Ex.: produto lançado errado" required></textarea></label>
+        </div>
+        <div class="modal-actions">
+          <button class="ghost-btn" type="button" id="barCounterCancelBackBtn">Voltar</button>
+          <button class="danger-btn" type="button" id="barCounterCancelConfirm">Cancelar venda e estornar</button>
         </div>
       </div>
     </div>
@@ -30458,10 +30751,17 @@
       barOrderCartSaving: false,
       barCounterCart: [],
       barCounterSearch: '',
-      barCounterCategory: '',
+      barCounterCategory: '__all__',
       barCounterPaymentMethod: 'PIX',
       barCounterSaving: false,
       barCounterRequestId: '',
+      barCounterEditingOrderId: '',
+      barCounterHistoryLoaded: false,
+      barCounterHistoryLoading: false,
+      barCounterHistorySearch: '',
+      barCounterHistoryStatus: 'TODOS',
+      barCounterCancelOrderId: '',
+      barCounterCancelRequestId: '',
       barCheckoutGroups: [],
       selectedBarCheckoutGroupIndex: -1,
       selectedBarSplitItemId: '',
@@ -30721,6 +31021,7 @@
     let courtDraftTimes = ['14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
     let barRefreshTimer = null;
     let barHistoryLoadPromise = null;
+    let barCounterHistoryLoadPromise = null;
     const barActionLocks = new Set();
     let barNotificationAudio = null;
     let adminNotificationAudio = null;
@@ -31466,7 +31767,11 @@
         notes: row.notes || '',
         openedBy: row.opened_by || '',
         openedAt: row.opened_at || row.created_at || '',
-        closedAt: row.closed_at || ''
+        closedAt: row.closed_at || '',
+        updatedAt: row.updated_at || row.created_at || '',
+        counterLastEditedAt: row.counter_last_edited_at || '',
+        counterCancelReason: row.counter_cancel_reason || '',
+        counterCancelledAt: row.counter_cancelled_at || ''
       };
     }
 
@@ -31491,6 +31796,8 @@
         splitSourceItemId: row.split_source_item_id || '',
         splitWith: row.split_with || '',
         billingOnly: row.billing_only === true,
+        counterRevision: Number(row.counter_revision || 0),
+        requiresProduction: row.requires_production === true,
         created: row.created_at || '',
         updated: row.updated_at || row.created_at || ''
       };
@@ -31597,6 +31904,8 @@
       opsState.barKnownServiceRequestIds = null;
       opsState.barHistoryLoaded = false;
       opsState.barHistoryLoading = false;
+      opsState.barCounterHistoryLoaded = false;
+      opsState.barCounterHistoryLoading = false;
       opsState.barDataForceQueued = false;
     }
 
@@ -31651,7 +31960,37 @@
       return pages.reduce(function (rows, page) { return rows.concat(page || []); }, []);
     }
 
-    async function fetchBarOperationalSnapshot() {
+    function barCounterPendingKitchenOrderIds() {
+      const orderIds = new Set((opsData.barOrderItems || []).filter(function (item) {
+        return String(item.source || '').toUpperCase() === 'BALCAO'
+          && ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(String(item.status || '').toUpperCase());
+      }).map(function (item) { return String(item.orderId || ''); }).filter(Boolean));
+      return new Set((opsData.barOrders || []).filter(function (order) {
+        return orderIds.has(String(order.id))
+          && String(order.source || '').toUpperCase() === 'BALCAO'
+          && String(order.status || '').toUpperCase() === 'FECHADA';
+      }).map(function (order) { return String(order.id); }));
+    }
+
+    async function fetchBarCounterKitchenBacklogOrders(additionalOrderIds) {
+      if (!canReadBarDataset('items') || !canReadBarDataset('orders')) return [];
+      const itemRows = await barDatasetRequest(
+        'items',
+        'bar_order_items?select=order_id&source=eq.BALCAO&status=in.(SOLICITADO,EM_PREPARO,PRONTO)&order=created_at.asc,id.asc&limit=500'
+      );
+      const pendingOrderIds = (itemRows || []).map(function (item) { return item.order_id; });
+      const chunks = barOrderIdChunks(pendingOrderIds.concat(Array.from(additionalOrderIds || [])));
+      if (!chunks.length) return [];
+      const pages = await Promise.all(chunks.map(function (chunk) {
+        return barDatasetRequest(
+          'orders',
+          'bar_orders?select=*,bar_tables(number,name)&id=in.(' + chunk.join(',') + ')&source=eq.BALCAO&status=in.(FECHADA,CANCELADA)&order=opened_at.asc,id.asc'
+        );
+      }));
+      return pages.reduce(function (rows, page) { return rows.concat(page || []); }, []);
+    }
+
+    async function fetchBarOperationalSnapshot(previousPendingCounterOrderIds) {
       const today = barOperationalDateString();
       const dayStart = encodeURIComponent(today + 'T00:00:00-03:00');
       const baseResults = await Promise.all([
@@ -31666,9 +32005,10 @@
         barDatasetRequest('service', 'bar_service_requests?select=*&order=created_at.desc&limit=200'),
         barDatasetRequest('settings', 'bar_runtime_settings?select=*&id=eq.true&limit=1'),
         barDatasetRequest('settings', 'bar_tv_event_art?select=*&id=eq.true&limit=1'),
-        barDatasetRequest('orders', 'bar_orders?select=*,bar_tables(number,name)&source=eq.BALCAO&status=eq.FECHADA&closed_at=gte.' + dayStart + '&order=closed_at.desc,id.desc', true)
+        barDatasetRequest('orders', 'bar_orders?select=*,bar_tables(number,name)&source=eq.BALCAO&status=in.(FECHADA,CANCELADA)&closed_at=gte.' + dayStart + '&order=closed_at.desc,id.desc', true),
+        fetchBarCounterKitchenBacklogOrders(previousPendingCounterOrderIds)
       ]);
-      const orders = barUniqueRows((baseResults[2] || []).concat(baseResults[3] || [], baseResults[11] || []));
+      const orders = barUniqueRows((baseResults[2] || []).concat(baseResults[3] || [], baseResults[11] || [], baseResults[12] || []));
       const orderIds = orders.map(function (order) { return order.id; });
       const detailResults = await Promise.all([
         barOrderScopedRows('items', 'bar_order_items?select=*,bar_products(category)', orderIds, '&order=created_at.desc,id.desc'),
@@ -31710,7 +32050,8 @@
       const loadEpoch = adminSessionEpoch;
       opsState.barDataLoading = true;
       try {
-        const snapshot = await fetchBarOperationalSnapshot();
+        const previousPendingCounterOrderIds = barCounterPendingKitchenOrderIds();
+        const snapshot = await fetchBarOperationalSnapshot(previousPendingCounterOrderIds);
         if (loadEpoch !== adminSessionEpoch) return false;
         if (canReadBarDataset('products')) opsData.barProducts = snapshot.products.map(mapBarProductRow);
         if (canReadBarDataset('tables')) opsData.barTables = snapshot.tables.map(mapBarTableRow);
@@ -31725,7 +32066,9 @@
         const liveOrderIds = new Set(liveOrders.map(function (order) { return String(order.id); }));
         const today = barOperationalDateString();
         const shouldReplaceLiveOrder = function (order) {
-          return liveOrderIds.has(String(order.id)) || barOrderIsOpen(order) ||
+          return liveOrderIds.has(String(order.id))
+            || previousPendingCounterOrderIds.has(String(order.id))
+            || barOrderIsOpen(order) ||
             (String(order.status || '').toUpperCase() === 'FECHADA' && barOperationalDateKey(order.closedAt || order.openedAt) === today);
         };
         if (canReadBarDataset('orders')) {
@@ -31736,21 +32079,27 @@
         if (canReadBarDataset('items')) {
           const liveItems = snapshot.items.map(mapBarOrderItemRow);
           opsData.barOrderItems = opsState.barHistoryLoaded
-            ? mergeBarSnapshotRows(opsData.barOrderItems, liveItems, function (item) { return liveOrderIds.has(String(item.orderId)); })
+            ? mergeBarSnapshotRows(opsData.barOrderItems, liveItems, function (item) {
+              return liveOrderIds.has(String(item.orderId)) || previousPendingCounterOrderIds.has(String(item.orderId));
+            })
             : liveItems;
         }
         if (canReadBarDataset('finance')) {
           const liveFinance = snapshot.finance.map(mapBarFinanceRow);
           opsData.barFinance = opsState.barHistoryLoaded
             ? mergeBarSnapshotRows(opsData.barFinance, liveFinance, function (entry) {
-              return liveOrderIds.has(String(entry.orderId)) || barFinanceEntryDateKey(entry) === today;
+              return liveOrderIds.has(String(entry.orderId))
+                || previousPendingCounterOrderIds.has(String(entry.orderId))
+                || barFinanceEntryDateKey(entry) === today;
             })
             : liveFinance;
         }
         if (canReadBarDataset('paymentParts')) {
           const liveParts = snapshot.paymentParts.map(mapBarOrderPaymentPartRow);
           opsData.barOrderPaymentParts = opsState.barHistoryLoaded
-            ? mergeBarSnapshotRows(opsData.barOrderPaymentParts, liveParts, function (part) { return liveOrderIds.has(String(part.orderId)); })
+            ? mergeBarSnapshotRows(opsData.barOrderPaymentParts, liveParts, function (part) {
+              return liveOrderIds.has(String(part.orderId)) || previousPendingCounterOrderIds.has(String(part.orderId));
+            })
             : liveParts;
         }
         if (canReadBarDataset('service')) opsData.barServiceRequests = snapshot.serviceRequests.map(mapBarServiceRequestRow);
@@ -31791,14 +32140,17 @@
     }
 
     function barOperationalSignature() {
+      const pendingCounterOrderIds = barCounterPendingKitchenOrderIds();
       const operationalOrderIds = new Set((opsData.barOrders || []).filter(function (order) {
-        return barOrderIsOpen(order) || barOperationalDateKey(order.closedAt || order.openedAt) === barOperationalDateString();
+        return barOrderIsOpen(order)
+          || pendingCounterOrderIds.has(String(order.id))
+          || barOperationalDateKey(order.closedAt || order.openedAt) === barOperationalDateString();
       }).map(function (order) { return String(order.id); }));
       return JSON.stringify({
         orders: (opsData.barOrders || []).filter(function (order) {
           return operationalOrderIds.has(String(order.id));
         }).map(function (order) {
-          return [order.id, order.status, order.paymentStatus, order.total, order.closedAt, order.updated];
+          return [order.id, order.status, order.paymentStatus, order.total, order.closedAt, order.updatedAt];
         }),
         items: (opsData.barOrderItems || []).filter(function (item) {
           return operationalOrderIds.has(String(item.orderId));
@@ -31823,13 +32175,15 @@
       try {
         const today = barOperationalDateString();
         const dayStart = encodeURIComponent(today + 'T00:00:00-03:00');
+        const previousPendingCounterOrderIds = barCounterPendingKitchenOrderIds();
         const baseResults = await Promise.all([
           barDatasetRequest('orders', 'bar_orders?select=*,bar_tables(number,name)&status=in.(ABERTA,EM_PREPARO,PRONTA)&order=opened_at.desc,id.desc'),
           barDatasetRequest('orders', 'bar_orders?select=*,bar_tables(number,name)&status=eq.FECHADA&closed_at=gte.' + dayStart + '&order=closed_at.desc,id.desc&limit=200'),
           barDatasetRequest('service', 'bar_service_requests?select=*&status=in.(PENDENTE,EM_ATENDIMENTO)&order=created_at.desc&limit=100'),
-          barDatasetRequest('orders', 'bar_orders?select=*,bar_tables(number,name)&source=eq.BALCAO&status=eq.FECHADA&closed_at=gte.' + dayStart + '&order=closed_at.desc,id.desc', true)
+          barDatasetRequest('orders', 'bar_orders?select=*,bar_tables(number,name)&source=eq.BALCAO&status=in.(FECHADA,CANCELADA)&closed_at=gte.' + dayStart + '&order=closed_at.desc,id.desc', true),
+          fetchBarCounterKitchenBacklogOrders(previousPendingCounterOrderIds)
         ]);
-        const liveOrders = barUniqueRows((baseResults[0] || []).concat(baseResults[1] || [], baseResults[3] || [])).map(mapBarOrderRow);
+        const liveOrders = barUniqueRows((baseResults[0] || []).concat(baseResults[1] || [], baseResults[3] || [], baseResults[4] || [])).map(mapBarOrderRow);
         const liveOrderIds = liveOrders.map(function (order) { return String(order.id); }).filter(Boolean);
         const detailResults = await Promise.all([
           barOrderScopedRows('items', 'bar_order_items?select=*,bar_products(category)', liveOrderIds, '&order=created_at.desc,id.desc'),
@@ -31839,7 +32193,9 @@
         ]);
         if (loadEpoch !== adminSessionEpoch) return false;
         const previousLiveOrderIds = new Set((opsData.barOrders || []).filter(function (order) {
-          return barOrderIsOpen(order) || (String(order.status || '').toUpperCase() === 'FECHADA' && barOperationalDateKey(order.closedAt || order.openedAt) === today);
+          return barOrderIsOpen(order)
+            || previousPendingCounterOrderIds.has(String(order.id))
+            || (String(order.status || '').toUpperCase() === 'FECHADA' && barOperationalDateKey(order.closedAt || order.openedAt) === today);
         }).map(function (order) { return String(order.id); }));
         const currentLiveOrderIds = new Set(liveOrderIds);
         const replaceOrderIds = new Set(Array.from(previousLiveOrderIds).concat(Array.from(currentLiveOrderIds)));
@@ -31925,6 +32281,55 @@
         if (barHistoryLoadPromise === task) barHistoryLoadPromise = null;
       });
       barHistoryLoadPromise = task;
+      return task;
+    }
+
+    function loadBarCounterHistoryData(force) {
+      if (!adminSession || !adminSession.access_token) return Promise.resolve(false);
+      if (isAdminDemoMode()) {
+        opsState.barCounterHistoryLoaded = true;
+        return Promise.resolve(true);
+      }
+      if (opsState.barCounterHistoryLoaded && !force) return Promise.resolve(false);
+      if (barCounterHistoryLoadPromise) return barCounterHistoryLoadPromise;
+      const loadEpoch = adminSessionEpoch;
+      opsState.barCounterHistoryLoading = true;
+      const task = barDatasetRequest(
+        'orders',
+        'bar_orders?select=*,bar_tables(number,name)&source=eq.BALCAO&status=in.(FECHADA,CANCELADA)&order=closed_at.desc,id.desc',
+        true
+      ).then(async function (orderRows) {
+        if (loadEpoch !== adminSessionEpoch) return false;
+        const orders = (orderRows || []).map(mapBarOrderRow);
+        const orderIds = orders.map(function (order) { return order.id; });
+        const details = await Promise.all([
+          barOrderScopedRows('items', 'bar_order_items?select=*,bar_products(category)', orderIds, '&order=created_at.desc,id.desc'),
+          barOrderScopedRows('finance', 'bar_financial_entries?select=*', orderIds, '&order=created_at.desc')
+        ]);
+        if (loadEpoch !== adminSessionEpoch) return false;
+        const fetchedIds = new Set(orderIds.map(String));
+        opsData.barOrders = mergeBarSnapshotRows(opsData.barOrders, orders, function (order) {
+          return fetchedIds.has(String(order.id));
+        });
+        opsData.barOrderItems = mergeBarSnapshotRows(opsData.barOrderItems, (details[0] || []).map(mapBarOrderItemRow), function (item) {
+          return fetchedIds.has(String(item.orderId));
+        });
+        opsData.barFinance = mergeBarSnapshotRows(opsData.barFinance, (details[1] || []).map(mapBarFinanceRow), function (entry) {
+          return fetchedIds.has(String(entry.orderId));
+        });
+        opsState.barCounterHistoryLoaded = true;
+        opsState.barLoadError = '';
+        return true;
+      }).catch(function (error) {
+        if (loadEpoch !== adminSessionEpoch) return false;
+        opsState.barLoadError = error && error.message ? error.message : 'Não foi possível carregar o histórico do balcão.';
+        console.warn('Não foi possível carregar o histórico do balcão.', opsState.barLoadError);
+        return false;
+      }).finally(function () {
+        if (loadEpoch === adminSessionEpoch) opsState.barCounterHistoryLoading = false;
+        if (barCounterHistoryLoadPromise === task) barCounterHistoryLoadPromise = null;
+      });
+      barCounterHistoryLoadPromise = task;
       return task;
     }
 
@@ -35023,7 +35428,7 @@
     }
 
     function barOrderSourceLabel(source) {
-      const labels = { QR_MESA: 'QR da mesa', QR_CARTAO: 'Cartão QR', EQUIPE: 'Equipe' };
+      const labels = { QR_MESA: 'QR da mesa', QR_CARTAO: 'Cartão QR', EQUIPE: 'Equipe', BALCAO: 'Balcão' };
       return labels[String(source || '').toUpperCase()] || 'Equipe';
     }
 
@@ -35077,6 +35482,9 @@
 
     function barKitchenIsPortionItem(item) {
       if (item && item.billingOnly) return false;
+      if (String(item && item.source || '').toUpperCase() === 'BALCAO' && Number(item && item.counterRevision || 0) > 0) {
+        return item.requiresProduction === true;
+      }
       const product = barProductById(item && item.productId);
       return barProductRequiresProduction({
         name: item && item.productName || product && product.name || '',
@@ -35088,10 +35496,11 @@
       return opsData.barOrderItems.filter(function (item) {
         const status = String(item.status || '').toUpperCase();
         const order = barOrderById(item.orderId);
+        const counterSale = order && String(order.source || '').toUpperCase() === 'BALCAO' && String(order.status || '').toUpperCase() === 'FECHADA';
         return ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(status) &&
           !(isPublicBarItem(item) && status === 'SOLICITADO') &&
           barKitchenIsPortionItem(item) &&
-          (!order || barOrderIsOpen(order));
+          (!order || barOrderIsOpen(order) || counterSale);
       }).sort(barKitchenQueueCompare);
     }
 
@@ -35127,9 +35536,10 @@
         const status = String(item.status || '').toUpperCase();
         const order = barOrderById(item.orderId);
         const orderClosed = order && String(order.status || '').toUpperCase() === 'FECHADA';
+        const counterSale = order && String(order.source || '').toUpperCase() === 'BALCAO';
         return barKitchenIsPortionItem(item) &&
           barKitchenDayKey(item.updated || item.created) === today &&
-          (status === 'ENTREGUE' || (orderClosed && ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(status)));
+          (status === 'ENTREGUE' || (!counterSale && orderClosed && ['SOLICITADO', 'EM_PREPARO', 'PRONTO'].includes(status)));
       }).sort(function (a, b) {
         const updatedDifference = barKitchenQueueTimestamp({ created: b.updated || b.created }) - barKitchenQueueTimestamp({ created: a.updated || a.created });
         if (updatedDifference) return updatedDifference;
@@ -35711,9 +36121,9 @@
       const count = orders.length;
       const total = orders.reduce(function (sum, order) { return sum + barOrderTotal(order); }, 0);
       const countLabel = count + (count === 1 ? ' venda hoje' : ' vendas hoje');
-      return '<article class="bar-command-unified-card bar-counter-command-card has-money-value" data-bar-counter-open>' +
+      return '<article class="bar-command-unified-card bar-counter-command-card has-money-value">' +
         '<button class="bar-command-unified-main" type="button" data-bar-counter-open aria-label="Abrir nova venda no balcão"><span class="bar-command-unified-icon" aria-hidden="true"><svg><use href="#admin-icon-receipt"></use></svg></span><span class="bar-command-unified-copy"><span class="bar-command-unified-heading"><strong>Balcão rápido</strong></span><small>' + escapeHtml(countLabel) + '</small></span></button>' +
-        '<div class="bar-command-unified-footer"><div class="bar-command-unified-alerts"><span class="bar-counter-command-action"><svg aria-hidden="true"><use href="#bar-icon-plus"></use></svg>Nova venda</span></div><div class="bar-command-unified-side"><b class="bar-command-unified-value">' + money(total) + '</b></div></div>' +
+        '<div class="bar-command-unified-footer"><div class="bar-counter-command-actions"><button class="bar-counter-command-action" type="button" data-bar-counter-open><svg aria-hidden="true"><use href="#bar-icon-plus"></use></svg>Nova venda</button><button class="bar-counter-command-action is-history" id="barCounterHistoryBtn" type="button" data-bar-counter-history-open><svg aria-hidden="true"><use href="#admin-icon-receipt"></use></svg>Histórico</button></div><div class="bar-command-unified-side"><b class="bar-command-unified-value">' + money(total) + '</b></div></div>' +
       '</article>';
     }
 
@@ -35896,7 +36306,7 @@
 
     function barDayClosingPaymentsForOrder(order, filter) {
       let payments = barReceivedPaymentsForOrder(order);
-      if (!payments.length) {
+      if (!payments.length && String(order && order.source || '').toUpperCase() !== 'BALCAO') {
         payments = [{
           orderId: order.id,
           amount: barOrderTotal(order),
@@ -36560,15 +36970,15 @@
       const value = normalizeMatchText(category || '');
       if (value.includes('cervej') || value.includes('chopp')) return 'beer';
       if (value.includes('bebid') || value.includes('agua') || value.includes('suco') || value.includes('refriger') || value.includes('isoton')) return 'drink';
-      if (value.includes('lanche') || value.includes('sandu') || value.includes('hamburg') || value.includes('torrada')) return 'snack';
-      if (value.includes('almoc') || value.includes('refeic') || value.includes('porc') || value.includes('frita') || value.includes('petisco')) return 'portion';
+      if (value.includes('lanche') || value.includes('sandu') || value.includes('hamburg') || value.includes('torrada') || value.includes('salgad')) return 'snack';
+      if (value.includes('almoc') || value.includes('refeic') || value.includes('comida') || value.includes('janta') || value.includes('prato') || value.includes('pizza') || value.includes('porc') || value.includes('frita') || value.includes('petisco')) return 'portion';
       if (value.includes('doce') || value.includes('chocolate') || value.includes('sorvete') || value.includes('bala')) return 'candy';
       return 'default';
     }
 
     function barProductCategoryLabel(category) {
       const value = normalizeMatchText(category || '');
-      if (value.includes('almoc') || value.includes('refeic')) return 'Refeição';
+      if (value.includes('almoc') || value.includes('refeic') || value.includes('comida') || value.includes('janta') || value.includes('prato')) return 'Refeição';
       return category || 'Outros';
     }
 
@@ -36576,13 +36986,13 @@
       const value = normalizeMatchText(category || '');
       if (value.includes('cervej') || value.includes('chopp')) return 0;
       if (value.includes('refriger')) return 1;
-      if (value.includes('refeic') || value.includes('almoc')) return 2;
-      if (value.includes('porc')) return 3;
-      if (value.includes('bebid')) return 4;
-      if (value.includes('lanche')) return 5;
-      if (value.includes('agua')) return 6;
-      if (value.includes('doce')) return 7;
-      return 8;
+      if (value.includes('bebid')) return 2;
+      if (value.includes('agua')) return 3;
+      if (value.includes('doce')) return 4;
+      if (value.includes('lanche') || value.includes('sandu') || value.includes('hamburg') || value.includes('torrada') || value.includes('salgad')) return 90;
+      if (value.includes('porc') || value.includes('frita') || value.includes('petisco')) return 91;
+      if (value.includes('refeic') || value.includes('almoc') || value.includes('comida') || value.includes('janta') || value.includes('prato') || value.includes('pizza')) return 92;
+      return 5;
     }
 
     function barProductRequiresProduction(product) {
@@ -36590,6 +37000,11 @@
       const name = normalizeMatchText(product.name || product.productName || '');
       const category = barProductCategoryKey(product.category);
       return ['portion', 'snack'].includes(category) || name.includes('mini pizza');
+    }
+
+    function barCounterProductPriority(product) {
+      const categoryPriority = barProductCategoryPriority(product && product.category);
+      return barProductRequiresProduction(product) && categoryPriority < 90 ? 90 : categoryPriority;
     }
 
     function barProductCategoryIcon(category) {
@@ -37012,10 +37427,14 @@
       activeItems.forEach(function (item) {
         const physicalId = String(item.splitSourceItemId || item.id);
         const sourceItem = itemsById.get(physicalId) || item;
+        const sourceOrder = barOrderById(sourceItem.orderId || item.orderId);
+        const effectiveSaleTime = sourceOrder && String(sourceOrder.source || '').toUpperCase() === 'BALCAO'
+          ? (sourceOrder.closedAt || sourceOrder.openedAt || sourceItem.created || item.created)
+          : (sourceItem.created || item.created);
         let group = saleGroups.get(physicalId);
         if (!group) {
           group = {
-            created: sourceItem.created || item.created,
+            created: effectiveSaleTime,
             amount: 0,
             quantity: Number(sourceItem.quantity || item.quantity || 0),
             productGroup: barFinanceProductGroup(sourceItem).key,
@@ -39221,10 +39640,27 @@
       });
     }
 
-    function barCounterOrderItemSummary(orderId) {
+    function barCounterOrderRevisionItems(orderOrId) {
+      const order = typeof orderOrId === 'object' && orderOrId ? orderOrId : barOrderById(orderOrId);
+      const orderId = order && order.id || orderOrId;
+      const items = (opsData.barOrderItems || []).filter(function (item) {
+        return String(item.orderId) === String(orderId);
+      });
+      const activeItems = items.filter(function (item) {
+        return String(item.status || '').toUpperCase() !== 'CANCELADO';
+      });
+      if (activeItems.length) return activeItems;
+      const latestRevision = items.reduce(function (latest, item) {
+        return Math.max(latest, Number(item.counterRevision || 0));
+      }, 0);
+      return items.filter(function (item) {
+        return Number(item.counterRevision || 0) === latestRevision;
+      });
+    }
+
+    function barCounterOrderItemSummary(orderOrId) {
       const groups = new Map();
-      (opsData.barOrderItems || []).forEach(function (item) {
-        if (String(item.orderId) !== String(orderId) || String(item.status || '').toUpperCase() === 'CANCELADO') return;
+      barCounterOrderRevisionItems(orderOrId).forEach(function (item) {
         const key = String(item.productName || 'Produto');
         groups.set(key, Number(groups.get(key) || 0) + Number(item.quantity || 0));
       });
@@ -39233,34 +39669,147 @@
       }).join(' · ');
     }
 
+    function barCounterOriginalQuantity(productId) {
+      const editingOrder = barOrderById(opsState.barCounterEditingOrderId);
+      if (!editingOrder) return 0;
+      return barCounterOrderRevisionItems(editingOrder).reduce(function (sum, item) {
+        return String(item.productId) === String(productId) ? sum + Number(item.quantity || 0) : sum;
+      }, 0);
+    }
+
+    function barCounterOrderHasStartedProduction(orderOrId) {
+      return barCounterOrderRevisionItems(orderOrId).some(function (item) {
+        return barKitchenIsPortionItem(item) && ['EM_PREPARO', 'PRONTO', 'ENTREGUE'].includes(String(item.status || '').toUpperCase());
+      });
+    }
+
+    function barCounterHistoryOrders() {
+      const statusFilter = String(opsState.barCounterHistoryStatus || 'TODOS').toUpperCase();
+      const query = normalizeMatchText(opsState.barCounterHistorySearch || '');
+      return (opsData.barOrders || []).filter(function (order) {
+        const status = String(order.status || '').toUpperCase();
+        if (String(order.source || '').toUpperCase() !== 'BALCAO' || !['FECHADA', 'CANCELADA'].includes(status)) return false;
+        if (statusFilter !== 'TODOS' && status !== statusFilter) return false;
+        if (!query) return true;
+        return normalizeMatchText([
+          order.commandNumber,
+          order.notes,
+          order.counterCancelReason,
+          barFinancePaymentLabel(order.paymentMethod),
+          barCounterOrderItemSummary(order)
+        ].filter(Boolean).join(' ')).includes(query);
+      }).sort(function (a, b) {
+        return String(b.counterCancelledAt || b.counterLastEditedAt || b.closedAt || b.openedAt || '').localeCompare(String(a.counterCancelledAt || a.counterLastEditedAt || a.closedAt || a.openedAt || ''));
+      });
+    }
+
+    function renderBarCounterHistoryModal() {
+      const list = $('barCounterHistoryList');
+      const summary = $('barCounterHistorySummary');
+      if (!list || !summary) return;
+      if (opsState.barCounterHistoryLoading && !opsState.barCounterHistoryLoaded) {
+        summary.textContent = 'Carregando histórico…';
+        list.innerHTML = '<div class="bar-counter-cart-empty">Buscando as vendas do balcão.</div>';
+        return;
+      }
+      const orders = barCounterHistoryOrders();
+      const completed = orders.filter(function (order) { return String(order.status || '').toUpperCase() === 'FECHADA'; });
+      const total = completed.reduce(function (sum, order) { return sum + Number(order.total || barOrderTotal(order) || 0); }, 0);
+      summary.textContent = orders.length.toLocaleString('pt-BR') + (orders.length === 1 ? ' venda encontrada' : ' vendas encontradas') + ' · ' + completed.length.toLocaleString('pt-BR') + ' concluída(s) · ' + money(total);
+      list.innerHTML = orders.map(function (order) {
+        const cancelled = String(order.status || '').toUpperCase() === 'CANCELADA';
+        const itemSummary = barCounterOrderItemSummary(order) || 'Itens não encontrados';
+        const when = barDateTimeLabel(order.counterCancelledAt || order.closedAt || order.openedAt);
+        const notes = String(order.notes || '').trim();
+        const edited = order.counterLastEditedAt ? '<small>Editada em ' + escapeHtml(barDateTimeLabel(order.counterLastEditedAt)) + '</small>' : '';
+        const reason = cancelled && order.counterCancelReason
+          ? '<span class="bar-counter-history-cancel-reason">Motivo: ' + escapeHtml(order.counterCancelReason) + '</span>'
+          : '';
+        const productionStarted = barCounterOrderHasStartedProduction(order);
+        const editButton = productionStarted
+          ? '<button type="button" disabled title="A comida já entrou em preparo; a venda pode ser cancelada, mas essa comida não volta ao estoque.">Edição bloqueada</button>'
+          : '<button type="button" data-bar-counter-sale-edit="' + escapeHtml(order.id) + '">Editar venda</button>';
+        const actions = cancelled ? '' : '<div class="bar-counter-history-actions">' + editButton + '<button type="button" data-bar-counter-sale-cancel="' + escapeHtml(order.id) + '">Excluir venda</button></div>';
+        return '<article class="bar-counter-history-row' + (cancelled ? ' is-cancelled' : '') + '">' +
+          '<div class="bar-counter-history-copy"><div class="bar-counter-history-heading"><strong>Venda #' + escapeHtml(order.commandNumber || String(order.id).slice(-4)) + '</strong><time>' + escapeHtml(when || 'Horário não informado') + '</time>' + barStatusPill(order.status) + '</div>' +
+          '<span class="bar-counter-history-items">' + escapeHtml(itemSummary) + '</span>' +
+          (notes ? '<span class="bar-counter-history-note">Observação: ' + escapeHtml(notes) + '</span>' : '') + reason + '</div>' +
+          '<div class="bar-counter-history-side"><div class="bar-counter-history-meta"><span class="bar-counter-history-total">' + money(Number(order.total || barOrderTotal(order) || 0)) + '</span>' + barPaymentMethodBadge(order.paymentMethod) + edited + '</div>' + actions + '</div>' +
+        '</article>';
+      }).join('') || '<div class="bar-counter-cart-empty">Nenhuma venda encontrada com esses filtros.</div>';
+    }
+
+    async function openBarCounterHistoryModal() {
+      $('barCounterHistoryModal').classList.add('show');
+      $('barCounterHistoryModal').setAttribute('aria-hidden', 'false');
+      $('barCounterHistorySearch').value = opsState.barCounterHistorySearch || '';
+      $('barCounterHistoryStatus').value = opsState.barCounterHistoryStatus || 'TODOS';
+      renderBarCounterHistoryModal();
+      try {
+        await loadBarCounterHistoryData(true);
+        renderBarCounterHistoryModal();
+      } catch (error) {
+        reportActionError(error);
+      }
+    }
+
+    function closeBarCounterHistoryModal() {
+      $('barCounterHistoryModal').classList.remove('show');
+      $('barCounterHistoryModal').setAttribute('aria-hidden', 'true');
+    }
+
+    function openBarCounterCancelModal(orderId) {
+      const order = barOrderById(orderId);
+      if (!order || String(order.source || '').toUpperCase() !== 'BALCAO' || String(order.status || '').toUpperCase() !== 'FECHADA') return;
+      opsState.barCounterCancelOrderId = order.id;
+      opsState.barCounterCancelRequestId = '';
+      $('barCounterCancelReason').value = '';
+      $('barCounterCancelSaleLabel').textContent = 'Venda #' + (order.commandNumber || String(order.id).slice(-4)) + ' · ' + money(Number(order.total || barOrderTotal(order) || 0));
+      $('barCounterCancelImpact').textContent = barCounterOrderHasStartedProduction(order)
+        ? 'Marcará o recebimento como cancelado e devolverá somente os itens que não entraram em preparo. Comidas já preparadas ou entregues não voltam ao estoque. Em Pix ou cartão, faça também a devolução pelo banco ou pela maquininha.'
+        : 'Devolverá os produtos ao estoque e marcará o recebimento como cancelado. Em pagamentos por Pix ou cartão, faça também a devolução ao cliente pelo banco ou pela maquininha.';
+      $('barCounterCancelModal').classList.add('show');
+      $('barCounterCancelModal').setAttribute('aria-hidden', 'false');
+      window.setTimeout(function () { $('barCounterCancelReason').focus(); }, 50);
+    }
+
+    function closeBarCounterCancelModal(force) {
+      if (opsState.barCounterSaving && !force) return;
+      $('barCounterCancelModal').classList.remove('show');
+      $('barCounterCancelModal').setAttribute('aria-hidden', 'true');
+      opsState.barCounterCancelOrderId = '';
+      opsState.barCounterCancelRequestId = '';
+    }
+
     function renderBarCounterSaleModal() {
       const grid = $('barCounterProductGrid');
       const tabs = $('barCounterCategoryTabs');
       if (!grid || !tabs) return;
       const query = normalizeMatchText(opsState.barCounterSearch || '');
       const activeProducts = (opsData.barProducts || []).filter(function (product) {
-        return product.active && !barProductRequiresProduction(product);
+        return product.active;
       }).sort(function (a, b) {
-        const categoryDifference = barProductCategoryPriority(a.category) - barProductCategoryPriority(b.category);
+        const categoryDifference = barCounterProductPriority(a) - barCounterProductPriority(b);
         return categoryDifference || String(a.category || '').localeCompare(String(b.category || ''), 'pt-BR') || String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR');
       });
       const categories = Array.from(new Set(activeProducts.map(function (product) { return product.category || 'Outros'; }))).sort(function (a, b) {
         return barProductCategoryPriority(a) - barProductCategoryPriority(b) || String(a).localeCompare(String(b), 'pt-BR');
       });
-      if (!categories.includes(opsState.barCounterCategory)) opsState.barCounterCategory = categories[0] || '';
-      tabs.innerHTML = categories.map(function (category) {
+      if (opsState.barCounterCategory !== '__all__' && !categories.includes(opsState.barCounterCategory)) opsState.barCounterCategory = '__all__';
+      const allActive = opsState.barCounterCategory === '__all__';
+      tabs.innerHTML = '<button class="bar-order-product-tab' + (allActive ? ' active' : '') + '" type="button" aria-pressed="' + (allActive ? 'true' : 'false') + '" data-bar-counter-category="__all__"' + (opsState.barCounterSaving ? ' disabled' : '') + '><svg aria-hidden="true"><use href="#bar-icon-grid"></use></svg><span>Todos</span><small>' + escapeHtml(activeProducts.length) + '</small></button>' + categories.map(function (category) {
         const active = opsState.barCounterCategory === category;
         const count = activeProducts.filter(function (product) { return (product.category || 'Outros') === category; }).length;
         return '<button class="bar-order-product-tab' + (active ? ' active' : '') + '" type="button" aria-pressed="' + (active ? 'true' : 'false') + '" data-bar-counter-category="' + escapeHtml(category) + '"' + (opsState.barCounterSaving ? ' disabled' : '') + '>' + barProductCategoryIcon(category) + '<span>' + escapeHtml(barProductCategoryLabel(category)) + '</span><small>' + escapeHtml(count) + '</small></button>';
       }).join('');
       const products = activeProducts.filter(function (product) {
-        if (String(product.category || 'Outros') !== opsState.barCounterCategory) return false;
+        if (!query && opsState.barCounterCategory !== '__all__' && String(product.category || 'Outros') !== opsState.barCounterCategory) return false;
         return !query || normalizeMatchText([product.name, product.category, product.sku].filter(Boolean).join(' ')).includes(query);
       });
       grid.innerHTML = products.map(function (product) {
         const cartItem = barCounterCartItem(product.id);
         const quantity = Number(cartItem && cartItem.quantity || 0);
-        const available = Number(product.stock || 0) > quantity;
+        const available = Number(product.stock || 0) + barCounterOriginalQuantity(product.id) > quantity;
         const categoryKey = barProductCategoryKey(product.category);
         const placeholder = '<span class="bar-order-product-card-placeholder ' + categoryKey + '">' + barProductCategoryIcon(product.category) + '</span>';
         const imageSource = barProductImageSource(product.imageUrl);
@@ -39269,8 +39818,8 @@
           : placeholder;
         return '<button class="bar-order-product-card is-' + escapeHtml(categoryKey) + (quantity ? ' is-selected' : '') + '" type="button" data-bar-counter-product="' + escapeHtml(product.id) + '" role="option" aria-selected="' + (quantity ? 'true' : 'false') + '"' + (available ? '' : ' disabled') + '>' +
           (quantity ? '<span class="bar-order-product-card-cart-quantity">+' + escapeHtml(quantity) + '</span>' : '') + '<span class="bar-order-product-card-media">' + media + '</span>' +
-          '<span class="bar-order-product-card-copy"><strong>' + escapeHtml(product.name) + '</strong><span class="bar-order-product-card-meta"><b>' + money(product.salePrice) + '</b></span></span></button>';
-      }).join('') || '<div class="bar-counter-cart-empty">Nenhum produto disponível para esta busca.<br>Itens de preparo devem usar a comanda normal.</div>';
+          '<span class="bar-order-product-card-copy"><strong>' + escapeHtml(product.name) + '</strong><span class="bar-order-product-card-meta"><b>' + money(product.salePrice) + '</b>' + (barProductRequiresProduction(product) ? '<span class="bar-counter-preparation-pill">Vai para a cozinha</span>' : '') + '</span></span></button>';
+      }).join('') || '<div class="bar-counter-cart-empty">Nenhum produto disponível para esta busca.</div>';
       grid.querySelectorAll('img[data-bar-counter-product-image]').forEach(function (image) {
         image.addEventListener('error', function () {
           image.style.display = 'none';
@@ -39283,11 +39832,13 @@
       opsState.barCounterCart = cart;
       $('barCounterCartList').innerHTML = cart.map(function (item) {
         const product = barProductById(item.productId);
-        return '<div class="bar-counter-cart-row"><div class="bar-counter-cart-row-copy"><strong>' + escapeHtml(product.name) + '</strong><small>' + money(Number(product.salePrice || 0) * Number(item.quantity || 0)) + '</small></div><div class="bar-counter-quantity"><button type="button" data-bar-counter-step="-1" data-bar-counter-product-id="' + escapeHtml(product.id) + '" aria-label="Diminuir ' + escapeHtml(product.name) + '">−</button><output>' + escapeHtml(item.quantity) + '</output><button type="button" data-bar-counter-step="1" data-bar-counter-product-id="' + escapeHtml(product.id) + '" aria-label="Aumentar ' + escapeHtml(product.name) + '">+</button></div></div>';
+        return '<div class="bar-counter-cart-row"><div class="bar-counter-cart-row-copy"><strong>' + escapeHtml(product.name) + '</strong><small>' + money(Number(product.salePrice || 0) * Number(item.quantity || 0)) + (product.active ? '' : ' · Produto arquivado') + '</small></div><div class="bar-counter-quantity"><button type="button" data-bar-counter-step="-1" data-bar-counter-product-id="' + escapeHtml(product.id) + '" aria-label="Diminuir ' + escapeHtml(product.name) + '">−</button><output>' + escapeHtml(item.quantity) + '</output><button type="button" data-bar-counter-step="1" data-bar-counter-product-id="' + escapeHtml(product.id) + '" aria-label="Aumentar ' + escapeHtml(product.name) + '"' + (product.active ? '' : ' disabled title="Produto arquivado: mantenha a quantidade atual ou remova o item."') + '>+</button></div></div>';
       }).join('') || '<div class="bar-counter-cart-empty">Toque nos produtos para adicionar à venda.</div>';
       $('barCounterCartTotal').textContent = money(barCounterCartTotal());
       $('barCounterCompleteBtn').disabled = !cart.length || opsState.barCounterSaving;
-      $('barCounterCompleteBtn').querySelector('span').textContent = opsState.barCounterSaving ? 'Registrando...' : 'Finalizar venda';
+      const editing = Boolean(opsState.barCounterEditingOrderId);
+      $('barCounterSaleTitle').textContent = editing ? 'Editar venda' : 'Nova venda';
+      $('barCounterCompleteBtn').querySelector('span').textContent = opsState.barCounterSaving ? (editing ? 'Salvando...' : 'Registrando...') : (editing ? 'Salvar alterações' : 'Finalizar venda');
       $('barCounterClearBtn').disabled = !cart.length || opsState.barCounterSaving;
       $('barCounterSearch').disabled = opsState.barCounterSaving;
       $('barCounterNotes').disabled = opsState.barCounterSaving;
@@ -39302,10 +39853,15 @@
     function changeBarCounterProduct(productId, step) {
       if (opsState.barCounterSaving) return;
       const product = barProductById(productId);
-      if (!product || !product.active || barProductRequiresProduction(product)) return;
+      if (!product) return;
       const current = barCounterCartItem(product.id);
       const nextQuantity = Number(current && current.quantity || 0) + Number(step || 0);
-      if (nextQuantity > Number(product.stock || 0)) {
+      if (!product.active && (Number(step || 0) > 0 || !current)) {
+        toast('Esse produto foi arquivado. Você pode manter ou remover a quantidade que já estava na venda.');
+        return;
+      }
+      const availableStock = Number(product.stock || 0) + barCounterOriginalQuantity(product.id);
+      if (nextQuantity > availableStock) {
         toast('Estoque insuficiente para ' + product.name + '.');
         return;
       }
@@ -39321,9 +39877,10 @@
     }
 
     function openBarCounterSaleModal() {
+      opsState.barCounterEditingOrderId = '';
       opsState.barCounterCart = [];
       opsState.barCounterSearch = '';
-      opsState.barCounterCategory = '';
+      opsState.barCounterCategory = '__all__';
       opsState.barCounterPaymentMethod = 'PIX';
       opsState.barCounterSaving = false;
       $('barCounterSearch').value = '';
@@ -39334,16 +39891,51 @@
       window.setTimeout(function () { $('barCounterSearch').focus(); }, 50);
     }
 
+    function openBarCounterSaleForEdit(orderId) {
+      const order = barOrderById(orderId);
+      if (!order || String(order.source || '').toUpperCase() !== 'BALCAO' || String(order.status || '').toUpperCase() !== 'FECHADA') {
+        toast('Essa venda não está mais disponível para edição.');
+        return;
+      }
+      if (barCounterOrderHasStartedProduction(order)) {
+        toast('A comida dessa venda já entrou em preparo. Cancele a venda para evitar um pedido duplicado na cozinha.');
+        return;
+      }
+      const items = barCounterOrderRevisionItems(order);
+      if (!items.length) {
+        toast('Não foi possível localizar os itens dessa venda.');
+        return;
+      }
+      opsState.barCounterEditingOrderId = order.id;
+      opsState.barCounterCart = items.map(function (item) {
+        return { productId: item.productId, quantity: Number(item.quantity || 1) };
+      }).filter(function (item) { return Boolean(barProductById(item.productId)); });
+      opsState.barCounterSearch = '';
+      opsState.barCounterCategory = '__all__';
+      opsState.barCounterPaymentMethod = order.paymentMethod || 'PIX';
+      opsState.barCounterSaving = false;
+      resetBarCounterRequest();
+      $('barCounterSearch').value = '';
+      $('barCounterNotes').value = order.notes || '';
+      renderBarCounterSaleModal();
+      closeBarCounterHistoryModal();
+      $('barCounterSaleModal').classList.add('show');
+      $('barCounterSaleModal').setAttribute('aria-hidden', 'false');
+      window.setTimeout(function () { $('barCounterSearch').focus(); }, 50);
+    }
+
     function closeBarCounterSaleModal(force) {
       if (opsState.barCounterSaving && !force) return;
       $('barCounterSaleModal').classList.remove('show');
       $('barCounterSaleModal').setAttribute('aria-hidden', 'true');
       opsState.barCounterCart = [];
+      opsState.barCounterEditingOrderId = '';
       resetBarCounterRequest();
     }
 
     async function completeBarCounterSaleAction() {
-      const actionKey = 'counter-sale';
+      const editingOrder = barOrderById(opsState.barCounterEditingOrderId);
+      const actionKey = 'counter-sale:' + String(editingOrder && editingOrder.id || 'new');
       if (opsState.barCounterSaving || !beginBarAction(actionKey)) return;
       let completed = false;
       try {
@@ -39356,18 +39948,27 @@
         });
         if (!cart.length) throw new Error('Adicione pelo menos um produto à venda.');
         cart.forEach(function (item) {
-          if (!item.product || !item.product.active) throw new Error('Um produto não está mais disponível.');
-          if (barProductRequiresProduction(item.product)) throw new Error('Use a comanda normal para itens que precisam de preparo.');
-          if (item.quantity > Number(item.product.stock || 0)) throw new Error('Estoque insuficiente para ' + item.product.name + '.');
+          if (!item.product) throw new Error('Um produto não está mais disponível.');
+          if (!item.product.active && (!editingOrder || item.quantity > barCounterOriginalQuantity(item.product.id))) {
+            throw new Error('Um produto foi arquivado. Mantenha a quantidade anterior ou remova esse item da venda.');
+          }
+          if (item.quantity > Number(item.product.stock || 0) + barCounterOriginalQuantity(item.product.id)) throw new Error('Estoque insuficiente para ' + item.product.name + '.');
         });
         const requestId = ensureBarCounterRequest();
         const notes = String($('barCounterNotes').value || '').trim();
         opsState.barCounterSaving = true;
         renderBarCounterSaleModal();
         if (barCanPersist() && cart.every(function (item) { return isUuid(item.product.id); })) {
-          await supabaseRest('rpc/bar_complete_counter_sale', {
+          await supabaseRest(editingOrder ? 'rpc/bar_update_counter_sale' : 'rpc/bar_complete_counter_sale', {
             method: 'POST',
-            body: {
+            body: editingOrder ? {
+              p_order_id: editingOrder.id,
+              p_items: cart.map(function (item) { return { product_id: item.product.id, quantity: item.quantity }; }),
+              p_payment_method: opsState.barCounterPaymentMethod,
+              p_notes: notes || null,
+              p_expected_updated_at: editingOrder.updatedAt,
+              p_request_id: requestId
+            } : {
               p_items: cart.map(function (item) { return { product_id: item.product.id, quantity: item.quantity }; }),
               p_payment_method: opsState.barCounterPaymentMethod,
               p_request_id: requestId,
@@ -39377,42 +39978,138 @@
           });
           completed = true;
           await loadBarData(true);
+          await loadBarCounterHistoryData(true);
         } else {
           const now = new Date().toISOString();
-          const commandNumber = (opsData.barOrders || []).reduce(function (max, order) { return Math.max(max, Number(order.commandNumber || 100)); }, 100) + 1;
-          const order = {
-            id: localId('bar_counter_order'), commandNumber: commandNumber, customerName: 'Balcão', source: 'BALCAO',
-            status: 'FECHADA', subtotal: barCounterCartTotal(), serviceCharge: 0, discount: 0, total: barCounterCartTotal(),
-            paymentStatus: 'PAGO', paymentMethod: opsState.barCounterPaymentMethod, notes: notes, openedAt: now, closedAt: now,
-            counterRequestId: requestId
+          const order = editingOrder || {
+            id: localId('bar_counter_order'), commandNumber: (opsData.barOrders || []).reduce(function (max, row) { return Math.max(max, Number(row.commandNumber || 100)); }, 100) + 1,
+            customerName: 'Balcão', source: 'BALCAO', status: 'FECHADA', serviceCharge: 0, discount: 0,
+            paymentStatus: 'PAGO', openedAt: now, closedAt: now, counterRequestId: requestId
           };
-          opsData.barOrders.unshift(order);
+          const currentItems = editingOrder ? barCounterOrderRevisionItems(editingOrder) : [];
+          const nextRevision = currentItems.reduce(function (latest, item) { return Math.max(latest, Number(item.counterRevision || 0)); }, 0) + 1;
+          currentItems.forEach(function (item) {
+            const product = barProductById(item.productId);
+            if (product) product.stock = Number(product.stock || 0) + Number(item.quantity || 0);
+            item.status = 'CANCELADO';
+            item.updated = now;
+          });
+          if (!editingOrder) opsData.barOrders.unshift(order);
           cart.forEach(function (entry) {
             entry.product.stock = Number(entry.product.stock || 0) - entry.quantity;
             opsData.barOrderItems.unshift({
               id: localId('bar_counter_item'), orderId: order.id, productId: entry.product.id, productName: entry.product.name,
               productCategory: entry.product.category, quantity: entry.quantity, unitPrice: entry.product.salePrice,
-              costPrice: entry.product.costPrice, source: 'BALCAO', status: 'ENTREGUE', notes: '', created: now, updated: now
+              costPrice: entry.product.costPrice, source: 'BALCAO', status: barProductRequiresProduction(entry.product) ? 'SOLICITADO' : 'ENTREGUE',
+              notes: '', counterRevision: editingOrder ? nextRevision : 1, requiresProduction: barProductRequiresProduction(entry.product), created: now, updated: now
             });
           });
+          (opsData.barFinance || []).filter(function (entry) {
+            return editingOrder && String(entry.orderId) === String(order.id) && String(entry.status || '').toUpperCase() === 'RECEBIDO';
+          }).forEach(function (entry) { entry.status = 'CANCELADO'; });
+          order.subtotal = barCounterCartTotal();
+          order.total = order.subtotal;
+          order.paymentMethod = opsState.barCounterPaymentMethod;
+          order.notes = notes;
+          order.updatedAt = now;
+          if (editingOrder) order.counterLastEditedAt = now;
           opsData.barFinance.unshift({
-            id: localId('bar_counter_finance'), orderId: order.id, type: 'RECEITA', description: 'Venda de balcão #' + commandNumber,
+            id: localId('bar_counter_finance'), orderId: order.id, type: 'RECEITA', description: 'Venda de balcão #' + order.commandNumber,
             counterparty: 'Balcão', category: 'Vendas', amount: order.total, dueDate: localDateString(), status: 'RECEBIDO',
             paymentMethod: order.paymentMethod, paidAt: now, notes: notes, created: now
           });
           completed = true;
         }
+        const wasEditing = Boolean(editingOrder);
         opsState.barCounterCart = [];
         resetBarCounterRequest();
         closeBarCounterSaleModal(true);
         renderBarModule();
-        toast('Venda de balcão registrada e encerrada.');
+        renderBarCounterHistoryModal();
+        if (wasEditing) {
+          $('barCounterHistoryModal').classList.add('show');
+          $('barCounterHistoryModal').setAttribute('aria-hidden', 'false');
+        }
+        toast(wasEditing ? 'Venda atualizada com estoque e caixa corrigidos.' : 'Venda de balcão registrada e encerrada.');
       } catch (error) {
         reportActionError(error);
       } finally {
         opsState.barCounterSaving = false;
         finishBarAction(actionKey);
         if (!completed && $('barCounterSaleModal').classList.contains('show')) renderBarCounterSaleModal();
+      }
+    }
+
+    async function cancelBarCounterSaleAction() {
+      const order = barOrderById(opsState.barCounterCancelOrderId);
+      const reason = String($('barCounterCancelReason').value || '').trim();
+      const productionStarted = barCounterOrderHasStartedProduction(order);
+      if (!order || String(order.status || '').toUpperCase() !== 'FECHADA') {
+        closeBarCounterCancelModal(true);
+        toast('Essa venda não está mais disponível para cancelamento.');
+        return;
+      }
+      if (!reason) {
+        toast('Informe o motivo para cancelar a venda.');
+        $('barCounterCancelReason').focus();
+        return;
+      }
+      const actionKey = 'counter-sale-cancel:' + String(order.id);
+      if (opsState.barCounterSaving || !beginBarAction(actionKey)) return;
+      let cancelled = false;
+      try {
+        requireAdminSession();
+        if (!opsState.barCounterCancelRequestId) {
+          if (!window.crypto || typeof window.crypto.randomUUID !== 'function') throw new Error('Atualize o navegador para cancelar a venda com segurança.');
+          opsState.barCounterCancelRequestId = window.crypto.randomUUID();
+        }
+        opsState.barCounterSaving = true;
+        $('barCounterCancelConfirm').disabled = true;
+        if (barCanPersist(order.id)) {
+          await supabaseRest('rpc/bar_cancel_counter_sale', {
+            method: 'POST',
+            body: {
+              p_order_id: order.id,
+              p_reason: reason,
+              p_expected_updated_at: order.updatedAt,
+              p_request_id: opsState.barCounterCancelRequestId
+            },
+            prefer: 'return=representation'
+          });
+          await loadBarData(true);
+          await loadBarCounterHistoryData(true);
+        } else {
+          const now = new Date().toISOString();
+          barCounterOrderRevisionItems(order).forEach(function (item) {
+            const product = barProductById(item.productId);
+            const preparedFood = barKitchenIsPortionItem(item) && ['EM_PREPARO', 'PRONTO', 'ENTREGUE'].includes(String(item.status || '').toUpperCase());
+            if (product && !preparedFood) product.stock = Number(product.stock || 0) + Number(item.quantity || 0);
+            item.status = 'CANCELADO';
+            item.updated = now;
+          });
+          (opsData.barFinance || []).filter(function (entry) {
+            return String(entry.orderId) === String(order.id) && String(entry.status || '').toUpperCase() === 'RECEBIDO';
+          }).forEach(function (entry) { entry.status = 'CANCELADO'; });
+          order.status = 'CANCELADA';
+          order.paymentStatus = 'CANCELADO';
+          order.counterCancelReason = reason;
+          order.counterCancelledAt = now;
+          order.updatedAt = now;
+        }
+        cancelled = true;
+        closeBarCounterCancelModal(true);
+        renderBarModule();
+        renderBarCounterHistoryModal();
+        toast(productionStarted
+          ? 'Venda cancelada. O recebimento foi anulado e comidas já preparadas não voltaram ao estoque.'
+          : 'Venda cancelada. Estoque e recebimento interno foram estornados.');
+      } catch (error) {
+        reportActionError(error);
+      } finally {
+        opsState.barCounterSaving = false;
+        $('barCounterCancelConfirm').disabled = false;
+        finishBarAction(actionKey);
+        if (!cancelled) renderBarCounterHistoryModal();
       }
     }
 
@@ -40903,17 +41600,32 @@
     async function updateBarItemStatusAction(itemId, status) {
       const item = opsData.barOrderItems.find(function (row) { return String(row.id) === String(itemId); });
       if (!item) return;
+      const order = barOrderById(item.orderId);
+      const counterItem = order && String(order.source || '').toUpperCase() === 'BALCAO';
       const actionKey = 'item-status:' + String(itemId || '');
       if (!beginBarAction(actionKey)) return;
       try {
         if (barCanPersist(item.id)) {
-          const saved = await supabaseRest('bar_order_items?id=eq.' + encodeURIComponent(item.id), { method: 'PATCH', body: { status: status, updated_at: new Date().toISOString() }, prefer: 'return=representation' });
-          Object.assign(item, mapBarOrderItemRow(Array.isArray(saved) ? saved[0] : saved));
+          if (counterItem) {
+            await supabaseRest('rpc/bar_update_counter_item_status', {
+              method: 'POST',
+              body: { p_item_id: item.id, p_status: status, p_expected_updated_at: item.updated },
+              prefer: 'return=representation'
+            });
+            await loadBarData(true);
+            if (opsState.barCounterHistoryLoaded) await loadBarCounterHistoryData(true);
+          } else {
+            const saved = await supabaseRest('bar_order_items?id=eq.' + encodeURIComponent(item.id), { method: 'PATCH', body: { status: status, updated_at: new Date().toISOString() }, prefer: 'return=representation' });
+            Object.assign(item, mapBarOrderItemRow(Array.isArray(saved) ? saved[0] : saved));
+          }
         } else {
           item.status = status;
+          item.updated = new Date().toISOString();
+          if (counterItem) order.updatedAt = item.updated;
         }
         renderBarModule();
         renderBarCommandModal();
+        if ($('barCounterHistoryModal').classList.contains('show')) renderBarCounterHistoryModal();
         if (String(status).toUpperCase() === 'PRONTO') toast('Porção marcada como pronta.');
         if (String(status).toUpperCase() === 'ENTREGUE') toast('Pedido entregue e movido para o histórico.');
       } catch (error) {
@@ -44123,7 +44835,10 @@
       opsState.barDataForceQueued = false;
       opsState.barHistoryLoaded = false;
       opsState.barHistoryLoading = false;
+      opsState.barCounterHistoryLoaded = false;
+      opsState.barCounterHistoryLoading = false;
       barHistoryLoadPromise = null;
+      barCounterHistoryLoadPromise = null;
       barActionLocks.clear();
       opsState.barLoadError = '';
       opsState.barAccessUsersLoaded = false;
@@ -47784,6 +48499,37 @@
       $('barNewLooseOrderBtn').addEventListener('click', function () { openBarNewOrderModal('loose'); });
       $('barCounterSaleCloseBtn').addEventListener('click', function () { closeBarCounterSaleModal(false); });
       $('barCounterCompleteBtn').addEventListener('click', completeBarCounterSaleAction);
+      $('barCounterHistoryCloseBtn').addEventListener('click', closeBarCounterHistoryModal);
+      $('barCounterHistorySearch').addEventListener('input', function () {
+        opsState.barCounterHistorySearch = this.value;
+        renderBarCounterHistoryModal();
+      });
+      $('barCounterHistoryStatus').addEventListener('change', function () {
+        opsState.barCounterHistoryStatus = this.value || 'TODOS';
+        renderBarCounterHistoryModal();
+      });
+      $('barCounterHistoryModal').addEventListener('click', function (event) {
+        const editButton = event.target.closest('[data-bar-counter-sale-edit]');
+        if (editButton) {
+          openBarCounterSaleForEdit(editButton.dataset.barCounterSaleEdit);
+          return;
+        }
+        const cancelButton = event.target.closest('[data-bar-counter-sale-cancel]');
+        if (cancelButton) {
+          openBarCounterCancelModal(cancelButton.dataset.barCounterSaleCancel);
+          return;
+        }
+        if (event.target.id === 'barCounterHistoryModal') closeBarCounterHistoryModal();
+      });
+      $('barCounterCancelCloseBtn').addEventListener('click', function () { closeBarCounterCancelModal(false); });
+      $('barCounterCancelBackBtn').addEventListener('click', function () { closeBarCounterCancelModal(false); });
+      $('barCounterCancelConfirm').addEventListener('click', cancelBarCounterSaleAction);
+      $('barCounterCancelReason').addEventListener('input', function () {
+        if (!opsState.barCounterSaving) opsState.barCounterCancelRequestId = '';
+      });
+      $('barCounterCancelModal').addEventListener('click', function (event) {
+        if (event.target.id === 'barCounterCancelModal') closeBarCounterCancelModal(false);
+      });
       $('barCounterClearBtn').addEventListener('click', function () {
         if (opsState.barCounterSaving) return;
         opsState.barCounterCart = [];
@@ -47860,9 +48606,9 @@
         syncBarKitchenScreen();
       });
       document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape' && $('barCounterSaleModal').classList.contains('show')) {
-          closeBarCounterSaleModal(false);
-        }
+        if (event.key === 'Escape' && $('barCounterCancelModal').classList.contains('show')) return closeBarCounterCancelModal(false);
+        if (event.key === 'Escape' && $('barCounterSaleModal').classList.contains('show')) return closeBarCounterSaleModal(false);
+        if (event.key === 'Escape' && $('barCounterHistoryModal').classList.contains('show')) return closeBarCounterHistoryModal();
         if (event.key === 'Escape' && $('barCustomerDetailModal').classList.contains('show')) {
           closeBarCustomerDetail();
         }
@@ -48012,6 +48758,11 @@
         }
       });
       $('barModule').addEventListener('click', function (event) {
+        const counterHistoryBtn = event.target.closest('[data-bar-counter-history-open]');
+        if (counterHistoryBtn) {
+          openBarCounterHistoryModal();
+          return;
+        }
         const counterSaleBtn = event.target.closest('[data-bar-counter-open]');
         if (counterSaleBtn) {
           openBarCounterSaleModal();

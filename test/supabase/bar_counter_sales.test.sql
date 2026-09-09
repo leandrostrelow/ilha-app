@@ -150,51 +150,49 @@ select throws_ok(
   'estoque insuficiente rejeita a venda inteira'
 );
 
-select throws_ok(
+select lives_ok(
   $$select public.bar_complete_counter_sale(
     '[{"product_id":"71000000-0000-4000-8000-000000000003","quantity":1}]'::jsonb,
     'DINHEIRO',
     '72000000-0000-4000-8000-000000000004'::uuid,
     null
   )$$,
-  '22023',
-  'Use a comanda normal para Porção sintética porque o item precisa de preparo.',
-  'produto de cozinha não é encerrado pelo atalho'
+  'produto de cozinha é vendido no balcão e segue para preparo'
 );
 
-select throws_ok(
+select lives_ok(
   $$select public.bar_complete_counter_sale(
     '[{"product_id":"71000000-0000-4000-8000-000000000004","quantity":1}]'::jsonb,
     'DINHEIRO',
     '72000000-0000-4000-8000-000000000005'::uuid,
     null
   )$$,
-  '22023',
-  'Use a comanda normal para Bauru sintético porque o item precisa de preparo.',
-  'lanches também precisam passar pela comanda normal'
+  'lanche pode ser pago no balcão e enviado para a cozinha'
 );
 
-select throws_ok(
+select lives_ok(
   $$select public.bar_complete_counter_sale(
     '[{"product_id":"71000000-0000-4000-8000-000000000005","quantity":1}]'::jsonb,
     'DINHEIRO',
     '72000000-0000-4000-8000-000000000006'::uuid,
     null
   )$$,
-  '22023',
-  'Use a comanda normal para Mini pizza sintética porque o item precisa de preparo.',
-  'mini pizza não pode contornar a cozinha pelo nome'
+  'mini pizza também pode ser paga no balcão e enviada para a cozinha'
 );
 
-select is(
-  (select count(*)::integer from public.bar_orders where counter_request_id in (
-    '72000000-0000-4000-8000-000000000003'::uuid,
-    '72000000-0000-4000-8000-000000000004'::uuid,
-    '72000000-0000-4000-8000-000000000005'::uuid,
-    '72000000-0000-4000-8000-000000000006'::uuid
-  )),
-  0,
-  'falhas não deixam pedidos parciais'
+select ok(
+  not exists (
+    select 1 from public.bar_orders
+     where counter_request_id = '72000000-0000-4000-8000-000000000003'::uuid
+  )
+  and (
+    select count(*) from public.bar_orders where counter_request_id in (
+      '72000000-0000-4000-8000-000000000004'::uuid,
+      '72000000-0000-4000-8000-000000000005'::uuid,
+      '72000000-0000-4000-8000-000000000006'::uuid
+    )
+  ) = 3,
+  'a falha de estoque não deixa parcial e as três vendas de cozinha são gravadas'
 );
 
 insert into public.bar_orders (
