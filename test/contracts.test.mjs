@@ -3166,7 +3166,7 @@ test('membro familiar ativo vira aluno operacional e pode receber plano e aula n
   assert.match(adminSource, /data-family-directory-student=/);
   assert.match(adminSource, /Plano individual · cobrança na conta da família/);
   assert.match(adminSource, /if \(studentId && String\(student\.id \|\| ''\) === studentId\) return true/);
-  assert.match(serviceWorkerSource, /ilha-play-v238-club-finance/);
+  assert.match(serviceWorkerSource, /ilha-play-v239-spatial-family/);
 });
 
 test('grade de aulas usa cartões compactos e filtros responsivos', () => {
