@@ -20629,6 +20629,55 @@
       margin: 2px 0 0;
     }
 
+    .bar-counter-modal-head {
+      gap: 18px;
+    }
+
+    .bar-counter-modal-heading {
+      min-width: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .bar-counter-modal-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .bar-counter-modal-tab {
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 12px;
+      border: 1px solid rgba(255, 255, 255, .26);
+      border-radius: 10px;
+      color: rgba(255, 255, 255, .8);
+      background: rgba(255, 255, 255, .08);
+      font: 900 10px/1 var(--font, inherit);
+      cursor: pointer;
+    }
+
+    .bar-counter-modal-tab svg {
+      width: 15px;
+      height: 15px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
+    .bar-counter-modal-tab.is-active {
+      border-color: #9bf000;
+      color: #14213a;
+      background: #9bf000;
+    }
+
+    .bar-counter-modal-tab:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 2px;
+    }
+
     .bar-counter-complete {
       min-height: 48px;
       display: inline-flex;
@@ -20946,16 +20995,6 @@
       text-transform: uppercase;
     }
 
-    .bar-counter-history-modal {
-      width: min(980px, 100%);
-      max-height: calc(100dvh - 24px);
-      display: flex;
-      min-height: 0;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .bar-counter-history-head,
     .bar-counter-history-footnote {
       flex: 0 0 auto;
     }
@@ -20967,6 +21006,12 @@
       overscroll-behavior: contain;
       background: #f4f8f9;
       -webkit-overflow-scrolling: touch;
+    }
+
+    .bar-counter-history-body[hidden],
+    .bar-counter-modal-body[hidden],
+    .bar-counter-modal-footer[hidden] {
+      display: none !important;
     }
 
     .bar-counter-history-tools {
@@ -21186,13 +21231,6 @@
         justify-content: space-between;
       }
 
-      .bar-counter-history-modal {
-        width: 100%;
-        height: calc(100dvh - 16px);
-        max-height: calc(100dvh - 16px);
-        border-radius: 16px;
-      }
-
       .bar-counter-history-tools { grid-template-columns: minmax(0, 1fr); }
       .bar-counter-history-row { grid-template-columns: minmax(0, 1fr); }
       .bar-counter-history-side { justify-items: stretch; text-align: left; }
@@ -21207,6 +21245,10 @@
       .bar-counter-command-actions { align-items: stretch; flex-direction: column; }
       .bar-counter-command-action { justify-content: center; }
       .bar-counter-history-actions { grid-template-columns: minmax(0, 1fr); }
+      .bar-counter-modal-head { align-items: stretch; }
+      .bar-counter-modal-heading { width: 100%; }
+      .bar-counter-modal-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .bar-counter-modal-tab { justify-content: center; }
     }
   </style>
 </head>
@@ -23063,10 +23105,16 @@
     <div class="admin-modal-overlay" id="barCounterSaleModal" aria-hidden="true">
       <div class="admin-modal bar-counter-sale-modal" role="dialog" aria-modal="true" aria-labelledby="barCounterSaleTitle">
         <div class="admin-modal-head bar-counter-modal-head">
-          <div><span class="bar-counter-kicker">BALCÃO RÁPIDO</span><h2 id="barCounterSaleTitle">Nova venda</h2><div class="muted">Escolha os itens e informe como recebeu.</div></div>
+          <div class="bar-counter-modal-heading">
+            <div><span class="bar-counter-kicker">BALCÃO RÁPIDO</span><h2 id="barCounterSaleTitle">Nova venda</h2><div class="muted" id="barCounterModalDescription">Escolha os itens e informe como recebeu.</div></div>
+            <div class="bar-counter-modal-tabs" role="tablist" aria-label="Balcão rápido">
+              <button class="bar-counter-modal-tab is-active" type="button" id="barCounterSaleTab" role="tab" aria-selected="true" aria-controls="barCounterSalePanel" data-bar-counter-modal-tab="sale"><svg aria-hidden="true"><use href="#bar-icon-plus"></use></svg>Nova venda</button>
+              <button class="bar-counter-modal-tab" type="button" id="barCounterHistoryTab" role="tab" aria-selected="false" aria-controls="barCounterHistoryPanel" data-bar-counter-modal-tab="history"><svg aria-hidden="true"><use href="#admin-icon-receipt"></use></svg>Histórico</button>
+            </div>
+          </div>
           <button class="ghost-btn bar-modal-close" type="button" id="barCounterSaleCloseBtn" aria-label="Fechar venda rápida"><svg><use href="#bar-icon-close"></use></svg><span>Fechar</span></button>
         </div>
-        <div class="admin-modal-body bar-counter-modal-body">
+        <div class="admin-modal-body bar-counter-modal-body" id="barCounterSalePanel" role="tabpanel" aria-labelledby="barCounterSaleTab">
           <section class="bar-counter-products" aria-labelledby="barCounterProductsTitle">
             <div class="bar-counter-tools">
               <label class="bar-counter-search" for="barCounterSearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><input id="barCounterSearch" type="search" placeholder="Buscar produto" autocomplete="off" /></label>
@@ -23087,27 +23135,19 @@
             <label class="bar-counter-notes" for="barCounterNotes"><span>Observação <small>opcional</small></span><input id="barCounterNotes" maxlength="500" placeholder="Ex.: venda do torneio" /></label>
           </aside>
         </div>
-        <div class="bar-counter-modal-footer">
-          <div><span>Total da venda</span><strong class="has-money-value" id="barCounterCartTotal">R$ 0,00</strong></div>
-          <button class="bar-counter-complete" type="button" id="barCounterCompleteBtn" disabled><svg><use href="#bar-icon-check"></use></svg><span>Finalizar venda</span></button>
-        </div>
-      </div>
-    </div>
-    <div class="admin-modal-overlay" id="barCounterHistoryModal" aria-hidden="true">
-      <div class="admin-modal bar-counter-history-modal" role="dialog" aria-modal="true" aria-labelledby="barCounterHistoryTitle">
-        <div class="admin-modal-head bar-counter-history-head">
-          <div><span class="bar-counter-kicker">BALCÃO RÁPIDO</span><h2 id="barCounterHistoryTitle">Histórico de vendas</h2><div class="muted">Consulte, corrija ou cancele uma venda sem apagar o registro.</div></div>
-          <button class="ghost-btn bar-modal-close" type="button" id="barCounterHistoryCloseBtn" aria-label="Fechar histórico do balcão"><svg><use href="#bar-icon-close"></use></svg><span>Fechar</span></button>
-        </div>
-        <div class="admin-modal-body bar-counter-history-body">
+        <div class="admin-modal-body bar-counter-history-body" id="barCounterHistoryPanel" role="tabpanel" aria-labelledby="barCounterHistoryTab" hidden>
           <div class="bar-counter-history-tools">
             <label class="bar-counter-search" for="barCounterHistorySearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><input id="barCounterHistorySearch" type="search" placeholder="Buscar por número, item ou observação" autocomplete="off" /></label>
             <label class="bar-counter-history-filter" for="barCounterHistoryStatus"><span>Status</span><select id="barCounterHistoryStatus"><option value="TODOS">Todas</option><option value="FECHADA">Concluídas</option><option value="CANCELADA">Canceladas</option></select></label>
           </div>
           <div class="bar-counter-history-summary" id="barCounterHistorySummary">Carregando histórico…</div>
           <div class="bar-counter-history-list" id="barCounterHistoryList"></div>
+          <div class="bar-counter-history-footnote"><svg aria-hidden="true"><use href="#admin-icon-receipt"></use></svg><span>“Excluir” cancela a venda e anula o recebimento interno. Itens que ainda não entraram em preparo voltam ao estoque; o registro continua salvo para conferência.</span></div>
         </div>
-        <div class="bar-counter-history-footnote"><svg aria-hidden="true"><use href="#admin-icon-receipt"></use></svg><span>“Excluir” cancela a venda e anula o recebimento interno. Itens que ainda não entraram em preparo voltam ao estoque; o registro continua salvo para conferência.</span></div>
+        <div class="bar-counter-modal-footer" id="barCounterSaleFooter">
+          <div><span>Total da venda</span><strong class="has-money-value" id="barCounterCartTotal">R$ 0,00</strong></div>
+          <button class="bar-counter-complete" type="button" id="barCounterCompleteBtn" disabled><svg><use href="#bar-icon-check"></use></svg><span>Finalizar venda</span></button>
+        </div>
       </div>
     </div>
     <div class="admin-modal-overlay" id="barCounterCancelModal" aria-hidden="true">
@@ -30788,6 +30828,7 @@
       barCounterSaving: false,
       barCounterRequestId: '',
       barCounterEditingOrderId: '',
+      barCounterView: 'sale',
       barCounterHistoryLoaded: false,
       barCounterHistoryLoading: false,
       barCounterHistorySearch: '',
@@ -39772,8 +39813,9 @@
     }
 
     async function openBarCounterHistoryModal() {
-      $('barCounterHistoryModal').classList.add('show');
-      $('barCounterHistoryModal').setAttribute('aria-hidden', 'false');
+      $('barCounterSaleModal').classList.add('show');
+      $('barCounterSaleModal').setAttribute('aria-hidden', 'false');
+      setBarCounterModalTab('history');
       $('barCounterHistorySearch').value = opsState.barCounterHistorySearch || '';
       $('barCounterHistoryStatus').value = opsState.barCounterHistoryStatus || 'TODOS';
       renderBarCounterHistoryModal();
@@ -39786,8 +39828,24 @@
     }
 
     function closeBarCounterHistoryModal() {
-      $('barCounterHistoryModal').classList.remove('show');
-      $('barCounterHistoryModal').setAttribute('aria-hidden', 'true');
+      closeBarCounterSaleModal(false);
+    }
+
+    function setBarCounterModalTab(view) {
+      const showHistory = view === 'history';
+      opsState.barCounterView = showHistory ? 'history' : 'sale';
+      $('barCounterSalePanel').hidden = showHistory;
+      $('barCounterHistoryPanel').hidden = !showHistory;
+      $('barCounterSaleFooter').hidden = showHistory;
+      $('barCounterSaleTab').classList.toggle('is-active', !showHistory);
+      $('barCounterSaleTab').setAttribute('aria-selected', showHistory ? 'false' : 'true');
+      $('barCounterHistoryTab').classList.toggle('is-active', showHistory);
+      $('barCounterHistoryTab').setAttribute('aria-selected', showHistory ? 'true' : 'false');
+      const editing = Boolean(opsState.barCounterEditingOrderId);
+      $('barCounterSaleTitle').textContent = showHistory ? 'Histórico de vendas' : (editing ? 'Editar venda' : 'Nova venda');
+      $('barCounterModalDescription').textContent = showHistory
+        ? 'Consulte, corrija ou cancele uma venda sem apagar o registro.'
+        : (editing ? 'Revise os itens e salve as alterações.' : 'Escolha os itens e informe como recebeu.');
     }
 
     function openBarCounterCancelModal(orderId) {
@@ -39869,7 +39927,10 @@
       $('barCounterCartTotal').textContent = money(barCounterCartTotal());
       $('barCounterCompleteBtn').disabled = !cart.length || opsState.barCounterSaving;
       const editing = Boolean(opsState.barCounterEditingOrderId);
-      $('barCounterSaleTitle').textContent = editing ? 'Editar venda' : 'Nova venda';
+      if (opsState.barCounterView !== 'history') {
+        $('barCounterSaleTitle').textContent = editing ? 'Editar venda' : 'Nova venda';
+        $('barCounterModalDescription').textContent = editing ? 'Revise os itens e salve as alterações.' : 'Escolha os itens e informe como recebeu.';
+      }
       $('barCounterCompleteBtn').querySelector('span').textContent = opsState.barCounterSaving ? (editing ? 'Salvando...' : 'Registrando...') : (editing ? 'Salvar alterações' : 'Finalizar venda');
       $('barCounterClearBtn').disabled = !cart.length || opsState.barCounterSaving;
       $('barCounterSearch').disabled = opsState.barCounterSaving;
@@ -39918,6 +39979,7 @@
       $('barCounterSearch').value = '';
       $('barCounterNotes').value = '';
       renderBarCounterSaleModal();
+      setBarCounterModalTab('sale');
       $('barCounterSaleModal').classList.add('show');
       $('barCounterSaleModal').setAttribute('aria-hidden', 'false');
       window.setTimeout(function () { $('barCounterSearch').focus(); }, 50);
@@ -39950,7 +40012,7 @@
       $('barCounterSearch').value = '';
       $('barCounterNotes').value = order.notes || '';
       renderBarCounterSaleModal();
-      closeBarCounterHistoryModal();
+      setBarCounterModalTab('sale');
       $('barCounterSaleModal').classList.add('show');
       $('barCounterSaleModal').setAttribute('aria-hidden', 'false');
       window.setTimeout(function () { $('barCounterSearch').focus(); }, 50);
@@ -39960,6 +40022,7 @@
       if (opsState.barCounterSaving && !force) return;
       $('barCounterSaleModal').classList.remove('show');
       $('barCounterSaleModal').setAttribute('aria-hidden', 'true');
+      opsState.barCounterView = 'sale';
       opsState.barCounterCart = [];
       opsState.barCounterEditingOrderId = '';
       resetBarCounterRequest();
@@ -40059,8 +40122,7 @@
         renderBarModule();
         renderBarCounterHistoryModal();
         if (wasEditing) {
-          $('barCounterHistoryModal').classList.add('show');
-          $('barCounterHistoryModal').setAttribute('aria-hidden', 'false');
+          await openBarCounterHistoryModal();
         }
         toast(wasEditing ? 'Venda atualizada com estoque e caixa corrigidos.' : 'Venda de balcão registrada e encerrada.');
       } catch (error) {
@@ -41657,7 +41719,7 @@
         }
         renderBarModule();
         renderBarCommandModal();
-        if ($('barCounterHistoryModal').classList.contains('show')) renderBarCounterHistoryModal();
+        if ($('barCounterSaleModal').classList.contains('show') && opsState.barCounterView === 'history') renderBarCounterHistoryModal();
         if (String(status).toUpperCase() === 'PRONTO') toast('Porção marcada como pronta.');
         if (String(status).toUpperCase() === 'ENTREGUE') toast('Pedido entregue e movido para o histórico.');
       } catch (error) {
@@ -48531,7 +48593,18 @@
       $('barNewLooseOrderBtn').addEventListener('click', function () { openBarNewOrderModal('loose'); });
       $('barCounterSaleCloseBtn').addEventListener('click', function () { closeBarCounterSaleModal(false); });
       $('barCounterCompleteBtn').addEventListener('click', completeBarCounterSaleAction);
-      $('barCounterHistoryCloseBtn').addEventListener('click', closeBarCounterHistoryModal);
+      document.querySelectorAll('[data-bar-counter-modal-tab]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          const view = this.dataset.barCounterModalTab === 'history' ? 'history' : 'sale';
+          setBarCounterModalTab(view);
+          if (view === 'history') {
+            loadBarCounterHistoryData(true).then(renderBarCounterHistoryModal).catch(reportActionError);
+          } else {
+            renderBarCounterSaleModal();
+            window.setTimeout(function () { $('barCounterSearch').focus(); }, 50);
+          }
+        });
+      });
       $('barCounterHistorySearch').addEventListener('input', function () {
         opsState.barCounterHistorySearch = this.value;
         renderBarCounterHistoryModal();
@@ -48540,7 +48613,7 @@
         opsState.barCounterHistoryStatus = this.value || 'TODOS';
         renderBarCounterHistoryModal();
       });
-      $('barCounterHistoryModal').addEventListener('click', function (event) {
+      $('barCounterHistoryPanel').addEventListener('click', function (event) {
         const editButton = event.target.closest('[data-bar-counter-sale-edit]');
         if (editButton) {
           openBarCounterSaleForEdit(editButton.dataset.barCounterSaleEdit);
@@ -48551,7 +48624,9 @@
           openBarCounterCancelModal(cancelButton.dataset.barCounterSaleCancel);
           return;
         }
-        if (event.target.id === 'barCounterHistoryModal') closeBarCounterHistoryModal();
+      });
+      $('barCounterSaleModal').addEventListener('click', function (event) {
+        if (event.target.id === 'barCounterSaleModal') closeBarCounterSaleModal(false);
       });
       $('barCounterCancelCloseBtn').addEventListener('click', function () { closeBarCounterCancelModal(false); });
       $('barCounterCancelBackBtn').addEventListener('click', function () { closeBarCounterCancelModal(false); });
@@ -48640,7 +48715,6 @@
       document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape' && $('barCounterCancelModal').classList.contains('show')) return closeBarCounterCancelModal(false);
         if (event.key === 'Escape' && $('barCounterSaleModal').classList.contains('show')) return closeBarCounterSaleModal(false);
-        if (event.key === 'Escape' && $('barCounterHistoryModal').classList.contains('show')) return closeBarCounterHistoryModal();
         if (event.key === 'Escape' && $('barCustomerDetailModal').classList.contains('show')) {
           closeBarCustomerDetail();
         }

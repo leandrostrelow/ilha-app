@@ -47,7 +47,11 @@ test('histórico do balcão permanece acessível e expõe edição e cancelament
   const historyLoader = functionSource(adminSource, 'loadBarCounterHistoryData');
   const historyOpener = functionSource(adminSource, 'openBarCounterHistoryModal');
   assert.match(adminSource, /id="barCounterHistoryBtn"/);
-  assert.match(adminSource, /id="barCounterHistoryModal"[^>]*aria-hidden="true"/);
+  assert.match(adminSource, /id="barCounterSaleModal"[^>]*aria-hidden="true"/);
+  assert.match(adminSource, /id="barCounterHistoryTab"[^>]*role="tab"/);
+  assert.match(adminSource, /id="barCounterHistoryPanel"[^>]*role="tabpanel"[^>]*hidden/);
+  assert.match(adminSource, /data-bar-counter-modal-tab="history"/);
+  assert.doesNotMatch(adminSource, /id="barCounterHistoryModal"/);
   assert.match(adminSource, /id="barCounterHistoryList"/);
   assert.match(adminSource, /data-bar-counter-history-open/);
   assert.match(adminSource, /data-bar-counter-sale-edit/);
@@ -61,6 +65,7 @@ test('histórico do balcão permanece acessível e expõe edição e cancelament
   assert.doesNotMatch(historyLoader, /limit=500/);
   assert.match(historyLoader, /barDatasetRequest\([\s\S]*true/);
   assert.match(historyOpener, /loadBarCounterHistoryData\(true\)/);
+  assert.match(historyOpener, /setBarCounterModalTab\('history'\)/);
 });
 
 test('catálogo do balcão oferece todos os produtos e ordena comidas no fim', () => {
