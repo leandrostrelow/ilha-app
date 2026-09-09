@@ -16,12 +16,18 @@ function functionSource(source, name) {
   return source.slice(start, next >= 0 ? next : undefined);
 }
 
-test('ADM Bar oferece um balcão fixo, histórico diário e checkout compacto', () => {
-  assert.match(adminSource, /id="barCounterPanel"/);
-  assert.match(adminSource, /id="barCounterSalesCount"/);
-  assert.match(adminSource, /id="barCounterSalesTotal"/);
-  assert.match(adminSource, /id="barCounterHistory"/);
+test('ADM Bar oferece o balcão como comanda destacada e checkout por categorias', () => {
+  assert.doesNotMatch(adminSource, /id="barCounterPanel"/);
+  assert.doesNotMatch(adminSource, /barCounterNewSaleBtn|id="barCounterCategory"/);
+  assert.match(adminSource, /function barCounterCommandCard\(/);
+  assert.match(adminSource, /bar-counter-command-card has-money-value" data-bar-counter-open/);
+  assert.match(adminSource, /barCounterCommandCard\(\) \+ looseCards/);
   assert.match(adminSource, /id="barCounterSaleModal"/);
+  assert.match(adminSource, /id="barCounterCategoryTabs"[^>]*role="group"/);
+  assert.match(adminSource, /data-bar-counter-category=[^\n]*aria-pressed|aria-pressed=[^\n]*data-bar-counter-category=/);
+  assert.match(adminSource, /bar-order-product-grid bar-counter-product-grid/);
+  assert.match(adminSource, /data-bar-counter-category=/);
+  assert.match(adminSource, /data-bar-counter-product-image/);
   assert.match(adminSource, /data-bar-counter-payment="PIX"[^>]*>Pix recebido/);
   assert.match(adminSource, /data-bar-counter-payment="DINHEIRO"/);
   assert.match(adminSource, /data-bar-counter-payment="CARTAO_DEBITO"/);
@@ -50,7 +56,7 @@ test('balcão evita itens de cozinha e reinicia pelo dia operacional das 06h', (
   assert.match(functionSource(adminSource, 'renderBarCounterSaleModal'), /!barProductRequiresProduction\(product\)/);
   assert.match(functionSource(adminSource, 'completeBarCounterSaleAction'), /Use a comanda normal para itens que precisam de preparo/);
   assert.match(functionSource(adminSource, 'barCounterTodayOrders'), /barOperationalDateString\(\)/);
-  assert.match(adminSource, /O movimento reinicia automaticamente às 06h/);
+  assert.match(functionSource(adminSource, 'barCounterCommandCard'), /barCounterTodayOrders\(\)/);
   assert.equal((adminSource.match(/source=eq\.BALCAO[^\n]*closed_at=gte[^\n]*, true\)/g) || []).length, 2);
   assert.match(migrationSource, /product_category_key like '%lanche%'/);
   assert.match(migrationSource, /product_name_key like '%mini pizza%'/);
