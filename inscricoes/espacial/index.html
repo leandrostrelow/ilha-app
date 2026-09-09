@@ -246,11 +246,17 @@
     }
     .candidate-card input:checked + .candidate-body { border-color: #7abd00; background: #f8ffe9; box-shadow: 0 0 0 4px rgba(168,239,0,.13); }
     .candidate-card input:focus-visible + .candidate-body { outline: 3px solid rgba(8,121,132,.27); outline-offset: 2px; }
+    .candidate-card.unavailable { cursor: not-allowed; }
+    .candidate-card.unavailable .candidate-body { border-style: dashed; background: #f5f8f9; opacity: .82; }
     .candidate-name { margin: 0; font-size: 18px; }
     .class-route { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-top: 11px; color: var(--muted); font-size: 13px; }
     .class-pill { display: inline-flex; align-items: center; min-height: 30px; padding: 6px 10px; border-radius: 999px; color: var(--ink); background: #edf4f5; font-weight: 800; }
     .class-pill.spatial { color: #12632f; background: #ddffc8; }
     .candidate-price { align-self: center; color: var(--teal); font-size: 23px; font-weight: 950; white-space: nowrap; }
+    .candidate-card.unavailable .candidate-price { color: var(--muted); font-size: 14px; }
+    .candidate-card.unavailable[data-state="FULL"] .candidate-price,
+    .candidate-card.unavailable[data-state="CLOSED"] .candidate-price { color: var(--red); }
+    .candidate-card.unavailable[data-state="ALREADY_REGISTERED"] .candidate-price { color: #126b3b; }
 
     .selection-summary {
       display: grid;
@@ -409,6 +415,7 @@
               <button class="button" id="copyPixButton" type="button" hidden>Copiar código Pix</button>
               <button class="button" id="refreshStatusButton" type="button" hidden>Atualizar pagamento</button>
               <button class="button lime" id="retryPaymentButton" type="button" hidden>Tentar gerar o Pix novamente</button>
+              <button class="button" id="anotherAthleteButton" type="button" hidden>Inscrever outro atleta vinculado</button>
               <a class="button primary" id="tournamentButton" href="/torneios">Ver página do torneio</a>
             </div>
             <p class="payment-feedback" id="paymentFeedback" role="status"></p>
@@ -436,6 +443,7 @@
       const PAYMENT_TERMINAL = new Set(['REVIEW_REQUIRED','PARTIALLY_REFUNDED','REFUNDED','CANCELLED','CHARGEBACK','OVERDUE']);
       const PAYMENT_PAID = new Set(['PAID','PAGO','RECEIVED','RECEBIDO']);
       const PAYMENT_PENDING = new Set(['CREATED','RECONCILING','PENDING','PENDENTE','FAILED']);
+      const ACTIONABLE_CANDIDATE_STATES = new Set(['ELIGIBLE', 'PAYMENT_PENDING']);
       const POLL_DELAYS = [5000, 8000, 12000, 20000, 30000];
       const DEFAULT_REQUEST_TIMEOUT_MS = 18000;
       // A primeira cobrança pode precisar criar o cliente e o Pix no Asaas em
@@ -464,6 +472,7 @@
         paymentExpiryTimer: null,
         paymentPollAttempt: 0,
         paymentStatusLoading: false,
+        linkedCandidateCount: 0,
       };
 
       class ApiError extends Error {
@@ -705,7 +714,23 @@
             spatialClass,
             amount: Number.isFinite(configuredAmount) && configuredAmount >= 0 ? configuredAmount : 80,
           };
-        }).filter((candidate) => candidate.proof && candidate.athleteName && candidate.currentClass && candidate.spatialClass);
+        }).filter((candidate) => candidate.athleteName && candidate.currentClass && candidate.spatialClass);
+      }
+
+      function candidateActionable(candidate) {
+        return Boolean(candidate && candidate.proof && ACTIONABLE_CANDIDATE_STATES.has(candidate.state));
+      }
+
+      function candidateStateLabel(candidate) {
+        const labels = {
+          ELIGIBLE: state.courtesyMode ? 'Isento' : money(candidate && candidate.amount),
+          PAYMENT_PENDING: 'Retomar pagamento',
+          ALREADY_REGISTERED: 'Já inscrito',
+          FULL: 'Sem vaga',
+          CLOSED: 'Inscrições fechadas',
+          REVIEW_REQUIRED: 'Em revisão',
+        };
+        return labels[candidate && candidate.state] || 'Indisponível';
       }
 
       function unavailableCandidatesMessage(payload) {
@@ -722,9 +747,12 @@
 
       function renderCandidates() {
         $('candidateList').replaceChildren();
+        const actionableCount = state.candidates.filter(candidateActionable).length;
         $('candidateTitle').textContent = state.candidates.length > 1 ? 'Escolha quem vai jogar' : 'Classe Espacial disponível';
         $('candidateIntro').textContent = state.candidates.length > 1
-          ? 'Este CPF é responsável por mais de um atleta elegível. Selecione uma inscrição para continuar.'
+          ? actionableCount > 1
+            ? 'Encontramos o responsável e os atletas vinculados. Faça uma inscrição por vez; depois que o primeiro Pix for confirmado, você poderá continuar com outra pessoa.'
+            : 'Encontramos o responsável e os atletas vinculados. Confira abaixo quem já está inscrito, quem está sem vaga e quem pode continuar.'
           : state.courtesyMode
           ? 'Encontramos a inscrição principal confirmada. Confira os dados antes de aceitar o convite isento.'
           : 'Encontramos a inscrição principal confirmada. Confira os dados antes de gerar o novo Pix.';
@@ -732,11 +760,15 @@
         state.candidates.forEach((candidate, index) => {
           const label = document.createElement('label');
           label.className = 'candidate-card';
+          label.dataset.state = candidate.state;
+          label.classList.toggle('unavailable', !candidateActionable(candidate));
           const input = document.createElement('input');
           input.type = 'radio';
           input.name = 'candidate';
           input.value = String(index);
           input.checked = index === state.selectedCandidateIndex;
+          input.disabled = !candidateActionable(candidate);
+          input.setAttribute('aria-label', candidate.athleteName + ': ' + candidateStateLabel(candidate));
           input.addEventListener('change', () => selectCandidate(index));
           const body = document.createElement('span');
           body.className = 'candidate-body';
@@ -759,7 +791,7 @@
           copy.append(name, route);
           const price = document.createElement('strong');
           price.className = 'candidate-price';
-          price.textContent = state.courtesyMode ? 'Isento' : money(candidate.amount);
+          price.textContent = candidateStateLabel(candidate);
           body.append(copy, price);
           label.append(input, body);
           $('candidateList').append(label);
@@ -768,12 +800,15 @@
       }
 
       function selectCandidate(index) {
-        state.selectedCandidateIndex = Number(index);
+        const nextIndex = Number(index);
+        if (!candidateActionable(state.candidates[nextIndex])) return;
+        state.selectedCandidateIndex = nextIndex;
         updateCandidateSummary();
       }
 
       function selectedCandidate() {
-        return state.candidates[state.selectedCandidateIndex] || null;
+        const candidate = state.candidates[state.selectedCandidateIndex] || null;
+        return candidateActionable(candidate) ? candidate : null;
       }
 
       function updateCandidateSummary() {
@@ -805,13 +840,18 @@
           if (!candidates.length) throw new ApiError(unavailableCandidatesMessage(result), 409, null);
           state.cpf = cpf;
           state.candidates = candidates;
-          state.selectedCandidateIndex = candidates.length === 1 ? 0 : -1;
+          state.linkedCandidateCount = candidates.length;
+          const actionableIndexes = candidates
+            .map((candidate, index) => candidateActionable(candidate) ? index : -1)
+            .filter((index) => index >= 0);
+          state.selectedCandidateIndex = actionableIndexes.length === 1 ? actionableIndexes[0] : -1;
           state.requestTokens.clear();
           $('cpfInput').value = '';
           $('checkoutConsent').checked = false;
           renderCandidates();
           clearError();
           setStep(2);
+          if (!actionableIndexes.length) showError(unavailableCandidatesMessage(result));
           window.scrollTo({ top: Math.max(0, $('flowShell').offsetTop - 82), behavior: 'smooth' });
         } catch (error) {
           const message = error instanceof ApiError && error.status === 429
@@ -848,9 +888,14 @@
             terms_accepted: true,
           }, state.courtesyMode ? DEFAULT_REQUEST_TIMEOUT_MS : CHECKOUT_REQUEST_TIMEOUT_MS);
           state.cpf = '';
-          state.portalToken = '';
           state.candidates = [];
-          if (state.courtesyMode) renderCourtesySuccess(result || {}, candidate);
+          state.selectedCandidateIndex = -1;
+          state.requestTokens.clear();
+          if (state.courtesyMode) {
+            state.portalToken = '';
+            state.linkedCandidateCount = 0;
+            renderCourtesySuccess(result || {}, candidate);
+          }
           else {
             state.paymentFallback = { amount: candidate.amount, spatialClass: candidate.spatialClass };
             renderPayment(result || {});
@@ -894,6 +939,7 @@
         $('copyPixButton').hidden = true;
         $('refreshStatusButton').hidden = true;
         $('retryPaymentButton').hidden = true;
+        $('anotherAthleteButton').hidden = true;
         $('tournamentButton').href = '/torneios/' + encodeURIComponent(state.slug);
         setPaymentFeedback('Nenhum pagamento foi gerado.', false);
       }
@@ -1037,6 +1083,7 @@
         const canTrack = Boolean(state.trackingToken) && !terminal;
         $('refreshStatusButton').hidden = !canTrack;
         $('retryPaymentButton').hidden = !canTrack || providerConfirmed || !(result.retryable === true || failed || (pending && !invoiceUrl && !pix));
+        $('anotherAthleteButton').hidden = state.courtesyMode || state.linkedCandidateCount < 2 || !confirmed;
         $('tournamentButton').href = '/torneios/' + encodeURIComponent(state.slug);
         const providerWarning = clean(result.warning);
         if (!preserveFeedback) {
@@ -1061,6 +1108,27 @@
       function clearPaymentExpiry() {
         if (state.paymentExpiryTimer) clearTimeout(state.paymentExpiryTimer);
         state.paymentExpiryTimer = null;
+      }
+
+      function startAnotherLinkedAthlete() {
+        if (state.courtesyMode || !state.portalToken || state.linkedCandidateCount < 2) return;
+        clearPaymentPoll();
+        clearPaymentExpiry();
+        state.cpf = '';
+        state.candidates = [];
+        state.selectedCandidateIndex = -1;
+        state.requestTokens.clear();
+        state.trackingToken = '';
+        state.paymentResult = null;
+        state.paymentFallback = null;
+        state.paymentPollAttempt = 0;
+        $('cpfInput').value = '';
+        $('checkoutConsent').checked = false;
+        resetCaptcha('Confirme novamente para localizar os atletas vinculados.');
+        clearError();
+        setStep(1);
+        $('cpfInput').focus();
+        window.scrollTo({ top: Math.max(0, $('flowShell').offsetTop - 82), behavior: 'smooth' });
       }
 
       function schedulePaymentExpiry() {
@@ -1232,6 +1300,7 @@
       $('copyPixButton').addEventListener('click', copyPix);
       $('refreshStatusButton').addEventListener('click', () => refreshPaymentStatus(true));
       $('retryPaymentButton').addEventListener('click', retryPayment);
+      $('anotherAthleteButton').addEventListener('click', startAnotherLinkedAthlete);
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden && state.trackingToken && !paymentTerminal(state.paymentResult)) refreshPaymentStatus(false);
       });
