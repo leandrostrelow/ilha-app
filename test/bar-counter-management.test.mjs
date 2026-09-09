@@ -173,6 +173,7 @@ test('upgrade preserva e classifica o snapshot dos itens legados de balcão', ()
   assert.match(legacyBackfill, /item\.status in \('SOLICITADO', 'EM_PREPARO', 'PRONTO'\)/);
   assert.match(legacyBackfill, /requires_production/);
   assert.match(legacyBackfill, /mini pizza/);
+  assert.match(migrationsSource, /bar_counter_sale_mutations_created_by_idx/);
 });
 
 test('cozinha preserva pendências do balcão após a virada do dia e o financeiro mantém a data da venda', () => {
