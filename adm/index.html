@@ -3699,10 +3699,9 @@
     }
 
     .client-monthly-billing-control {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) minmax(190px, 230px) auto;
       align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
       gap: 12px;
       padding: 13px;
       border: 1px solid #cfe3e7;
@@ -3721,6 +3720,25 @@
       font-size: 11px;
       font-weight: 750;
       line-height: 1.4;
+    }
+
+    .client-monthly-billing-method {
+      min-width: 0;
+    }
+
+    .client-monthly-billing-method label {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .client-monthly-billing-method select {
+      width: 100%;
+      min-height: 42px;
     }
 
     .client-invoice-guide {
@@ -10411,6 +10429,13 @@
       }
       .monthly-billing-settings-message {
         grid-column: auto;
+      }
+      .client-monthly-billing-control {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+      .client-monthly-billing-control button {
+        width: 100%;
       }
       .client-card {
         grid-template-columns: minmax(180px, 1fr) minmax(160px, 1fr) 112px 112px;
@@ -20743,8 +20768,16 @@
               <div class="field full" data-club-permission="finance.write">
                 <div class="client-monthly-billing-control" id="clientMonthlyBillingControl">
                   <div>
-                    <strong>Cobrança mensal Pix</strong>
+                    <strong>Cobrança mensal</strong>
                     <span id="clientMonthlyBillingStatus">Consultando a ativação...</span>
+                  </div>
+                  <div class="client-monthly-billing-method">
+                    <label for="clientMonthlyBillingMethod">Forma de pagamento</label>
+                    <select id="clientMonthlyBillingMethod">
+                      <option value="ASAAS_PIX">Pix Asaas — automático</option>
+                      <option value="CLUB_PIX">Pix do clube — baixa manual</option>
+                      <option value="CASH">Dinheiro — baixa manual</option>
+                    </select>
                   </div>
                   <button class="ghost-btn" type="button" id="clientMonthlyBillingToggleBtn" disabled>Carregando...</button>
                 </div>
@@ -20911,8 +20944,8 @@
               </div>
               <div class="client-invoice-guide">
                 <div>
-                  <strong>Mensalidade Pix pelo Asaas</strong>
-                  <span>Ative a cobrança acima e gere o Pix na área de Mensalidades.</span>
+                  <strong>Mensalidades do aluno</strong>
+                  <span>Pix Asaas tem baixa automática. Pix do clube e dinheiro são confirmados manualmente pelo ADM.</span>
                 </div>
                 <button class="ghost-btn" type="button" id="clientInvoiceOpenFinanceBtn">Abrir Mensalidades</button>
               </div>
@@ -22692,7 +22725,8 @@
                   <input id="monthlyBillingMonth" type="month" />
                 </div>
                 <button class="ghost-btn" type="button" id="monthlyBillingPreviewBtn">Atualizar prévia</button>
-                <button class="primary-btn" type="button" id="monthlyBillingGenerateBtn" data-club-permission="finance.write">Gerar ativadas</button>
+                <button class="primary-btn" type="button" id="monthlyBillingGenerateBtn" data-club-permission="finance.write">Gerar Pix Asaas</button>
+                <button class="ghost-btn" type="button" id="monthlyBillingGenerateManualBtn" data-club-permission="finance.write">Gerar Pix clube/dinheiro</button>
                 <button class="ghost-btn" type="button" id="monthlyBillingRetryBtn" data-club-permission="finance.write">Retentar falhas</button>
               </div>
               <div class="monthly-billing-message" id="monthlyBillingMessage" hidden role="status" aria-live="polite"></div>
@@ -31541,11 +31575,14 @@
       const invoices = invoicesForClient(client);
       $('clientInvoiceList').innerHTML = invoices.length ? invoices.map(function (invoice) {
         const managed = invoiceIsProviderManaged(invoice);
+        const manualMethod = monthlyBillingMethodIsManual(invoice.paymentMethod) ? normalizeMonthlyBillingMethod(invoice.paymentMethod) : '';
         const providerDetail = managed
           ? '<div class="client-invoice-provider-state"><strong>' + escapeHtml(clientInvoiceProviderLabel(invoice)) + '</strong><span>Confirmação automática; o status não pode ser alterado manualmente.</span>' +
             (invoice.lastPaymentError ? '<span class="client-invoice-provider-error">Última falha: ' + escapeHtml(invoice.lastPaymentError) + '</span>' : '') +
             (clientInvoiceHasUsablePix(invoice) ? '<div class="client-invoice-provider-actions"><button class="small-btn" type="button" data-client-invoice-pix="' + escapeHtml(invoice.id || '') + '">Copiar Pix</button></div>' : '') + '</div>' : '';
-        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(invoiceMonthLabel(invoice.invoiceMonth)) + '</strong><div class="muted">' + escapeHtml(invoice.planName || invoice.description || 'Mensalidade') + ' | vence ' + escapeHtml(invoice.dueDate ? financeDateLabel(invoice.dueDate) : 'a definir') + '</div></div><div class="ops-meta">' + statusPill(invoice.status) + (invoice.familyBilling ? '<span class="ops-pill good">Conta familiar</span>' : '') + '<span class="finance-total">' + money(invoice.amount) + '</span></div></div>' + providerDetail + (invoice.notes ? '<div class="muted" style="margin-top:8px">' + escapeHtml(invoice.notes) + '</div>' : '') + renderFamilyInvoiceItems(invoice) + '</article>';
+        const manualDetail = manualMethod
+          ? '<div class="client-invoice-provider-state"><strong>' + escapeHtml(monthlyBillingMethodLabel(manualMethod)) + '</strong><span>' + (String(invoice.status || '').toUpperCase() === 'PAGA' ? 'Recebimento confirmado manualmente pelo clube.' : 'Aguardando o pagamento e a confirmação manual no ADM.') + '</span></div>' : '';
+        return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(invoiceMonthLabel(invoice.invoiceMonth)) + '</strong><div class="muted">' + escapeHtml(invoice.planName || invoice.description || 'Mensalidade') + ' | vence ' + escapeHtml(invoice.dueDate ? financeDateLabel(invoice.dueDate) : 'a definir') + '</div></div><div class="ops-meta">' + statusPill(invoice.status) + (manualMethod ? '<span class="ops-pill">' + escapeHtml(monthlyBillingMethodLabel(manualMethod)) + '</span>' : '') + (invoice.familyBilling ? '<span class="ops-pill good">Conta familiar</span>' : '') + '<span class="finance-total">' + money(invoice.amount) + '</span></div></div>' + providerDetail + manualDetail + (invoice.notes ? '<div class="muted" style="margin-top:8px">' + escapeHtml(invoice.notes) + '</div>' : '') + renderFamilyInvoiceItems(invoice) + '</article>';
       }).join('') : '<div class="lesson-empty-state">Nenhuma fatura criada para este aluno.</div>';
       fillClientInvoiceDefaults(client);
     }
@@ -41532,7 +41569,8 @@
         STATUS_REGRESSION: 'Atualização ignorada para preservar um estado financeiro mais seguro.',
         FINANCIAL_STATE_PRESERVED: 'Estado financeiro confirmado foi preservado.',
         UNSUPPORTED_STATUS: 'Status do Asaas ainda não reconhecido. Revisão manual necessária.',
-        DUPLICATE_EVENT: 'Evento repetido do Asaas ignorado com segurança.'
+        DUPLICATE_EVENT: 'Evento repetido do Asaas ignorado com segurança.',
+        INVOICE_ALREADY_MANAGED_BY_ASAAS: 'A mensalidade deste mês já pertence ao Asaas e não pode ser convertida em pagamento manual.'
       };
       if (labels[code]) return labels[code];
       return original;
@@ -41557,7 +41595,7 @@
       status.textContent = !loaded ? (busy ? 'Carregando' : 'Indisponível') : settings.enabled ? 'Automação ativa' : 'Automação pausada';
       status.className = 'ops-pill' + (loaded && settings.enabled ? ' good' : loaded ? ' warn' : '');
       schedule.textContent = loaded
-        ? (settings.enabled ? 'Próxima geração automática' : 'Ao ativar, a geração ocorrerá') + ' no dia ' + settings.generationDay + ' de cada mês, às ' + settings.generationTime + ' (horário de Brasília).'
+        ? (settings.enabled ? 'Próxima geração automática' : 'Ao ativar, a geração ocorrerá') + ' no dia ' + settings.generationDay + ' de cada mês, às ' + settings.generationTime + ' (horário de Brasília), somente para alunos em Pix Asaas.'
         : 'Não foi possível confirmar a configuração da geração automática.';
       if (loaded && document.activeElement !== dayInput) dayInput.value = String(settings.generationDay);
       dayInput.disabled = busy || !loaded || !canUseClubPermission('finance.write');
@@ -41573,10 +41611,15 @@
     function normalizeMonthlyBillingCandidate(row) {
       row = row && typeof row === 'object' ? row : {};
       const clientId = row.clientId || row.client_id || '';
-      return {
+      const enrollment = opsState.monthlyBillingEnrollments[String(clientId)] || {};
+      const invoiceId = row.invoiceId || row.invoice_id || '';
+      const localInvoice = (opsData.paymentInvoices || []).find(function (invoice) {
+        return String(invoice.id || '') === String(invoiceId || '');
+      });
+      const candidate = {
         clientId: clientId,
         clientName: row.clientName || row.client_name || row.name || 'Aluno não identificado',
-        invoiceId: row.invoiceId || row.invoice_id || '',
+        invoiceId: invoiceId,
         amount: Number(row.amount || 0),
         dueDate: row.dueDate || row.due_date || '',
         familyBilling: row.familyBilling === true || row.family_billing === true,
@@ -41584,8 +41627,32 @@
         reason: row.reason || row.exclusionReason || row.exclusion_reason || '',
         providerStatus: row.providerStatus || row.provider_status || '',
         lastError: row.lastError || row.last_error || row.error || '',
-        billingEnabled: row.billingEnabled === true || row.billing_enabled === true || Boolean(opsState.monthlyBillingEnrollments[String(clientId)])
+        billingEnabled: row.billingEnabled === true || row.billing_enabled === true || enrollment.enabled === true,
+        billingMethod: normalizeMonthlyBillingMethod(row.billingMethod || row.billing_method || enrollment.billingMethod),
+        invoicePaymentMethod: normalizeMonthlyBillingMethod(row.invoicePaymentMethod || row.invoice_payment_method || localInvoice && localInvoice.paymentMethod || enrollment.billingMethod)
       };
+      if (monthlyBillingMethodIsManual(candidate.billingMethod) && candidate.state === 'SKIPPED' && candidate.reason === 'MISSING_VALID_CPF') {
+        candidate.state = 'ELIGIBLE';
+        candidate.reason = '';
+      }
+      return candidate;
+    }
+
+    function normalizeMonthlyBillingMethod(value) {
+      const normalized = String(value || '').trim().toUpperCase();
+      return ['ASAAS_PIX', 'CLUB_PIX', 'CASH'].includes(normalized) ? normalized : 'ASAAS_PIX';
+    }
+
+    function monthlyBillingMethodLabel(value) {
+      return ({
+        ASAAS_PIX: 'Pix Asaas',
+        CLUB_PIX: 'Pix do clube',
+        CASH: 'Dinheiro'
+      })[normalizeMonthlyBillingMethod(value)];
+    }
+
+    function monthlyBillingMethodIsManual(value) {
+      return ['CLUB_PIX', 'CASH'].includes(normalizeMonthlyBillingMethod(value));
     }
 
     function normalizeMonthlyBillingEnrollments(payload) {
@@ -41593,7 +41660,12 @@
       payload = payload && typeof payload === 'object' ? payload : {};
       return monthlyBillingList(payload.rows || payload.data).reduce(function (result, row) {
         const clientId = String(row && (row.clientId || row.client_id) || '');
-        if (clientId && (row.enabled === true || row.enabled === 'true')) result[clientId] = true;
+        if (clientId) {
+          result[clientId] = {
+            enabled: row.enabled === true || row.enabled === 'true',
+            billingMethod: normalizeMonthlyBillingMethod(row.billingMethod || row.billing_method)
+          };
+        }
         return result;
       }, {});
     }
@@ -41602,7 +41674,17 @@
       const payload = opsState.monthlyBillingPayload;
       if (!payload || !Array.isArray(payload.candidates)) return;
       payload.candidates.forEach(function (candidate) {
-        candidate.billingEnabled = Boolean(opsState.monthlyBillingEnrollments[String(candidate.clientId || '')]);
+        const enrollment = opsState.monthlyBillingEnrollments[String(candidate.clientId || '')] || {};
+        candidate.billingEnabled = enrollment.enabled === true;
+        candidate.billingMethod = normalizeMonthlyBillingMethod(enrollment.billingMethod);
+        const invoice = (opsData.paymentInvoices || []).find(function (item) {
+          return String(item.id || '') === String(candidate.invoiceId || '');
+        });
+        candidate.invoicePaymentMethod = normalizeMonthlyBillingMethod(invoice && invoice.paymentMethod || candidate.invoicePaymentMethod || candidate.billingMethod);
+        if (monthlyBillingMethodIsManual(candidate.billingMethod) && candidate.state === 'SKIPPED' && candidate.reason === 'MISSING_VALID_CPF') {
+          candidate.state = 'ELIGIBLE';
+          candidate.reason = '';
+        }
       });
     }
 
@@ -41610,16 +41692,21 @@
       if (nextEnrollment) requireClubPermission('finance.write');
       else if (!canUseClubPermission('finance.read') && !canUseClubPermission('finance.write')) requireClubPermission('finance.read');
       if (isAdminDemoMode()) {
-        if (nextEnrollment) return { clientId: nextEnrollment.clientId, enabled: nextEnrollment.enabled === true };
+        if (nextEnrollment) return {
+          clientId: nextEnrollment.clientId,
+          enabled: nextEnrollment.enabled === true,
+          billingMethod: normalizeMonthlyBillingMethod(nextEnrollment.billingMethod)
+        };
         return { rows: Object.keys(opsState.monthlyBillingEnrollments).map(function (clientId) {
-          return { clientId: clientId, enabled: true };
+          return Object.assign({ clientId: clientId }, opsState.monthlyBillingEnrollments[clientId]);
         }) };
       }
       return supabaseRest('rpc/' + (nextEnrollment ? 'admin_set_app_monthly_billing_enrollment' : 'admin_get_app_monthly_billing_enrollments'), {
         method: 'POST',
         body: nextEnrollment ? {
           p_client_id: nextEnrollment.clientId,
-          p_enabled: nextEnrollment.enabled === true
+          p_enabled: nextEnrollment.enabled === true,
+          p_billing_method: normalizeMonthlyBillingMethod(nextEnrollment.billingMethod)
         } : {},
         prefer: 'return=representation'
       });
@@ -41647,62 +41734,92 @@
     function renderClientMonthlyBillingControl(client) {
       const status = $('clientMonthlyBillingStatus');
       const button = $('clientMonthlyBillingToggleBtn');
-      if (!status || !button || !client) return;
+      const methodSelect = $('clientMonthlyBillingMethod');
+      if (!status || !button || !methodSelect || !client) return;
       const family = familyContextForClient(client);
       if (family.memberLink) {
         status.textContent = 'Este membro está incluído na cobrança de ' + (family.responsible && family.responsible.name || 'seu responsável financeiro') + '.';
         button.textContent = 'Gerenciada pelo responsável';
         button.disabled = true;
         button.className = 'ghost-btn';
+        methodSelect.value = 'ASAAS_PIX';
+        methodSelect.disabled = true;
         return;
       }
       const clientId = String(client.id || '');
       const loaded = opsState.monthlyBillingEnrollmentsLoaded;
       const saving = opsState.monthlyBillingEnrollmentSavingClientId === clientId;
-      const enabled = Boolean(opsState.monthlyBillingEnrollments[clientId]);
+      const enrollment = opsState.monthlyBillingEnrollments[clientId] || {};
+      const enabled = enrollment.enabled === true;
+      const billingMethod = loaded
+        ? normalizeMonthlyBillingMethod(enrollment.billingMethod)
+        : 'ASAAS_PIX';
+      methodSelect.value = billingMethod;
       status.textContent = !loaded
         ? 'Consultando a ativação segura...'
         : enabled
-          ? 'Ativada. Este responsável poderá receber a mensalidade Pix automática.'
-          : 'Desativada. Nenhuma nova mensalidade automática será emitida para este responsável.';
+          ? billingMethod === 'ASAAS_PIX'
+            ? 'Ativada no Pix Asaas. A cobrança e a baixa são automáticas.'
+            : 'Ativada em ' + monthlyBillingMethodLabel(billingMethod) + '. O sistema cria o lançamento interno e o ADM confirma o recebimento.'
+          : 'Desativada. Escolha a forma de pagamento e ative quando este aluno entrar na cobrança mensal.';
       button.textContent = saving ? 'Salvando...' : !loaded ? 'Carregando...' : enabled ? 'Desativar cobrança' : 'Ativar cobrança';
       button.disabled = !loaded || saving || !clientId || !canUseClubPermission('finance.write');
       button.className = enabled ? 'ghost-btn' : 'primary-btn';
+      methodSelect.disabled = !loaded || saving || !clientId || !canUseClubPermission('finance.write');
       button.dataset.monthlyBillingClient = clientId;
       button.dataset.monthlyBillingEnabled = enabled ? 'true' : 'false';
+      button.dataset.monthlyBillingMethod = billingMethod;
+      methodSelect.dataset.monthlyBillingClient = clientId;
+      methodSelect.dataset.monthlyBillingEnabled = enabled ? 'true' : 'false';
+      methodSelect.dataset.monthlyBillingSavedMethod = billingMethod;
     }
 
-    async function updateMonthlyBillingEnrollment(clientId, nextEnabled) {
+    async function updateMonthlyBillingEnrollment(clientId, nextEnabled, nextMethod, options) {
       clientId = String(clientId || '');
       if (!clientId || opsState.monthlyBillingEnrollmentSavingClientId) return false;
       requireClubPermission('finance.write');
+      options = options || {};
+      nextMethod = normalizeMonthlyBillingMethod(nextMethod);
       const candidate = opsState.monthlyBillingPayload && opsState.monthlyBillingPayload.candidates.find(function (item) {
         return String(item.clientId || '') === clientId;
       });
       const client = findClientByKey(clientId);
       const clientName = candidate && candidate.clientName || client && client.name || 'este responsável';
-      const confirmation = nextEnabled
-        ? 'Ativar a cobrança mensal Pix para ' + clientName + '? Nenhuma cobrança será criada agora; use “Gerar agora” quando quiser emitir a deste mês.'
-        : 'Desativar novas mensalidades automáticas para ' + clientName + '? Faturas que já existem continuarão válidas e serão conciliadas normalmente.';
-      if (!window.confirm(confirmation)) return false;
+      const existing = opsState.monthlyBillingEnrollments[clientId] || { enabled: false, billingMethod: 'ASAAS_PIX' };
+      const methodChanged = normalizeMonthlyBillingMethod(existing.billingMethod) !== nextMethod;
+      let confirmation = '';
+      if (options.methodOnly) {
+        confirmation = 'Alterar a forma de pagamento mensal de ' + clientName + ' para ' + monthlyBillingMethodLabel(nextMethod) + '? Faturas já emitidas não serão convertidas.';
+      } else if (nextEnabled) {
+        confirmation = 'Ativar a cobrança mensal de ' + clientName + ' em ' + monthlyBillingMethodLabel(nextMethod) + '? Nenhuma cobrança será criada agora; a emissão será feita na área de Mensalidades.';
+      } else {
+        confirmation = 'Desativar novas mensalidades para ' + clientName + '? Faturas que já existem continuarão válidas.';
+      }
+      if ((options.skipConfirmation !== true) && !window.confirm(confirmation)) {
+        if (options.methodOnly && $('clientMonthlyBillingMethod')) $('clientMonthlyBillingMethod').value = normalizeMonthlyBillingMethod(existing.billingMethod);
+        return false;
+      }
       opsState.monthlyBillingEnrollmentSavingClientId = clientId;
       renderMonthlyBilling();
       if (client) renderClientMonthlyBillingControl(client);
       try {
-        const saved = await monthlyBillingEnrollmentsRequest({ clientId: clientId, enabled: nextEnabled });
+        const saved = await monthlyBillingEnrollmentsRequest({ clientId: clientId, enabled: nextEnabled, billingMethod: nextMethod });
         const row = Array.isArray(saved) ? saved[0] : saved;
         const enabled = Boolean(row && (row.enabled === true || row.enabled === 'true'));
-        if (enabled) opsState.monthlyBillingEnrollments[clientId] = true;
-        else delete opsState.monthlyBillingEnrollments[clientId];
+        const billingMethod = normalizeMonthlyBillingMethod(row && (row.billingMethod || row.billing_method) || nextMethod);
+        opsState.monthlyBillingEnrollments[clientId] = { enabled: enabled, billingMethod: billingMethod };
         opsState.monthlyBillingEnrollmentsLoaded = true;
         applyMonthlyBillingEnrollmentsToPayload();
-        setMonthlyBillingMessage(enabled
-          ? clientName + ' foi ativado para receber mensalidades. A cobrança deste mês ainda não foi gerada.'
-          : clientName + ' foi desativado para novas mensalidades.', '');
-        toast(enabled ? 'Cobrança mensal ativada.' : 'Cobrança mensal desativada.');
+        setMonthlyBillingMessage(options.methodOnly && methodChanged
+          ? 'Forma de pagamento de ' + clientName + ' alterada para ' + monthlyBillingMethodLabel(billingMethod) + '. Faturas existentes foram preservadas.'
+          : enabled
+            ? clientName + ' foi ativado em ' + monthlyBillingMethodLabel(billingMethod) + '. A cobrança deste mês ainda não foi gerada.'
+            : clientName + ' foi desativado para novas mensalidades.', '');
+        toast(options.methodOnly ? 'Forma de pagamento atualizada.' : enabled ? 'Cobrança mensal ativada.' : 'Cobrança mensal desativada.');
         return true;
       } catch (error) {
         setMonthlyBillingMessage(error && error.message || 'Não foi possível alterar a ativação da mensalidade.', 'error');
+        if (options.methodOnly && $('clientMonthlyBillingMethod')) $('clientMonthlyBillingMethod').value = normalizeMonthlyBillingMethod(existing.billingMethod);
         reportActionError(error);
         return false;
       } finally {
@@ -41787,8 +41904,21 @@
 
     function monthlyBillingCandidateNeedsGeneration(candidate) {
       if (!candidate || !candidate.billingEnabled) return false;
+      if (normalizeMonthlyBillingMethod(candidate.billingMethod) !== 'ASAAS_PIX') return false;
+      if (candidate.invoiceId && monthlyBillingMethodIsManual(candidate.invoicePaymentMethod)) return false;
       if (['ELIGIBLE', 'ELIGIBLE_WITH_WARNING', 'READY'].includes(candidate.state)) return true;
       return candidate.state === 'EXISTING' && !String(candidate.providerStatus || '').trim();
+    }
+
+    function monthlyBillingCandidateNeedsManualGeneration(candidate) {
+      return Boolean(candidate && candidate.billingEnabled && !candidate.invoiceId &&
+        monthlyBillingMethodIsManual(candidate.billingMethod) &&
+        ['ELIGIBLE', 'ELIGIBLE_WITH_WARNING'].includes(candidate.state));
+    }
+
+    function monthlyBillingCandidateCanConfirmManual(candidate) {
+      return Boolean(candidate && candidate.invoiceId && monthlyBillingMethodIsManual(candidate.invoicePaymentMethod) &&
+        ['EXISTING', 'OVERDUE'].includes(candidate.state));
     }
 
     function monthlyBillingGeneratedCount(payload) {
@@ -41828,11 +41958,12 @@
       message.className = 'monthly-billing-message' + (opsState.monthlyBillingMessageKind ? ' ' + opsState.monthlyBillingMessageKind : '');
       message.textContent = opsState.monthlyBillingMessage;
       const busy = Boolean(opsState.monthlyBillingLoading);
-      ['monthlyBillingMonth', 'monthlyBillingPreviewBtn', 'monthlyBillingGenerateBtn', 'monthlyBillingRetryBtn'].forEach(function (id) {
+      ['monthlyBillingMonth', 'monthlyBillingPreviewBtn', 'monthlyBillingGenerateBtn', 'monthlyBillingGenerateManualBtn', 'monthlyBillingRetryBtn'].forEach(function (id) {
         if ($(id)) $(id).disabled = busy;
       });
       $('monthlyBillingPreviewBtn').textContent = busy ? 'Atualizando...' : 'Atualizar prévia';
       $('monthlyBillingGenerateBtn').disabled = busy || !payload || !candidates.some(monthlyBillingCandidateNeedsGeneration);
+      $('monthlyBillingGenerateManualBtn').disabled = busy || !payload || !candidates.some(monthlyBillingCandidateNeedsManualGeneration);
       $('monthlyBillingRetryBtn').disabled = busy || !payload || !candidates.some(monthlyBillingCandidateCanRetry);
       if (!opsState.monthlyBillingLoaded && !busy) {
         $('monthlyBillingRows').innerHTML = '<div class="lesson-empty-state">Escolha o mês e atualize a prévia antes de gerar cobranças.</div>';
@@ -41843,7 +41974,14 @@
         return;
       }
       $('monthlyBillingRows').innerHTML = candidates.map(function (candidate) {
-        const detail = [!candidate.billingEnabled && !candidate.invoiceId ? 'Cobrança mensal desativada.' : '', monthlyBillingReasonLabel(candidate.reason), candidate.providerStatus ? 'Asaas: ' + candidate.providerStatus : '', monthlyBillingReasonLabel(candidate.lastError)].filter(Boolean);
+        const manual = monthlyBillingMethodIsManual(candidate.billingMethod);
+        const detail = [
+          !candidate.billingEnabled && !candidate.invoiceId ? 'Cobrança mensal desativada.' : '',
+          candidate.billingEnabled && manual ? 'Cobrança interna; o Asaas não será acionado.' : '',
+          monthlyBillingReasonLabel(candidate.reason),
+          candidate.providerStatus ? 'Asaas: ' + candidate.providerStatus : '',
+          monthlyBillingReasonLabel(candidate.lastError)
+        ].filter(Boolean);
         const actions = [];
         if (candidate.invoiceId && canUseClubPermission('finance.write')) {
           if (monthlyBillingCandidateCanRetry(candidate)) actions.push('<button class="small-btn" type="button" data-monthly-billing-retry="' + escapeHtml(candidate.invoiceId) + '">Retentar</button>');
@@ -41852,13 +41990,19 @@
         }
         if (canUseClubPermission('finance.write') && candidate.clientId && (candidate.state !== 'SKIPPED' || candidate.billingEnabled)) {
           const savingEnrollment = opsState.monthlyBillingEnrollmentSavingClientId === String(candidate.clientId);
-          actions.push('<button class="small-btn' + (candidate.billingEnabled ? ' is-enabled' : '') + '" type="button" data-monthly-billing-enrollment="' + escapeHtml(candidate.clientId) + '" data-monthly-billing-enabled="' + (candidate.billingEnabled ? 'true' : 'false') + '"' + (savingEnrollment ? ' disabled' : '') + '>' + (savingEnrollment ? 'Salvando...' : candidate.billingEnabled ? 'Desativar' : 'Ativar') + '</button>');
+          actions.push('<button class="small-btn' + (candidate.billingEnabled ? ' is-enabled' : '') + '" type="button" data-monthly-billing-enrollment="' + escapeHtml(candidate.clientId) + '" data-monthly-billing-enabled="' + (candidate.billingEnabled ? 'true' : 'false') + '" data-monthly-billing-method="' + escapeHtml(candidate.billingMethod) + '"' + (savingEnrollment ? ' disabled' : '') + '>' + (savingEnrollment ? 'Salvando...' : candidate.billingEnabled ? 'Desativar' : 'Ativar') + '</button>');
         }
         if (canUseClubPermission('finance.write') && monthlyBillingCandidateNeedsGeneration(candidate)) {
-          actions.push('<button class="primary-btn small-btn" type="button" data-monthly-billing-generate="' + escapeHtml(candidate.clientId) + '">Gerar agora</button>');
+          actions.push('<button class="primary-btn small-btn" type="button" data-monthly-billing-generate="' + escapeHtml(candidate.clientId) + '">Gerar Pix Asaas</button>');
+        }
+        if (canUseClubPermission('finance.write') && monthlyBillingCandidateNeedsManualGeneration(candidate)) {
+          actions.push('<button class="primary-btn small-btn" type="button" data-monthly-billing-generate-manual="' + escapeHtml(candidate.clientId) + '">Gerar lançamento</button>');
+        }
+        if (canUseClubPermission('finance.write') && monthlyBillingCandidateCanConfirmManual(candidate)) {
+          actions.push('<button class="primary-btn small-btn" type="button" data-monthly-billing-confirm-manual="' + escapeHtml(candidate.invoiceId) + '" data-monthly-billing-client="' + escapeHtml(candidate.clientId) + '">Confirmar recebimento</button>');
         }
         return '<div class="monthly-billing-table-row ' + monthlyBillingRowClass(candidate.state) + '" role="row">' +
-          '<div class="monthly-billing-payer" role="cell"><strong>' + escapeHtml(candidate.clientName) + '</strong><small>' + escapeHtml(candidate.clientId ? 'Cadastro ' + candidate.clientId : 'Cadastro não informado') + '</small>' + (candidate.familyBilling ? '<span class="monthly-billing-family">Conta familiar</span>' : '') + '</div>' +
+          '<div class="monthly-billing-payer" role="cell"><strong>' + escapeHtml(candidate.clientName) + '</strong><small>' + escapeHtml(candidate.clientId ? 'Cadastro ' + candidate.clientId : 'Cadastro não informado') + '</small><span class="monthly-billing-family">' + escapeHtml(monthlyBillingMethodLabel(candidate.invoiceId ? candidate.invoicePaymentMethod : candidate.billingMethod)) + '</span>' + (candidate.familyBilling ? '<span class="monthly-billing-family">Conta familiar</span>' : '') + '</div>' +
           '<div role="cell">' + monthlyBillingStatePill(candidate.state) + '</div>' +
           '<div class="monthly-billing-detail" role="cell"><strong>' + escapeHtml(candidate.dueDate ? financeDateLabel(candidate.dueDate) : 'A definir') + '</strong></div>' +
           '<div role="cell"><strong>' + escapeHtml(money(candidate.amount || 0)) + '</strong></div>' +
@@ -42005,7 +42149,7 @@
       const confirmation = saveDayOnly
         ? 'Alterar a geração automática para o dia ' + generationDay + ' de cada mês? Faturas já emitidas não serão modificadas.'
         : enabling
-          ? 'Ativar a geração automática no dia ' + generationDay + ' de cada mês, às ' + current.generationTime + '? Quando o agendamento rodar, serão criadas cobranças Pix reais somente para os responsáveis elegíveis.'
+          ? 'Ativar a geração automática no dia ' + generationDay + ' de cada mês, às ' + current.generationTime + '? Quando o agendamento rodar, serão criadas cobranças Pix reais somente para os responsáveis ativados em Pix Asaas. Pix do clube e dinheiro continuarão manuais.'
           : 'Pausar a geração automática de novas mensalidades? Faturas já emitidas e a baixa automática dos pagamentos continuarão funcionando.';
       if (!window.confirm(confirmation)) return;
       opsState.monthlyBillingSettingsLoading = true;
@@ -42123,6 +42267,85 @@
         }
       } catch (error) {
         setMonthlyBillingMessage(error && error.message || 'Não foi possível gerar as mensalidades.', 'error');
+      } finally {
+        opsState.monthlyBillingLoading = false;
+        renderMonthlyBilling();
+      }
+    }
+
+    async function generateManualMonthlyBilling(clientId) {
+      const preview = opsState.monthlyBillingPayload;
+      const candidates = (preview && preview.candidates || []).filter(function (candidate) {
+        return monthlyBillingCandidateNeedsManualGeneration(candidate) && (!clientId || String(candidate.clientId) === String(clientId));
+      });
+      if (!candidates.length) return;
+      const total = candidates.reduce(function (sum, candidate) { return sum + Number(candidate.amount || 0); }, 0);
+      const names = candidates.slice(0, 3).map(function (candidate) { return candidate.clientName; }).join(', ');
+      const suffix = candidates.length > 3 ? ' e mais ' + (candidates.length - 3) : '';
+      if (!window.confirm('Gerar ' + candidates.length + ' lançamento(s) interno(s) de ' + money(total) + ' referente(s) a ' + invoiceMonthLabel(monthlyBillingInvoiceMonth()) + ' para ' + names + suffix + '? Nenhuma cobrança será criada ou enviada pelo Asaas.')) return;
+      opsState.monthlyBillingLoading = true;
+      setMonthlyBillingMessage('Gerando os lançamentos de Pix do clube e dinheiro...', '');
+      renderMonthlyBilling();
+      try {
+        if (isAdminDemoMode()) {
+          candidates.forEach(function (candidate) {
+            candidate.invoiceId = candidate.invoiceId || localId('manual_invoice');
+            candidate.invoicePaymentMethod = candidate.billingMethod;
+            candidate.state = 'EXISTING';
+          });
+        } else {
+          await supabaseRest('rpc/admin_generate_manual_app_monthly_billing', {
+            method: 'POST',
+            body: {
+              p_invoice_month: monthlyBillingInvoiceMonth(),
+              p_client_id: clientId || null
+            },
+            prefer: 'return=representation'
+          });
+          opsState.monthlyBillingLoading = false;
+          await loadOpsData(true);
+          opsState.monthlyBillingLoaded = false;
+          await loadMonthlyBillingPreview(false);
+        }
+        setMonthlyBillingMessage(candidates.length + ' lançamento(s) interno(s) criado(s). Confirme o recebimento no ADM quando o pagamento chegar.', '');
+        toast('Lançamentos manuais gerados.');
+      } catch (error) {
+        setMonthlyBillingMessage(error && error.message || 'Não foi possível gerar os lançamentos manuais.', 'error');
+      } finally {
+        opsState.monthlyBillingLoading = false;
+        renderMonthlyBilling();
+      }
+    }
+
+    async function confirmManualMonthlyPayment(invoiceId, clientId) {
+      if (!invoiceId || opsState.monthlyBillingLoading) return;
+      const candidate = opsState.monthlyBillingPayload && opsState.monthlyBillingPayload.candidates.find(function (item) {
+        return String(item.invoiceId || '') === String(invoiceId);
+      });
+      const name = candidate && candidate.clientName || 'este aluno';
+      const method = monthlyBillingMethodLabel(candidate && candidate.invoicePaymentMethod);
+      if (!window.confirm('Confirmar que o clube recebeu ' + money(candidate && candidate.amount || 0) + ' de ' + name + ' por ' + method + '? Esta baixa ficará registrada no financeiro.')) return;
+      opsState.monthlyBillingLoading = true;
+      setMonthlyBillingMessage('Confirmando o recebimento manual...', '');
+      renderMonthlyBilling();
+      try {
+        if (!isAdminDemoMode()) {
+          await supabaseRest('rpc/admin_confirm_manual_monthly_payment', {
+            method: 'POST',
+            body: { p_invoice_id: invoiceId, p_notes: null },
+            prefer: 'return=representation'
+          });
+          opsState.monthlyBillingLoading = false;
+          await loadOpsData(true);
+          opsState.monthlyBillingLoaded = false;
+          await loadMonthlyBillingPreview(false);
+        } else if (candidate) {
+          candidate.state = 'PAID';
+        }
+        setMonthlyBillingMessage('Recebimento de ' + name + ' confirmado e lançado no financeiro.', '');
+        toast('Pagamento confirmado.');
+      } catch (error) {
+        setMonthlyBillingMessage(error && error.message || 'Não foi possível confirmar o recebimento.', 'error');
       } finally {
         opsState.monthlyBillingLoading = false;
         renderMonthlyBilling();
@@ -45343,8 +45566,17 @@
       $('clientMonthlyBillingToggleBtn').addEventListener('click', function () {
         updateMonthlyBillingEnrollment(
           this.dataset.monthlyBillingClient,
-          this.dataset.monthlyBillingEnabled !== 'true'
+          this.dataset.monthlyBillingEnabled !== 'true',
+          $('clientMonthlyBillingMethod').value
         );
+      });
+      $('clientMonthlyBillingMethod').addEventListener('change', function () {
+        const clientId = this.dataset.monthlyBillingClient;
+        const enabled = this.dataset.monthlyBillingEnabled === 'true';
+        const savedMethod = normalizeMonthlyBillingMethod(this.dataset.monthlyBillingSavedMethod);
+        const nextMethod = normalizeMonthlyBillingMethod(this.value);
+        if (!clientId || nextMethod === savedMethod) return;
+        updateMonthlyBillingEnrollment(clientId, enabled, nextMethod, { methodOnly: true });
       });
       $('clientAreaPreviewBtn').addEventListener('click', openClientAreaPreview);
       $('clientPasswordRecoveryBtn').addEventListener('click', function () {
@@ -45836,6 +46068,9 @@
       $('monthlyBillingGenerateBtn').addEventListener('click', function () {
         generateMonthlyBilling();
       });
+      $('monthlyBillingGenerateManualBtn').addEventListener('click', function () {
+        generateManualMonthlyBilling();
+      });
       $('monthlyBillingRetryBtn').addEventListener('click', function () {
         retryMonthlyBillingFailures();
       });
@@ -45863,13 +46098,27 @@
         if (enrollmentBtn) {
           updateMonthlyBillingEnrollment(
             enrollmentBtn.dataset.monthlyBillingEnrollment,
-            enrollmentBtn.dataset.monthlyBillingEnabled !== 'true'
+            enrollmentBtn.dataset.monthlyBillingEnabled !== 'true',
+            enrollmentBtn.dataset.monthlyBillingMethod
           );
           return;
         }
         const generateMonthlyBtn = event.target.closest('[data-monthly-billing-generate]');
         if (generateMonthlyBtn) {
           generateMonthlyBilling(generateMonthlyBtn.dataset.monthlyBillingGenerate);
+          return;
+        }
+        const generateManualBtn = event.target.closest('[data-monthly-billing-generate-manual]');
+        if (generateManualBtn) {
+          generateManualMonthlyBilling(generateManualBtn.dataset.monthlyBillingGenerateManual);
+          return;
+        }
+        const confirmManualBtn = event.target.closest('[data-monthly-billing-confirm-manual]');
+        if (confirmManualBtn) {
+          confirmManualMonthlyPayment(
+            confirmManualBtn.dataset.monthlyBillingConfirmManual,
+            confirmManualBtn.dataset.monthlyBillingClient
+          );
           return;
         }
         const syncMonthlyBtn = event.target.closest('[data-monthly-billing-sync]');

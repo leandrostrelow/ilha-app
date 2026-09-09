@@ -29,6 +29,12 @@ const enrollmentMigrationPath = path.join(
   'migrations',
   '20260908212812_add_monthly_billing_enrollments.sql'
 );
+const paymentMethodsMigrationPath = path.join(
+  projectRoot,
+  'supabase',
+  'migrations',
+  '20260908235834_add_student_monthly_payment_methods.sql'
+);
 const dispatcherPath = path.join(
   projectRoot,
   'supabase',
@@ -36,14 +42,28 @@ const dispatcherPath = path.join(
   'client-notification-dispatch',
   'index.ts'
 );
-const [migration, scheduleMigration, serviceReadMigration, enrollmentMigration, edgeFunction, dispatcher] = await Promise.all([
+const [migration, scheduleMigration, serviceReadMigration, enrollmentMigration, paymentMethodsMigration, edgeFunction, dispatcher] = await Promise.all([
   readFile(migrationPath, 'utf8'),
   readFile(scheduleMigrationPath, 'utf8'),
   readFile(serviceReadMigrationPath, 'utf8'),
   readFile(enrollmentMigrationPath, 'utf8'),
+  readFile(paymentMethodsMigrationPath, 'utf8'),
   readFile(functionPath, 'utf8'),
   readFile(dispatcherPath, 'utf8')
 ]);
+
+test('forma mensal separa Pix Asaas de Pix do clube e dinheiro', () => {
+  assert.match(paymentMethodsMigration, /billing_method in \('ASAAS_PIX', 'CLUB_PIX', 'CASH'\)/i);
+  assert.match(paymentMethodsMigration, /and billing_method = 'ASAAS_PIX'[\s\S]*generate_app_monthly_pix_billing/i);
+  assert.match(paymentMethodsMigration, /admin_generate_manual_app_monthly_billing/i);
+  assert.match(paymentMethodsMigration, /billing_method in \('CLUB_PIX', 'CASH'\)/i);
+  assert.match(paymentMethodsMigration, /provider_status,[\s\S]*null,[\s\S]*case enrollment\.billing_method/i);
+  assert.match(paymentMethodsMigration, /INVOICE_ALREADY_MANAGED_BY_ASAAS/i);
+  assert.match(paymentMethodsMigration, /admin_confirm_manual_monthly_payment/i);
+  assert.match(paymentMethodsMigration, /app_payment_invoice_id = invoice_row\.id/i);
+  assert.match(paymentMethodsMigration, /revoke all on function public\.admin_generate_manual_app_monthly_billing[\s\S]*grant execute[\s\S]*to authenticated/i);
+  assert.doesNotMatch(paymentMethodsMigration, /grant execute[\s\S]{0,100}to anon/i);
+});
 
 test('worker mensal recebe somente as leituras legadas necessárias', () => {
   assert.match(serviceReadMigration, /grant select on table public\.app_payment_invoices to service_role/i);

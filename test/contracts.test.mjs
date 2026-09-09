@@ -573,10 +573,10 @@ test('ADM oferece prévia mensal, geração confirmada e retentativa isolada por
     'monthlyBillingEnabledMetric',
     'monthlyBillingPaidMetric', 'monthlyBillingOverdueMetric', 'monthlyBillingFailedMetric',
     'monthlyBillingSkippedMetric', 'monthlyBillingTotalMetric', 'monthlyBillingRows',
-    'monthlyBillingGenerateBtn', 'monthlyBillingRetryBtn', 'monthlyBillingSettingsStatus',
+    'monthlyBillingGenerateBtn', 'monthlyBillingGenerateManualBtn', 'monthlyBillingRetryBtn', 'monthlyBillingSettingsStatus',
     'monthlyBillingSettingsSchedule', 'monthlyBillingGenerationDay', 'monthlyBillingSaveDayBtn',
     'monthlyBillingToggleBtn', 'monthlyBillingSettingsMessage',
-    'clientMonthlyBillingControl', 'clientMonthlyBillingStatus', 'clientMonthlyBillingToggleBtn'
+    'clientMonthlyBillingControl', 'clientMonthlyBillingStatus', 'clientMonthlyBillingMethod', 'clientMonthlyBillingToggleBtn'
   ]) assert.match(adminSource, new RegExp(`id="${id}"`));
 
   const request = functionSource(adminSource, 'monthlyBillingRequest');
@@ -609,7 +609,7 @@ test('ADM oferece prévia mensal, geração confirmada e retentativa isolada por
   const updateSettings = functionSource(adminSource, 'updateMonthlyBillingSettings');
   assert.match(updateSettings, /requireClubPermission\('finance\.write'\)/);
   assert.match(updateSettings, /window\.confirm\(confirmation\)/);
-  assert.match(updateSettings, /cobranças Pix reais somente para os responsáveis elegíveis/);
+  assert.match(updateSettings, /cobranças Pix reais somente para os responsáveis ativados em Pix Asaas/);
   assert.match(updateSettings, /Faturas já emitidas e a baixa automática dos pagamentos continuarão funcionando/);
   assert.match(functionSource(adminSource, 'loadMonthlyBillingWorkspace'), /loadMonthlyBillingPreview[\s\S]*loadMonthlyBillingSettings[\s\S]*loadMonthlyBillingEnrollments/);
   assert.match(adminSource, /opsState\.financeView === 'monthly'\) loadMonthlyBillingWorkspace\(false\)/);
@@ -672,6 +672,7 @@ test('ADM impede mudança manual do estado financeiro de cobrança gerenciada pe
   assert.match(enrollmentRequest, /admin_set_app_monthly_billing_enrollment/);
   assert.match(enrollmentRequest, /admin_get_app_monthly_billing_enrollments/);
   assert.match(enrollmentRequest, /p_client_id:[\s\S]*p_enabled:/);
+  assert.match(enrollmentRequest, /p_billing_method:/);
   const updateEnrollment = functionSource(adminSource, 'updateMonthlyBillingEnrollment');
   assert.match(updateEnrollment, /window\.confirm\(confirmation\)/);
   assert.match(updateEnrollment, /Nenhuma cobrança será criada agora/);
@@ -679,6 +680,19 @@ test('ADM impede mudança manual do estado financeiro de cobrança gerenciada pe
   assert.match(functionSource(adminSource, 'renderClientMonthlyBillingControl'), /Gerenciada pelo responsável/);
   assert.match(adminSource, /data-monthly-billing-enrollment/);
   assert.match(adminSource, /data-monthly-billing-generate/);
+  assert.match(adminSource, /data-monthly-billing-generate-manual/);
+  assert.match(adminSource, /data-monthly-billing-confirm-manual/);
+
+  const generateManual = functionSource(adminSource, 'generateManualMonthlyBilling');
+  assert.match(generateManual, /admin_generate_manual_app_monthly_billing/);
+  assert.match(generateManual, /Nenhuma cobrança será criada ou enviada pelo Asaas/);
+  const confirmManual = functionSource(adminSource, 'confirmManualMonthlyPayment');
+  assert.match(confirmManual, /admin_confirm_manual_monthly_payment/);
+  assert.match(confirmManual, /window\.confirm/);
+
+  const invoiceCard = functionSource(indexSource, 'invoiceCard');
+  assert.match(invoiceCard, /invoiceManualPaymentLabel/);
+  assert.match(invoiceCard, /PAGAR NO CLUBE/);
 
   const mapFinance = functionSource(adminSource, 'mapFinanceRow');
   assert.match(mapFinance, /appPaymentInvoiceId:\s*row\.app_payment_invoice_id/);

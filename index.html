@@ -8913,6 +8913,10 @@
       return String(invoice && invoice.pix_payload || '').trim();
     }
 
+    function invoiceManualPaymentLabel(invoice) {
+      return ({ CLUB_PIX: 'Pix do clube', CASH: 'Dinheiro' })[String(invoice && invoice.payment_method || '').trim().toUpperCase()] || '';
+    }
+
     function invoiceCard(invoice) {
       const status = invoiceEffectiveStatus(invoice);
       const paid = status === 'PAGA';
@@ -8935,9 +8939,13 @@
       const expiry = invoice.pix_expires_at && !invoicePixExpired(invoice)
         ? '<span>Pix disponível até ' + escapeHtml(new Date(invoice.pix_expires_at).toLocaleString('pt-BR')) + '</span>' : '';
       const familyPill = invoice.family_billing || familyItems.length ? '<span class="pill good">Conta familiar</span>' : '';
+      const manualPaymentLabel = invoiceManualPaymentLabel(invoice);
+      const manualPaymentNote = manualPaymentLabel && !paid
+        ? '<div class="invoice-provider-note">Forma combinada: ' + escapeHtml(manualPaymentLabel) + '. O clube confirmará a baixa após receber o pagamento.</div>' : '';
       let action = '';
       if (paid) action = '<span class="pill status-paid">PAGO</span>';
       else if (status === 'CANCELADA') action = '';
+      else if (manualPaymentLabel) action = '<span class="pill">PAGAR NO CLUBE</span>';
       else if (status === 'GERANDO' || status === 'FALHA' || !invoicePaymentActionAllowed(invoice)) {
         action = '<button class="ghost-btn" type="button" data-refresh-invoice="' + escapeHtml(invoice.id || '') + '">Atualizar fatura</button>';
       } else {
@@ -8948,7 +8956,7 @@
           '<div class="invoice-title"><h3>Fatura de ' + escapeHtml(invoiceMonthLabel(invoice.invoice_month)) + '</h3>' + pill(status) + familyPill + '</div>' +
           '<div class="invoice-meta"><span>' + escapeHtml(invoice.plan_name || invoice.description || 'Mensalidade') + '</span><span>Vencimento ' + escapeHtml(dueText) + '</span>' + (invoice.paid_at ? '<span>Pago em ' + escapeHtml(formatShortDate(invoice.paid_at)) + '</span>' : '') + expiry + '</div>' +
           (invoice.notes ? '<div class="invoice-meta">' + escapeHtml(invoice.notes) + '</div>' : '') +
-          providerNote +
+          providerNote + manualPaymentNote +
           familyDetails +
         '</div>' +
         '<div class="invoice-actions">' +
