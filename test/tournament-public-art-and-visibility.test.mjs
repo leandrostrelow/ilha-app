@@ -56,6 +56,18 @@ test('página pública mostra classes somente quando a chave existe', () => {
   assert.match(publicPage, /if \(!ids\.some\(\(id\) => visibleCategoryIds\.has\(id\)\)\) return false/);
 });
 
+test('chave pública empilha as duas metades sem rolagem lateral', () => {
+  const bracketStyles = sourceSection(publicPage, '.bracket-scroller', '\n    .agenda-list');
+  const bracketRenderer = sourceSection(publicPage, 'function bracketBoardHtml', '\n    function matchCardHtml');
+  assert.match(bracketStyles, /\.bracket-scroller \{[^}]*overflow: visible/);
+  assert.match(bracketStyles, /\.bracket-board \{[^}]*min-width: 0;[^}]*display: grid/);
+  assert.doesNotMatch(bracketStyles, /overflow-x:\s*auto|min-width:\s*max-content/);
+  assert.match(bracketRenderer, /bracket-upper/);
+  assert.match(bracketRenderer, /bracket-final-stage/);
+  assert.match(bracketRenderer, /bracket-lower/);
+  assert.match(bracketRenderer, /branchRounds\.slice\(\)\.reverse\(\)/);
+});
+
 test('agenda pública exibe somente dias e classes que possuem jogos', () => {
   const schedule = sourceSection(publicPage, 'function scheduledGameRows()', '\n    function agendaMatchHtml');
   assert.match(schedule, /!isFinalized\(row\) && scheduleDayKey\(row\)/);
