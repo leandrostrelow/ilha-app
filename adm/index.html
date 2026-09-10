@@ -29573,7 +29573,7 @@
     }
 
     function drawAgendaPosterCard(ctx, match, x, y, width, height, colors) {
-      const compact = height < 64 || width < 620;
+      const compact = height < 88;
       const radius = compact ? 15 : 18;
       const isEvent = isAgendaEvent(match);
       const player1 = isEvent ? (match.titulo || match.jogador1 || 'Evento') : (getPlayerName(match.jogador1_id) || 'A definir');
@@ -29581,7 +29581,11 @@
       const category = isEvent ? 'Evento' : shortCategoryName(getCategoryName(match.categoria_id));
       const court = match.quadra || 'Sem quadra';
       const time = posterTime(match.hora);
-      const nameSize = compact ? 17 : 22;
+      const nameSize = compact ? 18 : 24;
+      const timeWidth = compact ? 72 : 78;
+      const timeHeight = compact ? 30 : 32;
+      const contentX = x + (compact ? 112 : 124);
+      const contentWidth = width - (compact ? 138 : 150);
 
       ctx.save();
       ctx.shadowColor = 'rgba(0, 168, 44, .14)';
@@ -29598,21 +29602,26 @@
       ctx.restore();
 
       ctx.fillStyle = colors.dark;
-      roundRect(ctx, x + 20, y + (compact ? 10 : 14), compact ? 92 : 112, compact ? 34 : 42, 21);
+      roundRect(ctx, x + 20, y + (compact ? 10 : 16), timeWidth, timeHeight, timeHeight / 2);
       ctx.fill();
       ctx.fillStyle = colors.white;
-      drawFitText(ctx, time, x + 20 + (compact ? 46 : 56), y + (compact ? 33 : 43), compact ? 72 : 90, compact ? 15 : 18, 900, 'center');
+      drawFitText(ctx, time, x + 20 + timeWidth / 2, y + (compact ? 31 : 38), timeWidth - 14, compact ? 13 : 14, 900, 'center');
 
       ctx.fillStyle = colors.text;
       ctx.textAlign = 'left';
-      const namesText = isEvent
-        ? shortName(player1, compact ? 32 : 52)
-        : shortName(player1, compact ? 16 : 28) + '  x  ' + shortName(player2, compact ? 16 : 28);
-      drawFitText(ctx, namesText, x + (compact ? 135 : 160), y + (compact ? 30 : 39), width - (compact ? 170 : 205), nameSize, 900, 'left');
+      if (!compact && !isEvent) {
+        drawFitText(ctx, shortName(player1, 30), contentX, y + 34, contentWidth, nameSize, 900, 'left');
+        drawFitText(ctx, '× ' + shortName(player2, 30), contentX, y + 65, contentWidth, nameSize, 900, 'left');
+      } else {
+        const namesText = isEvent
+          ? shortName(player1, compact ? 32 : 52)
+          : shortName(player1, 18) + '  ×  ' + shortName(player2, 18);
+        drawFitText(ctx, namesText, contentX, y + (compact ? 31 : 39), contentWidth, nameSize, 900, 'left');
+      }
 
       ctx.fillStyle = colors.muted;
       const meta = [category, court, isEvent && player2 ? shortName(player2, 42) : ''].filter(Boolean).join(' | ');
-      drawFitText(ctx, meta, x + (compact ? 135 : 160), y + (compact ? 49 : 63), width - (compact ? 170 : 205), compact ? 12 : 15, 900, 'left');
+      drawFitText(ctx, meta, contentX, y + (compact ? 51 : 92), contentWidth, compact ? 12 : 14, 900, 'left');
     }
 
     function drawAgendaPosterColumn(ctx, court, items, x, y, width, colors) {
@@ -29620,8 +29629,9 @@
       const displayItems = items.slice(0, 9);
       const maxRows = Math.max(displayItems.length, 1);
       const availableHeight = 700;
-      const gap = maxRows > 7 ? 7 : 10;
-      const cardHeight = Math.max(58, Math.min(76, Math.floor((availableHeight - headerHeight - ((maxRows - 1) * gap) - 14) / maxRows)));
+      const gap = maxRows > 7 ? 7 : maxRows > 4 ? 9 : 12;
+      const preferredHeight = maxRows <= 3 ? 112 : maxRows <= 4 ? 100 : maxRows <= 6 ? 84 : 76;
+      const cardHeight = Math.max(64, Math.min(preferredHeight, Math.floor((availableHeight - headerHeight - ((maxRows - 1) * gap) - 14) / maxRows)));
 
       ctx.save();
       ctx.fillStyle = colors.dark;
