@@ -354,10 +354,19 @@
     .filter-btn { flex: 0 0 auto; min-height: 38px; border-radius: 999px; padding: 8px 13px; border: 1px solid var(--line); background: #fff; color: var(--muted); font-size: 12px; font-weight: 900; }
     .filter-btn.active { border-color: var(--lime); background: var(--lime-soft); color: #315600; }
 
-    .bracket-scroller { overflow-x: auto; padding: 4px 2px 12px; }
-    .bracket-board { min-width: max-content; display: flex; align-items: stretch; gap: 14px; }
-    .bracket-round { width: 245px; display: flex; flex-direction: column; justify-content: space-around; gap: 12px; }
-    .bracket-round-title { position: sticky; left: 0; margin-bottom: 3px; color: var(--muted); font-size: 11px; font-weight: 950; letter-spacing: .06em; text-transform: uppercase; }
+    .bracket-scroller { width: 100%; overflow: visible; padding: 4px 2px 12px; }
+    .bracket-board { width: min(100%,900px); min-width: 0; display: grid; gap: 14px; margin: 0 auto; }
+    .bracket-branch { min-width: 0; display: grid; gap: 14px; }
+    .bracket-stage { position: relative; width: 100%; max-width: var(--stage-width,100%); display: grid; gap: 8px; margin: 0 auto; }
+    .bracket-stage + .bracket-stage::before,
+    .bracket-final-stage::before,
+    .bracket-lower::before { content: ''; width: 2px; height: 14px; margin: -14px auto 0; background: linear-gradient(var(--teal),var(--lime)); border-radius: 999px; }
+    .bracket-stage.single { width: min(100%,390px); }
+    .bracket-round-title { justify-self: center; min-height: 26px; display: inline-flex; align-items: center; justify-content: center; margin: 0; border-radius: 999px; padding: 5px 14px; background: #edf4f5; color: var(--muted); font-size: 10px; font-weight: 950; letter-spacing: .06em; text-align: center; text-transform: uppercase; }
+    .bracket-match-grid { min-width: 0; display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,250px),1fr)); gap: 10px; }
+    .bracket-final-stage { width: min(100%,420px); display: grid; gap: 8px; margin: 2px auto; padding: 12px; border: 1px solid #b7df40; border-radius: 18px; background: linear-gradient(145deg,#f7ffe0,#fff); box-shadow: 0 12px 30px rgba(77,117,0,.10); }
+    .bracket-final-stage .bracket-round-title { background: var(--lime); color: #284600; }
+    .bracket-final-stage .match-card { border-left-color: var(--lime); }
     .match-card { min-height: 82px; overflow: hidden; border: 1px solid var(--line); border-left: 4px solid var(--navy); border-radius: 14px; background: #fff; box-shadow: 0 8px 20px rgba(10,52,64,.055); }
     .match-card.done { border-left-color: var(--lime); }
     .match-player { min-height: 39px; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; font-weight: 850; }
@@ -642,6 +651,11 @@
       .search-row { grid-template-columns: 1fr; }
       .registration-row { padding: 11px 12px; }
       .registration-row-title { gap: 8px; }
+      .bracket-board, .bracket-branch { gap: 12px; }
+      .bracket-stage { max-width: 100% !important; }
+      .bracket-stage.single, .bracket-final-stage { width: 100%; }
+      .bracket-match-grid { grid-template-columns: 1fr; }
+      .bracket-final-stage { padding: 10px; }
       .agenda-card { grid-template-columns: 66px minmax(0,1fr); gap: 10px; padding: 10px; }
       .agenda-card .court-chip { grid-column: 2; justify-self: start; }
       .result-card { grid-template-columns: 1fr; gap: 8px; text-align: center; }
@@ -1421,10 +1435,37 @@
       if (!rows.length) return '<div class="empty-state">Chave ainda não publicada para esta classe.</div>';
       const rounds = new Map();
       rows.forEach((row) => { const number = roundNumber(row); if (!rounds.has(number)) rounds.set(number,[]); rounds.get(number).push(row); });
-      return '<div class="bracket-scroller"><div class="bracket-board">' + Array.from(rounds.keys()).sort((a,b) => a-b).map((number) => {
-        const roundMatches = rounds.get(number).slice().sort((a,b) => Number(field(a,'match_no','sort_order','position','position_in_round','posicao_chave')||0)-Number(field(b,'match_no','sort_order','position','position_in_round','posicao_chave')||0));
-        return '<section class="bracket-round"><div class="bracket-round-title">' + escapeHtml(roundLabel(roundMatches[0])) + '</div>' + roundMatches.map(matchCardHtml).join('') + '</section>';
-      }).join('') + '</div></div>';
+      const orderedRounds = Array.from(rounds.keys()).sort((a,b) => a-b).map((number) => ({
+        number,
+        matches: rounds.get(number).slice().sort((a,b) => Number(field(a,'match_no','sort_order','position','position_in_round','posicao_chave')||0)-Number(field(b,'match_no','sort_order','position','position_in_round','posicao_chave')||0))
+      }));
+      const finalRound = orderedRounds[orderedRounds.length - 1];
+      const branchRounds = orderedRounds.slice(0,-1).map((round,index) => {
+        const split = Math.ceil(round.matches.length / 2);
+        return {
+          number: round.number,
+          label: roundLabel(round.matches[0]),
+          upper: round.matches.slice(0,split),
+          lower: round.matches.slice(split),
+          depth: index
+        };
+      });
+      const upper = branchRounds.map((round) => bracketStageHtml(round.label,round.upper,round.depth)).join('');
+      const lower = branchRounds.slice().reverse().map((round) => bracketStageHtml(round.label,round.lower,round.depth)).join('');
+      const finalMatch = finalRound && finalRound.matches[0];
+      const final = finalMatch
+        ? '<section class="bracket-final-stage" aria-label="Final"><div class="bracket-round-title">' + escapeHtml(roundLabel(finalMatch)) + '</div><div class="bracket-match-grid">' + matchCardHtml(finalMatch) + '</div></section>'
+        : '';
+      return '<div class="bracket-scroller"><div class="bracket-board">' +
+        (upper ? '<div class="bracket-branch bracket-upper" aria-label="Parte superior da chave">' + upper + '</div>' : '') +
+        final +
+        (lower ? '<div class="bracket-branch bracket-lower" aria-label="Parte inferior da chave">' + lower + '</div>' : '') +
+        '</div></div>';
+    }
+    function bracketStageHtml(label,roundMatches,depth) {
+      if (!roundMatches.length) return '';
+      const stageWidth = Math.max(58,100 - (Number(depth || 0) * 18));
+      return '<section class="bracket-stage ' + (roundMatches.length === 1 ? 'single' : '') + '" style="--stage-width:' + stageWidth + '%"><div class="bracket-round-title">' + escapeHtml(label) + '</div><div class="bracket-match-grid">' + roundMatches.map(matchCardHtml).join('') + '</div></section>';
     }
     function matchCardHtml(row) {
       const winner = winnerId(row);
