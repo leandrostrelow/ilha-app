@@ -24601,6 +24601,11 @@
                 <select id="tournamentRegistrationOpen"><option value="true">Abertas</option><option value="false">Fechadas</option></select>
               </div>
               <div class="field">
+                <label>Transmissão OBS</label>
+                <select id="tournamentObsEnabled"><option value="false">Desativada</option><option value="true">Ativada</option></select>
+                <small class="muted">Quando desativada, os controles não aparecem na edição dos jogos.</small>
+              </div>
+              <div class="field">
                 <label>Data inicio</label>
                 <input id="tournamentStart" type="date" />
               </div>
@@ -24885,7 +24890,7 @@
           <label>Link das fotos</label>
           <input id="editorPhotoLink" type="url" placeholder="https://..." />
         </div>
-        <div class="field full">
+        <div class="field full" id="tournamentObsControls" hidden>
           <div class="live-panel">
             <div class="live-panel-head">
               <div>
@@ -25856,6 +25861,9 @@
       $('tournamentInstagram').value = t.instagram || '';
       $('tournamentWhatsapp').value = t.whatsapp || '';
       const settings = t.settings || {};
+      const obsEnabled = settings.obs_enabled === true;
+      $('tournamentObsEnabled').value = String(obsEnabled);
+      syncTournamentObsVisibility();
       const pricing = settings.registration_pricing || {};
       $('tournamentPriceCincate').value = Number.isFinite(Number(pricing.CINCATE)) ? Number(pricing.CINCATE).toFixed(2) : '';
       $('tournamentPriceStudent').value = Number.isFinite(Number(pricing.ILHA_STUDENT)) ? Number(pricing.ILHA_STUDENT).toFixed(2) : '';
@@ -25888,6 +25896,10 @@
       loadTournamentPushStatus().catch(function () {
         $('tournamentPushAudienceStatus').textContent = 'Não foi possível consultar';
       });
+    }
+
+    function syncTournamentObsVisibility() {
+      $('tournamentObsControls').hidden = $('tournamentObsEnabled').value !== 'true';
     }
 
     async function tournamentPushApi(payload) {
@@ -28263,6 +28275,7 @@
             whatsapp: $('tournamentWhatsapp').value,
             logo_url: $('tournamentLogoUrl').value,
             settings: Object.assign({}, currentSettings, {
+              obs_enabled: $('tournamentObsEnabled').value === 'true',
               registration_pricing: pricing,
               spatial_addon_fee: spatialAddonFee,
               spatial_addons: spatialAddons,
@@ -49970,6 +49983,7 @@
       trapPlayerEditorFocus(event);
     });
     $('tournamentForm').addEventListener('submit', saveTournament);
+    $('tournamentObsEnabled').addEventListener('change', syncTournamentObsVisibility);
     $('sendTournamentPushBtn').addEventListener('click', sendTournamentPushNotification);
     $('settings').addEventListener('input', function (event) {
       if (event.isTrusted && event.target.matches('input, select, textarea')) markTournamentDraftDirty();
