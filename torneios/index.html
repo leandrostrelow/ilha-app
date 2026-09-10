@@ -357,15 +357,21 @@
     .bracket-scroller { width: 100%; overflow: visible; padding: 4px 2px 12px; }
     .bracket-board { width: min(100%,900px); min-width: 0; display: grid; gap: 14px; margin: 0 auto; }
     .bracket-branch { min-width: 0; display: grid; gap: 14px; }
-    .bracket-stage { position: relative; width: 100%; max-width: var(--stage-width,100%); display: grid; gap: 8px; margin: 0 auto; }
+    .bracket-stage { position: relative; width: 100%; max-width: var(--stage-width,100%); display: grid; gap: 8px; margin: 0 auto; padding: 11px; border: 1px solid var(--stage-border,#dce8ec); border-radius: 18px; background: linear-gradient(145deg,var(--stage-soft,#f7fafb),#fff 72%); box-shadow: 0 9px 24px var(--stage-shadow,rgba(10,52,64,.05)); }
     .bracket-stage + .bracket-stage::before,
     .bracket-final-stage::before,
     .bracket-lower::before { content: ''; width: 2px; height: 14px; margin: -14px auto 0; background: linear-gradient(var(--teal),var(--lime)); border-radius: 999px; }
     .bracket-stage.single { width: min(100%,390px); }
     .bracket-round-title { justify-self: center; min-height: 26px; display: inline-flex; align-items: center; justify-content: center; margin: 0; border-radius: 999px; padding: 5px 14px; background: #edf4f5; color: var(--muted); font-size: 10px; font-weight: 950; letter-spacing: .06em; text-align: center; text-transform: uppercase; }
     .bracket-match-grid { min-width: 0; display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,250px),1fr)); gap: 10px; }
-    .bracket-final-stage { width: min(100%,420px); display: grid; gap: 8px; margin: 2px auto; padding: 12px; border: 1px solid #b7df40; border-radius: 18px; background: linear-gradient(145deg,#f7ffe0,#fff); box-shadow: 0 12px 30px rgba(77,117,0,.10); }
-    .bracket-final-stage .bracket-round-title { background: var(--lime); color: #284600; }
+    .bracket-stage.phase-1 { --stage-accent: #b9df79; --stage-border: #d5ecae; --stage-soft: #f7fcee; --stage-title: #e6f5ce; --stage-ink: #45661f; --stage-shadow: rgba(95,139,28,.06); }
+    .bracket-stage.phase-2 { --stage-accent: #78d82f; --stage-border: #b7e889; --stage-soft: #f1ffe5; --stage-title: #c9f59d; --stage-ink: #2c650e; --stage-shadow: rgba(72,167,16,.09); }
+    .bracket-stage.phase-3 { --stage-accent: #24dc25; --stage-border: #74ed68; --stage-soft: #ecffe9; --stage-title: #83f069; --stage-ink: #124f0b; --stage-shadow: rgba(0,207,29,.12); }
+    .bracket-stage .bracket-round-title { background: var(--stage-title,#edf4f5); color: var(--stage-ink,var(--muted)); }
+    .bracket-stage .match-card { border-color: var(--stage-border,#dce8ec); border-left-color: var(--stage-accent,var(--navy)); }
+    .bracket-stage .match-card.done { border-left-color: var(--lime); }
+    .bracket-final-stage { width: min(100%,420px); display: grid; gap: 8px; margin: 2px auto; padding: 13px; border: 2px solid #00ef2a; border-radius: 19px; background: radial-gradient(circle at top,#e2ffe7 0,#f5fff1 48%,#fff 100%); box-shadow: 0 14px 34px rgba(0,239,42,.18); }
+    .bracket-final-stage .bracket-round-title { background: #00ef2a; color: #073b0c; box-shadow: 0 6px 16px rgba(0,239,42,.22); }
     .bracket-final-stage .match-card { border-left-color: var(--lime); }
     .match-card { min-height: 82px; overflow: hidden; border: 1px solid var(--line); border-left: 4px solid var(--navy); border-radius: 14px; background: #fff; box-shadow: 0 8px 20px rgba(10,52,64,.055); }
     .match-card.done { border-left-color: var(--lime); }
@@ -378,17 +384,21 @@
 
     .agenda-list, .results-list { display: grid; gap: 10px; }
     .agenda-list { gap: 16px; }
-    .agenda-day-group { display: grid; gap: 13px; padding: 14px; border: 1px solid var(--line); border-radius: 20px; background: #f7fafb; }
-    .agenda-day-title { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 10px 14px; border-radius: 15px; background: var(--navy); color: #fff; }
+    .agenda-day-group { display: grid; gap: 11px; padding: 12px; border: 1px solid var(--line); border-radius: 20px; background: #f7fafb; }
+    .agenda-day-title { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 9px 12px; border-radius: 15px; background: var(--navy); color: #fff; }
     .agenda-day-title span { flex: 0 0 auto; border-radius: 999px; padding: 5px 9px; background: var(--lime); color: #284600; font-size: 9px; font-weight: 950; letter-spacing: .08em; }
-    .agenda-day-title h3 { margin: 0; font-size: 17px; font-weight: 950; text-transform: capitalize; }
-    .agenda-day-courts { display: grid; gap: 14px; }
-    .agenda-court-group { display: grid; gap: 9px; }
-    .agenda-court-title { min-height: 38px; display: flex; align-items: center; gap: 8px; margin: 0; border-radius: 999px; padding: 8px 14px; background: var(--teal); color: #fff; font-size: 14px; font-weight: 950; }
+    .agenda-day-title h3 { margin: 0; font-size: 16px; font-weight: 950; text-transform: capitalize; }
+    .agenda-day-courts { display: grid; gap: 12px; }
+    .agenda-court-group { display: grid; gap: 8px; }
+    .agenda-court-title { min-height: 34px; display: flex; align-items: center; gap: 8px; margin: 0; border-radius: 999px; padding: 7px 13px; background: #00a82c; color: #fff; font-size: 13px; font-weight: 950; }
     .agenda-court-title span { color: var(--lime); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
-    .agenda-court-games { display: grid; gap: 9px; }
+    .agenda-court-games { display: grid; gap: 8px; }
     .agenda-card { display: grid; grid-template-columns: 82px minmax(0,1fr) auto; align-items: center; gap: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 17px; background: #fff; }
-    .agenda-card.grouped { grid-template-columns: 72px minmax(0,1fr); }
+    .agenda-card.grouped { min-height: 68px; grid-template-columns: 78px minmax(0,1fr); gap: 12px; padding: 10px 12px; border-radius: 15px; }
+    .agenda-card.grouped .time-box { width: 72px; min-height: 34px; align-self: center; border-radius: 999px; background: #00a82c; }
+    .agenda-card.grouped .time-box strong { font-size: 12px; line-height: 1; }
+    .agenda-card.grouped h3 { font-size: 14px; font-weight: 950; line-height: 1.25; }
+    .agenda-card.grouped p { margin-top: 3px; font-size: 10px; font-weight: 800; line-height: 1.25; }
     .time-box { min-height: 62px; display: grid; place-items: center; border-radius: 13px; background: var(--navy); color: #fff; text-align: center; }
     .time-box strong { display: block; font-size: 15px; }
     .time-box small { display: block; margin-top: 2px; color: var(--lime); font-size: 10px; font-weight: 900; text-transform: uppercase; }
@@ -667,12 +677,15 @@
       .bracket-stage.single, .bracket-final-stage { width: 100%; }
       .bracket-match-grid { grid-template-columns: 1fr; }
       .bracket-final-stage { padding: 10px; }
-      .agenda-day-group { padding: 10px; border-radius: 17px; }
-      .agenda-day-title { align-items: flex-start; flex-direction: column; gap: 5px; padding: 11px 12px; }
-      .agenda-day-title h3 { font-size: 15px; }
+      .agenda-day-group { padding: 9px; border-radius: 17px; }
+      .agenda-day-title { align-items: center; flex-direction: row; gap: 8px; min-height: 42px; padding: 8px 10px; }
+      .agenda-day-title h3 { font-size: 14px; }
       .agenda-court-title { border-radius: 12px; }
       .agenda-card { grid-template-columns: 66px minmax(0,1fr); gap: 10px; padding: 10px; }
-      .agenda-card.grouped { grid-template-columns: 60px minmax(0,1fr); }
+      .agenda-card.grouped { min-height: 64px; grid-template-columns: 68px minmax(0,1fr); gap: 9px; padding: 9px 10px; }
+      .agenda-card.grouped .time-box { width: 64px; min-height: 32px; }
+      .agenda-card.grouped .time-box strong { font-size: 11px; }
+      .agenda-card.grouped h3 { font-size: 13px; }
       .agenda-card .court-chip { grid-column: 2; justify-self: start; }
       .result-card { grid-template-columns: 1fr; gap: 8px; text-align: center; }
       .result-player:last-child { text-align: center; }
@@ -1466,8 +1479,8 @@
           depth: index
         };
       });
-      const upper = branchRounds.map((round) => bracketStageHtml(round.label,round.upper,round.depth)).join('');
-      const lower = branchRounds.slice().reverse().map((round) => bracketStageHtml(round.label,round.lower,round.depth)).join('');
+      const upper = branchRounds.map((round) => bracketStageHtml(round.label,round.upper,round.depth,branchRounds.length)).join('');
+      const lower = branchRounds.slice().reverse().map((round) => bracketStageHtml(round.label,round.lower,round.depth,branchRounds.length)).join('');
       const finalMatch = finalRound && finalRound.matches[0];
       const final = finalMatch
         ? '<section class="bracket-final-stage" aria-label="Final"><div class="bracket-round-title">' + escapeHtml(roundLabel(finalMatch)) + '</div><div class="bracket-match-grid">' + matchCardHtml(finalMatch) + '</div></section>'
@@ -1478,10 +1491,11 @@
         (lower ? '<div class="bracket-branch bracket-lower" aria-label="Parte inferior da chave">' + lower + '</div>' : '') +
         '</div></div>';
     }
-    function bracketStageHtml(label,roundMatches,depth) {
+    function bracketStageHtml(label,roundMatches,depth,totalDepth) {
       if (!roundMatches.length) return '';
       const stageWidth = Math.max(58,100 - (Number(depth || 0) * 18));
-      return '<section class="bracket-stage ' + (roundMatches.length === 1 ? 'single' : '') + '" style="--stage-width:' + stageWidth + '%"><div class="bracket-round-title">' + escapeHtml(label) + '</div><div class="bracket-match-grid">' + roundMatches.map(matchCardHtml).join('') + '</div></section>';
+      const phaseLevel = Math.max(1,Math.min(3,4 - (Number(totalDepth || 1) - Number(depth || 0))));
+      return '<section class="bracket-stage phase-' + phaseLevel + ' ' + (roundMatches.length === 1 ? 'single' : '') + '" data-bracket-phase="' + phaseLevel + '" style="--stage-width:' + stageWidth + '%"><div class="bracket-round-title">' + escapeHtml(label) + '</div><div class="bracket-match-grid">' + roundMatches.map(matchCardHtml).join('') + '</div></section>';
     }
     function matchCardHtml(row) {
       const winner = winnerId(row);
@@ -1547,14 +1561,20 @@
       const label = date.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
       return label.charAt(0).toUpperCase() + label.slice(1);
     }
+    function publicScheduleTime(row) {
+      const exactTime = field(row,'scheduled_at','match_time','starts_at','event_time','time','hora');
+      if (exactTime) return shortTime(exactTime);
+      const relativeTime = clean(field(row,'time_label','schedule_time_label'));
+      return normalize(relativeTime).startsWith('apos') ? 'Após' : (relativeTime || 'A definir');
+    }
     function agendaMatchHtml(row,grouped) {
       const date = matchDate(row);
       const day = date ? date.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : 'A definir';
-      return '<article class="agenda-card ' + (grouped?'grouped':'') + '"><div class="time-box"><div><strong>' + escapeHtml(shortTime(field(row,'scheduled_at','match_time','time','hora'))) + '</strong>' + (grouped?'':'<small>' + escapeHtml(day) + '</small>') + '</div></div><div><h3>' + escapeHtml(playerName(row,1)) + ' × ' + escapeHtml(playerName(row,2)) + '</h3><p>' + escapeHtml(categoryName(matchCategoryId(row)) || roundLabel(row)) + '</p></div>' + (grouped?'':'<span class="court-chip">' + escapeHtml(field(row,'court_name','quadra') || 'Quadra a definir') + '</span>') + '</article>';
+      return '<article class="agenda-card ' + (grouped?'grouped':'') + '"><div class="time-box"><div><strong>' + escapeHtml(publicScheduleTime(row)) + '</strong>' + (grouped?'':'<small>' + escapeHtml(day) + '</small>') + '</div></div><div><h3>' + escapeHtml(playerName(row,1)) + ' × ' + escapeHtml(playerName(row,2)) + '</h3><p>' + escapeHtml(categoryName(matchCategoryId(row)) || roundLabel(row)) + '</p></div>' + (grouped?'':'<span class="court-chip">' + escapeHtml(field(row,'court_name','quadra') || 'Quadra a definir') + '</span>') + '</article>';
     }
     function agendaEventHtml(row,grouped) {
       const date = matchDate(row);
-      return '<article class="agenda-card ' + (grouped?'grouped':'') + '"><div class="time-box"><div><strong>' + escapeHtml(shortTime(field(row,'starts_at','event_time','time','hora'))) + '</strong>' + (grouped?'':'<small>' + escapeHtml(date ? date.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : 'Evento') + '</small>') + '</div></div><div><h3>' + escapeHtml(field(row,'title','titulo') || 'Evento') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || '') + '</p></div>' + (grouped?'':'<span class="court-chip">' + escapeHtml(field(row,'location','court_name','quadra') || 'Torneio') + '</span>') + '</article>';
+      return '<article class="agenda-card ' + (grouped?'grouped':'') + '"><div class="time-box"><div><strong>' + escapeHtml(publicScheduleTime(row)) + '</strong>' + (grouped?'':'<small>' + escapeHtml(date ? date.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : 'Evento') + '</small>') + '</div></div><div><h3>' + escapeHtml(field(row,'title','titulo') || 'Evento') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || '') + '</p></div>' + (grouped?'':'<span class="court-chip">' + escapeHtml(field(row,'location','court_name','quadra') || 'Torneio') + '</span>') + '</article>';
     }
 
     function scoreText(row) { const score = field(row,'score','placar'); if (typeof score === 'string') return score; const p1 = playerScore(row,1), p2 = playerScore(row,2); return p1 !== '' || p2 !== '' ? p1 + ' × ' + p2 : 'Finalizado'; }
