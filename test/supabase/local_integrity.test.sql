@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(158);
+select plan(159);
 
 select has_table(
   'public',
@@ -3093,6 +3093,18 @@ select ok(
         '%(used_registration_id, tournament_id, athlete_id, target_category_id)%'
   ),
   'a FK do registro utilizado possui índice composto no lado filho'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_catalog.pg_constraint as constraint_row
+    where constraint_row.conrelid = 'public.tournament_spatial_courtesy_invites'::regclass
+      and constraint_row.conname = 'tournament_spatial_courtesy_invites_used_scope_fk'
+      and constraint_row.contype = 'f'
+      and constraint_row.confupdtype = 'c'
+  ),
+  'mover a inscrição Espacial mantém o convite utilizado sincronizado por cascade'
 );
 
 select ok(

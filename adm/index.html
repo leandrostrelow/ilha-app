@@ -4916,6 +4916,18 @@
       box-shadow: inset 3px 0 0 var(--cat-accent, var(--ford-blue));
     }
 
+    button.cat-chip {
+      appearance: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    button.cat-chip:hover,
+    button.cat-chip:focus-visible {
+      outline: 2px solid var(--cat-accent, var(--ford-blue));
+      outline-offset: 2px;
+    }
+
     .cat-m1 { --cat-bg: #dbeafe; --cat-fg: #073b77; --cat-border: #9cc6ff; --cat-accent: #004d97; }
     .cat-m2 { --cat-bg: #eaffbf; --cat-fg: #173b0a; --cat-border: #b5e500; --cat-accent: #8fc400; }
     .cat-m3 { --cat-bg: #ffedd5; --cat-fg: #7c2d12; --cat-border: #fdba74; --cat-accent: #f97316; }
@@ -24385,10 +24397,15 @@
                 <label>Observações</label>
                 <textarea id="playerNotes" placeholder="Pagamento, restricao de horario, etc."></textarea>
               </div>
+              <div class="field full" id="playerRegistrationField" hidden>
+                <label>Qual inscrição deseja alterar?</label>
+                <select id="playerRegistration"></select>
+                <small class="muted">O atleta está em mais de uma classe. Selecione a inscrição correta antes de trocar a classe.</small>
+              </div>
               <div class="field">
                 <label>Classe da inscrição</label>
                 <select id="registrationCategory"></select>
-                <small class="muted">Ao salvar, esta inscrição será movida para a classe escolhida.</small>
+                <small class="muted" id="registrationCategoryHint">Ao salvar, esta inscrição será movida para a classe escolhida.</small>
               </div>
               <div class="field">
                 <label>Pagamento da inscrição</label>
@@ -25989,7 +26006,10 @@
             return regs.some(function (registration) { return String(registration.inscricao_id) === String(entry.inscricao_id); });
           });
           const cats = regs.map(function (r) {
-            return '<span class="mini-tag cat-chip ' + categoryColorClass(r.categoria_id) + '">' + escapeHtml(getCategoryName(r.categoria_id)) + '</span>';
+            return '<button class="mini-tag cat-chip ' + categoryColorClass(r.categoria_id) + '" type="button"' +
+              ' data-edit-player-registration="' + escapeHtml(r.inscricao_id) + '"' +
+              ' data-edit-registration-player="' + escapeHtml(player.jogador_id) + '"' +
+              ' title="Editar esta inscrição">' + escapeHtml(getCategoryName(r.categoria_id)) + '</button>';
           }).join('');
           const billingStatus = String(player.cobranca_inscricao_status || '');
           const billingAmount = Number(player.cobranca_inscricao_valor || 0);
@@ -27285,6 +27305,59 @@
       return regs[0] || null;
     }
 
+    function categoryById(categoryId) {
+      return state.data.categorias.find(function (category) {
+        return String(category.categoria_id) === String(categoryId);
+      }) || null;
+    }
+
+    function registrationEditorLabel(registration) {
+      const category = getCategoryName(registration.categoria_id) || 'Classe não informada';
+      const payment = String(registration.status_pagamento || 'PENDENTE');
+      return category + ' · ' + payment;
+    }
+
+    function renderEditableRegistrationCategories(playerId, registrationId, selectedCategoryId) {
+      const occupied = new Set(playerRegistrations(playerId).filter(function (registration) {
+        return String(registration.inscricao_id) !== String(registrationId);
+      }).map(function (registration) {
+        return String(registration.categoria_id);
+      }));
+      $('registrationCategory').innerHTML = state.data.categorias.map(function (category) {
+        const id = String(category.categoria_id || '');
+        return '<option value="' + escapeHtml(id) + '"' + (occupied.has(id) ? ' disabled' : '') + '>' +
+          escapeHtml(category.nome) + (occupied.has(id) ? ' · já inscrito' : '') + '</option>';
+      }).join('');
+      $('registrationCategory').value = String(selectedCategoryId || '');
+    }
+
+    function selectPlayerRegistrationForEdit(registrationId) {
+      const playerId = $('playerId').value;
+      const registration = playerRegistrations(playerId).find(function (item) {
+        return String(item.inscricao_id) === String(registrationId);
+      });
+      if (!registration) return;
+      $('playerRegistration').value = String(registration.inscricao_id || '');
+      $('registrationId').value = String(registration.inscricao_id || '');
+      renderEditableRegistrationCategories(playerId, registration.inscricao_id, registration.categoria_id);
+      $('registrationPayment').value = registration.status_pagamento || 'PENDENTE';
+      $('registrationCategoryHint').textContent = 'Você está editando “' + getCategoryName(registration.categoria_id) + '”. O pagamento e a mesma inscrição serão preservados na troca.';
+    }
+
+    function populatePlayerRegistrationEditor(playerId, requestedRegistrationId) {
+      const registrations = playerRegistrations(playerId).slice().sort(function (left, right) {
+        return getCategoryName(left.categoria_id).localeCompare(getCategoryName(right.categoria_id), 'pt-BR');
+      });
+      const preferred = registrations.find(function (registration) {
+        return String(registration.inscricao_id) === String(requestedRegistrationId || '');
+      }) || preferredRegistration(playerId) || registrations[0] || null;
+      $('playerRegistrationField').hidden = registrations.length < 2;
+      $('playerRegistration').innerHTML = registrations.map(function (registration) {
+        return '<option value="' + escapeHtml(registration.inscricao_id) + '">' + escapeHtml(registrationEditorLabel(registration)) + '</option>';
+      }).join('');
+      if (preferred) selectPlayerRegistrationForEdit(preferred.inscricao_id);
+    }
+
     function getPlayerName(id) {
       const player = state.data.jogadores.find(function (p) { return String(p.jogador_id) === String(id); });
       return player ? player.nome : '';
@@ -27847,7 +27920,7 @@
       renderBracket();
     }
 
-    function editPlayer(id) {
+    function editPlayer(id, registrationId) {
       const p = state.data.jogadores.find(function (item) { return String(item.jogador_id) === String(id); });
       if (!p) return;
       $('playerFormTitle').textContent = 'Editar jogador';
@@ -27869,9 +27942,7 @@
       $('playerNotes').value = p.observacoes || '';
       const registration = preferredRegistration(id);
       if (registration) {
-        $('registrationId').value = registration.inscricao_id || '';
-        $('registrationCategory').value = registration.categoria_id;
-        $('registrationPayment').value = registration.status_pagamento || 'PENDENTE';
+        populatePlayerRegistrationEditor(id, registrationId || registration.inscricao_id);
       } else if ($('playerCategoryFilter').value) {
         $('registrationCategory').value = $('playerCategoryFilter').value;
       }
@@ -27929,6 +28000,9 @@
       $('playerForm').reset();
       $('playerId').value = '';
       $('registrationId').value = '';
+      $('playerRegistrationField').hidden = true;
+      $('playerRegistration').innerHTML = '';
+      $('registrationCategoryHint').textContent = 'Ao salvar, esta inscrição será movida para a classe escolhida.';
       $('playerCity').value = 'Colatina';
       $('playerClub').value = 'Ilha Tenis';
       $('registrationPayment').value = 'PENDENTE';
@@ -27953,6 +28027,21 @@
         const originalPlayerId = $('playerId').value;
         const selectedCategory = $('registrationCategory').value;
         const previousRegs = originalPlayerId ? playerRegistrations(originalPlayerId) : [];
+        const registrationId = $('registrationId').value || '';
+        const previousRegistration = previousRegs.find(function (registration) {
+          return String(registration.inscricao_id) === String(registrationId);
+        }) || null;
+        const previousCategory = previousRegistration ? categoryById(previousRegistration.categoria_id) : null;
+        const selectedCategoryRow = categoryById(selectedCategory);
+        const spatialCodes = new Set(['ESP-A-M', 'ESP-B-M']);
+        const isSpatialMove = previousCategory && selectedCategoryRow &&
+          String(previousCategory.categoria_id) !== String(selectedCategoryRow.categoria_id) &&
+          spatialCodes.has(String(previousCategory.codigo || '').toUpperCase()) &&
+          spatialCodes.has(String(selectedCategoryRow.codigo || '').toUpperCase());
+        if (isSpatialMove && !confirm(
+          'Mover ' + ($('playerName').value.trim() || 'este atleta') + ' de “' + previousCategory.nome + '” para “' + selectedCategoryRow.nome + '”?\n\n' +
+          'A mesma inscrição e a situação do pagamento serão mantidas.'
+        )) return;
         const player = {
           jogador_id: originalPlayerId,
           nome: $('playerName').value.trim(),
@@ -27972,7 +28061,6 @@
         const saved = await apiPost({ action: 'savePlayer', jogador: player }, { silent: true });
         const savedPlayerId = saved && (saved.id || saved.jogador_id) || originalPlayerId;
         if (!savedPlayerId) throw new Error('Não foi possível identificar o atleta salvo.');
-        const registrationId = $('registrationId').value || '';
         await apiPost({
           action: 'saveRegistration',
           inscricao: {
@@ -49636,6 +49724,15 @@
         return;
       }
 
+      const editPlayerRegistrationBtn = event.target.closest('[data-edit-player-registration]');
+      if (editPlayerRegistrationBtn) {
+        editPlayer(
+          editPlayerRegistrationBtn.dataset.editRegistrationPlayer,
+          editPlayerRegistrationBtn.dataset.editPlayerRegistration
+        );
+        return;
+      }
+
       const deleteIncompletePlayerBtn = event.target.closest('[data-delete-incomplete-player]');
       if (deleteIncompletePlayerBtn) {
         deleteIncompleteTournamentPlayer(deleteIncompletePlayerBtn.dataset.deleteIncompletePlayer);
@@ -49778,6 +49875,9 @@
     });
     $('agendaEventForm').addEventListener('submit', saveAgendaEvent);
     $('playerForm').addEventListener('submit', savePlayer);
+    $('playerRegistration').addEventListener('change', function () {
+      selectPlayerRegistrationForEdit(this.value);
+    });
     $('newPlayerBtn').addEventListener('click', openNewPlayerForm);
     $('playerEditCloseBtn').addEventListener('click', clearPlayerForm);
     $('playerEditBackdrop').addEventListener('click', clearPlayerForm);
