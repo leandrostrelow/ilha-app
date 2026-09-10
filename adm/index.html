@@ -29402,22 +29402,22 @@
 
     function drawResultsPoster(ctx, canvas, matches, background) {
       const colors = {
-        dark: '#003f86',
-        dark2: '#005bbb',
-        lime: '#b5e500',
+        dark: '#00a82c',
+        dark2: '#00ef2a',
+        lime: '#00ef2a',
         white: '#ffffff',
-        soft: '#eaf3ff',
-        line: '#b7d2f5',
-        text: '#08264a',
-        muted: '#315a87',
-        winner: '#eaffbd'
+        soft: '#edfff1',
+        line: '#aeeebc',
+        text: '#0a3518',
+        muted: '#317044',
+        winner: '#d9ffe1'
       };
 
       const selectedMatches = matches.slice(0, 6);
       drawCoverImage(ctx, background, 0, 0, canvas.width, canvas.height);
 
       ctx.save();
-      ctx.shadowColor = 'rgba(0, 45, 98, .24)';
+      ctx.shadowColor = 'rgba(0, 168, 44, .24)';
       ctx.shadowBlur = 18;
       ctx.shadowOffsetY = 10;
       ctx.fillStyle = colors.dark;
@@ -29513,20 +29513,20 @@
 
     function drawAgendaPoster(ctx, canvas, matches, day, background) {
       const colors = {
-        dark: '#003f86',
-        dark2: '#005bbb',
-        lime: '#b5e500',
+        dark: '#00a82c',
+        dark2: '#00ef2a',
+        lime: '#00ef2a',
         white: '#ffffff',
-        soft: '#eaf3ff',
-        line: '#b7d2f5',
-        text: '#08264a',
-        muted: '#315a87'
+        soft: '#edfff1',
+        line: '#aeeebc',
+        text: '#0a3518',
+        muted: '#317044'
       };
 
       drawCoverImage(ctx, background, 0, 0, canvas.width, canvas.height);
 
       ctx.save();
-      ctx.shadowColor = 'rgba(0, 45, 98, .24)';
+      ctx.shadowColor = 'rgba(0, 168, 44, .24)';
       ctx.shadowBlur = 18;
       ctx.shadowOffsetY = 10;
       ctx.fillStyle = colors.dark;
@@ -29584,7 +29584,7 @@
       const nameSize = compact ? 17 : 22;
 
       ctx.save();
-      ctx.shadowColor = 'rgba(0, 45, 98, .14)';
+      ctx.shadowColor = 'rgba(0, 168, 44, .14)';
       ctx.shadowBlur = 13;
       ctx.shadowOffsetY = 7;
       ctx.fillStyle = colors.white;
@@ -29670,22 +29670,23 @@
       const layout = getDrawLayout(matches);
       const hasBackground = Boolean(background);
       const colors = {
-        dark: hasBackground ? '#003f86' : '#073f49',
-        dark2: hasBackground ? '#005bbb' : '#0a4b56',
-        lime: hasBackground ? '#005bbb' : '#b5e500',
+        dark: hasBackground ? '#00a82c' : '#073f49',
+        dark2: hasBackground ? '#00ef2a' : '#0a4b56',
+        lime: hasBackground ? '#00ef2a' : '#b5e500',
         white: '#ffffff',
-        soft: hasBackground ? '#eaf3ff' : '#f4f8f9',
-        line: hasBackground ? '#b7d2f5' : '#dce8ec',
-        text: hasBackground ? '#08264a' : '#10272c',
-        muted: hasBackground ? '#315a87' : '#d7e5e8',
-        winner: hasBackground ? '#dff0ff' : '#efffd2',
-        connector: hasBackground ? 'rgba(0, 63, 134, .42)' : 'rgba(215,229,232,.48)'
+        soft: hasBackground ? '#edfff1' : '#f4f8f9',
+        line: hasBackground ? '#aeeebc' : '#dce8ec',
+        text: hasBackground ? '#0a3518' : '#10272c',
+        muted: hasBackground ? '#317044' : '#d7e5e8',
+        winner: hasBackground ? '#d9ffe1' : '#efffd2',
+        accentText: hasBackground ? '#041108' : '#ffffff',
+        connector: hasBackground ? 'rgba(0, 239, 42, .42)' : 'rgba(215,229,232,.48)'
       };
 
       if (hasBackground) {
         drawCoverImage(ctx, background, 0, 0, canvas.width, canvas.height);
         ctx.save();
-        ctx.shadowColor = 'rgba(0, 45, 98, .24)';
+        ctx.shadowColor = 'rgba(0, 168, 44, .24)';
         ctx.shadowBlur = 14;
         ctx.shadowOffsetY = 8;
         ctx.fillStyle = colors.dark;
@@ -30018,7 +30019,7 @@
 
     function drawCanvasRoundLabel(ctx, label, x, y, width, colors, side) {
       ctx.save();
-      ctx.shadowColor = 'rgba(0, 45, 98, .14)';
+      ctx.shadowColor = 'rgba(0, 168, 44, .14)';
       ctx.shadowBlur = 8;
       ctx.shadowOffsetY = 4;
       ctx.fillStyle = side === 'right' ? colors.dark : colors.dark2;
@@ -30030,7 +30031,7 @@
         ctx.fill();
       }
       ctx.shadowColor = 'transparent';
-      ctx.fillStyle = colors.white;
+      ctx.fillStyle = colors.accentText || colors.white;
       ctx.textAlign = 'center';
       drawFitText(ctx, String(label || '').toUpperCase(), x + width / 2, y + 23, width - 18, 16, 900);
       ctx.restore();
