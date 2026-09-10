@@ -1336,7 +1336,11 @@
         ? 'Lotada no momento.'
         : (closed ? 'Inscrições encerradas no momento.' : 'Adicione por mais ' + money(fee) + ' no mesmo pagamento.');
     }
-    function playerName(match, slot) { return field(match, 'side' + slot + '_name', 'player' + slot + '_name', 'jogador' + slot + '_nome') || field(match['player' + slot],'name','nome') || 'A definir'; }
+    function playerName(match, slot) {
+      const name = field(match, 'side' + slot + '_name', 'player' + slot + '_name', 'jogador' + slot + '_nome') || field(match['player' + slot],'name','nome');
+      if (name) return name;
+      return roundNumber(match) <= 1 ? 'BYE' : 'A definir';
+    }
     function matchCategoryId(row) { return String(field(row,'category_id','categoria_id')); }
 
     function renderTournament() {

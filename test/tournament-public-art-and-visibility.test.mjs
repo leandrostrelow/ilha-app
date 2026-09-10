@@ -98,6 +98,11 @@ test('chave pública empilha as duas metades sem rolagem lateral', () => {
   assert.match(bracketStyles, /border: 2px solid #00ef2a/);
 });
 
+test('chave pública mostra BYE nas folgas da primeira rodada como o ADM', () => {
+  const playerLabel = sourceSection(publicPage, 'function playerName(match, slot)', '\n    function matchCategoryId');
+  assert.match(playerLabel, /roundNumber\(match\) <= 1 \? 'BYE' : 'A definir'/);
+});
+
 test('agenda pública exibe somente dias e classes que possuem jogos', () => {
   const schedule = sourceSection(publicPage, 'function scheduledGameRows()', '\n    function agendaMatchHtml');
   assert.match(schedule, /!isFinalized\(row\) && scheduleDayKey\(row\)/);
