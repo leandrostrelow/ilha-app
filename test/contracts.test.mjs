@@ -2312,11 +2312,16 @@ test('TV do Bar aceita transicao WebM transparente sem consumir vaga do slidesho
   assert.match(functionSource(adminSource, 'saveBarTvEventArt'), /transition_url: savedArt\.transitionUrl[\s\S]*transition_active: savedArt\.transitionActive/);
   assert.match(menuSource, /id="menuTvTransitionVideo"[^>]*muted autoplay playsinline preload="auto"/);
   assert.match(menuSource, /\.menu-tv-transition \{[\s\S]*z-index: 1100[\s\S]*pointer-events: none[\s\S]*background: transparent/);
+  assert.match(menuSource, /\.menu-event-art-close \{[\s\S]*display: none[\s\S]*body\.is-event-art-manual \.menu-event-art-close \{[\s\S]*display: grid/);
+  assert.match(menuSource, /body\.is-tv-transition-playing \.menu-header-tools \{[\s\S]*visibility: hidden/);
   const playTransition = functionSource(menuSource, 'playTvTransition');
+  assert.match(functionSource(menuSource, 'resetTvTransition'), /classList\.remove\('is-tv-transition-playing'\)/);
+  assert.match(playTransition, /classList\.add\('is-tv-transition-playing'\)/);
   assert.match(playTransition, /switchDelay = Math\.max\(250, Math\.min\(5000, duration \* 460\)\)/);
   assert.match(playTransition, /playResult\.catch\(fail\)/);
   assert.match(playTransition, /tvTransitionSafetyTimer = setTimeout\(fail, 13000\)/);
   assert.match(functionSource(menuSource, 'showNextEventSlideshowItem'), /playTvTransition\(function \(\)/);
+  assert.match(functionSource(menuSource, 'openEventArt'), /showEventArtSlide\(currentEventSlides\[0\], true\)/);
 });
 
 test('atalhos do cardapio abrem no navegador e também dentro do ADM Bar instalado', () => {
