@@ -765,6 +765,19 @@ function mapAthlete(row: Row, includePrivate = false, registrationOrder: Row = {
   };
 }
 
+function registrationAvailabilityDays(notes: unknown) {
+  const normalized = String(notes || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const availability = normalized.match(/disponibilidade:\s*([^\n.]*)/);
+  if (!availability) return [];
+  const value = availability[1];
+  return [
+    ["MONDAY", "segunda"],
+    ["TUESDAY", "terca"],
+    ["WEDNESDAY", "quarta"],
+    ["THURSDAY", "quinta"],
+  ].filter((entry) => value.includes(entry[1])).map((entry) => entry[0]);
+}
+
 function mapRegistration(row: Row, includeCapabilities = false, registrationOrder: Row = {}) {
   const registration: Row = {
     inscricao_id: row.id,
@@ -787,6 +800,7 @@ function mapRegistration(row: Row, includeCapabilities = false, registrationOrde
     grupo_id: includeCapabilities ? row.registration_group_id || "" : "",
     confirmado: row.status === "CONFIRMED",
     observacoes: includeCapabilities ? row.notes || "" : "",
+    dias_disponiveis: includeCapabilities ? registrationAvailabilityDays(row.notes) : [],
     cobranca_status: includeCapabilities ? registrationOrder.billing_status || "" : "",
     cobranca_valor: includeCapabilities ? Number(registrationOrder.amount || 0) : 0,
     cobranca_mes: includeCapabilities ? registrationOrder.billing_month || "" : "",
