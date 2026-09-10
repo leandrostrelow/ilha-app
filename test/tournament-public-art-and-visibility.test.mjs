@@ -57,6 +57,27 @@ test('página pública mostra classes somente quando a chave existe', () => {
   assert.match(publicPage, /if \(!ids\.some\(\(id\) => visibleCategoryIds\.has\(id\)\)\) return false/);
 });
 
+test('página pública prioriza as duas classes espaciais e comunica as chaves pendentes', () => {
+  const categories = sourceSection(publicPage, 'function publicDrawCategories()', '\n    function categoryName');
+  const brackets = sourceSection(publicPage, 'function bracketsHtml()', '\n    function bracketBoardHtml');
+  const schedule = sourceSection(publicPage, 'function scheduleHtml()', '\n    function scoreText');
+  assert.match(categories, /'ESP-A-M': 0, 'ESP-B-M': 1/);
+  assert.match(categories, /a\.index - b\.index/);
+  assert.match(brackets, /Aviso: as chaves das demais classes serão publicadas em breve\./);
+  assert.match(publicPage, /\.public-update-notice/);
+  assert.doesNotMatch(brackets, /Selecione a classe e acompanhe o caminho até a final\./);
+  assert.doesNotMatch(schedule, /Somente os dias que já possuem jogos publicados\./);
+});
+
+test('Sobre o evento abre primeiro e funciona como início da página pública', () => {
+  const labels = sourceSection(publicPage, 'const PUBLIC_TAB_LABELS', '\n    let turnstileScriptPromise');
+  const renderer = sourceSection(publicPage, 'function renderTournament()', '\n    function renderRegistrationOnly');
+  const tabSwitch = sourceSection(publicPage, 'function showTab(tab)', '\n    function formatPhone');
+  assert.ok(labels.indexOf("about: 'Sobre o evento'") < labels.indexOf("categories: 'Classes'"));
+  assert.match(renderer, /visibleTabs\.includes\('about'\) \? 'about'/);
+  assert.match(tabSwitch, /tab === 'about'/);
+});
+
 test('chave pública empilha as duas metades sem rolagem lateral', () => {
   const bracketStyles = sourceSection(publicPage, '.bracket-scroller', '\n    .agenda-list');
   const bracketRenderer = sourceSection(publicPage, 'function bracketBoardHtml', '\n    function matchCardHtml');

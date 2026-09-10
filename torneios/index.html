@@ -277,6 +277,7 @@
     .panel-head h2 { font-size: 25px; }
     .panel-head h3 { font-size: 19px; }
     .panel-head p { margin: 5px 0 0; color: var(--muted); font-size: 13px; font-weight: 650; }
+    .panel-head .public-update-notice { display: inline-flex; align-items: center; gap: 7px; margin-top: 8px; border: 1px solid #c9eb79; border-radius: 999px; padding: 6px 10px; background: #f5ffe2; color: #476900; font-size: 11px; font-weight: 850; }
     .info-copy { color: #4d646b; font-size: 15px; line-height: 1.65; white-space: pre-line; }
 
     .category-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
@@ -894,7 +895,7 @@
       inviteToken: inviteSegmentIndex >= 0 ? decodeURIComponent(routeParts[inviteSegmentIndex + 1] || '') : '',
       inviteInfo: null,
       snapshot: null,
-      activeTab: 'categories',
+      activeTab: 'about',
       bracketCategory: '',
       agendaCategory: '',
       registrationSearch: '',
@@ -932,12 +933,12 @@
       install: true
     };
     const PUBLIC_TAB_LABELS = {
+      about: 'Sobre o evento',
       categories: 'Classes',
       registrations: 'Inscritos',
       brackets: 'Chaves',
       schedule: 'Agenda',
       results: 'Resultados',
-      about: 'Sobre o evento',
       install: 'Instalar app'
     };
     let turnstileScriptPromise = null;
@@ -1228,7 +1229,12 @@
     }
     function publicDrawCategories() {
       const ids = publicDrawCategoryIds();
-      return categories().filter((row) => ids.has(categoryId(row)));
+      const publicCategories = categories().filter((row) => ids.has(categoryId(row)));
+      const priority = { 'ESP-A-M': 0, 'ESP-B-M': 1 };
+      return publicCategories
+        .map((row,index) => ({ row: row, index: index }))
+        .sort((a,b) => (priority[categoryCode(a.row)] ?? 2) - (priority[categoryCode(b.row)] ?? 2) || a.index - b.index)
+        .map((item) => item.row);
     }
     function categoryName(id) { const row = categories().find((item) => categoryId(item) === String(id)); return row ? field(row,'name','nome') : ''; }
     function categoryCapacity(row) {
@@ -1340,7 +1346,7 @@
       document.title = name + ' | Ilha Tênis';
       const visibleTabs = visiblePublicTabs();
       const requestedTab = clean(new URLSearchParams(location.search).get('tab'));
-      state.activeTab = visibleTabs.includes('categories') ? 'categories' : (visibleTabs[0] || '');
+      state.activeTab = visibleTabs.includes('about') ? 'about' : (visibleTabs[0] || '');
       if (visibleTabs.includes(requestedTab)) state.activeTab = requestedTab;
       const open = isRegistrationOpen(item);
       $('tournamentHeadActions').hidden = false;
@@ -1510,7 +1516,7 @@
       return '';
     }
     function bracketsHtml() {
-      return '<div class="panel"><div class="panel-head"><div><h2>Chaves</h2><p>Selecione a classe e acompanhe o caminho até a final.</p></div></div><div class="filter-strip" id="bracketFilters">' + publicDrawCategories().map((row) => '<button class="filter-btn ' + (categoryId(row) === state.bracketCategory ? 'active' : '') + '" type="button" data-bracket-category="' + escapeHtml(categoryId(row)) + '">' + escapeHtml(field(row,'name','nome')) + '</button>').join('') + '</div><div id="bracketContent">' + bracketBoardHtml(state.bracketCategory) + '</div></div>';
+      return '<div class="panel"><div class="panel-head"><div><h2>Chaves</h2><p class="public-update-notice">Aviso: as chaves das demais classes serão publicadas em breve.</p></div></div><div class="filter-strip" id="bracketFilters">' + publicDrawCategories().map((row) => '<button class="filter-btn ' + (categoryId(row) === state.bracketCategory ? 'active' : '') + '" type="button" data-bracket-category="' + escapeHtml(categoryId(row)) + '">' + escapeHtml(field(row,'name','nome')) + '</button>').join('') + '</div><div id="bracketContent">' + bracketBoardHtml(state.bracketCategory) + '</div></div>';
     }
     function bracketBoardHtml(category) {
       const rows = matches().filter((row) => matchCategoryId(row) === String(category));
@@ -1594,7 +1600,7 @@
       return gameRows.concat(eventRows).sort(matchDateSort);
     }
     function scheduleHtml() {
-      return '<div class="panel"><div class="panel-head"><div><h2>Agenda</h2><p>Somente os dias que já possuem jogos publicados.</p></div></div><div class="filter-strip" id="agendaFilters"><button class="filter-btn ' + (!state.agendaCategory?'active':'') + '" data-agenda-category="">Todos</button>' + agendaCategories().map((row) => '<button class="filter-btn ' + (categoryId(row) === state.agendaCategory?'active':'') + '" data-agenda-category="' + escapeHtml(categoryId(row)) + '">' + escapeHtml(field(row,'name','nome')) + '</button>').join('') + '</div><div class="agenda-list" id="agendaContent">' + agendaRowsHtml(state.agendaCategory) + '</div></div>';
+      return '<div class="panel"><div class="panel-head"><div><h2>Agenda</h2></div></div><div class="filter-strip" id="agendaFilters"><button class="filter-btn ' + (!state.agendaCategory?'active':'') + '" data-agenda-category="">Todos</button>' + agendaCategories().map((row) => '<button class="filter-btn ' + (categoryId(row) === state.agendaCategory?'active':'') + '" data-agenda-category="' + escapeHtml(categoryId(row)) + '">' + escapeHtml(field(row,'name','nome')) + '</button>').join('') + '</div><div class="agenda-list" id="agendaContent">' + agendaRowsHtml(state.agendaCategory) + '</div></div>';
     }
     function agendaRowsHtml(category) {
       const rows = scheduleItems().filter((row) => !category || row.__kind === 'event' || matchCategoryId(row) === String(category));
@@ -2173,7 +2179,7 @@
       document.querySelectorAll('[data-tab]').forEach((button) => button.classList.toggle('active',button.dataset.tab===tab));
       document.querySelectorAll('[data-panel]').forEach((panel) => panel.classList.toggle('active',panel.dataset.panel===tab));
       const url = new URL(location.href);
-      if (tab === 'categories') url.searchParams.delete('tab'); else url.searchParams.set('tab',tab);
+      if (tab === 'about') url.searchParams.delete('tab'); else url.searchParams.set('tab',tab);
       history.replaceState(null,'',url.pathname + url.search + url.hash);
       if (tab === 'install') updateTournamentPwaUi().catch(() => {});
       const nav = document.querySelector('.event-nav');
