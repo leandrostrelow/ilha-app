@@ -386,16 +386,15 @@
     .agenda-list { gap: 16px; }
     .agenda-day-group { display: grid; gap: 11px; padding: 12px; border: 1px solid var(--line); border-radius: 20px; background: #f7fafb; }
     .agenda-day-title { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 9px 12px; border-radius: 15px; background: var(--navy); color: #fff; }
-    .agenda-day-title span { flex: 0 0 auto; border-radius: 999px; padding: 5px 9px; background: var(--lime); color: #284600; font-size: 9px; font-weight: 950; letter-spacing: .08em; }
     .agenda-day-title h3 { margin: 0; font-size: 16px; font-weight: 950; text-transform: capitalize; }
     .agenda-day-courts { display: grid; gap: 12px; }
     .agenda-court-group { display: grid; gap: 8px; }
-    .agenda-court-title { min-height: 34px; display: flex; align-items: center; gap: 8px; margin: 0; border-radius: 999px; padding: 7px 13px; background: #00a82c; color: #fff; font-size: 13px; font-weight: 950; }
-    .agenda-court-title span { color: var(--lime); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+    .agenda-court-title { min-height: 34px; display: flex; align-items: center; gap: 8px; margin: 0; border-radius: 999px; padding: 7px 13px; background: var(--lime); color: #284600; font-size: 13px; font-weight: 950; }
+    .agenda-court-title span { color: #284600; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
     .agenda-court-games { display: grid; gap: 8px; }
     .agenda-card { display: grid; grid-template-columns: 82px minmax(0,1fr) auto; align-items: center; gap: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 17px; background: #fff; }
     .agenda-card.grouped { min-height: 68px; grid-template-columns: 78px minmax(0,1fr); gap: 12px; padding: 10px 12px; border-radius: 15px; }
-    .agenda-card.grouped .time-box { width: 72px; min-height: 34px; align-self: center; border-radius: 999px; background: #00a82c; }
+    .agenda-card.grouped .time-box { width: 72px; min-height: 34px; align-self: center; border-radius: 999px; background: var(--lime); color: #284600; }
     .agenda-card.grouped .time-box strong { font-size: 12px; line-height: 1; }
     .agenda-card.grouped h3 { font-size: 14px; font-weight: 950; line-height: 1.25; }
     .agenda-card.grouped p { margin-top: 3px; font-size: 10px; font-weight: 800; line-height: 1.25; }
@@ -448,6 +447,13 @@
     .pwa-onboarding-actions .button { width: 100%; }
     .pwa-onboarding-status { min-height: 18px; margin: 0; color: var(--muted); font-size: 11px; font-weight: 750; line-height: 1.4; text-align: center; }
     .button.notification-off { border-color: #efb7bb; background: #fff3f4; color: #a62e36; box-shadow: none; }
+    .tournament-pull-refresh { position: fixed; top: calc(10px + var(--safe-top)); left: 50%; z-index: 110; min-height: 42px; display: flex; align-items: center; gap: 9px; padding: 8px 14px 8px 9px; border: 1px solid rgba(255,255,255,.2); border-radius: 999px; background: var(--navy); color: #fff; box-shadow: 0 12px 30px rgba(4,28,34,.25); opacity: 0; pointer-events: none; transform: translate(-50%,calc(-100% - 24px)); transition: opacity .16s ease,transform .18s ease; }
+    .tournament-pull-refresh.visible { opacity: 1; transform: translate(-50%,0); }
+    .tournament-pull-refresh-icon { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: var(--lime); color: #284600; font-size: 16px; font-weight: 950; transition: transform .16s ease; }
+    .tournament-pull-refresh.ready .tournament-pull-refresh-icon { transform: rotate(180deg); }
+    .tournament-pull-refresh.refreshing .tournament-pull-refresh-icon { animation: tournament-pull-spin .72s linear infinite; }
+    .tournament-pull-refresh strong { font-size: 11px; font-weight: 900; white-space: nowrap; }
+    @keyframes tournament-pull-spin { to { transform: rotate(360deg); } }
     .modal {
       width: min(780px,100%);
       max-height: calc(100dvh - 48px - var(--safe-top) - var(--safe-bottom));
@@ -765,6 +771,11 @@
   <main class="page" id="appMain" aria-live="polite">
     <div class="loading-grid" id="loadingState"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
   </main>
+
+  <div class="tournament-pull-refresh" id="tournamentPullRefresh" role="status" aria-live="polite" hidden>
+    <span class="tournament-pull-refresh-icon" aria-hidden="true">↓</span>
+    <strong id="tournamentPullRefreshLabel">Puxe para atualizar</strong>
+  </div>
 
   <div class="modal-backdrop pwa-onboarding-backdrop" id="tournamentPwaOnboarding" aria-hidden="true" hidden>
     <section class="pwa-onboarding-card" role="dialog" aria-modal="true" aria-labelledby="tournamentPwaOnboardingTitle" tabindex="-1">
@@ -1556,6 +1567,19 @@
       return [value.getFullYear(), String(value.getMonth() + 1).padStart(2,'0'), String(value.getDate()).padStart(2,'0')].join('-');
     }
     function matchDateSort(a,b) { return (matchDate(a)?.getTime() || Number.MAX_SAFE_INTEGER) - (matchDate(b)?.getTime() || Number.MAX_SAFE_INTEGER) || shortTime(field(a,'match_time','event_time','time','hora')).localeCompare(shortTime(field(b,'match_time','event_time','time','hora'))); }
+    function scheduleOrderValue(row) {
+      const value = Number(field(row,'sort_order','ordem','order'));
+      return Number.isFinite(value) && value > 0 ? value : 0;
+    }
+    function scheduleOrderSort(a,b) {
+      const orderA = scheduleOrderValue(a);
+      const orderB = scheduleOrderValue(b);
+      if (orderA || orderB) {
+        const orderDiff = (orderA || Number.MAX_SAFE_INTEGER) - (orderB || Number.MAX_SAFE_INTEGER);
+        if (orderDiff) return orderDiff;
+      }
+      return matchDateSort(a,b) || matchId(a).localeCompare(matchId(b));
+    }
     function scheduledGameRows() {
       return matches().filter((row) => !isFinalized(row) && scheduleDayKey(row));
     }
@@ -1593,9 +1617,9 @@
       const courtGroups = Array.from(courts.entries()).sort((a,b) => a[0].localeCompare(b[0],'pt-BR',{numeric:true})).map(([court,items]) => {
         const isCourt = /^quadra\b/i.test(court);
         const courtLabel = isCourt ? court.replace(/^quadra\s*/i,'') : court;
-        return '<section class="agenda-court-group"><h4 class="agenda-court-title"><span>' + (isCourt?'Quadra':'Local') + '</span>' + escapeHtml(courtLabel) + '</h4><div class="agenda-court-games">' + items.sort(matchDateSort).map((row) => row.__kind === 'event' ? agendaEventHtml(row,true) : agendaMatchHtml(row,true)).join('') + '</div></section>';
+        return '<section class="agenda-court-group"><h4 class="agenda-court-title"><span>' + (isCourt?'Quadra':'Local') + '</span>' + escapeHtml(courtLabel) + '</h4><div class="agenda-court-games">' + items.sort(scheduleOrderSort).map((row) => row.__kind === 'event' ? agendaEventHtml(row,true) : agendaMatchHtml(row,true)).join('') + '</div></section>';
       }).join('');
-      return '<section class="agenda-day-group"><header class="agenda-day-title"><span>Dia</span><h3>' + escapeHtml(agendaDayLabel(rows[0])) + '</h3></header><div class="agenda-day-courts">' + courtGroups + '</div></section>';
+      return '<section class="agenda-day-group"><header class="agenda-day-title"><h3>' + escapeHtml(agendaDayLabel(rows[0])) + '</h3></header><div class="agenda-day-courts">' + courtGroups + '</div></section>';
     }
     function agendaDayLabel(row) {
       const date = matchDate(row);
@@ -1656,6 +1680,91 @@
 
     function tournamentUsesIos() {
       return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    const tournamentPullRefreshState = { active:false, ready:false, refreshing:false, startX:0, startY:0 };
+
+    function tournamentPageIsAtTop() {
+      const scroller = document.scrollingElement || document.documentElement;
+      return !scroller || scroller.scrollTop <= 1;
+    }
+
+    function setTournamentPullRefresh(visible,label,stateClass) {
+      const indicator = $('tournamentPullRefresh');
+      if (!indicator) return;
+      indicator.classList.toggle('visible',Boolean(visible));
+      indicator.classList.toggle('ready',stateClass === 'ready');
+      indicator.classList.toggle('refreshing',stateClass === 'refreshing');
+      $('tournamentPullRefreshLabel').textContent = label || 'Puxe para atualizar';
+    }
+
+    function resetTournamentPullRefresh(delay) {
+      setTimeout(() => {
+        if (tournamentPullRefreshState.refreshing) return;
+        tournamentPullRefreshState.active = false;
+        tournamentPullRefreshState.ready = false;
+        setTournamentPullRefresh(false,'Puxe para atualizar','');
+      },delay || 0);
+    }
+
+    function canStartTournamentPullRefresh(event) {
+      if (!tournamentAppInstalled() || tournamentPullRefreshState.refreshing || !tournamentPageIsAtTop() || document.body.classList.contains('modal-open')) return false;
+      const target = event.target;
+      return !(target && target.closest('input,textarea,select,button,a,[contenteditable="true"],.filter-strip,.event-nav'));
+    }
+
+    function handleTournamentPullStart(event) {
+      if (!event.touches || event.touches.length !== 1 || !canStartTournamentPullRefresh(event)) return;
+      tournamentPullRefreshState.active = true;
+      tournamentPullRefreshState.ready = false;
+      tournamentPullRefreshState.startX = event.touches[0].clientX;
+      tournamentPullRefreshState.startY = event.touches[0].clientY;
+    }
+
+    function handleTournamentPullMove(event) {
+      if (!tournamentPullRefreshState.active || tournamentPullRefreshState.refreshing || !event.touches || event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      const distanceY = touch.clientY - tournamentPullRefreshState.startY;
+      const distanceX = Math.abs(touch.clientX - tournamentPullRefreshState.startX);
+      if (distanceY <= 0 || distanceX > distanceY || !tournamentPageIsAtTop()) {
+        resetTournamentPullRefresh(0);
+        return;
+      }
+      if (distanceY > 8 && event.cancelable) event.preventDefault();
+      tournamentPullRefreshState.ready = distanceY >= 70;
+      setTournamentPullRefresh(true,tournamentPullRefreshState.ready ? 'Solte para atualizar' : 'Puxe para atualizar',tournamentPullRefreshState.ready ? 'ready' : '');
+    }
+
+    async function refreshTournamentFromPull() {
+      if (tournamentPullRefreshState.refreshing) return;
+      tournamentPullRefreshState.refreshing = true;
+      setTournamentPullRefresh(true,'Atualizando…','refreshing');
+      try {
+        if ('serviceWorker' in navigator) {
+          const registration = await navigator.serviceWorker.getRegistration('/torneios/');
+          if (registration) {
+            await registration.update();
+            if (registration.waiting) registration.waiting.postMessage({type:'SKIP_WAITING'});
+          }
+        }
+      } catch (error) {}
+      setTimeout(() => window.location.reload(),220);
+    }
+
+    function handleTournamentPullEnd() {
+      if (!tournamentPullRefreshState.active) return;
+      tournamentPullRefreshState.active = false;
+      if (tournamentPullRefreshState.ready) refreshTournamentFromPull();
+      else resetTournamentPullRefresh(0);
+    }
+
+    function initTournamentPullToRefresh() {
+      if (!tournamentAppInstalled() || state.slug !== 'ilha-open-2026' || state.registrationOnly || !('ontouchstart' in window)) return;
+      $('tournamentPullRefresh').hidden = false;
+      window.addEventListener('touchstart',handleTournamentPullStart,{passive:true});
+      window.addEventListener('touchmove',handleTournamentPullMove,{passive:false});
+      window.addEventListener('touchend',handleTournamentPullEnd,{passive:true});
+      window.addEventListener('touchcancel',() => resetTournamentPullRefresh(0),{passive:true});
     }
 
     function tournamentPushToken() {
@@ -1967,6 +2076,7 @@
       $('tournamentPwaOnboarding')?.addEventListener('click',(event) => { if (event.target === $('tournamentPwaOnboarding')) closeTournamentPwaOnboarding(); });
       document.addEventListener('keydown',handleTournamentPwaOnboardingKeydown);
       if (state.slug === 'ilha-open-2026') ensureTournamentServiceWorker().catch(() => {});
+      initTournamentPullToRefresh();
     }
     function siteFooter() { return '<footer>Ilha Tênis Colatina · Torneios, chaves e resultados</footer>'; }
 
