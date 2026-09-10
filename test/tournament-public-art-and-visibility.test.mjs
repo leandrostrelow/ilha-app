@@ -26,6 +26,14 @@ test('nova arte vertical é o fundo padrão das publicações', () => {
   assert.match(adminPage, /return String\(configured \|\| ''\)\.trim\(\) \|\| '\/fundo-chave-instagram\.png'/);
 });
 
+test('artes usam a paleta verde da identidade espacial', () => {
+  const posters = sourceSection(adminPage, 'function drawResultsPoster', '\n    function drawCoverImage');
+  assert.match(posters, /dark: '#00a82c'/);
+  assert.match(posters, /dark2: '#00ef2a'/);
+  assert.match(posters, /connector: hasBackground \? 'rgba\(0, 239, 42, \.42\)'/);
+  assert.doesNotMatch(posters, /#003f86|#005bbb|#08264a|#315a87|#b7d2f5|#eaf3ff/);
+});
+
 test('configurações permitem enviar, visualizar e restaurar o fundo das artes', () => {
   assert.match(adminPage, /id="tournamentArtBackgroundFile" type="file" accept="image\/png/);
   assert.match(adminPage, /id="tournamentArtBackgroundPreview"/);
