@@ -843,7 +843,7 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(tournamentSource, /id="headRegisterBtn"[\s\S]*Fazer inscrição/);
   assert.match(tournamentSource, /class="mobile-label">Inscreva-se/);
   assert.match(tournamentSource, /Seja um patrocinador/);
-  assert.match(functionSource(tournamentSource, 'renderTournament'), /state\.activeTab = visibleTabs\.includes\('categories'\)/);
+  assert.match(functionSource(tournamentSource, 'renderTournament'), /state\.activeTab = visibleTabs\.includes\('about'\)/);
   assert.doesNotMatch(functionSource(tournamentSource, 'renderTournament'), /tabButton\('overview','Visão geral'\)|data-panel="overview"|hero-actions/);
   assert.doesNotMatch(functionSource(tournamentSource, 'overviewHtml'), /summary-grid|<h3>Informações<\/h3>/);
   assert.match(tournamentSource, /registrations:\s*false[\s\S]*about:\s*true/);
