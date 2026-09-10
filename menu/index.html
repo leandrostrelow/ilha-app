@@ -1158,7 +1158,7 @@
       z-index: 1001;
       width: 48px;
       height: 48px;
-      display: grid;
+      display: none;
       place-items: center;
       padding: 0;
       border: 1px solid rgba(255, 255, 255, .28);
@@ -1170,6 +1170,14 @@
       cursor: pointer;
       box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
       backdrop-filter: blur(10px);
+    }
+
+    body.is-event-art-manual .menu-event-art-close {
+      display: grid;
+    }
+
+    body.is-tv-transition-playing .menu-header-tools {
+      visibility: hidden;
     }
 
     body.is-menu-fullscreen .menu-clock {
@@ -1717,6 +1725,7 @@
         video.removeAttribute('src');
         video.load();
         overlay.hidden = true;
+        document.body.classList.remove('is-tv-transition-playing');
       }
 
       function playTvTransition(switchAction) {
@@ -1759,6 +1768,7 @@
           if (playResult && typeof playResult.catch === 'function') playResult.catch(fail);
         };
         overlay.hidden = false;
+        document.body.classList.add('is-tv-transition-playing');
         video.muted = true;
         video.autoplay = true;
         video.playsInline = true;
@@ -1786,6 +1796,7 @@
         video.classList.add('is-fading');
         video.pause();
         document.body.classList.remove('is-event-art-open');
+        document.body.classList.remove('is-event-art-manual');
         const finish = function () {
           if (transitionEpoch !== eventSlideshowTransitionEpoch) return;
           overlay.hidden = true;
@@ -1820,8 +1831,9 @@
         showMenuSlideshowItem();
       }
 
-      function showEventArtSlide(slide) {
+      function showEventArtSlide(slide, openedManually) {
         if (!slide || !slide.mediaUrl) return showMenuSlideshowItem();
+        document.body.classList.toggle('is-event-art-manual', openedManually === true);
         const overlay = document.getElementById('menuEventArt');
         const image = document.getElementById('menuEventArtImage');
         const video = document.getElementById('menuEventArtVideo');
@@ -1915,7 +1927,7 @@
       async function openEventArt() {
         if (!currentEventSlides.length) return;
         eventSlideshowIndex = 1;
-        showEventArtSlide(currentEventSlides[0]);
+        showEventArtSlide(currentEventSlides[0], true);
         eventArtOpenedFullscreen = false;
         try {
           if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
