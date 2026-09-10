@@ -1106,6 +1106,15 @@
       opacity: 1;
       transition: opacity .65s ease;
       will-change: opacity;
+      pointer-events: none;
+    }
+
+    video::-webkit-media-controls,
+    video::-webkit-media-controls-panel,
+    video::-webkit-media-controls-fullscreen-button,
+    video::-webkit-media-controls-overlay-play-button {
+      display: none !important;
+      -webkit-appearance: none;
     }
 
     .menu-event-art-media[hidden] {
@@ -1256,12 +1265,12 @@
 
   <div class="menu-event-art" id="menuEventArt" role="dialog" aria-modal="true" aria-label="Mídia vertical do evento" hidden>
     <img class="menu-event-art-media" id="menuEventArtImage" alt="Arte do evento no Ilha Bar" hidden />
-    <video class="menu-event-art-media" id="menuEventArtVideo" aria-label="Vídeo do evento no Ilha Bar" muted autoplay playsinline preload="auto" hidden></video>
+    <video class="menu-event-art-media" id="menuEventArtVideo" aria-label="Vídeo do evento no Ilha Bar" muted autoplay playsinline webkit-playsinline preload="auto" controlslist="nodownload nofullscreen noremoteplayback" disablepictureinpicture disableremoteplayback x-webkit-airplay="deny" tabindex="-1" hidden></video>
     <button class="menu-event-art-close" type="button" id="menuEventArtClose" aria-label="Fechar mídia do evento" title="Voltar ao cardápio">×</button>
   </div>
 
   <div class="menu-tv-transition" id="menuTvTransition" aria-hidden="true" hidden>
-    <video id="menuTvTransitionVideo" aria-label="Transição visual da TV" muted autoplay playsinline preload="auto"></video>
+    <video id="menuTvTransitionVideo" aria-label="Transição visual da TV" muted autoplay playsinline webkit-playsinline preload="auto" controlslist="nodownload nofullscreen noremoteplayback" disablepictureinpicture disableremoteplayback x-webkit-airplay="deny" tabindex="-1"></video>
   </div>
 
   <script>
@@ -1728,6 +1737,19 @@
         document.body.classList.remove('is-tv-transition-playing');
       }
 
+      function configureInlineTvVideo(video) {
+        if (!video) return;
+        video.controls = false;
+        video.playsInline = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
+        video.setAttribute('controlslist', 'nodownload nofullscreen noremoteplayback');
+        video.setAttribute('x-webkit-airplay', 'deny');
+        video.removeAttribute('controls');
+        if ('disablePictureInPicture' in video) video.disablePictureInPicture = true;
+        if ('disableRemotePlayback' in video) video.disableRemotePlayback = true;
+      }
+
       function playTvTransition(switchAction) {
         let switched = false;
         const switchOnce = function () {
@@ -1769,6 +1791,7 @@
         };
         overlay.hidden = false;
         document.body.classList.add('is-tv-transition-playing');
+        configureInlineTvVideo(video);
         video.muted = true;
         video.autoplay = true;
         video.playsInline = true;
@@ -1897,6 +1920,7 @@
             }, EVENT_ART_FADE_MS);
           };
           if (slide.mediaType === 'video') {
+            configureInlineTvVideo(video);
             video.muted = true;
             video.autoplay = true;
             video.playsInline = true;
