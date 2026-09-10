@@ -242,6 +242,10 @@ const barTvScopedValidatorMigrationSource = await readFile(
   path.join(projectRoot, 'supabase', 'migrations', '20260903142124_scope_bar_tv_media_to_official_project.sql'),
   'utf8'
 );
+const barTvAlphaTransitionMigrationSource = await readFile(
+  path.join(projectRoot, 'supabase', 'migrations', '20260910195000_add_bar_tv_alpha_transition.sql'),
+  'utf8'
+);
 const securityOperationsSource = await readFile(path.join(projectRoot, 'SECURITY_OPERATIONS.md'), 'utf8');
 const gitignoreSource = await readFile(path.join(projectRoot, '.gitignore'), 'utf8');
 const sqlFiles = (await readdir(path.join(projectRoot, 'supabase'), { recursive: true }))
@@ -2290,6 +2294,25 @@ test('TV do Bar alterna cardapio, imagens e videos MP4 com tempo individual', ()
   assert.match(showSlide, /failedEventMediaAt\.set\(slide\.mediaUrl, Date\.now\(\)\)/);
   assert.match(showSlide, /scheduleEventSlideshow\(slide\.durationSeconds\)/);
   assert.match(adminSource, /@media \(max-width: 760px\)[\s\S]*\.bar-tv-event-art-card \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/);
+});
+
+test('TV do Bar aceita transicao WebM transparente sem consumir vaga do slideshow', () => {
+  assert.match(barTvAlphaTransitionMigrationSource, /add column if not exists transition_url text not null default ''/i);
+  assert.match(barTvAlphaTransitionMigrationSource, /add column if not exists transition_active boolean not null default false/i);
+  assert.match(barTvAlphaTransitionMigrationSource, /allowed_mime_types[\s\S]*'video\/webm'/i);
+  assert.match(barTvAlphaTransitionMigrationSource, /transition_url = ''[\s\S]*lkqtgptebkgfwguykxhv[\s\S]*bar-tv-media\/eventos[\s\S]*webm/i);
+  assert.match(adminSource, /id="barTvTransitionFile"[^>]*accept="video\/webm,[.]webm"/i);
+  assert.match(adminSource, /id="barTvTransitionActive"/i);
+  assert.match(functionSource(adminSource, 'prepareBarTvTransition'), /50 \* 1024 \* 1024[\s\S]*duration > 12/);
+  assert.match(functionSource(adminSource, 'selectBarTvTransition'), /transitionUrl: uploadedUrl, transitionActive: true/);
+  assert.match(functionSource(adminSource, 'saveBarTvEventArt'), /transition_url: savedArt\.transitionUrl[\s\S]*transition_active: savedArt\.transitionActive/);
+  assert.match(menuSource, /id="menuTvTransitionVideo"[^>]*muted autoplay playsinline preload="auto"/);
+  assert.match(menuSource, /\.menu-tv-transition \{[\s\S]*z-index: 1100[\s\S]*pointer-events: none[\s\S]*background: transparent/);
+  const playTransition = functionSource(menuSource, 'playTvTransition');
+  assert.match(playTransition, /switchDelay = Math\.max\(250, Math\.min\(5000, duration \* 460\)\)/);
+  assert.match(playTransition, /playResult\.catch\(fail\)/);
+  assert.match(playTransition, /tvTransitionSafetyTimer = setTimeout\(fail, 13000\)/);
+  assert.match(functionSource(menuSource, 'showNextEventSlideshowItem'), /playTvTransition\(function \(\)/);
 });
 
 test('ADM organiza links públicos, Classe Espacial e convites dentro do torneio', () => {

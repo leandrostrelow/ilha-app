@@ -17150,6 +17150,51 @@
       gap: 9px;
     }
 
+    .bar-tv-transition-panel {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 90px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 13px;
+      padding: 11px;
+      border: 1px solid rgba(160, 238, 0, .45);
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(160, 238, 0, .09), #ffffff 58%);
+    }
+
+    .bar-tv-transition-preview {
+      width: 90px;
+      aspect-ratio: 9 / 16;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background-color: #14223a;
+      background-image:
+        linear-gradient(45deg, rgba(255, 255, 255, .08) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255, 255, 255, .08) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, .08) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, .08) 75%);
+      background-size: 18px 18px;
+      background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+      color: #dce8ed;
+      font-size: 9px;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .bar-tv-transition-preview video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      background: transparent;
+    }
+
+    .bar-tv-transition-panel .bar-tv-event-art-actions {
+      justify-content: flex-end;
+    }
+
     .bar-tv-slide-row {
       min-width: 0;
       display: grid;
@@ -18541,6 +18586,25 @@
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 7px;
+      }
+
+      .bar-tv-transition-panel {
+        grid-template-columns: 68px minmax(0, 1fr);
+        align-items: start;
+      }
+
+      .bar-tv-transition-preview {
+        width: 68px;
+      }
+
+      .bar-tv-transition-panel .bar-tv-event-art-actions {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .bar-tv-transition-panel .bar-tv-event-art-toggle {
+        grid-column: 1 / -1;
       }
 
       .bar-menu-qr-card {
@@ -22800,8 +22864,22 @@
                     <button type="button" id="barTvEventArtPickBtn">＋ Adicionar mídia</button>
                   </div>
                 </div>
+                <div class="bar-tv-transition-panel" id="barTvTransitionPanel">
+                  <div class="bar-tv-transition-preview" id="barTvTransitionPreview"><span>SEM<br />TRANSIÇÃO</span></div>
+                  <div class="bar-tv-event-art-copy">
+                    <h3>Transição com transparência</h3>
+                    <p>As bolinhas aparecem por cima da tela durante cada troca. Envie um WebM transparente de até 50 MB e no máximo 12 segundos.</p>
+                    <small id="barTvTransitionStatus">Nenhuma transição enviada</small>
+                  </div>
+                  <div class="bar-tv-event-art-actions">
+                    <label class="bar-tv-event-art-toggle"><input id="barTvTransitionActive" type="checkbox" disabled />Usar nas trocas</label>
+                    <button type="button" id="barTvTransitionPickBtn">Enviar transição</button>
+                    <button class="danger" type="button" id="barTvTransitionRemoveBtn" hidden>Remover</button>
+                  </div>
+                </div>
                 <div class="bar-tv-slideshow-list" id="barTvEventArtList"></div>
                 <input id="barTvEventArtFile" type="file" accept="image/jpeg,image/png,image/webp,video/mp4" hidden />
+                <input id="barTvTransitionFile" type="file" accept="video/webm,.webm" hidden />
               </section>
 
               <div class="bar-menu-admin-metrics">
@@ -31555,6 +31633,8 @@
       barTvEventArt: {
         imageUrl: '',
         active: false,
+        transitionUrl: '',
+        transitionActive: false,
         updatedAt: ''
       },
       barCustomers: [],
@@ -32291,6 +32371,8 @@
       return {
         imageUrl: row && row.image_url || '',
         active: Boolean(row && row.active),
+        transitionUrl: row && row.transition_url || '',
+        transitionActive: Boolean(row && row.transition_active && row.transition_url),
         menuDurationSeconds: Math.min(300, Math.max(3, Number(row && row.menu_duration_seconds || 10))),
         slides: (rawSlides.length ? rawSlides : fallbackSlides).slice(0, 5).map(function (slide) {
           const mediaUrl = String(slide && (slide.media_url || slide.image_url) || '');
@@ -37716,6 +37798,17 @@
       $('barTvEventArtStatus').textContent = slides.length
         ? activeSlides.length + ' mídia(s) ativa(s) + cardápio no loop'
         : 'Somente o cardápio está na sequência';
+      const transitionUrl = String(art.transitionUrl || '');
+      $('barTvTransitionPreview').innerHTML = transitionUrl
+        ? '<video src="' + escapeHtml(transitionUrl) + '" muted playsinline loop autoplay preload="metadata" aria-label="Prévia da transição transparente"></video>'
+        : '<span>SEM<br />TRANSIÇÃO</span>';
+      $('barTvTransitionStatus').textContent = transitionUrl
+        ? (art.transitionActive ? 'Ativa em todas as trocas da sequência' : 'Enviada, mas pausada')
+        : 'Nenhuma transição enviada';
+      $('barTvTransitionActive').disabled = !transitionUrl;
+      $('barTvTransitionActive').checked = Boolean(transitionUrl && art.transitionActive);
+      $('barTvTransitionRemoveBtn').hidden = !transitionUrl;
+      $('barTvTransitionPickBtn').textContent = transitionUrl ? 'Trocar arquivo' : 'Enviar transição';
       list.innerHTML = slides.map(function (slide, index) {
         const isVideo = slide.mediaType === 'video';
         const mediaPreview = isVideo
@@ -41193,6 +41286,72 @@
       return resizeBarTvEventImage(file);
     }
 
+    function prepareBarTvTransition(file) {
+      return new Promise(function (resolve, reject) {
+        if (!file) {
+          resolve(null);
+          return;
+        }
+        if (!(file.type === 'video/webm' || /[.]webm$/i.test(file.name || ''))) {
+          reject(new Error('Use um vídeo WebM com fundo transparente.'));
+          return;
+        }
+        if (file.size > 50 * 1024 * 1024) {
+          reject(new Error('A transição precisa ter no máximo 50 MB.'));
+          return;
+        }
+        const previewUrl = URL.createObjectURL(file);
+        const video = document.createElement('video');
+        let settled = false;
+        const timeout = setTimeout(function () {
+          fail(new Error('A transição demorou demais para abrir. Tente outro WebM.'));
+        }, 15000);
+        const cleanup = function () {
+          clearTimeout(timeout);
+          video.onloadedmetadata = null;
+          video.onerror = null;
+          video.removeAttribute('src');
+          video.load();
+        };
+        const fail = function (error) {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          URL.revokeObjectURL(previewUrl);
+          reject(error);
+        };
+        video.preload = 'metadata';
+        video.muted = true;
+        video.playsInline = true;
+        video.onloadedmetadata = function () {
+          if (settled) return;
+          const duration = Number(video.duration || 0);
+          if (!Number.isFinite(duration) || duration <= 0) {
+            fail(new Error('Não consegui identificar a duração dessa transição.'));
+            return;
+          }
+          if (duration > 12) {
+            fail(new Error('A transição pode ter no máximo 12 segundos.'));
+            return;
+          }
+          settled = true;
+          cleanup();
+          resolve({
+            blob: file,
+            previewUrl: previewUrl,
+            mediaType: 'transition',
+            durationSeconds: duration,
+            extension: 'webm',
+            contentType: 'video/webm'
+          });
+        };
+        video.onerror = function () {
+          fail(new Error('Não consegui abrir esse arquivo. Confirme se ele está em WebM.'));
+        };
+        video.src = previewUrl;
+      });
+    }
+
     function barProductImageSlug(name) {
       return normalizeMatchText(name || 'produto').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 56) || 'produto';
     }
@@ -41225,8 +41384,9 @@
     async function uploadBarTvMedia(prepared) {
       if (!prepared || !prepared.blob) return '';
       requireAdminSession();
-      const extension = prepared.mediaType === 'video' ? 'mp4' : 'webp';
-      const objectPath = 'eventos/' + Date.now() + '-midia-tv-' + Math.random().toString(36).slice(2, 7) + '.' + extension;
+      const extension = prepared.extension || (prepared.mediaType === 'video' ? 'mp4' : 'webp');
+      const fileLabel = prepared.mediaType === 'transition' ? 'transicao-tv' : 'midia-tv';
+      const objectPath = 'eventos/' + Date.now() + '-' + fileLabel + '-' + Math.random().toString(36).slice(2, 7) + '.' + extension;
       const headers = supabaseHeaders(true);
       headers['Content-Type'] = prepared.contentType || prepared.blob.type || (prepared.mediaType === 'video' ? 'video/mp4' : 'image/webp');
       headers['cache-control'] = 'max-age=31536000';
@@ -41372,6 +41532,8 @@
         };
       }).filter(function (slide) { return Boolean(slide.mediaUrl); });
       savedArt.menuDurationSeconds = Math.min(300, Math.max(3, Number(savedArt.menuDurationSeconds || 10)));
+      savedArt.transitionUrl = String(savedArt.transitionUrl || '').trim();
+      savedArt.transitionActive = Boolean(savedArt.transitionUrl && savedArt.transitionActive);
       const firstImageSlide = savedArt.slides.find(function (slide) { return slide.mediaType === 'image'; }) || null;
       const hasActiveSlide = savedArt.slides.some(function (slide) { return slide.active; });
       if (barCanPersist()) {
@@ -41384,6 +41546,8 @@
               return { media_type: slide.mediaType, media_url: slide.mediaUrl, duration_seconds: slide.durationSeconds, active: slide.active };
             }),
             menu_duration_seconds: savedArt.menuDurationSeconds,
+            transition_url: savedArt.transitionUrl,
+            transition_active: savedArt.transitionActive,
             updated_by: adminProfile && adminProfile.id || null,
             updated_at: new Date().toISOString()
           },
@@ -41395,6 +41559,40 @@
       opsData.barTvEventArt = savedArt;
       renderBarTvEventArt();
       return savedArt;
+    }
+
+    async function selectBarTvTransition(file) {
+      const prepared = await prepareBarTvTransition(file);
+      if (!prepared) return;
+      const previousUrl = String(opsData.barTvEventArt && opsData.barTvEventArt.transitionUrl || '');
+      const pickButton = $('barTvTransitionPickBtn');
+      let uploadedUrl = prepared.previewUrl;
+      try {
+        requireAdminSession();
+        pickButton.disabled = true;
+        pickButton.textContent = 'Enviando...';
+        if (barCanPersist()) uploadedUrl = await uploadBarTvMedia(prepared);
+        await saveBarTvEventArt({ transitionUrl: uploadedUrl, transitionActive: true });
+        if (barCanPersist() && previousUrl && previousUrl !== uploadedUrl) deleteBarTvMedia(previousUrl);
+        toast('Transição enviada e ativada na TV.');
+      } catch (error) {
+        if (barCanPersist() && uploadedUrl && uploadedUrl !== prepared.previewUrl) deleteBarTvMedia(uploadedUrl);
+        throw error;
+      } finally {
+        if (barCanPersist() && /^blob:/i.test(prepared.previewUrl || '')) URL.revokeObjectURL(prepared.previewUrl);
+        pickButton.disabled = false;
+        $('barTvTransitionFile').value = '';
+        renderBarTvEventArt();
+      }
+    }
+
+    async function removeBarTvTransition() {
+      const previousUrl = String(opsData.barTvEventArt && opsData.barTvEventArt.transitionUrl || '');
+      if (!previousUrl || !window.confirm('Remover a transição da TV?')) return;
+      await saveBarTvEventArt({ transitionUrl: '', transitionActive: false });
+      if (barCanPersist()) deleteBarTvMedia(previousUrl);
+      else if (/^blob:/i.test(previousUrl)) URL.revokeObjectURL(previousUrl);
+      toast('Transição removida da TV.');
     }
 
     async function selectBarTvEventArt(file) {
@@ -49279,6 +49477,26 @@
           $('barTvEventArtFile').value = '';
           reportActionError(error);
         });
+      });
+      $('barTvTransitionPickBtn').addEventListener('click', function () {
+        $('barTvTransitionFile').click();
+      });
+      $('barTvTransitionFile').addEventListener('change', function (event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        selectBarTvTransition(file).catch(function (error) {
+          $('barTvTransitionFile').value = '';
+          reportActionError(error);
+        });
+      });
+      $('barTvTransitionActive').addEventListener('change', function () {
+        const enabled = this.checked;
+        saveBarTvEventArt({ transitionActive: enabled }).then(function () {
+          toast(enabled ? 'Transição ativada na TV.' : 'Transição pausada.');
+        }).catch(reportActionError);
+      });
+      $('barTvTransitionRemoveBtn').addEventListener('click', function () {
+        removeBarTvTransition().catch(reportActionError);
       });
       $('barTvMenuDuration').addEventListener('change', function () {
         const duration = Math.min(300, Math.max(3, Number(this.value || 10)));

@@ -1116,8 +1116,32 @@
       opacity: 0;
     }
 
+    .menu-tv-transition {
+      position: fixed;
+      inset: 0;
+      z-index: 1100;
+      overflow: hidden;
+      pointer-events: none;
+      background: transparent;
+    }
+
+    .menu-tv-transition[hidden] {
+      display: none;
+    }
+
+    .menu-tv-transition video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      background: transparent;
+    }
+
     @media (min-width: 720px) and (orientation: landscape) {
-      body[data-menu-layout="vertical"] .menu-event-art-media {
+      body[data-menu-layout="vertical"] .menu-event-art-media,
+      body[data-menu-layout="vertical"] .menu-tv-transition video {
         inset: auto;
         top: 50%;
         left: 50%;
@@ -1228,6 +1252,10 @@
     <button class="menu-event-art-close" type="button" id="menuEventArtClose" aria-label="Fechar mídia do evento" title="Voltar ao cardápio">×</button>
   </div>
 
+  <div class="menu-tv-transition" id="menuTvTransition" aria-hidden="true" hidden>
+    <video id="menuTvTransitionVideo" aria-label="Transição visual da TV" muted autoplay playsinline preload="auto"></video>
+  </div>
+
   <script>
     (function () {
       'use strict';
@@ -1237,7 +1265,7 @@
       const MOBILE_MENU_VIEW = new URLSearchParams(window.location.search).get('view') === 'mobile' || /^\/cardapio\/?$/.test(window.location.pathname);
       const MENU_VISIBILITY_FIELD = MOBILE_MENU_VIEW ? 'menu_visible' : 'menu_tv_visible';
       const MENU_QUERY = 'bar_products?select=id,name,category,sale_price,image_url,notes,menu_featured,menu_sort_order,updated_at&active=eq.true&' + MENU_VISIBILITY_FIELD + '=eq.true&order=category.asc,menu_sort_order.asc,name.asc';
-      const EVENT_ART_QUERY = 'bar_tv_event_art?select=image_url,slides,menu_duration_seconds,updated_at&id=eq.true&active=eq.true&limit=1';
+      const EVENT_ART_QUERY = 'bar_tv_event_art?select=image_url,slides,menu_duration_seconds,transition_url,transition_active,updated_at&id=eq.true&active=eq.true&limit=1';
       const MENU_REFRESH_INTERVAL = 15000;
       const MENU_REQUEST_TIMEOUT_MS = 12000;
       const EVENT_ART_FADE_MS = 650;
@@ -1258,12 +1286,17 @@
       let resizeTimer = 0;
       let currentEventArtUrl = '';
       let currentEventSlides = [];
+      let currentTvTransitionUrl = '';
+      let currentTvTransitionActive = false;
       let menuSlideDurationSeconds = 10;
       let eventSlideshowIndex = 0;
       let eventSlideshowTimer = 0;
       let eventSlideshowTransitionTimer = 0;
       let eventSlideshowLoadTimer = 0;
       let eventSlideshowTransitionEpoch = 0;
+      let tvTransitionPlaybackEpoch = 0;
+      let tvTransitionSwitchTimer = 0;
+      let tvTransitionSafetyTimer = 0;
       let lastEventSlideshowPayload = '';
       const failedEventMediaAt = new Map();
       let eventArtOpenedFullscreen = false;
@@ -1612,13 +1645,17 @@
             currentEventSlides = [{ mediaType: 'image', mediaUrl: String(row.image_url).trim(), durationSeconds: 10, active: true }];
           }
           menuSlideDurationSeconds = Math.min(300, Math.max(3, Number(row && row.menu_duration_seconds || 10)));
+          currentTvTransitionUrl = String(row && row.transition_url || '').trim();
+          currentTvTransitionActive = Boolean(row && row.transition_active && currentTvTransitionUrl && canRetryEventMedia(currentTvTransitionUrl));
         } catch (error) {
           currentEventSlides = [];
           menuSlideDurationSeconds = 10;
+          currentTvTransitionUrl = '';
+          currentTvTransitionActive = false;
         }
         currentEventArtUrl = currentEventSlides[0] && currentEventSlides[0].mediaUrl || '';
         document.getElementById('menuEventArtBtn').hidden = !currentEventSlides.length;
-        const nextPayload = JSON.stringify([menuSlideDurationSeconds, currentEventSlides]);
+        const nextPayload = JSON.stringify([menuSlideDurationSeconds, currentEventSlides, currentTvTransitionUrl, currentTvTransitionActive]);
         if (nextPayload !== lastEventSlideshowPayload) {
           lastEventSlideshowPayload = nextPayload;
           currentEventSlides.forEach(function (slide) {
@@ -1626,6 +1663,12 @@
             const preload = new Image();
             preload.src = slide.mediaUrl;
           });
+          if (currentTvTransitionActive) {
+            const preloadTransition = document.createElement('video');
+            preloadTransition.muted = true;
+            preloadTransition.preload = 'auto';
+            preloadTransition.src = currentTvTransitionUrl;
+          }
           startEventSlideshow();
         }
       }
@@ -1661,6 +1704,75 @@
         video.load();
       }
 
+      function resetTvTransition() {
+        clearTimeout(tvTransitionSwitchTimer);
+        clearTimeout(tvTransitionSafetyTimer);
+        const overlay = document.getElementById('menuTvTransition');
+        const video = document.getElementById('menuTvTransitionVideo');
+        video.onloadedmetadata = null;
+        video.oncanplay = null;
+        video.onended = null;
+        video.onerror = null;
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+        overlay.hidden = true;
+      }
+
+      function playTvTransition(switchAction) {
+        let switched = false;
+        const switchOnce = function () {
+          if (switched) return;
+          switched = true;
+          switchAction();
+        };
+        if (!currentTvTransitionActive || !currentTvTransitionUrl || document.hidden) {
+          switchOnce();
+          return;
+        }
+        const playbackEpoch = ++tvTransitionPlaybackEpoch;
+        resetTvTransition();
+        const overlay = document.getElementById('menuTvTransition');
+        const video = document.getElementById('menuTvTransitionVideo');
+        let playbackRequested = false;
+        const finish = function () {
+          if (playbackEpoch !== tvTransitionPlaybackEpoch) return;
+          switchOnce();
+          resetTvTransition();
+        };
+        const fail = function () {
+          if (playbackEpoch !== tvTransitionPlaybackEpoch) return;
+          failedEventMediaAt.set(currentTvTransitionUrl, Date.now());
+          currentTvTransitionActive = false;
+          finish();
+        };
+        const startPlayback = function () {
+          if (playbackRequested || playbackEpoch !== tvTransitionPlaybackEpoch) return;
+          playbackRequested = true;
+          const duration = Number(video.duration || 0);
+          const switchDelay = Math.max(250, Math.min(5000, duration * 460));
+          tvTransitionSwitchTimer = setTimeout(function () {
+            if (playbackEpoch === tvTransitionPlaybackEpoch) switchOnce();
+          }, switchDelay);
+          try { video.currentTime = 0; } catch (error) {}
+          const playResult = video.play();
+          if (playResult && typeof playResult.catch === 'function') playResult.catch(fail);
+        };
+        overlay.hidden = false;
+        video.muted = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.preload = 'auto';
+        video.onloadedmetadata = startPlayback;
+        video.oncanplay = startPlayback;
+        video.onended = finish;
+        video.onerror = fail;
+        video.src = currentTvTransitionUrl;
+        video.load();
+        if (video.readyState >= 1) Promise.resolve().then(startPlayback);
+        tvTransitionSafetyTimer = setTimeout(fail, 13000);
+      }
+
       function showMenuSlideshowItem() {
         const overlay = document.getElementById('menuEventArt');
         const image = document.getElementById('menuEventArtImage');
@@ -1688,15 +1800,19 @@
         if (!currentEventSlides.length) return showMenuSlideshowItem();
         const sequenceLength = currentEventSlides.length + 1;
         eventSlideshowIndex = (eventSlideshowIndex + 1) % sequenceLength;
-        if (eventSlideshowIndex === 0) return showMenuSlideshowItem();
-        const slide = currentEventSlides[eventSlideshowIndex - 1];
-        showEventArtSlide(slide);
+        playTvTransition(function () {
+          if (eventSlideshowIndex === 0) return showMenuSlideshowItem();
+          const slide = currentEventSlides[eventSlideshowIndex - 1];
+          showEventArtSlide(slide);
+        });
       }
 
       function startEventSlideshow() {
         clearTimeout(eventSlideshowTimer);
         clearTimeout(eventSlideshowTransitionTimer);
         clearTimeout(eventSlideshowLoadTimer);
+        tvTransitionPlaybackEpoch += 1;
+        resetTvTransition();
         eventSlideshowIndex = 0;
         showMenuSlideshowItem();
       }
@@ -1897,6 +2013,8 @@
           clearTimeout(eventSlideshowTransitionTimer);
           clearTimeout(eventSlideshowLoadTimer);
           document.getElementById('menuEventArtVideo').pause();
+          tvTransitionPlaybackEpoch += 1;
+          resetTvTransition();
         }
       });
       window.addEventListener('focus', function () {
