@@ -428,6 +428,26 @@
     .error-card p { color: var(--muted); line-height: 1.5; }
 
     .modal-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: calc(24px + var(--safe-top)) max(24px, env(safe-area-inset-right, 0px)) calc(24px + var(--safe-bottom)) max(24px, env(safe-area-inset-left, 0px)); background: rgba(4,28,34,.68); backdrop-filter: blur(7px); }
+    .pwa-onboarding-backdrop { z-index: 95; }
+    .pwa-onboarding-card { position: relative; width: min(460px,100%); max-height: calc(100dvh - 48px - var(--safe-top) - var(--safe-bottom)); overflow-y: auto; border: 1px solid rgba(168,233,0,.42); border-radius: 28px; background: #fff; box-shadow: 0 30px 90px rgba(0,0,0,.38); }
+    .pwa-onboarding-close { position: absolute; top: 13px; right: 13px; z-index: 2; width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.18); border-radius: 13px; background: rgba(4,28,34,.64); color: #fff; font-size: 22px; backdrop-filter: blur(10px); }
+    .pwa-onboarding-hero { display: grid; justify-items: center; padding: 28px 26px 24px; border-radius: 27px 27px 0 0; background: radial-gradient(circle at 50% 4%,rgba(0,239,42,.24),transparent 13rem),linear-gradient(155deg,#061f27,#0a4a50); color: #fff; text-align: center; }
+    .pwa-onboarding-icon { width: 106px; height: 106px; border: 2px solid rgba(255,255,255,.18); border-radius: 24px; box-shadow: 0 16px 36px rgba(0,0,0,.30); }
+    .pwa-onboarding-hero .eyebrow { margin-top: 18px; color: var(--lime); }
+    .pwa-onboarding-hero h2 { max-width: 360px; margin: 5px 0 0; font-size: 30px; line-height: 1.05; letter-spacing: -.045em; }
+    .pwa-onboarding-hero p:last-child { max-width: 350px; margin: 10px 0 0; color: rgba(255,255,255,.78); font-size: 13px; font-weight: 650; line-height: 1.5; }
+    .pwa-onboarding-body { display: grid; gap: 17px; padding: 20px 22px calc(22px + var(--safe-bottom)); }
+    .pwa-mini-steps { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .pwa-mini-step { display: grid; grid-template-columns: 30px minmax(0,1fr); align-items: center; gap: 10px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 14px; background: #f7fafb; }
+    .pwa-mini-step b { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; background: var(--lime); color: #284600; font-size: 12px; }
+    .pwa-mini-step span { color: var(--muted); font-size: 12px; font-weight: 750; line-height: 1.4; }
+    .pwa-notification-benefits { display: grid; gap: 8px; }
+    .pwa-notification-benefit { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #cfe6d4; border-radius: 13px; background: #f0fbf2; color: #215f31; font-size: 12px; font-weight: 800; }
+    .pwa-notification-benefit span { font-size: 19px; }
+    .pwa-onboarding-actions { display: grid; gap: 8px; }
+    .pwa-onboarding-actions .button { width: 100%; }
+    .pwa-onboarding-status { min-height: 18px; margin: 0; color: var(--muted); font-size: 11px; font-weight: 750; line-height: 1.4; text-align: center; }
+    .button.notification-off { border-color: #efb7bb; background: #fff3f4; color: #a62e36; box-shadow: none; }
     .modal {
       width: min(780px,100%);
       max-height: calc(100dvh - 48px - var(--safe-top) - var(--safe-bottom));
@@ -693,6 +713,13 @@
       .sponsor-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
       .modal-backdrop { place-items: center; padding: calc(10px + var(--safe-top)) max(10px, env(safe-area-inset-right, 0px)) calc(10px + var(--safe-bottom)) max(10px, env(safe-area-inset-left, 0px)); }
       .modal { max-height: calc(100dvh - 20px - var(--safe-top) - var(--safe-bottom)); border-radius: 22px; }
+      .pwa-onboarding-card { max-height: calc(100dvh - 20px - var(--safe-top) - var(--safe-bottom)); border-radius: 22px; }
+      .pwa-onboarding-hero { padding: 22px 18px 19px; border-radius: 21px 21px 0 0; }
+      .pwa-onboarding-icon { width: 84px; height: 84px; border-radius: 20px; }
+      .pwa-onboarding-hero .eyebrow { margin-top: 13px; }
+      .pwa-onboarding-hero h2 { font-size: 25px; }
+      .pwa-onboarding-body { gap: 13px; padding: 15px 15px calc(16px + var(--safe-bottom)); }
+      .pwa-mini-step { padding: 8px 9px; }
       .modal-head, .modal-body { padding-left: 17px; padding-right: 17px; }
       .modal-foot { padding-left: 17px; padding-right: 17px; }
       .form-grid, .category-checks { grid-template-columns: 1fr; }
@@ -738,6 +765,13 @@
   <main class="page" id="appMain" aria-live="polite">
     <div class="loading-grid" id="loadingState"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
   </main>
+
+  <div class="modal-backdrop pwa-onboarding-backdrop" id="tournamentPwaOnboarding" aria-hidden="true" hidden>
+    <section class="pwa-onboarding-card" role="dialog" aria-modal="true" aria-labelledby="tournamentPwaOnboardingTitle" tabindex="-1">
+      <button class="pwa-onboarding-close" id="closeTournamentPwaOnboardingBtn" type="button" aria-label="Fechar">×</button>
+      <div id="tournamentPwaOnboardingContent"></div>
+    </section>
+  </div>
 
   <div class="modal-backdrop" id="registrationModal" aria-hidden="true" hidden>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="registrationTitle" tabindex="-1">
@@ -834,6 +868,9 @@
     const TOURNAMENT_PUSH_VAPID_KEY = 'BJtga8GuviTBc3mzDwBkr0kKw-kV02hVSwu6DjgZgSgAhFuvPZNj88WfTwyV7mXgJJnxKD5ZiJCRW8nv7ndx-RU';
     const TOURNAMENT_PUSH_TOKEN_KEY = 'ilha-open-2026:push-token';
     const TOURNAMENT_PUSH_REGISTERED_KEY = 'ilha-open-2026:push-registered';
+    const TOURNAMENT_PUSH_PREFERENCE_KEY = 'ilha-open-2026:push-preference';
+    const TOURNAMENT_INSTALL_PROMPT_SESSION_KEY = 'ilha-open-2026:install-prompt-seen';
+    const TOURNAMENT_PUSH_PROMPT_SESSION_KEY = 'ilha-open-2026:push-prompt-seen';
     const routeParts = location.pathname.split('/').filter(Boolean);
     const courtesySegmentIndex = routeParts.indexOf('cortesia');
     const inviteSegmentIndex = routeParts.indexOf('convite');
@@ -870,7 +907,9 @@
       lastRegistrationResult: null,
       deferredInstallPrompt: null,
       tournamentServiceWorker: null,
-      tournamentNotificationsEnabled: false
+      tournamentNotificationsEnabled: false,
+      tournamentOnboardingMode: '',
+      tournamentOnboardingTrigger: null
     };
     const PUBLIC_TAB_DEFAULTS = {
       categories: true,
@@ -999,7 +1038,10 @@
           state.captchaConfig = state.inviteInfo;
         }
         if (state.registrationOnly && state.slug) renderRegistrationOnly();
-        else if (state.slug) renderTournament(); else renderLanding();
+        else if (state.slug) {
+          renderTournament();
+          maybeShowTournamentPwaOnboarding().catch(() => {});
+        } else renderLanding();
       } catch (error) { renderError(error); }
     }
 
@@ -1603,7 +1645,7 @@
     }
 
     function installAppHtml() {
-      return '<div class="panel install-shell"><section class="install-hero"><div><p class="eyebrow">Ilha Open no seu celular</p><h2>Tenha o torneio sempre à mão.</h2><p>Instale o aplicativo para abrir classes, inscritos e informações do evento direto pela tela inicial.</p><div class="install-actions"><button class="button lime" id="installTournamentAppBtn" type="button">Instalar Ilha Open</button><button class="button secondary" id="enableTournamentNotificationsBtn" type="button">Ativar notificações</button></div><p class="install-status" id="tournamentPwaStatus" role="status">Confira abaixo como instalar.</p></div><img class="install-app-icon" src="/icons/ilha-open-512.png" alt="Ícone do aplicativo Ilha Open 2026" /></section>' +
+      return '<div class="panel install-shell"><section class="install-hero"><div><p class="eyebrow">Ilha Open no seu celular</p><h2>Tenha o torneio sempre à mão.</h2><p>Instale o aplicativo para abrir classes, inscritos e informações do evento direto pela tela inicial.</p><div class="install-actions"><button class="button lime" id="installTournamentAppBtn" data-pwa-install-button type="button">Instalar Ilha Open</button><button class="button secondary" id="enableTournamentNotificationsBtn" data-pwa-notification-button type="button">Ativar notificações</button></div><p class="install-status" id="tournamentPwaStatus" data-tournament-pwa-status role="status">Confira abaixo como instalar.</p></div><img class="install-app-icon" src="/icons/ilha-open-512.png" alt="Ícone do aplicativo Ilha Open 2026" /></section>' +
         '<div class="install-content"><section class="install-section"><h3>Como instalar</h3><p>Leva menos de um minuto e não ocupa espaço como um aplicativo comum.</p><div class="install-step-grid"><article class="install-step"><b>1</b><strong>No iPhone</strong><span>Abra no Safari, toque em Compartilhar e escolha “Adicionar à Tela de Início”.</span></article><article class="install-step"><b>2</b><strong>No Android</strong><span>Toque em “Instalar Ilha Open”. Se não aparecer, abra o menu ⋮ e escolha “Instalar app”.</span></article><article class="install-step"><b>3</b><strong>Receba novidades</strong><span>Abra o app instalado e toque em “Ativar notificações” para acompanhar avisos do torneio.</span></article></div></section>' +
         '<section class="install-section"><h3>Atalhos do torneio</h3><p>Você também pode acessar rapidamente as áreas mais importantes.</p><div class="install-shortcuts"><button class="install-shortcut" type="button" data-install-shortcut="categories"><span>🎾</span><strong>Classes</strong></button><button class="install-shortcut" type="button" data-install-shortcut="registrations"><span>👥</span><strong>Inscritos</strong></button><button class="install-shortcut" type="button" data-install-shortcut="about"><span>ℹ️</span><strong>Sobre o evento</strong></button><button class="install-shortcut" type="button" data-install-shortcut="registration"><span>✅</span><strong>Fazer inscrição</strong></button></div></section></div></div>';
     }
@@ -1633,6 +1675,30 @@
 
     function markTournamentPushRegistered() {
       try { localStorage.setItem(TOURNAMENT_PUSH_REGISTERED_KEY,'1'); } catch (error) {}
+    }
+
+    function clearTournamentPushRegistered() {
+      try { localStorage.removeItem(TOURNAMENT_PUSH_REGISTERED_KEY); } catch (error) {}
+    }
+
+    function tournamentPushPreference() {
+      try { return localStorage.getItem(TOURNAMENT_PUSH_PREFERENCE_KEY) || ''; } catch (error) { return ''; }
+    }
+
+    function setTournamentPushPreference(value) {
+      try { localStorage.setItem(TOURNAMENT_PUSH_PREFERENCE_KEY,value); } catch (error) {}
+    }
+
+    function tournamentSessionSeen(key) {
+      try { return sessionStorage.getItem(key) === '1'; } catch (error) { return false; }
+    }
+
+    function markTournamentSessionSeen(key) {
+      try { sessionStorage.setItem(key,'1'); } catch (error) {}
+    }
+
+    function setTournamentPwaStatus(message) {
+      document.querySelectorAll('[data-tournament-pwa-status]').forEach((element) => { element.textContent = message; });
     }
 
     function tournamentUrlBase64ToBytes(value) {
@@ -1679,21 +1745,19 @@
     }
 
     async function enableTournamentNotifications() {
-      const status = $('tournamentPwaStatus');
-      const button = $('enableTournamentNotificationsBtn');
       if (tournamentUsesIos() && !tournamentAppInstalled()) {
-        if (status) status.textContent = 'No iPhone, adicione primeiro à Tela de Início e abra o aplicativo instalado.';
-        return;
+        setTournamentPwaStatus('No iPhone, adicione primeiro à Tela de Início e abra o aplicativo instalado.');
+        return false;
       }
       if (!('Notification' in window) || !('PushManager' in window)) {
-        if (status) status.textContent = 'Este navegador não oferece notificações. Atualize-o ou use Safari/Chrome.';
-        return;
+        setTournamentPwaStatus('Este navegador não oferece notificações. Atualize-o ou use Safari/Chrome.');
+        return false;
       }
       if (Notification.permission === 'denied') {
-        if (status) status.textContent = 'As notificações estão bloqueadas. Libere o Ilha Open nas configurações do aparelho.';
-        return;
+        setTournamentPwaStatus('As notificações estão bloqueadas. Libere o Ilha Open nas configurações do aparelho.');
+        return false;
       }
-      if (button) { button.disabled = true; button.textContent = 'Ativando…'; }
+      document.querySelectorAll('[data-pwa-notification-button]').forEach((button) => { button.disabled = true; button.textContent = 'Ativando…'; });
       try {
         const registration = await ensureTournamentServiceWorker();
         if (!registration) throw new Error('Não foi possível preparar o aplicativo.');
@@ -1703,48 +1767,84 @@
         if (!subscription) subscription = await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:tournamentUrlBase64ToBytes(TOURNAMENT_PUSH_VAPID_KEY)});
         await saveTournamentPushSubscription(subscription);
         markTournamentPushRegistered();
+        setTournamentPushPreference('enabled');
         state.tournamentNotificationsEnabled = true;
         await registration.showNotification('Notificações ativadas!',{body:'Você receberá os avisos do Ilha Open 2026 por aqui.',icon:'/icons/ilha-open-192.png',badge:'/icons/ilha-open-192.png',tag:'ilha-open-2026-ativado',data:{url:publicUrl(state.slug)}});
-        if (status) status.textContent = 'Notificações ativadas neste aparelho.';
+        setTournamentPwaStatus('Notificações ativadas neste aparelho.');
+        return true;
       } catch (error) {
-        if (status) status.textContent = error && error.message || 'Não foi possível ativar as notificações.';
+        setTournamentPwaStatus(error && error.message || 'Não foi possível ativar as notificações.');
+        return false;
       } finally {
-        if (button) button.disabled = false;
         updateTournamentPwaUi().catch(() => {});
       }
     }
 
+    async function disableTournamentNotifications() {
+      document.querySelectorAll('[data-pwa-notification-button]').forEach((button) => { button.disabled = true; button.textContent = 'Desativando…'; });
+      try {
+        const registration = await navigator.serviceWorker.getRegistration('/torneios/');
+        const subscription = registration && await registration.pushManager.getSubscription();
+        if (subscription) {
+          await requestJson(SUPABASE_URL + '/functions/v1/' + TOURNAMENT_PUSH_FUNCTION,{
+            method:'POST',
+            headers:headers(),
+            body:JSON.stringify({
+              action:'unsubscribe',
+              tournament_slug:state.slug,
+              endpoint:subscription.endpoint,
+              subscription_token:tournamentPushToken()
+            })
+          });
+          await subscription.unsubscribe();
+        }
+        clearTournamentPushRegistered();
+        setTournamentPushPreference('disabled');
+        state.tournamentNotificationsEnabled = false;
+        setTournamentPwaStatus('Notificações desativadas neste aparelho. Você pode ativá-las novamente quando quiser.');
+        return true;
+      } catch (error) {
+        setTournamentPwaStatus(error && error.message || 'Não foi possível desativar as notificações.');
+        return false;
+      } finally {
+        updateTournamentPwaUi().catch(() => {});
+      }
+    }
+
+    async function toggleTournamentNotifications() {
+      if (state.tournamentNotificationsEnabled) return disableTournamentNotifications();
+      return enableTournamentNotifications();
+    }
+
     async function installTournamentApp() {
-      const status = $('tournamentPwaStatus');
       if (tournamentAppInstalled()) {
-        if (status) status.textContent = 'O Ilha Open já está instalado neste aparelho.';
+        setTournamentPwaStatus('O Ilha Open já está instalado neste aparelho.');
         return;
       }
       if (state.deferredInstallPrompt) {
         state.deferredInstallPrompt.prompt();
         const choice = await state.deferredInstallPrompt.userChoice;
         state.deferredInstallPrompt = null;
-        if (status) status.textContent = choice && choice.outcome === 'accepted' ? 'Aplicativo instalado com sucesso.' : 'Você pode instalar quando quiser.';
+        setTournamentPwaStatus(choice && choice.outcome === 'accepted' ? 'Aplicativo instalado! Agora abra o Ilha Open pelo novo ícone.' : 'Você pode instalar quando quiser.');
         updateTournamentPwaUi().catch(() => {});
         return;
       }
-      if (status) status.textContent = tournamentUsesIos()
+      setTournamentPwaStatus(tournamentUsesIos()
         ? 'No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.'
-        : 'Abra o menu do navegador e escolha “Instalar app” ou “Adicionar à tela inicial”.';
-      document.querySelector('.install-step-grid')?.scrollIntoView({behavior:'smooth',block:'center'});
+        : 'Abra o menu do navegador e escolha “Instalar app” ou “Adicionar à tela inicial”.');
+      (document.querySelector('.pwa-mini-steps') || document.querySelector('.install-step-grid'))?.scrollIntoView({behavior:'smooth',block:'center'});
     }
 
     async function updateTournamentPwaUi() {
-      const installButton = $('installTournamentAppBtn');
-      const notificationButton = $('enableTournamentNotificationsBtn');
-      const status = $('tournamentPwaStatus');
-      if (!installButton || !notificationButton) return;
+      const installButtons = Array.from(document.querySelectorAll('[data-pwa-install-button]'));
+      const notificationButtons = Array.from(document.querySelectorAll('[data-pwa-notification-button]'));
       const installed = tournamentAppInstalled();
-      installButton.disabled = installed;
-      installButton.textContent = installed ? 'Ilha Open instalado' : (tournamentUsesIos() && !state.deferredInstallPrompt ? 'Como instalar no iPhone' : 'Instalar Ilha Open');
+      installButtons.forEach((button) => {
+        button.disabled = installed;
+        button.textContent = installed ? 'Ilha Open instalado' : (tournamentUsesIos() && !state.deferredInstallPrompt ? 'Como instalar no iPhone' : 'Instalar Ilha Open');
+      });
       if (!('Notification' in window) || !('PushManager' in window)) {
-        notificationButton.disabled = true;
-        notificationButton.textContent = 'Notificações indisponíveis';
+        notificationButtons.forEach((button) => { button.disabled = true; button.textContent = 'Notificações indisponíveis'; });
         return;
       }
       let subscribed = state.tournamentNotificationsEnabled;
@@ -1753,9 +1853,102 @@
         subscribed = Boolean(registration && await registration.pushManager.getSubscription() && tournamentPushRegistered());
       } catch (error) {}
       state.tournamentNotificationsEnabled = subscribed && Notification.permission === 'granted';
-      notificationButton.disabled = Notification.permission === 'denied';
-      notificationButton.textContent = state.tournamentNotificationsEnabled ? 'Notificações ativas' : (Notification.permission === 'denied' ? 'Notificações bloqueadas' : 'Ativar notificações');
-      if (state.tournamentNotificationsEnabled && status) status.textContent = 'App pronto e notificações ativas neste aparelho.';
+      notificationButtons.forEach((button) => {
+        button.disabled = Notification.permission === 'denied';
+        button.textContent = state.tournamentNotificationsEnabled ? 'Desativar notificações' : (Notification.permission === 'denied' ? 'Notificações bloqueadas' : 'Ativar notificações');
+        button.classList.toggle('notification-off',state.tournamentNotificationsEnabled);
+      });
+      if (state.tournamentNotificationsEnabled) setTournamentPwaStatus('App pronto e notificações ativas neste aparelho.');
+    }
+
+    function tournamentOnboardingHtml(mode) {
+      if (mode === 'notifications') {
+        return '<div class="pwa-onboarding-hero"><img class="pwa-onboarding-icon" src="/icons/ilha-open-512.png" alt="Logo do Ilha Open 2026" /><p class="eyebrow">Aplicativo instalado</p><h2 id="tournamentPwaOnboardingTitle">Ative as notificações</h2><p>Receba as novidades do torneio diretamente no celular.</p></div>' +
+          '<div class="pwa-onboarding-body"><div class="pwa-notification-benefits"><div class="pwa-notification-benefit"><span aria-hidden="true">🕐</span>Alterações de horários e quadras</div><div class="pwa-notification-benefit"><span aria-hidden="true">🎾</span>Avisos, resultados e informações importantes</div></div><div class="pwa-onboarding-actions"><button class="button lime" id="onboardingNotificationBtn" data-pwa-notification-button type="button">Ativar notificações</button><button class="button" data-close-pwa-onboarding type="button">Agora não</button></div><p class="pwa-onboarding-status" data-tournament-pwa-status role="status">Você poderá desativar quando quiser na aba “Instalar app”.</p></div>';
+      }
+      const deviceSteps = tournamentUsesIos()
+        ? '<li class="pwa-mini-step"><b>1</b><span>Abra esta página no <strong>Safari</strong>.</span></li><li class="pwa-mini-step"><b>2</b><span>Toque em <strong>Compartilhar</strong> e depois em <strong>Adicionar à Tela de Início</strong>.</span></li><li class="pwa-mini-step"><b>3</b><span>Abra o Ilha Open pelo novo ícone.</span></li>'
+        : '<li class="pwa-mini-step"><b>1</b><span>Toque em <strong>Instalar Ilha Open</strong>.</span></li><li class="pwa-mini-step"><b>2</b><span>Confirme a instalação no aviso do navegador.</span></li><li class="pwa-mini-step"><b>3</b><span>Abra o Ilha Open pelo novo ícone.</span></li>';
+      return '<div class="pwa-onboarding-hero"><img class="pwa-onboarding-icon" src="/icons/ilha-open-512.png" alt="Logo do Ilha Open 2026" /><p class="eyebrow">Bem-vindo</p><h2 id="tournamentPwaOnboardingTitle">Acompanhe o Ilha Open no celular</h2><p>Instale o aplicativo oficial para acessar chaves, agenda e resultados com mais facilidade.</p></div>' +
+        '<div class="pwa-onboarding-body"><ol class="pwa-mini-steps">' + deviceSteps + '</ol><div class="pwa-onboarding-actions"><button class="button lime" id="onboardingInstallBtn" data-pwa-install-button type="button">Instalar Ilha Open</button><button class="button" data-close-pwa-onboarding type="button">Continuar no navegador</button></div><p class="pwa-onboarding-status" data-tournament-pwa-status role="status">A instalação é rápida e não exige loja de aplicativos.</p></div>';
+    }
+
+    function setTournamentOnboardingBackgroundInert(inert) {
+      [document.querySelector('.site-head'),$('appMain')].forEach((element) => {
+        if (!element) return;
+        if (inert) element.setAttribute('inert','');
+        else element.removeAttribute('inert');
+      });
+    }
+
+    function tournamentOnboardingFocusableElements() {
+      return Array.from($('tournamentPwaOnboarding').querySelectorAll('button:not([disabled]),[tabindex]:not([tabindex="-1"])'))
+        .filter((element) => !element.closest('[hidden],[inert]') && element.getClientRects().length > 0);
+    }
+
+    function openTournamentPwaOnboarding(mode) {
+      state.tournamentOnboardingMode = mode;
+      state.tournamentOnboardingTrigger = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
+      $('tournamentPwaOnboardingContent').innerHTML = tournamentOnboardingHtml(mode);
+      $('tournamentPwaOnboarding').hidden = false;
+      $('tournamentPwaOnboarding').setAttribute('aria-hidden','false');
+      setTournamentOnboardingBackgroundInert(true);
+      document.body.classList.add('modal-open');
+      document.querySelectorAll('[data-close-pwa-onboarding]').forEach((button) => button.addEventListener('click',closeTournamentPwaOnboarding));
+      $('onboardingInstallBtn')?.addEventListener('click',installTournamentApp);
+      $('onboardingNotificationBtn')?.addEventListener('click',async () => {
+        if (await toggleTournamentNotifications()) setTimeout(closeTournamentPwaOnboarding,500);
+      });
+      updateTournamentPwaUi().catch(() => {});
+      setTimeout(() => $('tournamentPwaOnboarding').querySelector('.pwa-onboarding-card')?.focus(),0);
+    }
+
+    function closeTournamentPwaOnboarding() {
+      if ($('tournamentPwaOnboarding').hidden) return;
+      $('tournamentPwaOnboarding').hidden = true;
+      $('tournamentPwaOnboarding').setAttribute('aria-hidden','true');
+      setTournamentOnboardingBackgroundInert(false);
+      document.body.classList.remove('modal-open');
+      state.tournamentOnboardingMode = '';
+      const trigger = state.tournamentOnboardingTrigger;
+      state.tournamentOnboardingTrigger = null;
+      if (trigger && trigger.isConnected) setTimeout(() => trigger.focus(),0);
+    }
+
+    function handleTournamentPwaOnboardingKeydown(event) {
+      if ($('tournamentPwaOnboarding').hidden) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeTournamentPwaOnboarding();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = tournamentOnboardingFocusableElements();
+      if (!focusable.length) return event.preventDefault();
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !$('tournamentPwaOnboarding').contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    async function maybeShowTournamentPwaOnboarding() {
+      if (state.slug !== 'ilha-open-2026' || state.registrationOnly || state.inviteMode || state.courtesyMode || state.activeTab === 'install') return;
+      await updateTournamentPwaUi();
+      if (!tournamentAppInstalled()) {
+        if (tournamentSessionSeen(TOURNAMENT_INSTALL_PROMPT_SESSION_KEY)) return;
+        markTournamentSessionSeen(TOURNAMENT_INSTALL_PROMPT_SESSION_KEY);
+        openTournamentPwaOnboarding('install');
+        return;
+      }
+      const notificationsSupported = 'Notification' in window && 'PushManager' in window;
+      if (!notificationsSupported || Notification.permission === 'denied' || state.tournamentNotificationsEnabled || tournamentPushPreference() === 'disabled' || tournamentSessionSeen(TOURNAMENT_PUSH_PROMPT_SESSION_KEY)) return;
+      markTournamentSessionSeen(TOURNAMENT_PUSH_PROMPT_SESSION_KEY);
+      openTournamentPwaOnboarding('notifications');
     }
 
     function initTournamentPwa() {
@@ -1767,8 +1960,12 @@
       });
       window.addEventListener('appinstalled',() => {
         state.deferredInstallPrompt = null;
+        if (state.tournamentOnboardingMode === 'install') setTournamentPwaStatus('Aplicativo instalado! Agora abra o Ilha Open pelo novo ícone.');
         updateTournamentPwaUi().catch(() => {});
       });
+      $('closeTournamentPwaOnboardingBtn')?.addEventListener('click',closeTournamentPwaOnboarding);
+      $('tournamentPwaOnboarding')?.addEventListener('click',(event) => { if (event.target === $('tournamentPwaOnboarding')) closeTournamentPwaOnboarding(); });
+      document.addEventListener('keydown',handleTournamentPwaOnboardingKeydown);
       if (state.slug === 'ilha-open-2026') ensureTournamentServiceWorker().catch(() => {});
     }
     function siteFooter() { return '<footer>Ilha Tênis Colatina · Torneios, chaves e resultados</footer>'; }
@@ -1781,7 +1978,7 @@
         else showTab(button.dataset.installShortcut);
       }));
       $('installTournamentAppBtn')?.addEventListener('click',installTournamentApp);
-      $('enableTournamentNotificationsBtn')?.addEventListener('click',enableTournamentNotifications);
+      $('enableTournamentNotificationsBtn')?.addEventListener('click',toggleTournamentNotifications);
       document.querySelectorAll('[data-bracket-category]').forEach((button) => button.addEventListener('click', () => { state.bracketCategory = button.dataset.bracketCategory; document.querySelectorAll('[data-bracket-category]').forEach((item) => item.classList.toggle('active', item === button)); $('bracketContent').innerHTML = bracketBoardHtml(state.bracketCategory); }));
       document.querySelectorAll('[data-agenda-category]').forEach((button) => button.addEventListener('click', () => { state.agendaCategory = button.dataset.agendaCategory; document.querySelectorAll('[data-agenda-category]').forEach((item) => item.classList.toggle('active', item === button)); $('agendaContent').innerHTML = agendaRowsHtml(state.agendaCategory); }));
       const search = $('registrationSearch'), category = $('registrationCategoryFilter');
