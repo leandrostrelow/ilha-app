@@ -2315,6 +2315,17 @@ test('TV do Bar aceita transicao WebM transparente sem consumir vaga do slidesho
   assert.match(functionSource(menuSource, 'showNextEventSlideshowItem'), /playTvTransition\(function \(\)/);
 });
 
+test('atalhos do cardapio abrem no navegador e também dentro do ADM Bar instalado', () => {
+  assert.equal((adminSource.match(/data-bar-menu-preview/g) || []).length, 4);
+  const openPreview = functionSource(adminSource, 'openBarMenuPreview');
+  assert.match(openPreview, /event\.preventDefault\(\)/);
+  assert.match(openPreview, /barAppIsInstalled\(\)[\s\S]*window\.location\.assign\(destination\)/);
+  assert.match(openPreview, /window\.open\(destination, '_blank'\)/);
+  assert.match(openPreview, /previewWindow\.opener = null/);
+  assert.match(openPreview, /window\.location\.assign\(destination\)/);
+  assert.match(adminSource, /querySelectorAll\('\[data-bar-menu-preview\]'\)[\s\S]*addEventListener\('click', openBarMenuPreview\)/);
+});
+
 test('ADM organiza links públicos, Classe Espacial e convites dentro do torneio', () => {
   assert.match(adminSource, /data-tab="links">Links</);
   assert.match(adminSource, /id="links"[\s\S]*id="registrationTournamentLink"[\s\S]*id="spatialTournamentLink"[\s\S]*id="publicTournamentLink"[\s\S]*id="registrationInviteBtn"/);

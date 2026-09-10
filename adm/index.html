@@ -22847,8 +22847,8 @@
                   <h2>Cardápio</h2>
                 </div>
                 <div class="bar-menu-admin-actions">
-                  <a class="primary-btn bar-menu-preview-btn" href="/cardapio" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#admin-icon-phone"></use></svg><span>Cardápio online</span></a>
-                  <a class="primary-btn bar-menu-preview-btn bar-menu-mobile-btn" href="/menu" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#bar-icon-screen"></use></svg><span>Cardápio TV</span></a>
+                  <a class="primary-btn bar-menu-preview-btn" href="/cardapio" target="_blank" rel="noopener" data-bar-menu-preview><svg aria-hidden="true"><use href="#admin-icon-phone"></use></svg><span>Cardápio online</span></a>
+                  <a class="primary-btn bar-menu-preview-btn bar-menu-mobile-btn" href="/menu" target="_blank" rel="noopener" data-bar-menu-preview><svg aria-hidden="true"><use href="#bar-icon-screen"></use></svg><span>Cardápio TV</span></a>
                 </div>
               </div>
 
@@ -22896,7 +22896,7 @@
                   <span class="bar-menu-qr-url">app.ilhatenis.com/cardapio</span>
                 </div>
                 <div class="bar-menu-qr-actions">
-                  <a href="/cardapio" target="_blank" rel="noopener">Abrir no celular</a>
+                  <a href="/cardapio" target="_blank" rel="noopener" data-bar-menu-preview>Abrir no celular</a>
                   <a href="/assets/ilha-bar-cardapio-qr.png" download="qr-code-cardapio-ilha-bar.png">Baixar QR Code</a>
                 </div>
               </section>
@@ -48244,6 +48244,23 @@
       return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     }
 
+    function openBarMenuPreview(event) {
+      const link = event && event.currentTarget;
+      const destination = link && link.href;
+      if (!destination) return;
+      event.preventDefault();
+      if (barAppIsInstalled()) {
+        window.location.assign(destination);
+        return;
+      }
+      const previewWindow = window.open(destination, '_blank');
+      if (previewWindow) {
+        previewWindow.opener = null;
+        return;
+      }
+      window.location.assign(destination);
+    }
+
     function syncBarStandaloneMode() {
       document.documentElement.classList.toggle('bar-standalone', barAppIsInstalled());
     }
@@ -49469,6 +49486,9 @@
       });
       $('barTvEventArtPickBtn').addEventListener('click', function () {
         $('barTvEventArtFile').click();
+      });
+      document.querySelectorAll('[data-bar-menu-preview]').forEach(function (link) {
+        link.addEventListener('click', openBarMenuPreview);
       });
       $('barTvEventArtFile').addEventListener('change', function (event) {
         const file = event.target.files && event.target.files[0];
