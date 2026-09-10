@@ -1798,11 +1798,14 @@
 
       function showNextEventSlideshowItem() {
         if (!currentEventSlides.length) return showMenuSlideshowItem();
-        const sequenceLength = currentEventSlides.length + 1;
+        // Keep the menu between every uploaded media item. Besides making the
+        // sequence predictable, this prevents a long run of videos from
+        // effectively hiding the menu from customers watching the TV.
+        const sequenceLength = currentEventSlides.length * 2;
         eventSlideshowIndex = (eventSlideshowIndex + 1) % sequenceLength;
         playTvTransition(function () {
-          if (eventSlideshowIndex === 0) return showMenuSlideshowItem();
-          const slide = currentEventSlides[eventSlideshowIndex - 1];
+          if (eventSlideshowIndex % 2 === 0) return showMenuSlideshowItem();
+          const slide = currentEventSlides[Math.floor(eventSlideshowIndex / 2)];
           showEventArtSlide(slide);
         });
       }
@@ -1834,6 +1837,7 @@
 
         const fail = function () {
           if (transitionEpoch !== eventSlideshowTransitionEpoch) return;
+          const failedSlideIndex = currentEventSlides.indexOf(slide);
           clearTimeout(eventSlideshowLoadTimer);
           clearTimeout(eventSlideshowTransitionTimer);
           resetEventArtMedia();
@@ -1844,8 +1848,10 @@
           currentEventSlides = currentEventSlides.filter(function (item) { return item.mediaUrl !== slide.mediaUrl; });
           currentEventArtUrl = currentEventSlides[0] && currentEventSlides[0].mediaUrl || '';
           document.getElementById('menuEventArtBtn').hidden = !currentEventSlides.length;
-          eventSlideshowIndex = Math.max(0, eventSlideshowIndex - 1);
-          showNextEventSlideshowItem();
+          eventSlideshowIndex = currentEventSlides.length
+            ? Math.max(0, failedSlideIndex) * 2 % (currentEventSlides.length * 2)
+            : 0;
+          showMenuSlideshowItem();
         };
 
         const swapMedia = function () {

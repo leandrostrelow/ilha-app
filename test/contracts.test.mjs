@@ -2272,7 +2272,10 @@ test('TV do Bar alterna cardapio, imagens e videos MP4 com tempo individual', ()
   assert.match(functionSource(adminSource, 'saveBarTvEventArt'), /slides:\s*savedArt\.slides\.map/);
   assert.match(functionSource(adminSource, 'saveBarTvEventArt'), /media_type:\s*slide\.mediaType[\s\S]*media_url:\s*slide\.mediaUrl/);
   assert.match(functionSource(menuSource, 'startEventSlideshow'), /eventSlideshowIndex = 0[\s\S]*showMenuSlideshowItem/);
-  assert.match(functionSource(menuSource, 'showNextEventSlideshowItem'), /currentEventSlides\.length \+ 1[\s\S]*showMenuSlideshowItem/);
+  const nextSlideshowItem = functionSource(menuSource, 'showNextEventSlideshowItem');
+  assert.match(nextSlideshowItem, /currentEventSlides\.length \* 2/);
+  assert.match(nextSlideshowItem, /eventSlideshowIndex % 2 === 0[\s\S]*showMenuSlideshowItem/);
+  assert.match(nextSlideshowItem, /currentEventSlides\[Math\.floor\(eventSlideshowIndex \/ 2\)\]/);
   assert.match(functionSource(menuSource, 'showMenuSlideshowItem'), /clearTimeout\(eventSlideshowTimer\)[\s\S]*scheduleEventSlideshow\(menuSlideDurationSeconds\)/);
   const slideshowDelay = loadFunction(menuSource, 'eventSlideshowDelayMs');
   assert.equal(slideshowDelay(10), 10000);
@@ -2285,6 +2288,7 @@ test('TV do Bar alterna cardapio, imagens e videos MP4 com tempo individual', ()
   assert.match(functionSource(menuSource, 'canRetryEventMedia'), /failedEventMediaAt\.delete\(mediaUrl\)/);
   assert.match(functionSource(menuSource, 'loadEventArt'), /!configuredSlides\.length[\s\S]*row\.image_url/);
   const showSlide = functionSource(menuSource, 'showEventArtSlide');
+  assert.match(showSlide, /failedSlideIndex = currentEventSlides\.indexOf\(slide\)[\s\S]*showMenuSlideshowItem\(\)/);
   assert.match(showSlide, /image\.onload = reveal/);
   assert.match(showSlide, /video\.onended = function[\s\S]*showNextEventSlideshowItem/);
   assert.match(showSlide, /video\.onloadedmetadata = startVideoPlayback/);
