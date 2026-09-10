@@ -2282,7 +2282,7 @@ test('TV do Bar alterna cardapio, imagens e videos MP4 com tempo individual', ()
   assert.equal(slideshowDelay(1), 3000);
   assert.match(menuSource, /\.menu-event-art \{[\s\S]*transition: opacity \.65s ease/);
   assert.match(menuSource, /\.menu-event-art-media\.is-fading \{[\s\S]*opacity: 0/);
-  assert.match(menuSource, /id="menuEventArtVideo"[^>]*muted autoplay playsinline preload="auto"/);
+  assert.match(menuSource, /id="menuEventArtVideo"[^>]*muted autoplay playsinline[^>]*preload="auto"/);
   assert.match(functionSource(menuSource, 'loadEventArt'), /new Image\(\)[\s\S]*preload\.src = slide\.mediaUrl/);
   assert.match(menuSource, /const EVENT_MEDIA_RETRY_MS = 60000/);
   assert.match(functionSource(menuSource, 'canRetryEventMedia'), /failedEventMediaAt\.delete\(mediaUrl\)/);
@@ -2310,7 +2310,12 @@ test('TV do Bar aceita transicao WebM transparente sem consumir vaga do slidesho
   assert.match(functionSource(adminSource, 'prepareBarTvTransition'), /50 \* 1024 \* 1024[\s\S]*duration > 12/);
   assert.match(functionSource(adminSource, 'selectBarTvTransition'), /transitionUrl: uploadedUrl, transitionActive: true/);
   assert.match(functionSource(adminSource, 'saveBarTvEventArt'), /transition_url: savedArt\.transitionUrl[\s\S]*transition_active: savedArt\.transitionActive/);
-  assert.match(menuSource, /id="menuTvTransitionVideo"[^>]*muted autoplay playsinline preload="auto"/);
+  assert.match(menuSource, /id="menuTvTransitionVideo"[^>]*muted autoplay playsinline[^>]*preload="auto"/);
+  assert.match(menuSource, /id="menuTvTransitionVideo"[^>]*webkit-playsinline[^>]*controlslist="nodownload nofullscreen noremoteplayback"[^>]*disablepictureinpicture[^>]*disableremoteplayback/);
+  assert.match(menuSource, /id="menuEventArtVideo"[^>]*webkit-playsinline[^>]*controlslist="nodownload nofullscreen noremoteplayback"[^>]*disablepictureinpicture[^>]*disableremoteplayback/);
+  const configureInlineVideo = functionSource(menuSource, 'configureInlineTvVideo');
+  assert.match(configureInlineVideo, /video\.controls = false[\s\S]*webkit-playsinline[\s\S]*nofullscreen[\s\S]*disablePictureInPicture[\s\S]*disableRemotePlayback/);
+  assert.match(menuSource, /video::[-]webkit-media-controls[\s\S]*display: none !important/);
   assert.match(menuSource, /\.menu-tv-transition \{[\s\S]*z-index: 1100[\s\S]*pointer-events: none[\s\S]*background: transparent/);
   assert.match(menuSource, /\.menu-event-art-close \{[\s\S]*display: none[\s\S]*body\.is-event-art-manual \.menu-event-art-close \{[\s\S]*display: grid/);
   assert.match(menuSource, /body\.is-tv-transition-playing \.menu-header-tools \{[\s\S]*visibility: hidden/);
