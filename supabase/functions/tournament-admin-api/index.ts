@@ -1821,6 +1821,20 @@ async function saveRegistration(client: DbClient, actorId: string, payload: Row)
   const existing = await lookup.maybeSingle();
   assertNoError(existing.error);
   current = existing.data || {};
+  if (current.id && String(current.category_id || "") !== categoryId) {
+    const duplicate = await client.from("tournament_registrations")
+      .select("id,status,payment_status")
+      .eq("tournament_id", tournament.id)
+      .eq("category_id", categoryId)
+      .eq("athlete_id", athleteId)
+      .neq("id", current.id)
+      .neq("status", "CANCELLED")
+      .limit(1);
+    assertNoError(duplicate.error);
+    if ((duplicate.data || []).length) {
+      throw new ApiError("Este atleta já possui uma inscrição ativa na classe escolhida.", 409);
+    }
+  }
   const paymentStatus = databasePaymentStatus(input.status_pagamento || input.payment_status || current.payment_status);
   const confirmedField = ownField(input, "confirmado", "confirmed");
   const requestedConfirmed = confirmedField.present ? booleanValue(confirmedField.value, false) : null;
