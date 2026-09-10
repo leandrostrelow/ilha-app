@@ -86,7 +86,10 @@ test('agenda pública exibe somente dias e classes que possuem jogos', () => {
   assert.match(schedule, /function agendaDayGroupHtml\(rows\)/);
   assert.match(schedule, /class="agenda-day-group"/);
   assert.match(schedule, /class="agenda-court-group"/);
-  assert.match(schedule, /items\.sort\(matchDateSort\)/);
+  assert.match(publicPage, /function scheduleOrderValue\(row\)/);
+  assert.match(publicPage, /field\(row,'sort_order','ordem','order'\)/);
+  assert.match(schedule, /items\.sort\(scheduleOrderSort\)/);
+  assert.doesNotMatch(schedule, /<span>Dia<\/span>/);
 });
 
 test('agenda pública preserva o horário relativo Após em cartões compactos', () => {
@@ -97,8 +100,19 @@ test('agenda pública preserva o horário relativo Após em cartões compactos',
   assert.match(renderer, /startsWith\('apos'\) \? 'Após'/);
   assert.match(renderer, /escapeHtml\(publicScheduleTime\(row\)\)/);
   assert.match(styles, /\.agenda-card\.grouped \{[^}]*min-height: 68px;[^}]*grid-template-columns: 78px minmax\(0,1fr\)/);
-  assert.match(styles, /\.agenda-card\.grouped \.time-box \{[^}]*border-radius: 999px;[^}]*background: #00a82c/);
+  assert.match(styles, /\.agenda-card\.grouped \.time-box \{[^}]*border-radius: 999px;[^}]*background: var\(--lime\)/);
+  assert.match(styles, /\.agenda-court-title \{[^}]*background: var\(--lime\);[^}]*color: #284600/);
   assert.match(styles, /\.agenda-card\.grouped \.time-box strong \{[^}]*font-size: 12px/);
+});
+
+test('app instalado permite puxar a página pública para atualizar', () => {
+  assert.match(publicPage, /id="tournamentPullRefresh"/);
+  assert.match(publicPage, /function initTournamentPullToRefresh\(\)/);
+  assert.match(publicPage, /if \(!tournamentAppInstalled\(\)/);
+  assert.match(publicPage, /addEventListener\('touchmove',handleTournamentPullMove,\{passive:false\}\)/);
+  assert.match(publicPage, /distanceY >= 70/);
+  assert.match(publicPage, /serviceWorker\.getRegistration\('\/torneios\/'\)/);
+  assert.match(publicPage, /window\.location\.reload\(\)/);
 });
 
 test('snapshot público expõe somente o rótulo seguro do horário relativo', () => {
