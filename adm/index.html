@@ -24635,6 +24635,14 @@
                 <div class="muted">Recomendado: 1600 × 600 px, fundo transparente e até 2 MB.</div>
                 <div id="tournamentLogoPreview" style="display:none;margin-top:10px;padding:14px;border:1px solid #d7e4e7;border-radius:14px;background:#0a3440"><img alt="Prévia da logo do torneio" style="display:block;max-width:100%;width:360px;max-height:135px;object-fit:contain;object-position:left center" /></div>
               </div>
+              <div class="field full">
+                <label>Fundo das artes de chaves e agenda (PNG vertical)</label>
+                <input id="tournamentArtBackgroundUrl" type="hidden" />
+                <input id="tournamentArtBackgroundFile" type="file" accept="image/png,.png" />
+                <div class="muted">Recomendado: 1080 × 1920 px e até 2 MB. O mesmo fundo será usado nas artes das chaves, agenda e resultados.</div>
+                <div id="tournamentArtBackgroundPreview" style="margin-top:10px;padding:12px;border:1px solid #d7e4e7;border-radius:14px;background:#eef4f5"><img alt="Prévia do fundo das artes" style="display:block;width:140px;max-width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:10px;background:#0a0a0a" /></div>
+                <div class="actions" style="margin-top:10px"><button class="ghost-btn" id="tournamentArtBackgroundResetBtn" type="button">Usar fundo padrão</button></div>
+              </div>
               <div class="field">
                 <label>Ano</label>
                 <input id="tournamentYear" type="number" />
@@ -25945,6 +25953,8 @@
       $('tournamentInstagram').value = t.instagram || '';
       $('tournamentWhatsapp').value = t.whatsapp || '';
       const settings = t.settings || {};
+      $('tournamentArtBackgroundUrl').value = settings.art_background_url || '';
+      renderTournamentArtBackgroundPreview(settings.art_background_url || '');
       const obsEnabled = settings.obs_enabled === true;
       $('tournamentObsEnabled').value = String(obsEnabled);
       const activeCourtCount = (state.data.quadras || []).filter(function (court) { return court.ativa !== false; }).length;
@@ -28544,6 +28554,7 @@
             settings: Object.assign({}, currentSettings, {
               obs_enabled: $('tournamentObsEnabled').value === 'true',
               court_count: courtCount,
+              art_background_url: $('tournamentArtBackgroundUrl').value.trim(),
               registration_pricing: pricing,
               spatial_addon_fee: spatialAddonFee,
               spatial_addons: spatialAddons,
@@ -28620,6 +28631,28 @@
       $('tournamentAboutImageUrl').value = url;
       renderTournamentAboutImagePreview(url);
       toast('Imagem enviada. Clique em Salvar página pública para publicar.');
+    }
+
+    function tournamentArtBackgroundUrl() {
+      const draft = $('tournamentArtBackgroundUrl');
+      if (draft && String(draft.value || '').trim()) return String(draft.value).trim();
+      const configured = state.data && state.data.torneio && state.data.torneio.settings && state.data.torneio.settings.art_background_url;
+      return String(configured || '').trim() || '/fundo-chave-instagram.png';
+    }
+
+    function renderTournamentArtBackgroundPreview(url) {
+      const preview = $('tournamentArtBackgroundPreview');
+      const image = preview && preview.querySelector('img');
+      if (!image) return;
+      image.src = String(url || '').trim() || '/fundo-chave-instagram.png';
+    }
+
+    async function uploadTournamentArtBackground(file) {
+      const url = await uploadTournamentBrandingImage(file, 'fundo-artes');
+      $('tournamentArtBackgroundUrl').value = url;
+      renderTournamentArtBackgroundPreview(url);
+      markTournamentDraftDirty();
+      toast('Fundo enviado. Clique em Salvar torneio para publicar nas artes.');
     }
 
     function syncAboutSponsorsFromEditor() {
@@ -29311,12 +29344,15 @@
     }
 
     function loadInstagramBackground() {
+      const configured = tournamentArtBackgroundUrl();
       const candidates = [
+        configured,
+        '/fundo-chave-instagram.png',
         'fundo-chave-instagram.png',
         '../fundo-chave-instagram.png',
         'fundo-chave-instagram.png.png',
         './fundo-chave-instagram.png.png'
-      ];
+      ].filter(function (src, index, values) { return src && values.indexOf(src) === index; });
       return candidates.reduce(function (promise, src) {
         return promise.then(function (found) {
           if (found) return found;
@@ -29326,8 +29362,9 @@
     }
 
     function loadInstagramBackgroundSource(src) {
+      const cacheSeparator = String(src).includes('?') ? '&' : '?';
       if (window.fetch && window.URL && URL.createObjectURL) {
-        return fetch(src + '?v=' + Date.now())
+        return fetch(src + cacheSeparator + 'v=' + Date.now())
           .then(function (response) {
             if (!response.ok) throw new Error('Fundo não encontrado.');
             return response.blob();
@@ -29356,9 +29393,10 @@
     function loadImageDirect(src) {
       return new Promise(function (resolve) {
         const image = new Image();
+        image.crossOrigin = 'anonymous';
         image.onload = function () { resolve(image); };
         image.onerror = function () { resolve(null); };
-        image.src = src + '?v=' + Date.now();
+        image.src = src + (String(src).includes('?') ? '&' : '?') + 'v=' + Date.now();
       });
     }
 
@@ -50347,6 +50385,21 @@
         $('tournamentAboutImageFile').value = '';
         toast(error.message);
       });
+    });
+    $('tournamentArtBackgroundFile').addEventListener('change', function (event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      uploadTournamentArtBackground(file).catch(function (error) {
+        $('tournamentArtBackgroundFile').value = '';
+        toast(error.message);
+      });
+    });
+    $('tournamentArtBackgroundResetBtn').addEventListener('click', function () {
+      $('tournamentArtBackgroundUrl').value = '';
+      $('tournamentArtBackgroundFile').value = '';
+      renderTournamentArtBackgroundPreview('');
+      markTournamentDraftDirty();
+      toast('Fundo padrão selecionado. Clique em Salvar torneio.');
     });
     $('addAboutSponsorBtn').addEventListener('click', function () {
       syncAboutSponsorsFromEditor();

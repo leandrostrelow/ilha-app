@@ -1636,6 +1636,10 @@ function tournamentPayload(input: Row, current: Row = {}) {
     requestedSettings.court_count,
     integerValue(currentSettings.court_count, 2),
   )));
+  const artBackgroundUrl = nullableText(
+    requestedSettings.art_background_url ?? currentSettings.art_background_url,
+    1000,
+  );
   const requestedSpatialPortal = {
     ...firstObject(currentSettings.spatial_addon_portal),
     ...firstObject(requestedSettings.spatial_addon_portal),
@@ -1664,6 +1668,7 @@ function tournamentPayload(input: Row, current: Row = {}) {
       spatial_addon_fee: spatialAddonFee,
       spatial_addons: spatialAddons,
       court_count: courtCount,
+      art_background_url: artBackgroundUrl,
       ...(Object.keys(requestedSpatialPortal).length ? { spatial_addon_portal: requestedSpatialPortal } : {}),
       public_tabs: publicTabs,
       about_event: aboutEvent,

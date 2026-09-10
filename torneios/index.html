@@ -1127,6 +1127,13 @@
     function sponsors() { return list(state.snapshot && (state.snapshot.sponsors || state.snapshot.patrocinadores)); }
     function categoryId(row) { return String(field(row,'id','category_id','categoria_id')); }
     function categoryCode(row) { return clean(field(row,'code','codigo')).toUpperCase(); }
+    function publicDrawCategoryIds() {
+      return new Set(matches().map((row) => matchCategoryId(row)).filter(Boolean));
+    }
+    function publicDrawCategories() {
+      const ids = publicDrawCategoryIds();
+      return categories().filter((row) => ids.has(categoryId(row)));
+    }
     function categoryName(id) { const row = categories().find((item) => categoryId(item) === String(id)); return row ? field(row,'name','nome') : ''; }
     function categoryCapacity(row) {
       const maxRaw = field(row || {},'max_entries','max_inscritos');
@@ -1245,9 +1252,9 @@
       $('headRegisterBtn').onclick = openRegistration;
       document.body.classList.toggle('internal-registration', isInternalRegistration());
       const cover = field(item,'cover_url','banner_url','image_url');
-      if (!state.bracketCategory || !categories().some((row) => categoryId(row) === String(state.bracketCategory))) {
-        const categoryWithDraw = categories().find((row) => matches().some((match) => matchCategoryId(match) === categoryId(row)));
-        state.bracketCategory = categoryWithDraw ? categoryId(categoryWithDraw) : (categories()[0] ? categoryId(categories()[0]) : '');
+      const drawCategories = publicDrawCategories();
+      if (!state.bracketCategory || !drawCategories.some((row) => categoryId(row) === String(state.bracketCategory))) {
+        state.bracketCategory = drawCategories[0] ? categoryId(drawCategories[0]) : '';
       }
       $('appMain').innerHTML =
         '<section class="event-hero">' + (cover ? '<img class="event-hero-bg" src="' + escapeHtml(cover) + '" alt="" />' : '') + '<div class="event-hero-shade"></div><div class="event-hero-body">' +
@@ -1334,7 +1341,8 @@
     }
 
     function categoriesHtml() {
-      return '<div class="panel"><div class="panel-head"><div><h2>Classes</h2><p>Confira modalidades, limites e valores por perfil.</p></div></div>' + registrationPricesHtml() + publicRegistrationCtaHtml() + '<div class="category-grid">' + (categories().map((row) => {
+      const visibleCategories = publicDrawCategories();
+      return '<div class="panel"><div class="panel-head"><div><h2>Classes</h2><p>Confira as classes com chave já publicada.</p></div></div>' + registrationPricesHtml() + publicRegistrationCtaHtml() + '<div class="category-grid">' + (visibleCategories.map((row) => {
         const id = categoryId(row);
         const rawStoredCount = field(row,'registration_count','quantidade_inscritos');
         const storedCount = rawStoredCount === '' ? NaN : Number(rawStoredCount);
@@ -1352,24 +1360,30 @@
 
     function registrationAthlete(row) { return row.athlete || row.player || row.jogador || {}; }
     function registrationName(row) { return field(row,'public_name','athlete_name','player_name','jogador_nome','name','nome') || field(registrationAthlete(row),'name','nome') || 'Atleta'; }
-    function registrationCategoryNames(row) {
+    function registrationCategoryIds(row) {
       const ids = list(field(row,'category_ids','categoria_ids')).map(String);
-      const single = field(row,'category_id','categoria_id'); if (single) ids.push(String(single));
+      const single = field(row,'category_id','categoria_id');
+      if (single) ids.push(String(single));
+      return Array.from(new Set(ids));
+    }
+    function registrationCategoryNames(row) {
+      const ids = registrationCategoryIds(row);
       const nested = list(row.categories || row.categorias).map((item) => field(item,'name','nome')).filter(Boolean);
       const names = ids.map(categoryName).filter(Boolean).concat(nested);
       return Array.from(new Set(names)).join(', ') || 'Classe a confirmar';
     }
     function registrationsHtml() {
-      return '<div class="panel"><div class="panel-head"><div><h2>Atletas inscritos</h2><p>Lista pública de participantes confirmados.</p></div></div><div class="search-row"><input class="field-control" id="registrationSearch" placeholder="Buscar atleta" value="' + escapeHtml(state.registrationSearch) + '" /><select class="field-control" id="registrationCategoryFilter"><option value="">Todas as classes</option>' + categories().map((row) => '<option value="' + escapeHtml(categoryId(row)) + '">' + escapeHtml(field(row,'name','nome')) + '</option>').join('') + '</select></div><div class="registration-list" id="publicRegistrationList">' + registrationRowsHtml('',state.registrationSearch) + '</div></div>';
+      return '<div class="panel"><div class="panel-head"><div><h2>Atletas inscritos</h2><p>Lista pública de participantes confirmados.</p></div></div><div class="search-row"><input class="field-control" id="registrationSearch" placeholder="Buscar atleta" value="' + escapeHtml(state.registrationSearch) + '" /><select class="field-control" id="registrationCategoryFilter"><option value="">Todas as classes</option>' + publicDrawCategories().map((row) => '<option value="' + escapeHtml(categoryId(row)) + '">' + escapeHtml(field(row,'name','nome')) + '</option>').join('') + '</select></div><div class="registration-list" id="publicRegistrationList">' + registrationRowsHtml('',state.registrationSearch) + '</div></div>';
     }
     function registrationRowsHtml(categoryFilter,search) {
+      const visibleCategoryIds = publicDrawCategoryIds();
       const rows = registrations().filter((row) => {
         const status = clean(field(row,'status','registration_status','status_pagamento')).toUpperCase();
         if (!['CONFIRMED','WAITLIST','CONFIRMADO','LISTA_ESPERA'].includes(status)) return false;
         if (search && !normalize(registrationName(row)).includes(normalize(search))) return false;
+        const ids = registrationCategoryIds(row);
+        if (!ids.some((id) => visibleCategoryIds.has(id))) return false;
         if (categoryFilter) {
-          const ids = list(field(row,'category_ids','categoria_ids')).map(String);
-          const single = field(row,'category_id','categoria_id'); if (single) ids.push(String(single));
           if (!ids.includes(String(categoryFilter))) return false;
         }
         return true;
@@ -1400,7 +1414,7 @@
       return '';
     }
     function bracketsHtml() {
-      return '<div class="panel"><div class="panel-head"><div><h2>Chaves</h2><p>Selecione a classe e acompanhe o caminho até a final.</p></div></div><div class="filter-strip" id="bracketFilters">' + categories().map((row) => '<button class="filter-btn ' + (categoryId(row) === state.bracketCategory ? 'active' : '') + '" type="button" data-bracket-category="' + escapeHtml(categoryId(row)) + '">' + escapeHtml(field(row,'name','nome')) + '</button>').join('') + '</div><div id="bracketContent">' + bracketBoardHtml(state.bracketCategory) + '</div></div>';
+      return '<div class="panel"><div class="panel-head"><div><h2>Chaves</h2><p>Selecione a classe e acompanhe o caminho até a final.</p></div></div><div class="filter-strip" id="bracketFilters">' + publicDrawCategories().map((row) => '<button class="filter-btn ' + (categoryId(row) === state.bracketCategory ? 'active' : '') + '" type="button" data-bracket-category="' + escapeHtml(categoryId(row)) + '">' + escapeHtml(field(row,'name','nome')) + '</button>').join('') + '</div><div id="bracketContent">' + bracketBoardHtml(state.bracketCategory) + '</div></div>';
     }
     function bracketBoardHtml(category) {
       const rows = matches().filter((row) => matchCategoryId(row) === String(category));
@@ -1420,14 +1434,30 @@
     function matchPlayerHtml(row,slot,winner) { const id = playerId(row,slot); return '<div class="match-player ' + (winner && id === winner ? 'winner' : '') + '"><span>' + escapeHtml(playerName(row,slot)) + '</span><b>' + escapeHtml(playerScore(row,slot)) + '</b></div>'; }
 
     function matchDate(row) { return dateValue(field(row,'scheduled_at','match_date','event_date','date','data','starts_at')); }
+    function scheduleDayKey(row) {
+      const raw = clean(field(row,'match_date','event_date','date','data','scheduled_at','starts_at'));
+      const isoDate = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (isoDate) return isoDate[1];
+      const value = matchDate(row);
+      if (!value) return '';
+      return [value.getFullYear(), String(value.getMonth() + 1).padStart(2,'0'), String(value.getDate()).padStart(2,'0')].join('-');
+    }
     function matchDateSort(a,b) { return (matchDate(a)?.getTime() || Number.MAX_SAFE_INTEGER) - (matchDate(b)?.getTime() || Number.MAX_SAFE_INTEGER) || shortTime(field(a,'match_time','event_time','time','hora')).localeCompare(shortTime(field(b,'match_time','event_time','time','hora'))); }
+    function scheduledGameRows() {
+      return matches().filter((row) => !isFinalized(row) && scheduleDayKey(row));
+    }
+    function agendaCategories() {
+      const ids = new Set(scheduledGameRows().map((row) => matchCategoryId(row)).filter(Boolean));
+      return categories().filter((row) => ids.has(categoryId(row)));
+    }
     function scheduleItems() {
-      const gameRows = matches().filter((row) => !isFinalized(row) && (field(row,'scheduled_at','match_date','event_date','date','data') || field(row,'match_time','time','hora'))).map((row) => Object.assign({__kind:'match'},row));
-      const eventRows = events().map((row) => Object.assign({__kind:'event'},row));
+      const gameRows = scheduledGameRows().map((row) => Object.assign({__kind:'match'},row));
+      const gameDays = new Set(gameRows.map(scheduleDayKey));
+      const eventRows = events().filter((row) => gameDays.has(scheduleDayKey(row))).map((row) => Object.assign({__kind:'event'},row));
       return gameRows.concat(eventRows).sort(matchDateSort);
     }
     function scheduleHtml() {
-      return '<div class="panel"><div class="panel-head"><div><h2>Agenda</h2><p>Jogos e eventos publicados pela organização.</p></div></div><div class="filter-strip" id="agendaFilters"><button class="filter-btn ' + (!state.agendaCategory?'active':'') + '" data-agenda-category="">Todos</button>' + categories().map((row) => '<button class="filter-btn ' + (categoryId(row) === state.agendaCategory?'active':'') + '" data-agenda-category="' + escapeHtml(categoryId(row)) + '">' + escapeHtml(field(row,'name','nome')) + '</button>').join('') + '</div><div class="agenda-list" id="agendaContent">' + agendaRowsHtml(state.agendaCategory) + '</div></div>';
+      return '<div class="panel"><div class="panel-head"><div><h2>Agenda</h2><p>Somente os dias que já possuem jogos publicados.</p></div></div><div class="filter-strip" id="agendaFilters"><button class="filter-btn ' + (!state.agendaCategory?'active':'') + '" data-agenda-category="">Todos</button>' + agendaCategories().map((row) => '<button class="filter-btn ' + (categoryId(row) === state.agendaCategory?'active':'') + '" data-agenda-category="' + escapeHtml(categoryId(row)) + '">' + escapeHtml(field(row,'name','nome')) + '</button>').join('') + '</div><div class="agenda-list" id="agendaContent">' + agendaRowsHtml(state.agendaCategory) + '</div></div>';
     }
     function agendaRowsHtml(category) {
       const rows = scheduleItems().filter((row) => !category || row.__kind === 'event' || matchCategoryId(row) === String(category));
