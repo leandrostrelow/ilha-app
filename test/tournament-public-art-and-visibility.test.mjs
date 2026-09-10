@@ -4,11 +4,12 @@ import path from 'node:path';
 import test from 'node:test';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
-const [adminPage, publicPage, adminApi, background] = await Promise.all([
+const [adminPage, publicPage, adminApi, background, relativeTimeMigration] = await Promise.all([
   readFile(path.join(projectRoot, 'adm/index.html'), 'utf8'),
   readFile(path.join(projectRoot, 'torneios/index.html'), 'utf8'),
   readFile(path.join(projectRoot, 'supabase/functions/tournament-admin-api/index.ts'), 'utf8'),
   readFile(path.join(projectRoot, 'fundo-chave-instagram.png')),
+  readFile(path.join(projectRoot, 'supabase/migrations/20260910191716_expose_public_tournament_relative_time.sql'), 'utf8'),
 ]);
 
 function sourceSection(source, start, end) {
@@ -66,6 +67,14 @@ test('chave pública empilha as duas metades sem rolagem lateral', () => {
   assert.match(bracketRenderer, /bracket-final-stage/);
   assert.match(bracketRenderer, /bracket-lower/);
   assert.match(bracketRenderer, /branchRounds\.slice\(\)\.reverse\(\)/);
+  assert.match(bracketRenderer, /bracketStageHtml\(round\.label,round\.upper,round\.depth,branchRounds\.length\)/);
+  assert.match(bracketRenderer, /bracketStageHtml\(round\.label,round\.lower,round\.depth,branchRounds\.length\)/);
+  assert.match(bracketRenderer, /const phaseLevel = Math\.max\(1,Math\.min\(3,4 - \(Number\(totalDepth \|\| 1\) - Number\(depth \|\| 0\)\)\)\)/);
+  assert.match(bracketRenderer, /data-bracket-phase=/);
+  assert.match(bracketStyles, /\.bracket-stage\.phase-1/);
+  assert.match(bracketStyles, /\.bracket-stage\.phase-2/);
+  assert.match(bracketStyles, /\.bracket-stage\.phase-3/);
+  assert.match(bracketStyles, /border: 2px solid #00ef2a/);
 });
 
 test('agenda pública exibe somente dias e classes que possuem jogos', () => {
@@ -78,6 +87,27 @@ test('agenda pública exibe somente dias e classes que possuem jogos', () => {
   assert.match(schedule, /class="agenda-day-group"/);
   assert.match(schedule, /class="agenda-court-group"/);
   assert.match(schedule, /items\.sort\(matchDateSort\)/);
+});
+
+test('agenda pública preserva o horário relativo Após em cartões compactos', () => {
+  const styles = sourceSection(publicPage, '.agenda-list', '\n    .sponsor-grid');
+  const renderer = sourceSection(publicPage, 'function agendaDayLabel', '\n    function scoreText');
+  assert.match(renderer, /function publicScheduleTime\(row\)/);
+  assert.match(renderer, /field\(row,'time_label','schedule_time_label'\)/);
+  assert.match(renderer, /startsWith\('apos'\) \? 'Após'/);
+  assert.match(renderer, /escapeHtml\(publicScheduleTime\(row\)\)/);
+  assert.match(styles, /\.agenda-card\.grouped \{[^}]*min-height: 68px;[^}]*grid-template-columns: 78px minmax\(0,1fr\)/);
+  assert.match(styles, /\.agenda-card\.grouped \.time-box \{[^}]*border-radius: 999px;[^}]*background: #00a82c/);
+  assert.match(styles, /\.agenda-card\.grouped \.time-box strong \{[^}]*font-size: 12px/);
+});
+
+test('snapshot público expõe somente o rótulo seguro do horário relativo', () => {
+  assert.match(relativeTimeMigration, /replacement_fragment text := E'[\s\S]*\\'time_label\\', case/);
+  assert.match(relativeTimeMigration, /tournament_match\.metadata ->> \\'legacy_time\\'/);
+  assert.match(relativeTimeMigration, /in \(\\'após\\', \\'apos\\'\) then \\'Após\\'/);
+  assert.match(relativeTimeMigration, /revoke all on function private\.tournament_public_snapshot_legacy_unsafe\(text\)/);
+  assert.match(relativeTimeMigration, /set local lock_timeout = '5s'/);
+  assert.doesNotMatch(relativeTimeMigration, /'metadata', tournament_match\.metadata/);
 });
 
 test('arte da agenda prioriza os nomes e reduz o destaque do horário', () => {
