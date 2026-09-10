@@ -851,7 +851,7 @@ function mapMatch(row: Row, athletes: Map<string, Row>) {
     quadra: row.court_name || "",
     data: legacyDay(row.match_date, metadata),
     data_iso: row.match_date || "",
-    hora: row.match_time ? String(row.match_time).slice(0, 5) : "",
+    hora: row.match_time ? String(row.match_time).slice(0, 5) : text(metadata.legacy_time, 20),
     status: legacyMatchStatus(row.status),
     ordem: row.sort_order || 0,
     observacoes: row.public_notes || metadata.observacoes || "",
@@ -928,7 +928,7 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", incl
       ? client.from("tournament_payments").select("id,tournament_id,registration_id,registration_group_id,status,billing_type,amount,invoice_url,pix_payload,pix_expires_at,expires_at,paid_at,created_at").eq("tournament_id", id).order("created_at")
       : Promise.resolve({ data: [], error: null }),
     client.from("tournament_matches").select("*").eq("tournament_id", id).order("category_id").order("round_no").order("match_no"),
-    client.from("tournament_courts").select("*").eq("tournament_id", id).order("sort_order").order("name"),
+    client.from("tournament_courts").select("*").eq("tournament_id", id).eq("active", true).order("sort_order").order("name"),
     client.from("tournament_schedule_events").select("*").eq("tournament_id", id).order("event_date").order("event_time"),
     includeCapabilities
       ? client.from("tournament_registration_invites").select("id,tournament_id,recipient_name,recipient_phone,athlete_limit,status,used_registration_group_id,token_ciphertext,expires_at,created_at,used_at,revoked_at").eq("tournament_id", id).order("created_at", { ascending: false })
@@ -1632,6 +1632,10 @@ function tournamentPayload(input: Row, current: Row = {}) {
     image_url: nullableText(requestedAboutEvent.image_url, 1000),
     sponsors: aboutSponsors,
   };
+  const courtCount = Math.min(12, Math.max(1, integerValue(
+    requestedSettings.court_count,
+    integerValue(currentSettings.court_count, 2),
+  )));
   const requestedSpatialPortal = {
     ...firstObject(currentSettings.spatial_addon_portal),
     ...firstObject(requestedSettings.spatial_addon_portal),
@@ -1659,12 +1663,70 @@ function tournamentPayload(input: Row, current: Row = {}) {
       registration_pricing: registrationPricing,
       spatial_addon_fee: spatialAddonFee,
       spatial_addons: spatialAddons,
+      court_count: courtCount,
       ...(Object.keys(requestedSpatialPortal).length ? { spatial_addon_portal: requestedSpatialPortal } : {}),
       public_tabs: publicTabs,
       about_event: aboutEvent,
     },
     updated_at: new Date().toISOString(),
   };
+}
+
+async function syncTournamentCourtCount(client: DbClient, actorId: string, tournamentId: string, desiredCount: number) {
+  const lookup = await client.from("tournament_courts").select("*").eq("tournament_id", tournamentId).order("sort_order").order("name");
+  assertNoError(lookup.error);
+  const allCourts = ((lookup.data || []) as Row[]).map((court) => ({ ...court }));
+  const before = allCourts.map(mapCourt);
+  const active = allCourts.filter((court) => court.active !== false);
+  const inactive = allCourts.filter((court) => court.active === false);
+  const selected = active.slice(0, desiredCount);
+  for (const court of inactive) {
+    if (selected.length >= desiredCount) break;
+    selected.push(court);
+  }
+  const usedNames = new Set(((lookup.data || []) as Row[]).map((court) => text(court.name, 100).toLowerCase()));
+  while (selected.length < desiredCount) {
+    let number = 1;
+    while (usedNames.has(`quadra ${number}`)) number += 1;
+    const inserted = await client.from("tournament_courts").insert({
+      tournament_id: tournamentId,
+      name: `Quadra ${number}`,
+      sort_order: (selected.length + 1) * 10,
+      active: true,
+    }).select().single();
+    assertNoError(inserted.error);
+    const insertedCourt = inserted.data as Row;
+    selected.push(insertedCourt);
+    allCourts.push(insertedCourt);
+    usedNames.add(`quadra ${number}`);
+  }
+  const selectedIds = new Set(selected.map((court) => String(court.id)));
+  for (let index = 0; index < selected.length; index += 1) {
+    const court = selected[index];
+    const nextOrder = (index + 1) * 10;
+    if (court.active === false || Number(court.sort_order || 0) !== nextOrder) {
+      const update = await client.from("tournament_courts")
+        .update({ active: true, sort_order: nextOrder, updated_at: new Date().toISOString() })
+        .eq("id", court.id);
+      assertNoError(update.error);
+      court.active = true;
+      court.sort_order = nextOrder;
+    }
+  }
+  const toDeactivate = allCourts.filter((court) => court.active !== false && !selectedIds.has(String(court.id)));
+  if (toDeactivate.length) {
+    const update = await client.from("tournament_courts")
+      .update({ active: false, updated_at: new Date().toISOString() })
+      .in("id", toDeactivate.map((court) => court.id));
+    assertNoError(update.error);
+    toDeactivate.forEach((court) => { court.active = false; });
+  }
+  const after = allCourts.sort((left, right) =>
+    Number(left.sort_order || 0) - Number(right.sort_order || 0) || String(left.name || "").localeCompare(String(right.name || ""))
+  ).map(mapCourt);
+  if (JSON.stringify(before) !== JSON.stringify(after)) {
+    await audit(client, actorId, tournamentId, "tournament_courts", tournamentId, "SYNC", before, after);
+  }
 }
 
 async function saveTournament(client: DbClient, actorId: string, payload: Row, create: boolean) {
@@ -1690,6 +1752,7 @@ async function saveTournament(client: DbClient, actorId: string, payload: Row, c
     assertNoError(result.error);
     saved = result.data;
   }
+  await syncTournamentCourtCount(client, actorId, saved.id, integerValue(firstObject(saved.settings).court_count, 2));
   await audit(
     client,
     actorId,
@@ -1974,10 +2037,16 @@ function matchPayload(input: Row, tournament: Row, current: Row = {}) {
   let time = current.match_time || null;
   if (timeField.present) {
     const rawTime = text(timeField.value, 20);
-    if (!rawTime) time = null;
-    else {
+    if (!rawTime) {
+      time = null;
+      delete metadata.legacy_time;
+    } else if (normalizeKey(rawTime).startsWith("apos")) {
+      time = null;
+      metadata.legacy_time = "Após";
+    } else {
       time = validTime(rawTime);
       if (!time) throw new ApiError("Horário inválido.");
+      delete metadata.legacy_time;
     }
   }
   const winnerField = ownField(input, "vencedor_id", "winner_athlete_id");
@@ -2150,10 +2219,16 @@ async function updateMatchFields(client: DbClient, actorId: string, payload: Row
     let matchTime = lookup.data.match_time || null;
     if (timeField.present) {
       const rawTime = text(timeField.value, 20);
-      if (!rawTime) matchTime = null;
-      else {
+      if (!rawTime) {
+        matchTime = null;
+        delete metadata.legacy_time;
+      } else if (normalizeKey(rawTime).startsWith("apos")) {
+        matchTime = null;
+        metadata.legacy_time = "Após";
+      } else {
         matchTime = validTime(rawTime);
         if (!matchTime) throw new ApiError("Horário inválido.");
+        delete metadata.legacy_time;
       }
     }
     const courtName = courtField.present ? nullableText(courtField.value, 100) : (lookup.data.court_name || null);
@@ -2212,12 +2287,15 @@ async function saveAgendaEvent(client: DbClient, actorId: string, payload: Row) 
   if (title.length < 2) throw new ApiError("Informe o nome do evento.");
   const statusValue = text(input.status || current.status || "SCHEDULED", 30).toUpperCase();
   const allowedStatuses = ["SCHEDULED", "CONFIRMED", "FINISHED", "CANCELLED"];
+  const rawEventTime = text(input.hora ?? input.event_time ?? current.event_time, 20);
+  const eventTime = rawEventTime ? validTime(rawEventTime) : null;
+  if (rawEventTime && !eventTime) throw new ApiError("Horário do evento inválido.");
   const data = {
     tournament_id: tournament.id,
     title,
     description: nullableText(input.descricao ?? input.description ?? current.description, 1000),
     event_date: resolveLegacyDate(input.data ?? input.event_date ?? current.event_date, tournament),
-    event_time: validTime(input.hora ?? input.event_time ?? current.event_time) || null,
+    event_time: eventTime,
     court_name: nullableText(input.quadra ?? input.court_name ?? current.court_name, 100),
     status: allowedStatuses.includes(statusValue) ? statusValue : "SCHEDULED",
     published: booleanValue(input.publicar ?? input.published, current.published !== false),
