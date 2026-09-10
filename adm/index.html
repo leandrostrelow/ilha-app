@@ -4839,9 +4839,27 @@
 
     .player-filters {
       display: grid;
-      grid-template-columns: minmax(160px, 1.6fr) repeat(3, minmax(120px, 1fr));
+      grid-template-columns: minmax(160px, 1.5fr) repeat(4, minmax(115px, 1fr));
       gap: 8px;
       margin-bottom: 12px;
+    }
+
+    .player-availability {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 7px;
+      padding: 5px 8px;
+      border-radius: 9px;
+      background: #e7f8f8;
+      color: #075d64;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .player-availability.missing {
+      background: #fff4cf;
+      color: #805b00;
     }
 
     .agenda-filters {
@@ -24439,6 +24457,14 @@
               <option value="">Todos status</option>
               <option value="INATIVO">Inativos</option>
             </select>
+            <select id="playerAvailabilityFilter">
+              <option value="">Todos os dias</option>
+              <option value="MONDAY">Pode na segunda</option>
+              <option value="TUESDAY">Pode na terça</option>
+              <option value="WEDNESDAY">Pode na quarta</option>
+              <option value="THURSDAY">Pode na quinta</option>
+              <option value="MISSING">Não informou os dias</option>
+            </select>
             <select id="playerGenderFilter">
               <option value="">Masc/Fem</option>
               <option value="MASC">Masculino</option>
@@ -25982,18 +26008,22 @@
       const search = normalizeSearch($('playerSearch').value);
       const categoryFilter = $('playerCategoryFilter').value;
       const statusFilter = $('playerStatusFilter').value;
+      const availabilityFilter = $('playerAvailabilityFilter').value;
       const genderFilter = $('playerGenderFilter').value;
       const filtered = state.data.jogadores
         .slice()
         .sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome)); })
         .filter(function (player) {
           const regs = playerRegistrations(player.jogador_id);
+          const availabilityDays = playerAvailabilityDays(player.jogador_id);
           const cats = regs.map(function (r) { return getCategoryName(r.categoria_id); }).join(' ');
-          const haystack = normalizeSearch([player.nome, player.apelido, player.whatsapp, player.cidade, player.clube, cats].join(' '));
+          const haystack = normalizeSearch([player.nome, player.apelido, player.whatsapp, player.cidade, player.clube, cats, availabilityDaysLabel(availabilityDays)].join(' '));
           if (search && haystack.indexOf(search) === -1) return false;
           if (statusFilter && String(player.status || 'ATIVO') !== statusFilter) return false;
           if (genderFilter && String(player.genero || '') !== genderFilter) return false;
           if (categoryFilter && !regs.some(function (r) { return String(r.categoria_id) === String(categoryFilter); })) return false;
+          if (availabilityFilter === 'MISSING' && availabilityDays.length) return false;
+          if (availabilityFilter && availabilityFilter !== 'MISSING' && availabilityDays.indexOf(availabilityFilter) === -1) return false;
           return true;
         });
 
@@ -26002,6 +26032,8 @@
         .map(function (player) {
           const regs = registrations
             .filter(function (r) { return String(r.jogador_id) === String(player.jogador_id) && String(r.status_pagamento) !== 'CANCELADO'; });
+          const availabilityDays = playerAvailabilityDays(player.jogador_id);
+          const availabilityText = availabilityDaysLabel(availabilityDays);
           const onlinePayment = (state.data.pagamentos_online || []).find(function (entry) {
             return regs.some(function (registration) { return String(registration.inscricao_id) === String(entry.inscricao_id); });
           });
@@ -26039,7 +26071,10 @@
             '<div><strong>' + escapeHtml(player.nome) + '</strong><small>' +
             escapeHtml(player.cidade || 'sem cidade') + ' | ' + escapeHtml(player.whatsapp || 'sem WhatsApp') +
             (player.menor_de_idade ? '<br>Responsável: ' + escapeHtml(player.responsavel_nome || 'não informado') + ' · ' + escapeHtml(player.responsavel_telefone || 'sem telefone') : '') +
-            '</small><div class="tag-line">' +
+            '</small>' +
+            '<div class="player-availability' + (availabilityDays.length ? '' : ' missing') + '">' +
+              '<span aria-hidden="true">📅</span><span>' + (availabilityDays.length ? 'Pode jogar: ' + escapeHtml(availabilityText) : 'Disponibilidade não informada') + '</span>' +
+            '</div><div class="tag-line">' +
             (cats || '<span class="mini-tag warn">sem classe</span>') +
             '<span class="mini-tag' + statusClass + '">' + escapeHtml(player.status || 'ATIVO') + '</span>' +
             (courtesy ? '<span class="mini-tag">CORTESIA</span>' : '') +
@@ -27293,6 +27328,51 @@
       return state.data.inscricoes.filter(function (r) {
         return String(r.jogador_id) === String(playerId) && String(r.status_pagamento) !== 'CANCELADO';
       });
+    }
+
+    const tournamentAvailabilityDays = [
+      { value: 'MONDAY', label: 'Segunda' },
+      { value: 'TUESDAY', label: 'Terça' },
+      { value: 'WEDNESDAY', label: 'Quarta' },
+      { value: 'THURSDAY', label: 'Quinta' }
+    ];
+
+    function registrationAvailabilityDays(registration) {
+      if (Array.isArray(registration.dias_disponiveis)) {
+        return registration.dias_disponiveis.filter(function (day) {
+          return tournamentAvailabilityDays.some(function (item) { return item.value === day; });
+        });
+      }
+      const notes = normalizeSearch(registration.observacoes || '');
+      const availability = notes.match(/disponibilidade:\s*([^\n.]*)/);
+      if (!availability) return [];
+      const value = availability[1];
+      return tournamentAvailabilityDays.filter(function (item) {
+        const words = {
+          MONDAY: 'segunda',
+          TUESDAY: 'terca',
+          WEDNESDAY: 'quarta',
+          THURSDAY: 'quinta'
+        };
+        return value.indexOf(words[item.value]) !== -1;
+      }).map(function (item) { return item.value; });
+    }
+
+    function playerAvailabilityDays(playerId) {
+      const available = new Set();
+      playerRegistrations(playerId).forEach(function (registration) {
+        registrationAvailabilityDays(registration).forEach(function (day) { available.add(day); });
+      });
+      return tournamentAvailabilityDays
+        .map(function (item) { return item.value; })
+        .filter(function (day) { return available.has(day); });
+    }
+
+    function availabilityDaysLabel(days) {
+      return tournamentAvailabilityDays
+        .filter(function (item) { return days.indexOf(item.value) !== -1; })
+        .map(function (item) { return item.label; })
+        .join(', ');
     }
 
     function preferredRegistration(playerId) {
@@ -49862,7 +49942,7 @@
     $('matchEditorBackdrop').addEventListener('click', function (event) {
       if (event.target.id === 'matchEditorBackdrop') closeMatchEditor();
     });
-    ['playerSearch', 'playerCategoryFilter', 'playerStatusFilter', 'playerGenderFilter'].forEach(function (id) {
+    ['playerSearch', 'playerCategoryFilter', 'playerStatusFilter', 'playerAvailabilityFilter', 'playerGenderFilter'].forEach(function (id) {
       $(id).addEventListener('input', renderPlayers);
       $(id).addEventListener('change', renderPlayers);
     });
