@@ -74,4 +74,17 @@ test('agenda pública exibe somente dias e classes que possuem jogos', () => {
   assert.match(schedule, /const gameDays = new Set\(gameRows\.map\(scheduleDayKey\)\)/);
   assert.match(schedule, /events\(\)\.filter\(\(row\) => gameDays\.has\(scheduleDayKey\(row\)\)\)/);
   assert.match(schedule, /agendaCategories\(\)\.map/);
+  assert.match(schedule, /function agendaDayGroupHtml\(rows\)/);
+  assert.match(schedule, /class="agenda-day-group"/);
+  assert.match(schedule, /class="agenda-court-group"/);
+  assert.match(schedule, /items\.sort\(matchDateSort\)/);
+});
+
+test('arte da agenda prioriza os nomes e reduz o destaque do horário', () => {
+  const poster = sourceSection(adminPage, 'function drawAgendaPosterCard', '\n    function posterDayName');
+  assert.match(poster, /const nameSize = compact \? 18 : 24/);
+  assert.match(poster, /const timeWidth = compact \? 72 : 78/);
+  assert.match(poster, /shortName\(player1, 30\)/);
+  assert.match(poster, /'× ' \+ shortName\(player2, 30\)/);
+  assert.match(poster, /maxRows <= 3 \? 112/);
 });

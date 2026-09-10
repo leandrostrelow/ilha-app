@@ -377,7 +377,18 @@
     .match-meta { padding: 5px 9px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 750; }
 
     .agenda-list, .results-list { display: grid; gap: 10px; }
+    .agenda-list { gap: 16px; }
+    .agenda-day-group { display: grid; gap: 13px; padding: 14px; border: 1px solid var(--line); border-radius: 20px; background: #f7fafb; }
+    .agenda-day-title { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 10px 14px; border-radius: 15px; background: var(--navy); color: #fff; }
+    .agenda-day-title span { flex: 0 0 auto; border-radius: 999px; padding: 5px 9px; background: var(--lime); color: #284600; font-size: 9px; font-weight: 950; letter-spacing: .08em; }
+    .agenda-day-title h3 { margin: 0; font-size: 17px; font-weight: 950; text-transform: capitalize; }
+    .agenda-day-courts { display: grid; gap: 14px; }
+    .agenda-court-group { display: grid; gap: 9px; }
+    .agenda-court-title { min-height: 38px; display: flex; align-items: center; gap: 8px; margin: 0; border-radius: 999px; padding: 8px 14px; background: var(--teal); color: #fff; font-size: 14px; font-weight: 950; }
+    .agenda-court-title span { color: var(--lime); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+    .agenda-court-games { display: grid; gap: 9px; }
     .agenda-card { display: grid; grid-template-columns: 82px minmax(0,1fr) auto; align-items: center; gap: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 17px; background: #fff; }
+    .agenda-card.grouped { grid-template-columns: 72px minmax(0,1fr); }
     .time-box { min-height: 62px; display: grid; place-items: center; border-radius: 13px; background: var(--navy); color: #fff; text-align: center; }
     .time-box strong { display: block; font-size: 15px; }
     .time-box small { display: block; margin-top: 2px; color: var(--lime); font-size: 10px; font-weight: 900; text-transform: uppercase; }
@@ -656,7 +667,12 @@
       .bracket-stage.single, .bracket-final-stage { width: 100%; }
       .bracket-match-grid { grid-template-columns: 1fr; }
       .bracket-final-stage { padding: 10px; }
+      .agenda-day-group { padding: 10px; border-radius: 17px; }
+      .agenda-day-title { align-items: flex-start; flex-direction: column; gap: 5px; padding: 11px 12px; }
+      .agenda-day-title h3 { font-size: 15px; }
+      .agenda-court-title { border-radius: 12px; }
       .agenda-card { grid-template-columns: 66px minmax(0,1fr); gap: 10px; padding: 10px; }
+      .agenda-card.grouped { grid-template-columns: 60px minmax(0,1fr); }
       .agenda-card .court-chip { grid-column: 2; justify-self: start; }
       .result-card { grid-template-columns: 1fr; gap: 8px; text-align: center; }
       .result-player:last-child { text-align: center; }
@@ -1502,16 +1518,43 @@
     }
     function agendaRowsHtml(category) {
       const rows = scheduleItems().filter((row) => !category || row.__kind === 'event' || matchCategoryId(row) === String(category));
-      return rows.map((row) => row.__kind === 'event' ? agendaEventHtml(row) : agendaMatchHtml(row)).join('') || '<div class="empty-state">Nenhum horário publicado.</div>';
+      if (!rows.length) return '<div class="empty-state">Nenhum horário publicado.</div>';
+      const days = new Map();
+      rows.forEach((row) => {
+        const dayKey = scheduleDayKey(row) || 'sem-data';
+        if (!days.has(dayKey)) days.set(dayKey,[]);
+        days.get(dayKey).push(row);
+      });
+      return Array.from(days.values()).map(agendaDayGroupHtml).join('');
     }
-    function agendaMatchHtml(row) {
+    function agendaDayGroupHtml(rows) {
+      const courts = new Map();
+      rows.forEach((row) => {
+        const court = clean(field(row,row.__kind === 'event' ? 'location' : 'court_name','quadra')) || (row.__kind === 'event' ? 'Torneio' : 'Quadra a definir');
+        if (!courts.has(court)) courts.set(court,[]);
+        courts.get(court).push(row);
+      });
+      const courtGroups = Array.from(courts.entries()).sort((a,b) => a[0].localeCompare(b[0],'pt-BR',{numeric:true})).map(([court,items]) => {
+        const isCourt = /^quadra\b/i.test(court);
+        const courtLabel = isCourt ? court.replace(/^quadra\s*/i,'') : court;
+        return '<section class="agenda-court-group"><h4 class="agenda-court-title"><span>' + (isCourt?'Quadra':'Local') + '</span>' + escapeHtml(courtLabel) + '</h4><div class="agenda-court-games">' + items.sort(matchDateSort).map((row) => row.__kind === 'event' ? agendaEventHtml(row,true) : agendaMatchHtml(row,true)).join('') + '</div></section>';
+      }).join('');
+      return '<section class="agenda-day-group"><header class="agenda-day-title"><span>Dia</span><h3>' + escapeHtml(agendaDayLabel(rows[0])) + '</h3></header><div class="agenda-day-courts">' + courtGroups + '</div></section>';
+    }
+    function agendaDayLabel(row) {
+      const date = matchDate(row);
+      if (!date) return clean(field(row,'match_date','event_date','date','data')) || 'Data a definir';
+      const label = date.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+      return label.charAt(0).toUpperCase() + label.slice(1);
+    }
+    function agendaMatchHtml(row,grouped) {
       const date = matchDate(row);
       const day = date ? date.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : 'A definir';
-      return '<article class="agenda-card"><div class="time-box"><div><strong>' + escapeHtml(shortTime(field(row,'scheduled_at','match_time','time','hora'))) + '</strong><small>' + escapeHtml(day) + '</small></div></div><div><h3>' + escapeHtml(playerName(row,1)) + ' × ' + escapeHtml(playerName(row,2)) + '</h3><p>' + escapeHtml(categoryName(matchCategoryId(row)) || roundLabel(row)) + '</p></div><span class="court-chip">' + escapeHtml(field(row,'court_name','quadra') || 'Quadra a definir') + '</span></article>';
+      return '<article class="agenda-card ' + (grouped?'grouped':'') + '"><div class="time-box"><div><strong>' + escapeHtml(shortTime(field(row,'scheduled_at','match_time','time','hora'))) + '</strong>' + (grouped?'':'<small>' + escapeHtml(day) + '</small>') + '</div></div><div><h3>' + escapeHtml(playerName(row,1)) + ' × ' + escapeHtml(playerName(row,2)) + '</h3><p>' + escapeHtml(categoryName(matchCategoryId(row)) || roundLabel(row)) + '</p></div>' + (grouped?'':'<span class="court-chip">' + escapeHtml(field(row,'court_name','quadra') || 'Quadra a definir') + '</span>') + '</article>';
     }
-    function agendaEventHtml(row) {
+    function agendaEventHtml(row,grouped) {
       const date = matchDate(row);
-      return '<article class="agenda-card"><div class="time-box"><div><strong>' + escapeHtml(shortTime(field(row,'starts_at','event_time','time','hora'))) + '</strong><small>' + escapeHtml(date ? date.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : 'Evento') + '</small></div></div><div><h3>' + escapeHtml(field(row,'title','titulo') || 'Evento') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || '') + '</p></div><span class="court-chip">' + escapeHtml(field(row,'location','court_name','quadra') || 'Torneio') + '</span></article>';
+      return '<article class="agenda-card ' + (grouped?'grouped':'') + '"><div class="time-box"><div><strong>' + escapeHtml(shortTime(field(row,'starts_at','event_time','time','hora'))) + '</strong>' + (grouped?'':'<small>' + escapeHtml(date ? date.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : 'Evento') + '</small>') + '</div></div><div><h3>' + escapeHtml(field(row,'title','titulo') || 'Evento') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || '') + '</p></div>' + (grouped?'':'<span class="court-chip">' + escapeHtml(field(row,'location','court_name','quadra') || 'Torneio') + '</span>') + '</article>';
     }
 
     function scoreText(row) { const score = field(row,'score','placar'); if (typeof score === 'string') return score; const p1 = playerScore(row,1), p2 = playerScore(row,2); return p1 !== '' || p2 !== '' ? p1 + ' × ' + p2 : 'Finalizado'; }
