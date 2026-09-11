@@ -78,11 +78,11 @@ test('Sobre o evento abre primeiro e funciona como início da página pública',
   assert.match(tabSwitch, /tab === 'about'/);
 });
 
-test('Ilha Bet aparece como Palpite antes de Sobre o evento e convida sem insistência', () => {
+test('Ilha Bet aparece antes de Sobre o evento e convida sem insistência', () => {
   const labels = sourceSection(publicPage, 'const PUBLIC_TAB_LABELS', '\n    let turnstileScriptPromise');
   const loader = sourceSection(publicPage, 'async function getBetCampaign', '\n    async function getRegistrationInviteInfo');
   const invite = sourceSection(publicPage, 'function tournamentBetInviteStorageKey', '\n    function initTournamentPwa');
-  assert.ok(labels.indexOf("bet: 'Palpite'") < labels.indexOf("about: 'Sobre o evento'"));
+  assert.ok(labels.indexOf("bet: 'Ilha Bet'") < labels.indexOf("about: 'Sobre o evento'"));
   assert.match(publicPage, /<h2>Ilha Bet<\/h2>/);
   assert.match(publicPage, /\/bet\?torneio=/);
   assert.match(loader, /payload && payload\.data \? payload\.data : payload/);
