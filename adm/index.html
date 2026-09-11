@@ -24721,6 +24721,15 @@
                 <div id="tournamentArtBackgroundPreview" style="margin-top:10px;padding:12px;border:1px solid #d7e4e7;border-radius:14px;background:#eef4f5"><img alt="Prévia do fundo das artes" style="display:block;width:140px;max-width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:10px;background:#0a0a0a" /></div>
                 <div class="actions" style="margin-top:10px"><button class="ghost-btn" id="tournamentArtBackgroundResetBtn" type="button">Usar fundo padrão</button></div>
               </div>
+              <div class="field full">
+                <label>Vídeo de abertura do app do torneio (MP4 vertical)</label>
+                <select id="tournamentIntroVideoEnabled"><option value="true">Ativado</option><option value="false">Desativado</option></select>
+                <input id="tournamentIntroVideoUrl" type="hidden" />
+                <input id="tournamentIntroVideoFile" type="file" accept="video/mp4,.mp4" />
+                <div class="muted">Aparece sempre que o app instalado é aberto. Recomendado: até 10 segundos, formato vertical e no máximo 15 MB.</div>
+                <div id="tournamentIntroVideoPreview" hidden style="margin-top:10px;padding:12px;border:1px solid #d7e4e7;border-radius:14px;background:#071217"><video aria-label="Prévia do vídeo de abertura" muted playsinline controls preload="metadata" style="display:block;width:180px;max-width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:10px;background:#000"></video></div>
+                <div class="actions" style="margin-top:10px"><button class="danger-btn" id="tournamentIntroVideoRemoveBtn" type="button">Remover vídeo</button></div>
+              </div>
               <div class="field">
                 <label>Ano</label>
                 <input id="tournamentYear" type="number" />
@@ -26033,6 +26042,10 @@
       const settings = t.settings || {};
       $('tournamentArtBackgroundUrl').value = settings.art_background_url || '';
       renderTournamentArtBackgroundPreview(settings.art_background_url || '');
+      const introVideo = settings.intro_video && typeof settings.intro_video === 'object' ? settings.intro_video : {};
+      $('tournamentIntroVideoEnabled').value = String(introVideo.enabled === true);
+      $('tournamentIntroVideoUrl').value = introVideo.url || '';
+      renderTournamentIntroVideoPreview(introVideo.url || '');
       const obsEnabled = settings.obs_enabled === true;
       $('tournamentObsEnabled').value = String(obsEnabled);
       const activeCourtCount = (state.data.quadras || []).filter(function (court) { return court.ativa !== false; }).length;
@@ -28633,6 +28646,10 @@
               obs_enabled: $('tournamentObsEnabled').value === 'true',
               court_count: courtCount,
               art_background_url: $('tournamentArtBackgroundUrl').value.trim(),
+              intro_video: {
+                enabled: $('tournamentIntroVideoEnabled').value === 'true' && Boolean($('tournamentIntroVideoUrl').value.trim()),
+                url: $('tournamentIntroVideoUrl').value.trim()
+              },
               registration_pricing: pricing,
               spatial_addon_fee: spatialAddonFee,
               spatial_addons: spatialAddons,
@@ -28731,6 +28748,69 @@
       renderTournamentArtBackgroundPreview(url);
       markTournamentDraftDirty();
       toast('Fundo enviado. Clique em Salvar torneio para publicar nas artes.');
+    }
+
+    function renderTournamentIntroVideoPreview(url) {
+      const preview = $('tournamentIntroVideoPreview');
+      const video = preview && preview.querySelector('video');
+      if (!preview || !video) return;
+      const source = String(url || '').trim();
+      preview.hidden = !source;
+      if (source) video.src = source;
+      else video.removeAttribute('src');
+      video.load();
+    }
+
+    function readTournamentIntroVideoDuration(file) {
+      return new Promise(function (resolve, reject) {
+        const probe = document.createElement('video');
+        const objectUrl = URL.createObjectURL(file);
+        let settled = false;
+        const timer = setTimeout(function () { finish(new Error('Não foi possível conferir a duração do vídeo.')); }, 10000);
+        function finish(error, duration) {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          probe.removeEventListener('loadedmetadata', handleLoaded);
+          probe.removeEventListener('error', handleError);
+          URL.revokeObjectURL(objectUrl);
+          probe.removeAttribute('src');
+          probe.load();
+          if (error) reject(error);
+          else resolve(Number(duration));
+        }
+        function handleLoaded() { finish(null, probe.duration); }
+        function handleError() { finish(new Error('O arquivo não parece ser um vídeo MP4 válido.')); }
+        probe.preload = 'metadata';
+        probe.addEventListener('loadedmetadata', handleLoaded);
+        probe.addEventListener('error', handleError);
+        probe.src = objectUrl;
+      });
+    }
+
+    async function uploadTournamentIntroVideo(file) {
+      const isMp4 = file && (file.type === 'video/mp4' || /\.mp4$/i.test(file.name || ''));
+      if (!isMp4) throw new Error('Escolha um vídeo MP4.');
+      if (file.size > 15 * 1024 * 1024) throw new Error('O vídeo deve ter no máximo 15 MB.');
+      const duration = await readTournamentIntroVideoDuration(file);
+      if (!Number.isFinite(duration) || duration <= 0 || duration > 15) throw new Error('Use um vídeo curto, com no máximo 15 segundos.');
+      if (!state.selectedTournamentId) throw new Error('Selecione um torneio antes de enviar o vídeo.');
+      const objectPath = String(state.selectedTournamentId) + '/intro-' + Date.now() + '.mp4';
+      const headers = supabaseHeaders(true);
+      headers['Content-Type'] = 'video/mp4';
+      const response = await fetchWithAdminTimeout(supabaseBaseUrl() + '/storage/v1/object/tournament-branding/' + encodeStoragePath(objectPath), {
+        method: 'POST', headers: headers, body: file
+      }, 90000);
+      if (!response.ok) {
+        const body = await response.json().catch(function () { return {}; });
+        throw new Error(body.message || body.error || 'Não foi possível enviar o vídeo.');
+      }
+      const url = supabaseBaseUrl() + '/storage/v1/object/public/tournament-branding/' + encodeStoragePath(objectPath);
+      $('tournamentIntroVideoUrl').value = url;
+      $('tournamentIntroVideoEnabled').value = 'true';
+      renderTournamentIntroVideoPreview(url);
+      markTournamentDraftDirty();
+      toast('Vídeo enviado. Clique em Salvar torneio para publicar no app.');
     }
 
     function syncAboutSponsorsFromEditor() {
@@ -50649,6 +50729,22 @@
       renderTournamentArtBackgroundPreview('');
       markTournamentDraftDirty();
       toast('Fundo padrão selecionado. Clique em Salvar torneio.');
+    });
+    $('tournamentIntroVideoFile').addEventListener('change', function (event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      uploadTournamentIntroVideo(file).catch(function (error) {
+        $('tournamentIntroVideoFile').value = '';
+        toast(error.message);
+      });
+    });
+    $('tournamentIntroVideoRemoveBtn').addEventListener('click', function () {
+      $('tournamentIntroVideoEnabled').value = 'false';
+      $('tournamentIntroVideoUrl').value = '';
+      $('tournamentIntroVideoFile').value = '';
+      renderTournamentIntroVideoPreview('');
+      markTournamentDraftDirty();
+      toast('Vídeo removido. Clique em Salvar torneio.');
     });
     $('addAboutSponsorBtn').addEventListener('click', function () {
       syncAboutSponsorsFromEditor();

@@ -1,11 +1,12 @@
-const CACHE_NAME = 'ilha-open-2026-v2';
+const CACHE_NAME = 'ilha-open-2026-v3';
 const APP_URL = '/torneios/ilha-open-2026';
 const ASSETS = [
   APP_URL,
   '/torneios/index.html',
   '/torneios/manifest.json',
   '/icons/ilha-open-192.png',
-  '/icons/ilha-open-512.png'
+  '/icons/ilha-open-512.png',
+  '/assets/tournament/ilha-open-intro.mp4'
 ];
 
 self.addEventListener('install', (event) => {
