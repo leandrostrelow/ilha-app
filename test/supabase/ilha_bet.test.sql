@@ -258,6 +258,9 @@ select throws_ok(
   'o banco rejeita palpite feito antes da janela de 24 horas'
 );
 
+delete from public.tournament_matches
+where id = '79000000-0000-4000-8000-000000000033'::uuid;
+
 select throws_ok(
   $$insert into public.tournament_prediction_requests (
     request_id, campaign_id, entry_id, match_id, predicted_winner_athlete_id
