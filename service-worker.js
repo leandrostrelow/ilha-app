@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'ilha-play-v';
-const CACHE_NAME = 'ilha-play-v240-client-intro';
+const CACHE_NAME = 'ilha-play-v241-client-intro-fluid';
 const CORE_ASSETS = [
   '/',
   '/index.html',
