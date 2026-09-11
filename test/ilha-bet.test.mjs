@@ -160,3 +160,21 @@ test('Edge Functions usam captcha, rate limit e dupla autorização administrati
   assert.match(config, /\[functions\.bet-public-api\]\s+verify_jwt = false/);
   assert.match(config, /\[functions\.bet-admin-api\]\s+verify_jwt = true/);
 });
+
+test('cada jogo abre para palpites somente nas 24 horas anteriores', async () => {
+  const [publicApi, app, html, migration] = await Promise.all([
+    read('supabase/functions/bet-public-api/index.ts'),
+    read('bet/app.js'),
+    read('bet/index.html'),
+    read('supabase/migrations/20260911210000_open_predictions_one_day_before_match.sql')
+  ]);
+  assert.match(publicApi, /referenceMs - 24 \* 60 \* 60 \* 1000/);
+  assert.match(publicApi, /prediction_opens_at: window\.opensAt/);
+  assert.match(publicApi, /lock_reason: acceptingPredictions \? matchLockReason/);
+  assert.match(app, /match\.lock_reason === 'UPCOMING'/);
+  assert.match(app, /Abre \$\{dateTimeLabel\(match\.prediction_opens_at\)\}/);
+  assert.match(html, /Cada jogo abre para palpites 24 horas antes do horário marcado/);
+  assert.match(migration, /clock_timestamp\(\) < v_reference_at - interval '24 hours'/);
+  assert.match(migration, /before insert or update of predicted_winner_athlete_id/);
+  assert.match(migration, /message = 'prediction_not_open'/);
+});

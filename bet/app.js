@@ -237,7 +237,15 @@
       const label = isWinner ? 'Venceu' : isSelected ? 'Seu palpite' : locked ? '' : 'Escolher';
       return `<button class="${classes}" type="button" data-pick data-match-id="${escapeHtml(match.id)}" data-athlete-id="${escapeHtml(side.id)}" ${locked ? 'disabled' : ''} aria-pressed="${isSelected}"><strong>${escapeHtml(side.name)}</strong><small>${escapeHtml(label)}</small></button>`;
     };
-    const stateLabel = isSaving ? 'Salvando…' : settled ? `Resultado: ${escapeHtml(match.score || 'confirmado')}` : match.locked ? 'Palpite encerrado' : selected ? 'Palpite salvo' : 'Aberto';
+    const stateLabel = isSaving
+      ? 'Salvando…'
+      : settled
+        ? `Resultado: ${escapeHtml(match.score || 'confirmado')}`
+        : match.lock_reason === 'UPCOMING' && match.prediction_opens_at
+          ? `Abre ${dateTimeLabel(match.prediction_opens_at)}`
+          : match.locked
+            ? 'Palpite encerrado'
+            : selected ? 'Palpite salvo' : 'Aberto';
     return `<article class="match-card">
       <div class="match-meta"><span>${escapeHtml(phaseLabel(match.phase))} · jogo ${escapeHtml(match.match_no || '')}</span><span class="points-badge">vale ${escapeHtml(match.points)} pt${Number(match.points) === 1 ? '' : 's'}</span></div>
       ${choice(match.side1)}${choice(match.side2)}
