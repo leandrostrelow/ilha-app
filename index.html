@@ -149,6 +149,80 @@
       animation: tennisBallSpin .8s linear infinite;
     }
 
+    body.client-intro-open {
+      overflow: hidden;
+      background: #000000;
+    }
+
+    .client-app-intro {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      color: #ffffff;
+      background: #000000;
+      opacity: 1;
+      transition: opacity .28s ease;
+    }
+
+    .client-app-intro[hidden] {
+      display: none;
+    }
+
+    .client-app-intro.is-closing {
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .client-app-intro video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      background: #000000;
+    }
+
+    .client-app-intro-skip {
+      position: absolute;
+      z-index: 2;
+      top: max(16px, env(safe-area-inset-top));
+      right: max(16px, env(safe-area-inset-right));
+      min-height: 42px;
+      padding: 0 17px;
+      border: 1px solid rgba(255, 255, 255, .34);
+      border-radius: 999px;
+      color: #ffffff;
+      background: rgba(4, 19, 23, .62);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .24);
+      font-size: 13px;
+      font-weight: 900;
+      backdrop-filter: blur(10px);
+    }
+
+    .client-app-intro-loading {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: rgba(255, 255, 255, .84);
+      background: #000000;
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .04em;
+      transition: opacity .18s ease;
+    }
+
+    .client-app-intro.is-playing .client-app-intro-loading {
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .client-app-intro { transition: none; }
+    }
+
     .client-auth { width: min(980px, 100%); }
 
     .auth-card {
@@ -4611,6 +4685,12 @@
     </symbol>
   </svg>
 
+  <div class="client-app-intro" id="clientAppIntro" hidden aria-hidden="true">
+    <video id="clientAppIntroVideo" muted playsinline preload="auto" aria-label="Abertura do Ilha Play"></video>
+    <div class="client-app-intro-loading" id="clientAppIntroLoading">Abrindo Ilha Play</div>
+    <button class="client-app-intro-skip" id="clientAppIntroSkipBtn" type="button">Pular intro</button>
+  </div>
+
   <div class="client-loading-screen" aria-live="polite">
     <img src="../logo.png" alt="Ilha Tênis Colatina" />
     <div class="client-loading-ball" aria-hidden="true"></div>
@@ -5255,6 +5335,9 @@
     const DEMO_SESSION_KEY = 'ilha-client-demo-session';
     const CLIENT_PUSH_PREFERENCE_KEY = 'ilha-client-push-enabled';
     const CLIENT_PUSH_AFTER_LOGIN_KEY = 'ilha-client-push-enable-after-login';
+    const CLIENT_INTRO_CONFIG_CACHE_KEY = 'ilha-client-intro-config-v1';
+    const CLIENT_INTRO_SKIP_ONCE_KEY = 'ilha-client-intro-skip-once';
+    const DEFAULT_CLIENT_INTRO_CONFIG = Object.freeze({ enabled: true, url: '/assets/app/ilha-play-intro.mp4' });
     const FALLBACK_PROFILE_KEY = 'ilha-client-profile-fallback';
     const PENDING_SIGNUP_KEY = 'ilha-client-pending-signup';
     const CLUB_TIME_ZONE = 'America/Sao_Paulo';
@@ -5476,12 +5559,161 @@
         const key = 'ilha-app-reloaded-cache';
         if (storageGet('sessionStorage', key) === data.cache) return;
         storageSet('sessionStorage', key, data.cache);
+        skipClientIntroOnce();
         window.location.reload();
       });
     }
 
     function clientAppIsInstalled() {
       return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    function skipClientIntroOnce() {
+      storageSet('sessionStorage', CLIENT_INTRO_SKIP_ONCE_KEY, '1');
+    }
+
+    function consumeClientIntroSkipOnce() {
+      const shouldSkip = storageGet('sessionStorage', CLIENT_INTRO_SKIP_ONCE_KEY) === '1';
+      if (shouldSkip) storageRemove('sessionStorage', CLIENT_INTRO_SKIP_ONCE_KEY);
+      return shouldSkip;
+    }
+
+    function safeClientIntroUrl(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return '';
+      try {
+        const parsed = new URL(raw, window.location.origin);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '';
+        return raw;
+      } catch (error) {
+        return '';
+      }
+    }
+
+    function normalizeClientIntroConfig(row) {
+      const url = safeClientIntroUrl(row && (row.intro_video_url || row.url));
+      const enabledValue = row && (row.intro_enabled !== undefined ? row.intro_enabled : row.enabled);
+      return { enabled: enabledValue === true && Boolean(url), url: url };
+    }
+
+    function cachedClientIntroConfig() {
+      try {
+        const cached = JSON.parse(storageGet('localStorage', CLIENT_INTRO_CONFIG_CACHE_KEY) || 'null');
+        if (!cached || typeof cached.enabled !== 'boolean') return null;
+        return normalizeClientIntroConfig(cached);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    async function loadClientIntroConfig() {
+      const fallback = cachedClientIntroConfig() || DEFAULT_CLIENT_INTRO_CONFIG;
+      const controller = typeof AbortController === 'function' ? new AbortController() : null;
+      const timeout = window.setTimeout(function () {
+        if (controller) controller.abort();
+      }, 2500);
+      try {
+        const response = await fetch(
+          SUPABASE_URL + '/rest/v1/app_client_experience_settings?select=intro_enabled,intro_video_url&singleton=eq.true&limit=1',
+          {
+            cache: 'no-store',
+            signal: controller ? controller.signal : undefined,
+            headers: {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: 'Bearer ' + SUPABASE_ANON_KEY
+            }
+          }
+        );
+        if (!response.ok) throw new Error('Configuração indisponível.');
+        const rows = await response.json();
+        if (!Array.isArray(rows) || !rows[0]) return fallback;
+        const config = normalizeClientIntroConfig(rows[0]);
+        storageSet('localStorage', CLIENT_INTRO_CONFIG_CACHE_KEY, JSON.stringify(config));
+        return config;
+      } catch (error) {
+        return fallback;
+      } finally {
+        window.clearTimeout(timeout);
+      }
+    }
+
+    function maybeShowClientAppIntro() {
+      if (!clientAppIsInstalled() || consumeClientIntroSkipOnce()) return Promise.resolve('not-shown');
+      const overlay = $('clientAppIntro');
+      const video = $('clientAppIntroVideo');
+      const skip = $('clientAppIntroSkipBtn');
+      const loading = $('clientAppIntroLoading');
+      if (!overlay || !video || !skip) return Promise.resolve('unavailable');
+      overlay.hidden = false;
+      overlay.setAttribute('aria-hidden', 'false');
+      overlay.classList.remove('is-closing', 'is-playing');
+      document.body.classList.add('client-intro-open');
+      ['clientAuth', 'clientApp'].forEach(function (id) {
+        const element = $(id);
+        if (element) element.inert = true;
+      });
+      if (loading) loading.textContent = 'Abrindo Ilha Play';
+      return new Promise(function (resolve) {
+        let settled = false;
+        let timeout = 0;
+        function removeListeners() {
+          video.removeEventListener('ended', onEnded);
+          video.removeEventListener('error', onError);
+          video.removeEventListener('playing', onPlaying);
+          skip.removeEventListener('click', onSkip);
+          if (timeout) window.clearTimeout(timeout);
+        }
+        function cleanup(reason) {
+          video.pause();
+          video.removeAttribute('src');
+          video.load();
+          overlay.hidden = true;
+          overlay.classList.remove('is-closing', 'is-playing');
+          overlay.setAttribute('aria-hidden', 'true');
+          document.body.classList.remove('client-intro-open');
+          ['clientAuth', 'clientApp'].forEach(function (id) {
+            const element = $(id);
+            if (element) element.inert = false;
+          });
+          resolve(reason);
+        }
+        function finish(reason, immediate) {
+          if (settled) return;
+          settled = true;
+          removeListeners();
+          if (immediate) {
+            cleanup(reason);
+            return;
+          }
+          overlay.classList.add('is-closing');
+          window.setTimeout(function () { cleanup(reason); }, 280);
+        }
+        function onEnded() { finish('ended'); }
+        function onError() { finish('error'); }
+        function onSkip() { finish('skipped'); }
+        function onPlaying() { overlay.classList.add('is-playing'); }
+        video.addEventListener('ended', onEnded);
+        video.addEventListener('error', onError);
+        video.addEventListener('playing', onPlaying);
+        skip.addEventListener('click', onSkip);
+        timeout = window.setTimeout(function () { finish('timeout'); }, 15000);
+        loadClientIntroConfig().then(function (config) {
+          if (settled) return;
+          if (!config || config.enabled !== true || !config.url) {
+            finish('disabled', true);
+            return;
+          }
+          video.muted = true;
+          video.defaultMuted = true;
+          video.playsInline = true;
+          video.src = config.url;
+          video.load();
+          const playback = video.play();
+          if (playback && typeof playback.catch === 'function') {
+            playback.catch(function () { finish('play-error'); });
+          }
+        }).catch(function () { finish('config-error', true); });
+      });
     }
 
     function clientUsesIos() {
@@ -5775,6 +6007,7 @@
         await updateAppShell();
         setPullRefresh(96, 'Atualizando', 'refreshing');
         reloading = true;
+        skipClientIntroOnce();
         window.setTimeout(function () {
           window.location.reload();
         }, 260);
@@ -9813,12 +10046,14 @@
         });
       });
       initClientInstallPrompt();
-      showWelcomeUpdateModal();
-      restore();
+      maybeShowClientAppIntro().catch(function () { return 'intro-error'; }).finally(function () {
+        showWelcomeUpdateModal();
+        restore();
+      });
     }
 
     init();
   </script>
-  <script src="/auto-update.js?v=221"></script>
+  <script src="/auto-update.js?v=222"></script>
 </body>
 </html>
