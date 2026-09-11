@@ -157,14 +157,14 @@
     .client-app-intro {
       position: fixed;
       inset: 0;
-      z-index: 500;
+      z-index: 3000;
       display: grid;
       place-items: center;
       overflow: hidden;
       color: #ffffff;
       background: #000000;
       opacity: 1;
-      transition: opacity .28s ease;
+      transition: opacity .2s ease;
     }
 
     .client-app-intro[hidden] {
@@ -182,41 +182,6 @@
       display: block;
       object-fit: cover;
       background: #000000;
-    }
-
-    .client-app-intro-skip {
-      position: absolute;
-      z-index: 2;
-      top: max(16px, env(safe-area-inset-top));
-      right: max(16px, env(safe-area-inset-right));
-      min-height: 42px;
-      padding: 0 17px;
-      border: 1px solid rgba(255, 255, 255, .34);
-      border-radius: 999px;
-      color: #ffffff;
-      background: rgba(4, 19, 23, .62);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, .24);
-      font-size: 13px;
-      font-weight: 900;
-      backdrop-filter: blur(10px);
-    }
-
-    .client-app-intro-loading {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      color: rgba(255, 255, 255, .84);
-      background: #000000;
-      font-size: 12px;
-      font-weight: 850;
-      letter-spacing: .04em;
-      transition: opacity .18s ease;
-    }
-
-    .client-app-intro.is-playing .client-app-intro-loading {
-      pointer-events: none;
-      opacity: 0;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -4687,8 +4652,6 @@
 
   <div class="client-app-intro" id="clientAppIntro" hidden aria-hidden="true">
     <video id="clientAppIntroVideo" muted playsinline preload="auto" aria-label="Abertura do Ilha Play"></video>
-    <div class="client-app-intro-loading" id="clientAppIntroLoading">Abrindo Ilha Play</div>
-    <button class="client-app-intro-skip" id="clientAppIntroSkipBtn" type="button">Pular intro</button>
   </div>
 
   <div class="client-loading-screen" aria-live="polite">
@@ -5637,38 +5600,56 @@
       }
     }
 
-    function maybeShowClientAppIntro() {
+    function waitForClientAppReady() {
+      if (!document.body.classList.contains('client-checking')) return Promise.resolve();
+      return new Promise(function (resolve) {
+        let settled = false;
+        const observer = new MutationObserver(function () {
+          if (!document.body.classList.contains('client-checking')) finish();
+        });
+        const timeout = window.setTimeout(finish, 8000);
+        function finish() {
+          if (settled) return;
+          settled = true;
+          observer.disconnect();
+          window.clearTimeout(timeout);
+          resolve();
+        }
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+      });
+    }
+
+    function maybeShowClientAppIntro(appReady) {
       if (!clientAppIsInstalled() || consumeClientIntroSkipOnce()) return Promise.resolve('not-shown');
       const overlay = $('clientAppIntro');
       const video = $('clientAppIntroVideo');
-      const skip = $('clientAppIntroSkipBtn');
-      const loading = $('clientAppIntroLoading');
-      if (!overlay || !video || !skip) return Promise.resolve('unavailable');
+      if (!overlay || !video) return Promise.resolve('unavailable');
+      const startupReady = Promise.resolve(appReady).catch(function () { return null; });
       overlay.hidden = false;
       overlay.setAttribute('aria-hidden', 'false');
-      overlay.classList.remove('is-closing', 'is-playing');
+      overlay.classList.remove('is-closing');
       document.body.classList.add('client-intro-open');
       ['clientAuth', 'clientApp'].forEach(function (id) {
         const element = $(id);
         if (element) element.inert = true;
       });
-      if (loading) loading.textContent = 'Abrindo Ilha Play';
       return new Promise(function (resolve) {
         let settled = false;
+        let waitingForApp = false;
         let timeout = 0;
+        let readinessTimeout = 0;
         function removeListeners() {
           video.removeEventListener('ended', onEnded);
           video.removeEventListener('error', onError);
-          video.removeEventListener('playing', onPlaying);
-          skip.removeEventListener('click', onSkip);
           if (timeout) window.clearTimeout(timeout);
+          if (readinessTimeout) window.clearTimeout(readinessTimeout);
         }
         function cleanup(reason) {
           video.pause();
           video.removeAttribute('src');
           video.load();
           overlay.hidden = true;
-          overlay.classList.remove('is-closing', 'is-playing');
+          overlay.classList.remove('is-closing');
           overlay.setAttribute('aria-hidden', 'true');
           document.body.classList.remove('client-intro-open');
           ['clientAuth', 'clientApp'].forEach(function (id) {
@@ -5686,16 +5667,25 @@
             return;
           }
           overlay.classList.add('is-closing');
-          window.setTimeout(function () { cleanup(reason); }, 280);
+          window.setTimeout(function () { cleanup(reason); }, 200);
         }
-        function onEnded() { finish('ended'); }
+        function onEnded() {
+          if (settled || waitingForApp) return;
+          waitingForApp = true;
+          if (timeout) {
+            window.clearTimeout(timeout);
+            timeout = 0;
+          }
+          Promise.race([
+            startupReady,
+            new Promise(function (ready) {
+              readinessTimeout = window.setTimeout(ready, 4000);
+            })
+          ]).then(function () { finish('ended'); });
+        }
         function onError() { finish('error'); }
-        function onSkip() { finish('skipped'); }
-        function onPlaying() { overlay.classList.add('is-playing'); }
         video.addEventListener('ended', onEnded);
         video.addEventListener('error', onError);
-        video.addEventListener('playing', onPlaying);
-        skip.addEventListener('click', onSkip);
         timeout = window.setTimeout(function () { finish('timeout'); }, 15000);
         loadClientIntroConfig().then(function (config) {
           if (settled) return;
@@ -10046,14 +10036,20 @@
         });
       });
       initClientInstallPrompt();
-      maybeShowClientAppIntro().catch(function () { return 'intro-error'; }).finally(function () {
+      const clientStartup = Promise.resolve().then(function () {
+        return restore();
+      }).then(function () {
+        return waitForClientAppReady();
+      });
+      maybeShowClientAppIntro(clientStartup).catch(function () {
+        return 'intro-error';
+      }).finally(function () {
         showWelcomeUpdateModal();
-        restore();
       });
     }
 
     init();
   </script>
-  <script src="/auto-update.js?v=222"></script>
+  <script src="/auto-update.js?v=223"></script>
 </body>
 </html>

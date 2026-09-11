@@ -26,7 +26,7 @@ function sourceSection(source, start, end) {
 test('vídeo padrão do Ilha Play é um MP4 leve e entra no cache do app', () => {
   assert.ok(introVideo.subarray(0, 32).includes(Buffer.from('ftyp')), 'arquivo não parece ser MP4');
   assert.ok(introVideo.length < 4 * 1024 * 1024, 'vídeo padrão deve permanecer leve para celular');
-  assert.match(serviceWorker, /ilha-play-v240-client-intro/);
+  assert.match(serviceWorker, /ilha-play-v241-client-intro-fluid/);
   assert.match(serviceWorker, /\/assets\/app\/ilha-play-intro\.mp4/);
   assert.match(server, /\['\.mp4', 'video\/mp4'\]/);
   assert.match(appVersion, /2026-09-11/);
@@ -48,20 +48,28 @@ test('ADM possui módulo próprio para ativar, trocar, visualizar e remover a ab
   assert.match(adminPage, /'club-settings': 'settings'/);
 });
 
-test('intro aparece somente no app instalado e nunca bloqueia o acesso', () => {
-  const intro = sourceSection(clientPage, 'function maybeShowClientAppIntro()', '\n    function clientUsesIos');
+test('intro aparece somente no app instalado, sem controles sobre o vídeo', () => {
+  const intro = sourceSection(clientPage, 'function maybeShowClientAppIntro(appReady)', '\n    function clientUsesIos');
   assert.match(intro, /!clientAppIsInstalled\(\)/);
   assert.match(intro, /consumeClientIntroSkipOnce\(\)/);
   assert.match(intro, /config\.enabled !== true/);
   assert.match(intro, /video\.muted = true/);
   assert.match(intro, /video\.addEventListener\('ended', onEnded\)/);
   assert.match(intro, /video\.addEventListener\('error', onError\)/);
-  assert.match(intro, /skip\.addEventListener\('click', onSkip\)/);
   assert.match(intro, /finish\('play-error'\)/);
   assert.match(intro, /finish\('timeout'\)/);
   assert.match(intro, /removeListeners\(\)/);
-  assert.match(clientPage, /id="clientAppIntroSkipBtn"[^>]*>Pular intro<\/button>/);
-  assert.match(clientPage, /maybeShowClientAppIntro\(\)[\s\S]*showWelcomeUpdateModal\(\);[\s\S]*restore\(\);/);
+  assert.doesNotMatch(clientPage, /clientAppIntroSkipBtn|Pular intro|Abrindo Ilha Play/);
+});
+
+test('o app carrega por trás da intro e só troca para uma tela pronta', () => {
+  const intro = sourceSection(clientPage, 'function maybeShowClientAppIntro(appReady)', '\n    function clientUsesIos');
+  assert.match(intro, /const startupReady = Promise\.resolve\(appReady\)/);
+  assert.match(intro, /Promise\.race\(\[\s*startupReady/);
+  assert.match(intro, /readinessTimeout = window\.setTimeout\(ready, 4000\)/);
+  assert.match(clientPage, /function waitForClientAppReady\(\)[\s\S]*client-checking[\s\S]*MutationObserver/);
+  assert.match(clientPage, /\.client-app-intro \{[\s\S]*z-index: 3000/);
+  assert.match(clientPage, /const clientStartup = Promise\.resolve\(\)\.then\(function \(\) \{\s*return restore\(\);\s*\}\)\.then\(function \(\) \{\s*return waitForClientAppReady\(\);\s*\}\);\s*maybeShowClientAppIntro\(clientStartup\)[\s\S]*\.finally\(function \(\) \{\s*showWelcomeUpdateModal\(\);/);
 });
 
 test('configuração remota tem cache de segurança e o gesto de atualizar não repete a intro', () => {
