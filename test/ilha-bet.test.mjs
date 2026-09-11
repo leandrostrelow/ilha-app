@@ -33,6 +33,18 @@ test('acesso público guarda somente código e identificador no aparelho', async
   assert.match(app, /data-pick[\s\S]*aria-pressed/);
 });
 
+test('resumo e filtros públicos permanecem corretos no celular', async () => {
+  const [app, styles] = await Promise.all([
+    read('bet/app.js'),
+    read('bet/styles.css')
+  ]);
+  assert.match(app, /matchCount === 1 \? 'jogo disponível' : 'jogos disponíveis'/);
+  assert.doesNotMatch(app, /disponível\$\{[^}]+\? '' : 'is'\}/);
+  assert.match(app, /categoryIdsWithMatches = new Set\(state\.data\.matches\.map/);
+  assert.match(app, /availableCategories = state\.data\.categories\.filter/);
+  assert.match(styles, /@media \(max-width: 800px\)[\s\S]*\.hero-score \{[^}]*background: var\(--teal\)/);
+});
+
 test('link simples escolhe a campanha ativa sem permitir fallback de slug inválido', async () => {
   const [app, publicApi] = await Promise.all([
     read('bet/app.js'),

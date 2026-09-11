@@ -194,7 +194,8 @@
     const windowParts = [];
     if (campaign.closes_at) windowParts.push(`Até ${dateTimeLabel(campaign.closes_at)}`);
     else if (tournament.ends_on) windowParts.push(`Torneio até ${dateLabel(tournament.ends_on)}`);
-    windowParts.push(`${state.data.matches.length} jogo${state.data.matches.length === 1 ? '' : 's'} disponível${state.data.matches.length === 1 ? '' : 'is'}`);
+    const matchCount = state.data.matches.length;
+    windowParts.push(`${matchCount} ${matchCount === 1 ? 'jogo disponível' : 'jogos disponíveis'}`);
     $('campaignWindow').textContent = windowParts.join(' · ');
     $('heroTitle').firstChild.nodeValue = `${campaign.title || 'Palpite Ilha'}`;
     $('tournamentLink').href = `/torneios/${encodeURIComponent(tournament.slug)}`;
@@ -211,9 +212,12 @@
   function renderCategoryFilter() {
     const select = $('categoryFilter');
     const previous = state.categoryId;
-    select.innerHTML = '<option value="">Todas as classes</option>' + state.data.categories.map((category) =>
+    const categoryIdsWithMatches = new Set(state.data.matches.map((match) => match.category_id));
+    const availableCategories = state.data.categories.filter((category) => categoryIdsWithMatches.has(category.id));
+    select.innerHTML = '<option value="">Todas as classes</option>' + availableCategories.map((category) =>
       `<option value="${escapeHtml(category.id)}">${escapeHtml(category.name)}</option>`).join('');
-    if (state.data.categories.some((category) => category.id === previous)) select.value = previous;
+    if (availableCategories.some((category) => category.id === previous)) select.value = previous;
+    else state.categoryId = '';
   }
 
   function renderMatchCard(match, pickMap) {
