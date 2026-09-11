@@ -6,14 +6,14 @@ import path from 'node:path';
 const root = path.resolve(import.meta.dirname, '..');
 const read = (relative) => readFile(path.join(root, relative), 'utf8');
 
-test('Palpite Ilha entra no build e possui página pública própria', async () => {
+test('Ilha Bet entra no build e possui página pública própria', async () => {
   const [build, html, app] = await Promise.all([
     read('scripts/build.mjs'),
     read('bet/index.html'),
     read('bet/app.js')
   ]);
   assert.match(build, /directories = \[[^\]]*'bet'/);
-  assert.match(html, /<title>Palpite Ilha/);
+  assert.match(html, /<title>Ilha Bet/);
   assert.match(html, /href="\/bet\/styles\.css"/);
   assert.match(html, /src="\/bet\/app\.js"/);
   assert.match(html, /não há aposta, pagamento, depósito, saque, odds ou pontos convertidos em dinheiro/i);
@@ -64,12 +64,13 @@ test('link simples escolhe a campanha ativa sem permitir fallback de slug invál
   assert.match(publicApi, /ranking\.map\(\(\{ entry_id: _entryId, joined_at: _joinedAt, \.\.\.row \}\) => row\)/);
 });
 
-test('ADM integra o Palpite Ilha ao torneio sem administrador fixo', async () => {
+test('ADM integra o Ilha Bet ao torneio sem administrador fixo', async () => {
   const [adminHtml, adminJs] = await Promise.all([
     read('adm/index.html'),
     read('adm/predictions.js')
   ]);
   assert.match(adminHtml, /data-admin-nav="club-bet"/);
+  assert.match(adminHtml, />Ilha Bet</);
   assert.match(adminHtml, /href="\/adm\/predictions\.css"/);
   assert.match(adminHtml, /src="\/adm\/predictions\.js"/);
   assert.match(adminHtml, /id="betTournamentPicker"/);

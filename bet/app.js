@@ -107,7 +107,7 @@
     let body = null;
     try { body = await response.json(); } catch (_error) { /* handled below */ }
     if (!response.ok || body?.ok === false) {
-      const error = new Error(body?.error || 'Não foi possível concluir agora.');
+      const error = new Error(String(body?.error || 'Não foi possível concluir agora.').replaceAll('Palpite Ilha', 'Ilha Bet'));
       error.code = body?.code || `http_${response.status}`;
       error.status = response.status;
       const retryAfterSeconds = Number(response.headers.get('Retry-After') || body?.retry_after_seconds);
@@ -138,6 +138,10 @@
     toast.classList.add('show');
     clearTimeout(showToast.timer);
     showToast.timer = setTimeout(() => toast.classList.remove('show'), 2800);
+  }
+
+  function displayCampaignTitle(value) {
+    return String(value || '').replace(/^Palpite Ilha\b/i, 'Ilha Bet') || 'Ilha Bet';
   }
 
   function dateLabel(value) {
@@ -197,7 +201,7 @@
     const matchCount = state.data.matches.length;
     windowParts.push(`${matchCount} ${matchCount === 1 ? 'jogo disponível' : 'jogos disponíveis'}`);
     $('campaignWindow').textContent = windowParts.join(' · ');
-    $('heroTitle').firstChild.nodeValue = `${campaign.title || 'Palpite Ilha'}`;
+    $('heroTitle').firstChild.nodeValue = displayCampaignTitle(campaign.title);
     $('tournamentLink').href = `/torneios/${encodeURIComponent(tournament.slug)}`;
     $('rulesText').textContent = campaign.rules_text || 'Escolha um atleta por jogo. Cada acerto soma os pontos definidos para a fase. O ranking usa somente os resultados oficiais lançados pela organização.';
     $('initialPoints').textContent = campaign.initial_round_points;
@@ -610,7 +614,7 @@
       state.config = config;
       state.data = snapshot.data;
       if (!state.data?.available) {
-        showNotice('Palpite Ilha em preparação', 'A organização ainda não abriu um desafio para este torneio. Volte em breve.', true);
+        showNotice('Ilha Bet em preparação', 'A organização ainda não abriu um desafio para este torneio. Volte em breve.', true);
         return;
       }
       state.slug = String(state.data.tournament?.slug || state.slug).trim().toLowerCase();

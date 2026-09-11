@@ -37,10 +37,10 @@
     options = options || {};
     const currentSession = session();
     if (!currentSession || !currentSession.access_token || currentSession.access_token === 'demo') {
-      throw new Error('Entre com uma conta administrativa real para usar o Palpite Ilha.');
+      throw new Error('Entre com uma conta administrativa real para usar o Ilha Bet.');
     }
     if (!moduleState.context || !moduleState.context.supabaseUrl || !moduleState.context.publishableKey) {
-      throw new Error('A configuração do Palpite Ilha está indisponível. Atualize a página.');
+      throw new Error('A configuração do Ilha Bet está indisponível. Atualize a página.');
     }
     const query = options.tournamentId ? '?tournament_id=' + encodeURIComponent(options.tournamentId) : '';
     let response;
@@ -56,7 +56,7 @@
         ...(options.body ? { body: JSON.stringify(options.body) } : {})
       });
     } catch (_error) {
-      throw new Error('Não foi possível conectar ao Palpite Ilha. Verifique sua internet e tente novamente.');
+      throw new Error('Não foi possível conectar ao Ilha Bet. Verifique sua internet e tente novamente.');
     }
     let payload = null;
     try { payload = await response.json(); } catch (_error) {}
@@ -64,14 +64,14 @@
       const fallback = response.status === 401
         ? 'Sua sessão expirou. Entre novamente.'
         : response.status === 403
-          ? 'Você não tem permissão para administrar o Palpite Ilha.'
-          : 'Não foi possível carregar o Palpite Ilha.';
+          ? 'Você não tem permissão para administrar o Ilha Bet.'
+          : 'Não foi possível carregar o Ilha Bet.';
       const error = new Error(payload && payload.error || fallback);
       error.code = payload && payload.code || 'request_failed';
       throw error;
     }
     if (!payload.data || typeof payload.data !== 'object') {
-      throw new Error('O Palpite Ilha respondeu sem os dados esperados. Atualize e tente novamente.');
+      throw new Error('O Ilha Bet respondeu sem os dados esperados. Atualize e tente novamente.');
     }
     return payload;
   }
@@ -105,7 +105,7 @@
   function campaignDefaults() {
     const tournament = moduleState.data && moduleState.data.tournament;
     return {
-      title: tournament ? 'Palpite Ilha · ' + tournament.name : 'Palpite Ilha',
+      title: tournament ? 'Ilha Bet · ' + tournament.name : 'Ilha Bet',
       status: 'DRAFT',
       published: false,
       opens_at: '',
@@ -146,7 +146,7 @@
     const campaign = Object.assign(campaignDefaults(), moduleState.data.campaign || {});
     const campaignStatus = String(campaign.status || 'DRAFT').toUpperCase();
     const values = {
-      betCampaignTitle: campaign.title,
+      betCampaignTitle: String(campaign.title || '').replace(/^Palpite Ilha\b/i, 'Ilha Bet'),
       betCampaignStatus: campaign.status,
       betCampaignOpensAt: localDateTime(campaign.opens_at),
       betCampaignClosesAt: localDateTime(campaign.closes_at),
@@ -264,7 +264,7 @@
       moduleState.data = payload.data;
       render();
       setStatus('Alteração salva com segurança.', false);
-      notify('Palpite Ilha atualizado.');
+      notify('Ilha Bet atualizado.');
     } catch (error) {
       setStatus(error.message, true);
       notify(error.message);
@@ -320,7 +320,7 @@
     });
     byId('betOpenPublicBtn').addEventListener('click', function () { if (publicUrl()) window.open(publicUrl(), '_blank', 'noopener'); });
     byId('betCopyPublicBtn').addEventListener('click', async function () {
-      try { await navigator.clipboard.writeText(publicUrl()); notify('Link do Palpite Ilha copiado.'); }
+      try { await navigator.clipboard.writeText(publicUrl()); notify('Link do Ilha Bet copiado.'); }
       catch (_error) { notify('Não foi possível copiar. Selecione o link no campo.'); }
     });
   }
