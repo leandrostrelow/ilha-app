@@ -428,6 +428,11 @@
     .error-card p { color: var(--muted); line-height: 1.5; }
 
     .modal-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: calc(24px + var(--safe-top)) max(24px, env(safe-area-inset-right, 0px)) calc(24px + var(--safe-bottom)) max(24px, env(safe-area-inset-left, 0px)); background: rgba(4,28,34,.68); backdrop-filter: blur(7px); }
+    .tournament-intro { position: fixed; inset: 0; z-index: 140; display: grid; place-items: center; overflow: hidden; padding: 0; background: #020607; opacity: 1; transition: opacity .2s ease; }
+    .tournament-intro.closing { opacity: 0; pointer-events: none; }
+    .tournament-intro video { width: 100%; height: 100%; object-fit: cover; background: #020607; }
+    .tournament-intro-skip { position: absolute; top: calc(14px + var(--safe-top)); right: max(14px, env(safe-area-inset-right, 0px)); z-index: 1; min-height: 42px; padding: 9px 15px; border: 1px solid rgba(255,255,255,.30); border-radius: 999px; background: rgba(2,12,14,.70); color: #fff; font-size: 12px; font-weight: 900; backdrop-filter: blur(12px); box-shadow: 0 10px 24px rgba(0,0,0,.28); }
+    .tournament-intro-loading { position: absolute; left: 50%; bottom: calc(22px + var(--safe-bottom)); z-index: 1; margin: 0; color: rgba(255,255,255,.76); font-size: 11px; font-weight: 850; letter-spacing: .04em; transform: translateX(-50%); }
     .pwa-onboarding-backdrop { z-index: 95; }
     .pwa-onboarding-card { position: relative; width: min(460px,100%); max-height: calc(100dvh - 48px - var(--safe-top) - var(--safe-bottom)); overflow-y: auto; border: 1px solid rgba(168,233,0,.42); border-radius: 28px; background: #fff; box-shadow: 0 30px 90px rgba(0,0,0,.38); }
     .pwa-onboarding-close { position: absolute; top: 13px; right: 13px; z-index: 2; width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.18); border-radius: 13px; background: rgba(4,28,34,.64); color: #fff; font-size: 22px; backdrop-filter: blur(10px); }
@@ -778,6 +783,12 @@
     <strong id="tournamentPullRefreshLabel">Puxe para atualizar</strong>
   </div>
 
+  <div class="tournament-intro" id="tournamentIntro" aria-hidden="true" hidden>
+    <video id="tournamentIntroVideo" aria-label="Vídeo de abertura do torneio" muted playsinline preload="auto" disablepictureinpicture></video>
+    <button class="tournament-intro-skip" id="tournamentIntroSkipBtn" type="button">Pular intro</button>
+    <p class="tournament-intro-loading" id="tournamentIntroLoading" role="status">Abrindo o torneio…</p>
+  </div>
+
   <div class="modal-backdrop pwa-onboarding-backdrop" id="tournamentPwaOnboarding" aria-hidden="true" hidden>
     <section class="pwa-onboarding-card" role="dialog" aria-modal="true" aria-labelledby="tournamentPwaOnboardingTitle" tabindex="-1">
       <button class="pwa-onboarding-close" id="closeTournamentPwaOnboardingBtn" type="button" aria-label="Fechar">×</button>
@@ -883,6 +894,7 @@
     const TOURNAMENT_PUSH_PREFERENCE_KEY = 'ilha-open-2026:push-preference';
     const TOURNAMENT_INSTALL_PROMPT_SESSION_KEY = 'ilha-open-2026:install-prompt-seen';
     const TOURNAMENT_PUSH_PROMPT_SESSION_KEY = 'ilha-open-2026:push-prompt-seen';
+    const TOURNAMENT_INTRO_SKIP_ONCE_KEY = 'ilha-open-2026:intro-skip-once';
     const routeParts = location.pathname.split('/').filter(Boolean);
     const courtesySegmentIndex = routeParts.indexOf('cortesia');
     const inviteSegmentIndex = routeParts.indexOf('convite');
@@ -1052,6 +1064,7 @@
         if (state.registrationOnly && state.slug) renderRegistrationOnly();
         else if (state.slug) {
           renderTournament();
+          await maybeShowTournamentIntro();
           maybeShowTournamentPwaOnboarding().catch(() => {});
         } else renderLanding();
       } catch (error) { renderError(error); }
@@ -1154,6 +1167,10 @@
 
     function tournament() { return state.snapshot && (state.snapshot.tournament || state.snapshot.torneio) || {}; }
     function tournamentSettings() { const value = field(tournament(),'settings'); return value && typeof value === 'object' ? value : {}; }
+    function tournamentIntroSettings() {
+      const value = tournamentSettings().intro_video;
+      return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    }
     function publicTabs() {
       const configured = tournamentSettings().public_tabs;
       return Object.assign({}, PUBLIC_TAB_DEFAULTS, configured && typeof configured === 'object' && !Array.isArray(configured) ? configured : {});
@@ -1688,6 +1705,90 @@
       return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     }
 
+    function consumeTournamentIntroSkipOnce() {
+      try {
+        if (sessionStorage.getItem(TOURNAMENT_INTRO_SKIP_ONCE_KEY) !== '1') return false;
+        sessionStorage.removeItem(TOURNAMENT_INTRO_SKIP_ONCE_KEY);
+        return true;
+      } catch (error) { return false; }
+    }
+
+    function skipTournamentIntroOnce() {
+      try { sessionStorage.setItem(TOURNAMENT_INTRO_SKIP_ONCE_KEY,'1'); } catch (error) {}
+    }
+
+    function setTournamentIntroBackgroundInert(inert) {
+      [document.querySelector('.site-head'),$('appMain')].forEach((element) => {
+        if (!element) return;
+        if (inert) element.setAttribute('inert','');
+        else element.removeAttribute('inert');
+      });
+    }
+
+    function maybeShowTournamentIntro() {
+      const config = tournamentIntroSettings();
+      const introUrl = safeHref(config.url,'');
+      if (!tournamentAppInstalled() || state.registrationOnly || state.inviteMode || state.courtesyMode || config.enabled !== true || !introUrl || consumeTournamentIntroSkipOnce()) {
+        return Promise.resolve(false);
+      }
+      const overlay = $('tournamentIntro');
+      const video = $('tournamentIntroVideo');
+      const skip = $('tournamentIntroSkipBtn');
+      const loading = $('tournamentIntroLoading');
+      if (!overlay || !video || !skip) return Promise.resolve(false);
+      return new Promise((resolve) => {
+        let finished = false;
+        let fallbackTimer = null;
+        const onEnded = () => finish('ended');
+        const onError = () => finish('video-error');
+        const onSkip = () => finish('skipped');
+        const onPlaying = () => { if (loading) loading.hidden = true; };
+        const removeListeners = () => {
+          video.removeEventListener('ended',onEnded);
+          video.removeEventListener('error',onError);
+          video.removeEventListener('playing',onPlaying);
+          skip.removeEventListener('click',onSkip);
+        };
+        const finish = (reason) => {
+          if (finished) return;
+          finished = true;
+          overlay.dataset.closeReason = reason || 'closed';
+          clearTimeout(fallbackTimer);
+          removeListeners();
+          overlay.classList.add('closing');
+          setTimeout(() => {
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
+            overlay.hidden = true;
+            overlay.classList.remove('closing');
+            overlay.setAttribute('aria-hidden','true');
+            setTournamentIntroBackgroundInert(false);
+            document.body.classList.remove('modal-open');
+            resolve(true);
+          },210);
+        };
+        video.muted = true;
+        video.src = introUrl;
+        video.currentTime = 0;
+        video.addEventListener('ended',onEnded);
+        video.addEventListener('error',onError);
+        video.addEventListener('playing',onPlaying);
+        skip.addEventListener('click',onSkip);
+        if (loading) loading.hidden = false;
+        overlay.hidden = false;
+        overlay.dataset.closeReason = '';
+        overlay.dataset.shownAt = String(Date.now());
+        overlay.setAttribute('aria-hidden','false');
+        setTournamentIntroBackgroundInert(true);
+        document.body.classList.add('modal-open');
+        fallbackTimer = setTimeout(() => finish('timeout'),15000);
+        setTimeout(() => skip.focus(),0);
+        const playback = video.play();
+        if (playback && typeof playback.catch === 'function') playback.catch(() => finish('play-error'));
+      });
+    }
+
     function tournamentUsesIos() {
       return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     }
@@ -1748,6 +1849,7 @@
     async function refreshTournamentFromPull() {
       if (tournamentPullRefreshState.refreshing) return;
       tournamentPullRefreshState.refreshing = true;
+      skipTournamentIntroOnce();
       setTournamentPullRefresh(true,'Atualizando…','refreshing');
       try {
         if ('serviceWorker' in navigator) {
@@ -3312,6 +3414,6 @@
     initTournamentPwa();
     loadPage();
   </script>
-  <script src="/auto-update.js?v=210"></script>
+  <script src="/auto-update.js?v=211"></script>
 </body>
 </html>
