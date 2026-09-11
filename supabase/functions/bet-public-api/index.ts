@@ -277,11 +277,30 @@ function asIsoFromMatch(match: Row, tournament: Row) {
   return `${match.match_date}T${String(match.match_time).slice(0, 8)}${offset}`;
 }
 
+function predictionWindow(match: Row, tournament: Row) {
+  const timezone = String(tournament.timezone || "America/Sao_Paulo");
+  const offset = timezone === "America/Sao_Paulo" ? "-03:00" : "";
+  const scheduledAt = asIsoFromMatch(match, tournament);
+  const reference = scheduledAt || (match.match_date ? `${match.match_date}T00:00:00${offset}` : "");
+  const referenceMs = reference ? new Date(reference).getTime() : Number.NaN;
+  return {
+    scheduledAt,
+    opensAt: Number.isFinite(referenceMs) ? new Date(referenceMs - 24 * 60 * 60 * 1000).toISOString() : "",
+  };
+}
+
 function isMatchLocked(match: Row, tournament: Row) {
   const status = String(match.status || "").toUpperCase();
   if (!["PENDING", "SCHEDULED"].includes(status) || match.started_at || match.finished_at || match.winner_athlete_id) return true;
-  const scheduled = asIsoFromMatch(match, tournament);
-  return scheduled ? new Date(scheduled).getTime() <= Date.now() : false;
+  const window = predictionWindow(match, tournament);
+  if (!window.opensAt || Date.now() < new Date(window.opensAt).getTime()) return true;
+  return window.scheduledAt ? new Date(window.scheduledAt).getTime() <= Date.now() : false;
+}
+
+function matchLockReason(match: Row, tournament: Row) {
+  const window = predictionWindow(match, tournament);
+  if (window.opensAt && Date.now() < new Date(window.opensAt).getTime()) return "UPCOMING";
+  return isMatchLocked(match, tournament) ? "CLOSED" : null;
 }
 
 function campaignAcceptsPredictions(campaign: Row) {
@@ -462,6 +481,7 @@ async function loadSnapshot(client: DbClient, tournamentSlug: string, participan
       const side1 = athleteMap.get(String(match.side1_athlete_id));
       const side2 = athleteMap.get(String(match.side2_athlete_id));
       const total = totals.get(match.id) || { total: 0, side1: 0, side2: 0 };
+      const window = predictionWindow(match, tournament);
       return {
         id: match.id,
         category_id: match.category_id,
@@ -477,8 +497,10 @@ async function loadSnapshot(client: DbClient, tournamentSlug: string, participan
         match_date: match.match_date,
         match_time: match.match_time ? String(match.match_time).slice(0, 5) : null,
         scheduled_at: asIsoFromMatch(match, tournament) || null,
+        prediction_opens_at: window.opensAt || null,
         status: match.status,
         locked: !acceptingPredictions || isMatchLocked(match, tournament),
+        lock_reason: acceptingPredictions ? matchLockReason(match, tournament) : "CLOSED",
         points: pointsForMatch(match, campaign),
       };
     }),
@@ -506,6 +528,7 @@ function mapDatabaseError(error: unknown): never {
   if (message.includes("entry_blocked")) throw new ApiError("Este cadastro está bloqueado. Fale com a organização.", 403, "entry_blocked");
   if (message.includes("match_unavailable")) throw new ApiError("Este jogo ainda não está disponível para palpite.", 409, "match_unavailable");
   if (message.includes("prediction_locked")) throw new ApiError("O jogo já começou ou o horário do palpite encerrou.", 409, "prediction_locked");
+  if (message.includes("prediction_not_open")) throw new ApiError("Este jogo abre para palpites 24 horas antes do horário marcado.", 409, "prediction_not_open");
   if (message.includes("request_conflict")) {
     throw new ApiError("Esta tentativa já foi usada com dados diferentes. Revise os dados e tente novamente.", 409, "request_conflict");
   }

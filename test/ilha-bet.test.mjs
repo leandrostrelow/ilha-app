@@ -131,7 +131,7 @@ test('banco do Palpite Ilha mantém PII fechada e prêmio desligado no seed', as
 
 test('pgTAP cobre ledger, grants, idempotência e finalização', async () => {
   const sql = await read('test/supabase/ilha_bet.test.sql');
-  assert.match(sql, /select plan\(29\)/);
+  assert.match(sql, /select plan\(30\)/);
   assert.match(sql, /tournament_prediction_requests/);
   assert.match(sql, /retry exato não duplica palpite, ledger ou auditoria/);
   assert.match(sql, /retry antigo nunca desfaz a escolha mais recente/);
@@ -159,4 +159,22 @@ test('Edge Functions usam captcha, rate limit e dupla autorização administrati
   assert.match(adminApi, /tournament_not_finished/);
   assert.match(config, /\[functions\.bet-public-api\]\s+verify_jwt = false/);
   assert.match(config, /\[functions\.bet-admin-api\]\s+verify_jwt = true/);
+});
+
+test('cada jogo abre para palpites somente nas 24 horas anteriores', async () => {
+  const [publicApi, app, html, migration] = await Promise.all([
+    read('supabase/functions/bet-public-api/index.ts'),
+    read('bet/app.js'),
+    read('bet/index.html'),
+    read('supabase/migrations/20260911210000_open_predictions_one_day_before_match.sql')
+  ]);
+  assert.match(publicApi, /referenceMs - 24 \* 60 \* 60 \* 1000/);
+  assert.match(publicApi, /prediction_opens_at: window\.opensAt/);
+  assert.match(publicApi, /lock_reason: acceptingPredictions \? matchLockReason/);
+  assert.match(app, /match\.lock_reason === 'UPCOMING'/);
+  assert.match(app, /Abre \$\{dateTimeLabel\(match\.prediction_opens_at\)\}/);
+  assert.match(html, /Cada jogo abre para palpites 24 horas antes do horário marcado/);
+  assert.match(migration, /clock_timestamp\(\) < v_reference_at - interval '24 hours'/);
+  assert.match(migration, /before insert or update of predicted_winner_athlete_id/);
+  assert.match(migration, /message = 'prediction_not_open'/);
 });

@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(29);
+select plan(30);
 
 select ok(
   to_regclass('public.tournament_prediction_audit_log') is not null
@@ -140,7 +140,7 @@ insert into public.tournament_matches (
   1,
   '79000000-0000-4000-8000-000000000021'::uuid,
   '79000000-0000-4000-8000-000000000022'::uuid,
-  now() + interval '1 day',
+  now() + interval '23 hours',
   'SCHEDULED',
   true
 );
@@ -225,6 +225,41 @@ select throws_ok(
   'O palpite precisa pertencer ao participante e ao torneio da própria campanha.',
   'o banco rejeita atleta que não disputa a partida'
 );
+
+insert into public.tournament_matches (
+  id, tournament_id, category_id, round_no, round_code, match_no,
+  side1_athlete_id, side2_athlete_id, scheduled_at, status, published
+) values (
+  '79000000-0000-4000-8000-000000000033'::uuid,
+  '79000000-0000-4000-8000-000000000001'::uuid,
+  '79000000-0000-4000-8000-000000000011'::uuid,
+  1,
+  'QF',
+  3,
+  '79000000-0000-4000-8000-000000000021'::uuid,
+  '79000000-0000-4000-8000-000000000022'::uuid,
+  now() + interval '2 days',
+  'SCHEDULED',
+  true
+);
+
+select throws_ok(
+  $$insert into public.tournament_predictions (
+    campaign_id, entry_id, match_id, predicted_winner_athlete_id
+  ) values (
+    '79000000-0000-4000-8000-000000000041'::uuid,
+    (select id from public.tournament_prediction_entries
+     where registration_request_id = '79000000-0000-4000-8000-000000000051'::uuid),
+    '79000000-0000-4000-8000-000000000033'::uuid,
+    '79000000-0000-4000-8000-000000000021'::uuid
+  )$$,
+  'P0001',
+  'prediction_not_open',
+  'o banco rejeita palpite feito antes da janela de 24 horas'
+);
+
+delete from public.tournament_matches
+where id = '79000000-0000-4000-8000-000000000033'::uuid;
 
 select throws_ok(
   $$insert into public.tournament_prediction_requests (
@@ -358,7 +393,7 @@ where id = '79000000-0000-4000-8000-000000000031'::uuid;
 
 insert into public.tournament_matches (
   id, tournament_id, category_id, round_no, round_code, match_no,
-  side1_athlete_id, side2_athlete_id, winner_athlete_id, status, published
+  side1_athlete_id, side2_athlete_id, winner_athlete_id, scheduled_at, status, published
 ) values (
   '79000000-0000-4000-8000-000000000032'::uuid,
   '79000000-0000-4000-8000-000000000001'::uuid,
@@ -369,6 +404,7 @@ insert into public.tournament_matches (
   '79000000-0000-4000-8000-000000000021'::uuid,
   '79000000-0000-4000-8000-000000000022'::uuid,
   '79000000-0000-4000-8000-000000000022'::uuid,
+  now() - interval '1 hour',
   'CANCELLED',
   true
 );
