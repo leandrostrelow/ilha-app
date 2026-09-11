@@ -19,6 +19,46 @@ test('alterações rápidas são enfileiradas e a agenda do editor salva automat
   assert.match(adminPage, /\$\('editorTime'\)\.addEventListener\('input', scheduleEditorAgendaAutoSave\)/);
 });
 
+test('abrir jogo pela agenda preserva os atletas da própria classe ao editar o horário', () => {
+  const playerOptions = adminPage.slice(
+    adminPage.indexOf('function playerOptions'),
+    adminPage.indexOf('function dayOptions'),
+  );
+  const editor = adminPage.slice(
+    adminPage.indexOf('function openMatchEditor'),
+    adminPage.indexOf('function fillEditorScoreFields'),
+  );
+  const schedulePayload = adminPage.slice(
+    adminPage.indexOf('function editorAgendaPayload'),
+    adminPage.indexOf('function agendaEditorSignature'),
+  );
+  const swapMatches = adminPage.slice(
+    adminPage.indexOf('function buildSwapMatches'),
+    adminPage.indexOf('function assertNoSameRoundDuplicates'),
+  );
+  const currentMatches = adminPage.slice(
+    adminPage.indexOf('function currentMatches'),
+    adminPage.indexOf('function playerRegistrations'),
+  );
+  const backendSchedule = adminApi.slice(
+    adminApi.indexOf('async function updateMatchFields'),
+    adminApi.indexOf('async function saveAgendaEvent'),
+  );
+
+  assert.match(playerOptions, /function playerOptions\(selected, categoryId\)/);
+  assert.match(playerOptions, /effectiveCategoryId = categoryId \|\| state\.selectedCategory/);
+  assert.match(playerOptions, /String\(insc\.categoria_id\) === String\(effectiveCategoryId\)/);
+  assert.match(playerOptions, /categoryPlayers\.unshift\(selectedPlayer\)/);
+  assert.match(editor, /playerOptions\(match\.jogador1_id, match\.categoria_id\)/);
+  assert.match(editor, /playerOptions\(match\.jogador2_id, match\.categoria_id\)/);
+  assert.match(swapMatches, /currentMatches\(original\.categoria_id\)/);
+  assert.match(currentMatches, /function currentMatches\(categoryId\)/);
+  assert.match(currentMatches, /effectiveCategoryId = categoryId \|\| state\.selectedCategory/);
+  assert.match(adminPage, /title="Abrir jogo e editar horário"/);
+  assert.doesNotMatch(schedulePayload, /jogador1_id|jogador2_id/);
+  assert.doesNotMatch(backendSchedule.slice(0, backendSchedule.indexOf('} else {')), /side1_athlete_id|side2_athlete_id/);
+});
+
 test('agenda usa arrastar e soltar com suporte a mouse, toque e teclado', () => {
   assert.match(adminPage, /data-agenda-drag-handle=/);
   assert.match(adminPage, /document\.addEventListener\('dragstart'/);

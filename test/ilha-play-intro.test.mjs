@@ -26,7 +26,7 @@ function sourceSection(source, start, end) {
 test('vídeo padrão do Ilha Play é um MP4 leve e entra no cache do app', () => {
   assert.ok(introVideo.subarray(0, 32).includes(Buffer.from('ftyp')), 'arquivo não parece ser MP4');
   assert.ok(introVideo.length < 4 * 1024 * 1024, 'vídeo padrão deve permanecer leve para celular');
-  assert.match(serviceWorker, /ilha-play-v241-client-intro-fluid/);
+  assert.match(serviceWorker, /ilha-play-v242-agenda-match-editor/);
   assert.match(serviceWorker, /\/assets\/app\/ilha-play-intro\.mp4/);
   assert.match(server, /\['\.mp4', 'video\/mp4'\]/);
   assert.match(appVersion, /2026-09-11/);
