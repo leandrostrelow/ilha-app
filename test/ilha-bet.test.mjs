@@ -131,7 +131,7 @@ test('banco do Palpite Ilha mantém PII fechada e prêmio desligado no seed', as
 
 test('pgTAP cobre ledger, grants, idempotência e finalização', async () => {
   const sql = await read('test/supabase/ilha_bet.test.sql');
-  assert.match(sql, /select plan\(29\)/);
+  assert.match(sql, /select plan\(30\)/);
   assert.match(sql, /tournament_prediction_requests/);
   assert.match(sql, /retry exato não duplica palpite, ledger ou auditoria/);
   assert.match(sql, /retry antigo nunca desfaz a escolha mais recente/);
