@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'ilha-play-v';
-const CACHE_NAME = 'ilha-play-v241-client-intro-fluid';
+const CACHE_NAME = 'ilha-play-v242-agenda-match-editor';
 const CORE_ASSETS = [
   '/',
   '/index.html',

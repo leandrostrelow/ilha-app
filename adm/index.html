@@ -27168,15 +27168,22 @@
       return inferred;
     }
 
-    function playerOptions(selected) {
+    function playerOptions(selected, categoryId) {
+      const effectiveCategoryId = categoryId || state.selectedCategory;
       const activePlayers = state.data.jogadores
         .filter(function (p) { return String(p.status || 'ATIVO') !== 'INATIVO'; })
         .slice()
         .sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome)); });
       const categoryIds = new Set(state.data.inscricoes
-        .filter(function (insc) { return String(insc.categoria_id) === String(state.selectedCategory) && String(insc.status_pagamento) !== 'CANCELADO'; })
+        .filter(function (insc) { return String(insc.categoria_id) === String(effectiveCategoryId) && String(insc.status_pagamento) !== 'CANCELADO'; })
         .map(function (insc) { return String(insc.jogador_id); }));
       const categoryPlayers = activePlayers.filter(function (p) { return categoryIds.has(String(p.jogador_id)); });
+      const selectedPlayer = state.data.jogadores.find(function (p) {
+        return String(p.jogador_id) === String(selected || '');
+      });
+      if (selectedPlayer && !categoryPlayers.some(function (p) { return String(p.jogador_id) === String(selectedPlayer.jogador_id); })) {
+        categoryPlayers.unshift(selectedPlayer);
+      }
       function opts(players) {
         return players.map(function (p) {
           return '<option value="' + escapeHtml(p.jogador_id) + '"' + (String(selected) === String(p.jogador_id) ? ' selected' : '') + '>' +
@@ -27215,8 +27222,8 @@
       $('editorMatchId').value = match.jogo_id;
       $('matchEditorTitle').textContent = (roundLabels[match.fase] || match.fase || 'Jogo') + ' | Jogo ' + (match.posicao_chave || '');
       $('matchEditorSubtitle').textContent = getCategoryName(match.categoria_id) + ' - clique em salvar para atualizar a base do torneio.';
-      $('editorPlayer1').innerHTML = playerOptions(match.jogador1_id);
-      $('editorPlayer2').innerHTML = playerOptions(match.jogador2_id);
+      $('editorPlayer1').innerHTML = playerOptions(match.jogador1_id, match.categoria_id);
+      $('editorPlayer2').innerHTML = playerOptions(match.jogador2_id, match.categoria_id);
       fillEditorScoreFields(match.placar || '');
       $('editorDate').innerHTML = dayOptions(match.data || '');
       $('editorDate').value = match.data || '';
@@ -27385,7 +27392,7 @@
 
       const pending = {};
       pending[String(data.jogo_id)] = Object.assign({}, data);
-      const categoryMatches = currentMatches().map(function (match) {
+      const categoryMatches = currentMatches(original.categoria_id).map(function (match) {
         return Object.assign({}, match);
       });
 
@@ -27740,7 +27747,7 @@
       const done = String(j.status || '').toUpperCase() === 'FINALIZADO';
       const categoryClass = categoryColorClass(j.categoria_id);
       const key = agendaItemKey(j);
-      return '<div class="agenda-match-card cat-chip ' + categoryClass + ' ' + (done ? 'done' : '') + '" role="button" tabindex="0" data-open-match="' + escapeHtml(j.jogo_id) + '" data-agenda-key="' + escapeHtml(key) + '">' +
+      return '<div class="agenda-match-card cat-chip ' + categoryClass + ' ' + (done ? 'done' : '') + '" role="button" tabindex="0" title="Abrir jogo e editar horário" aria-label="Abrir jogo e editar horário" data-open-match="' + escapeHtml(j.jogo_id) + '" data-agenda-key="' + escapeHtml(key) + '">' +
         '<div class="agenda-match-top"><span>' + escapeHtml(phase) + ' ' + escapeHtml(j.posicao_chave || '') + '</span><span class="agenda-card-actions">' +
         '<button type="button" class="agenda-drag-handle" draggable="true" data-agenda-drag-handle="' + escapeHtml(key) + '" title="Arraste para mudar a ordem" aria-label="Arrastar jogo para mudar a ordem">⋮⋮</button>' +
         '<span class="agenda-time-pill">' + escapeHtml(formatAgendaTime(j.hora)) + '</span></span></div>' +
@@ -27928,8 +27935,9 @@
       return normalizeSearch(value).indexOf('apos') === 0 ? 'Após' : value;
     }
 
-    function currentMatches() {
-      return state.data.jogos.filter(function (j) { return String(j.categoria_id) === String(state.selectedCategory); });
+    function currentMatches(categoryId) {
+      const effectiveCategoryId = categoryId || state.selectedCategory;
+      return state.data.jogos.filter(function (j) { return String(j.categoria_id) === String(effectiveCategoryId); });
     }
 
     function playerRegistrations(playerId) {
@@ -51118,9 +51126,15 @@
     });
     document.addEventListener('keydown', function (event) {
       const handle = event.target.closest('[data-agenda-drag-handle]');
-      if (!handle || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+      if (handle && ['ArrowUp', 'ArrowDown'].includes(event.key)) {
+        event.preventDefault();
+        moveAgendaItem(handle.dataset.agendaDragHandle, event.key === 'ArrowUp' ? 'up' : 'down');
+        return;
+      }
+      const matchCard = event.target.closest('[data-open-match]');
+      if (!matchCard || !['Enter', ' '].includes(event.key)) return;
       event.preventDefault();
-      moveAgendaItem(handle.dataset.agendaDragHandle, event.key === 'ArrowUp' ? 'up' : 'down');
+      openMatchEditor(matchCard.dataset.openMatch);
     });
     ['editorDate', 'editorCourt'].forEach(function (id) {
       $(id).addEventListener('change', scheduleEditorAgendaAutoSave);
@@ -51324,6 +51338,6 @@
     window.addEventListener('pagehide', rememberBarScrollPosition);
     initAdminLogin();
   </script>
-  <script src="/auto-update.js?v=218"></script>
+  <script src="/auto-update.js?v=219"></script>
 </body>
 </html>
