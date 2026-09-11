@@ -78,6 +78,21 @@ test('Sobre o evento abre primeiro e funciona como início da página pública',
   assert.match(tabSwitch, /tab === 'about'/);
 });
 
+test('Ilha Bet aparece como Palpite antes de Sobre o evento e convida sem insistência', () => {
+  const labels = sourceSection(publicPage, 'const PUBLIC_TAB_LABELS', '\n    let turnstileScriptPromise');
+  const loader = sourceSection(publicPage, 'async function getBetCampaign', '\n    async function getRegistrationInviteInfo');
+  const invite = sourceSection(publicPage, 'function tournamentBetInviteStorageKey', '\n    function initTournamentPwa');
+  assert.ok(labels.indexOf("bet: 'Palpite'") < labels.indexOf("about: 'Sobre o evento'"));
+  assert.match(publicPage, /<h2>Ilha Bet<\/h2>/);
+  assert.match(publicPage, /\/bet\?torneio=/);
+  assert.match(loader, /payload && payload\.data \? payload\.data : payload/);
+  assert.match(publicPage, /72 \* 60 \* 60 \* 1000/);
+  assert.match(invite, /palpite-ilha:access:/);
+  assert.match(invite, /accepting_predictions !== true/);
+  assert.match(invite, /registrationModal[\s\S]*tournamentPwaOnboarding[\s\S]*tournamentIntro/);
+  assert.match(publicPage, /Sem aposta e sem pagamento/);
+});
+
 test('chave pública empilha as duas metades sem rolagem lateral', () => {
   const bracketStyles = sourceSection(publicPage, '.bracket-scroller', '\n    .agenda-list');
   const bracketRenderer = sourceSection(publicPage, 'function bracketBoardHtml', '\n    function matchCardHtml');

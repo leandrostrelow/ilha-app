@@ -434,6 +434,17 @@
     .tournament-intro-skip { position: absolute; top: calc(14px + var(--safe-top)); right: max(14px, env(safe-area-inset-right, 0px)); z-index: 1; min-height: 42px; padding: 9px 15px; border: 1px solid rgba(255,255,255,.30); border-radius: 999px; background: rgba(2,12,14,.70); color: #fff; font-size: 12px; font-weight: 900; backdrop-filter: blur(12px); box-shadow: 0 10px 24px rgba(0,0,0,.28); }
     .tournament-intro-loading { position: absolute; left: 50%; bottom: calc(22px + var(--safe-bottom)); z-index: 1; margin: 0; color: rgba(255,255,255,.76); font-size: 11px; font-weight: 850; letter-spacing: .04em; transform: translateX(-50%); }
     .pwa-onboarding-backdrop { z-index: 95; }
+    .bet-invite-backdrop { z-index: 90; }
+    .bet-invite-card { position: relative; width: min(440px,100%); overflow: hidden; border: 1px solid rgba(168,233,0,.5); border-radius: 28px; background: #fff; box-shadow: 0 30px 90px rgba(0,0,0,.38); }
+    .bet-invite-hero { padding: 30px 28px 25px; background: radial-gradient(circle at 15% 0,rgba(168,233,0,.3),transparent 11rem),linear-gradient(145deg,#061f27,#0a4a50); color: #fff; text-align: center; }
+    .bet-invite-mark { width: 68px; height: 68px; display: grid; place-items: center; margin: 0 auto 15px; border: 1px solid rgba(255,255,255,.2); border-radius: 20px; background: var(--lime); color: #244000; font-size: 31px; box-shadow: 0 14px 30px rgba(0,0,0,.22); }
+    .bet-invite-hero .eyebrow { color: var(--lime); }
+    .bet-invite-hero h2 { margin: 6px 0 9px; font-size: 31px; line-height: 1.04; letter-spacing: -.045em; }
+    .bet-invite-hero p:last-child { max-width: 340px; margin: 0 auto; color: rgba(255,255,255,.78); font-size: 13px; font-weight: 700; line-height: 1.5; }
+    .bet-invite-body { display: grid; gap: 13px; padding: 20px 22px calc(22px + var(--safe-bottom)); }
+    .bet-invite-free { margin: 0; padding: 11px 13px; border-radius: 13px; background: #f1f9dc; color: #416300; font-size: 12px; font-weight: 850; line-height: 1.45; text-align: center; }
+    .bet-invite-actions { display: grid; gap: 8px; }
+    .bet-invite-actions .button { width: 100%; }
     .pwa-onboarding-card { position: relative; width: min(460px,100%); max-height: calc(100dvh - 48px - var(--safe-top) - var(--safe-bottom)); overflow-y: auto; border: 1px solid rgba(168,233,0,.42); border-radius: 28px; background: #fff; box-shadow: 0 30px 90px rgba(0,0,0,.38); }
     .pwa-onboarding-close { position: absolute; top: 13px; right: 13px; z-index: 2; width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.18); border-radius: 13px; background: rgba(4,28,34,.64); color: #fff; font-size: 22px; backdrop-filter: blur(10px); }
     .pwa-onboarding-hero { display: grid; justify-items: center; padding: 28px 26px 24px; border-radius: 27px 27px 0 0; background: radial-gradient(circle at 50% 4%,rgba(0,239,42,.24),transparent 13rem),linear-gradient(155deg,#061f27,#0a4a50); color: #fff; text-align: center; }
@@ -796,6 +807,13 @@
     </section>
   </div>
 
+  <div class="modal-backdrop bet-invite-backdrop" id="tournamentBetInvite" aria-hidden="true" hidden>
+    <section class="bet-invite-card" role="dialog" aria-modal="true" aria-labelledby="tournamentBetInviteTitle" tabindex="-1">
+      <div class="bet-invite-hero"><div class="bet-invite-mark" aria-hidden="true">🎾</div><span class="eyebrow">Brincadeira gratuita</span><h2 id="tournamentBetInviteTitle">Participe do Ilha Bet</h2><p>Escolha quem vence os jogos, acompanhe seus pontos e dispute o ranking com a turma.</p></div>
+      <div class="bet-invite-body"><p class="bet-invite-free">Sem aposta e sem pagamento — é só diversão entre os participantes do torneio.</p><div class="bet-invite-actions"><a class="button lime" id="openTournamentBetBtn" href="/bet">Fazer meus palpites</a><button class="button" id="closeTournamentBetInviteBtn" type="button">Agora não</button></div></div>
+    </section>
+  </div>
+
   <div class="modal-backdrop" id="registrationModal" aria-hidden="true" hidden>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="registrationTitle" tabindex="-1">
       <div class="modal-head">
@@ -895,6 +913,7 @@
     const TOURNAMENT_INSTALL_PROMPT_SESSION_KEY = 'ilha-open-2026:install-prompt-seen';
     const TOURNAMENT_PUSH_PROMPT_SESSION_KEY = 'ilha-open-2026:push-prompt-seen';
     const TOURNAMENT_INTRO_SKIP_ONCE_KEY = 'ilha-open-2026:intro-skip-once';
+    const TOURNAMENT_BET_INVITE_INTERVAL_MS = 72 * 60 * 60 * 1000;
     const routeParts = location.pathname.split('/').filter(Boolean);
     const courtesySegmentIndex = routeParts.indexOf('cortesia');
     const inviteSegmentIndex = routeParts.indexOf('convite');
@@ -933,9 +952,12 @@
       tournamentServiceWorker: null,
       tournamentNotificationsEnabled: false,
       tournamentOnboardingMode: '',
-      tournamentOnboardingTrigger: null
+      tournamentOnboardingTrigger: null,
+      betCampaign: null,
+      betInviteTrigger: null
     };
     const PUBLIC_TAB_DEFAULTS = {
+      bet: true,
       categories: true,
       registrations: false,
       brackets: true,
@@ -945,6 +967,7 @@
       install: true
     };
     const PUBLIC_TAB_LABELS = {
+      bet: 'Palpite',
       about: 'Sobre o evento',
       categories: 'Classes',
       registrations: 'Inscritos',
@@ -1043,6 +1066,17 @@
       });
     }
 
+    async function getBetCampaign(slug) {
+      if (!slug) return null;
+      try {
+        const payload = await requestJson(SUPABASE_URL + '/functions/v1/bet-public-api?torneio=' + encodeURIComponent(slug), {
+          method: 'GET', headers: headers()
+        });
+        const snapshot = payload && payload.data ? payload.data : payload;
+        return snapshot && snapshot.available && snapshot.campaign ? snapshot.campaign : null;
+      } catch (error) { return null; }
+    }
+
     async function getRegistrationInviteInfo() {
       const params = new URLSearchParams({ tournament_slug: state.slug, invite_token: state.inviteToken });
       return requestJson(SUPABASE_URL + '/functions/v1/' + currentRegistrationFunction() + '?' + params.toString(), {
@@ -1054,6 +1088,7 @@
       try {
         const payload = await getSnapshot(state.slug);
         state.snapshot = payload && payload.data ? payload.data : payload;
+        if (state.slug && !state.registrationOnly && !state.inviteMode && !state.courtesyMode) state.betCampaign = await getBetCampaign(state.slug);
         if (state.courtesyMode && !state.inviteMode) {
           throw new Error('Este link de isenção foi substituído por convites únicos. Solicite um novo convite à organização.');
         }
@@ -1065,7 +1100,8 @@
         else if (state.slug) {
           renderTournament();
           await maybeShowTournamentIntro();
-          maybeShowTournamentPwaOnboarding().catch(() => {});
+          const onboardingShown = await maybeShowTournamentPwaOnboarding().catch(() => false);
+          if (!onboardingShown) maybeShowTournamentBetInvite();
         } else renderLanding();
       } catch (error) { renderError(error); }
     }
@@ -1177,7 +1213,7 @@
     }
     function visiblePublicTabs() {
       const configured = publicTabs();
-      return Object.keys(PUBLIC_TAB_LABELS).filter((id) => configured[id] !== false && (id !== 'install' || state.slug === 'ilha-open-2026'));
+      return Object.keys(PUBLIC_TAB_LABELS).filter((id) => configured[id] !== false && (id !== 'install' || state.slug === 'ilha-open-2026') && (id !== 'bet' || Boolean(state.betCampaign)));
     }
     function aboutEventSettings() {
       const value = tournamentSettings().about_event;
@@ -1414,9 +1450,14 @@
       if (id === 'brackets') return bracketsHtml();
       if (id === 'schedule') return scheduleHtml();
       if (id === 'results') return resultsHtml();
+      if (id === 'bet') return betTabHtml();
       if (id === 'about') return aboutHtml();
       if (id === 'install') return installAppHtml();
       return '';
+    }
+    function betPublicUrl() { return '/bet?torneio=' + encodeURIComponent(state.slug); }
+    function betTabHtml() {
+      return '<div class="panel"><section class="install-hero"><div><p class="eyebrow">Diversão conectada ao torneio</p><h2>Ilha Bet</h2><p>Escolha os vencedores dos jogos, some pontos conforme os resultados oficiais e acompanhe sua posição no ranking.</p><div class="install-actions"><a class="button lime" href="' + betPublicUrl() + '">Fazer meus palpites</a></div><p class="install-status">Participação gratuita, sem aposta, pagamento, depósito ou prêmio em dinheiro.</p></div><div class="hero-mark" aria-hidden="true">🎾</div></section></div>';
     }
     function tournamentTitleHtml(item,name) {
       const logo = field(item,'logo_url');
@@ -2158,18 +2199,80 @@
     }
 
     async function maybeShowTournamentPwaOnboarding() {
-      if (state.slug !== 'ilha-open-2026' || state.registrationOnly || state.inviteMode || state.courtesyMode || state.activeTab === 'install') return;
+      if (state.slug !== 'ilha-open-2026' || state.registrationOnly || state.inviteMode || state.courtesyMode || state.activeTab === 'install') return false;
       await updateTournamentPwaUi();
       if (!tournamentAppInstalled()) {
-        if (tournamentSessionSeen(TOURNAMENT_INSTALL_PROMPT_SESSION_KEY)) return;
+        if (tournamentSessionSeen(TOURNAMENT_INSTALL_PROMPT_SESSION_KEY)) return false;
         markTournamentSessionSeen(TOURNAMENT_INSTALL_PROMPT_SESSION_KEY);
         openTournamentPwaOnboarding('install');
-        return;
+        return true;
       }
       const notificationsSupported = 'Notification' in window && 'PushManager' in window;
-      if (!notificationsSupported || Notification.permission === 'denied' || state.tournamentNotificationsEnabled || tournamentPushPreference() === 'disabled' || tournamentSessionSeen(TOURNAMENT_PUSH_PROMPT_SESSION_KEY)) return;
+      if (!notificationsSupported || Notification.permission === 'denied' || state.tournamentNotificationsEnabled || tournamentPushPreference() === 'disabled' || tournamentSessionSeen(TOURNAMENT_PUSH_PROMPT_SESSION_KEY)) return false;
       markTournamentSessionSeen(TOURNAMENT_PUSH_PROMPT_SESSION_KEY);
       openTournamentPwaOnboarding('notifications');
+      return true;
+    }
+
+    function tournamentBetInviteStorageKey() {
+      return 'ilha-bet:invite-seen:' + clean(state.betCampaign && state.betCampaign.id || state.slug);
+    }
+
+    function tournamentBetParticipantKnown() {
+      const campaignId = clean(state.betCampaign && state.betCampaign.id);
+      if (!campaignId) return false;
+      try { return Boolean(localStorage.getItem('palpite-ilha:access:' + campaignId)); } catch (error) { return false; }
+    }
+
+    function tournamentBetInviteRecentlySeen() {
+      try {
+        const seenAt = Number(localStorage.getItem(tournamentBetInviteStorageKey()) || 0);
+        return Number.isFinite(seenAt) && seenAt > 0 && Date.now() - seenAt < TOURNAMENT_BET_INVITE_INTERVAL_MS;
+      } catch (error) { return true; }
+    }
+
+    function markTournamentBetInviteSeen() {
+      try { localStorage.setItem(tournamentBetInviteStorageKey(),String(Date.now())); } catch (error) {}
+    }
+
+    function setTournamentBetInviteBackgroundInert(inert) {
+      [document.querySelector('.site-head'),$('appMain')].forEach((element) => {
+        if (!element) return;
+        if (inert) element.setAttribute('inert','');
+        else element.removeAttribute('inert');
+      });
+    }
+
+    function openTournamentBetInvite() {
+      if (!$('tournamentBetInvite').hidden) return;
+      state.betInviteTrigger = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
+      $('openTournamentBetBtn').href = betPublicUrl();
+      markTournamentBetInviteSeen();
+      $('tournamentBetInvite').hidden = false;
+      $('tournamentBetInvite').setAttribute('aria-hidden','false');
+      setTournamentBetInviteBackgroundInert(true);
+      document.body.classList.add('modal-open');
+      setTimeout(() => $('tournamentBetInvite').querySelector('.bet-invite-card')?.focus(),0);
+    }
+
+    function closeTournamentBetInvite() {
+      if ($('tournamentBetInvite').hidden) return;
+      $('tournamentBetInvite').hidden = true;
+      $('tournamentBetInvite').setAttribute('aria-hidden','true');
+      setTournamentBetInviteBackgroundInert(false);
+      document.body.classList.remove('modal-open');
+      const trigger = state.betInviteTrigger;
+      state.betInviteTrigger = null;
+      if (trigger && trigger.isConnected) setTimeout(() => trigger.focus(),0);
+    }
+
+    function maybeShowTournamentBetInvite() {
+      if (!state.betCampaign || state.betCampaign.accepting_predictions !== true || state.registrationOnly || state.inviteMode || state.courtesyMode || tournamentBetParticipantKnown() || tournamentBetInviteRecentlySeen()) return false;
+      if (!$('registrationModal').hidden || !$('tournamentPwaOnboarding').hidden || !$('tournamentIntro').hidden) return false;
+      setTimeout(() => {
+        if ($('registrationModal').hidden && $('tournamentPwaOnboarding').hidden && $('tournamentIntro').hidden) openTournamentBetInvite();
+      },1200);
+      return true;
     }
 
     function initTournamentPwa() {
@@ -2186,7 +2289,11 @@
       });
       $('closeTournamentPwaOnboardingBtn')?.addEventListener('click',closeTournamentPwaOnboarding);
       $('tournamentPwaOnboarding')?.addEventListener('click',(event) => { if (event.target === $('tournamentPwaOnboarding')) closeTournamentPwaOnboarding(); });
+      $('closeTournamentBetInviteBtn')?.addEventListener('click',closeTournamentBetInvite);
+      $('tournamentBetInvite')?.addEventListener('click',(event) => { if (event.target === $('tournamentBetInvite')) closeTournamentBetInvite(); });
+      $('openTournamentBetBtn')?.addEventListener('click',markTournamentBetInviteSeen);
       document.addEventListener('keydown',handleTournamentPwaOnboardingKeydown);
+      document.addEventListener('keydown',(event) => { if (event.key === 'Escape' && !$('tournamentBetInvite').hidden) closeTournamentBetInvite(); });
       if (state.slug === 'ilha-open-2026') ensureTournamentServiceWorker().catch(() => {});
       initTournamentPullToRefresh();
     }
