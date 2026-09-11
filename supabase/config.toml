@@ -52,6 +52,11 @@ verify_jwt = false
 # Public subscribe requests validate origin, publishable key and payload in the
 # handler. Broadcasts additionally require a user JWT with tournament access.
 
+[functions.bet-public-api]
+verify_jwt = false
+# Public reads and participant access are protected inside the handler by
+# origin validation, Turnstile, rate limits and a derived access-code hash.
+
 # Management endpoints require a valid user JWT at the gateway and repeat the
 # permission check in the handler before constructing a service-role client.
 [functions.bar-user-access]
@@ -67,4 +72,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.tournament-admin-api]
+verify_jwt = true
+
+[functions.bet-admin-api]
 verify_jwt = true
