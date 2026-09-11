@@ -215,11 +215,15 @@
     body.club-database .club-home,
     body.club-database .topbar,
     body.club-database .section,
+    body.club-settings .club-home,
+    body.club-settings .topbar,
+    body.club-settings .section,
     body.club-tournament .lessons-module,
     body.club-home .lessons-module,
     body.club-home .ops-module,
     body.club-tournament .ops-module,
-    body.club-lessons .ops-module {
+    body.club-lessons .ops-module,
+    body.club-settings .ops-module {
       display: none;
     }
 
@@ -237,7 +241,8 @@
     body.club-communication .communication-module,
     body.club-clients .clients-module,
     body.club-team .team-module,
-    body.club-database .database-module {
+    body.club-database .database-module,
+    body.club-settings .app-settings-module {
       display: block;
     }
 
@@ -1744,6 +1749,232 @@
     .ops-panel.span-7 { grid-column: span 7; }
     .ops-panel.span-8 { grid-column: span 8; }
     .ops-panel.span-12 { grid-column: span 12; }
+
+    .app-settings-module .module-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .app-settings-grid {
+      align-items: start;
+    }
+
+    .app-intro-settings-card {
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .app-intro-settings-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 22px;
+      color: #ffffff;
+      background:
+        radial-gradient(circle at 88% 10%, rgba(181, 229, 0, .28), transparent 30%),
+        linear-gradient(130deg, #083f4b 0%, #10272c 100%);
+    }
+
+    .app-intro-settings-head h2,
+    .app-intro-settings-head p {
+      margin: 0;
+    }
+
+    .app-intro-settings-head h2 {
+      font-size: 20px;
+    }
+
+    .app-intro-settings-head p {
+      max-width: 620px;
+      margin-top: 6px;
+      color: rgba(255, 255, 255, .78);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    .app-intro-status-pill {
+      flex: 0 0 auto;
+      padding: 7px 11px;
+      border: 1px solid rgba(255, 255, 255, .24);
+      border-radius: 999px;
+      color: #ffffff;
+      background: rgba(255, 255, 255, .1);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .app-intro-status-pill.is-active {
+      border-color: rgba(181, 229, 0, .5);
+      color: #dfff4f;
+      background: rgba(181, 229, 0, .12);
+    }
+
+    .app-intro-settings-body {
+      display: grid;
+      grid-template-columns: minmax(0, .86fr) minmax(260px, 1.14fr);
+      gap: 22px;
+      padding: 22px;
+    }
+
+    .app-intro-controls {
+      display: grid;
+      align-content: start;
+      gap: 15px;
+    }
+
+    .app-settings-field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .app-settings-field > span {
+      color: #475467;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .045em;
+      text-transform: uppercase;
+    }
+
+    .app-settings-field select,
+    .app-settings-file {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--text);
+      background: #ffffff;
+    }
+
+    .app-settings-field select {
+      padding: 0 12px;
+    }
+
+    .app-settings-file {
+      padding: 9px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .app-settings-file::file-selector-button {
+      margin-right: 10px;
+      padding: 8px 12px;
+      border: 0;
+      border-radius: 8px;
+      color: #ffffff;
+      background: var(--teal);
+      font: inherit;
+      font-weight: 850;
+      cursor: pointer;
+    }
+
+    .app-intro-help {
+      padding: 12px 13px;
+      border: 1px solid #dce8eb;
+      border-radius: 12px;
+      color: #586b75;
+      background: #f5f9fa;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    .app-intro-message {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .app-intro-message.is-error {
+      color: #b42318;
+    }
+
+    .app-intro-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .app-intro-preview {
+      min-height: 390px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid #1f343b;
+      border-radius: 18px;
+      background: #000000;
+      box-shadow: 0 16px 36px rgba(16, 39, 44, .15);
+    }
+
+    .app-intro-preview[hidden] {
+      display: none;
+    }
+
+    .app-intro-preview video {
+      width: 100%;
+      height: min(58vh, 520px);
+      display: block;
+      object-fit: contain;
+      background: #000000;
+    }
+
+    .app-settings-safety {
+      display: grid;
+      gap: 13px;
+    }
+
+    .app-settings-safety-item {
+      padding: 14px;
+      border: 1px solid #dce7ea;
+      border-radius: 13px;
+      background: #f8fbfc;
+    }
+
+    .app-settings-safety-item strong,
+    .app-settings-safety-item span {
+      display: block;
+    }
+
+    .app-settings-safety-item strong {
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .app-settings-safety-item span {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 760px) {
+      .app-intro-settings-head,
+      .app-intro-settings-body {
+        grid-template-columns: 1fr;
+      }
+
+      .app-intro-settings-head {
+        display: grid;
+      }
+
+      .app-intro-preview {
+        min-height: 320px;
+      }
+
+      .app-intro-preview video {
+        height: min(62vh, 460px);
+      }
+
+      .app-intro-actions > * {
+        flex: 1 1 160px;
+      }
+    }
 
     .ops-panel-head {
       display: flex;
@@ -21446,6 +21677,10 @@
       <path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5" />
       <path d="M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" />
     </symbol>
+    <symbol id="admin-icon-settings" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 9 19.37a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.63 15 1.7 1.7 0 0 0 3.08 14H3v-4h.08A1.7 1.7 0 0 0 4.63 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.63 1.7 1.7 0 0 0 10 3.08V3h4v.08A1.7 1.7 0 0 0 15 4.63a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.37 9 1.7 1.7 0 0 0 20.92 10H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z" />
+    </symbol>
     <symbol id="admin-icon-calendar" viewBox="0 0 24 24">
       <path d="M7 3v3M17 3v3M4 9h16M6 5h12a2 2 0 0 1 2 2v12H4V7a2 2 0 0 1 2-2Z" />
       <path d="M8 14h3M13 14h3M8 17h3M13 17h3" />
@@ -21689,6 +21924,7 @@
         <button class="admin-nav-btn" type="button" data-admin-nav="club-communication"><span class="admin-nav-icon"><svg><use href="#admin-icon-megaphone"></use></svg></span><span>Comunicação</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-team"><span class="admin-nav-icon"><svg><use href="#admin-icon-team"></use></svg></span><span>Equipe</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-database"><span class="admin-nav-icon"><svg><use href="#admin-icon-database"></use></svg></span><span>Planos</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-settings"><span class="admin-nav-icon"><svg><use href="#admin-icon-settings"></use></svg></span><span>Configurações</span></button>
       </nav>
       <div class="admin-sidebar-footer">
         <button type="button" data-admin-notifications>Ativar notificações</button>
@@ -21775,6 +22011,71 @@
         </div>
       </section>
 
+    </section>
+
+    <section class="ops-module app-settings-module" id="appSettingsModule">
+      <div class="module-shell">
+        <div class="module-head">
+          <div>
+            <h1>Configurações</h1>
+            <p>Preferências gerais do aplicativo Ilha Play dos clientes.</p>
+          </div>
+          <div class="module-actions">
+            <a class="ghost-btn" href="/" target="_blank" rel="noopener">Abrir Ilha Play</a>
+            <button class="ghost-btn" type="button" id="appSettingsReloadBtn">Atualizar</button>
+          </div>
+        </div>
+        <div class="ops-content">
+          <div class="ops-grid app-settings-grid">
+            <section class="ops-panel span-8 app-intro-settings-card" aria-labelledby="appIntroSettingsTitle">
+              <div class="app-intro-settings-head">
+                <div>
+                  <h2 id="appIntroSettingsTitle">Vídeo de abertura</h2>
+                  <p>Aparece a cada abertura do Ilha Play instalado no celular. No navegador comum, o cliente entra direto no aplicativo.</p>
+                </div>
+                <span class="app-intro-status-pill" id="appIntroStatusPill">Carregando</span>
+              </div>
+              <div class="app-intro-settings-body">
+                <div class="app-intro-controls">
+                  <label class="app-settings-field" for="appIntroVideoEnabled">
+                    <span>Exibição no aplicativo</span>
+                    <select id="appIntroVideoEnabled">
+                      <option value="true">Ativada</option>
+                      <option value="false">Desativada</option>
+                    </select>
+                  </label>
+                  <label class="app-settings-field" for="appIntroVideoFile">
+                    <span>Trocar vídeo</span>
+                    <input class="app-settings-file" id="appIntroVideoFile" type="file" accept="video/mp4,.mp4" />
+                  </label>
+                  <input id="appIntroVideoUrl" type="hidden" value="/assets/app/ilha-play-intro.mp4" />
+                  <div class="app-intro-help">Use MP4 vertical, de até 15 segundos e 15 MB. O vídeo toca sem som, pode ser pulado e nunca impede o cliente de entrar se a conexão falhar.</div>
+                  <div class="app-intro-message" id="appIntroSettingsMessage" aria-live="polite"></div>
+                  <div class="app-intro-actions">
+                    <button class="primary-btn" type="button" id="appIntroVideoSaveBtn">Salvar configuração</button>
+                    <button class="danger-btn" type="button" id="appIntroVideoRemoveBtn">Remover vídeo</button>
+                  </div>
+                </div>
+                <div class="app-intro-preview" id="appIntroVideoPreview">
+                  <video controls muted playsinline preload="metadata" aria-label="Prévia do vídeo de abertura"></video>
+                </div>
+              </div>
+            </section>
+            <aside class="ops-panel span-4 app-settings-safety" aria-label="Como a abertura funciona">
+              <div class="ops-panel-head">
+                <div>
+                  <h2>Experiência protegida</h2>
+                  <div class="muted">Abertura chamativa sem atrapalhar o uso diário.</div>
+                </div>
+              </div>
+              <div class="app-settings-safety-item"><strong>Somente no app instalado</strong><span>A página aberta pelo navegador não exibe a intro.</span></div>
+              <div class="app-settings-safety-item"><strong>Saída garantida</strong><span>Ao terminar, ao pular ou se der erro, o Ilha Play abre normalmente.</span></div>
+              <div class="app-settings-safety-item"><strong>Atualização sem repetição</strong><span>Ao puxar a tela para atualizar, a intro não recomeça naquela recarga.</span></div>
+              <div class="app-settings-safety-item"><strong>Configuração imediata</strong><span>Ativar, desativar ou trocar o vídeo passa a valer na próxima abertura.</span></div>
+            </aside>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="ops-module clients-module" id="clientsModule">
@@ -30330,7 +30631,8 @@
       communication: 'club-communication',
       team: 'club-team',
       plans: 'club-database',
-      tournaments: 'club-tournament'
+      tournaments: 'club-tournament',
+      settings: 'club-settings'
     };
     const ADM_LAUNCH_MODE = ADM_LAUNCH_MODULES[ADMIN_URL_PARAMS.get('module')] || '';
     if (IS_BAR_ADMIN_SURFACE && 'scrollRestoration' in window.history) {
@@ -31529,6 +31831,11 @@
       barHistoryLoaded: false,
       barHistoryLoading: false,
       barLoadError: '',
+      appSettingsLoaded: false,
+      appSettingsLoading: false,
+      appSettingsSaving: false,
+      appIntroEnabled: true,
+      appIntroVideoUrl: '/assets/app/ilha-play-intro.mp4',
       bootstrapPrepared: false,
       loaded: false
     };
@@ -31579,7 +31886,8 @@
       { key: 'announcements', label: 'Comunicados', detail: 'Publicar avisos no app do aluno.' },
       { key: 'tournaments', label: 'Torneios', detail: 'Organizar inscricoes, chaves, agenda e resultados.' },
       { key: 'communication', label: 'Comunicacao', detail: 'Enviar avisos, campanhas e mensagens.' },
-      { key: 'team', label: 'Equipe e acessos', detail: 'Criar usuários e alterar permissões.' }
+      { key: 'team', label: 'Equipe e acessos', detail: 'Criar usuários e alterar permissões.' },
+      { key: 'settings', label: 'Configurações do app', detail: 'Alterar a abertura e as preferências gerais do Ilha Play.' }
     ];
 
     const roleDefaultPermissions = {
@@ -31798,7 +32106,7 @@
         toast('Seu acesso não permite abrir este módulo.');
         return false;
       }
-      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-courts', 'club-finance', 'club-bar', 'club-store', 'club-announcements', 'club-communication', 'club-clients', 'club-team', 'club-database'].forEach(function (className) {
+      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-courts', 'club-finance', 'club-bar', 'club-store', 'club-announcements', 'club-communication', 'club-clients', 'club-team', 'club-database', 'club-settings'].forEach(function (className) {
         document.body.classList.remove(className);
       });
       document.body.classList.add(mode);
@@ -45461,7 +45769,8 @@
         'club-communication': 'communication',
         'club-team': 'team',
         'club-database': 'plans',
-        'club-tournament': 'tournaments'
+        'club-tournament': 'tournaments',
+        'club-settings': 'settings'
       };
       return permissions[mode] || '';
     }
@@ -45473,7 +45782,7 @@
     }
 
     function firstAllowedClubMode(profile) {
-      return ['club-home', 'club-clients', 'club-lessons', 'club-agenda', 'club-courts', 'club-finance', 'club-store', 'club-announcements', 'club-communication', 'club-tournament', 'club-database', 'club-team']
+      return ['club-home', 'club-clients', 'club-lessons', 'club-agenda', 'club-courts', 'club-finance', 'club-store', 'club-announcements', 'club-communication', 'club-tournament', 'club-database', 'club-team', 'club-settings']
         .find(function (mode) { return canOpenClubMode(mode, profile); }) || '';
     }
 
@@ -46357,7 +46666,8 @@
           'club-communication': openCommunicationModule,
           'club-team': openTeamModule,
           'club-database': openDatabaseModule,
-          'club-tournament': openTournamentModule
+          'club-tournament': openTournamentModule,
+          'club-settings': openAppSettingsModule
         };
         if (launchActions[launchMode]) launchActions[launchMode]();
       }
@@ -46367,6 +46677,165 @@
         if (adminNotificationSoundEnabled) ensureAdminPushSubscription(false).catch(function () {});
       }
       updateAdminNotificationsButtons();
+    }
+
+    function setAppIntroSettingsMessage(message, isError) {
+      const element = $('appIntroSettingsMessage');
+      if (!element) return;
+      element.textContent = message || '';
+      element.classList.toggle('is-error', Boolean(isError));
+    }
+
+    function normalizeAppExperienceSettings(row) {
+      const url = String(row && row.intro_video_url || '').trim();
+      return {
+        enabled: Boolean(row && row.intro_enabled) && Boolean(url),
+        url: url
+      };
+    }
+
+    function renderAppIntroVideoPreview(url) {
+      const preview = $('appIntroVideoPreview');
+      const video = preview && preview.querySelector('video');
+      if (!preview || !video) return;
+      const source = String(url || '').trim();
+      preview.hidden = !source;
+      if (source) {
+        if (video.getAttribute('src') !== source) {
+          video.src = source;
+          video.load();
+        }
+      } else {
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+      }
+    }
+
+    function renderAppSettingsModule() {
+      if (!$('appSettingsModule')) return;
+      $('appIntroVideoEnabled').value = opsState.appIntroEnabled ? 'true' : 'false';
+      $('appIntroVideoUrl').value = opsState.appIntroVideoUrl || '';
+      const active = opsState.appIntroEnabled && Boolean(opsState.appIntroVideoUrl);
+      const pill = $('appIntroStatusPill');
+      pill.textContent = opsState.appSettingsLoading ? 'Carregando' : (active ? 'Ativada' : 'Desativada');
+      pill.classList.toggle('is-active', !opsState.appSettingsLoading && active);
+      $('appIntroVideoSaveBtn').disabled = opsState.appSettingsLoading || opsState.appSettingsSaving;
+      $('appIntroVideoRemoveBtn').disabled = opsState.appSettingsLoading || opsState.appSettingsSaving || !opsState.appIntroVideoUrl;
+      $('appIntroVideoFile').disabled = opsState.appSettingsLoading || opsState.appSettingsSaving;
+      $('appIntroVideoEnabled').disabled = opsState.appSettingsLoading || opsState.appSettingsSaving;
+      renderAppIntroVideoPreview(opsState.appIntroVideoUrl);
+    }
+
+    async function loadAppExperienceSettings(force) {
+      if (opsState.appSettingsLoading) return;
+      if (opsState.appSettingsLoaded && !force) {
+        renderAppSettingsModule();
+        return;
+      }
+      opsState.appSettingsLoading = true;
+      setAppIntroSettingsMessage('Carregando configuração...');
+      renderAppSettingsModule();
+      try {
+        if (isAdminDemoMode()) {
+          opsState.appIntroEnabled = true;
+          opsState.appIntroVideoUrl = '/assets/app/ilha-play-intro.mp4';
+        } else {
+          requireClubPermission('settings');
+          const rows = await supabaseRest('app_client_experience_settings?select=intro_enabled,intro_video_url&singleton=eq.true&limit=1');
+          const settings = normalizeAppExperienceSettings(Array.isArray(rows) ? rows[0] : rows);
+          opsState.appIntroEnabled = settings.enabled;
+          opsState.appIntroVideoUrl = settings.url;
+        }
+        opsState.appSettingsLoaded = true;
+        setAppIntroSettingsMessage('Configuração sincronizada.');
+      } catch (error) {
+        setAppIntroSettingsMessage(error.message || 'Não foi possível carregar a configuração.', true);
+        throw error;
+      } finally {
+        opsState.appSettingsLoading = false;
+        renderAppSettingsModule();
+      }
+    }
+
+    async function uploadAppIntroVideo(file) {
+      const isMp4 = file && (file.type === 'video/mp4' || /\.mp4$/i.test(file.name || ''));
+      if (!isMp4) throw new Error('Escolha um vídeo MP4.');
+      if (file.size > 15 * 1024 * 1024) throw new Error('O vídeo deve ter no máximo 15 MB.');
+      const duration = await readTournamentIntroVideoDuration(file);
+      if (!Number.isFinite(duration) || duration <= 0 || duration > 15) throw new Error('Use um vídeo curto, com no máximo 15 segundos.');
+      requireClubPermission('settings');
+      if (isAdminDemoMode()) {
+        opsState.appIntroVideoUrl = URL.createObjectURL(file);
+        opsState.appIntroEnabled = true;
+        renderAppSettingsModule();
+        setAppIntroSettingsMessage('Prévia local pronta. Clique em Salvar configuração.');
+        return opsState.appIntroVideoUrl;
+      }
+      const objectPath = 'ilha-play/intro-' + Date.now() + '.mp4';
+      const headers = supabaseHeaders(true);
+      headers['Content-Type'] = 'video/mp4';
+      const response = await fetchWithAdminTimeout(supabaseBaseUrl() + '/storage/v1/object/app-branding/' + encodeStoragePath(objectPath), {
+        method: 'POST', headers: headers, body: file
+      }, 90000);
+      if (!response.ok) {
+        const body = await response.json().catch(function () { return {}; });
+        throw new Error(body.message || body.error || 'Não foi possível enviar o vídeo.');
+      }
+      opsState.appIntroVideoUrl = supabaseBaseUrl() + '/storage/v1/object/public/app-branding/' + encodeStoragePath(objectPath);
+      opsState.appIntroEnabled = true;
+      renderAppSettingsModule();
+      setAppIntroSettingsMessage('Vídeo enviado. Clique em Salvar configuração para ativá-lo.');
+      return opsState.appIntroVideoUrl;
+    }
+
+    async function saveAppExperienceSettings(nextSettings) {
+      requireClubPermission('settings');
+      if (opsState.appSettingsSaving) return;
+      const enabled = nextSettings ? Boolean(nextSettings.enabled) : $('appIntroVideoEnabled').value === 'true';
+      const url = nextSettings ? String(nextSettings.url || '').trim() : String($('appIntroVideoUrl').value || '').trim();
+      if (enabled && !url) throw new Error('Envie um vídeo antes de ativar a abertura.');
+      opsState.appSettingsSaving = true;
+      setAppIntroSettingsMessage('Salvando configuração...');
+      renderAppSettingsModule();
+      try {
+        if (!isAdminDemoMode()) {
+          const rows = await supabaseRest('app_client_experience_settings?singleton=eq.true&select=intro_enabled,intro_video_url', {
+            method: 'PATCH',
+            body: {
+              intro_enabled: enabled,
+              intro_video_url: url || null,
+              updated_at: new Date().toISOString()
+            },
+            prefer: 'return=representation'
+          });
+          if (!Array.isArray(rows) || !rows[0]) throw new Error('Não foi possível confirmar a configuração salva.');
+        }
+        opsState.appIntroEnabled = enabled;
+        opsState.appIntroVideoUrl = url;
+        opsState.appSettingsLoaded = true;
+        setAppIntroSettingsMessage(enabled ? 'Abertura ativada para a próxima vez que o cliente abrir o app.' : 'Abertura desativada.');
+        toast('Configuração do Ilha Play salva.');
+      } finally {
+        opsState.appSettingsSaving = false;
+        renderAppSettingsModule();
+      }
+    }
+
+    async function removeAppIntroVideo() {
+      if (!opsState.appIntroVideoUrl) return;
+      if (!window.confirm('Remover o vídeo da abertura? O arquivo ficará preservado no histórico, mas não será mais exibido.')) return;
+      await saveAppExperienceSettings({ enabled: false, url: '' });
+      $('appIntroVideoFile').value = '';
+    }
+
+    function openAppSettingsModule() {
+      if (!setClubMode('club-settings')) return;
+      window.scrollTo(0, 0);
+      renderAppSettingsModule();
+      loadAppExperienceSettings(false).catch(function (error) {
+        console.warn('Não foi possível carregar as configurações do Ilha Play.', error && error.message);
+      });
     }
 
     function showClubHome() {
@@ -46408,7 +46877,7 @@
         }, ADMIN_REQUEST_TIMEOUT_MS).catch(function () {});
       }
       document.body.classList.remove('adm-unlocked');
-      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-courts', 'club-finance', 'club-bar', 'club-store', 'club-announcements', 'club-communication', 'club-clients', 'club-team', 'club-database'].forEach(function (className) {
+      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-courts', 'club-finance', 'club-bar', 'club-store', 'club-announcements', 'club-communication', 'club-clients', 'club-team', 'club-database', 'club-settings'].forEach(function (className) {
         document.body.classList.remove(className);
       });
       document.body.classList.add('adm-locked');
@@ -46442,6 +46911,7 @@
       if (document.body.classList.contains('club-communication')) renderCommunicationModule();
       if (document.body.classList.contains('club-team')) renderTeamModule();
       if (document.body.classList.contains('club-database')) renderPlansModule();
+      if (document.body.classList.contains('club-settings')) renderAppSettingsModule();
     }
 
     function quoteCsv(value) {
@@ -48515,6 +48985,35 @@
       $('homeLogoutBtn').addEventListener('click', lockAdmin);
       $('sidebarLogoutBtn').addEventListener('click', lockAdmin);
       $('barSurfaceLogoutBtn').addEventListener('click', lockAdmin);
+      $('appSettingsReloadBtn').addEventListener('click', function () {
+        loadAppExperienceSettings(true).catch(reportActionError);
+      });
+      $('appIntroVideoSaveBtn').addEventListener('click', function () {
+        saveAppExperienceSettings().catch(function (error) {
+          setAppIntroSettingsMessage(error.message || 'Não foi possível salvar a configuração.', true);
+          reportActionError(error);
+        });
+      });
+      $('appIntroVideoRemoveBtn').addEventListener('click', function () {
+        removeAppIntroVideo().catch(function (error) {
+          setAppIntroSettingsMessage(error.message || 'Não foi possível remover o vídeo.', true);
+          reportActionError(error);
+        });
+      });
+      $('appIntroVideoFile').addEventListener('change', function () {
+        const input = this;
+        const file = input.files && input.files[0];
+        if (!file) return;
+        input.disabled = true;
+        setAppIntroSettingsMessage('Enviando e conferindo o vídeo...');
+        uploadAppIntroVideo(file).catch(function (error) {
+          input.value = '';
+          setAppIntroSettingsMessage(error.message || 'Não foi possível enviar o vídeo.', true);
+          reportActionError(error);
+        }).finally(function () {
+          input.disabled = false;
+        });
+      });
       [
         ['openTournamentModule', openTournamentModule],
         ['openClientsModule', openClientsModule],
@@ -48549,7 +49048,8 @@
             'club-communication': openCommunicationModule,
             'club-team': openTeamModule,
             'club-database': openDatabaseModule,
-            'club-tournament': openTournamentModule
+            'club-tournament': openTournamentModule,
+            'club-settings': openAppSettingsModule
           };
           const action = actions[btn.dataset.adminNav];
           if (action) action();
@@ -50824,6 +51324,6 @@
     window.addEventListener('pagehide', rememberBarScrollPosition);
     initAdminLogin();
   </script>
-  <script src="/auto-update.js?v=217"></script>
+  <script src="/auto-update.js?v=218"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'ilha-play-v';
-const CACHE_NAME = 'ilha-play-v239-spatial-family';
+const CACHE_NAME = 'ilha-play-v240-client-intro';
 const CORE_ASSETS = [
   '/',
   '/index.html',
@@ -9,6 +9,7 @@ const CORE_ASSETS = [
   '/icon.png',
   '/logo.png',
   '/assets/branding/ilha-tenis-logo-light.png',
+  '/assets/app/ilha-play-intro.mp4',
   '/assets/audio/notification-tennis-serve.mp3',
   '/assets/vendor/qrcode-generator.js'
 ];
