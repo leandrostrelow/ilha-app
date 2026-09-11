@@ -23,6 +23,10 @@ const PUBLIC_CONSTANTS = Object.freeze({
     SUPABASE_URL: 'supabaseUrl',
     SUPABASE_ANON_KEY: 'publishableKey'
   },
+  'bet/index.html': {
+    SUPABASE_URL: 'supabaseUrl',
+    SUPABASE_ANON_KEY: 'publishableKey'
+  },
   'bar/index.html': {
     SUPABASE_URL: 'supabaseUrl',
     SUPABASE_KEY: 'publishableKey'

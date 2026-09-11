@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#073f4a" />
+  <meta name="description" content="Palpite gratuitamente nos jogos do torneio e acompanhe o ranking do Palpite Ilha." />
+  <meta name="robots" content="index,follow" />
+  <meta property="og:title" content="Palpite Ilha" />
+  <meta property="og:description" content="Escolha seus favoritos, acompanhe os resultados e participe do ranking gratuito do Ilha Tênis." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://app.ilhatenis.com/bet" />
+  <meta property="og:image" content="https://app.ilhatenis.com/icon.png" />
+  <link rel="icon" href="../icon.png" />
+  <link rel="apple-touch-icon" href="../icon.png" />
+  <link rel="stylesheet" href="/bet/styles.css" />
+  <title>Palpite Ilha · Ilha Tênis</title>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">Pular para o conteúdo</a>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Ir para o Ilha Play">
+      <img src="../assets/branding/ilha-tenis-logo-light.png" alt="Ilha Tênis Colatina" />
+    </a>
+    <div class="header-actions">
+      <span class="free-badge">100% gratuito</span>
+      <button class="quiet-button" id="openAccessButton" type="button">Já participo</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="heroTitle">
+      <div class="hero-copy">
+        <span class="eyebrow">Desafio de palpites do clube</span>
+        <h1 id="heroTitle">Palpite Ilha<span>.</span></h1>
+        <p class="hero-lead">Escolha quem avança em cada jogo, some pontos com os resultados reais e acompanhe a disputa com a turma.</p>
+        <div class="hero-actions">
+          <button class="primary-button" id="joinButton" type="button">Quero participar</button>
+          <a class="secondary-button" id="tournamentLink" href="/torneios/ilha-open-2026">Ver torneio</a>
+        </div>
+        <p class="safety-line"><strong>É só diversão:</strong> não há aposta, pagamento, depósito, saque, odds ou pontos convertidos em dinheiro.</p>
+      </div>
+      <div class="hero-score" aria-live="polite">
+        <span class="live-dot"></span>
+        <span id="campaignStatus">Carregando desafio…</span>
+        <strong id="tournamentName">Ilha Open</strong>
+        <small id="campaignWindow">Buscando os jogos publicados.</small>
+      </div>
+      <div class="prize-card" id="prizeCard" hidden>
+        <img src="../camisaverde.png" alt="Camisa verde do Ilha Tênis" />
+        <div><span>Reconhecimento do campeão</span><strong id="prizeText"></strong></div>
+      </div>
+    </section>
+
+    <section class="status-card" id="pageNotice" role="status" aria-live="polite">
+      <span class="status-spinner" aria-hidden="true"></span>
+      <div><strong>Preparando os jogos</strong><p>Aguarde só um instante.</p></div>
+    </section>
+
+    <section class="workspace" id="workspace" hidden>
+      <nav class="tabs" aria-label="Palpite Ilha" role="tablist">
+        <button class="tab active" id="gamesTab" type="button" role="tab" data-tab="games" aria-controls="gamesPanel" aria-selected="true">Jogos</button>
+        <button class="tab" id="mineTab" type="button" role="tab" data-tab="mine" aria-controls="minePanel" aria-selected="false">Meus palpites <span id="myPickCount">0</span></button>
+        <button class="tab" id="rankingTab" type="button" role="tab" data-tab="ranking" aria-controls="rankingPanel" aria-selected="false">Ranking</button>
+        <button class="tab" id="rulesTab" type="button" role="tab" data-tab="rules" aria-controls="rulesPanel" aria-selected="false">Regras</button>
+      </nav>
+
+      <section class="tab-panel active" id="gamesPanel" data-panel="games" role="tabpanel" aria-labelledby="gamesTab">
+        <div class="section-heading">
+          <div><span class="eyebrow dark">Faça suas escolhas</span><h2>Jogos disponíveis</h2><p>Você pode trocar um palpite até o horário marcado ou até o jogo começar.</p></div>
+          <label class="filter-label" for="categoryFilter">Classe
+            <select id="categoryFilter"><option value="">Todas as classes</option></select>
+          </label>
+        </div>
+        <div class="join-reminder" id="joinReminder">
+          <div><strong>Entre no ranking em menos de um minuto.</strong><span>Nome, telefone e e-mail. Sem senha e sem pagamento.</span></div>
+          <button class="primary-button compact" type="button" data-open-registration>Participar grátis</button>
+        </div>
+        <div class="games-list" id="gamesList"></div>
+      </section>
+
+      <section class="tab-panel" id="minePanel" data-panel="mine" role="tabpanel" aria-labelledby="mineTab" hidden>
+        <div class="section-heading">
+          <div><span class="eyebrow dark">Seu cartão</span><h2>Meus palpites</h2><p id="participantGreeting">Entre para ver e alterar suas escolhas.</p></div>
+          <button class="secondary-button dark" id="leaveDeviceButton" type="button" hidden>Sair deste aparelho</button>
+        </div>
+        <div class="access-card" id="accessCard">
+          <div class="access-empty" id="accessEmpty">
+            <strong>Ainda não reconhecemos seu cadastro neste aparelho.</strong>
+            <p>Faça um cadastro novo ou entre com seu e-mail e código de acesso.</p>
+            <button class="primary-button" type="button" data-open-registration>Acessar</button>
+          </div>
+          <div id="accessDetails" hidden>
+            <div><span>Código de acesso</span><strong id="savedAccessCode">••••••••••</strong><small>Guarde para entrar em outro celular.</small></div>
+            <button class="copy-button" id="copyAccessCodeButton" type="button">Copiar código</button>
+          </div>
+        </div>
+        <div class="my-picks" id="myPicksList"></div>
+      </section>
+
+      <section class="tab-panel" id="rankingPanel" data-panel="ranking" role="tabpanel" aria-labelledby="rankingTab" hidden>
+        <div class="section-heading">
+          <div><span class="eyebrow dark">Classificação ao vivo</span><h2>Ranking da turma</h2><p>Os pontos entram automaticamente quando o resultado do jogo é confirmado.</p></div>
+          <div class="points-key"><span>Fases iniciais <b id="initialPoints">1</b></span><span>Semi <b id="semifinalPoints">2</b></span><span>Final <b id="finalPoints">3</b></span></div>
+        </div>
+        <div class="ranking-list" id="rankingList"></div>
+      </section>
+
+      <section class="tab-panel" id="rulesPanel" data-panel="rules" role="tabpanel" aria-labelledby="rulesTab" hidden>
+        <div class="section-heading">
+          <div><span class="eyebrow dark">Transparente desde o início</span><h2>Como funciona</h2><p>Uma brincadeira gratuita conectada aos resultados oficiais do torneio.</p></div>
+        </div>
+        <div class="rules-grid">
+          <article><span>01</span><h3>Escolha o favorito</h3><p>Cada jogo aceita uma escolha. Você pode mudar enquanto o palpite estiver aberto.</p></article>
+          <article><span>02</span><h3>O jogo trava sozinho</h3><p>No horário marcado ou quando a organização iniciar a partida, ninguém consegue alterar.</p></article>
+          <article><span>03</span><h3>Resultado oficial</h3><p>O vencedor lançado no sistema do torneio atualiza os pontos e o ranking.</p></article>
+          <article><span>04</span><h3>Desempate objetivo</h3><p>Mais pontos, depois mais jogos apurados e, persistindo, cadastro mais antigo.</p></article>
+        </div>
+        <div class="rules-copy">
+          <h3>Regra deste desafio</h3>
+          <p id="rulesText"></p>
+          <div class="legal-note"><strong>Participação recreativa, gratuita e sem fins lucrativos.</strong> Não existe compra de créditos, aposta, pagamento, prêmio em dinheiro, saque ou conversão de pontos. Os contatos são usados apenas para administrar o desafio e falar com o participante.</div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer><img src="../logo.png" alt="" aria-hidden="true" /><span>Ilha Tênis Colatina · Diversão dentro e fora da quadra</span></footer>
+
+  <div class="modal-backdrop" id="registrationModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="registrationTitle">
+      <div class="modal-head">
+        <div><span class="eyebrow">Entrada gratuita</span><h2 id="registrationTitle">Participar do Palpite Ilha</h2></div>
+        <button class="modal-close" id="closeRegistrationButton" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-tabs" role="tablist" aria-label="Tipo de acesso">
+        <button class="active" id="registerModeTab" type="button" role="tab" data-access-mode="register" aria-controls="registerForm" aria-selected="true">Primeiro acesso</button>
+        <button id="resumeModeTab" type="button" role="tab" data-access-mode="resume" aria-controls="resumeForm" aria-selected="false">Já tenho código</button>
+      </div>
+      <form id="registerForm" role="tabpanel" aria-labelledby="registerModeTab">
+        <label>Nome completo<input id="registerName" autocomplete="name" maxlength="120" required /></label>
+        <div class="form-grid">
+          <label>WhatsApp<input id="registerPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="16" placeholder="(27) 99999-9999" required /></label>
+          <label>E-mail<input id="registerEmail" type="email" autocomplete="email" maxlength="254" required /></label>
+        </div>
+        <label class="consent"><input id="registerConsent" type="checkbox" required /><span>Li as regras, sou maior de 18 anos ou tenho autorização do responsável e permito o uso destes dados para administrar o desafio.</span></label>
+        <button class="primary-button wide" type="submit">Criar meu cartão de palpites</button>
+      </form>
+      <form id="resumeForm" role="tabpanel" aria-labelledby="resumeModeTab" hidden>
+        <label>E-mail do cadastro<input id="resumeEmail" type="email" autocomplete="email" maxlength="254" required /></label>
+        <label>Código de acesso<input id="resumeCode" class="code-input" inputmode="text" autocomplete="one-time-code" maxlength="12" placeholder="ABCD-234567" required /></label>
+        <p class="form-hint">É o código mostrado ao concluir o cadastro. Ele também fica salvo no aparelho usado.</p>
+        <button class="primary-button wide" type="submit">Entrar nos meus palpites</button>
+      </form>
+      <div class="captcha-shell"><div id="captchaWidget"></div><small id="captchaStatus">Carregando proteção anti-robô…</small></div>
+      <p class="form-error" id="formError" role="alert" hidden></p>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="accessCodeModal" hidden>
+    <section class="modal access-code-modal" role="dialog" aria-modal="true" aria-labelledby="accessCodeTitle">
+      <span class="success-icon">✓</span>
+      <span class="eyebrow dark">Cadastro concluído</span>
+      <h2 id="accessCodeTitle">Seu código de acesso</h2>
+      <strong class="access-code-value" id="newAccessCode"></strong>
+      <p>Ele já ficou salvo neste aparelho. Guarde ou tire uma captura para conseguir entrar em outro celular.</p>
+      <button class="copy-button large" id="copyNewAccessCodeButton" type="button">Copiar código</button>
+      <button class="primary-button wide" id="finishRegistrationButton" type="button">Começar a palpitar</button>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_zcX8te5g99p0bA12xy_E-A_MTyNpJNx';
+    window.PALPITE_ILHA_CONFIG = Object.freeze({ supabaseUrl: SUPABASE_URL, publishableKey: SUPABASE_ANON_KEY });
+  </script>
+  <script src="../auto-update.js" defer></script>
+  <script src="/bet/app.js" defer></script>
+</body>
+</html>

@@ -112,7 +112,8 @@ test('preflight bloqueia deploy parcial de Bar, Menu ou Torneios', () => {
     () => assertPublishedRuntime(clientHtml, adminHtml, config, {
       barHtml: surface('SUPABASE_KEY'),
       menuHtml: surface('SUPABASE_ANON_KEY', 'https://outroprojetoref12345.supabase.co'),
-      tournamentsHtml: surface('SUPABASE_ANON_KEY')
+      tournamentsHtml: surface('SUPABASE_ANON_KEY'),
+      betHtml: surface('SUPABASE_ANON_KEY')
     }),
     /Menu/
   );
@@ -213,6 +214,18 @@ test('build de staging troca somente constantes públicas e recusa produção', 
     }),
     /produção/
   );
+});
+
+test('build de staging isola também o Palpite Ilha', () => {
+  const config = loadStagingPublicConfig(validEnvironment);
+  const source = `
+    const SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_oldproductionkey123456789';
+  `;
+  const output = rewriteStagingHtml('bet/index.html', source, config);
+  assert.match(output, new RegExp(config.projectRef));
+  assert.match(output, new RegExp(config.publishableKey));
+  assert.doesNotMatch(output, /lkqtgptebkgfwguykxhv/);
 });
 
 test('build de staging preserva slugs de teste removendo apenas redirects para o canônico', async () => {

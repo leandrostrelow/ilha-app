@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'ilha-play-v';
-const CACHE_NAME = 'ilha-play-v242-agenda-match-editor';
+const CACHE_NAME = 'ilha-play-v243-palpite-ilha';
 const CORE_ASSETS = [
   '/',
   '/index.html',
@@ -19,6 +19,10 @@ const OPTIONAL_ASSETS = [
   './adm-manifest.json',
   './menu/',
   './menu/index.html',
+  './bet/',
+  './bet/index.html',
+  './bet/styles.css',
+  './bet/app.js',
   './assets/branding/ilha-bar-logo-dark.png',
   './assets/branding/ilha-bar-logo-light.png',
   './assets/ilha-bar-cardapio-qr.png',
@@ -184,6 +188,9 @@ self.addEventListener('fetch', event => {
           }
           if (url.pathname === '/bar' || url.pathname.startsWith('/bar/')) {
             return caches.match('./bar/index.html');
+          }
+          if (url.pathname === '/bet' || url.pathname.startsWith('/bet/')) {
+            return caches.match('./bet/index.html');
           }
           if (/^\/inscricoes\/[^/]+\/espacial(?:-convite)?\/?$/.test(url.pathname)) {
             return caches.match('./inscricoes/espacial/index.html');

@@ -89,16 +89,17 @@ async function fetchJson(url, label) {
 }
 
 async function assertPublishedApplication() {
-  const [clientHtml, adminHtml, barHtml, menuHtml, tournamentsHtml, manifest, serviceWorker] = await Promise.all([
+  const [clientHtml, adminHtml, barHtml, menuHtml, tournamentsHtml, betHtml, manifest, serviceWorker] = await Promise.all([
     fetchText(pageUrl(), 'Ilha Play'),
     fetchText(pageUrl('adm'), 'ADM'),
     fetchText(pageUrl('bar'), 'Bar'),
     fetchText(pageUrl('menu'), 'Menu'),
     fetchText(pageUrl('torneios'), 'Torneios'),
+    fetchText(pageUrl('bet'), 'Palpite Ilha'),
     fetchJson(pageUrl('manifest.json'), 'manifesto PWA'),
     fetchText(pageUrl('service-worker.js'), 'service worker')
   ]);
-  assertPublishedRuntime(clientHtml, adminHtml, config, { barHtml, menuHtml, tournamentsHtml });
+  assertPublishedRuntime(clientHtml, adminHtml, config, { barHtml, menuHtml, tournamentsHtml, betHtml });
   if (!manifest.name || !manifest.start_url || !Array.isArray(manifest.icons) || !manifest.icons.length) {
     throw new Error('O manifesto PWA de staging está incompleto.');
   }

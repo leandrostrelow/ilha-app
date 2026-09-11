@@ -190,7 +190,8 @@ export function assertPublishedRuntime(clientHtml, adminHtml, config, surfaces =
   const additionalConstants = [
     ['Bar', surfaces.barHtml, 'SUPABASE_URL', 'SUPABASE_KEY'],
     ['Menu', surfaces.menuHtml, 'SUPABASE_URL', 'SUPABASE_ANON_KEY'],
-    ['Torneios', surfaces.tournamentsHtml, 'SUPABASE_URL', 'SUPABASE_ANON_KEY']
+    ['Torneios', surfaces.tournamentsHtml, 'SUPABASE_URL', 'SUPABASE_ANON_KEY'],
+    ['Palpite Ilha', surfaces.betHtml, 'SUPABASE_URL', 'SUPABASE_ANON_KEY']
   ];
   for (const [label, source, urlName, keyName] of additionalConstants) {
     if (!source) throw new Error(`O preflight de staging não recebeu o HTML de ${label}.`);

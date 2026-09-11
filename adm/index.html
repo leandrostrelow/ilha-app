@@ -12,6 +12,7 @@
   <link id="adminAppManifest" href="/adm-manifest.json" />
   <link id="adminAppleIcon" rel="apple-touch-icon" sizes="180x180" href="/icon.png" />
   <link id="adminFavicon" rel="icon" type="image/png" sizes="192x192" href="/icon.png" />
+  <link rel="stylesheet" href="/adm/predictions.css" />
   <title>Gestão Clube Ilha</title>
   <script>
     (function () {
@@ -179,6 +180,9 @@
       display: none;
     }
 
+    body.club-bet .club-home,
+    body.club-bet .topbar,
+    body.club-bet .section,
     body.club-lessons .club-home,
     body.club-lessons .topbar,
     body.club-lessons .section,
@@ -222,6 +226,7 @@
     body.club-home .lessons-module,
     body.club-home .ops-module,
     body.club-tournament .ops-module,
+    body.club-bet .ops-module,
     body.club-lessons .ops-module,
     body.club-settings .ops-module {
       display: none;
@@ -231,6 +236,7 @@
       display: block;
     }
 
+    body.club-bet .bet-module,
     body.club-students .student-center-module,
     body.club-agenda .agenda-module,
     body.club-courts .court-booking-module,
@@ -21909,6 +21915,7 @@
         <button class="admin-nav-btn" type="button" data-admin-nav="club-finance"><span class="admin-nav-icon"><svg><use href="#admin-icon-wallet"></use></svg></span><span>Financeiro</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-courts"><span class="admin-nav-icon"><svg><use href="#admin-icon-calendar"></use></svg></span><span>Quadras</span></button>
         <button class="admin-nav-btn" type="button" data-admin-nav="club-tournament"><span class="admin-nav-icon"><svg><use href="#admin-icon-trophy"></use></svg></span><span>Torneios</span></button>
+        <button class="admin-nav-btn" type="button" data-admin-nav="club-bet"><span class="admin-nav-icon"><svg><use href="#admin-icon-trophy"></use></svg></span><span>Palpite Ilha</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="orders"><span class="admin-nav-icon"><svg><use href="#admin-icon-receipt"></use></svg></span><span>Comandas</span><span class="bar-nav-badge" id="barOrdersNavBadge" hidden>0</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="kitchen"><span class="admin-nav-icon"><svg><use href="#bar-icon-portion"></use></svg></span><span>Pedidos</span><span class="bar-nav-badge" id="barKitchenNavBadge" hidden>0</span></button>
         <button class="admin-nav-btn" type="button" data-bar-entry data-bar-side-tab="customers"><span class="admin-nav-icon"><svg><use href="#admin-icon-users"></use></svg></span><span>Clientes</span></button>
@@ -22011,6 +22018,123 @@
         </div>
       </section>
 
+    </section>
+
+    <section class="ops-module bet-module" id="betModule">
+      <div class="module-shell">
+        <div class="module-head">
+          <div>
+            <span class="bet-admin-kicker">Diversão conectada ao torneio</span>
+            <h1>Palpite Ilha</h1>
+            <p>Escolha o torneio, acompanhe o ranking e administre o desafio gratuito do clube.</p>
+          </div>
+          <div class="bet-admin-actions">
+            <button class="ghost-btn" type="button" id="betCopyPublicBtn">Copiar link</button>
+            <button class="ghost-btn" type="button" id="betOpenPublicBtn">Abrir página</button>
+            <button class="ghost-btn" type="button" id="betAdminReloadBtn">Atualizar</button>
+          </div>
+        </div>
+        <div class="ops-content">
+          <div class="bet-admin-status" id="betAdminStatus" aria-live="polite">Abra o módulo para carregar os dados.</div>
+          <div class="bet-admin-toolbar">
+            <label for="betTournamentPicker">Torneio conectado
+              <select id="betTournamentPicker" aria-label="Torneio conectado"></select>
+            </label>
+            <label for="betPublicLink">Link para compartilhar
+              <input id="betPublicLink" type="text" readonly />
+            </label>
+          </div>
+
+          <div class="bet-admin-summary" aria-label="Resumo do Palpite Ilha">
+            <article class="bet-admin-metric"><span>Participantes ativos</span><strong id="betMetricParticipants">0</strong></article>
+            <article class="bet-admin-metric"><span>Palpites registrados</span><strong id="betMetricPredictions">0</strong></article>
+            <article class="bet-admin-metric"><span>Jogos apurados</span><strong id="betMetricSettled">0/0</strong></article>
+            <article class="bet-admin-metric"><span>Status</span><strong id="betMetricStatus">—</strong></article>
+          </div>
+
+          <div class="bet-admin-layout">
+            <section class="bet-admin-card" aria-labelledby="betCampaignSettingsTitle">
+              <div class="bet-admin-card-head">
+                <div><h2 id="betCampaignSettingsTitle">Configuração do desafio</h2><p>O resultado e os atletas vêm diretamente do torneio escolhido.</p></div>
+              </div>
+              <form class="bet-admin-form" id="betCampaignForm">
+                <label class="bet-admin-field" for="betCampaignTitle">Nome do desafio
+                  <input id="betCampaignTitle" maxlength="120" required />
+                </label>
+                <div class="bet-admin-grid">
+                  <label class="bet-admin-field" for="betCampaignStatus">Situação
+                    <select id="betCampaignStatus">
+                      <option value="DRAFT">Rascunho</option>
+                      <option value="OPEN">Palpites abertos</option>
+                      <option value="LOCKED">Palpites encerrados</option>
+                      <option value="FINISHED" disabled>Finalizado</option>
+                      <option value="ARCHIVED">Arquivado</option>
+                    </select>
+                  </label>
+                  <label class="bet-admin-check" for="betCampaignPublished">
+                    <input id="betCampaignPublished" type="checkbox" />
+                    <span>Mostrar este desafio no link público</span>
+                  </label>
+                  <label class="bet-admin-field" for="betCampaignOpensAt">Abrir em
+                    <input id="betCampaignOpensAt" type="datetime-local" />
+                  </label>
+                  <label class="bet-admin-field" for="betCampaignClosesAt">Encerrar inscrições em
+                    <input id="betCampaignClosesAt" type="datetime-local" />
+                  </label>
+                </div>
+                <div>
+                  <div class="bet-admin-points">
+                    <label class="bet-admin-field" for="betInitialPoints">Fases iniciais
+                      <input id="betInitialPoints" type="number" min="1" max="20" value="1" />
+                    </label>
+                    <label class="bet-admin-field" for="betSemifinalPoints">Semifinal
+                      <input id="betSemifinalPoints" type="number" min="1" max="20" value="2" />
+                    </label>
+                    <label class="bet-admin-field" for="betFinalPoints">Final
+                      <input id="betFinalPoints" type="number" min="1" max="20" value="3" />
+                    </label>
+                  </div>
+                  <small id="betPointsHint" class="muted">Pode ser ajustada até o primeiro cadastro.</small>
+                </div>
+                <label class="bet-admin-field" for="betCampaignRules">Regras visíveis ao público
+                  <textarea id="betCampaignRules" maxlength="4000" required></textarea>
+                </label>
+                <label class="bet-admin-check" for="betPrizeEnabled">
+                  <input id="betPrizeEnabled" type="checkbox" />
+                  <span>Divulgar reconhecimento ou prêmio ao campeão</span>
+                </label>
+                <div class="bet-admin-prize" id="betPrizeFields" hidden>
+                  <label class="bet-admin-field" for="betPrizeDescription">Descrição
+                    <input id="betPrizeDescription" maxlength="240" placeholder="Ex.: uma camisa oficial do Ilha Tênis" />
+                  </label>
+                  <label class="bet-admin-field" for="betPrizeAuthorization">Referência da revisão/autorização
+                    <input id="betPrizeAuthorization" maxlength="160" placeholder="Informe somente após validação jurídica" />
+                  </label>
+                  <div class="bet-admin-legal"><strong>Atenção:</strong> “sem fins lucrativos” não elimina automaticamente as regras brasileiras de promoção comercial. O sistema só publica o prêmio quando esta referência é preenchida.</div>
+                </div>
+                <div class="bet-admin-form-actions">
+                  <button class="primary-btn" id="betSaveCampaignBtn" type="submit">Salvar configuração</button>
+                  <button class="ghost-btn" id="betFinalizeCampaignBtn" type="button" hidden>Finalizar e confirmar campeão</button>
+                  <button class="ghost-btn" id="betReopenCampaignBtn" type="button" hidden>Reabrir desafio</button>
+                </div>
+              </form>
+            </section>
+
+            <section class="bet-admin-card" aria-labelledby="betParticipantsTitle">
+              <div class="bet-admin-card-head">
+                <div><h2 id="betParticipantsTitle">Participantes e ranking</h2><p>Contatos ficam visíveis somente no ADM. A página pública mostra o nome abreviado.</p></div>
+                <label class="bet-admin-field bet-admin-filter" for="betParticipantSearch">Buscar
+                  <input id="betParticipantSearch" type="search" placeholder="Nome, telefone ou e-mail" />
+                </label>
+              </div>
+              <div class="bet-admin-winner" id="betWinnerCard" hidden><span>Campeão confirmado</span><strong id="betWinnerName"></strong></div>
+              <div class="bet-admin-participants" id="betParticipantsList" aria-live="polite">
+                <div class="bet-admin-empty">Carregando participantes…</div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="ops-module app-settings-module" id="appSettingsModule">
@@ -25415,6 +25539,7 @@
 
   <script src="../assets/vendor/qrcode-generator.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+  <script src="/adm/predictions.js"></script>
   <script>
     window.addEventListener('error', function (event) {
       var status = document.getElementById('syncStatus');
@@ -30640,6 +30765,7 @@
       team: 'club-team',
       plans: 'club-database',
       tournaments: 'club-tournament',
+      bet: 'club-bet',
       settings: 'club-settings'
     };
     const ADM_LAUNCH_MODE = ADM_LAUNCH_MODULES[ADMIN_URL_PARAMS.get('module')] || '';
@@ -32114,7 +32240,7 @@
         toast('Seu acesso não permite abrir este módulo.');
         return false;
       }
-      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-courts', 'club-finance', 'club-bar', 'club-store', 'club-announcements', 'club-communication', 'club-clients', 'club-team', 'club-database', 'club-settings'].forEach(function (className) {
+      ['club-home', 'club-tournament', 'club-bet', 'club-lessons', 'club-students', 'club-agenda', 'club-courts', 'club-finance', 'club-bar', 'club-store', 'club-announcements', 'club-communication', 'club-clients', 'club-team', 'club-database', 'club-settings'].forEach(function (className) {
         document.body.classList.remove(className);
       });
       document.body.classList.add(mode);
@@ -45778,6 +45904,7 @@
         'club-team': 'team',
         'club-database': 'plans',
         'club-tournament': 'tournaments',
+        'club-bet': 'tournaments',
         'club-settings': 'settings'
       };
       return permissions[mode] || '';
@@ -46675,6 +46802,7 @@
           'club-team': openTeamModule,
           'club-database': openDatabaseModule,
           'club-tournament': openTournamentModule,
+          'club-bet': openBetModule,
           'club-settings': openAppSettingsModule
         };
         if (launchActions[launchMode]) launchActions[launchMode]();
@@ -46875,6 +47003,21 @@
       }
     }
 
+    function openBetModule() {
+      if (!setClubMode('club-bet')) return;
+      window.scrollTo(0, 0);
+      if (!window.IlhaBetAdmin) {
+        toast('O módulo Palpite Ilha não carregou. Atualize a página.');
+        return;
+      }
+      window.IlhaBetAdmin.open({
+        supabaseUrl: LESSONS_SUPABASE_URL,
+        publishableKey: LESSONS_SUPABASE_ANON_KEY,
+        getSession: function () { return adminSession; },
+        notify: toast
+      });
+    }
+
     function lockAdmin(skipRemoteLogout) {
       const token = adminSession && adminSession.access_token;
       clearAdminSession();
@@ -46885,7 +47028,7 @@
         }, ADMIN_REQUEST_TIMEOUT_MS).catch(function () {});
       }
       document.body.classList.remove('adm-unlocked');
-      ['club-home', 'club-tournament', 'club-lessons', 'club-students', 'club-agenda', 'club-courts', 'club-finance', 'club-bar', 'club-store', 'club-announcements', 'club-communication', 'club-clients', 'club-team', 'club-database', 'club-settings'].forEach(function (className) {
+      ['club-home', 'club-tournament', 'club-bet', 'club-lessons', 'club-students', 'club-agenda', 'club-courts', 'club-finance', 'club-bar', 'club-store', 'club-announcements', 'club-communication', 'club-clients', 'club-team', 'club-database', 'club-settings'].forEach(function (className) {
         document.body.classList.remove(className);
       });
       document.body.classList.add('adm-locked');
@@ -46919,6 +47062,7 @@
       if (document.body.classList.contains('club-communication')) renderCommunicationModule();
       if (document.body.classList.contains('club-team')) renderTeamModule();
       if (document.body.classList.contains('club-database')) renderPlansModule();
+      if (document.body.classList.contains('club-bet') && window.IlhaBetAdmin) window.IlhaBetAdmin.render();
       if (document.body.classList.contains('club-settings')) renderAppSettingsModule();
     }
 
@@ -49057,6 +49201,7 @@
             'club-team': openTeamModule,
             'club-database': openDatabaseModule,
             'club-tournament': openTournamentModule,
+            'club-bet': openBetModule,
             'club-settings': openAppSettingsModule
           };
           const action = actions[btn.dataset.adminNav];
