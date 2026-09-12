@@ -134,6 +134,31 @@ test('filtro de jogadores destaca automaticamente as classes lotadas em verde', 
   assert.equal(sandbox.result.isFull, true);
 });
 
+test('filtro de jogadores prioriza em amarelo as classes que já possuem chave', () => {
+  const hasDraw = functionSource(adminPageSource, 'adminCategoryHasDraw');
+  const filters = functionSource(adminPageSource, 'renderPlayerFilters');
+  const highlight = functionSource(adminPageSource, 'syncPlayerCategoryFilterHighlight');
+  assert.match(hasDraw, /state\.data\.jogos/);
+  assert.match(hasDraw, /\.some\(function \(match\)/);
+  assert.match(filters, /🟡 CHAVEADA —/);
+  assert.match(filters, /category-option-bracketed/);
+  assert.match(filters, /data-category-bracketed="true"/);
+  assert.match(highlight, /bracketed-category-selected/);
+  assert.match(highlight, /!isBracketed && adminCategoryCapacity/);
+  assert.match(adminPageSource, /#playerCategoryFilter option\.category-option-bracketed[\s\S]*background: #ffe38a/);
+  assert.match(adminPageSource, /#playerCategoryFilter\.bracketed-category-selected/);
+
+  const sandbox = {
+    state: {
+      data: {
+        jogos: [{ categoria_id: 'bracketed' }],
+      },
+    },
+  };
+  vm.runInNewContext(`${hasDraw}\nresult = adminCategoryHasDraw({ categoria_id: 'bracketed' });`, sandbox);
+  assert.equal(sandbox.result, true);
+});
+
 test('Classe Espacial lotada não pode ser marcada e informa o motivo', () => {
   const individualAddon = functionSource(publicPageSource, 'updateSpatialAddonField');
   assert.match(individualAddon, /categoryIsFull\(additional\)/);
