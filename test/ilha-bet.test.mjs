@@ -157,6 +157,7 @@ test('código de acesso é enviado por e-mail com idempotência e sem quebrar o 
   assert.match(helper, /"Idempotency-Key": `ilha-bet-access\/\$\{entry\.id\}`/);
   assert.match(helper, /RESEND_API_KEY/);
   assert.match(helper, /PREDICTION_EMAIL_FROM/);
+  assert.match(helper, /AbortSignal\.timeout\(8_000\)/);
   assert.doesNotMatch(helper, /access_code=/);
   assert.match(publicApi, /sendPredictionAccessEmail[\s\S]*catch \(emailError\)[\s\S]*email_delivery: emailDelivery/);
   assert.match(adminApi, /action === "sendAccessEmails"/);
