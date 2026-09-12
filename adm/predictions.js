@@ -172,6 +172,8 @@
     byId('betReopenCampaignBtn').hidden = !finished;
     byId('betReopenCampaignBtn').disabled = moduleState.loading || !finished;
     byId('betAdminReloadBtn').disabled = moduleState.loading;
+    byId('betSendAccessEmailsBtn').disabled = moduleState.loading || !moduleState.data.campaign ||
+      Number(moduleState.data.summary && moduleState.data.summary.active_participants || 0) === 0;
     const link = publicUrl();
     byId('betPublicLink').value = link;
     byId('betOpenPublicBtn').disabled = !link;
@@ -199,10 +201,12 @@
     const actionsDisabled = moduleState.loading || campaignFinished;
     target.innerHTML = participants.map(function (entry) {
       const active = entry.status === 'ACTIVE';
+      const emailSent = entry.email_delivery_status === 'SENT';
+      const emailStatus = emailSent ? 'E-mail com código enviado' : entry.email_delivery_status === 'FAILED' ? 'Falha no último envio' : 'Código ainda não enviado';
       return '<article class="bet-admin-participant ' + (active ? '' : 'blocked') + '">' +
         '<span class="bet-admin-rank">' + escapeHtml(entry.position || '—') + '</span>' +
         '<div class="bet-admin-person"><strong>' + escapeHtml(entry.full_name) + '</strong><span>' + escapeHtml(entry.public_name) + ' · ' + escapeHtml(active ? 'Ativo' : 'Bloqueado') + '</span></div>' +
-        '<div class="bet-admin-person bet-admin-contact"><strong>' + escapeHtml(phoneLabel(entry.phone)) + '</strong><span>' + escapeHtml(entry.email) + '</span></div>' +
+        '<div class="bet-admin-person bet-admin-contact"><strong>' + escapeHtml(phoneLabel(entry.phone)) + '</strong><span>' + escapeHtml(entry.email) + '</span><small>' + escapeHtml(emailStatus) + '</small></div>' +
         '<div class="bet-admin-score bet-admin-points-score"><span>Pontos</span><strong>' + escapeHtml(entry.score) + '</strong></div>' +
         '<div class="bet-admin-score"><span>Acertos</span><strong>' + escapeHtml(entry.correct) + '</strong></div>' +
         '<div class="bet-admin-score"><span>Palpites</span><strong>' + escapeHtml(entry.predictions) + '</strong></div>' +
@@ -263,8 +267,17 @@
       });
       moduleState.data = payload.data;
       render();
-      setStatus('Alteração salva com segurança.', false);
-      notify('Ilha Bet atualizado.');
+      if (action === 'sendAccessEmails') {
+        const result = payload.result || {};
+        const sent = Number(result.sent || 0);
+        const alreadySent = Number(result.already_sent || 0);
+        const failed = Number(result.failed || 0);
+        setStatus(sent + ' código(s) enviado(s), ' + alreadySent + ' já enviado(s)' + (failed ? ' e ' + failed + ' falha(s).' : '.'), failed > 0);
+        notify(failed ? 'Envio concluído com algumas falhas. Confira a lista.' : 'Códigos enviados por e-mail.');
+      } else {
+        setStatus('Alteração salva com segurança.', false);
+        notify('Ilha Bet atualizado.');
+      }
     } catch (error) {
       setStatus(error.message, true);
       notify(error.message);
@@ -317,6 +330,9 @@
     });
     byId('betReopenCampaignBtn').addEventListener('click', function () {
       mutate('reopenCampaign', {}, 'Reabrir o desafio e remover a confirmação do vencedor?');
+    });
+    byId('betSendAccessEmailsBtn').addEventListener('click', function () {
+      mutate('sendAccessEmails', {}, 'Enviar agora o código de acesso para todos os participantes ativos que ainda não receberam? Os envios concluídos não serão duplicados.');
     });
     byId('betOpenPublicBtn').addEventListener('click', function () { if (publicUrl()) window.open(publicUrl(), '_blank', 'noopener'); });
     byId('betCopyPublicBtn').addEventListener('click', async function () {

@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(30);
+select plan(34);
 
 select ok(
   to_regclass('public.tournament_prediction_audit_log') is not null
@@ -10,8 +10,9 @@ select ok(
   and to_regclass('public.tournament_prediction_entries') is not null
   and to_regclass('public.tournament_prediction_requests') is not null
   and to_regclass('public.tournament_prediction_rate_limits') is not null
+  and to_regclass('public.tournament_prediction_access_email_deliveries') is not null
   and to_regclass('public.tournament_predictions') is not null,
-  'as seis tabelas do Palpite Ilha existem'
+  'as sete tabelas do Palpite Ilha existem'
 );
 
 select ok(
@@ -23,7 +24,8 @@ select ok(
       ('tournament_predictions'),
       ('tournament_prediction_requests'),
       ('tournament_prediction_audit_log'),
-      ('tournament_prediction_rate_limits')
+      ('tournament_prediction_rate_limits'),
+      ('tournament_prediction_access_email_deliveries')
     ) as protected_table(relation_name)
     join pg_class as relation on relation.relname = protected_table.relation_name
     join pg_namespace as namespace on namespace.oid = relation.relnamespace
@@ -42,7 +44,8 @@ select ok(
       ('public.tournament_predictions'),
       ('public.tournament_prediction_requests'),
       ('public.tournament_prediction_audit_log'),
-      ('public.tournament_prediction_rate_limits')
+      ('public.tournament_prediction_rate_limits'),
+      ('public.tournament_prediction_access_email_deliveries')
     ) as protected_table(table_name)
     where has_table_privilege('anon', protected_table.table_name, 'SELECT,INSERT,UPDATE,DELETE')
        or has_table_privilege('authenticated', protected_table.table_name, 'SELECT,INSERT,UPDATE,DELETE')
@@ -79,7 +82,9 @@ select ok(
       ('public.admin_set_tournament_prediction_entry_status(uuid,text,uuid)'),
       ('public.admin_delete_tournament_prediction_entry(uuid,uuid)'),
       ('public.admin_finalize_tournament_prediction_campaign(uuid,uuid)'),
-      ('public.admin_reopen_tournament_prediction_campaign(uuid,uuid)')
+      ('public.admin_reopen_tournament_prediction_campaign(uuid,uuid)'),
+      ('public.claim_tournament_prediction_access_email(uuid)'),
+      ('public.complete_tournament_prediction_access_email(uuid,boolean,text,text)')
     ) as rpc(signature)
     where has_function_privilege('anon', rpc.signature, 'EXECUTE')
        or has_function_privilege('authenticated', rpc.signature, 'EXECUTE')
@@ -194,6 +199,49 @@ select is(
   ),
   '1:1',
   'retry de cadastro não duplica participante nem auditoria'
+);
+
+select lives_ok(
+  $$select public.claim_tournament_prediction_access_email(
+    (select id from public.tournament_prediction_entries
+     where registration_request_id = '79000000-0000-4000-8000-000000000051'::uuid)
+  )$$,
+  'o backend reserva o primeiro envio do código por e-mail'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.tournament_prediction_access_email_deliveries
+    where campaign_id = '79000000-0000-4000-8000-000000000041'::uuid
+  ),
+  1,
+  'uma entrada possui somente um ledger de envio'
+);
+
+select ok(
+  public.complete_tournament_prediction_access_email(
+    (select id from public.tournament_prediction_access_email_deliveries
+     where campaign_id = '79000000-0000-4000-8000-000000000041'::uuid),
+    true,
+    'email_test_123',
+    null
+  ),
+  'o backend confirma o envio do código'
+);
+
+select is(
+  (
+    select status || ':' || attempt_count::text || ':' || (sent_at is not null)::text || ':' ||
+      (select count(*)::text from public.claim_tournament_prediction_access_email(
+        (select id from public.tournament_prediction_entries
+         where registration_request_id = '79000000-0000-4000-8000-000000000051'::uuid)
+      ))
+    from public.tournament_prediction_access_email_deliveries
+    where campaign_id = '79000000-0000-4000-8000-000000000041'::uuid
+  ),
+  'SENT:1:true:0',
+  'envio confirmado não volta para a fila nem é duplicado'
 );
 
 select throws_ok(

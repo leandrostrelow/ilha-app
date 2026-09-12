@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js@2.112.3/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import { appCorsHeaders } from "../_shared/cors.ts";
+import { derivePredictionAccessCode, sendPredictionAccessEmail } from "../_shared/prediction-access-email.ts";
 
 type Row = Record<string, any>;
 type DbClient = SupabaseClient<any, "public", "public", any>;
@@ -251,16 +252,6 @@ function normalizeAccessCode(value: unknown) {
   const code = text(value, 20).toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (code.length !== 10 || [...code].some((character) => !accessCodeAlphabet.includes(character))) {
     throw new ApiError("Código de acesso inválido.", 401, "invalid_access");
-  }
-  return code;
-}
-
-async function derivedAccessCode(config: SecurityConfig, requestId: string) {
-  const digest = await hmacSha256(config.rateLimitSalt, `palpite-code:${requestId}`);
-  let code = "";
-  for (let index = 0; index < 20; index += 2) {
-    const byte = Number.parseInt(digest.slice(index, index + 2), 16);
-    code += accessCodeAlphabet[byte % accessCodeAlphabet.length];
   }
   return code;
 }
@@ -593,7 +584,7 @@ Deno.serve(async (request: Request) => {
       if (!await verifyTurnstile(request, text(payload.captcha_token, 2048), config)) {
         throw new ApiError("Confirme a proteção anti-robô e tente novamente.", 400, "captcha_failed");
       }
-      const accessCode = await derivedAccessCode(config, requestId);
+      const accessCode = await derivePredictionAccessCode(config.rateLimitSalt, requestId);
       const accessHash = await accessCodeHash(config, accessCode);
       let result;
       try {
@@ -613,9 +604,20 @@ Deno.serve(async (request: Request) => {
       const entry = (Array.isArray(result!.data) ? result!.data[0] : result!.data) as Row;
       if (!entry?.id) throw new ApiError("Não foi possível concluir o cadastro.", 500, "registration_failed");
       const participant = { entry };
+      let emailDelivery: Row = { status: "NOT_CONFIGURED" };
+      try {
+        emailDelivery = await sendPredictionAccessEmail(client, entry, campaign, selected.tournament || {}, accessCode);
+      } catch (emailError) {
+        console.error("bet-public-api access email failure", {
+          stage: "access_email",
+          code: text((emailError as Row)?.code || "email_delivery_failed", 80),
+        });
+        emailDelivery = { status: "FAILED" };
+      }
       return json(request, {
         ok: true,
         access: { entry_id: entry.id, access_code: accessCode },
+        email_delivery: emailDelivery,
         data: await loadSnapshot(client, tournamentSlug, participant),
       }, 201);
     }
