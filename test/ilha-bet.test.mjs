@@ -75,6 +75,7 @@ test('ADM integra o Ilha Bet ao torneio sem administrador fixo', async () => {
   assert.match(adminHtml, /src="\/adm\/predictions\.js"/);
   assert.match(adminHtml, /id="betTournamentPicker"/);
   assert.match(adminHtml, /id="betParticipantsList"/);
+  assert.match(adminHtml, /id="betSendAccessEmailsBtn"/);
   assert.match(adminHtml, /'club-bet': 'tournaments'/);
   assert.match(adminJs, /\/functions\/v1\/bet-admin-api/);
   assert.match(adminJs, /getSession/);
@@ -82,6 +83,7 @@ test('ADM integra o Ilha Bet ao torneio sem administrador fixo', async () => {
   assert.match(adminJs, /betFinalizeCampaignBtn'\)\.hidden = !canFinalize/);
   assert.match(adminJs, /betFinalizeCampaignBtn'\)\.disabled = moduleState\.loading \|\| !canFinalize/);
   assert.match(adminJs, /action === 'finalizeCampaign' && status !== 'LOCKED'/);
+  assert.match(adminJs, /mutate\('sendAccessEmails'/);
   assert.doesNotMatch(`${adminHtml}\n${adminJs}`, /brunosilva821@hotmail\.com/i);
   assert.doesNotThrow(() => new Function(adminJs));
 });
@@ -129,16 +131,42 @@ test('banco do Palpite Ilha mantém PII fechada e prêmio desligado no seed', as
   }
 });
 
-test('pgTAP cobre ledger, grants, idempotência e finalização', async () => {
+test('pgTAP cobre ledger, e-mail, grants, idempotência e finalização', async () => {
   const sql = await read('test/supabase/ilha_bet.test.sql');
-  assert.match(sql, /select plan\(30\)/);
+  assert.match(sql, /select plan\(34\)/);
   assert.match(sql, /tournament_prediction_requests/);
+  assert.match(sql, /tournament_prediction_access_email_deliveries/);
   assert.match(sql, /retry exato não duplica palpite, ledger ou auditoria/);
   assert.match(sql, /retry antigo nunca desfaz a escolha mais recente/);
   assert.match(sql, /RPCs administrativas são exclusivas do backend service_role/);
   assert.match(sql, /partida cancelada não impede a finalização/);
   assert.match(sql, /campanha não pode coroar campeão antes de o torneio ser finalizado/);
   assert.match(sql, /partida cancelada com vencedor residual nunca entra na pontuação/);
+});
+
+test('código de acesso é enviado por e-mail com idempotência e sem quebrar o cadastro', async () => {
+  const [helper, publicApi, adminApi, html, app, migration] = await Promise.all([
+    read('supabase/functions/_shared/prediction-access-email.ts'),
+    read('supabase/functions/bet-public-api/index.ts'),
+    read('supabase/functions/bet-admin-api/index.ts'),
+    read('bet/index.html'),
+    read('bet/app.js'),
+    read('supabase/migrations/20260912115944_add_prediction_access_email_delivery.sql')
+  ]);
+  assert.match(helper, /https:\/\/api\.resend\.com\/emails/);
+  assert.match(helper, /"Idempotency-Key": `ilha-bet-access\/\$\{entry\.id\}`/);
+  assert.match(helper, /RESEND_API_KEY/);
+  assert.match(helper, /PREDICTION_EMAIL_FROM/);
+  assert.match(helper, /AbortSignal\.timeout\(8_000\)/);
+  assert.doesNotMatch(helper, /access_code=/);
+  assert.match(publicApi, /sendPredictionAccessEmail[\s\S]*catch \(emailError\)[\s\S]*email_delivery: emailDelivery/);
+  assert.match(adminApi, /action === "sendAccessEmails"/);
+  assert.match(adminApi, /\.eq\("status", "ACTIVE"\)/);
+  assert.match(html, /id="newAccessEmailStatus"/);
+  assert.match(app, /response\.email_delivery[\s\S]*Também enviamos uma cópia/);
+  assert.match(migration, /force row level security/);
+  assert.match(migration, /claim_tournament_prediction_access_email/);
+  assert.match(migration, /complete_tournament_prediction_access_email/);
 });
 
 test('Edge Functions usam captcha, rate limit e dupla autorização administrativa', async () => {

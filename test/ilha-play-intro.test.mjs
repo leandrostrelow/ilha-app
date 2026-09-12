@@ -29,7 +29,7 @@ test('vídeo padrão do Ilha Play é um MP4 leve e entra no cache do app', () =>
   assert.match(serviceWorker, /ilha-play-v243-palpite-ilha/);
   assert.match(serviceWorker, /\/assets\/app\/ilha-play-intro\.mp4/);
   assert.match(server, /\['\.mp4', 'video\/mp4'\]/);
-  assert.match(appVersion, /2026-09-11/);
+  assert.match(appVersion, /"version": "\d{4}-\d{2}-\d{2}\.\d{4}"/);
 });
 
 test('ADM possui módulo próprio para ativar, trocar, visualizar e remover a abertura', () => {

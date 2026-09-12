@@ -1,6 +1,11 @@
 import "jsr:@supabase/functions-js@2.112.3/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import { appCorsHeaders } from "../_shared/cors.ts";
+import {
+  derivePredictionAccessCode,
+  predictionEmailConfigured,
+  sendPredictionAccessEmail,
+} from "../_shared/prediction-access-email.ts";
 
 type Row = Record<string, any>;
 type DbClient = SupabaseClient<any, "public", "public", any>;
@@ -206,18 +211,30 @@ async function loadSnapshot(client: DbClient, requestedTournamentId = "") {
     };
   }
 
-  const [entryResult, predictionResult, matchResult] = await Promise.all([
+  const [entryResult, predictionResult, matchResult, deliveryResult] = await Promise.all([
     client.from("tournament_prediction_entries").select("*").eq("campaign_id", campaign.id),
     client.from("tournament_predictions").select("id,entry_id,match_id,predicted_winner_athlete_id,created_at,updated_at").eq("campaign_id", campaign.id),
     client.from("tournament_matches").select("id,side1_athlete_id,side2_athlete_id,winner_athlete_id,round_code,phase,status,published")
       .eq("tournament_id", tournament.id).eq("published", true),
+    client.from("tournament_prediction_access_email_deliveries")
+      .select("entry_id,status,sent_at,attempt_count,last_error_code").eq("campaign_id", campaign.id),
   ]);
-  [entryResult.error, predictionResult.error, matchResult.error].forEach(assertNoError);
+  [entryResult.error, predictionResult.error, matchResult.error, deliveryResult.error].forEach(assertNoError);
   const entries = (entryResult.data || []) as Row[];
   const predictions = (predictionResult.data || []) as Row[];
   const matches = (matchResult.data || []) as Row[];
+  const deliveries = (deliveryResult.data || []) as Row[];
+  const deliveryMap = new Map(deliveries.map((delivery) => [String(delivery.entry_id), delivery]));
   const matchMap = new Map(matches.map((match) => [String(match.id), match]));
-  const participants = calculateRanking(entries, predictions, matchMap, campaign);
+  const participants = calculateRanking(entries, predictions, matchMap, campaign).map((participant) => {
+    const delivery = deliveryMap.get(String(participant.id));
+    return {
+      ...participant,
+      email_delivery_status: delivery?.status || "PENDING",
+      email_sent_at: delivery?.sent_at || null,
+      email_attempt_count: Number(delivery?.attempt_count || 0),
+    };
+  });
   const availableMatches = matches.filter((match) =>
     match.side1_athlete_id && match.side2_athlete_id && String(match.status || "").toUpperCase() !== "CANCELLED"
   ).length;
@@ -233,6 +250,8 @@ async function loadSnapshot(client: DbClient, requestedTournamentId = "") {
       predictions: predictions.length,
       settled_matches: settledMatches,
       available_matches: availableMatches,
+      access_emails_sent: deliveries.filter((delivery) => delivery.status === "SENT").length,
+      access_emails_failed: deliveries.filter((delivery) => delivery.status === "FAILED").length,
     },
     winner: campaign.winner_entry_id ? participants.find((entry) => entry.id === campaign.winner_entry_id) || null : null,
     public_url: `https://app.ilhatenis.com/bet?torneio=${encodeURIComponent(tournament.slug)}`,
@@ -332,6 +351,53 @@ async function reopenCampaign(client: DbClient, actorId: string, payload: Row) {
   return rpcRow(result.data);
 }
 
+async function sendAccessEmails(client: DbClient, payload: Row) {
+  const tournament = await selectedTournament(client, payload.tournament_id);
+  if (!predictionEmailConfigured()) {
+    throw new ApiError(
+      "Configure o remetente do Ilha Bet antes de enviar os códigos por e-mail.",
+      503,
+      "email_not_configured",
+    );
+  }
+  const campaignResult = await client.from("tournament_prediction_campaigns").select("*")
+    .eq("tournament_id", tournament.id).maybeSingle();
+  assertNoError(campaignResult.error);
+  const campaign = campaignResult.data as Row | null;
+  if (!campaign) throw new ApiError("Desafio não encontrado.", 404, "campaign_not_found");
+
+  const rateLimitSalt = Deno.env.get("PUBLIC_REGISTRATION_RATE_LIMIT_SALT") || "";
+  if (rateLimitSalt.length < 32) throw new ApiError("Configuração indisponível.", 503, "not_configured");
+  const entriesResult = await client.from("tournament_prediction_entries")
+    .select("id,campaign_id,registration_request_id,full_name,email,status")
+    .eq("campaign_id", campaign.id).eq("status", "ACTIVE").order("created_at", { ascending: true });
+  assertNoError(entriesResult.error);
+  const entries = (entriesResult.data || []) as Row[];
+  const summary = { total: entries.length, sent: 0, already_sent: 0, failed: 0 };
+
+  for (let offset = 0; offset < entries.length; offset += 5) {
+    const batch = entries.slice(offset, offset + 5);
+    const results = await Promise.all(batch.map(async (entry) => {
+      try {
+        const accessCode = await derivePredictionAccessCode(rateLimitSalt, String(entry.registration_request_id));
+        return await sendPredictionAccessEmail(client, entry, campaign, tournament, accessCode);
+      } catch (error) {
+        console.error("bet-admin-api access email failure", {
+          stage: "send_access_emails",
+          code: text((error as Row)?.code || "email_delivery_failed", 80),
+        });
+        return { status: "FAILED" };
+      }
+    }));
+    for (const result of results) {
+      if (result.status === "SENT") summary.sent += 1;
+      else if (result.status === "ALREADY_SENT") summary.already_sent += 1;
+      else summary.failed += 1;
+    }
+  }
+  return summary;
+}
+
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(request) });
   let stage = "bootstrap";
@@ -386,6 +452,7 @@ Deno.serve(async (request: Request) => {
     else if (action === "deleteEntry") result = await deleteEntry(client, profile.id, payload);
     else if (action === "finalizeCampaign") result = await finalizeCampaign(client, profile.id, payload);
     else if (action === "reopenCampaign") result = await reopenCampaign(client, profile.id, payload);
+    else if (action === "sendAccessEmails") result = await sendAccessEmails(client, payload);
     else throw new ApiError("Ação inválida.", 400, "invalid_action");
     return json(request, { ok: true, result, data: await loadSnapshot(client, uuid(payload.tournament_id)) });
   } catch (error) {

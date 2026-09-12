@@ -473,6 +473,9 @@
       clearPendingRegistrationRequestId();
       closeRegistration();
       $('newAccessCode').textContent = response.access.access_code;
+      $('newAccessEmailStatus').textContent = response.email_delivery && response.email_delivery.status === 'SENT'
+        ? 'Também enviamos uma cópia para o e-mail informado. Assim você recupera o acesso em outro celular.'
+        : 'Ele já ficou salvo neste aparelho. Guarde ou tire uma captura para conseguir entrar em outro celular.';
       $('accessCodeModal').hidden = false;
       document.body.style.overflow = 'hidden';
       setBackgroundInert(true);
