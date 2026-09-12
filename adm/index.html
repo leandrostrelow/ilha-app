@@ -5129,6 +5129,19 @@
       box-shadow: 0 0 0 3px rgba(166, 255, 0, .22);
     }
 
+    #playerCategoryFilter option.category-option-bracketed {
+      color: #6a5000;
+      background: #ffe38a;
+      font-weight: 950;
+    }
+
+    #playerCategoryFilter.bracketed-category-selected {
+      border-color: #e1ac00;
+      color: #6a5000;
+      background: #fff3bf;
+      box-shadow: 0 0 0 3px rgba(255, 195, 0, .22);
+    }
+
     .agenda-event-form {
       margin: 12px 0 14px;
       display: grid;
@@ -26622,21 +26635,33 @@
       return { maxEntries: maxEntries, occupiedEntries: occupiedEntries, isFull: occupiedEntries >= maxEntries };
     }
 
+    function adminCategoryHasDraw(category) {
+      const categoryId = String(category && (category.categoria_id || category.id) || '');
+      return Boolean(categoryId) && (state.data.jogos || []).some(function (match) {
+        return String(match.categoria_id || match.category_id || '') === categoryId;
+      });
+    }
+
     function syncPlayerCategoryFilterHighlight() {
       const select = $('playerCategoryFilter');
       const selected = state.data.categorias.find(function (category) {
         return String(category.categoria_id) === String(select.value || '');
       });
-      select.classList.toggle('full-category-selected', Boolean(selected && adminCategoryCapacity(selected).isFull));
+      const isBracketed = Boolean(selected && adminCategoryHasDraw(selected));
+      select.classList.toggle('bracketed-category-selected', isBracketed);
+      select.classList.toggle('full-category-selected', Boolean(selected && !isBracketed && adminCategoryCapacity(selected).isFull));
     }
 
     function renderPlayerFilters() {
       const current = $('playerCategoryFilter').value;
       $('playerCategoryFilter').innerHTML = '<option value="">Todas classes</option>' + state.data.categorias.map(function (cat) {
+        const isBracketed = adminCategoryHasDraw(cat);
         const capacity = adminCategoryCapacity(cat);
-        const label = (capacity.isFull ? '🟢 LOTADA — ' : '') + cat.nome;
+        const label = (isBracketed ? '🟡 CHAVEADA — ' : capacity.isFull ? '🟢 LOTADA — ' : '') + cat.nome;
         return '<option value="' + escapeHtml(cat.categoria_id) + '"' +
-          (capacity.isFull ? ' class="category-option-full" data-category-full="true"' : '') + '>' +
+          (isBracketed
+            ? ' class="category-option-bracketed" data-category-bracketed="true"'
+            : capacity.isFull ? ' class="category-option-full" data-category-full="true"' : '') + '>' +
           escapeHtml(label) + '</option>';
       }).join('');
       $('playerCategoryFilter').value = current || '';
