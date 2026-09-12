@@ -107,6 +107,33 @@ test('classe lotada fica indisponível nos formulários individual, interno e fa
   assert.match(publicPageSource, /\.category-check:has\(input:disabled\)/);
 });
 
+test('filtro de jogadores destaca automaticamente as classes lotadas em verde', () => {
+  const capacity = functionSource(adminPageSource, 'adminCategoryCapacity');
+  const filters = functionSource(adminPageSource, 'renderPlayerFilters');
+  assert.match(capacity, /\['PENDING', 'CONFIRMED'\]\.includes\(registrationStatus\)/);
+  assert.match(capacity, /occupiedEntries >= maxEntries/);
+  assert.match(filters, /🟢 LOTADA —/);
+  assert.match(filters, /category-option-full/);
+  assert.match(filters, /data-category-full="true"/);
+  assert.match(adminPageSource, /#playerCategoryFilter option\.category-option-full[\s\S]*background: #caff45/);
+  assert.match(adminPageSource, /#playerCategoryFilter\.full-category-selected/);
+
+  const sandbox = {
+    state: {
+      data: {
+        inscricoes: [
+          { categoria_id: 'full', status: 'PENDING' },
+          { categoria_id: 'full', status: 'CONFIRMED' },
+          { categoria_id: 'full', status: 'CANCELLED' },
+        ],
+      },
+    },
+  };
+  vm.runInNewContext(`${capacity}\nresult = adminCategoryCapacity({ categoria_id: 'full', max_inscritos: 2 });`, sandbox);
+  assert.equal(sandbox.result.occupiedEntries, 2);
+  assert.equal(sandbox.result.isFull, true);
+});
+
 test('Classe Espacial lotada não pode ser marcada e informa o motivo', () => {
   const individualAddon = functionSource(publicPageSource, 'updateSpatialAddonField');
   assert.match(individualAddon, /categoryIsFull\(additional\)/);

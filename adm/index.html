@@ -5116,6 +5116,19 @@
       font-weight: 800;
     }
 
+    #playerCategoryFilter option.category-option-full {
+      color: #245400;
+      background: #caff45;
+      font-weight: 950;
+    }
+
+    #playerCategoryFilter.full-category-selected {
+      border-color: #79c900;
+      color: #245400;
+      background: #efffc3;
+      box-shadow: 0 0 0 3px rgba(166, 255, 0, .22);
+    }
+
     .agenda-event-form {
       margin: 12px 0 14px;
       display: grid;
@@ -26595,12 +26608,39 @@
       if (currentRegistrationCategory) $('registrationCategory').value = currentRegistrationCategory;
     }
 
+    function adminCategoryCapacity(category) {
+      const maxEntries = Number(category && (category.max_inscritos ?? category.max_entries));
+      if (!Number.isInteger(maxEntries) || maxEntries < 1) {
+        return { maxEntries: null, occupiedEntries: 0, isFull: false };
+      }
+      const categoryId = String(category.categoria_id || category.id || '');
+      const occupiedEntries = (state.data.inscricoes || []).filter(function (registration) {
+        const registrationStatus = String(registration.status || 'PENDING').toUpperCase();
+        return String(registration.categoria_id || registration.category_id || '') === categoryId &&
+          ['PENDING', 'CONFIRMED'].includes(registrationStatus);
+      }).length;
+      return { maxEntries: maxEntries, occupiedEntries: occupiedEntries, isFull: occupiedEntries >= maxEntries };
+    }
+
+    function syncPlayerCategoryFilterHighlight() {
+      const select = $('playerCategoryFilter');
+      const selected = state.data.categorias.find(function (category) {
+        return String(category.categoria_id) === String(select.value || '');
+      });
+      select.classList.toggle('full-category-selected', Boolean(selected && adminCategoryCapacity(selected).isFull));
+    }
+
     function renderPlayerFilters() {
       const current = $('playerCategoryFilter').value;
       $('playerCategoryFilter').innerHTML = '<option value="">Todas classes</option>' + state.data.categorias.map(function (cat) {
-        return '<option value="' + escapeHtml(cat.categoria_id) + '">' + escapeHtml(cat.nome) + '</option>';
+        const capacity = adminCategoryCapacity(cat);
+        const label = (capacity.isFull ? '🟢 LOTADA — ' : '') + cat.nome;
+        return '<option value="' + escapeHtml(cat.categoria_id) + '"' +
+          (capacity.isFull ? ' class="category-option-full" data-category-full="true"' : '') + '>' +
+          escapeHtml(label) + '</option>';
       }).join('');
       $('playerCategoryFilter').value = current || '';
+      syncPlayerCategoryFilterHighlight();
     }
 
     function renderAgendaFilterOptions() {
@@ -26632,6 +26672,7 @@
     }
 
     function renderPlayers() {
+      syncPlayerCategoryFilterHighlight();
       const registrations = state.data.inscricoes;
       const search = normalizeSearch($('playerSearch').value);
       const categoryFilter = $('playerCategoryFilter').value;
