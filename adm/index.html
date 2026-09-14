@@ -5160,6 +5160,39 @@
       color: #805b00;
     }
 
+    .player-registration-note {
+      margin-top: 7px;
+      padding: 7px 9px;
+      border: 1px solid #b6e45a;
+      border-left: 4px solid var(--lime);
+      border-radius: 9px;
+      background: #f5ffe3;
+      color: #34510b;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+
+    .player-registration-note strong {
+      display: inline;
+      color: #243b08;
+      font-size: inherit;
+    }
+
+    .player-registration-note-detail {
+      min-height: 54px;
+      padding: 10px 12px;
+      border: 1px solid #b6e45a;
+      border-left: 4px solid var(--lime);
+      border-radius: 10px;
+      background: #f5ffe3;
+      color: #243b08;
+      font-weight: 800;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+
     .agenda-filters {
       display: grid;
       grid-template-columns: repeat(3, minmax(120px, 1fr));
@@ -25065,6 +25098,11 @@
                 <label>Observações</label>
                 <textarea id="playerNotes" placeholder="Pagamento, restricao de horario, etc."></textarea>
               </div>
+              <div class="field full" id="playerRegistrationNoteField" hidden>
+                <label>Observação enviada na inscrição</label>
+                <div class="player-registration-note-detail" id="playerRegistrationNote"></div>
+                <small class="muted">Texto original informado pelo atleta, separado das observações internas acima.</small>
+              </div>
               <div class="field full" id="playerRegistrationField" hidden>
                 <label>Qual inscrição deseja alterar?</label>
                 <select id="playerRegistration"></select>
@@ -26817,6 +26855,7 @@
             .filter(function (r) { return String(r.jogador_id) === String(player.jogador_id) && String(r.status_pagamento) !== 'CANCELADO'; });
           const availabilityDays = playerAvailabilityDays(player.jogador_id);
           const availabilityText = availabilityDaysLabel(availabilityDays);
+          const submittedNotes = playerRegistrationNotes(regs);
           const onlinePayment = (state.data.pagamentos_online || []).find(function (entry) {
             return regs.some(function (registration) { return String(registration.inscricao_id) === String(entry.inscricao_id); });
           });
@@ -26857,7 +26896,9 @@
             '</small>' +
             '<div class="player-availability' + (availabilityDays.length ? '' : ' missing') + '">' +
               '<span aria-hidden="true">📅</span><span>' + (availabilityDays.length ? 'Pode jogar: ' + escapeHtml(availabilityText) : 'Disponibilidade não informada') + '</span>' +
-            '</div><div class="tag-line">' +
+            '</div>' + (submittedNotes.length
+              ? '<div class="player-registration-note"><strong>⚠️ Observação da inscrição:</strong> ' + escapeHtml(submittedNotes.join('\n')) + '</div>'
+              : '') + '<div class="tag-line">' +
             (cats || '<span class="mini-tag warn">sem classe</span>') +
             '<span class="mini-tag' + statusClass + '">' + escapeHtml(player.status || 'ATIVO') + '</span>' +
             (courtesy ? '<span class="mini-tag">CORTESIA</span>' : '') +
@@ -28268,6 +28309,20 @@
         .filter(function (day) { return available.has(day); });
     }
 
+    function registrationAthleteNote(registration) {
+      const raw = String(registration && registration.observacoes || '').trim();
+      const marker = raw.match(/(?:^|\n)observa(?:ç|c)(?:ã|a)o:\s*/i);
+      if (!marker) return '';
+      const start = Number(marker.index || 0) + marker[0].length;
+      return raw.slice(start)
+        .split(/\n(?=(?:menor de idade\.|classe adicional:))/i)[0]
+        .trim();
+    }
+
+    function playerRegistrationNotes(registrations) {
+      return Array.from(new Set((registrations || []).map(registrationAthleteNote).filter(Boolean)));
+    }
+
     function availabilityDaysLabel(days) {
       return tournamentAvailabilityDays
         .filter(function (item) { return days.indexOf(item.value) !== -1; })
@@ -28321,6 +28376,9 @@
       $('registrationId').value = String(registration.inscricao_id || '');
       renderEditableRegistrationCategories(playerId, registration.inscricao_id, registration.categoria_id);
       $('registrationPayment').value = registration.status_pagamento || 'PENDENTE';
+      const submittedNote = registrationAthleteNote(registration);
+      $('playerRegistrationNoteField').hidden = !submittedNote;
+      $('playerRegistrationNote').textContent = submittedNote;
       $('registrationCategoryHint').textContent = 'Você está editando “' + getCategoryName(registration.categoria_id) + '”. O pagamento e a mesma inscrição serão preservados na troca.';
     }
 
@@ -28384,9 +28442,10 @@
       const phase = roundLabels[match.fase] || match.fase || 'Jogo';
       const phaseText = whatsappPhaseText(phase);
       const opponent = getPlayerName(opponentId) || 'advers\u00e1rio a definir';
-      const day = dayTurnText($('editorDate').value, $('editorTime').value).toLowerCase();
-      const dayPhrase = day === 'dia a definir' ? 'em dia a definir' : 'na ' + day;
+      const schedulePhrase = whatsappSchedulePhrase($('editorDate').value, $('editorTime').value);
       const tournament = cleanTournamentName((state.data.torneio && state.data.torneio.nome) || 'II VIAFOR OPEN');
+      const tournamentUrl = (state.data.torneio && state.data.torneio.public_url) ||
+        ('https://app.ilhatenis.com/torneios/' + encodeURIComponent((state.data.torneio && state.data.torneio.slug) || 'ilha-open-2026'));
       const tennisEmoji = String.fromCodePoint(0x1F3BE);
 
       const firstName = String(player.nome || 'Atleta').trim().split(/\s+/)[0] || 'Atleta';
@@ -28399,13 +28458,13 @@
           tournament + ' ' + tennisEmoji,
           '',
           'Fala ' + firstName + ', blz?',
-          'Passando para confirmar seu jogo da ' + category + ' ' + phaseText + ' contra ' + opponent + ' ' + dayPhrase + '.',
+          'Passando para confirmar seu jogo da ' + category + ' ' + phaseText + ' contra ' + opponent + schedulePhrase + '.',
           '',
           'Por favor, confirme sua presen\u00e7a.',
           '',
-          'E todas as informa\u00e7\u00f5es necess\u00e1rias est\u00e3o em nosso aplicativo:',
+          'Todas as informa\u00e7\u00f5es necess\u00e1rias est\u00e3o no aplicativo oficial do torneio:',
           '',
-          'https://app.ilhatenis.com/'
+          tournamentUrl
         ].join('\n');
 
       window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
@@ -28442,6 +28501,14 @@
       const day = displayAgendaDay(dayValue) || 'dia a definir';
       const turn = turnFromTime(timeValue);
       return turn ? day + ' ' + turn : day;
+    }
+
+    function whatsappSchedulePhrase(dayValue, timeValue) {
+      const day = displayAgendaDay(dayValue);
+      const time = normalizeAgendaTime(timeValue);
+      const hasExactTime = /^\d{2}:\d{2}$/.test(time);
+      if (!day || day === 'Sem dia') return hasExactTime ? ', às ' + time : '';
+      return ', na ' + String(day).toLowerCase() + (hasExactTime ? ', às ' + time : '');
     }
 
     function turnFromTime(value) {
@@ -29068,6 +29135,8 @@
       $('registrationId').value = '';
       $('playerRegistrationField').hidden = true;
       $('playerRegistration').innerHTML = '';
+      $('playerRegistrationNoteField').hidden = true;
+      $('playerRegistrationNote').textContent = '';
       $('registrationCategoryHint').textContent = 'Ao salvar, esta inscrição será movida para a classe escolhida.';
       $('playerCity').value = 'Colatina';
       $('playerClub').value = 'Ilha Tenis';
