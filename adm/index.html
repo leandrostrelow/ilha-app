@@ -25074,6 +25074,7 @@
             <div class="muted">Edite jogadores, placares e horarios diretamente nos jogos.</div>
           </div>
           <div class="actions" style="margin-top:0">
+            <button class="ghost-btn" type="button" id="publishBracketBtn" onclick="toggleBracketPublication()" disabled>Disponibilizar online</button>
             <button class="primary-btn" type="button" id="saveBracketBtn" onclick="saveBracketChanges()" disabled>Salvar chave</button>
             <button class="ghost-btn" type="button" onclick="downloadInstagramImage()">Imagem Instagram</button>
           </div>
@@ -25827,6 +25828,25 @@
       const count = dirtyMatchCount();
       btn.disabled = !count || state.saving;
       btn.textContent = count ? 'Salvar chave (' + count + ')' : 'Salvar chave';
+    }
+
+    function bracketIsPublished(matches) {
+      return Boolean(matches.length && matches.every(function (match) { return match.publicar === true; }));
+    }
+
+    function updateBracketPublicationButton() {
+      const btn = $('publishBracketBtn');
+      if (!btn) return;
+      const matches = currentMatches();
+      const published = bracketIsPublished(matches);
+      btn.disabled = !matches.length || state.saving;
+      btn.textContent = published ? 'Retirar da página pública' : 'Disponibilizar online';
+      btn.classList.toggle('primary-btn', !published);
+      btn.classList.toggle('ghost-btn', published);
+      btn.setAttribute('aria-pressed', String(published));
+      btn.title = published
+        ? 'A chave está visível na página oficial do torneio.'
+        : 'A chave está privada e visível somente no ADM.';
     }
 
     function markMatchDirty(match) {
@@ -27067,6 +27087,7 @@
       applyAdvancementsLocally();
       const bracket = $('bracket');
       const matches = currentMatches();
+      updateBracketPublicationButton();
       if (!matches.length) {
         bracket.innerHTML = '<div class="empty">Nenhuma chave criada para esta categoria ainda.</div>';
         return;
@@ -28853,9 +28874,39 @@
           overwrite: true
         });
         await loadData(false);
-        toast('Chave criada.');
+        toast('Chave criada em modo privado. Publique quando terminar os ajustes.');
       } catch (error) {
         toast(error.message);
+      }
+    }
+
+    async function toggleBracketPublication() {
+      const matches = currentMatches();
+      if (!matches.length || !state.selectedCategory) return;
+      if (dirtyMatchCount()) {
+        toast('Salve as alterações da chave antes de publicar.');
+        return;
+      }
+      const currentlyPublished = bracketIsPublished(matches);
+      const nextPublished = !currentlyPublished;
+      const categoryName = getCategoryName(state.selectedCategory);
+      const message = nextPublished
+        ? 'Disponibilizar a chave de "' + categoryName + '" na página pública oficial?'
+        : 'Retirar a chave de "' + categoryName + '" da página pública? Ela continuará salva no ADM.';
+      if (!confirm(message)) return;
+      const btn = $('publishBracketBtn');
+      btn.disabled = true;
+      try {
+        await apiPost({
+          action: 'setBracketPublication',
+          categoria_id: state.selectedCategory,
+          publicar: nextPublished
+        });
+        await loadData(false);
+        toast(nextPublished ? 'Chave disponibilizada na página pública.' : 'Chave retirada da página pública.');
+      } catch (error) {
+        toast(error.message);
+        updateBracketPublicationButton();
       }
     }
 

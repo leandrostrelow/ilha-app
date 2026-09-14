@@ -26,6 +26,7 @@ const writeActions = new Set([
   "saveRegistration",
   "deleteRegistration",
   "generateBracket",
+  "setBracketPublication",
   "saveMatch",
   "saveMatches",
   "scheduleMatch",
@@ -856,6 +857,7 @@ function mapMatch(row: Row, athletes: Map<string, Row>) {
     ordem: row.sort_order || 0,
     observacoes: row.public_notes || metadata.observacoes || "",
     resultado_em: row.finished_at || "",
+    publicar: row.published === true,
   };
 }
 
@@ -2195,6 +2197,46 @@ async function saveMatches(client: DbClient, actorId: string, payload: Row) {
   return saved;
 }
 
+async function setBracketPublication(client: DbClient, actorId: string, payload: Row) {
+  const categoryId = uuid(payload.categoria_id || payload.category_id);
+  if (!categoryId) throw new ApiError("Escolha uma classe.");
+  const categoryResult = await client.from("tournament_categories")
+    .select("id,tournament_id,name")
+    .eq("id", categoryId)
+    .maybeSingle();
+  assertNoError(categoryResult.error);
+  const category = categoryResult.data as Row | null;
+  if (!category) throw new ApiError("Classe não encontrada.", 404);
+  const tournament = await currentTournament(client, payload, category);
+  if (String(category.tournament_id) !== String(tournament.id)) {
+    throw new ApiError("A classe não pertence a este torneio.", 409);
+  }
+  const published = booleanValue(payload.publicar ?? payload.published, false);
+  const previous = await client.from("tournament_matches")
+    .select("id,published")
+    .eq("tournament_id", tournament.id)
+    .eq("category_id", categoryId);
+  assertNoError(previous.error);
+  if (!(previous.data || []).length) throw new ApiError("Esta classe ainda não possui chave.", 409);
+  const updated = await client.from("tournament_matches")
+    .update({ published, updated_at: new Date().toISOString() })
+    .eq("tournament_id", tournament.id)
+    .eq("category_id", categoryId)
+    .select("id,published");
+  assertNoError(updated.error);
+  await audit(
+    client,
+    actorId,
+    tournament.id,
+    "bracket_publication",
+    categoryId,
+    published ? "PUBLISH" : "UNPUBLISH",
+    { published: (previous.data || []).every((row: Row) => row.published === true) },
+    { published, match_count: (updated.data || []).length },
+  );
+  return { categoria_id: categoryId, published, match_count: (updated.data || []).length };
+}
+
 async function updateMatchFields(client: DbClient, actorId: string, payload: Row, mode: "schedule" | "score") {
   const matchId = uuid(payload.jogo_id || payload.match_id || firstObject(payload.jogo).jogo_id);
   if (!matchId) throw new ApiError("Jogo inválido.");
@@ -2446,7 +2488,7 @@ async function generateBracket(client: DbClient, actorId: string, payload: Row) 
         score: null,
         status: "PENDING",
         sort_order: (round * 1000) + ((position + 1) * 10),
-        published: true,
+        published: false,
         metadata: { generated: true },
       };
       if (round === 1) {
@@ -2602,6 +2644,7 @@ Deno.serve(async (request) => {
       responseTournamentId = (result as Row).tournament_id;
     } else if (action === "deleteRegistration") result = await deleteRegistration(trustedClient, profile.id, payload);
     else if (action === "generateBracket") result = await generateBracket(client, profile.id, payload);
+    else if (action === "setBracketPublication") result = await setBracketPublication(client, profile.id, payload);
     else if (action === "saveMatch") result = await saveOneMatch(client, profile.id, payload, firstObject(payload.jogo, payload.match, payload));
     else if (action === "saveMatches") result = await saveMatches(client, profile.id, payload);
     else if (action === "scheduleMatch") result = await updateMatchFields(client, profile.id, payload, "schedule");
