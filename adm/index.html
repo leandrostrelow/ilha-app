@@ -4568,6 +4568,8 @@
     /* A ficha do aluno e longa: cabecalho e acoes ficam acessiveis enquanto o miolo rola. */
     #clientModal .admin-modal {
       display: flex;
+      width: min(1120px, 100%);
+      height: calc(100dvh - 36px);
       min-height: 0;
       max-height: calc(100dvh - 24px);
       flex-direction: column;
@@ -4610,7 +4612,9 @@
       overscroll-behavior: contain;
       scroll-padding-bottom: 18px;
       -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
+    #clientModal .admin-modal-body::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
     /* O gestor trabalha de cima para baixo: consulta primeiro e edita depois. */
     #players > .grid,
