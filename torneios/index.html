@@ -1793,7 +1793,9 @@
     function groupStandingsHtml(groupRows,finalMatch) {
       const standings = groupStandingRows(groupRows);
       if (!standings.length) return '<div class="empty-state">A classificação aparecerá quando os jogos do grupo forem publicados.</div>';
-      const complete = groupRows.length >= 3 && groupRows.every(isCompletedGroupMatch);
+      const playerCount = standings.length;
+      const expectedMatches = playerCount >= 3 ? (playerCount * (playerCount - 1)) / 2 : 0;
+      const complete = playerCount >= 3 && groupRows.length === expectedMatches && groupRows.every(isCompletedGroupMatch);
       const unresolved = complete && standings.some((standing) => standing.tiePending);
       const finalistIds = new Set(finalMatch ? [playerId(finalMatch,1),playerId(finalMatch,2)].filter(Boolean) : []);
       const status = finalistIds.size === 2
@@ -1809,8 +1811,14 @@
     function groupBoardHtml(category,rows) {
       const groupRows = rows.filter(isGroupStageMatch).slice().sort((a,b) => roundNumber(a) - roundNumber(b) || Number(field(a,'match_no','position','posicao_chave') || 0) - Number(field(b,'match_no','position','posicao_chave') || 0));
       const finalMatch = rows.filter(isFinalStageMatch).slice().sort((a,b) => roundNumber(b) - roundNumber(a) || Number(field(a,'match_no','position','posicao_chave') || 0) - Number(field(b,'match_no','position','posicao_chave') || 0))[0] || null;
-      const rules = '<section class="group-rules" aria-labelledby="groupRulesTitle"><h3 id="groupRulesTitle">Como funciona</h3><ol class="group-rules-list"><li class="group-rule"><b>1</b><span>Todos contra todos: cada atleta enfrenta os outros uma vez.</span></li><li class="group-rule"><b>2</b><span>Cada vitória vale 1 ponto na classificação.</span></li><li class="group-rule"><b>3</b><span>Os dois melhores colocados disputam a final.</span></li><li class="group-rule"><b>4</b><span>Empate entre dois: confronto direto. Empate triplo: saldo de sets e depois saldo de games. Persistindo, a organização define.</span></li><li class="group-rule"><b>5</b><span>O super tie vale como um set e não entra no saldo de games.</span></li></ol></section>';
-      const matchesHtml = '<section class="group-section"><div class="group-section-head"><div><h3>Fase de grupos</h3><p>Os três confrontos do grupo.</p></div><span class="mini-chip">Todos contra todos</span></div><div class="group-match-grid">' + (groupRows.map(matchCardHtml).join('') || '<div class="empty-state">Jogos do grupo ainda não publicados.</div>') + '</div></section>';
+      const participantIds = new Set();
+      groupRows.forEach((row) => { [playerId(row,1),playerId(row,2)].filter(Boolean).forEach((id) => participantIds.add(id)); });
+      const participantCount = participantIds.size;
+      const rules = '<section class="group-rules" aria-labelledby="groupRulesTitle"><h3 id="groupRulesTitle">Como funciona</h3><ol class="group-rules-list"><li class="group-rule"><b>1</b><span>Todos contra todos: cada atleta enfrenta os outros uma vez.</span></li><li class="group-rule"><b>2</b><span>Cada vitória vale 1 ponto na classificação.</span></li><li class="group-rule"><b>3</b><span>Os dois melhores colocados disputam a final.</span></li><li class="group-rule"><b>4</b><span>Empate entre dois: confronto direto. Empate entre três ou mais: saldo de sets e depois saldo de games. Persistindo, a organização define.</span></li><li class="group-rule"><b>5</b><span>O super tie vale como um set e não entra no saldo de games.</span></li></ol></section>';
+      const groupSummary = participantCount >= 3
+        ? participantCount + ' atletas · ' + groupRows.length + (groupRows.length === 1 ? ' jogo' : ' jogos')
+        : 'Todos contra todos';
+      const matchesHtml = '<section class="group-section"><div class="group-section-head"><div><h3>Fase de grupos</h3><p>Cada atleta enfrenta todos os outros uma vez.</p></div><span class="mini-chip">' + escapeHtml(groupSummary) + '</span></div><div class="group-match-grid">' + (groupRows.map(matchCardHtml).join('') || '<div class="empty-state">Jogos do grupo ainda não publicados.</div>') + '</div></section>';
       const standingsHtml = '<section class="group-section"><div class="group-section-head"><div><h3>Classificação</h3><p>J: jogos · V: vitórias · D: derrotas · SS: saldo de sets · SG: saldo de games</p></div></div>' + groupStandingsHtml(groupRows,finalMatch) + '</section>';
       const finalHtml = '<section class="group-final" aria-label="Final"><div class="bracket-round-title">Final · 1º × 2º</div>' + (finalMatch ? '<section class="bracket-final-stage"><div class="bracket-match-grid">' + matchCardHtml(finalMatch) + '</div></section>' : '<div class="group-final-placeholder">A final será exibida aqui assim que for publicada pela organização.</div>') + '</section>';
       return '<div class="group-board" data-group-category="' + escapeHtml(category) + '">' + rules + matchesHtml + standingsHtml + finalHtml + '</div>';

@@ -43,18 +43,25 @@ test('fase de grupos e final recebem nomes públicos claros', () => {
 test('painel público apresenta jogos, tabela, regras e final oficial', () => {
   const groupRenderer = sourceSection(publicPage, 'function groupBoardHtml', '\n    function bracketStageHtml');
 
-  assert.match(groupRenderer, /Os três confrontos do grupo\./);
+  assert.match(groupRenderer, /Cada atleta enfrenta todos os outros uma vez\./);
+  assert.match(groupRenderer, /participantCount \+ ' atletas · ' \+ groupRows\.length/);
   assert.match(groupRenderer, /Todos contra todos: cada atleta enfrenta os outros uma vez\./);
   assert.match(groupRenderer, /Cada vitória vale 1 ponto na classificação\./);
   assert.match(groupRenderer, /Os dois melhores colocados disputam a final\./);
   assert.match(groupRenderer, /Empate entre dois: confronto direto\./);
-  assert.match(groupRenderer, /Empate triplo: saldo de sets e depois saldo de games\./);
+  assert.match(groupRenderer, /Empate entre três ou mais: saldo de sets e depois saldo de games\./);
   assert.match(groupRenderer, /Persistindo, a organização define\./);
   assert.match(groupRenderer, /O super tie vale como um set e não entra no saldo de games\./);
   assert.match(groupRenderer, /groupStandingsHtml\(groupRows,finalMatch\)/);
   assert.match(groupRenderer, /rows\.filter\(isFinalStageMatch\)/);
   assert.match(groupRenderer, /matchCardHtml\(finalMatch\)/);
   assert.match(groupRenderer, /Final · 1º × 2º/);
+});
+
+test('painel público reconhece conclusão de grupos com quantidade variável', () => {
+  const standingsRenderer = sourceSection(publicPage, 'function groupStandingsHtml', '\n    function groupBoardHtml');
+  assert.match(standingsRenderer, /playerCount \* \(playerCount - 1\)/);
+  assert.match(standingsRenderer, /groupRows\.length === expectedMatches/);
 });
 
 test('classificação considera somente o grupo e aplica saldo de sets e games no empate triplo', () => {

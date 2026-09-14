@@ -24,7 +24,7 @@ function standingsRuntime() {
     sourceSection(adminPage, 'function parseScoreDetailed', '\n    function buildScoreFromEditorFields'),
     sourceSection(adminPage, 'function scoreCellParts', '\n    function compareScoreCells'),
   ].join('\n');
-  const names = { a: 'Ana', b: 'Bia', c: 'Clara' };
+  const names = { a: 'Ana', b: 'Bia', c: 'Clara', d: 'Dora', e: 'Eva' };
   const context = vm.createContext({
     Map,
     Set,
@@ -49,19 +49,40 @@ function groupMatch(round, first, second, winner, score, status = 'FINALIZADO') 
   };
 }
 
-test('ADM oferece grupo de três com regras claras e mantém a geração privada', () => {
+test('ADM oferece grupo geral, remove o aviso fixo e mantém a geração privada', () => {
   assert.match(adminPage, /id="generateGroupBtn" onclick="generateGroup\(\)" disabled>Gerar grupo/);
-  assert.match(adminPage, /Todos jogam contra todos e os 2 melhores fazem a final/);
-  assert.match(adminPage, /confronto direto quando 2 empatam/);
-  assert.match(adminPage, /empate triplo, saldo de sets e depois saldo de games/);
+  assert.doesNotMatch(adminPage, /group-format-rules/);
+  assert.doesNotMatch(adminPage, /Grupo para 3 atletas/);
   assert.doesNotMatch(adminPage, /<option value="3">3 \(grupo \+ final\)<\/option>/);
 
   const generator = sourceSection(adminPage, 'async function generateGroup()', '\n    async function toggleBracketPublication');
-  assert.match(generator, /confirmedCount !== 3/);
+  assert.match(generator, /confirmedCount < 3/);
+  assert.match(generator, /confirmedCount \* \(confirmedCount - 1\)/);
   assert.match(generator, /action: 'generateGroup'/);
   assert.match(generator, /overwrite: true/);
-  assert.match(generator, /Grupo e final criados em modo privado/);
+  assert.match(generator, /Grupo criado em modo privado/);
   assert.match(generator, /vai substituir todos eles/);
+});
+
+test('classificação conclui corretamente um grupo de quatro atletas com seis jogos', () => {
+  const calculate = standingsRuntime();
+  const standings = calculate([
+    groupMatch(1, 'a', 'b', 'a', '6x2 6x2'),
+    groupMatch(2, 'a', 'c', 'a', '6x3 6x3'),
+    groupMatch(3, 'a', 'd', 'a', '6x1 6x1'),
+    groupMatch(4, 'b', 'c', 'b', '6x4 6x4'),
+    groupMatch(5, 'b', 'd', 'b', '6x2 6x2'),
+    groupMatch(6, 'c', 'd', 'c', '6x2 6x2'),
+  ]);
+
+  assert.equal(standings.complete, true);
+  assert.equal(standings.remaining, 0);
+  assert.deepEqual(Array.from(standings.rows, (row) => [row.id, row.played, row.wins]), [
+    ['a', 3, 3],
+    ['b', 3, 2],
+    ['c', 3, 1],
+    ['d', 3, 0],
+  ]);
 });
 
 test('renderização separa grupo, classificação e final sem alterar a chave eliminatória', () => {

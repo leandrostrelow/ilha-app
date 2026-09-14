@@ -5621,28 +5621,6 @@
       min-height: 42px;
     }
 
-    .group-format-rules {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      align-items: center;
-      gap: 9px;
-      margin: -1px 0 12px;
-      padding: 9px 11px;
-      border: 1px solid #cce9a0;
-      border-radius: 12px;
-      background: #f7ffe8;
-      color: #43582a;
-      font-size: 11px;
-      line-height: 1.35;
-    }
-
-    .group-format-rules strong {
-      color: #274607;
-      font-size: 11px;
-      text-transform: uppercase;
-      white-space: nowrap;
-    }
-
     .group-competition-board {
       display: grid;
       grid-template-columns: minmax(250px, 1.08fr) minmax(330px, 1.35fr) minmax(230px, .95fr);
@@ -11713,10 +11691,6 @@
       .bracket-tools {
         grid-template-columns: 1fr;
         gap: 7px;
-      }
-      .group-format-rules {
-        grid-template-columns: 1fr;
-        gap: 3px;
       }
       .group-competition-board {
         grid-template-columns: 1fr;
@@ -25448,10 +25422,6 @@
             </div>
           </div>
         </div>
-        <div class="group-format-rules" id="groupFormatRules">
-          <strong>Grupo para 3 atletas</strong>
-          <span>Todos jogam contra todos e os 2 melhores fazem a final. Critérios: vitórias; confronto direto quando 2 empatam; em empate triplo, saldo de sets e depois saldo de games. Se o empate continuar, o ADM define. Ao gerar, a classe fica lotada com 3 atletas.</span>
-        </div>
         <div class="bracket-wrap">
           <div class="bracket" id="bracket"></div>
         </div>
@@ -27619,12 +27589,15 @@
         ordered.push.apply(ordered, tied);
       });
 
-      const complete = groupMatches.length === 3 && completedMatches.length === 3 && rows.length === 3;
+      const expectedMatches = rows.length >= 3 ? (rows.length * (rows.length - 1)) / 2 : 0;
+      const complete = rows.length >= 3 && groupMatches.length === expectedMatches && completedMatches.length === expectedMatches;
       let decisionRequired = false;
       if (complete && ordered.length >= 3) {
         const second = ordered[1];
         const third = ordered[2];
-        const qualificationCutIsTied = second.wins === third.wins &&
+        const cutoffBucket = rows.filter(function (row) { return row.wins === second.wins; });
+        const qualificationCutIsTied = cutoffBucket.length >= 3 &&
+          second.wins === third.wins &&
           second.setBalance === third.setBalance &&
           second.gameBalance === third.gameBalance;
         if (qualificationCutIsTied) {
@@ -27640,7 +27613,7 @@
       return {
         rows: ordered,
         complete: complete,
-        remaining: Math.max(0, 3 - completedMatches.length),
+        remaining: Math.max(0, expectedMatches - completedMatches.length),
         decisionRequired: decisionRequired
       };
     }
@@ -27690,7 +27663,7 @@
       const finalMatch = tournamentGroupFinal(matches);
       const standings = calculateTournamentGroupStandings(matches);
       return '<div class="group-competition-board">' +
-        '<section class="group-competition-panel"><div class="group-competition-heading">Todos contra todos <span>3 jogos</span></div>' +
+        '<section class="group-competition-panel"><div class="group-competition-heading">Todos contra todos <span>' + groupMatches.length + (groupMatches.length === 1 ? ' jogo' : ' jogos') + '</span></div>' +
         '<div class="group-match-list">' + groupMatches.map(function (match, index) {
           return groupMatchSlotHtml(match, 'Jogo ' + (index + 1));
         }).join('') + '</div></section>' +
@@ -29566,14 +29539,15 @@
         return;
       }
       const confirmedCount = confirmedCategoryRegistrationCount(state.selectedCategory);
-      if (confirmedCount !== 3) {
-        toast('O grupo com final precisa ter exatamente 3 inscrições confirmadas. Esta classe tem ' + confirmedCount + '.');
+      if (confirmedCount < 3) {
+        toast('O grupo com final precisa ter pelo menos 3 inscrições confirmadas. Esta classe tem ' + confirmedCount + '.');
         return;
       }
+      const groupMatchCount = (confirmedCount * (confirmedCount - 1)) / 2;
       const existingMatches = currentMatches();
       if (existingMatches.length) {
         const categoryName = getCategoryName(state.selectedCategory);
-        if (!confirm('A categoria "' + categoryName + '" já tem jogos criados. Gerar o grupo vai substituir todos eles. Deseja continuar?')) return;
+        if (!confirm('A categoria "' + categoryName + '" já tem jogos criados. Gerar um grupo com ' + confirmedCount + ' atletas vai substituir todos eles. Deseja continuar?')) return;
       }
       try {
         await apiPost({
@@ -29582,7 +29556,7 @@
           overwrite: true
         });
         await loadData(false);
-        toast('Grupo e final criados em modo privado, e a classe ficou lotada com 3 atletas. Confira os jogos antes de disponibilizar online.');
+        toast('Grupo criado em modo privado: ' + confirmedCount + ' atletas, ' + groupMatchCount + ' jogos e a final. A classe ficou lotada com os participantes atuais.');
       } catch (error) {
         toast(error.message);
       }

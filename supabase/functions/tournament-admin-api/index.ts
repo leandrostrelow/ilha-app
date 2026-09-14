@@ -2593,12 +2593,12 @@ async function generateGroup(client: DbClient, actorId: string, payload: Row) {
       const bRank = integerValue(b.tournament_athletes?.ranking, 99999);
       return aRank - bRank;
     });
-  if (registrations.length !== 3) {
-    throw new ApiError("O grupo exige exatamente três inscrições confirmadas.", 409);
+  if (registrations.length < 3) {
+    throw new ApiError("O grupo exige pelo menos três inscrições confirmadas.", 409);
   }
   const athleteIds = registrations.map((registration) => uuid(registration.athlete_id)).filter(Boolean);
-  if (athleteIds.length !== 3 || new Set(athleteIds).size !== 3) {
-    throw new ApiError("As três inscrições do grupo precisam pertencer a atletas distintos.", 409);
+  if (athleteIds.length !== registrations.length || new Set(athleteIds).size !== registrations.length) {
+    throw new ApiError("Todas as inscrições do grupo precisam pertencer a atletas distintos.", 409);
   }
 
   const replacement = await client.rpc("tournament_replace_group_stage_atomic", {
@@ -2611,7 +2611,8 @@ async function generateGroup(client: DbClient, actorId: string, payload: Row) {
   const result = (replacement.data || {}) as Row;
   const previousMatches = Array.isArray(result.previous_matches) ? result.previous_matches : [];
   const insertedMatches = Array.isArray(result.matches) ? result.matches : [];
-  if (insertedMatches.length !== 4) throw new Error("O grupo não foi gravado por completo.");
+  const groupMatchCount = (registrations.length * (registrations.length - 1)) / 2;
+  if (insertedMatches.length !== groupMatchCount + 1) throw new Error("O grupo não foi gravado por completo.");
   await audit(
     client,
     actorId,
@@ -2625,7 +2626,8 @@ async function generateGroup(client: DbClient, actorId: string, payload: Row) {
   return {
     categoria_id: categoryId,
     formato: "GROUPS_AND_KNOCKOUT",
-    tamanho_chave: 3,
+    tamanho_chave: registrations.length,
+    jogos_grupo: groupMatchCount,
     jogos: insertedMatches,
   };
 }
