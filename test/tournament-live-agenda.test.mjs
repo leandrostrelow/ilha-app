@@ -69,6 +69,18 @@ test('agenda usa arrastar e soltar com suporte a mouse, toque e teclado', () => 
   assert.doesNotMatch(adminPage, /data-agenda-move(?:-item)?=/);
 });
 
+test('agenda administrativa oculta jogos finalizados a partir do dia seguinte', () => {
+  const visibility = adminPage.slice(
+    adminPage.indexOf('function isFinalizedAgendaMatch'),
+    adminPage.indexOf('function agendaCourtNames'),
+  );
+  assert.match(visibility, /function agendaMatchDateKey\(match\)/);
+  assert.match(visibility, /match\.data_iso \|\| match\.match_date/);
+  assert.match(visibility, /return !matchDateKey \|\| matchDateKey >= todayKey/);
+  assert.match(visibility, /const todayKey = localDateString\(\)/);
+  assert.match(visibility, /if \(!matchStaysOnAdminSchedule\(j, todayKey\)\) return false/);
+});
+
 test('ordenação considera toda a coluna, mesmo quando existe filtro de classe', () => {
   const reorderBlock = adminPage.slice(
     adminPage.indexOf('function agendaGroupForItem'),
