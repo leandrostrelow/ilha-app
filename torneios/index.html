@@ -461,8 +461,7 @@
     .tournament-intro { position: fixed; inset: 0; z-index: 140; display: grid; place-items: center; overflow: hidden; padding: 0; background: #020607; opacity: 1; transition: opacity .2s ease; }
     .tournament-intro.closing { opacity: 0; pointer-events: none; }
     .tournament-intro video { width: 100%; height: 100%; object-fit: cover; background: #020607; }
-    .tournament-intro-skip { position: absolute; top: calc(14px + var(--safe-top)); right: max(14px, env(safe-area-inset-right, 0px)); z-index: 1; min-height: 42px; padding: 9px 15px; border: 1px solid rgba(255,255,255,.30); border-radius: 999px; background: rgba(2,12,14,.70); color: #fff; font-size: 12px; font-weight: 900; backdrop-filter: blur(12px); box-shadow: 0 10px 24px rgba(0,0,0,.28); }
-    .tournament-intro-loading { position: absolute; left: 50%; bottom: calc(22px + var(--safe-bottom)); z-index: 1; margin: 0; color: rgba(255,255,255,.76); font-size: 11px; font-weight: 850; letter-spacing: .04em; transform: translateX(-50%); }
+    .tournament-intro.preparing { opacity: 0; pointer-events: none; }
     .pwa-onboarding-backdrop { z-index: 95; }
     .bet-invite-backdrop { z-index: 90; }
     .bet-invite-card { position: relative; width: min(440px,100%); overflow: hidden; border: 1px solid rgba(168,233,0,.5); border-radius: 28px; background: #fff; box-shadow: 0 30px 90px rgba(0,0,0,.38); }
@@ -835,8 +834,6 @@
 
   <div class="tournament-intro" id="tournamentIntro" aria-hidden="true" hidden>
     <video id="tournamentIntroVideo" aria-label="Vídeo de abertura do torneio" muted playsinline preload="auto" disablepictureinpicture></video>
-    <button class="tournament-intro-skip" id="tournamentIntroSkipBtn" type="button">Pular intro</button>
-    <p class="tournament-intro-loading" id="tournamentIntroLoading" role="status">Abrindo o torneio…</p>
   </div>
 
   <div class="modal-backdrop pwa-onboarding-backdrop" id="tournamentPwaOnboarding" aria-hidden="true" hidden>
@@ -2015,27 +2012,43 @@
       }
       const overlay = $('tournamentIntro');
       const video = $('tournamentIntroVideo');
-      const skip = $('tournamentIntroSkipBtn');
-      const loading = $('tournamentIntroLoading');
-      if (!overlay || !video || !skip) return Promise.resolve(false);
+      if (!overlay || !video) return Promise.resolve(false);
       return new Promise((resolve) => {
         let finished = false;
         let fallbackTimer = null;
+        let startupTimer = null;
+        let stallTimer = null;
+        let shown = false;
         const onEnded = () => finish('ended');
         const onError = () => finish('video-error');
-        const onSkip = () => finish('skipped');
-        const onPlaying = () => { if (loading) loading.hidden = true; };
+        const onPlaying = () => {
+          if (finished) return;
+          clearTimeout(startupTimer);
+          clearTimeout(stallTimer);
+          if (shown) return;
+          shown = true;
+          overlay.classList.remove('preparing');
+          overlay.setAttribute('aria-hidden','false');
+          setTournamentIntroBackgroundInert(true);
+          document.body.classList.add('modal-open');
+        };
+        const onWaiting = () => {
+          clearTimeout(stallTimer);
+          stallTimer = setTimeout(() => finish('stalled'),1200);
+        };
         const removeListeners = () => {
           video.removeEventListener('ended',onEnded);
           video.removeEventListener('error',onError);
           video.removeEventListener('playing',onPlaying);
-          skip.removeEventListener('click',onSkip);
+          video.removeEventListener('waiting',onWaiting);
         };
         const finish = (reason) => {
           if (finished) return;
           finished = true;
           overlay.dataset.closeReason = reason || 'closed';
           clearTimeout(fallbackTimer);
+          clearTimeout(startupTimer);
+          clearTimeout(stallTimer);
           removeListeners();
           overlay.classList.add('closing');
           setTimeout(() => {
@@ -2043,31 +2056,33 @@
             video.removeAttribute('src');
             video.load();
             overlay.hidden = true;
-            overlay.classList.remove('closing');
+            overlay.classList.remove('closing','preparing');
             overlay.setAttribute('aria-hidden','true');
             setTournamentIntroBackgroundInert(false);
             document.body.classList.remove('modal-open');
-            resolve(true);
-          },210);
+            resolve(shown);
+          },shown ? 210 : 0);
         };
         video.muted = true;
+        video.defaultMuted = true;
+        video.playsInline = true;
         video.src = introUrl;
         video.currentTime = 0;
         video.addEventListener('ended',onEnded);
         video.addEventListener('error',onError);
         video.addEventListener('playing',onPlaying);
-        skip.addEventListener('click',onSkip);
-        if (loading) loading.hidden = false;
+        video.addEventListener('waiting',onWaiting);
+        overlay.classList.add('preparing');
         overlay.hidden = false;
         overlay.dataset.closeReason = '';
         overlay.dataset.shownAt = String(Date.now());
-        overlay.setAttribute('aria-hidden','false');
-        setTournamentIntroBackgroundInert(true);
-        document.body.classList.add('modal-open');
+        overlay.setAttribute('aria-hidden','true');
+        startupTimer = setTimeout(() => finish('startup-timeout'),1800);
         fallbackTimer = setTimeout(() => finish('timeout'),15000);
-        setTimeout(() => skip.focus(),0);
-        const playback = video.play();
-        if (playback && typeof playback.catch === 'function') playback.catch(() => finish('play-error'));
+        try {
+          const playback = video.play();
+          if (playback && typeof playback.catch === 'function') playback.catch(() => finish('play-error'));
+        } catch (error) { finish('play-error'); }
       });
     }
 

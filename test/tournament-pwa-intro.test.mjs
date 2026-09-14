@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
+import vm from 'node:vm';
 import { projectRoot } from '../scripts/project-files.mjs';
 
 const migrationName = '20260911002123_add_tournament_intro_video.sql';
@@ -25,7 +26,7 @@ function sourceSection(source, start, end) {
 test('vídeo padrão é MP4 compacto e entra no cache do app', () => {
   assert.ok(introVideo.subarray(0, 32).includes(Buffer.from('ftyp')), 'arquivo não parece ser MP4');
   assert.ok(introVideo.length < 3 * 1024 * 1024, 'vídeo padrão deve permanecer leve para celular');
-  assert.match(serviceWorker, /ilha-open-2026-v3/);
+  assert.match(serviceWorker, /ilha-open-2026-v4/);
   assert.match(serviceWorker, /\/assets\/tournament\/ilha-open-intro\.mp4/);
   assert.match(server, /\['\.mp4', 'video\/mp4'\]/);
 });
@@ -53,10 +54,9 @@ test('intro aparece a cada abertura somente no app instalado e nunca bloqueia a 
   assert.match(intro, /video\.muted = true/);
   assert.match(intro, /video\.addEventListener\('ended',onEnded/);
   assert.match(intro, /video\.addEventListener\('error',onError/);
-  assert.match(intro, /skip\.addEventListener\('click',onSkip/);
   assert.match(intro, /removeListeners\(\)/);
   assert.match(intro, /setTimeout\(\(\) => finish\('timeout'\),15000\)/);
-  assert.match(publicPage, /id="tournamentIntroSkipBtn"[^>]*>Pular intro<\/button>/);
+  assert.doesNotMatch(publicPage, /Pular intro|Abrindo o torneio/);
   assert.doesNotMatch(intro, /localStorage|prompt-seen/);
 });
 
@@ -66,6 +66,49 @@ test('puxar para atualizar não repete a intro na mesma atualização', () => {
   assert.match(publicPage, /function consumeTournamentIntroSkipOnce\(\)/);
   assert.match(refresh, /skipTournamentIntroOnce\(\)/);
   assert.match(refresh, /window\.location\.reload\(\)/);
+});
+
+test('abertura espera reprodução e libera a página quando o vídeo demora ou trava', async () => {
+  const source = sourceSection(publicPage, 'function maybeShowTournamentIntro()', '\n    function tournamentUsesIos');
+  for (const scenario of ['startup', 'playing', 'error']) {
+    const listeners = new Map();
+    const timers = new Map();
+    const classes = new Set();
+    let nextTimer = 0;
+    let inert = false;
+    const overlay = { hidden:true, dataset:{}, setAttribute(){}, classList:{ add:(...names)=>names.forEach(n=>classes.add(n)), remove:(...names)=>names.forEach(n=>classes.delete(n)) } };
+    const video = { play:()=>Promise.resolve(), pause(){}, load(){}, removeAttribute(){}, addEventListener:(name,fn)=>listeners.set(name,fn), removeEventListener:(name)=>listeners.delete(name) };
+    const context = vm.createContext({
+      tournamentIntroSettings:()=>({enabled:true,url:'/intro.mp4'}), safeHref:v=>v,
+      tournamentAppInstalled:()=>true, consumeTournamentIntroSkipOnce:()=>false, state:{},
+      $:id=>id==='tournamentIntro'?overlay:video,
+      setTournamentIntroBackgroundInert:value=>{inert=value;}, document:{body:{classList:{add(){},remove(){}}}},
+      setTimeout:(fn,delay)=>{const id=++nextTimer;timers.set(id,{fn,delay});return id;}, clearTimeout:id=>timers.delete(id)
+    });
+    const done = vm.runInContext(source+'; maybeShowTournamentIntro()',context);
+    assert.equal(inert,false);
+    assert.ok(classes.has('preparing'));
+    const fire = delay => {
+      const entry=[...timers].find(([,timer])=>timer.delay===delay);
+      assert.ok(entry, 'timer esperado: '+delay);
+      timers.delete(entry[0]);entry[1].fn();
+    };
+    if (scenario==='playing') {
+      listeners.get('playing')();
+      assert.equal(inert,true);
+      assert.equal(classes.has('preparing'),false);
+      listeners.get('waiting')();fire(1200);fire(210);
+    } else {
+      if (scenario==='startup') fire(1800);
+      else listeners.get('error')();
+      fire(0);
+    }
+    await done;
+    assert.equal(inert,false);
+    assert.equal(overlay.hidden,true);
+    assert.equal(listeners.size,0);
+    assert.equal(timers.size,0);
+  }
 });
 
 test('migração libera MP4 com limite controlado e expõe somente a configuração pública', () => {
