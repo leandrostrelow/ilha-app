@@ -2460,16 +2460,22 @@ async function generateBracket(client: DbClient, actorId: string, payload: Row) 
     .from("tournament_registrations")
     .select("*, tournament_athletes(ranking, seed)")
     .eq("category_id", categoryId)
-    .eq("status", "CONFIRMED");
+    .in("status", ["CONFIRMED", "PENDING"]);
   assertNoError(registrationsResult.error);
-  const registrations = ((registrationsResult.data || []) as Row[]).sort((a, b) => {
-    const aSeed = integerValue(a.seed_number ?? a.tournament_athletes?.seed, 99999);
-    const bSeed = integerValue(b.seed_number ?? b.tournament_athletes?.seed, 99999);
-    if (aSeed !== bSeed) return aSeed - bSeed;
-    const aRank = integerValue(a.tournament_athletes?.ranking, 99999);
-    const bRank = integerValue(b.tournament_athletes?.ranking, 99999);
-    return aRank - bRank;
-  });
+  const activeRegistrations = (registrationsResult.data || []) as Row[];
+  if (activeRegistrations.some((registration) => text(registration.status, 30).toUpperCase() === "PENDING")) {
+    throw new ApiError("Conclua ou cancele as inscrições pendentes antes de gerar a chave.", 409);
+  }
+  const registrations = activeRegistrations
+    .filter((registration) => text(registration.status, 30).toUpperCase() === "CONFIRMED")
+    .sort((a, b) => {
+      const aSeed = integerValue(a.seed_number ?? a.tournament_athletes?.seed, 99999);
+      const bSeed = integerValue(b.seed_number ?? b.tournament_athletes?.seed, 99999);
+      if (aSeed !== bSeed) return aSeed - bSeed;
+      const aRank = integerValue(a.tournament_athletes?.ranking, 99999);
+      const bRank = integerValue(b.tournament_athletes?.ranking, 99999);
+      return aRank - bRank;
+    });
   if (registrations.length < 2) throw new ApiError("São necessárias pelo menos duas inscrições confirmadas para gerar a chave.");
   const automaticSize = nextPowerOfTwo(registrations.length);
   const requestedSize = integerValue(payload.tamanho_chave || payload.draw_size, 0);
