@@ -383,6 +383,35 @@
     .match-player b { color: var(--teal); }
     .match-meta { padding: 5px 9px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 750; }
 
+    .group-board { display: grid; gap: 16px; }
+    .group-rules { padding: 16px; border: 1px solid #cfe69d; border-radius: 18px; background: linear-gradient(145deg,#f7ffe7,#fff); }
+    .group-rules h3, .group-section-head h3 { margin: 0; font-size: 17px; letter-spacing: -.025em; }
+    .group-rules-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+    .group-rule { min-width: 0; display: grid; grid-template-columns: 28px minmax(0,1fr); align-items: start; gap: 9px; padding: 10px; border: 1px solid #dcebbd; border-radius: 13px; background: rgba(255,255,255,.86); color: #40565c; font-size: 11px; font-weight: 750; line-height: 1.45; }
+    .group-rule b { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px; background: var(--lime); color: #284600; font-size: 11px; }
+    .group-section { min-width: 0; padding: 15px; border: 1px solid var(--line); border-radius: 18px; background: #f7fafb; }
+    .group-section-head { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 11px; }
+    .group-section-head p { margin: 3px 0 0; color: var(--muted); font-size: 11px; font-weight: 700; }
+    .group-match-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+    .group-match-grid .match-card { min-width: 0; }
+    .group-standings-wrap { width: 100%; overflow: hidden; }
+    .group-standings { width: 100%; border-collapse: separate; border-spacing: 0 6px; table-layout: fixed; }
+    .group-standings th { padding: 0 5px 3px; color: var(--muted); font-size: 9px; font-weight: 950; letter-spacing: .04em; text-align: center; text-transform: uppercase; }
+    .group-standings th:first-child { width: auto; text-align: left; }
+    .group-standings th:not(:first-child) { width: 48px; }
+    .group-standings abbr { text-decoration: none; cursor: help; }
+    .group-standings td { height: 42px; padding: 8px 5px; background: #fff; color: #40565c; font-size: 11px; font-weight: 850; text-align: center; }
+    .group-standings td:first-child { overflow: hidden; border-radius: 12px 0 0 12px; padding-left: 10px; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+    .group-standings td:last-child { border-radius: 0 12px 12px 0; }
+    .group-standings tr.finalist td { background: var(--lime-soft); color: #315600; }
+    .group-position { display: inline-grid; width: 23px; height: 23px; place-items: center; margin-right: 7px; border-radius: 8px; background: #edf4f5; color: var(--muted); font-size: 10px; }
+    .group-standings tr.finalist .group-position { background: var(--lime); color: #284600; }
+    .group-standing-status { margin: 7px 0 0; color: var(--muted); font-size: 10px; font-weight: 750; line-height: 1.45; }
+    .group-standing-status.attention { color: #7b5700; }
+    .group-final { display: grid; justify-items: center; gap: 8px; }
+    .group-final .bracket-final-stage { margin: 0; }
+    .group-final-placeholder { width: min(100%,420px); min-height: 96px; display: grid; place-items: center; padding: 18px; border: 2px dashed #b9d986; border-radius: 18px; background: #fbfff4; color: var(--muted); font-size: 12px; font-weight: 800; text-align: center; }
+
     .agenda-list, .results-list { display: grid; gap: 10px; }
     .agenda-list { gap: 16px; }
     .agenda-day-group { display: grid; gap: 11px; padding: 12px; border: 1px solid var(--line); border-radius: 20px; background: #f7fafb; }
@@ -410,6 +439,7 @@
     .result-player:last-child { text-align: right; }
     .result-player.winner { color: var(--good); font-weight: 950; }
     .score-pill { min-width: 76px; min-height: 38px; display: grid; place-items: center; border-radius: 12px; background: var(--navy); color: #fff; font-size: 13px; font-weight: 950; }
+    .result-context { grid-column: 1 / -1; margin-top: -3px; color: var(--muted); font-size: 10px; font-weight: 800; text-align: center; }
 
     .sponsor-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
     .sponsor { min-height: 0; aspect-ratio: 1 / 1; display: grid; place-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: #fff; text-decoration: none; }
@@ -720,6 +750,14 @@
       .bracket-stage.single, .bracket-final-stage { width: 100%; }
       .bracket-match-grid { grid-template-columns: 1fr; }
       .bracket-final-stage { padding: 10px; }
+      .group-rules-list, .group-match-grid { grid-template-columns: 1fr; }
+      .group-rules, .group-section { padding: 11px; border-radius: 15px; }
+      .group-section-head { align-items: start; flex-direction: column; gap: 3px; }
+      .group-standings th:not(:first-child) { width: 34px; }
+      .group-standings th { padding-left: 2px; padding-right: 2px; font-size: 8px; }
+      .group-standings td { padding-left: 2px; padding-right: 2px; font-size: 10px; }
+      .group-standings td:first-child { padding-left: 7px; }
+      .group-position { width: 21px; height: 21px; margin-right: 4px; }
       .agenda-day-group { padding: 9px; border-radius: 17px; }
       .agenda-day-title { align-items: center; flex-direction: row; gap: 8px; min-height: 42px; padding: 8px 10px; }
       .agenda-day-title h3 { font-size: 14px; }
@@ -733,6 +771,7 @@
       .result-card { grid-template-columns: 1fr; gap: 8px; text-align: center; }
       .result-player:last-child { text-align: center; }
       .score-pill { justify-self: center; }
+      .result-context { grid-column: 1; }
       .sponsor-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
       .modal-backdrop { place-items: center; padding: calc(10px + var(--safe-top)) max(10px, env(safe-area-inset-right, 0px)) calc(10px + var(--safe-bottom)) max(10px, env(safe-area-inset-left, 0px)); }
       .modal { max-height: calc(100dvh - 20px - var(--safe-top) - var(--safe-bottom)); border-radius: 22px; }
@@ -1290,6 +1329,18 @@
         .map((item) => item.row);
     }
     function categoryName(id) { const row = categories().find((item) => categoryId(item) === String(id)); return row ? field(row,'name','nome') : ''; }
+    function categoryById(id) { return categories().find((item) => categoryId(item) === String(id)) || null; }
+    function categoryDrawFormat(rowOrId) {
+      const row = rowOrId && typeof rowOrId === 'object' ? rowOrId : categoryById(rowOrId);
+      return clean(field(row,'draw_format','formato')).toUpperCase();
+    }
+    function isGroupKnockoutCategory(rowOrId) { return categoryDrawFormat(rowOrId) === 'GROUPS_AND_KNOCKOUT'; }
+    function categoryDrawLabel(row) {
+      const format = categoryDrawFormat(row);
+      if (format === 'GROUPS_AND_KNOCKOUT') return 'Grupo + final';
+      if (format === 'ROUND_ROBIN') return 'Todos contra todos';
+      return field(row,'draw_size','tamanho_chave') || 'Chave auto';
+    }
     function categoryCapacity(row) {
       const maxRaw = field(row || {},'max_entries','max_inscritos');
       const occupiedRaw = field(row || {},'occupied_count','ocupadas','registration_count','quantidade_inscritos');
@@ -1518,7 +1569,7 @@
         const capacityLabel = categoryCapacityLabel(row);
         const capacityClass = capacity.isFull ? ' full' : (capacity.remainingEntries !== null && capacity.remainingEntries <= 2 ? ' low' : '');
         const capacityChip = capacityLabel ? '<span class="mini-chip category-capacity' + capacityClass + '">' + escapeHtml(capacityLabel) + '</span>' : '';
-        return '<article class="category-card"><div><h3>' + escapeHtml(field(row,'name','nome') || 'Classe') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || field(row,'gender','genero') || 'Categoria do torneio') + '</p></div><div class="category-card-foot"><span class="mini-chip">' + count + ' inscritos</span>' + capacityChip + spatialPrice + '<span class="mini-chip">' + escapeHtml(field(row,'draw_size','tamanho_chave') || 'Chave auto') + '</span></div></article>';
+        return '<article class="category-card"><div><h3>' + escapeHtml(field(row,'name','nome') || 'Classe') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || field(row,'gender','genero') || 'Categoria do torneio') + '</p></div><div class="category-card-foot"><span class="mini-chip">' + count + ' inscritos</span>' + capacityChip + spatialPrice + '<span class="mini-chip">' + escapeHtml(categoryDrawLabel(row)) + '</span></div></article>';
       }).join('') || '<div class="empty-state" style="grid-column:1/-1">As classes serão publicadas em breve.</div>') + '</div></div>';
     }
 
@@ -1559,9 +1610,14 @@
     function roundLabel(row) {
       const phase = clean(field(row,'phase','fase')).toUpperCase();
       const code = clean(field(row,'round_code','codigo_rodada')).toUpperCase();
-      const labels = {R64:'64 avos',R32:'32 avos',R16:'Oitavas',QF:'Quartas',SF:'Semifinal',FINAL:'Final'};
+      const labels = {R64:'64 avos',R32:'32 avos',R16:'Oitavas',QF:'Quartas',SF:'Semifinal',FINAL:'Final',F:'Final',GROUP:'Fase de grupos',GROUP_STAGE:'Fase de grupos',GRUPO:'Fase de grupos',RR:'Fase de grupos',ROUND_ROBIN:'Fase de grupos'};
       return labels[phase] || labels[code] || field(row,'round_name','nome_rodada') || 'Rodada ' + roundNumber(row);
     }
+    function matchPhaseCode(row) {
+      return clean(field(row,'phase','fase','round_code','codigo_rodada')).toUpperCase();
+    }
+    function isGroupStageMatch(row) { return ['GROUP','GROUP_STAGE','GRUPO','RR','ROUND_ROBIN'].includes(matchPhaseCode(row)); }
+    function isFinalStageMatch(row) { return ['FINAL','F'].includes(matchPhaseCode(row)); }
     function matchId(row) { return String(field(row,'id','match_id','jogo_id')); }
     function winnerId(row) { return String(field(row,'winner_athlete_id','winner_id','vencedor_id')); }
     function playerId(row,slot) { return String(field(row,'side' + slot + '_athlete_id','player' + slot + '_id','jogador' + slot + '_id')); }
@@ -1583,6 +1639,7 @@
     function bracketBoardHtml(category) {
       const rows = matches().filter((row) => matchCategoryId(row) === String(category));
       if (!rows.length) return '<div class="empty-state">Chave ainda não publicada para esta classe.</div>';
+      if (isGroupKnockoutCategory(category) || rows.some(isGroupStageMatch)) return groupBoardHtml(category,rows);
       const rounds = new Map();
       rows.forEach((row) => { const number = roundNumber(row); if (!rounds.has(number)) rounds.set(number,[]); rounds.get(number).push(row); });
       const orderedRounds = Array.from(rounds.keys()).sort((a,b) => a-b).map((number) => ({
@@ -1611,6 +1668,152 @@
         final +
         (lower ? '<div class="bracket-branch bracket-lower" aria-label="Parte inferior da chave">' + lower + '</div>' : '') +
         '</div></div>';
+    }
+    function groupScoreNumber(value) {
+      const raw = clean(value);
+      if (/^[67]\d+$/.test(raw)) return Number(raw.charAt(0));
+      const parsed = Number(raw);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    function groupScoreExtra(value,superTie) {
+      const raw = clean(value);
+      if (!superTie && /^[67]\d+$/.test(raw)) return Number(raw.slice(1));
+      return null;
+    }
+    function groupScorePairs(row) {
+      const raw = clean(field(row,'score','placar'));
+      if (!raw) return [];
+      if (raw.includes('|') && !/[xX]/.test(raw)) {
+        const sides = raw.split('|');
+        const side1 = clean(sides[0]).split(/[\s,;]+/).filter(Boolean);
+        const side2 = clean(sides[1]).split(/[\s,;]+/).filter(Boolean);
+        return side1.slice(0,Math.min(side1.length,side2.length)).map((value,index) => ({ side1: groupScoreNumber(value), side2: groupScoreNumber(side2[index]), side1Extra:groupScoreExtra(value,false), side2Extra:groupScoreExtra(side2[index],false), superTie:false }));
+      }
+      const pairs = [];
+      const pattern = /((?:ST|TB)\s*)?(\d+)\s*[xX\/-]\s*(\d+)/gi;
+      let pair;
+      while ((pair = pattern.exec(raw)) !== null) {
+        const superTie = Boolean(pair[1]);
+        pairs.push({ side1: groupScoreNumber(pair[2]), side2: groupScoreNumber(pair[3]), side1Extra:groupScoreExtra(pair[2],superTie), side2Extra:groupScoreExtra(pair[3],superTie), superTie:superTie });
+      }
+      return pairs;
+    }
+    function groupMatchBalance(row) {
+      return groupScorePairs(row).reduce((total,pair) => {
+        const setWinner = pair.side1 > pair.side2
+          ? 1
+          : (pair.side2 > pair.side1
+            ? 2
+            : (pair.side1Extra !== null && pair.side2Extra !== null && pair.side1Extra !== pair.side2Extra ? (pair.side1Extra > pair.side2Extra ? 1 : 2) : 0));
+        if (setWinner === 1) total.sets1 += 1;
+        if (setWinner === 2) total.sets2 += 1;
+        if (!pair.superTie) {
+          total.games1 += pair.side1;
+          total.games2 += pair.side2;
+        }
+        return total;
+      },{ sets1:0, sets2:0, games1:0, games2:0 });
+    }
+    function groupBalanceSort(a,b) {
+      return b.setBalance - a.setBalance || b.gameBalance - a.gameBalance || a.entryOrder - b.entryOrder;
+    }
+    function isCompletedGroupMatch(row) {
+      const status = clean(field(row,'status')).toUpperCase();
+      return Boolean(winnerId(row)) && ['FINISHED','WALKOVER','FINALIZED','FINALIZADO','ENCERRADO','COMPLETED'].includes(status);
+    }
+    function groupDirectMatch(rows,standingA,standingB) {
+      return rows.find((row) => isCompletedGroupMatch(row) && [playerId(row,1),playerId(row,2)].includes(standingA.id) && [playerId(row,1),playerId(row,2)].includes(standingB.id));
+    }
+    function groupStandingRows(rows) {
+      const groupRows = rows.filter(isGroupStageMatch);
+      const standings = new Map();
+      let entryOrder = 0;
+      const ensureStanding = (row,slot) => {
+        const id = playerId(row,slot);
+        if (!id) return null;
+        if (!standings.has(id)) standings.set(id,{ id:id, name:playerName(row,slot), played:0, wins:0, losses:0, setsFor:0, setsAgainst:0, gamesFor:0, gamesAgainst:0, setBalance:0, gameBalance:0, entryOrder:entryOrder++, tiePending:false });
+        return standings.get(id);
+      };
+      groupRows.forEach((row) => { ensureStanding(row,1); ensureStanding(row,2); });
+      groupRows.filter(isCompletedGroupMatch).forEach((row) => {
+        const side1 = ensureStanding(row,1);
+        const side2 = ensureStanding(row,2);
+        const winner = winnerId(row);
+        if (!side1 || !side2 || !winner || ![side1.id,side2.id].includes(winner)) return;
+        side1.played += 1;
+        side2.played += 1;
+        if (winner === side1.id) { side1.wins += 1; side2.losses += 1; }
+        else { side2.wins += 1; side1.losses += 1; }
+        const balance = groupMatchBalance(row);
+        side1.setsFor += balance.sets1;
+        side1.setsAgainst += balance.sets2;
+        side2.setsFor += balance.sets2;
+        side2.setsAgainst += balance.sets1;
+        side1.gamesFor += balance.games1;
+        side1.gamesAgainst += balance.games2;
+        side2.gamesFor += balance.games2;
+        side2.gamesAgainst += balance.games1;
+      });
+      const rowsByWins = new Map();
+      standings.forEach((standing) => {
+        standing.setBalance = standing.setsFor - standing.setsAgainst;
+        standing.gameBalance = standing.gamesFor - standing.gamesAgainst;
+        if (!rowsByWins.has(standing.wins)) rowsByWins.set(standing.wins,[]);
+        rowsByWins.get(standing.wins).push(standing);
+      });
+      const ordered = [];
+      Array.from(rowsByWins.keys()).sort((a,b) => b-a).forEach((wins) => {
+        const tied = rowsByWins.get(wins);
+        const availableFinalSpots = Math.max(0,2 - ordered.length);
+        if (tied.length === 2) {
+          const direct = groupDirectMatch(groupRows,tied[0],tied[1]);
+          const directWinner = direct && winnerId(direct);
+          if (directWinner) tied.sort((a,b) => a.id === directWinner ? -1 : (b.id === directWinner ? 1 : 0));
+          else {
+            tied.sort((a,b) => a.entryOrder - b.entryOrder);
+            tied.forEach((standing) => { standing.tiePending = true; });
+          }
+        } else if (tied.length > 2) {
+          tied.sort(groupBalanceSort);
+          if (availableFinalSpots > 0 && availableFinalSpots < tied.length) {
+            const lastInside = tied[availableFinalSpots - 1];
+            const firstOutside = tied[availableFinalSpots];
+            if (lastInside.setBalance === firstOutside.setBalance && lastInside.gameBalance === firstOutside.gameBalance) {
+              tied.forEach((standing) => {
+                standing.tiePending = standing.setBalance === lastInside.setBalance && standing.gameBalance === lastInside.gameBalance;
+              });
+            }
+          }
+        }
+        ordered.push(...tied);
+      });
+      return ordered;
+    }
+    function signedGroupBalance(value) { return value > 0 ? '+' + value : String(value || 0); }
+    function groupStandingsHtml(groupRows,finalMatch) {
+      const standings = groupStandingRows(groupRows);
+      if (!standings.length) return '<div class="empty-state">A classificação aparecerá quando os jogos do grupo forem publicados.</div>';
+      const complete = groupRows.length >= 3 && groupRows.every(isCompletedGroupMatch);
+      const unresolved = complete && standings.some((standing) => standing.tiePending);
+      const finalistIds = new Set(finalMatch ? [playerId(finalMatch,1),playerId(finalMatch,2)].filter(Boolean) : []);
+      const status = finalistIds.size === 2
+        ? 'Finalistas definidos pela organização.'
+        : (!complete
+          ? 'Classificação provisória: ela muda conforme os resultados são lançados.'
+          : (unresolved ? 'O desempate ainda será definido pela organização.' : 'Os dois primeiros colocados avançam para a final.'));
+      return '<div class="group-standings-wrap"><table class="group-standings"><caption class="sr-only">Classificação da fase de grupos</caption><thead><tr><th>Atleta</th><th><abbr title="Jogos">J</abbr></th><th><abbr title="Vitórias">V</abbr></th><th><abbr title="Derrotas">D</abbr></th><th><abbr title="Saldo de sets">SS</abbr></th><th><abbr title="Saldo de games">SG</abbr></th></tr></thead><tbody>' + standings.map((standing,index) => {
+        const finalist = finalistIds.has(standing.id) || (!finalistIds.size && complete && !unresolved && index < 2);
+        return '<tr class="' + (finalist ? 'finalist' : '') + '"><td title="' + escapeHtml(standing.name) + '"><span class="group-position">' + (index + 1) + 'º</span>' + escapeHtml(standing.name) + '</td><td>' + standing.played + '</td><td>' + standing.wins + '</td><td>' + standing.losses + '</td><td>' + signedGroupBalance(standing.setBalance) + '</td><td>' + signedGroupBalance(standing.gameBalance) + '</td></tr>';
+      }).join('') + '</tbody></table><p class="group-standing-status ' + (unresolved ? 'attention' : '') + '">' + escapeHtml(status) + '</p></div>';
+    }
+    function groupBoardHtml(category,rows) {
+      const groupRows = rows.filter(isGroupStageMatch).slice().sort((a,b) => roundNumber(a) - roundNumber(b) || Number(field(a,'match_no','position','posicao_chave') || 0) - Number(field(b,'match_no','position','posicao_chave') || 0));
+      const finalMatch = rows.filter(isFinalStageMatch).slice().sort((a,b) => roundNumber(b) - roundNumber(a) || Number(field(a,'match_no','position','posicao_chave') || 0) - Number(field(b,'match_no','position','posicao_chave') || 0))[0] || null;
+      const rules = '<section class="group-rules" aria-labelledby="groupRulesTitle"><h3 id="groupRulesTitle">Como funciona</h3><ol class="group-rules-list"><li class="group-rule"><b>1</b><span>Todos contra todos: cada atleta enfrenta os outros uma vez.</span></li><li class="group-rule"><b>2</b><span>Cada vitória vale 1 ponto na classificação.</span></li><li class="group-rule"><b>3</b><span>Os dois melhores colocados disputam a final.</span></li><li class="group-rule"><b>4</b><span>Empate entre dois: confronto direto. Empate triplo: saldo de sets e depois saldo de games. Persistindo, a organização define.</span></li><li class="group-rule"><b>5</b><span>O super tie vale como um set e não entra no saldo de games.</span></li></ol></section>';
+      const matchesHtml = '<section class="group-section"><div class="group-section-head"><div><h3>Fase de grupos</h3><p>Os três confrontos do grupo.</p></div><span class="mini-chip">Todos contra todos</span></div><div class="group-match-grid">' + (groupRows.map(matchCardHtml).join('') || '<div class="empty-state">Jogos do grupo ainda não publicados.</div>') + '</div></section>';
+      const standingsHtml = '<section class="group-section"><div class="group-section-head"><div><h3>Classificação</h3><p>J: jogos · V: vitórias · D: derrotas · SS: saldo de sets · SG: saldo de games</p></div></div>' + groupStandingsHtml(groupRows,finalMatch) + '</section>';
+      const finalHtml = '<section class="group-final" aria-label="Final"><div class="bracket-round-title">Final · 1º × 2º</div>' + (finalMatch ? '<section class="bracket-final-stage"><div class="bracket-match-grid">' + matchCardHtml(finalMatch) + '</div></section>' : '<div class="group-final-placeholder">A final será exibida aqui assim que for publicada pela organização.</div>') + '</section>';
+      return '<div class="group-board" data-group-category="' + escapeHtml(category) + '">' + rules + matchesHtml + standingsHtml + finalHtml + '</div>';
     }
     function bracketStageHtml(label,roundMatches,depth,totalDepth) {
       if (!roundMatches.length) return '';
@@ -1725,10 +1928,16 @@
       const relativeTime = clean(field(row,'time_label','schedule_time_label'));
       return normalize(relativeTime).startsWith('apos') ? 'Após' : (relativeTime || 'A definir');
     }
+    function publicMatchContextLabel(row) {
+      const category = categoryName(matchCategoryId(row));
+      const stage = roundLabel(row);
+      if (isGroupKnockoutCategory(matchCategoryId(row)) || isGroupStageMatch(row) || isFinalStageMatch(row)) return [category,stage].filter(Boolean).join(' · ');
+      return category || stage;
+    }
     function agendaMatchHtml(row,grouped) {
       const date = matchDate(row);
       const day = date ? date.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : 'A definir';
-      return '<article class="agenda-card ' + (grouped?'grouped':'') + '"><div class="time-box"><div><strong>' + escapeHtml(publicScheduleTime(row)) + '</strong>' + (grouped?'':'<small>' + escapeHtml(day) + '</small>') + '</div></div><div><h3>' + escapeHtml(playerName(row,1)) + ' × ' + escapeHtml(playerName(row,2)) + '</h3><p>' + escapeHtml(categoryName(matchCategoryId(row)) || roundLabel(row)) + '</p></div>' + (grouped?'':'<span class="court-chip">' + escapeHtml(field(row,'court_name','quadra') || 'Quadra a definir') + '</span>') + '</article>';
+      return '<article class="agenda-card ' + (grouped?'grouped':'') + '"><div class="time-box"><div><strong>' + escapeHtml(publicScheduleTime(row)) + '</strong>' + (grouped?'':'<small>' + escapeHtml(day) + '</small>') + '</div></div><div><h3>' + escapeHtml(playerName(row,1)) + ' × ' + escapeHtml(playerName(row,2)) + '</h3><p>' + escapeHtml(publicMatchContextLabel(row)) + '</p></div>' + (grouped?'':'<span class="court-chip">' + escapeHtml(field(row,'court_name','quadra') || 'Quadra a definir') + '</span>') + '</article>';
     }
     function agendaEventHtml(row,grouped) {
       const date = matchDate(row);
@@ -1738,7 +1947,7 @@
     function scoreText(row) { const score = field(row,'score','placar'); if (typeof score === 'string') return score; const p1 = playerScore(row,1), p2 = playerScore(row,2); return p1 !== '' || p2 !== '' ? p1 + ' × ' + p2 : 'Finalizado'; }
     function resultsHtml() {
       const rows = matches().filter(isFinalized).sort((a,b) => (matchDate(b)?.getTime()||0)-(matchDate(a)?.getTime()||0));
-      return '<div class="panel"><div class="panel-head"><div><h2>Resultados</h2><p>Placares confirmados pela organização.</p></div></div><div class="results-list">' + (rows.map((row) => { const winner = winnerId(row); return '<article class="result-card"><div class="result-player ' + (winner && playerId(row,1)===winner?'winner':'') + '">' + escapeHtml(playerName(row,1)) + '</div><span class="score-pill">' + escapeHtml(scoreText(row)) + '</span><div class="result-player ' + (winner && playerId(row,2)===winner?'winner':'') + '">' + escapeHtml(playerName(row,2)) + '</div></article>'; }).join('') || '<div class="empty-state">Nenhum resultado publicado.</div>') + '</div></div>';
+      return '<div class="panel"><div class="panel-head"><div><h2>Resultados</h2><p>Placares confirmados pela organização.</p></div></div><div class="results-list">' + (rows.map((row) => { const winner = winnerId(row); return '<article class="result-card"><div class="result-player ' + (winner && playerId(row,1)===winner?'winner':'') + '">' + escapeHtml(playerName(row,1)) + '</div><span class="score-pill">' + escapeHtml(scoreText(row)) + '</span><div class="result-player ' + (winner && playerId(row,2)===winner?'winner':'') + '">' + escapeHtml(playerName(row,2)) + '</div><div class="result-context">' + escapeHtml(publicMatchContextLabel(row)) + '</div></article>'; }).join('') || '<div class="empty-state">Nenhum resultado publicado.</div>') + '</div></div>';
     }
 
     function allSponsors() {

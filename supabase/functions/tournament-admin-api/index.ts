@@ -26,6 +26,7 @@ const writeActions = new Set([
   "saveRegistration",
   "deleteRegistration",
   "generateBracket",
+  "generateGroup",
   "setBracketPublication",
   "saveMatch",
   "saveMatches",
@@ -372,6 +373,15 @@ function errorCode(error: unknown) {
 
 function assertNoError(error: any) {
   if (error) throw error;
+}
+
+function assertNoGroupFinalConflict(error: any) {
+  if (!error) return;
+  const message = text(error.message, 500);
+  if (errorCode(error) === "P0001" && normalizeKey(message).includes("final")) {
+    throw new ApiError(message || "A final já possui resultado e bloqueou a alteração do grupo.", 409);
+  }
+  throw error;
 }
 
 function firstObject(...values: unknown[]): Row {
@@ -2169,12 +2179,21 @@ async function saveOneMatch(client: DbClient, actorId: string, payload: Row, inp
   const data = matchPayload(input, tournament, current);
   if (!data.category_id) throw new ApiError("A classe do jogo é obrigatória.");
   const category = await client.from("tournament_categories")
-    .select("id")
+    .select("id,draw_format")
     .eq("id", data.category_id)
     .eq("tournament_id", tournament.id)
     .maybeSingle();
   assertNoError(category.error);
   if (!category.data) throw new ApiError("A classe do jogo não pertence a este torneio.");
+  const participantFieldsWereEdited = ownField(input, "jogador1_id", "side1_athlete_id").present ||
+    ownField(input, "jogador2_id", "side2_athlete_id").present;
+  const participantsChanged = uuid(data.side1_athlete_id) !== uuid(current.side1_athlete_id) ||
+    uuid(data.side2_athlete_id) !== uuid(current.side2_athlete_id);
+  const isGroupFinal = text(category.data.draw_format, 40).toUpperCase() === "GROUPS_AND_KNOCKOUT" &&
+    text(data.phase || data.round_code, 40).toUpperCase() === "FINAL";
+  if (current.id && isGroupFinal && participantFieldsWereEdited && participantsChanged) {
+    data.metadata = { ...firstObject(data.metadata), group_final_manual: true };
+  }
   if (data.winner_athlete_id && ![data.side1_athlete_id, data.side2_athlete_id].includes(data.winner_athlete_id)) {
     throw new ApiError("O vencedor precisa ser um dos atletas deste jogo.");
   }
@@ -2182,7 +2201,7 @@ async function saveOneMatch(client: DbClient, actorId: string, payload: Row, inp
   const result = current.id
     ? await client.from("tournament_matches").update(data).eq("id", current.id).select().single()
     : await client.from("tournament_matches").insert(data).select().single();
-  assertNoError(result.error);
+  assertNoGroupFinalConflict(result.error);
   await syncWinnerPropagation(client, result.data as Row, uuid(current.winner_athlete_id));
   await audit(client, actorId, tournament.id, "match", result.data.id, current.id ? "UPDATE" : "CREATE", current.id ? current : null, result.data);
   return result.data as Row;
@@ -2314,7 +2333,7 @@ async function updateMatchFields(client: DbClient, actorId: string, payload: Row
     };
   }
   const result = await client.from("tournament_matches").update(update).eq("id", matchId).select().single();
-  assertNoError(result.error);
+  assertNoGroupFinalConflict(result.error);
   await syncWinnerPropagation(client, result.data as Row, uuid(lookup.data.winner_athlete_id));
   await audit(client, actorId, tournament.id, "match", matchId, mode === "schedule" ? "SCHEDULE" : "SCORE", lookup.data, result.data);
   return result.data as Row;
@@ -2519,7 +2538,7 @@ async function generateBracket(client: DbClient, actorId: string, payload: Row) 
     throw new Error("A chave gerada não passou na validação interna.");
   }
 
-  const replacement = await client.rpc("tournament_replace_bracket_atomic", {
+  const replacement = await client.rpc("tournament_replace_single_elimination_atomic", {
     p_tournament_id: tournament.id,
     p_category_id: categoryId,
     p_draw_size: size,
@@ -2542,6 +2561,73 @@ async function generateBracket(client: DbClient, actorId: string, payload: Row) 
     insertedMatches,
   );
   return { categoria_id: categoryId, tamanho_chave: size, jogos: insertedMatches };
+}
+
+async function generateGroup(client: DbClient, actorId: string, payload: Row) {
+  const categoryId = uuid(payload.categoria_id || payload.category_id);
+  if (!categoryId) throw new ApiError("Escolha uma classe.");
+  const categoryResult = await client.from("tournament_categories").select("*").eq("id", categoryId).maybeSingle();
+  assertNoError(categoryResult.error);
+  const category = categoryResult.data as Row | null;
+  if (!category) throw new ApiError("Classe não encontrada.", 404);
+  const tournament = await selectTournament(client, category.tournament_id, "");
+  if (!tournament) throw new ApiError("Torneio não encontrado.", 404);
+
+  const registrationsResult = await client
+    .from("tournament_registrations")
+    .select("athlete_id,seed_number,status,tournament_athletes(ranking,seed)")
+    .eq("category_id", categoryId)
+    .in("status", ["CONFIRMED", "PENDING"]);
+  assertNoError(registrationsResult.error);
+  const activeRegistrations = (registrationsResult.data || []) as Row[];
+  if (activeRegistrations.some((registration) => text(registration.status, 30).toUpperCase() === "PENDING")) {
+    throw new ApiError("Conclua ou cancele as inscrições pendentes antes de gerar o grupo.", 409);
+  }
+  const registrations = activeRegistrations
+    .filter((registration) => text(registration.status, 30).toUpperCase() === "CONFIRMED")
+    .sort((a, b) => {
+      const aSeed = integerValue(a.seed_number ?? a.tournament_athletes?.seed, 99999);
+      const bSeed = integerValue(b.seed_number ?? b.tournament_athletes?.seed, 99999);
+      if (aSeed !== bSeed) return aSeed - bSeed;
+      const aRank = integerValue(a.tournament_athletes?.ranking, 99999);
+      const bRank = integerValue(b.tournament_athletes?.ranking, 99999);
+      return aRank - bRank;
+    });
+  if (registrations.length !== 3) {
+    throw new ApiError("O grupo exige exatamente três inscrições confirmadas.", 409);
+  }
+  const athleteIds = registrations.map((registration) => uuid(registration.athlete_id)).filter(Boolean);
+  if (athleteIds.length !== 3 || new Set(athleteIds).size !== 3) {
+    throw new ApiError("As três inscrições do grupo precisam pertencer a atletas distintos.", 409);
+  }
+
+  const replacement = await client.rpc("tournament_replace_group_stage_atomic", {
+    p_tournament_id: tournament.id,
+    p_category_id: categoryId,
+    p_athlete_ids: athleteIds,
+    p_overwrite: payload.overwrite === true,
+  });
+  assertNoGroupFinalConflict(replacement.error);
+  const result = (replacement.data || {}) as Row;
+  const previousMatches = Array.isArray(result.previous_matches) ? result.previous_matches : [];
+  const insertedMatches = Array.isArray(result.matches) ? result.matches : [];
+  if (insertedMatches.length !== 4) throw new Error("O grupo não foi gravado por completo.");
+  await audit(
+    client,
+    actorId,
+    tournament.id,
+    "group_stage",
+    categoryId,
+    previousMatches.length ? "REGENERATE" : "GENERATE",
+    previousMatches,
+    insertedMatches,
+  );
+  return {
+    categoria_id: categoryId,
+    formato: "GROUPS_AND_KNOCKOUT",
+    tamanho_chave: 3,
+    jogos: insertedMatches,
+  };
 }
 
 Deno.serve(async (request) => {
@@ -2644,6 +2730,7 @@ Deno.serve(async (request) => {
       responseTournamentId = (result as Row).tournament_id;
     } else if (action === "deleteRegistration") result = await deleteRegistration(trustedClient, profile.id, payload);
     else if (action === "generateBracket") result = await generateBracket(client, profile.id, payload);
+    else if (action === "generateGroup") result = await generateGroup(client, profile.id, payload);
     else if (action === "setBracketPublication") result = await setBracketPublication(client, profile.id, payload);
     else if (action === "saveMatch") result = await saveOneMatch(client, profile.id, payload, firstObject(payload.jogo, payload.match, payload));
     else if (action === "saveMatches") result = await saveMatches(client, profile.id, payload);
