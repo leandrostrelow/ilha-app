@@ -460,7 +460,7 @@ where id = '79000000-0000-4000-8000-000000000031'::uuid;
 
 insert into public.tournament_matches (
   id, tournament_id, category_id, round_no, round_code, match_no,
-  side1_athlete_id, side2_athlete_id, winner_athlete_id, scheduled_at, status, published
+  side1_athlete_id, side2_athlete_id, scheduled_at, status, published
 ) values (
   '79000000-0000-4000-8000-000000000032'::uuid,
   '79000000-0000-4000-8000-000000000001'::uuid,
@@ -470,9 +470,8 @@ insert into public.tournament_matches (
   2,
   '79000000-0000-4000-8000-000000000021'::uuid,
   '79000000-0000-4000-8000-000000000022'::uuid,
-  '79000000-0000-4000-8000-000000000022'::uuid,
-  now() - interval '1 hour',
-  'CANCELLED',
+  now() + interval '22 hours',
+  'SCHEDULED',
   true
 );
 
@@ -485,6 +484,13 @@ insert into public.tournament_predictions (
   '79000000-0000-4000-8000-000000000032'::uuid,
   '79000000-0000-4000-8000-000000000022'::uuid
 );
+
+update public.tournament_matches
+set winner_athlete_id = '79000000-0000-4000-8000-000000000022'::uuid,
+    status = 'CANCELLED',
+    started_at = now() - interval '2 hours',
+    finished_at = now() - interval '1 hour'
+where id = '79000000-0000-4000-8000-000000000032'::uuid;
 
 update public.tournament_prediction_campaigns
 set status = 'LOCKED'

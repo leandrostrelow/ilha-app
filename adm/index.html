@@ -28955,8 +28955,6 @@
       const tournament = cleanTournamentName((state.data.torneio && state.data.torneio.nome) || 'II VIAFOR OPEN');
       const tournamentUrl = (state.data.torneio && state.data.torneio.public_url) ||
         ('https://app.ilhatenis.com/torneios/' + encodeURIComponent((state.data.torneio && state.data.torneio.slug) || 'ilha-open-2026'));
-      const tennisEmoji = String.fromCodePoint(0x1F3BE);
-
       const firstName = String(player.nome || 'Atleta').trim().split(/\s+/)[0] || 'Atleta';
       const message = type === 'call'
         ? [
@@ -28964,12 +28962,12 @@
           'Por favor, venha para o clube o quanto antes.'
         ].join('\n')
         : [
-          tournament + ' ' + tennisEmoji,
+          tournament,
           '',
           'Fala ' + firstName + ', blz?',
           'Passando para confirmar seu jogo da ' + category + ' ' + phaseText + ' contra ' + opponent + schedulePhrase + '.',
           '',
-          'Por favor, confirme sua presen\u00e7a.',
+          'Por favor, confirme aqui mesmo a sua presen\u00e7a.',
           '',
           'Todas as informa\u00e7\u00f5es necess\u00e1rias est\u00e3o no aplicativo oficial do torneio:',
           '',

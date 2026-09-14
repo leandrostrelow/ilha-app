@@ -203,20 +203,32 @@ test('Edge Functions usam captcha, rate limit e dupla autorização administrati
   assert.match(config, /\[functions\.bet-admin-api\]\s+verify_jwt = true/);
 });
 
-test('cada jogo abre para palpites somente nas 24 horas anteriores', async () => {
+test('somente jogos agendados aparecem e o primeiro horário do dia encerra os palpites', async () => {
   const [publicApi, app, html, migration] = await Promise.all([
     read('supabase/functions/bet-public-api/index.ts'),
     read('bet/app.js'),
     read('bet/index.html'),
-    read('supabase/migrations/20260911210000_open_predictions_one_day_before_match.sql')
+    read('supabase/migrations/20260914174048_schedule_prediction_day_window.sql')
   ]);
-  assert.match(publicApi, /referenceMs - 24 \* 60 \* 60 \* 1000/);
+  assert.match(publicApi, /function matchAgendaDay/);
+  assert.match(publicApi, /function predictionDayCutoffs/);
+  assert.match(publicApi, /timestamp < new Date\(current\)\.getTime\(\)/);
+  assert.match(publicApi, /day && dayCutoffs\.has\(day\) && \["PENDING", "SCHEDULED"\]\.includes\(status\)/);
+  assert.match(publicApi, /matchMap = new Map\(completeMatches\.map/);
+  assert.match(publicApi, /closesAtMs - 24 \* 60 \* 60 \* 1000/);
   assert.match(publicApi, /prediction_opens_at: window\.opensAt/);
+  assert.match(publicApi, /prediction_closes_at: window\.closesAt/);
   assert.match(publicApi, /lock_reason: acceptingPredictions \? matchLockReason/);
   assert.match(app, /match\.lock_reason === 'UPCOMING'/);
   assert.match(app, /Abre \$\{dateTimeLabel\(match\.prediction_opens_at\)\}/);
-  assert.match(html, /Cada jogo abre para palpites 24 horas antes do horário marcado/);
-  assert.match(migration, /clock_timestamp\(\) < v_reference_at - interval '24 hours'/);
-  assert.match(migration, /before insert or update of predicted_winner_athlete_id/);
+  assert.match(html, /Mostramos somente os jogos que já estão na agenda/);
+  assert.match(html, /encerram quando começa o primeiro jogo/);
+  assert.match(migration, /function private\.tournament_prediction_day_cutoff/);
+  assert.match(migration, /select min\([\s\S]*candidate\.scheduled_at/);
+  assert.match(migration, /candidate\.match_date[\s\S]*= selected_match\.match_day/);
+  assert.match(migration, /clock_timestamp\(\) < v_day_cutoff - interval '24 hours'/);
+  assert.match(migration, /clock_timestamp\(\) >= v_day_cutoff/);
+  assert.match(migration, /v_match\.match_date is null and v_match\.scheduled_at is null/);
   assert.match(migration, /message = 'prediction_not_open'/);
+  assert.match(migration, /message = 'prediction_locked'/);
 });

@@ -18,6 +18,8 @@ test('mensagem de confirmação usa a página oficial do torneio', () => {
   assert.match(adminPage, /const tournamentUrl = \(state\.data\.torneio && state\.data\.torneio\.public_url\)/);
   assert.match(adminPage, /aplicativo oficial do torneio/);
   assert.match(adminPage, /'https:\/\/app\.ilhatenis\.com\/torneios\/'/);
+  assert.match(adminPage, /'Por favor, confirme aqui mesmo a sua presen\\u00e7a\.'/);
+  assert.doesNotMatch(adminPage, /tournament \+ ' ' \+ tennisEmoji/);
 });
 
 test('mensagem inclui hora exata e omite o marcador Após', () => {

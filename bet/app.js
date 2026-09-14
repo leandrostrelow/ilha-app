@@ -258,7 +258,7 @@
     const visible = state.data.matches.filter((match) => !state.categoryId || match.category_id === state.categoryId);
     const categories = state.data.categories.filter((category) => visible.some((match) => match.category_id === category.id));
     if (!visible.length) {
-      $('gamesList').innerHTML = '<div class="empty-state"><strong>Nenhum jogo disponível aqui.</strong>Assim que a organização publicar os confrontos completos, eles aparecem automaticamente.</div>';
+      $('gamesList').innerHTML = '<div class="empty-state"><strong>Nenhum jogo agendado aqui.</strong>Assim que a organização colocar os confrontos na agenda, eles aparecem automaticamente.</div>';
       return;
     }
     $('gamesList').innerHTML = categories.map((category) => {
