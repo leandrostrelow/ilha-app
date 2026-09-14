@@ -128,7 +128,7 @@ test('agenda pública exibe somente dias e classes que possuem jogos', () => {
   assert.match(schedule, /const gameDays = new Set\(gameRows\.map\(scheduleDayKey\)\)/);
   assert.match(schedule, /events\(\)\.filter\(\(row\) => gameDays\.has\(scheduleDayKey\(row\)\)\)/);
   assert.match(schedule, /agendaCategories\(\)\.map/);
-  assert.match(schedule, /function agendaDayGroupHtml\(rows\)/);
+  assert.match(schedule, /function agendaDayGroupHtml\(rows,resultsMode\)/);
   assert.match(schedule, /class="agenda-day-group"/);
   assert.match(schedule, /class="agenda-court-group"/);
   assert.match(publicPage, /function scheduleOrderValue\(row\)/);

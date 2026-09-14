@@ -145,7 +145,8 @@ test('agenda e resultados identificam fase de grupos e final', () => {
   assert.match(schedule, /\[category,stage\]\.filter\(Boolean\)\.join\(' · '\)/);
   assert.match(schedule, /escapeHtml\(publicMatchContextLabel\(row\)\)/);
   assert.match(results, /class="result-context"/);
-  assert.match(results, /escapeHtml\(publicMatchContextLabel\(row\)\)/);
+  assert.match(results, /categoryName\(matchCategoryId\(row\)\),roundLabel\(row\)/);
+  assert.match(results, /escapeHtml\(context\)/);
 });
 
 test('grupo permanece legível no celular sem criar rolagem na página', () => {

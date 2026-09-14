@@ -434,12 +434,16 @@
     .agenda-card h3 { margin: 0; font-size: 15px; }
     .agenda-card p { margin: 5px 0 0; color: var(--muted); font-size: 12px; font-weight: 650; }
     .court-chip { min-height: 32px; display: inline-flex; align-items: center; border-radius: 999px; padding: 7px 10px; background: #edf4f5; color: #526a71; font-size: 11px; font-weight: 900; white-space: nowrap; }
-    .result-card { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 12px; padding: 15px; border: 1px solid var(--line); border-radius: 17px; background: #fff; }
-    .result-player { min-width: 0; font-weight: 800; }
-    .result-player:last-child { text-align: right; }
-    .result-player.winner { color: var(--good); font-weight: 950; }
-    .score-pill { min-width: 76px; min-height: 38px; display: grid; place-items: center; border-radius: 12px; background: var(--navy); color: #fff; font-size: 13px; font-weight: 950; }
-    .result-context { grid-column: 1 / -1; margin-top: -3px; color: var(--muted); font-size: 10px; font-weight: 800; text-align: center; }
+    .result-card { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 15px; background: #fff; }
+    .result-context { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; padding: 10px 12px; color: var(--muted); font-size: 11px; font-weight: 800; }
+    .result-status { color: var(--good); font-size: 10px; white-space: nowrap; }
+    .result-player { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; padding: 12px; border-top: 1px solid var(--line); font-size: 14px; font-weight: 800; }
+    .result-player-name { min-width: 0; overflow-wrap: anywhere; }
+    .result-player.winner { background: #f2fbdf; color: #284600; font-weight: 950; box-shadow: inset 3px 0 0 var(--lime); }
+    .result-player-name small { display: block; margin-top: 3px; font-size: 9px; letter-spacing: .04em; text-transform: uppercase; }
+    .result-score { flex-shrink: 0; font-variant-numeric: tabular-nums; word-spacing: 8px; font-size: 15px; }
+    .result-summary { margin: 0; padding: 8px 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; font-weight: 750; }
+    @media (min-width: 900px) { .results-list .agenda-day-courts { grid-template-columns: repeat(2,minmax(0,1fr)); align-items: start; } }
 
     .sponsor-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
     .sponsor { min-height: 0; aspect-ratio: 1 / 1; display: grid; place-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: #fff; text-decoration: none; }
@@ -767,10 +771,7 @@
       .agenda-card.grouped .time-box strong { font-size: 11px; }
       .agenda-card.grouped h3 { font-size: 13px; }
       .agenda-card .court-chip { grid-column: 2; justify-self: start; }
-      .result-card { grid-template-columns: 1fr; gap: 8px; text-align: center; }
-      .result-player:last-child { text-align: center; }
-      .score-pill { justify-self: center; }
-      .result-context { grid-column: 1; }
+      .result-player { padding: 10px; font-size: 13px; }
       .sponsor-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
       .modal-backdrop { place-items: center; padding: calc(10px + var(--safe-top)) max(10px, env(safe-area-inset-right, 0px)) calc(10px + var(--safe-bottom)) max(10px, env(safe-area-inset-left, 0px)); }
       .modal { max-height: calc(100dvh - 20px - var(--safe-top) - var(--safe-bottom)); border-radius: 22px; }
@@ -965,6 +966,7 @@
       activeTab: 'about',
       bracketCategory: '',
       agendaCategory: '',
+      resultsCategory: '',
       registrationSearch: '',
       submitting: false,
       lastRegistrationPayload: null,
@@ -1907,7 +1909,7 @@
       });
       return Array.from(days.values()).map(agendaDayGroupHtml).join('');
     }
-    function agendaDayGroupHtml(rows) {
+    function agendaDayGroupHtml(rows,resultsMode) {
       const courts = new Map();
       rows.forEach((row) => {
         const court = clean(field(row,row.__kind === 'event' ? 'location' : 'court_name','quadra')) || (row.__kind === 'event' ? 'Torneio' : 'Quadra a definir');
@@ -1917,7 +1919,7 @@
       const courtGroups = Array.from(courts.entries()).sort((a,b) => a[0].localeCompare(b[0],'pt-BR',{numeric:true})).map(([court,items]) => {
         const isCourt = /^quadra\b/i.test(court);
         const courtLabel = isCourt ? court.replace(/^quadra\s*/i,'') : court;
-        return '<section class="agenda-court-group"><h4 class="agenda-court-title"><span>' + (isCourt?'Quadra':'Local') + '</span>' + escapeHtml(courtLabel) + '</h4><div class="agenda-court-games">' + items.sort(scheduleOrderSort).map((row) => row.__kind === 'event' ? agendaEventHtml(row,true) : agendaMatchHtml(row,true)).join('') + '</div></section>';
+        return '<section class="agenda-court-group"><h4 class="agenda-court-title"><span>' + (isCourt?'Quadra':'Local') + '</span>' + escapeHtml(courtLabel) + '</h4><div class="agenda-court-games">' + items.sort(scheduleOrderSort).map((row) => resultsMode === true ? resultMatchHtml(row) : (row.__kind === 'event' ? agendaEventHtml(row,true) : agendaMatchHtml(row,true))).join('') + '</div></section>';
       }).join('');
       return '<section class="agenda-day-group"><header class="agenda-day-title"><h3>' + escapeHtml(agendaDayLabel(rows[0])) + '</h3></header><div class="agenda-day-courts">' + courtGroups + '</div></section>';
     }
@@ -1951,8 +1953,26 @@
 
     function scoreText(row) { const score = field(row,'score','placar'); if (typeof score === 'string') return score; const p1 = playerScore(row,1), p2 = playerScore(row,2); return p1 !== '' || p2 !== '' ? p1 + ' × ' + p2 : 'Finalizado'; }
     function resultsHtml() {
-      const rows = matches().filter(isFinalized).sort((a,b) => (matchDate(b)?.getTime()||0)-(matchDate(a)?.getTime()||0));
-      return '<div class="panel"><div class="panel-head"><div><h2>Resultados</h2><p>Placares confirmados pela organização.</p></div></div><div class="results-list">' + (rows.map((row) => { const winner = winnerId(row); return '<article class="result-card"><div class="result-player ' + (winner && playerId(row,1)===winner?'winner':'') + '">' + escapeHtml(playerName(row,1)) + '</div><span class="score-pill">' + escapeHtml(scoreText(row)) + '</span><div class="result-player ' + (winner && playerId(row,2)===winner?'winner':'') + '">' + escapeHtml(playerName(row,2)) + '</div><div class="result-context">' + escapeHtml(publicMatchContextLabel(row)) + '</div></article>'; }).join('') || '<div class="empty-state">Nenhum resultado publicado.</div>') + '</div></div>';
+      const ids = new Set(matches().filter(isFinalized).map(matchCategoryId));
+      return '<div class="panel"><div class="panel-head"><h2>Resultados</h2></div><div class="filter-strip"><button type="button" class="filter-btn ' + (!state.resultsCategory?'active':'') + '" data-results-category="">Todos</button>' + categories().filter(row => ids.has(categoryId(row))).map(row => '<button type="button" class="filter-btn ' + (state.resultsCategory===categoryId(row)?'active':'') + '" data-results-category="' + escapeHtml(categoryId(row)) + '">' + escapeHtml(field(row,'name','nome')) + '</button>').join('') + '</div><div class="agenda-list results-list" id="resultsContent">' + resultsRowsHtml(state.resultsCategory) + '</div></div>';
+    }
+    function resultsRowsHtml(category) {
+      const rows = matches().filter(row => isFinalized(row) && (!category || matchCategoryId(row)===String(category))).sort((a,b) => (matchDate(b)?.getTime()||0)-(matchDate(a)?.getTime()||0));
+      const days = new Map();
+      rows.forEach(row => { const day = scheduleDayKey(row) || 'sem-data'; if (!days.has(day)) days.set(day,[]); days.get(day).push(row); });
+      return Array.from(days.values()).map(rows => agendaDayGroupHtml(rows,true)).join('') || '<div class="empty-state">Nenhum resultado publicado.</div>';
+    }
+    function resultMatchHtml(row) {
+      const winner = winnerId(row);
+      const pairs = groupScorePairs(row);
+      const players = [1,2].map(slot => {
+        const won = Boolean(winner && playerId(row,slot)===winner);
+        const score = pairs.length ? pairs.map(pair => (pair.superTie?'ST ':'') + pair['side'+slot] + (pair['side'+slot+'Extra']!==null?'('+pair['side'+slot+'Extra']+')':'')).join('  ') : playerScore(row,slot);
+        return '<div class="result-player ' + (won?'winner':'') + '"><span class="result-player-name">' + escapeHtml(playerName(row,slot)) + (won?'<small>Vencedor</small>':'') + '</span><b class="result-score" aria-label="Placar">' + escapeHtml(score) + '</b></div>';
+      }).join('');
+      const context = [categoryName(matchCategoryId(row)),roundLabel(row)].filter(Boolean).join(' · ');
+      const status = /walkover|w\.?o\.?/i.test(clean(field(row,'status'))+' '+clean(field(row,'score','placar'))) ? 'W.O.' : 'Finalizado';
+      return '<article class="result-card"><div class="result-context"><span>' + escapeHtml(context) + '</span><span class="result-status">' + status + '</span></div>' + players + (!pairs.length?'<p class="result-summary">' + escapeHtml(scoreText(row)) + '</p>':'') + '</article>';
     }
 
     function allSponsors() {
@@ -2566,6 +2586,7 @@
       $('enableTournamentNotificationsBtn')?.addEventListener('click',toggleTournamentNotifications);
       document.querySelectorAll('[data-bracket-category]').forEach((button) => button.addEventListener('click', () => { state.bracketCategory = button.dataset.bracketCategory; document.querySelectorAll('[data-bracket-category]').forEach((item) => item.classList.toggle('active', item === button)); $('bracketContent').innerHTML = bracketBoardHtml(state.bracketCategory); }));
       document.querySelectorAll('[data-agenda-category]').forEach((button) => button.addEventListener('click', () => { state.agendaCategory = button.dataset.agendaCategory; document.querySelectorAll('[data-agenda-category]').forEach((item) => item.classList.toggle('active', item === button)); $('agendaContent').innerHTML = agendaRowsHtml(state.agendaCategory); }));
+      document.querySelectorAll('[data-results-category]').forEach(button => button.addEventListener('click', () => { state.resultsCategory = button.dataset.resultsCategory; document.querySelectorAll('[data-results-category]').forEach(item => item.classList.toggle('active',item===button)); $('resultsContent').innerHTML = resultsRowsHtml(state.resultsCategory); }));
       const search = $('registrationSearch'), category = $('registrationCategoryFilter');
       if (search && category) {
         const update = () => { state.registrationSearch = search.value; $('publicRegistrationList').innerHTML = registrationRowsHtml(category.value,search.value); };
