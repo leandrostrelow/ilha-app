@@ -4574,7 +4574,6 @@
       overflow: hidden;
     }
     #clientModal .admin-modal-head,
-    #clientModal .client-reset-notice,
     #clientModal .modal-actions {
       flex: 0 0 auto;
     }
@@ -4584,6 +4583,14 @@
     #clientModal .modal-actions > button {
       flex: 1 1 150px;
     }
+    .client-profile-tabs { display: flex; gap: 8px; padding: 12px 18px; flex: 0 0 auto; border-bottom: 1px solid var(--line); background: #f7fafb; }
+    .client-profile-tabs button { flex: 1; min-width: 0; min-height: 44px; border: 1px solid #dce5ed; border-radius: 12px; background: #fff; color: #52636e; font-weight: 850; cursor: pointer; }
+    .client-profile-tabs button[aria-selected="true"] { background: #182338; color: #fff; border-color: #182338; }
+    .client-profile-tabs button:focus-visible { outline: 3px solid #a6d72b; outline-offset: 2px; }
+    .client-profile-panel[hidden] { display: none !important; }
+    .client-profile-access { display: flex; flex-wrap: wrap; gap: 10px; padding-top: 18px; }
+    #clientModal .modal-actions { display: flex; gap: 10px; }
+    @media (max-width: 600px) { .client-profile-tabs { padding: 10px; gap: 5px; } .client-profile-tabs button { font-size: 12px; } #clientModal .modal-actions > button { flex: 1 1 0; min-width: 0; } }
     #clientModal .admin-modal > form {
       display: flex;
       min-height: 0;
@@ -22694,6 +22701,11 @@
           <button class="ghost-btn" type="button" id="clientModalClose">Fechar</button>
         </div>
         <form id="clientModalForm">
+          <div class="client-profile-tabs" role="tablist" aria-label="Ficha do cliente">
+            <button type="button" role="tab" id="clientTabInfo" aria-controls="clientPanelInfo" aria-selected="true" data-client-tab="Info">Informações</button>
+            <button type="button" role="tab" id="clientTabFinance" aria-controls="clientPanelFinance" aria-selected="false" tabindex="-1" data-client-tab="Finance">Financeiro</button>
+            <button type="button" role="tab" id="clientTabLessons" aria-controls="clientPanelLessons" aria-selected="false" tabindex="-1" data-client-tab="Lessons">Aulas</button>
+          </div>
           <div class="admin-modal-body">
             <div class="form-grid">
               <div class="field full">
@@ -22984,9 +22996,7 @@
               <div class="ops-list" id="clientInvoiceList" style="margin-top:12px"></div>
             </div>
           </div>
-          <p class="client-reset-notice" id="clientResetNotice" hidden>O reset cria primeiro um backup privado por 90 dias. Ele preserva a senha, o e-mail, o acesso ao ADM/Bar, família, faturas, aulas, loja, torneios, reservas e todo o histórico.</p>
           <div class="modal-actions">
-            <button class="danger-btn" type="button" id="clientDeleteBtn" data-club-permission="clients.write">Criar backup e zerar Ilha Play</button>
             <button class="ghost-btn" type="button" id="clientPasswordRecoveryBtn" data-club-permission="clients.write">Enviar recuperação de senha</button>
             <button class="ghost-btn" type="button" id="clientAreaPreviewBtn">Abrir área do cliente</button>
             <button class="ghost-btn" type="button" id="clientModalCancel">Cancelar</button>
@@ -35715,9 +35725,71 @@
       }
     }
 
+    function initializeClientProfileTabs() {
+      const body = document.querySelector('#clientModal .admin-modal-body');
+      if ($('clientPanelInfo')) return;
+      const originalGrid = body.querySelector('.form-grid');
+      ['Info','Finance','Lessons'].forEach(function (name) {
+        const panel = document.createElement('section');
+        panel.id = 'clientPanel' + name;
+        panel.className = 'client-profile-panel';
+        panel.setAttribute('role','tabpanel');
+        panel.setAttribute('aria-labelledby','clientTab' + name);
+        panel.hidden = name !== 'Info';
+        const grid = document.createElement('div');
+        grid.className = 'form-grid';
+        panel.appendChild(grid);
+        body.appendChild(panel);
+      });
+      const info = $('clientPanelInfo');
+      const finance = document.getElementById('clientPanelFinance');
+      const lessons = document.getElementById('clientPanelLessons');
+      Array.from(originalGrid.children).forEach(function (field) {
+        const target = field.querySelector('#clientEditPlan,#clientEditDeclaredPlan,#clientEditDueDay,#clientEditAmount,#clientMonthlyBillingControl') ? finance : field.querySelector('#clientEditFrequency,.client-lesson-editor') ? lessons : info;
+        target.querySelector('.form-grid').appendChild(field);
+      });
+      originalGrid.remove();
+      info.appendChild($('clientFamilyPanel'));
+      finance.appendChild($('clientRequestSummary'));
+      finance.appendChild($('clientInvoicesPanel'));
+      const access = document.createElement('div');
+      access.className = 'client-profile-access';
+      access.appendChild($('clientPasswordRecoveryBtn'));
+      access.appendChild($('clientAreaPreviewBtn'));
+      info.appendChild(access);
+      document.querySelectorAll('[data-client-tab]').forEach(function (button) {
+        button.addEventListener('click',function () { selectClientProfileTab(button.dataset.clientTab); });
+        button.addEventListener('keydown',function (event) {
+          const tabs = Array.from(document.querySelectorAll('[data-client-tab]'));
+          const index = tabs.indexOf(button);
+          const next = event.key === 'ArrowRight' ? (index+1)%tabs.length : event.key === 'ArrowLeft' ? (index+tabs.length-1)%tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length-1 : -1;
+          if (next < 0) return;
+          event.preventDefault();
+          selectClientProfileTab(tabs[next].dataset.clientTab);
+          tabs[next].focus();
+        });
+      });
+      $('clientModalForm').addEventListener('invalid',function (event) {
+        const panel = event.target.closest('.client-profile-panel');
+        if (panel) selectClientProfileTab(panel.id.replace('clientPanel',''));
+      },true);
+    }
+
+    function selectClientProfileTab(name) {
+      document.querySelectorAll('[data-client-tab]').forEach(function (button) {
+        const active = button.dataset.clientTab === name;
+        button.setAttribute('aria-selected',String(active));
+        button.tabIndex = active ? 0 : -1;
+        $(button.getAttribute('aria-controls')).hidden = !active;
+      });
+      document.querySelector('#clientModal .admin-modal-body').scrollTop = 0;
+    }
+
     function openClientModal(key) {
       const client = findClientByKey(key);
       if (!client) return;
+      initializeClientProfileTabs();
+      selectClientProfileTab('Info');
       const canManageLessons = canUseClubPermission('classes');
       if (canManageLessons) initAdminLessonRealtime();
       clientLessonEditEnrollmentId = '';
@@ -50171,9 +50243,6 @@
       $('clientAreaPreviewBtn').addEventListener('click', openClientAreaPreview);
       $('clientPasswordRecoveryBtn').addEventListener('click', function () {
         sendClientPasswordRecovery().catch(reportActionError);
-      });
-      $('clientDeleteBtn').addEventListener('click', function () {
-        deleteClientFromAdmin().catch(reportActionError);
       });
       $('clientBackupList').addEventListener('click', function (event) {
         const copyButton = event.target.closest('[data-client-backup-copy]');
