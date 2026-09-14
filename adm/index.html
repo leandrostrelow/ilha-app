@@ -4612,6 +4612,67 @@
       grid-column: 1 / -1;
     }
 
+    #settings > .grid {
+      gap: 12px;
+    }
+
+    .card.tournament-settings-group {
+      padding: 0;
+      overflow: clip;
+    }
+
+    .tournament-settings-group > summary {
+      display: flex;
+      min-height: 58px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      cursor: pointer;
+      list-style: none;
+      user-select: none;
+    }
+
+    .tournament-settings-group > summary::-webkit-details-marker { display: none; }
+
+    .tournament-settings-group > summary::after {
+      content: '+';
+      display: grid;
+      width: 30px;
+      height: 30px;
+      flex: 0 0 auto;
+      place-items: center;
+      border-radius: 999px;
+      background: #edf4f5;
+      color: var(--ink);
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .tournament-settings-group[open] > summary::after { content: '−'; }
+
+    .tournament-settings-group[open] > summary {
+      border-bottom: 1px solid #e4ecee;
+    }
+
+    .tournament-settings-group > summary strong {
+      font-size: 17px;
+      line-height: 1.1;
+    }
+
+    .tournament-settings-group > summary small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .tournament-settings-content {
+      padding: 16px 18px 18px;
+    }
+
     #players .player-list-card { order: 1; }
     #players .player-form-card { display: none; }
 
@@ -11346,6 +11407,13 @@
       .card {
         border-radius: 16px;
         padding: 10px;
+      }
+      .tournament-settings-group > summary {
+        min-height: 54px;
+        padding: 13px 14px;
+      }
+      .tournament-settings-content {
+        padding: 14px;
       }
       .card-title {
         display: grid;
@@ -24740,8 +24808,7 @@
     <div class="topbar">
       <div class="topline">
         <div>
-          <h1>Gestão do Torneio Ilha</h1>
-          <div class="muted" id="tournamentSubtitle">Carregando torneio...</div>
+          <h1 id="tournamentTitle">Gestão Ilha Open 2026</h1>
         </div>
         <div class="top-actions">
           <select class="tournament-switcher" id="tournamentPicker" aria-label="Selecionar torneio"></select>
@@ -24767,11 +24834,10 @@
         <div class="card metric span-3"><strong id="metricCategories">0</strong><span>categorias</span></div>
         <div class="card metric span-3"><strong id="metricMatches">0</strong><span>jogos criados</span></div>
         <div class="card metric span-3"><strong id="metricScheduled">0</strong><span>jogos na agenda</span></div>
-        <div class="card span-8">
+        <div class="card span-12">
           <div class="card-title">
             <div>
               <h2>Atalhos do torneio</h2>
-              <div class="muted">Fluxo sugerido: jogadores, inscrições, chave, agenda e placar.</div>
             </div>
           </div>
           <div class="actions">
@@ -24780,10 +24846,6 @@
             <button class="ghost-btn" type="button" data-tab-go="schedule">Montar agenda</button>
             <button class="ghost-btn" type="button" onclick="reloadTournamentManually()">Recarregar torneio</button>
           </div>
-        </div>
-        <div class="card span-4">
-          <h2>Publicação</h2>
-          <p class="muted">Na aba Chaves, use "Imagem Instagram" para baixar a arte da categoria atual em alta qualidade.</p>
         </div>
         <div class="card span-12">
           <div class="card-title">
@@ -24814,7 +24876,6 @@
         <div class="card-title">
           <div>
             <h2>Links do torneio</h2>
-            <div class="muted">Acesse e copie todos os endereços do torneio em um só lugar.</div>
           </div>
         </div>
         <div class="tournament-link-grid">
@@ -24905,7 +24966,6 @@
         <div class="card-title">
           <div>
             <h2>Convites do torneio</h2>
-            <div class="muted">Acompanhe para quem cada convite foi criado e se ele já foi utilizado.</div>
           </div>
           <button class="primary-btn" type="button" id="registrationInviteSectionBtn">Gerar convite</button>
         </div>
@@ -25071,7 +25131,6 @@
         <div class="card-title">
           <div>
             <h2>Chaves</h2>
-            <div class="muted">Edite jogadores, placares e horarios diretamente nos jogos.</div>
           </div>
           <div class="actions" style="margin-top:0">
             <button class="ghost-btn" type="button" id="publishBracketBtn" onclick="toggleBracketPublication()" disabled>Disponibilizar online</button>
@@ -25108,7 +25167,6 @@
         <div class="card-title">
           <div>
             <h2>Agenda de jogos</h2>
-            <div class="muted">Clique no jogo para editar. Arraste ⋮⋮ para ordenar; dia, horário e quadra salvam automaticamente.</div>
           </div>
         </div>
         <form class="agenda-event-form" id="agendaEventForm">
@@ -25153,37 +25211,14 @@
 
     <section class="section" id="settings">
       <div class="grid">
-        <div class="card span-6">
-          <h2>Dados do torneio</h2>
-          <form id="tournamentForm" style="margin-top:12px">
+        <details class="card span-12 tournament-settings-group" open>
+          <summary><span><strong>Dados do torneio</strong><small>Nome, situação, datas e quadras</small></span></summary>
+          <div class="tournament-settings-content">
+          <form id="tournamentForm">
             <div class="form-grid">
               <div class="field full">
                 <label>Nome do torneio</label>
                 <input id="tournamentName" />
-              </div>
-              <div class="field full">
-                <label>Logo do torneio (PNG)</label>
-                <input id="tournamentLogoUrl" type="hidden" />
-                <input id="tournamentLogoFile" type="file" accept="image/png,.png" />
-                <div class="muted">Recomendado: 1600 × 600 px, fundo transparente e até 2 MB.</div>
-                <div id="tournamentLogoPreview" style="display:none;margin-top:10px;padding:14px;border:1px solid #d7e4e7;border-radius:14px;background:#0a3440"><img alt="Prévia da logo do torneio" style="display:block;max-width:100%;width:360px;max-height:135px;object-fit:contain;object-position:left center" /></div>
-              </div>
-              <div class="field full">
-                <label>Fundo das artes de chaves e agenda (PNG vertical)</label>
-                <input id="tournamentArtBackgroundUrl" type="hidden" />
-                <input id="tournamentArtBackgroundFile" type="file" accept="image/png,.png" />
-                <div class="muted">Recomendado: 1080 × 1920 px e até 2 MB. O mesmo fundo será usado nas artes das chaves, agenda e resultados.</div>
-                <div id="tournamentArtBackgroundPreview" style="margin-top:10px;padding:12px;border:1px solid #d7e4e7;border-radius:14px;background:#eef4f5"><img alt="Prévia do fundo das artes" style="display:block;width:140px;max-width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:10px;background:#0a0a0a" /></div>
-                <div class="actions" style="margin-top:10px"><button class="ghost-btn" id="tournamentArtBackgroundResetBtn" type="button">Usar fundo padrão</button></div>
-              </div>
-              <div class="field full">
-                <label>Vídeo de abertura do app do torneio (MP4 vertical)</label>
-                <select id="tournamentIntroVideoEnabled"><option value="true">Ativado</option><option value="false">Desativado</option></select>
-                <input id="tournamentIntroVideoUrl" type="hidden" />
-                <input id="tournamentIntroVideoFile" type="file" accept="video/mp4,.mp4" />
-                <div class="muted">Aparece sempre que o app instalado é aberto. Recomendado: até 10 segundos, formato vertical e no máximo 15 MB.</div>
-                <div id="tournamentIntroVideoPreview" hidden style="margin-top:10px;padding:12px;border:1px solid #d7e4e7;border-radius:14px;background:#071217"><video aria-label="Prévia do vídeo de abertura" muted playsinline controls preload="metadata" style="display:block;width:180px;max-width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:10px;background:#000"></video></div>
-                <div class="actions" style="margin-top:10px"><button class="danger-btn" id="tournamentIntroVideoRemoveBtn" type="button">Remover vídeo</button></div>
               </div>
               <div class="field">
                 <label>Ano</label>
@@ -25239,27 +25274,6 @@
                 <input id="tournamentWhatsapp" />
               </div>
               <div class="field full">
-                <div class="card-title" style="margin:8px 0 2px">
-                  <div><h3>Valores da inscrição</h3><div class="muted">Aplicados conforme o perfil escolhido na página pública.</div></div>
-                </div>
-              </div>
-              <div class="field">
-                <label>CINCATE</label>
-                <input id="tournamentPriceCincate" type="number" min="0" max="99999.99" step="0.01" inputmode="decimal" />
-              </div>
-              <div class="field">
-                <label>Aluno Ilha Tênis</label>
-                <input id="tournamentPriceStudent" type="number" min="0" max="99999.99" step="0.01" inputmode="decimal" />
-              </div>
-              <div class="field">
-                <label>Não associado</label>
-                <input id="tournamentPriceNonMember" type="number" min="0" max="99999.99" step="0.01" inputmode="decimal" />
-              </div>
-              <div class="field">
-                <label>Adicional Classe Espacial</label>
-                <input id="tournamentPriceSpatialAddon" type="number" min="0" max="99999.99" step="0.01" inputmode="decimal" />
-              </div>
-              <div class="field full">
                 <label>Observações</label>
                 <textarea id="tournamentNotes"></textarea>
               </div>
@@ -25268,17 +25282,72 @@
               <button class="primary-btn" type="submit">Salvar torneio</button>
             </div>
           </form>
-        </div>
-        <div class="card span-6">
+          </div>
+        </details>
+        <details class="card span-12 tournament-settings-group">
+          <summary><span><strong>Imagens e abertura</strong><small>Logo, fundo das artes e vídeo do aplicativo</small></span></summary>
+          <div class="tournament-settings-content form-grid">
+            <div class="field full">
+              <label>Logo do torneio (PNG)</label>
+              <input id="tournamentLogoUrl" type="hidden" form="tournamentForm" />
+              <input id="tournamentLogoFile" type="file" accept="image/png,.png" form="tournamentForm" />
+              <div class="muted">Recomendado: 1600 × 600 px, fundo transparente e até 2 MB.</div>
+              <div id="tournamentLogoPreview" style="display:none;margin-top:10px;padding:14px;border:1px solid #d7e4e7;border-radius:14px;background:#0a3440"><img alt="Prévia da logo do torneio" style="display:block;max-width:100%;width:360px;max-height:135px;object-fit:contain;object-position:left center" /></div>
+            </div>
+            <div class="field">
+              <label>Fundo das artes (PNG vertical)</label>
+              <input id="tournamentArtBackgroundUrl" type="hidden" form="tournamentForm" />
+              <input id="tournamentArtBackgroundFile" type="file" accept="image/png,.png" form="tournamentForm" />
+              <div class="muted">Para chaves, agenda e resultados. Recomendado: 1080 × 1920 px e até 2 MB.</div>
+              <div id="tournamentArtBackgroundPreview" style="margin-top:10px;padding:12px;border:1px solid #d7e4e7;border-radius:14px;background:#eef4f5"><img alt="Prévia do fundo das artes" style="display:block;width:140px;max-width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:10px;background:#0a0a0a" /></div>
+              <div class="actions" style="margin-top:10px"><button class="ghost-btn" id="tournamentArtBackgroundResetBtn" type="button">Usar fundo padrão</button></div>
+            </div>
+            <div class="field">
+              <label>Vídeo de abertura do app (MP4 vertical)</label>
+              <select id="tournamentIntroVideoEnabled" form="tournamentForm"><option value="true">Ativado</option><option value="false">Desativado</option></select>
+              <input id="tournamentIntroVideoUrl" type="hidden" form="tournamentForm" />
+              <input id="tournamentIntroVideoFile" type="file" accept="video/mp4,.mp4" form="tournamentForm" />
+              <div class="muted">Recomendado: até 10 segundos e no máximo 15 MB.</div>
+              <div id="tournamentIntroVideoPreview" hidden style="margin-top:10px;padding:12px;border:1px solid #d7e4e7;border-radius:14px;background:#071217"><video aria-label="Prévia do vídeo de abertura" muted playsinline controls preload="metadata" style="display:block;width:180px;max-width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:10px;background:#000"></video></div>
+              <div class="actions" style="margin-top:10px"><button class="danger-btn" id="tournamentIntroVideoRemoveBtn" type="button">Remover vídeo</button></div>
+            </div>
+          </div>
+        </details>
+        <details class="card span-12 tournament-settings-group">
+          <summary><span><strong>Valores da inscrição</strong><small>Preços por perfil e adicional da Classe Espacial</small></span></summary>
+          <div class="tournament-settings-content form-grid">
+            <div class="field">
+              <label>CINCATE</label>
+              <input id="tournamentPriceCincate" type="number" min="0" max="99999.99" step="0.01" inputmode="decimal" form="tournamentForm" />
+            </div>
+            <div class="field">
+              <label>Aluno Ilha Tênis</label>
+              <input id="tournamentPriceStudent" type="number" min="0" max="99999.99" step="0.01" inputmode="decimal" form="tournamentForm" />
+            </div>
+            <div class="field">
+              <label>Não associado</label>
+              <input id="tournamentPriceNonMember" type="number" min="0" max="99999.99" step="0.01" inputmode="decimal" form="tournamentForm" />
+            </div>
+            <div class="field">
+              <label>Adicional Classe Espacial</label>
+              <input id="tournamentPriceSpatialAddon" type="number" min="0" max="99999.99" step="0.01" inputmode="decimal" form="tournamentForm" />
+            </div>
+            <div class="actions full"><button class="primary-btn" type="submit" form="tournamentForm">Salvar valores</button></div>
+          </div>
+        </details>
+        <details class="card span-12 tournament-settings-group">
+          <summary><span><strong>Classes</strong><small>Atletas, vagas e tamanho das chaves</small></span></summary>
+          <div class="tournament-settings-content">
           <div class="card-title">
-            <div><h2>Classes</h2><div class="muted">Valores, limite de vagas e formato da chave.</div></div>
             <button class="primary-btn" type="button" id="newCategoryBtn">Nova classe</button>
           </div>
           <div class="list" id="categoryList" style="margin-top:12px"></div>
-        </div>
-        <div class="card span-12">
+          </div>
+        </details>
+        <details class="card span-12 tournament-settings-group">
+          <summary><span><strong>Página pública</strong><small>Abas, apresentação e patrocinadores</small></span></summary>
+          <div class="tournament-settings-content">
           <div class="card-title">
-            <div><h2>Página pública</h2><div class="muted">Escolha o que aparece para o público e edite a apresentação do evento.</div></div>
             <button class="primary-btn" type="submit" form="tournamentForm">Salvar página pública</button>
           </div>
           <h3>Abas visíveis</h3>
@@ -25313,13 +25382,12 @@
             <textarea id="tournamentSponsorText" maxlength="1000" rows="3" placeholder="Convide empresas e marcas para apoiar o torneio."></textarea>
           </div>
           <div class="about-sponsor-list" id="aboutSponsorList"></div>
-        </div>
-        <div class="card span-12">
+          </div>
+        </details>
+        <details class="card span-12 tournament-settings-group">
+          <summary><span><strong>Notificações</strong><small>Enviar avisos para quem ativou o app do torneio</small></span></summary>
+          <div class="tournament-settings-content">
           <div class="card-title">
-            <div>
-              <h2>Notificações do app do torneio</h2>
-              <div class="muted">Envie avisos somente para os aparelhos que ativaram as notificações na aba “Instalar app”.</div>
-            </div>
             <span class="status-pill" id="tournamentPushAudienceStatus">Consultando aparelhos…</span>
           </div>
           <div class="form-grid" style="margin-top:14px">
@@ -25335,7 +25403,8 @@
           <div class="actions">
             <button class="primary-btn" type="button" id="sendTournamentPushBtn">Enviar notificação</button>
           </div>
-        </div>
+          </div>
+        </details>
       </div>
     </section>
   </div>
@@ -26075,7 +26144,7 @@
 
     function renderMetrics() {
       const data = state.data;
-      $('tournamentSubtitle').textContent = (data.torneio.nome || 'Torneio') + ' | ' + (data.torneio.cidade || 'Colatina');
+      $('tournamentTitle').textContent = 'Gestão ' + (data.torneio.nome || 'do torneio');
       $('metricPlayers').textContent = data.jogadores.filter(function (p) { return String(p.status || 'ATIVO') !== 'INATIVO'; }).length;
       $('metricCategories').textContent = data.categorias.length;
       $('metricMatches').textContent = data.jogos.length;
