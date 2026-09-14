@@ -120,7 +120,11 @@ test('chave pública mostra BYE nas folgas da primeira rodada como o ADM', () =>
 
 test('agenda pública exibe somente dias e classes que possuem jogos', () => {
   const schedule = sourceSection(publicPage, 'function scheduledGameRows()', '\n    function agendaMatchHtml');
-  assert.match(schedule, /!isFinalized\(row\) && scheduleDayKey\(row\)/);
+  assert.match(publicPage, /function currentTournamentDateKey\(\)/);
+  assert.match(publicPage, /timeZone = clean\(field\(tournament\(\),'timezone'\)\) \|\| 'America\/Sao_Paulo'/);
+  assert.match(publicPage, /function matchStaysOnPublicSchedule\(row,todayKey\)/);
+  assert.match(publicPage, /return !isFinalized\(row\) \|\| dayKey >= todayKey/);
+  assert.match(schedule, /matchStaysOnPublicSchedule\(row,todayKey\)/);
   assert.match(schedule, /const gameDays = new Set\(gameRows\.map\(scheduleDayKey\)\)/);
   assert.match(schedule, /events\(\)\.filter\(\(row\) => gameDays\.has\(scheduleDayKey\(row\)\)\)/);
   assert.match(schedule, /agendaCategories\(\)\.map/);

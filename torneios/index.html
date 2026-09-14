@@ -1648,8 +1648,32 @@
       }
       return matchDateSort(a,b) || matchId(a).localeCompare(matchId(b));
     }
+    function currentTournamentDateKey() {
+      const timeZone = clean(field(tournament(),'timezone')) || 'America/Sao_Paulo';
+      try {
+        const parts = new Intl.DateTimeFormat('en-US',{
+          timeZone,
+          year:'numeric',
+          month:'2-digit',
+          day:'2-digit'
+        }).formatToParts(new Date()).reduce((result,part) => {
+          if (part.type !== 'literal') result[part.type] = part.value;
+          return result;
+        },{});
+        return [parts.year,parts.month,parts.day].join('-');
+      } catch (error) {
+        const now = new Date();
+        return [now.getFullYear(),String(now.getMonth() + 1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+      }
+    }
+    function matchStaysOnPublicSchedule(row,todayKey) {
+      const dayKey = scheduleDayKey(row);
+      if (!dayKey) return false;
+      return !isFinalized(row) || dayKey >= todayKey;
+    }
     function scheduledGameRows() {
-      return matches().filter((row) => !isFinalized(row) && scheduleDayKey(row));
+      const todayKey = currentTournamentDateKey();
+      return matches().filter((row) => matchStaysOnPublicSchedule(row,todayKey));
     }
     function agendaCategories() {
       const ids = new Set(scheduledGameRows().map((row) => matchCategoryId(row)).filter(Boolean));
