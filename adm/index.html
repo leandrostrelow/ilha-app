@@ -4588,6 +4588,11 @@
     .client-profile-tabs button[aria-selected="true"] { background: #182338; color: #fff; border-color: #182338; }
     .client-profile-tabs button:focus-visible { outline: 3px solid #a6d72b; outline-offset: 2px; }
     .client-profile-panel[hidden] { display: none !important; }
+    #clientInvoicesPanel > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 12px; margin-bottom: 0; }
+    #clientInvoicesPanel > summary::-webkit-details-marker { display: none; }
+    #clientInvoicesPanel > summary::after { content: '+'; margin-left: auto; font-size: 24px; color: #087e88; }
+    #clientInvoicesPanel[open] > summary { margin-bottom: 16px; }
+    #clientInvoicesPanel[open] > summary::after { content: '−'; }
     .client-profile-access { display: flex; flex-wrap: wrap; gap: 10px; padding-top: 18px; }
     #clientModal .modal-actions { display: flex; gap: 10px; }
     @media (max-width: 600px) { .client-profile-tabs { padding: 10px; gap: 5px; } .client-profile-tabs button { font-size: 12px; } #clientModal .modal-actions > button { flex: 1 1 0; min-width: 0; } }
@@ -22705,6 +22710,7 @@
             <button type="button" role="tab" id="clientTabInfo" aria-controls="clientPanelInfo" aria-selected="true" data-client-tab="Info">Informações</button>
             <button type="button" role="tab" id="clientTabFinance" aria-controls="clientPanelFinance" aria-selected="false" tabindex="-1" data-client-tab="Finance">Financeiro</button>
             <button type="button" role="tab" id="clientTabLessons" aria-controls="clientPanelLessons" aria-selected="false" tabindex="-1" data-client-tab="Lessons">Aulas</button>
+            <button type="button" role="tab" id="clientTabFamily" aria-controls="clientPanelFamily" aria-selected="false" tabindex="-1" data-client-tab="Family">Família</button>
           </div>
           <div class="admin-modal-body">
             <div class="form-grid">
@@ -22938,13 +22944,13 @@
                 </div>
               </div>
             </section>
-            <div class="ops-panel client-invoices-panel" id="clientInvoicesPanel" data-club-permission="finance.read" style="margin-top:12px">
-              <div class="ops-panel-head">
+            <details class="ops-panel client-invoices-panel" id="clientInvoicesPanel" data-club-permission="finance.read" style="margin-top:12px">
+              <summary class="ops-panel-head">
                 <div>
                   <h2 id="clientInvoicesTitle">Histórico financeiro do aluno</h2>
                   <div class="muted" id="clientInvoicesSubtitle">Cobranças e pagamentos registrados para este aluno.</div>
                 </div>
-              </div>
+              </summary>
               <div class="client-invoice-guide">
                 <div>
                   <strong>Mensalidades do aluno</strong>
@@ -22994,7 +23000,7 @@
                 </div>
               </details>
               <div class="ops-list" id="clientInvoiceList" style="margin-top:12px"></div>
-            </div>
+            </details>
           </div>
           <div class="modal-actions">
             <button class="ghost-btn" type="button" id="clientPasswordRecoveryBtn" data-club-permission="clients.write">Enviar recuperação de senha</button>
@@ -35729,7 +35735,7 @@
       const body = document.querySelector('#clientModal .admin-modal-body');
       if ($('clientPanelInfo')) return;
       const originalGrid = body.querySelector('.form-grid');
-      ['Info','Finance','Lessons'].forEach(function (name) {
+      ['Info','Finance','Lessons','Family'].forEach(function (name) {
         const panel = document.createElement('section');
         panel.id = 'clientPanel' + name;
         panel.className = 'client-profile-panel';
@@ -35749,7 +35755,7 @@
         target.querySelector('.form-grid').appendChild(field);
       });
       originalGrid.remove();
-      info.appendChild($('clientFamilyPanel'));
+      document.getElementById('clientPanelFamily').appendChild($('clientFamilyPanel'));
       finance.appendChild($('clientRequestSummary'));
       finance.appendChild($('clientInvoicesPanel'));
       const access = document.createElement('div');
@@ -35790,6 +35796,7 @@
       if (!client) return;
       initializeClientProfileTabs();
       selectClientProfileTab('Info');
+      $('clientInvoicesPanel').open = false;
       const canManageLessons = canUseClubPermission('classes');
       if (canManageLessons) initAdminLessonRealtime();
       clientLessonEditEnrollmentId = '';
