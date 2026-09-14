@@ -133,7 +133,7 @@ test('banco do Palpite Ilha mantém PII fechada e prêmio desligado no seed', as
 
 test('pgTAP cobre ledger, e-mail, grants, idempotência e finalização', async () => {
   const sql = await read('test/supabase/ilha_bet.test.sql');
-  assert.match(sql, /select plan\(34\)/);
+  assert.match(sql, /select plan\(36\)/);
   assert.match(sql, /tournament_prediction_requests/);
   assert.match(sql, /tournament_prediction_access_email_deliveries/);
   assert.match(sql, /retry exato não duplica palpite, ledger ou auditoria/);
@@ -145,28 +145,42 @@ test('pgTAP cobre ledger, e-mail, grants, idempotência e finalização', async 
 });
 
 test('código de acesso é enviado por e-mail com idempotência e sem quebrar o cadastro', async () => {
-  const [helper, publicApi, adminApi, html, app, migration] = await Promise.all([
+  const [helper, publicApi, adminApi, adminJs, html, app, migration, manualMigration] = await Promise.all([
     read('supabase/functions/_shared/prediction-access-email.ts'),
     read('supabase/functions/bet-public-api/index.ts'),
     read('supabase/functions/bet-admin-api/index.ts'),
+    read('adm/predictions.js'),
     read('bet/index.html'),
     read('bet/app.js'),
-    read('supabase/migrations/20260912115944_add_prediction_access_email_delivery.sql')
+    read('supabase/migrations/20260912115944_add_prediction_access_email_delivery.sql'),
+    read('supabase/migrations/20260914122406_add_prediction_manual_access_email.sql')
   ]);
   assert.match(helper, /https:\/\/api\.resend\.com\/emails/);
-  assert.match(helper, /"Idempotency-Key": `ilha-bet-access\/\$\{entry\.id\}`/);
+  assert.match(helper, /: `ilha-bet-access\/\$\{entry\.id\}`/);
   assert.match(helper, /RESEND_API_KEY/);
   assert.match(helper, /PREDICTION_EMAIL_FROM/);
   assert.match(helper, /AbortSignal\.timeout\(8_000\)/);
   assert.doesNotMatch(helper, /access_code=/);
   assert.match(publicApi, /sendPredictionAccessEmail[\s\S]*catch \(emailError\)[\s\S]*email_delivery: emailDelivery/);
   assert.match(adminApi, /action === "sendAccessEmails"/);
+  assert.match(adminApi, /action === "sendAccessEmail"/);
+  assert.match(adminApi, /action === "accessWhatsapp"/);
   assert.match(adminApi, /\.eq\("status", "ACTIVE"\)/);
+  assert.match(adminJs, /data-bet-email/);
+  assert.match(adminJs, /data-bet-whatsapp/);
+  assert.match(adminJs, /action: 'sendAccessEmail'/);
+  assert.match(adminJs, /action: 'accessWhatsapp'/);
   assert.match(html, /id="newAccessEmailStatus"/);
+  assert.match(html, /id="lostAccessButton"/);
   assert.match(app, /response\.email_delivery[\s\S]*Também enviamos uma cópia/);
+  assert.match(app, /function requestLostAccess[\s\S]*https:\/\/wa\.me\//);
   assert.match(migration, /force row level security/);
   assert.match(migration, /claim_tournament_prediction_access_email/);
   assert.match(migration, /complete_tournament_prediction_access_email/);
+  assert.match(manualMigration, /claim_tournament_prediction_access_email_retry/);
+  assert.match(manualMigration, /revoke all[\s\S]*from public, anon, authenticated/);
+  assert.match(manualMigration, /grant execute[\s\S]*to service_role/);
+  assert.match(helper, /manual-\$\{attemptCount\}/);
 });
 
 test('Edge Functions usam captcha, rate limit e dupla autorização administrativa', async () => {

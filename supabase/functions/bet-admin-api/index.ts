@@ -51,6 +51,13 @@ function uuid(value: unknown) {
     : "";
 }
 
+function whatsappNumber(value: unknown) {
+  const phone = String(value ?? "").replace(/\D/g, "");
+  if (phone.length === 10 || phone.length === 11) return `55${phone}`;
+  if ((phone.length === 12 || phone.length === 13) && phone.startsWith("55")) return phone;
+  return "";
+}
+
 function boolean(value: unknown, fallback = false) {
   if (value === true || value === "true") return true;
   if (value === false || value === "false") return false;
@@ -398,6 +405,70 @@ async function sendAccessEmails(client: DbClient, payload: Row) {
   return summary;
 }
 
+async function predictionEntryContext(client: DbClient, payload: Row) {
+  const tournament = await selectedTournament(client, payload.tournament_id);
+  const entryId = uuid(payload.entry_id);
+  if (!entryId) throw new ApiError("Participante inválido.", 400, "entry_required");
+  const campaignResult = await client.from("tournament_prediction_campaigns").select("*")
+    .eq("tournament_id", tournament.id).maybeSingle();
+  assertNoError(campaignResult.error);
+  const campaign = campaignResult.data as Row | null;
+  if (!campaign) throw new ApiError("Desafio não encontrado.", 404, "campaign_not_found");
+  const entryResult = await client.from("tournament_prediction_entries")
+    .select("id,campaign_id,registration_request_id,full_name,email,phone,status")
+    .eq("id", entryId).eq("campaign_id", campaign.id).maybeSingle();
+  assertNoError(entryResult.error);
+  const entry = entryResult.data as Row | null;
+  if (!entry) throw new ApiError("Participante não encontrado.", 404, "entry_not_found");
+  if (entry.status !== "ACTIVE") throw new ApiError("Ative o participante antes de enviar o código.", 409, "entry_blocked");
+  const rateLimitSalt = Deno.env.get("PUBLIC_REGISTRATION_RATE_LIMIT_SALT") || "";
+  if (rateLimitSalt.length < 32) throw new ApiError("Configuração indisponível.", 503, "not_configured");
+  const accessCode = await derivePredictionAccessCode(rateLimitSalt, String(entry.registration_request_id));
+  return { tournament, campaign, entry, accessCode };
+}
+
+async function sendAccessEmail(client: DbClient, payload: Row) {
+  if (!predictionEmailConfigured()) {
+    throw new ApiError(
+      "Configure o remetente do Ilha Bet antes de enviar os códigos por e-mail.",
+      503,
+      "email_not_configured",
+    );
+  }
+  const context = await predictionEntryContext(client, payload);
+  const result = await sendPredictionAccessEmail(
+    client,
+    context.entry,
+    context.campaign,
+    context.tournament,
+    context.accessCode,
+    { force: true },
+  );
+  if (result.status !== "SENT") {
+    throw new ApiError("Não foi possível enviar o código agora. Tente novamente.", 502, "email_delivery_failed");
+  }
+  return { status: "SENT", entry_id: context.entry.id, email: context.entry.email };
+}
+
+async function accessWhatsapp(client: DbClient, payload: Row) {
+  const context = await predictionEntryContext(client, payload);
+  const phone = whatsappNumber(context.entry.phone);
+  if (!phone) throw new ApiError("Este participante não possui um WhatsApp válido.", 409, "invalid_phone");
+  const code = `${context.accessCode.slice(0, 4)}-${context.accessCode.slice(4)}`;
+  const message = [
+    `Oi, ${text(context.entry.full_name, 120)}! Aqui é da Ilha Tênis. 🎾`,
+    "",
+    `Seu código de acesso do Ilha Bet é: *${code}*`,
+    "",
+    "Guarde este código para entrar novamente nos seus palpites. Ele é pessoal e não deve ser compartilhado.",
+    `https://app.ilhatenis.com/bet?torneio=${encodeURIComponent(String(context.tournament.slug || ""))}`,
+  ].join("\n");
+  return {
+    entry_id: context.entry.id,
+    whatsapp_url: `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
+  };
+}
+
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(request) });
   let stage = "bootstrap";
@@ -453,6 +524,8 @@ Deno.serve(async (request: Request) => {
     else if (action === "finalizeCampaign") result = await finalizeCampaign(client, profile.id, payload);
     else if (action === "reopenCampaign") result = await reopenCampaign(client, profile.id, payload);
     else if (action === "sendAccessEmails") result = await sendAccessEmails(client, payload);
+    else if (action === "sendAccessEmail") result = await sendAccessEmail(client, payload);
+    else if (action === "accessWhatsapp") result = await accessWhatsapp(client, payload);
     else throw new ApiError("Ação inválida.", 400, "invalid_action");
     return json(request, { ok: true, result, data: await loadSnapshot(client, uuid(payload.tournament_id)) });
   } catch (error) {

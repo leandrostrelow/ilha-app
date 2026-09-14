@@ -562,6 +562,33 @@
     }
   }
 
+  function whatsappNumber(value) {
+    const phone = String(value || '').replace(/\D/g, '');
+    if (phone.length === 10 || phone.length === 11) return '55' + phone;
+    if ((phone.length === 12 || phone.length === 13) && phone.startsWith('55')) return phone;
+    return '';
+  }
+
+  function requestLostAccess() {
+    $('formError').hidden = true;
+    const email = $('resumeEmail').value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      return setFormError(new Error('Informe primeiro o e-mail usado no cadastro.'));
+    }
+    const phone = whatsappNumber(state.data?.tournament?.whatsapp);
+    if (!phone) return setFormError(new Error('O WhatsApp da organização não está disponível agora.'));
+    const tournamentName = state.data?.tournament?.name || 'torneio';
+    const message = [
+      'Olá! Perdi meu código de acesso do Ilha Bet. 🎾',
+      '',
+      'Torneio: ' + tournamentName,
+      'E-mail do cadastro: ' + email,
+      '',
+      'Pode me ajudar a recuperar o acesso?'
+    ].join('\n');
+    window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
+  }
+
   function bindEvents() {
     document.addEventListener('click', (event) => {
       const target = event.target.closest('button, a');
@@ -577,6 +604,7 @@
     $('registrationModal').addEventListener('click', (event) => { if (event.target === $('registrationModal')) closeRegistration(); });
     $('registerForm').addEventListener('submit', register);
     $('resumeForm').addEventListener('submit', resume);
+    $('lostAccessButton').addEventListener('click', requestLostAccess);
     $('categoryFilter').addEventListener('change', (event) => { state.categoryId = event.target.value; renderGames(); });
     $('leaveDeviceButton').addEventListener('click', () => { forgetAccess(); render(); showToast('Acesso removido somente deste aparelho.'); });
     $('copyAccessCodeButton').addEventListener('click', () => copyText(state.access?.access_code || ''));

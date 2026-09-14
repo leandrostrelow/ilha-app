@@ -198,11 +198,12 @@
       return;
     }
     const campaignFinished = String(moduleState.data.campaign && moduleState.data.campaign.status || '').toUpperCase() === 'FINISHED';
-    const actionsDisabled = moduleState.loading || campaignFinished;
+    const managementDisabled = moduleState.loading || campaignFinished;
     target.innerHTML = participants.map(function (entry) {
       const active = entry.status === 'ACTIVE';
       const emailSent = entry.email_delivery_status === 'SENT';
       const emailStatus = emailSent ? 'E-mail com código enviado' : entry.email_delivery_status === 'FAILED' ? 'Falha no último envio' : 'Código ainda não enviado';
+      const accessDisabled = moduleState.loading || !active;
       return '<article class="bet-admin-participant ' + (active ? '' : 'blocked') + '">' +
         '<span class="bet-admin-rank">' + escapeHtml(entry.position || '—') + '</span>' +
         '<div class="bet-admin-person"><strong>' + escapeHtml(entry.full_name) + '</strong><span>' + escapeHtml(entry.public_name) + ' · ' + escapeHtml(active ? 'Ativo' : 'Bloqueado') + '</span></div>' +
@@ -210,7 +211,12 @@
         '<div class="bet-admin-score bet-admin-points-score"><span>Pontos</span><strong>' + escapeHtml(entry.score) + '</strong></div>' +
         '<div class="bet-admin-score"><span>Acertos</span><strong>' + escapeHtml(entry.correct) + '</strong></div>' +
         '<div class="bet-admin-score"><span>Palpites</span><strong>' + escapeHtml(entry.predictions) + '</strong></div>' +
-        '<div class="bet-admin-entry-actions"><button type="button" data-bet-status="' + escapeHtml(active ? 'BLOCKED' : 'ACTIVE') + '" data-entry-id="' + escapeHtml(entry.id) + '"' + (actionsDisabled ? ' disabled' : '') + '>' + (active ? 'Pausar' : 'Ativar') + '</button><button class="danger" type="button" data-bet-delete data-entry-id="' + escapeHtml(entry.id) + '" data-entry-name="' + escapeHtml(entry.full_name) + '"' + (actionsDisabled ? ' disabled' : '') + '>Excluir</button></div>' +
+        '<div class="bet-admin-entry-actions">' +
+          '<button class="email" type="button" data-bet-email data-entry-id="' + escapeHtml(entry.id) + '" data-entry-name="' + escapeHtml(entry.full_name) + '"' + (accessDisabled ? ' disabled' : '') + '>' + (emailSent ? 'Reenviar e-mail' : 'Enviar e-mail') + '</button>' +
+          '<button class="whatsapp" type="button" data-bet-whatsapp data-entry-id="' + escapeHtml(entry.id) + '"' + (accessDisabled ? ' disabled' : '') + '>WhatsApp</button>' +
+          '<button type="button" data-bet-status="' + escapeHtml(active ? 'BLOCKED' : 'ACTIVE') + '" data-entry-id="' + escapeHtml(entry.id) + '"' + (managementDisabled ? ' disabled' : '') + '>' + (active ? 'Pausar' : 'Ativar') + '</button>' +
+          '<button class="danger" type="button" data-bet-delete data-entry-id="' + escapeHtml(entry.id) + '" data-entry-name="' + escapeHtml(entry.full_name) + '"' + (managementDisabled ? ' disabled' : '') + '>Excluir</button>' +
+        '</div>' +
       '</article>';
     }).join('');
   }
@@ -287,6 +293,58 @@
     }
   }
 
+  async function sendParticipantEmail(button) {
+    if (moduleState.loading) return;
+    const tournament = moduleState.data && moduleState.data.tournament;
+    if (!tournament) return notify('Selecione um torneio.');
+    moduleState.loading = true;
+    setStatus('Enviando o código por e-mail…', false);
+    render();
+    try {
+      const payload = await request({
+        method: 'POST',
+        body: { action: 'sendAccessEmail', tournament_id: tournament.id, entry_id: button.dataset.entryId }
+      });
+      moduleState.data = payload.data;
+      setStatus('Código enviado para o e-mail de ' + button.dataset.entryName + '.', false);
+      notify('Código enviado por e-mail.');
+    } catch (error) {
+      setStatus(error.message, true);
+      notify(error.message);
+    } finally {
+      moduleState.loading = false;
+      render();
+    }
+  }
+
+  async function openParticipantWhatsApp(button) {
+    if (moduleState.loading) return;
+    const tournament = moduleState.data && moduleState.data.tournament;
+    if (!tournament) return notify('Selecione um torneio.');
+    const popup = window.open('about:blank', '_blank');
+    moduleState.loading = true;
+    setStatus('Preparando a mensagem com o código…', false);
+    render();
+    try {
+      const payload = await request({
+        method: 'POST',
+        body: { action: 'accessWhatsapp', tournament_id: tournament.id, entry_id: button.dataset.entryId }
+      });
+      const destination = payload.result && payload.result.whatsapp_url;
+      if (!destination) throw new Error('Não foi possível preparar o WhatsApp.');
+      if (popup) popup.location.replace(destination);
+      else window.location.href = destination;
+      setStatus('Mensagem pronta no WhatsApp.', false);
+    } catch (error) {
+      if (popup) popup.close();
+      setStatus(error.message, true);
+      notify(error.message);
+    } finally {
+      moduleState.loading = false;
+      render();
+    }
+  }
+
   function formPayload() {
     return {
       title: byId('betCampaignTitle').value,
@@ -318,6 +376,10 @@
     byId('betParticipantsList').addEventListener('click', function (event) {
       const statusButton = event.target.closest('[data-bet-status]');
       const deleteButton = event.target.closest('[data-bet-delete]');
+      const emailButton = event.target.closest('[data-bet-email]');
+      const whatsappButton = event.target.closest('[data-bet-whatsapp]');
+      if (emailButton) return sendParticipantEmail(emailButton);
+      if (whatsappButton) return openParticipantWhatsApp(whatsappButton);
       if (statusButton) {
         mutate('setEntryStatus', { entry_id: statusButton.dataset.entryId, status: statusButton.dataset.betStatus });
       }

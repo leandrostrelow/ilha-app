@@ -322,7 +322,7 @@ function assertNoError(error: Row | null) {
 async function selectCampaign(client: DbClient, tournamentSlug: string) {
   let tournament: Row | null = null;
   if (tournamentSlug) {
-    const tournamentResult = await client.from("tournaments").select("id,name,slug,logo_url,cover_url,status,is_published,starts_on,ends_on,timezone")
+    const tournamentResult = await client.from("tournaments").select("id,name,slug,logo_url,cover_url,status,is_published,starts_on,ends_on,timezone,whatsapp")
       .eq("slug", tournamentSlug).eq("is_published", true).neq("status", "ARCHIVED").maybeSingle();
     assertNoError(tournamentResult.error);
     tournament = tournamentResult.data as Row | null;
@@ -347,7 +347,7 @@ async function selectCampaign(client: DbClient, tournamentSlug: string) {
 
   const tournamentIds = [...new Set(orderedCampaigns.map((row) => row.tournament_id).filter(Boolean))];
   if (tournamentIds.length) {
-    const tournamentResult = await client.from("tournaments").select("id,name,slug,logo_url,cover_url,status,is_published,starts_on,ends_on,timezone")
+    const tournamentResult = await client.from("tournaments").select("id,name,slug,logo_url,cover_url,status,is_published,starts_on,ends_on,timezone,whatsapp")
       .in("id", tournamentIds).eq("is_published", true).neq("status", "ARCHIVED");
     assertNoError(tournamentResult.error);
     const tournaments = new Map(((tournamentResult.data || []) as Row[]).map((row) => [String(row.id), row]));
@@ -449,6 +449,7 @@ async function loadSnapshot(client: DbClient, tournamentSlug: string, participan
       slug: tournament.slug,
       logo_url: tournament.logo_url,
       cover_url: tournament.cover_url,
+      whatsapp: tournament.whatsapp,
       starts_on: tournament.starts_on,
       ends_on: tournament.ends_on,
     },
