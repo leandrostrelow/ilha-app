@@ -560,7 +560,7 @@ select is(
            and invoice_month = pg_temp.ci_billing_month(0)
       ),
       100,
-      '2026-09-08T12:00:00-03:00'::timestamptz,
+      (now() - interval '1 hour'),
       'evt_monthly_ci_1',
       '{"payment":{"billing_type":"PIX"}}'::jsonb
     ) ->> 'reason'
@@ -598,7 +598,7 @@ select is(
            and invoice_month = pg_temp.ci_billing_month(0)
       ),
       100,
-      '2026-09-08T12:00:00-03:00'::timestamptz,
+      (now() - interval '1 hour'),
       'evt_monthly_ci_1',
       '{"payment":{"billing_type":"PIX"}}'::jsonb
     ) ->> 'reason'
@@ -1006,10 +1006,10 @@ insert into public.app_payment_invoices (
   client_id, invoice_month, description, amount, due_date
 ) values (
   '71000000-0000-4000-8000-000000000001'::uuid,
-  date '2027-01-01',
+  pg_temp.ci_billing_month(4),
   'Mensalidade Ilha Tênis',
   100,
-  date '2027-01-31'
+  (pg_temp.ci_billing_month(5)-1)
 );
 insert into public.financial_transactions (
   counterparty, description, category, type, amount, due_date, status, paid_at,
@@ -1020,7 +1020,7 @@ insert into public.financial_transactions (
   'Mensalidade',
   'RECEITA',
   100,
-  date '2027-01-31',
+  (pg_temp.ci_billing_month(5)-1),
   'RECEBIDO',
   now(),
   'LEGACY',
@@ -1032,7 +1032,7 @@ update public.app_family_members
    and status = 'ATIVO';
 select lives_ok(
   $$select public.generate_app_monthly_pix_billing(
-      date '2027-01-01',
+      pg_temp.ci_billing_month(4),
       null,
       'SANDBOX'
     )$$,
@@ -1041,7 +1041,7 @@ select lives_ok(
 select is(
   (select provider_status from public.app_payment_invoices
     where client_id = '71000000-0000-4000-8000-000000000001'::uuid
-      and invoice_month = date '2027-01-01'),
+      and invoice_month = pg_temp.ci_billing_month(4)),
   'REVIEW_REQUIRED',
   'lançamento legado encerrado isola somente a fatura conflitante para revisão'
 );
@@ -1049,7 +1049,7 @@ select is(
   (select count(*)::integer from public.app_invoice_provider_payments as payment
     join public.app_payment_invoices as invoice on invoice.id = payment.invoice_id
     where invoice.client_id = '71000000-0000-4000-8000-000000000001'::uuid
-      and invoice.invoice_month = date '2027-01-01'),
+      and invoice.invoice_month = pg_temp.ci_billing_month(4)),
   0,
   'fatura com conflito no razão não chega à fila do Asaas'
 );
@@ -1057,7 +1057,7 @@ select is(
   (select count(*)::integer from public.app_invoice_provider_payments as payment
     join public.app_payment_invoices as invoice on invoice.id = payment.invoice_id
     where invoice.client_id = '71000000-0000-4000-8000-000000000002'::uuid
-      and invoice.invoice_month = date '2027-01-01'),
+      and invoice.invoice_month = pg_temp.ci_billing_month(4)),
   1,
   'outro responsável elegível do lote continua até READY'
 );

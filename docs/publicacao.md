@@ -57,3 +57,5 @@ A antiga pasta de trabalho contém alterações e materiais preservados. Novos t
 ## Testes do banco
 
 `config/supabase-ci-tests.json` mantém os oito contratos pgTAP que já faziam parte da CI e acrescenta o contrato de Day Use com dados fictícios. Todas as migrations são reaplicadas em banco descartável. Os demais arquivos SQL recuperados são cenários manuais antigos, alguns dependentes de cadastros específicos; precisam de fixtures sintéticas antes de entrar na CI. Não os execute no banco dos clientes. A preparação falha se uma suíte listada não tiver um plano pgTAP.
+
+A reconstrução também recupera a função de chaveamento atômico que já existia no banco remoto e nos scripts antigos. As migrations de 05/11 restringem a execução direta de duas funções de trigger e qualificam uma coluna ambígua na preparação de recebimentos familiares. Essas duas correções ficam versionadas e testadas localmente; não foram aplicadas ao banco remoto nesta entrega de publicação.
