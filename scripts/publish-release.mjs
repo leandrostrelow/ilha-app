@@ -11,7 +11,10 @@ if (!/^dpl_[A-Za-z0-9]+$/.test(deploymentId || '') || !/^[a-f0-9]{40}$/.test(exp
 }
 const project = 'prj_MUb9rh43OwQGAKYmnNzcWMsksagx';
 const team = 'team_haAWLhBkXXQTkFqaQx150ARq';
-const vc = (...args) => execFileSync('pnpm', ['dlx', 'vercel@65.11.0', ...args, '--scope', 'leandrostrelow'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+const vc = (...args) => execFileSync('pnpm', ['dlx', 'vercel@65.11.0', ...args, '--scope', 'leandrostrelow'], {
+  encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+  env: { ...process.env, VERCEL_PROJECT_ID: project, VERCEL_ORG_ID: team }
+}).trim();
 const api = route => JSON.parse(vc('api', `${route}?teamId=${team}`));
 const gh = async route => {
   const response = await fetch(`https://api.github.com/repos/leandrostrelow/ilha-app/${route}`, { headers: { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' } });
