@@ -1,0 +1,54 @@
+/* Still photographs and a separate, softly masked credit roll. */
+#gameDialog .campaign-ending.album-mode{flex:none}
+#gameDialog.ending-mode{background:#0c151a;overflow:auto}
+#gameDialog .campaign-ending.album-mode{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(260px,.8fr);grid-template-rows:auto minmax(230px,1fr) auto;align-content:center;align-items:center;gap:18px 30px;min-height:var(--game-vh,100dvh);padding:max(24px,env(safe-area-inset-top)) clamp(20px,4vw,70px) max(20px,env(safe-area-inset-bottom));background:radial-gradient(ellipse at 20% 40%,#21322f,#0c151a 75%);overflow:visible}
+.album-photo{grid-column:1;grid-row:1/4;position:relative;margin:0;aspect-ratio:3/2;max-height:80dvh;width:100%;overflow:hidden;border:1px solid #c9ad7866;background:#080e12;box-shadow:0 24px 80px #0008;outline:6px solid #d9cda00b}
+.album-photo img{display:block;width:100%;height:100%;object-fit:contain;image-rendering:auto}
+.album-photo figcaption{position:absolute;inset:20%;display:grid;place-items:center;text-align:center;font:16px/1.7 monospace;color:#ebdfbc}
+.album-heading{grid-column:2;align-self:end;min-width:0}
+#gameDialog .album-heading #endingEyebrow{font:10px/1.5 monospace;letter-spacing:2px;color:#b4cbbd}
+#gameDialog .album-heading #endingTitle{font:700 clamp(21px,2.4vw,33px)/1.22 monospace;color:#ffedb9;margin:14px 0 0;overflow-wrap:anywhere}
+.album-credit-viewport{grid-column:2;height:clamp(220px,36dvh,390px);overflow:hidden;position:relative;mask-image:linear-gradient(transparent,#000 15%,#000 82%,transparent)}
+.album-credit-track{will-change:transform}
+.album-credit{height:var(--credit-height,240px);box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;gap:12px;text-align:left;padding:18px 0}
+.album-credit p,.album-credit h3{margin:0}
+.album-credit-title{font:11px/1.5 monospace;text-transform:uppercase;letter-spacing:1.4px;color:#a9c5b9}
+.album-credit-name{font:700 clamp(22px,2vw,30px)/1.2 monospace;color:#f4d77c}
+.album-credit-text{font:clamp(15px,1.25vw,18px)/1.7 monospace;color:#e0e6df;overflow-wrap:anywhere}
+.album-controls{grid-column:2;align-self:start;min-width:0}
+#gameDialog .album-mode .ending-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#gameDialog .album-mode .ending-actions button{padding:9px 10px;min-height:44px;font:12px/1.4 monospace;border:1px solid #b8cdb444;border-radius:5px;background:#1a2b2c;color:#e1e9da;box-shadow:none;grid-column:auto}
+#gameDialog .album-mode #endingPause{color:#f7df99;border-color:#ddc07888}
+#gameDialog .album-mode #endingSkip{border:0;background:transparent;color:#a8bbb4}
+#gameDialog .album-mode #endingExit{display:block;width:100%;border:0;background:transparent;text-align:center;margin:8px 0 0;padding:8px;min-height:44px}
+.album-progress{display:block;width:100%;height:3px;appearance:none;border:0;margin:0 0 18px;background:#263b38;accent-color:#d8c080}
+.album-progress::-webkit-progress-bar{background:#263b38}.album-progress::-webkit-progress-value{background:#d8c080}.album-progress::-moz-progress-bar{background:#d8c080}
+.album-thanks{font:13px/1.7 monospace;color:#c9d6ca;text-align:left;margin:12px 0}
+.album-thanks small{display:block;color:#93a8a0;font-size:10px;line-height:1.8;margin-top:12px}
+#gameDialog .album-mode[data-phase=end] .album-credit-viewport{display:none}
+#gameDialog .album-mode[data-phase=end] .album-heading{align-self:end}
+#gameDialog .album-mode[data-phase=end] .album-controls{grid-row:2/4}
+#gameDialog .album-mode[data-phase=end] #endingNext{grid-column:1/-1;background:#e5cb89;color:#172b2a;border-color:#e5cb89;font-weight:700}
+@media(max-width:700px){
+ #gameDialog .campaign-ending.album-mode{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto auto;align-content:start;gap:14px;min-height:var(--game-vh,100dvh);padding:max(14px,env(safe-area-inset-top)) 0 max(12px,env(safe-area-inset-bottom))}
+ .album-photo{grid-column:1;grid-row:2;border-width:1px 0;outline:0;max-height:none}
+ .album-heading{grid-column:1;grid-row:1;padding:0 20px}
+ #gameDialog .album-heading #endingTitle{font-size:20px;margin-top:6px}
+ .album-credit-viewport{grid-column:1;grid-row:3;margin:0 22px;height:clamp(230px,28dvh,270px)}
+ .album-credit{gap:7px}.album-credit-name{font-size:24px}.album-credit-text{font-size:15px;line-height:1.6}
+ .album-controls{grid-column:1;grid-row:4;padding:0 18px}.album-progress{margin-bottom:12px}
+ #gameDialog .album-mode .ending-actions{grid-template-columns:1fr 1fr 1fr}
+ #gameDialog .album-mode #endingSkip{grid-column:1/-1;min-height:36px;padding:4px}
+ #gameDialog .album-mode #endingExit{margin-top:0;min-height:36px}
+ #gameDialog .album-mode[data-phase=end] .album-controls{grid-row:3/5}
+}
+@media(max-height:520px) and (orientation:landscape){
+ #gameDialog .campaign-ending.album-mode{grid-template-columns:minmax(0,1.45fr) minmax(240px,1fr);grid-template-rows:auto auto auto;gap:10px 20px;padding:12px 20px;align-content:center}
+ .album-photo{grid-column:1;grid-row:1/4;max-height:88dvh}.album-heading{grid-column:2;grid-row:1;padding:0}.album-credit-viewport{grid-column:2;grid-row:2;height:170px;margin:0}.album-controls{grid-column:2;grid-row:3;padding:0}
+ #gameDialog .album-heading #endingTitle{font-size:17px;margin-top:4px}.album-credit-name{font-size:20px}.album-credit-text{font-size:12px;line-height:1.5}.album-credit-title{font-size:9px}.album-credit{gap:5px}
+ #gameDialog .album-mode .ending-actions{grid-template-columns:repeat(3,1fr);gap:5px}#gameDialog .album-mode .ending-actions button{font-size:10px;min-height:36px;padding:5px}
+ #gameDialog .album-mode #endingSkip{grid-column:auto}#gameDialog .album-mode #endingExit{font-size:10px;min-height:32px;padding:5px}
+ .album-progress{margin-bottom:8px}
+}
+@media(prefers-reduced-motion:reduce){.album-credit-track{will-change:auto}.album-credit-viewport{mask-image:none}}
+.album-mode[data-paused=true] .album-credit-viewport{mask-image:none}

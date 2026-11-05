@@ -36,18 +36,6 @@
       <div class="hero-copy">
         <span class="eyebrow">Desafio de palpites do clube</span>
         <h1 id="heroTitle">Ilha Bet<span>.</span></h1>
-        <p class="hero-lead">Escolha quem avança em cada jogo, some pontos com os resultados reais e acompanhe a disputa com a turma.</p>
-        <div class="hero-actions">
-          <button class="primary-button" id="joinButton" type="button">Quero participar</button>
-          <a class="secondary-button" id="tournamentLink" href="/torneios/ilha-open-2026">Ver torneio</a>
-        </div>
-        <p class="safety-line"><strong>É só diversão:</strong> não há aposta, pagamento, depósito, saque, odds ou pontos convertidos em dinheiro.</p>
-      </div>
-      <div class="hero-score" aria-live="polite">
-        <span class="live-dot"></span>
-        <span id="campaignStatus">Carregando desafio…</span>
-        <strong id="tournamentName">Ilha Open</strong>
-        <small id="campaignWindow">Buscando os jogos publicados.</small>
       </div>
       <div class="prize-card" id="prizeCard" hidden>
         <img src="../camisaverde.png" alt="Camisa verde do Ilha Tênis" />
@@ -61,20 +49,23 @@
     </section>
 
     <section class="workspace" id="workspace" hidden>
+      <div id="pullRefreshStatus" class="pull-refresh-status" role="status" hidden></div>
       <nav class="tabs" aria-label="Ilha Bet" role="tablist">
         <button class="tab active" id="gamesTab" type="button" role="tab" data-tab="games" aria-controls="gamesPanel" aria-selected="true">Jogos</button>
-        <button class="tab" id="mineTab" type="button" role="tab" data-tab="mine" aria-controls="minePanel" aria-selected="false">Meus palpites <span id="myPickCount">0</span></button>
+        <button class="tab" id="mineTab" type="button" role="tab" data-tab="mine" aria-controls="minePanel" aria-selected="false">Histórico <span id="myPickCount">0</span></button>
         <button class="tab" id="rankingTab" type="button" role="tab" data-tab="ranking" aria-controls="rankingPanel" aria-selected="false">Ranking</button>
         <button class="tab" id="rulesTab" type="button" role="tab" data-tab="rules" aria-controls="rulesPanel" aria-selected="false">Regras</button>
+        <button class="tab" id="profileTab" type="button" role="tab" data-tab="profile" aria-controls="profilePanel" aria-selected="false">Meus dados</button>
       </nav>
 
       <section class="tab-panel active" id="gamesPanel" data-panel="games" role="tabpanel" aria-labelledby="gamesTab">
         <div class="section-heading">
-          <div><span class="eyebrow dark">Faça suas escolhas</span><h2>Jogos disponíveis</h2><p>Cada jogo abre para palpites 24 horas antes do horário marcado. Depois de aberto, você pode alterar até a partida começar.</p></div>
+          <div><span class="eyebrow dark">Faça suas escolhas</span><h2>Jogos disponíveis</h2></div>
           <label class="filter-label" for="categoryFilter">Classe
             <select id="categoryFilter"><option value="">Todas as classes</option></select>
           </label>
         </div>
+        <div class="games-day-tabs" id="gamesDayTabs" role="tablist" aria-label="Dias dos jogos"></div>
         <div class="join-reminder" id="joinReminder">
           <div><strong>Entre no ranking em menos de um minuto.</strong><span>Nome, telefone e e-mail. Sem senha e sem pagamento.</span></div>
           <button class="primary-button compact" type="button" data-open-registration>Participar grátis</button>
@@ -84,9 +75,15 @@
 
       <section class="tab-panel" id="minePanel" data-panel="mine" role="tabpanel" aria-labelledby="mineTab" hidden>
         <div class="section-heading">
-          <div><span class="eyebrow dark">Seu cartão</span><h2>Meus palpites</h2><p id="participantGreeting">Entre para ver e alterar suas escolhas.</p></div>
-          <button class="secondary-button dark" id="leaveDeviceButton" type="button" hidden>Sair deste aparelho</button>
+          <div><span class="eyebrow dark">Meus palpites</span><h2>Histórico completo</h2><p id="participantGreeting">Entre para consultar todos os seus palpites, inclusive os jogos finalizados.</p></div>
         </div>
+        <div class="history-summary" id="historySummary" aria-label="Resumo dos seus palpites" hidden></div>
+        <h3 id="historyHeading" hidden>Todos os jogos em que você palpitou</h3>
+        <div class="my-picks" id="myPicksList"></div>
+      </section>
+
+      <section class="tab-panel" id="profilePanel" data-panel="profile" role="tabpanel" aria-labelledby="profileTab" hidden>
+        <div class="section-heading"><div><span class="eyebrow dark">Sua conta</span><h2>Meus dados</h2><p>Seu código para acessar os palpites em outro aparelho.</p></div></div>
         <div class="access-card" id="accessCard">
           <div class="access-empty" id="accessEmpty">
             <strong>Ainda não reconhecemos seu cadastro neste aparelho.</strong>
@@ -98,7 +95,7 @@
             <button class="copy-button" id="copyAccessCodeButton" type="button">Copiar código</button>
           </div>
         </div>
-        <div class="my-picks" id="myPicksList"></div>
+        <button class="secondary-button dark" id="leaveDeviceButton" type="button" hidden>Sair deste aparelho</button>
       </section>
 
       <section class="tab-panel" id="rankingPanel" data-panel="ranking" role="tabpanel" aria-labelledby="rankingTab" hidden>
@@ -115,9 +112,9 @@
         </div>
         <div class="rules-grid">
           <article><span>01</span><h3>Escolha o favorito</h3><p>Cada jogo aceita uma escolha. Você pode mudar enquanto o palpite estiver aberto.</p></article>
-          <article><span>02</span><h3>O jogo trava sozinho</h3><p>No horário marcado ou quando a organização iniciar a partida, ninguém consegue alterar.</p></article>
+          <article><span>02</span><h3>Prazo para palpitar</h3><p>A rodada fecha no primeiro jogo do dia. Confrontos novos liberados depois abrem uma nova oportunidade: até seu horário ou, em jogos “APÓS”, até a organização iniciar a partida.</p></article>
           <article><span>03</span><h3>Resultado oficial</h3><p>O vencedor lançado no sistema do torneio atualiza os pontos e o ranking.</p></article>
-          <article><span>04</span><h3>Desempate objetivo</h3><p>Mais pontos, depois mais jogos apurados e, persistindo, cadastro mais antigo.</p></article>
+          <article><span>04</span><h3>Desempate objetivo</h3><p>Mais pontos; em caso de empate, menos palpites já apurados; depois, cadastro mais antigo. Jogos pendentes não entram no desempate.</p></article>
         </div>
         <div class="rules-copy">
           <h3>Regra deste desafio</h3>
@@ -154,6 +151,7 @@
         <label>Código de acesso<input id="resumeCode" class="code-input" inputmode="text" autocomplete="one-time-code" maxlength="12" placeholder="ABCD-234567" required /></label>
         <p class="form-hint">É o código mostrado ao concluir o cadastro. Ele fica salvo no aparelho e também é enviado ao e-mail informado.</p>
         <button class="primary-button wide" type="submit">Entrar nos meus palpites</button>
+        <button class="lost-access-button" id="lostAccessButton" type="button">Perdi meu código · pedir ajuda no WhatsApp</button>
       </form>
       <div class="captcha-shell"><div id="captchaWidget"></div><small id="captchaStatus">Carregando proteção anti-robô…</small></div>
       <p class="form-error" id="formError" role="alert" hidden></p>

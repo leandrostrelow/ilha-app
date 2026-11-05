@@ -133,6 +133,11 @@ test('preparador de Supabase cria baseline e bootstrap sintético na ordem do ru
   assert.equal(fixtureIndex, allowlistIndex + 1);
   assert.equal(hardeningIndex, fixtureIndex + 1);
   assert.ok(recoverableResetIndex > hardeningIndex);
+  const dayUseFixtureIndex = result.migrations.indexOf('20261007223000_ci_seed_day_use.sql');
+  assert.ok(dayUseFixtureIndex > 0);
+  assert.equal(result.migrations[dayUseFixtureIndex + 1], '20261007224027_bar_beach_day_use.sql');
+  const dayUseFixture = await readFile(path.join(target, 'supabase', 'migrations', result.migrations[dayUseFixtureIndex]), 'utf8');
+  assert.match(dayUseFixture, /'Day Use', 'Beach', 30/);
   const nativeCourt = await readFile(path.join(target, 'supabase', 'migrations', result.migrations[1]), 'utf8');
   const tournaments = await readFile(path.join(target, 'supabase', 'migrations', result.migrations[2]), 'utf8');
   assert.match(nativeCourt, /app_court_schedule_days/);

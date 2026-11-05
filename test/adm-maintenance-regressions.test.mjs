@@ -100,6 +100,20 @@ test('checkout dividido do Bar volta a uma coluna no mobile', () => {
   assert.match(splitGrid, /grid-template-columns\s*:\s*(?:minmax\(0\s*,\s*)?1fr\)?\s*(?:!important)?\s*;/);
 });
 
+test('financeiro do ADM Bar mantém data e indicadores compactos no celular', () => {
+  const mobileCss = maxWidthMediaBodies(adminCss, 760);
+  const controls = declarationsFor(mobileCss, '.bar-finance-report-controls');
+  const dateInput = declarationsFor(adminCss, '.bar-finance-date-control input');
+  const kpi = declarationsFor(mobileCss, '.bar-finance-kpi');
+
+  assert.match(adminSource, /<h2>Financeiro do Bar<\/h2>/);
+  assert.doesNotMatch(adminSource, /Acompanhe recebimentos, despesas e resultado do Bar/);
+  assert.match(controls, /grid-template-columns\s*:\s*minmax\(0\s*,\s*1fr\)\s+auto\s*;/);
+  assert.match(dateInput, /min-width\s*:\s*0\s*;/);
+  assert.match(dateInput, /box-sizing\s*:\s*border-box\s*;/);
+  assert.match(kpi, /min-height\s*:\s*82px\s*;/);
+});
+
 test('ADM Bar mantém um botão Sair acessível no cabeçalho mobile', () => {
   const buttons = adminSource.match(/<button\b[^>]*id="barSurfaceLogoutBtn"[^>]*>[\s\S]*?<\/button>/g) || [];
   assert.equal(buttons.length, 1, 'o botão móvel Sair do ADM Bar deve existir uma única vez');
@@ -150,13 +164,13 @@ test('modais operacionais preservam foco e respondem ao teclado', () => {
   assert.match(focusTrap, /event\.shiftKey/);
   assert.match(adminSource, /document\.addEventListener\('keydown',\s*handleClubAdminModalKeyboard\)/);
   for (const [modalId, focusId] of [
-    ['clientModal', 'clientEditName'],
-    ['courtSlotModal', 'courtSlotStatus'],
     ['lessonSlotEditorModal', 'lessonSlotEditorTime'],
-    ['lessonStudentEditorModal', 'lessonStudentPickerSearch'],
+    ['lessonStudentEditorModal', 'lessonManualStudentName'],
   ]) {
     assert.match(adminSource, new RegExp(`showClubAdminModal\\('${modalId}',\\s*'${focusId}'\\)`));
   }
+  assert.match(adminSource, /showClubAdminModal\('clientModal', 'clientTab' \+ opsState.clientProfileTab\)/);
+  assert.match(adminSource, /showClubAdminModal\('courtSlotModal', blockedByDefault \? 'courtSlotDefaultToggle' : 'courtSlotStatus'\)/);
 });
 
 test('topo do torneio empilha ações e status em telas estreitas', () => {

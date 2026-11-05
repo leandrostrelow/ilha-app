@@ -26,6 +26,8 @@ const writeActions = new Set([
   "saveRegistration",
   "deleteRegistration",
   "generateBracket",
+  "generateGroup",
+  "setBracketPublication",
   "saveMatch",
   "saveMatches",
   "scheduleMatch",
@@ -373,6 +375,15 @@ function assertNoError(error: any) {
   if (error) throw error;
 }
 
+function assertNoGroupFinalConflict(error: any) {
+  if (!error) return;
+  const message = text(error.message, 500);
+  if (errorCode(error) === "P0001" && normalizeKey(message).includes("final")) {
+    throw new ApiError(message || "A final já possui resultado e bloqueou a alteração do grupo.", 409);
+  }
+  throw error;
+}
+
 function firstObject(...values: unknown[]): Row {
   for (const value of values) {
     if (value && typeof value === "object" && !Array.isArray(value)) return value as Row;
@@ -594,18 +605,29 @@ function normalizeKey(value: unknown) {
   return text(value, 80).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
-function resolveLegacyDate(value: unknown, tournament: Row) {
+function resolveLegacyDate(value: unknown, tournament: Row, currentDate: unknown = null) {
   const raw = text(value, 20);
   if (!raw) throw new ApiError("Informe a data.");
   const direct = validDate(value);
   if (direct) return direct;
   const desired = weekDayIndexes[normalizeKey(value)];
   if (desired === undefined) throw new ApiError("Data inválida.");
-  const baseText = validDate(tournament.starts_on) || saoPauloToday();
+  // Older ADM clients send only a weekday. Preserve an unchanged saved date,
+  // especially when saving a result or reordering a past match.
+  const existing = validDate(currentDate);
+  if (existing && new Date(`${existing}T12:00:00Z`).getUTCDay() === desired) return existing;
+  // New weekday selections belong to the next occurrence, not the first week
+  // of a multi-week tournament. Current clients always send an explicit date.
+  const today = saoPauloToday();
+  const start = validDate(tournament.starts_on);
+  const baseText = start && start > today ? start : today;
   const base = new Date(`${baseText}T12:00:00Z`);
   const distance = (desired - base.getUTCDay() + 7) % 7;
   base.setUTCDate(base.getUTCDate() + distance);
-  return base.toISOString().slice(0, 10);
+  const resolved = base.toISOString().slice(0, 10);
+  const end = validDate(tournament.ends_on);
+  if (end && resolved > end) throw new ApiError("Escolha a data completa do jogo dentro do período do torneio.");
+  return resolved;
 }
 
 function legacyDay(value: unknown, metadata: Row = {}) {
@@ -729,6 +751,7 @@ function mapCategory(row: Row) {
     max_inscritos: row.max_entries || "",
     status: row.active === false ? "INATIVA" : "ATIVA",
     ordem: row.sort_order || 0,
+    settings: firstObject(row.settings),
   };
 }
 
@@ -829,8 +852,9 @@ function mapOnlinePayment(row: Row) {
   };
 }
 
-function mapMatch(row: Row, athletes: Map<string, Row>) {
+function mapMatch(row: Row, athletes: Map<string, Row>, teams: Map<string, string> = new Map()) {
   const metadata = firstObject(row.metadata);
+  const name = (id: unknown) => teams.get(`${row.category_id}:${id}`) || athletes.get(String(id || ""))?.full_name || "";
   return {
     jogo_id: row.id,
     id: row.id,
@@ -840,11 +864,11 @@ function mapMatch(row: Row, athletes: Map<string, Row>) {
     fase: row.phase || row.round_code || "",
     posicao_chave: row.match_no || 1,
     jogador1_id: row.side1_athlete_id || "",
-    jogador1_nome: athletes.get(String(row.side1_athlete_id || ""))?.full_name || "",
+    jogador1_nome: name(row.side1_athlete_id),
     jogador2_id: row.side2_athlete_id || "",
-    jogador2_nome: athletes.get(String(row.side2_athlete_id || ""))?.full_name || "",
+    jogador2_nome: name(row.side2_athlete_id),
     vencedor_id: row.winner_athlete_id || "",
-    vencedor_nome: athletes.get(String(row.winner_athlete_id || ""))?.full_name || "",
+    vencedor_nome: name(row.winner_athlete_id),
     origem1_jogo_id: row.source1_match_id || "",
     origem2_jogo_id: row.source2_match_id || "",
     placar: row.score || "",
@@ -856,6 +880,7 @@ function mapMatch(row: Row, athletes: Map<string, Row>) {
     ordem: row.sort_order || 0,
     observacoes: row.public_notes || metadata.observacoes || "",
     resultado_em: row.finished_at || "",
+    publicar: row.published === true,
   };
 }
 
@@ -963,6 +988,8 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", incl
   const athletes = ((athletesResult.data || []) as Row[])
     .filter((row) => relevantAthleteIds.has(String(row.id)));
   const athleteMap = new Map(athletes.map((row) => [String(row.id), row]));
+  const teamNames = new Map(registrations.filter((r) => r.partner_name && r.status !== "CANCELLED")
+    .map((r) => [`${r.category_id}:${r.athlete_id}`, String(r.public_name || "")]));
   const registrationOrders = (ordersResult.data || []) as Row[];
   const orderMap = new Map(registrationOrders.map((row) => [String(row.id), row]));
   const registrationGroups = (registrationGroupsResult.data || []) as Row[];
@@ -1035,7 +1062,7 @@ async function loadSnapshot(client: DbClient, tournamentId = "", slug = "", incl
       pago_em: row.paid_at || "",
       aceite_em: row.terms_accepted_at,
     })) : [],
-    jogos: matches.map((row) => mapMatch(row, athleteMap)),
+    jogos: matches.map((row) => mapMatch(row, athleteMap, teamNames)),
     quadras: ((courtsResult.data || []) as Row[]).map(mapCourt),
     agenda: ((eventsResult.data || []) as Row[]).map(mapEvent),
     config: [{ chave: "LIVE_STATE", valor: JSON.stringify(livePayload) }],
@@ -1391,14 +1418,16 @@ async function createRegistrationInvite(client: DbClient, actorId: string, paylo
   if (recipientPhone && !/^\d{10,13}$/.test(recipientPhone)) {
     throw new ApiError("Informe um WhatsApp válido ou deixe o campo vazio.");
   }
-  if (tournament.registration_open !== true || tournament.status !== "REGISTRATION_OPEN") {
-    throw new ApiError("Abra as inscrições do torneio antes de gerar um convite.", 409);
+  if (!["REGISTRATION_OPEN", "REGISTRATION_CLOSED", "IN_PROGRESS"].includes(String(tournament.status || ""))) {
+    throw new ApiError("Convites só podem ser gerados antes do encerramento definitivo do torneio.", 409);
   }
 
   const rawToken = crypto.randomUUID();
   const tokenHash = await sha256Hex(rawToken);
   const tokenCiphertext = await encryptRegistrationInviteToken(rawToken);
-  const expiresAt = tournament.registration_closes_at || null;
+  // A private invitation is an explicit ADM exception to public registration.
+  // It remains single-use and does not reopen the tournament landing page.
+  const expiresAt = null;
   const result = await client.from("tournament_registration_invites").insert({
     tournament_id: tournament.id,
     token_hash: tokenHash,
@@ -1799,6 +1828,7 @@ async function saveCategory(client: DbClient, actorId: string, payload: Row) {
     active: text(input.status, 20).toUpperCase() !== "INATIVA" && input.active !== false,
     is_published: input.is_published !== false,
     sort_order: integerValue(input.ordem ?? input.sort_order, current.sort_order || 0),
+    settings: { ...firstObject(current.settings), ...firstObject(input.settings) },
     updated_at: new Date().toISOString(),
   };
   const result = current.id
@@ -2033,7 +2063,7 @@ function matchPayload(input: Row, tournament: Row, current: Row = {}) {
       date = null;
       delete metadata.legacy_date;
     } else {
-      date = resolveLegacyDate(rawDate, tournament);
+      date = resolveLegacyDate(rawDate, tournament, current.match_date);
       if (validDate(rawDate)) delete metadata.legacy_date;
       else metadata.legacy_date = rawDate;
     }
@@ -2167,12 +2197,21 @@ async function saveOneMatch(client: DbClient, actorId: string, payload: Row, inp
   const data = matchPayload(input, tournament, current);
   if (!data.category_id) throw new ApiError("A classe do jogo é obrigatória.");
   const category = await client.from("tournament_categories")
-    .select("id")
+    .select("id,draw_format")
     .eq("id", data.category_id)
     .eq("tournament_id", tournament.id)
     .maybeSingle();
   assertNoError(category.error);
   if (!category.data) throw new ApiError("A classe do jogo não pertence a este torneio.");
+  const participantFieldsWereEdited = ownField(input, "jogador1_id", "side1_athlete_id").present ||
+    ownField(input, "jogador2_id", "side2_athlete_id").present;
+  const participantsChanged = uuid(data.side1_athlete_id) !== uuid(current.side1_athlete_id) ||
+    uuid(data.side2_athlete_id) !== uuid(current.side2_athlete_id);
+  const isGroupFinal = text(category.data.draw_format, 40).toUpperCase() === "GROUPS_AND_KNOCKOUT" &&
+    text(data.phase || data.round_code, 40).toUpperCase() === "FINAL";
+  if (current.id && isGroupFinal && participantFieldsWereEdited && participantsChanged) {
+    data.metadata = { ...firstObject(data.metadata), group_final_manual: true };
+  }
   if (data.winner_athlete_id && ![data.side1_athlete_id, data.side2_athlete_id].includes(data.winner_athlete_id)) {
     throw new ApiError("O vencedor precisa ser um dos atletas deste jogo.");
   }
@@ -2180,7 +2219,7 @@ async function saveOneMatch(client: DbClient, actorId: string, payload: Row, inp
   const result = current.id
     ? await client.from("tournament_matches").update(data).eq("id", current.id).select().single()
     : await client.from("tournament_matches").insert(data).select().single();
-  assertNoError(result.error);
+  assertNoGroupFinalConflict(result.error);
   await syncWinnerPropagation(client, result.data as Row, uuid(current.winner_athlete_id));
   await audit(client, actorId, tournament.id, "match", result.data.id, current.id ? "UPDATE" : "CREATE", current.id ? current : null, result.data);
   return result.data as Row;
@@ -2193,6 +2232,46 @@ async function saveMatches(client: DbClient, actorId: string, payload: Row) {
   const saved: Row[] = [];
   for (const match of matches) saved.push(await saveOneMatch(client, actorId, payload, firstObject(match)));
   return saved;
+}
+
+async function setBracketPublication(client: DbClient, actorId: string, payload: Row) {
+  const categoryId = uuid(payload.categoria_id || payload.category_id);
+  if (!categoryId) throw new ApiError("Escolha uma classe.");
+  const categoryResult = await client.from("tournament_categories")
+    .select("id,tournament_id,name")
+    .eq("id", categoryId)
+    .maybeSingle();
+  assertNoError(categoryResult.error);
+  const category = categoryResult.data as Row | null;
+  if (!category) throw new ApiError("Classe não encontrada.", 404);
+  const tournament = await currentTournament(client, payload, category);
+  if (String(category.tournament_id) !== String(tournament.id)) {
+    throw new ApiError("A classe não pertence a este torneio.", 409);
+  }
+  const published = booleanValue(payload.publicar ?? payload.published, false);
+  const previous = await client.from("tournament_matches")
+    .select("id,published")
+    .eq("tournament_id", tournament.id)
+    .eq("category_id", categoryId);
+  assertNoError(previous.error);
+  if (!(previous.data || []).length) throw new ApiError("Esta classe ainda não possui chave.", 409);
+  const updated = await client.from("tournament_matches")
+    .update({ published, updated_at: new Date().toISOString() })
+    .eq("tournament_id", tournament.id)
+    .eq("category_id", categoryId)
+    .select("id,published");
+  assertNoError(updated.error);
+  await audit(
+    client,
+    actorId,
+    tournament.id,
+    "bracket_publication",
+    categoryId,
+    published ? "PUBLISH" : "UNPUBLISH",
+    { published: (previous.data || []).every((row: Row) => row.published === true) },
+    { published, match_count: (updated.data || []).length },
+  );
+  return { categoria_id: categoryId, published, match_count: (updated.data || []).length };
 }
 
 async function updateMatchFields(client: DbClient, actorId: string, payload: Row, mode: "schedule" | "score") {
@@ -2216,7 +2295,7 @@ async function updateMatchFields(client: DbClient, actorId: string, payload: Row
         matchDate = null;
         delete metadata.legacy_date;
       } else {
-        matchDate = resolveLegacyDate(rawDate, tournament);
+        matchDate = resolveLegacyDate(rawDate, tournament, lookup.data.match_date);
         if (validDate(rawDate)) delete metadata.legacy_date;
         else metadata.legacy_date = rawDate;
       }
@@ -2272,7 +2351,7 @@ async function updateMatchFields(client: DbClient, actorId: string, payload: Row
     };
   }
   const result = await client.from("tournament_matches").update(update).eq("id", matchId).select().single();
-  assertNoError(result.error);
+  assertNoGroupFinalConflict(result.error);
   await syncWinnerPropagation(client, result.data as Row, uuid(lookup.data.winner_athlete_id));
   await audit(client, actorId, tournament.id, "match", matchId, mode === "schedule" ? "SCHEDULE" : "SCORE", lookup.data, result.data);
   return result.data as Row;
@@ -2299,7 +2378,7 @@ async function saveAgendaEvent(client: DbClient, actorId: string, payload: Row) 
     tournament_id: tournament.id,
     title,
     description: nullableText(input.descricao ?? input.description ?? current.description, 1000),
-    event_date: resolveLegacyDate(input.data ?? input.event_date ?? current.event_date, tournament),
+    event_date: resolveLegacyDate(input.data ?? input.event_date ?? current.event_date, tournament, current.event_date),
     event_time: eventTime,
     court_name: nullableText(input.quadra ?? input.court_name ?? current.court_name, 100),
     status: allowedStatuses.includes(statusValue) ? statusValue : "SCHEDULED",
@@ -2397,18 +2476,28 @@ async function generateBracket(client: DbClient, actorId: string, payload: Row) 
   if (!tournament) throw new ApiError("Torneio não encontrado.", 404);
   const registrationsResult = await client
     .from("tournament_registrations")
-    .select("*, tournament_athletes(ranking, seed)")
+    .select("*, tournament_athletes(ranking, seed, status, active)")
     .eq("category_id", categoryId)
-    .eq("status", "CONFIRMED");
+    .in("status", ["CONFIRMED", "PENDING"]);
   assertNoError(registrationsResult.error);
-  const registrations = ((registrationsResult.data || []) as Row[]).sort((a, b) => {
-    const aSeed = integerValue(a.seed_number ?? a.tournament_athletes?.seed, 99999);
-    const bSeed = integerValue(b.seed_number ?? b.tournament_athletes?.seed, 99999);
-    if (aSeed !== bSeed) return aSeed - bSeed;
-    const aRank = integerValue(a.tournament_athletes?.ranking, 99999);
-    const bRank = integerValue(b.tournament_athletes?.ranking, 99999);
-    return aRank - bRank;
+  const eligibleRegistrations = ((registrationsResult.data || []) as Row[]).filter((registration) => {
+    const athlete = registration.tournament_athletes as Row | null;
+    return athlete?.active !== false && text(athlete?.status, 30).toUpperCase() !== "INACTIVE";
   });
+  const activeRegistrations = eligibleRegistrations;
+  if (activeRegistrations.some((registration) => text(registration.status, 30).toUpperCase() === "PENDING")) {
+    throw new ApiError("Conclua ou cancele as inscrições pendentes antes de gerar a chave.", 409);
+  }
+  const registrations = activeRegistrations
+    .filter((registration) => text(registration.status, 30).toUpperCase() === "CONFIRMED")
+    .sort((a, b) => {
+      const aSeed = integerValue(a.seed_number ?? a.tournament_athletes?.seed, 99999);
+      const bSeed = integerValue(b.seed_number ?? b.tournament_athletes?.seed, 99999);
+      if (aSeed !== bSeed) return aSeed - bSeed;
+      const aRank = integerValue(a.tournament_athletes?.ranking, 99999);
+      const bRank = integerValue(b.tournament_athletes?.ranking, 99999);
+      return aRank - bRank;
+    });
   if (registrations.length < 2) throw new ApiError("São necessárias pelo menos duas inscrições confirmadas para gerar a chave.");
   const automaticSize = nextPowerOfTwo(registrations.length);
   const requestedSize = integerValue(payload.tamanho_chave || payload.draw_size, 0);
@@ -2446,7 +2535,7 @@ async function generateBracket(client: DbClient, actorId: string, payload: Row) 
         score: null,
         status: "PENDING",
         sort_order: (round * 1000) + ((position + 1) * 10),
-        published: true,
+        published: false,
         metadata: { generated: true },
       };
       if (round === 1) {
@@ -2477,7 +2566,7 @@ async function generateBracket(client: DbClient, actorId: string, payload: Row) 
     throw new Error("A chave gerada não passou na validação interna.");
   }
 
-  const replacement = await client.rpc("tournament_replace_bracket_atomic", {
+  const replacement = await client.rpc("tournament_replace_single_elimination_atomic", {
     p_tournament_id: tournament.id,
     p_category_id: categoryId,
     p_draw_size: size,
@@ -2500,6 +2589,80 @@ async function generateBracket(client: DbClient, actorId: string, payload: Row) 
     insertedMatches,
   );
   return { categoria_id: categoryId, tamanho_chave: size, jogos: insertedMatches };
+}
+
+async function generateGroup(client: DbClient, actorId: string, payload: Row) {
+  const categoryId = uuid(payload.categoria_id || payload.category_id);
+  if (!categoryId) throw new ApiError("Escolha uma classe.");
+  const categoryResult = await client.from("tournament_categories").select("*").eq("id", categoryId).maybeSingle();
+  assertNoError(categoryResult.error);
+  const category = categoryResult.data as Row | null;
+  if (!category) throw new ApiError("Classe não encontrada.", 404);
+  const tournament = await selectTournament(client, category.tournament_id, "");
+  if (!tournament) throw new ApiError("Torneio não encontrado.", 404);
+
+  const registrationsResult = await client
+    .from("tournament_registrations")
+    .select("athlete_id,seed_number,status,tournament_athletes(ranking,seed,status,active)")
+    .eq("category_id", categoryId)
+    .in("status", ["CONFIRMED", "PENDING"]);
+  assertNoError(registrationsResult.error);
+  const eligibleRegistrations = ((registrationsResult.data || []) as Row[]).filter((registration) => {
+    const athlete = registration.tournament_athletes as Row | null;
+    return athlete?.active !== false && text(athlete?.status, 30).toUpperCase() !== "INACTIVE";
+  });
+  const activeRegistrations = eligibleRegistrations;
+  if (activeRegistrations.some((registration) => text(registration.status, 30).toUpperCase() === "PENDING")) {
+    throw new ApiError("Conclua ou cancele as inscrições pendentes antes de gerar o grupo.", 409);
+  }
+  const registrations = activeRegistrations
+    .filter((registration) => text(registration.status, 30).toUpperCase() === "CONFIRMED")
+    .sort((a, b) => {
+      const aSeed = integerValue(a.seed_number ?? a.tournament_athletes?.seed, 99999);
+      const bSeed = integerValue(b.seed_number ?? b.tournament_athletes?.seed, 99999);
+      if (aSeed !== bSeed) return aSeed - bSeed;
+      const aRank = integerValue(a.tournament_athletes?.ranking, 99999);
+      const bRank = integerValue(b.tournament_athletes?.ranking, 99999);
+      return aRank - bRank;
+    });
+  const roundRobin = category.draw_format === "ROUND_ROBIN";
+  if (registrations.length < (roundRobin ? 2 : 3)) {
+    throw new ApiError("O grupo exige pelo menos três inscrições confirmadas.", 409);
+  }
+  const athleteIds = registrations.map((registration) => uuid(registration.athlete_id)).filter(Boolean);
+  if (athleteIds.length !== registrations.length || new Set(athleteIds).size !== registrations.length) {
+    throw new ApiError("Todas as inscrições do grupo precisam pertencer a atletas distintos.", 409);
+  }
+
+  const replacement = await client.rpc(roundRobin ? "tournament_replace_round_robin_atomic" : "tournament_replace_group_stage_atomic", {
+    p_tournament_id: tournament.id,
+    p_category_id: categoryId,
+    p_athlete_ids: athleteIds,
+    p_overwrite: payload.overwrite === true,
+  });
+  assertNoGroupFinalConflict(replacement.error);
+  const result = (replacement.data || {}) as Row;
+  const previousMatches = Array.isArray(result.previous_matches) ? result.previous_matches : [];
+  const insertedMatches = Array.isArray(result.matches) ? result.matches : [];
+  const groupMatchCount = (registrations.length * (registrations.length - 1)) / 2;
+  if (insertedMatches.length !== groupMatchCount + (roundRobin ? 0 : 1)) throw new Error("O grupo não foi gravado por completo.");
+  await audit(
+    client,
+    actorId,
+    tournament.id,
+    "group_stage",
+    categoryId,
+    previousMatches.length ? "REGENERATE" : "GENERATE",
+    previousMatches,
+    insertedMatches,
+  );
+  return {
+    categoria_id: categoryId,
+    formato: roundRobin ? "ROUND_ROBIN" : "GROUPS_AND_KNOCKOUT",
+    tamanho_chave: registrations.length,
+    jogos_grupo: groupMatchCount,
+    jogos: insertedMatches,
+  };
 }
 
 Deno.serve(async (request) => {
@@ -2602,6 +2765,8 @@ Deno.serve(async (request) => {
       responseTournamentId = (result as Row).tournament_id;
     } else if (action === "deleteRegistration") result = await deleteRegistration(trustedClient, profile.id, payload);
     else if (action === "generateBracket") result = await generateBracket(client, profile.id, payload);
+    else if (action === "generateGroup") result = await generateGroup(client, profile.id, payload);
+    else if (action === "setBracketPublication") result = await setBracketPublication(client, profile.id, payload);
     else if (action === "saveMatch") result = await saveOneMatch(client, profile.id, payload, firstObject(payload.jogo, payload.match, payload));
     else if (action === "saveMatches") result = await saveMatches(client, profile.id, payload);
     else if (action === "scheduleMatch") result = await updateMatchFields(client, profile.id, payload, "schedule");

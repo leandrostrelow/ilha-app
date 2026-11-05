@@ -328,7 +328,7 @@ test('mensalidades viram cartões legíveis no celular sem tabela de 760px', () 
   assert.match(mobileCss, /content\s*:\s*attr\(data-label\)\s*;/);
 
   const renderer = functionSource(adminSource, 'renderMonthlyBilling');
-  for (const label of ['Pagador', 'Estado', 'Vencimento', 'Valor', 'Detalhe', 'Ações']) {
+  for (const label of ['Pagador', 'Estado', 'Vencimento', 'Valor', 'Conta', 'Ações']) {
     assert.match(renderer, new RegExp(`data-label=["']${label}["']`));
   }
 });

@@ -12,6 +12,7 @@
   <link id="tournamentAppleTouchIcon" />
   <link rel="icon" type="image/png" sizes="512x512" href="/icon.png" />
   <title>Torneios | Ilha Tênis</title>
+  <link rel="stylesheet" href="/pickleball.css" />
   <script>
     if (/^\/torneios\/ilha-open-2026(?:\/|$)/.test(location.pathname)) {
       const manifest = document.getElementById('tournamentAppManifest');
@@ -295,7 +296,7 @@
     .about-copy .public-registration-cta { margin: 18px 0 0; }
     .mini-chip { display: inline-flex; align-items: center; min-height: 27px; border-radius: 999px; padding: 5px 8px; background: #edf4f5; color: #526a71; font-size: 10px; font-weight: 900; text-transform: uppercase; }
 
-    .about-layout { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(280px,.85fr); gap: 18px; }
+    .about-layout { display: grid; grid-template-columns: minmax(0,1fr); gap: 18px; }
     .about-copy { min-width: 0; }
     .about-copy h2 { margin: 0; font-size: clamp(25px,4vw,38px); letter-spacing: -.04em; }
     .about-copy p { margin: 14px 0 0; color: #4d646b; font-size: 15px; line-height: 1.7; white-space: pre-line; }
@@ -383,6 +384,35 @@
     .match-player b { color: var(--teal); }
     .match-meta { padding: 5px 9px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 750; }
 
+    .group-board { display: grid; gap: 16px; }
+    .group-rules { padding: 16px; border: 1px solid #cfe69d; border-radius: 18px; background: linear-gradient(145deg,#f7ffe7,#fff); }
+    .group-rules h3, .group-section-head h3 { margin: 0; font-size: 17px; letter-spacing: -.025em; }
+    .group-rules-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+    .group-rule { min-width: 0; display: grid; grid-template-columns: 28px minmax(0,1fr); align-items: start; gap: 9px; padding: 10px; border: 1px solid #dcebbd; border-radius: 13px; background: rgba(255,255,255,.86); color: #40565c; font-size: 11px; font-weight: 750; line-height: 1.45; }
+    .group-rule b { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px; background: var(--lime); color: #284600; font-size: 11px; }
+    .group-section { min-width: 0; padding: 15px; border: 1px solid var(--line); border-radius: 18px; background: #f7fafb; }
+    .group-section-head { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 11px; }
+    .group-section-head p { margin: 3px 0 0; color: var(--muted); font-size: 11px; font-weight: 700; }
+    .group-match-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+    .group-match-grid .match-card { min-width: 0; }
+    .group-standings-wrap { width: 100%; overflow: hidden; }
+    .group-standings { width: 100%; border-collapse: separate; border-spacing: 0 6px; table-layout: fixed; }
+    .group-standings th { padding: 0 5px 3px; color: var(--muted); font-size: 9px; font-weight: 950; letter-spacing: .04em; text-align: center; text-transform: uppercase; }
+    .group-standings th:first-child { width: auto; text-align: left; }
+    .group-standings th:not(:first-child) { width: 48px; }
+    .group-standings abbr { text-decoration: none; cursor: help; }
+    .group-standings td { height: 42px; padding: 8px 5px; background: #fff; color: #40565c; font-size: 11px; font-weight: 850; text-align: center; }
+    .group-standings td:first-child { overflow: hidden; border-radius: 12px 0 0 12px; padding-left: 10px; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+    .group-standings td:last-child { border-radius: 0 12px 12px 0; }
+    .group-standings tr.finalist td { background: var(--lime-soft); color: #315600; }
+    .group-position { display: inline-grid; width: 23px; height: 23px; place-items: center; margin-right: 7px; border-radius: 8px; background: #edf4f5; color: var(--muted); font-size: 10px; }
+    .group-standings tr.finalist .group-position { background: var(--lime); color: #284600; }
+    .group-standing-status { margin: 7px 0 0; color: var(--muted); font-size: 10px; font-weight: 750; line-height: 1.45; }
+    .group-standing-status.attention { color: #7b5700; }
+    .group-final { display: grid; justify-items: center; gap: 8px; }
+    .group-final .bracket-final-stage { margin: 0; }
+    .group-final-placeholder { width: min(100%,420px); min-height: 96px; display: grid; place-items: center; padding: 18px; border: 2px dashed #b9d986; border-radius: 18px; background: #fbfff4; color: var(--muted); font-size: 12px; font-weight: 800; text-align: center; }
+
     .agenda-list, .results-list { display: grid; gap: 10px; }
     .agenda-list { gap: 16px; }
     .agenda-day-group { display: grid; gap: 11px; padding: 12px; border: 1px solid var(--line); border-radius: 20px; background: #f7fafb; }
@@ -405,12 +435,26 @@
     .agenda-card h3 { margin: 0; font-size: 15px; }
     .agenda-card p { margin: 5px 0 0; color: var(--muted); font-size: 12px; font-weight: 650; }
     .court-chip { min-height: 32px; display: inline-flex; align-items: center; border-radius: 999px; padding: 7px 10px; background: #edf4f5; color: #526a71; font-size: 11px; font-weight: 900; white-space: nowrap; }
-    .result-card { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 12px; padding: 15px; border: 1px solid var(--line); border-radius: 17px; background: #fff; }
-    .result-player { min-width: 0; font-weight: 800; }
-    .result-player:last-child { text-align: right; }
-    .result-player.winner { color: var(--good); font-weight: 950; }
-    .score-pill { min-width: 76px; min-height: 38px; display: grid; place-items: center; border-radius: 12px; background: var(--navy); color: #fff; font-size: 13px; font-weight: 950; }
+    .result-card { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 15px; background: #fff; }
+    .result-context { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; padding: 10px 12px; color: var(--muted); font-size: 11px; font-weight: 800; }
+    .result-status { color: var(--good); font-size: 10px; white-space: nowrap; }
+    .result-player { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; padding: 12px; border-top: 1px solid var(--line); font-size: 14px; font-weight: 800; }
+    .result-player-name { min-width: 0; overflow-wrap: anywhere; }
+    .result-player.winner { background: #f2fbdf; color: #284600; font-weight: 950; box-shadow: inset 3px 0 0 var(--lime); }
+    .result-player-name small { display: block; margin-top: 3px; font-size: 9px; letter-spacing: .04em; text-transform: uppercase; }
+    .result-score { flex-shrink: 0; font-variant-numeric: tabular-nums; word-spacing: 8px; font-size: 15px; }
+    .result-summary { margin: 0; padding: 8px 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; font-weight: 750; }
+    @media (min-width: 900px) { .results-list .agenda-day-courts { grid-template-columns: repeat(2,minmax(0,1fr)); align-items: start; } }
 
+    .arrigoni-invite { box-sizing: border-box; width: min(440px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; border: 0; border-radius: 24px; padding: 30px 24px 20px; color: #17323c; background: white; text-align: center; box-shadow: 0 24px 80px #0005; }
+    .arrigoni-invite::backdrop { background: #09242dbb; }
+    .arrigoni-invite img { display: block; width: 180px; max-width: 70%; height: 145px; object-fit: contain; margin: 0 auto 16px; }
+    .arrigoni-invite h2 { font-size: 23px; line-height: 1.2; }
+    .arrigoni-invite p { line-height: 1.5; }
+    .arrigoni-invite .button { margin-top: 10px; background: #007f79; color: white; }
+    .arrigoni-invite .ghost { background: #eff7f6; color: #17323c; }
+    .arrigoni-close { position: absolute; right: 12px; top: 10px; min-width: 44px; min-height: 44px; border: 0; border-radius: 50%; background: #eff7f6; font-size: 24px; cursor: pointer; }
+    .arrigoni-later { display: block; margin: 12px auto 0; padding: 10px 20px; border: 0; background: transparent; color: #526970; cursor: pointer; }
     .sponsor-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
     .sponsor { min-height: 0; aspect-ratio: 1 / 1; display: grid; place-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: #fff; text-decoration: none; }
     a.sponsor:hover { border-color: var(--lime); transform: translateY(-2px); }
@@ -431,8 +475,7 @@
     .tournament-intro { position: fixed; inset: 0; z-index: 140; display: grid; place-items: center; overflow: hidden; padding: 0; background: #020607; opacity: 1; transition: opacity .2s ease; }
     .tournament-intro.closing { opacity: 0; pointer-events: none; }
     .tournament-intro video { width: 100%; height: 100%; object-fit: cover; background: #020607; }
-    .tournament-intro-skip { position: absolute; top: calc(14px + var(--safe-top)); right: max(14px, env(safe-area-inset-right, 0px)); z-index: 1; min-height: 42px; padding: 9px 15px; border: 1px solid rgba(255,255,255,.30); border-radius: 999px; background: rgba(2,12,14,.70); color: #fff; font-size: 12px; font-weight: 900; backdrop-filter: blur(12px); box-shadow: 0 10px 24px rgba(0,0,0,.28); }
-    .tournament-intro-loading { position: absolute; left: 50%; bottom: calc(22px + var(--safe-bottom)); z-index: 1; margin: 0; color: rgba(255,255,255,.76); font-size: 11px; font-weight: 850; letter-spacing: .04em; transform: translateX(-50%); }
+    .tournament-intro.preparing { opacity: 0; pointer-events: none; }
     .pwa-onboarding-backdrop { z-index: 95; }
     .bet-invite-backdrop { z-index: 90; }
     .bet-invite-card { position: relative; width: min(440px,100%); overflow: hidden; border: 1px solid rgba(168,233,0,.5); border-radius: 28px; background: #fff; box-shadow: 0 30px 90px rgba(0,0,0,.38); }
@@ -720,6 +763,14 @@
       .bracket-stage.single, .bracket-final-stage { width: 100%; }
       .bracket-match-grid { grid-template-columns: 1fr; }
       .bracket-final-stage { padding: 10px; }
+      .group-rules-list, .group-match-grid { grid-template-columns: 1fr; }
+      .group-rules, .group-section { padding: 11px; border-radius: 15px; }
+      .group-section-head { align-items: start; flex-direction: column; gap: 3px; }
+      .group-standings th:not(:first-child) { width: 34px; }
+      .group-standings th { padding-left: 2px; padding-right: 2px; font-size: 8px; }
+      .group-standings td { padding-left: 2px; padding-right: 2px; font-size: 10px; }
+      .group-standings td:first-child { padding-left: 7px; }
+      .group-position { width: 21px; height: 21px; margin-right: 4px; }
       .agenda-day-group { padding: 9px; border-radius: 17px; }
       .agenda-day-title { align-items: center; flex-direction: row; gap: 8px; min-height: 42px; padding: 8px 10px; }
       .agenda-day-title h3 { font-size: 14px; }
@@ -730,9 +781,7 @@
       .agenda-card.grouped .time-box strong { font-size: 11px; }
       .agenda-card.grouped h3 { font-size: 13px; }
       .agenda-card .court-chip { grid-column: 2; justify-self: start; }
-      .result-card { grid-template-columns: 1fr; gap: 8px; text-align: center; }
-      .result-player:last-child { text-align: center; }
-      .score-pill { justify-self: center; }
+      .result-player { padding: 10px; font-size: 13px; }
       .sponsor-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
       .modal-backdrop { place-items: center; padding: calc(10px + var(--safe-top)) max(10px, env(safe-area-inset-right, 0px)) calc(10px + var(--safe-bottom)) max(10px, env(safe-area-inset-left, 0px)); }
       .modal { max-height: calc(100dvh - 20px - var(--safe-top) - var(--safe-bottom)); border-radius: 22px; }
@@ -772,6 +821,57 @@
       body.registration-only .modal-foot { padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); }
       body.registration-only .category-check { min-height: 54px; }
     }
+
+    /* CINCATE 2026 palette sampled from its tournament crest. */
+    body.cincate-theme {
+      --ink: #132b40;
+      --muted: #586a7e;
+      --navy: #0d2940;
+      --teal: #506795;
+      --lime: #b3cd32;
+      --lime-soft: #f0f6d8;
+      --bg: #f3f5f7;
+      --line: #d9e0e8;
+      --shadow: 0 16px 40px rgba(13,41,64,.12);
+      background: radial-gradient(circle at 90% 0, rgba(179,205,50,.15), transparent 25rem), var(--bg);
+    }
+    body.cincate-theme .event-hero {
+      background: linear-gradient(135deg, #0d2940 0%, #213f64 55%, #506795 100%);
+    }
+    body.cincate-theme .event-hero-shade {
+      background: linear-gradient(90deg, rgba(8,32,50,.88) 0, rgba(13,41,64,.54) 54%, rgba(80,103,149,.16) 100%);
+    }
+    body.cincate-theme .head-actions .head-sponsor,
+    body.cincate-theme .sponsor-cta {
+      background: var(--lime);
+      border-color: var(--lime);
+      color: var(--ink);
+      box-shadow: 0 10px 22px rgba(179,205,50,.24);
+    }
+    body.cincate-theme .head-actions .head-sponsor:hover,
+    body.cincate-theme .sponsor-cta:hover {
+      border-color: #9db525;
+      background: #a9c22a;
+    }
+    body.cincate-theme .about-partners {
+      background: linear-gradient(145deg, #0d2940, #506795);
+    }
+    body.cincate-theme .sponsor { padding: 10px; }
+    body.cincate-theme .sponsor img { width: 100%; height: 100%; max-width: none; max-height: none; }
+    body.cincate-theme .tournament-logo {
+      width: min(600px, 100%);
+      height: auto;
+      max-height: 240px;
+      object-position: left center;
+    }
+    @media (max-width: 620px) {
+      body.cincate-theme .event-hero .tournament-logo {
+        width: min(360px, 100%);
+        max-height: 150px;
+        margin: 0;
+        object-position: left center;
+      }
+    }
   </style>
 </head>
 <body>
@@ -779,7 +879,7 @@
     <div class="site-head-inner">
       <div class="brand-link"><img src="/logo.png" alt="Ilha Tênis" /></div>
       <div class="head-actions" id="tournamentHeadActions" hidden>
-        <a class="button head-sponsor" href="https://wa.me/5527999805814?text=Ol%C3%A1%21%20Quero%20saber%20mais%20sobre%20as%20oportunidades%20de%20patroc%C3%ADnio%20do%20torneio%20Ilha%20Open%202026." target="_blank" rel="noopener" aria-label="Falar pelo WhatsApp para patrocinar o torneio"><span aria-hidden="true">💬</span><span class="desktop-label">Seja um patrocinador</span><span class="mobile-label">Patrocinar</span></a>
+        <a class="button head-sponsor" id="headSponsorLink" target="_blank" rel="noopener" aria-label="Falar pelo WhatsApp para patrocinar o torneio"><span aria-hidden="true">💬</span><span class="desktop-label">Seja um patrocinador</span><span class="mobile-label">Patrocinar</span></a>
         <button class="button lime" id="headRegisterBtn" type="button"><span class="desktop-label">Fazer inscrição</span><span class="mobile-label">Inscreva-se</span></button>
       </div>
     </div>
@@ -796,8 +896,6 @@
 
   <div class="tournament-intro" id="tournamentIntro" aria-hidden="true" hidden>
     <video id="tournamentIntroVideo" aria-label="Vídeo de abertura do torneio" muted playsinline preload="auto" disablepictureinpicture></video>
-    <button class="tournament-intro-skip" id="tournamentIntroSkipBtn" type="button">Pular intro</button>
-    <p class="tournament-intro-loading" id="tournamentIntroLoading" role="status">Abrindo o torneio…</p>
   </div>
 
   <div class="modal-backdrop pwa-onboarding-backdrop" id="tournamentPwaOnboarding" aria-hidden="true" hidden>
@@ -929,6 +1027,7 @@
       activeTab: 'about',
       bracketCategory: '',
       agendaCategory: '',
+      resultsCategory: '',
       registrationSearch: '',
       submitting: false,
       lastRegistrationPayload: null,
@@ -1111,8 +1210,16 @@
     }
 
     function tournamentsFromSnapshot() {
-      if (Array.isArray(state.snapshot)) return state.snapshot;
-      return list(state.snapshot && (state.snapshot.tournaments || state.snapshot.torneios));
+      const rows = Array.isArray(state.snapshot)
+        ? state.snapshot.slice()
+        : list(state.snapshot && (state.snapshot.tournaments || state.snapshot.torneios)).slice();
+      // The active tennis event is the club's main public tournament. Keep it
+      // first even when another event was created or published more recently.
+      return rows.sort((left,right) => {
+        const leftMain = clean(field(left,'slug','public_slug')) === 'ilha-open-2026' ? 0 : 1;
+        const rightMain = clean(field(right,'slug','public_slug')) === 'ilha-open-2026' ? 0 : 1;
+        return leftMain - rightMain;
+      });
     }
 
     function tournamentStatus(row) { return clean(field(row, 'status', 'registration_status')).toUpperCase(); }
@@ -1161,10 +1268,11 @@
     }
     function heroMetaHtml(item) {
       const open = isRegistrationOpen(item);
+      const invitationOpen = state.inviteMode === true;
       return '<div class="hero-meta">' +
         '<span class="meta-pill meta-date"><span class="meta-pill-icon" aria-hidden="true">📅</span><span><small>Data do evento</small><strong>' + escapeHtml(formatHeroRange(item)) + '</strong></span></span>' +
         '<span class="meta-pill"><span class="meta-pill-icon" aria-hidden="true">📍</span><span><small>Local</small><strong>' + escapeHtml(field(item,'club_name','clube','venue','location','local') || 'Ilha Tênis') + '</strong></span></span>' +
-        '<span class="meta-pill status-pill ' + (open ? 'status-open' : '') + '"><span class="meta-pill-icon" aria-hidden="true">' + (open ? '●' : 'ℹ️') + '</span><strong>' + escapeHtml(statusLabel(item)) + '</strong></span></div>';
+        '<span class="meta-pill status-pill ' + (open || invitationOpen ? 'status-open' : '') + '"><span class="meta-pill-icon" aria-hidden="true">' + (open || invitationOpen ? '●' : 'ℹ️') + '</span><strong>' + escapeHtml(invitationOpen ? 'Convite liberado' : statusLabel(item)) + '</strong></span></div>';
     }
     function money(value) { const number = Number(value || 0); return number ? number.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : 'Grátis'; }
     function registrationInviteLimit() { return Math.max(1,Math.min(6,Number(state.inviteInfo && state.inviteInfo.athlete_limit || 1))); }
@@ -1203,6 +1311,18 @@
 
     function tournament() { return state.snapshot && (state.snapshot.tournament || state.snapshot.torneio) || {}; }
     function tournamentSettings() { const value = field(tournament(),'settings'); return value && typeof value === 'object' ? value : {}; }
+    function tournamentContact() {
+      const slug = clean(field(tournament(),'slug','public_slug') || state.slug).toLowerCase();
+      return slug === 'cincate-2026'
+        ? { phone: '5527996133327', label: '(27) 99613-3327' }
+        : { phone: '5527999805814', label: '(27) 99980-5814' };
+    }
+    function tournamentWhatsappUrl(message) {
+      return 'https://wa.me/' + tournamentContact().phone + '?text=' + encodeURIComponent(message);
+    }
+    function tournamentSponsorUrl() {
+      return tournamentWhatsappUrl('Olá! Quero saber mais sobre as oportunidades de patrocínio do torneio ' + (field(tournament(),'name') || 'Ilha') + '.');
+    }
     function tournamentIntroSettings() {
       const value = tournamentSettings().intro_video;
       return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -1236,8 +1356,7 @@
         link.href = configuredUrl;
         link.textContent = 'Consultar aviso de privacidade';
       } else {
-        const message = encodeURIComponent('Olá! Quero tirar uma dúvida sobre o uso dos meus dados na inscrição do torneio.');
-        link.href = 'https://wa.me/5527999805814?text=' + message;
+        link.href = tournamentWhatsappUrl('Olá! Quero tirar uma dúvida sobre o uso dos meus dados na inscrição do torneio.');
         link.textContent = 'Falar com a organização sobre seus dados';
       }
       notice.hidden = false;
@@ -1278,18 +1397,51 @@
     function categoryId(row) { return String(field(row,'id','category_id','categoria_id')); }
     function categoryCode(row) { return clean(field(row,'code','codigo')).toUpperCase(); }
     function publicDrawCategoryIds() {
-      return new Set(matches().map((row) => matchCategoryId(row)).filter(Boolean));
+      const drawnIds = new Set(matches().map((row) => matchCategoryId(row)).filter(Boolean));
+      // A published roster can be viewed before the organizer creates draws.
+      // In that case, expose all published categories so confirmed athletes
+      // are not hidden merely because the tournament has no matches yet.
+      return drawnIds.size ? drawnIds : new Set(categories().map(categoryId).filter(Boolean));
+    }
+    function publicDrawCategoryFinished(row) {
+      const rows = matches().filter((match) => matchCategoryId(match) === categoryId(row));
+      return rows.length > 0 && rows.every(isFinalized);
+    }
+    function publicDrawCategoryOrder(row) {
+      const name = clean(field(row,'name','nome'));
+      const code = categoryCode(row);
+      const numberMatch = name.match(/^\s*(\d+)/) || code.match(/(?:^|[^0-9])(\d+)(?:$|[^0-9])/);
+      const number = numberMatch ? Number(numberMatch[1]) : 999;
+      const gender = clean(field(row,'gender','genero')).toUpperCase();
+      const genderOrder = gender === 'MALE' || /-M$/.test(code) || /^M\d/.test(code) ? 0
+        : (gender === 'FEMALE' || /-F$/.test(code) || /^F\d/.test(code) ? 1 : 2);
+      return { number, genderOrder, name };
     }
     function publicDrawCategories() {
       const ids = publicDrawCategoryIds();
       const publicCategories = categories().filter((row) => ids.has(categoryId(row)));
-      const priority = { 'ESP-A-M': 0, 'ESP-B-M': 1 };
       return publicCategories
-        .map((row,index) => ({ row: row, index: index }))
-        .sort((a,b) => (priority[categoryCode(a.row)] ?? 2) - (priority[categoryCode(b.row)] ?? 2) || a.index - b.index)
+        .map((row,index) => ({ row, index, finished: publicDrawCategoryFinished(row), order: publicDrawCategoryOrder(row) }))
+        .sort((a,b) => Number(a.finished) - Number(b.finished)
+          || a.order.number - b.order.number
+          || a.order.genderOrder - b.order.genderOrder
+          || a.order.name.localeCompare(b.order.name, 'pt-BR', { numeric: true })
+          || a.index - b.index)
         .map((item) => item.row);
     }
     function categoryName(id) { const row = categories().find((item) => categoryId(item) === String(id)); return row ? field(row,'name','nome') : ''; }
+    function categoryById(id) { return categories().find((item) => categoryId(item) === String(id)) || null; }
+    function categoryDrawFormat(rowOrId) {
+      const row = rowOrId && typeof rowOrId === 'object' ? rowOrId : categoryById(rowOrId);
+      return clean(field(row,'draw_format','formato')).toUpperCase();
+    }
+    function isGroupKnockoutCategory(rowOrId) { return categoryDrawFormat(rowOrId) === 'GROUPS_AND_KNOCKOUT'; }
+    function categoryDrawLabel(row) {
+      const format = categoryDrawFormat(row);
+      if (format === 'GROUPS_AND_KNOCKOUT') return 'Grupo + final';
+      if (format === 'ROUND_ROBIN') return 'Todos contra todos';
+      return field(row,'draw_size','tamanho_chave') || 'Chave auto';
+    }
     function categoryCapacity(row) {
       const maxRaw = field(row || {},'max_entries','max_inscritos');
       const occupiedRaw = field(row || {},'occupied_count','ocupadas','registration_count','quantidade_inscritos');
@@ -1319,8 +1471,9 @@
       const status = clean(field(row,'status')).toUpperCase();
       const active = field(row,'active','ativo');
       const open = field(row,'registration_open','inscricoes_abertas');
-      if (['CLOSED','ENCERRADA','INATIVA'].includes(status)) return false;
       if (active === false || String(active).toLowerCase() === 'false') return false;
+      if (typeof state !== 'undefined' && state.inviteMode) return true;
+      if (['CLOSED','ENCERRADA','INATIVA'].includes(status)) return false;
       return open !== false && String(open).toLowerCase() !== 'false';
     }
     function categoryCapacityLabel(row) {
@@ -1401,11 +1554,15 @@
       if (!item || !Object.keys(item).length) return renderError(new Error('Torneio não encontrado.'));
       const name = field(item,'name','nome') || 'Torneio Ilha';
       document.title = name + ' | Ilha Tênis';
+      document.body.classList.toggle('pickleball-theme', item.settings && item.settings.sport === 'PICKLEBALL');
+      document.body.classList.toggle('cincate-theme', clean(field(item,'slug','public_slug')).toLowerCase() === 'cincate-2026');
+      if (document.body.classList.contains('cincate-theme')) document.querySelector('meta[name="theme-color"]').content = '#0d2940';
       const visibleTabs = visiblePublicTabs();
       const requestedTab = clean(new URLSearchParams(location.search).get('tab'));
       state.activeTab = visibleTabs.includes('about') ? 'about' : (visibleTabs[0] || '');
       if (visibleTabs.includes(requestedTab)) state.activeTab = requestedTab;
       const open = isRegistrationOpen(item);
+      $('headSponsorLink').href = tournamentSponsorUrl();
       $('tournamentHeadActions').hidden = false;
       $('headRegisterBtn').hidden = !open;
       $('headRegisterBtn').onclick = openRegistration;
@@ -1439,7 +1596,7 @@
         ? 'Inscrição rápida para atletas do clube. Escolha uma ou duas classes; o valor será cobrado na próxima mensalidade.'
         : (state.inviteMode ? 'Você recebeu ' + registrationInviteCountLabel() + '. Este convite é isento, exclusivo e será inutilizado após a inscrição.' : 'Escolha sua classe, preencha seus dados e conclua o pagamento para confirmar a inscrição.');
       $('appMain').innerHTML = '<section class="registration-intro"><div><p class="eyebrow">' + (state.inviteMode ? 'Convite exclusivo' : 'Inscrições') + '</p>' + tournamentTitleHtml(item, name) + '<p>' + escapeHtml(introCopy) + '</p>' + heroMetaHtml(item) + '</div>' + (internal && cover ? '<img class="registration-poster" src="' + escapeHtml(cover) + '" alt="Cartaz do ' + escapeHtml(name) + '" />' : '') + '</section>';
-      if (isRegistrationOpen(item)) openRegistration();
+      if (state.inviteMode || isRegistrationOpen(item)) openRegistration();
       else $('appMain').innerHTML += '<div class="error-card"><h2>Inscrições encerradas</h2><p>A organização informará quando houver uma nova oportunidade.</p><a class="button primary" href="' + publicUrl(state.slug) + '">Ver página do torneio</a></div>';
     }
 
@@ -1457,7 +1614,7 @@
     }
     function betPublicUrl() { return '/bet?torneio=' + encodeURIComponent(state.slug); }
     function betTabHtml() {
-      return '<div class="panel"><section class="install-hero"><div><h2>Ilha Bet</h2><p>Escolha os vencedores dos jogos, some pontos conforme os resultados oficiais e acompanhe sua posição no ranking.</p><div class="install-actions"><a class="button lime" href="' + betPublicUrl() + '">Fazer meus palpites</a></div><p class="install-status">Participação gratuita, sem aposta, pagamento, depósito ou prêmio em dinheiro.</p></div><div class="hero-mark" aria-hidden="true">🎾</div></section></div>';
+      return '<div class="panel"><section class="install-hero"><div><h2>Ilha Bet</h2><div class="install-actions"><a class="button lime" href="' + betPublicUrl() + '">Fazer meus palpites</a></div><p class="install-status">Participação gratuita, sem aposta, pagamento, depósito ou prêmio em dinheiro.</p></div><div class="hero-mark" aria-hidden="true">🎾</div></section></div>';
     }
     function tournamentTitleHtml(item,name) {
       const logo = field(item,'logo_url');
@@ -1479,20 +1636,22 @@
       const rawInstagram = clean(field(tournament(),'instagram'));
       const instagramHandle = (rawInstagram || 'ilhateniscolatina').replace(/^https?:\/\/(?:www\.)?instagram\.com\//i,'').replace(/^@/,'').replace(/[\/?#].*$/,'') || 'ilhateniscolatina';
       const instagramHref = safeHref(/^https?:\/\//i.test(rawInstagram) ? rawInstagram : 'https://www.instagram.com/' + encodeURIComponent(instagramHandle), 'https://www.instagram.com/ilhateniscolatina');
-      const whatsappMessage = encodeURIComponent('Olá! Quero saber mais sobre o Ilha Open 2026.');
+      const whatsappUrl = tournamentWhatsappUrl('Olá! Quero saber mais sobre o ' + (field(tournament(),'name') || 'torneio') + '.');
       const contacts = '<div class="about-contact-list" aria-label="Contatos e localização do evento">' +
         '<a class="about-contact-link" href="' + escapeHtml(instagramHref) + '" target="_blank" rel="noopener"><span class="about-contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg></span><span><small>Instagram</small><strong>@' + escapeHtml(instagramHandle) + '</strong></span></a>' +
-        '<a class="about-contact-link" href="https://wa.me/5527999805814?text=' + whatsappMessage + '" target="_blank" rel="noopener"><span class="about-contact-icon" aria-hidden="true">💬</span><span><small>Contato</small><strong>(27) 99980-5814</strong></span></a>' +
+        '<a class="about-contact-link" href="' + escapeHtml(whatsappUrl) + '" target="_blank" rel="noopener"><span class="about-contact-icon" aria-hidden="true">💬</span><span><small>Contato</small><strong>' + escapeHtml(tournamentContact().label) + '</strong></span></a>' +
         '<a class="about-contact-link" href="https://www.google.com/maps/search/?api=1&amp;query=Ilha%20T%C3%AAnis%20Colatina" target="_blank" rel="noopener"><span class="about-contact-icon" aria-hidden="true">📍</span><span><small>Localização</small><strong>Ilha Tênis — Colatina</strong></span></a></div>';
-      return '<div class="panel"><div class="about-layout"><div class="about-copy"><h2>' + escapeHtml(title) + '</h2><p>' + escapeHtml(copy) + '</p>' +
+      const partners = tournamentSettings().sport === 'PICKLEBALL' && !allSponsors().length ? '' : '<aside class="about-partners">' + sponsorsHtml(true) + '</aside>';
+      return '<div class="panel"><div class="about-layout">' + partners + '<div class="about-copy"><h2>' + escapeHtml(title) + '</h2><p>' + escapeHtml(copy) + '</p>' +
         publicRegistrationCtaHtml() +
         contacts +
         (image ? '<img class="about-image" src="' + escapeHtml(image) + '" alt="' + escapeHtml(title) + '" loading="lazy" />' : '') +
-        '</div><aside class="about-partners">' + sponsorsHtml(true) + '</aside></div></div>';
+        '</div></div></div>';
     }
     function infoRow(label,value) { return '<div class="registration-row" style="grid-template-columns:minmax(0,1fr) auto"><div><strong>' + escapeHtml(label) + '</strong></div><span class="mini-chip">' + escapeHtml(value) + '</span></div>'; }
 
     function registrationPricesHtml() {
+      if (tournamentSettings().registration_mode === 'ATHLETE_PACKAGES') return '<div class="public-price-grid" role="group" aria-label="Valores por atleta">' + [1,2,3,4].map((n) => '<div class="public-price-card"><span>' + n + (n === 1 ? ' classe' : ' classes') + ' · por atleta</span><strong>' + money([0,50,80,90,100][n]) + '</strong></div>').join('') + '</div>';
       if (isInternalRegistration()) return '<div class="public-price-grid" role="group" aria-label="Valores da inscrição"><div class="public-price-card"><span>1 classe</span><strong>' + escapeHtml(money(internalRegistrationAmount(1))) + '</strong></div><div class="public-price-card"><span>2 classes</span><strong>' + escapeHtml(money(internalRegistrationAmount(2))) + '</strong></div><div class="public-price-card"><span>Cobrança</span><strong>Próxima mensalidade</strong></div></div>';
       const pricing = registrationPricing();
       return '<div class="public-price-grid" role="group" aria-label="Valores da inscrição"><div class="public-price-card"><span>CINCATE</span><strong>' + escapeHtml(money(pricing.CINCATE || 0)) + '</strong></div><div class="public-price-card"><span>Aluno Ilha Tênis</span><strong>' + escapeHtml(money(pricing.ILHA_STUDENT || 0)) + '</strong></div><div class="public-price-card"><span>Não associado</span><strong>' + escapeHtml(money(pricing.NON_MEMBER || 0)) + '</strong></div></div>';
@@ -1505,8 +1664,8 @@
     }
 
     function categoriesHtml() {
-      const visibleCategories = publicDrawCategories();
-      return '<div class="panel"><div class="panel-head"><div><h2>Classes</h2><p>Confira as classes com chave já publicada.</p></div></div>' + registrationPricesHtml() + publicRegistrationCtaHtml() + '<div class="category-grid">' + (visibleCategories.map((row) => {
+      const visibleCategories = tournamentSettings().sport === 'PICKLEBALL' ? categories() : publicDrawCategories();
+      return '<div class="panel"><div class="panel-head"><div><h2>Classes</h2><p>' + (tournamentSettings().sport === 'PICKLEBALL' ? 'Simples e duplas. Escolha suas classes e venha jogar.' : 'Confira as classes com chave já publicada.') + '</p></div></div>' + registrationPricesHtml() + publicRegistrationCtaHtml() + '<div class="category-grid">' + (visibleCategories.map((row) => {
         const id = categoryId(row);
         const rawStoredCount = field(row,'registration_count','quantidade_inscritos');
         const storedCount = rawStoredCount === '' ? NaN : Number(rawStoredCount);
@@ -1518,7 +1677,7 @@
         const capacityLabel = categoryCapacityLabel(row);
         const capacityClass = capacity.isFull ? ' full' : (capacity.remainingEntries !== null && capacity.remainingEntries <= 2 ? ' low' : '');
         const capacityChip = capacityLabel ? '<span class="mini-chip category-capacity' + capacityClass + '">' + escapeHtml(capacityLabel) + '</span>' : '';
-        return '<article class="category-card"><div><h3>' + escapeHtml(field(row,'name','nome') || 'Classe') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || field(row,'gender','genero') || 'Categoria do torneio') + '</p></div><div class="category-card-foot"><span class="mini-chip">' + count + ' inscritos</span>' + capacityChip + spatialPrice + '<span class="mini-chip">' + escapeHtml(field(row,'draw_size','tamanho_chave') || 'Chave auto') + '</span></div></article>';
+        return '<article class="category-card"><div><h3>' + escapeHtml(field(row,'name','nome') || 'Classe') + '</h3><p>' + escapeHtml(field(row,'description','descricao') || field(row,'gender','genero') || 'Categoria do torneio') + '</p></div><div class="category-card-foot"><span class="mini-chip">' + count + ' inscritos</span>' + capacityChip + spatialPrice + '<span class="mini-chip">' + escapeHtml(categoryDrawLabel(row)) + '</span></div></article>';
       }).join('') || '<div class="empty-state" style="grid-column:1/-1">As classes serão publicadas em breve.</div>') + '</div></div>';
     }
 
@@ -1559,9 +1718,14 @@
     function roundLabel(row) {
       const phase = clean(field(row,'phase','fase')).toUpperCase();
       const code = clean(field(row,'round_code','codigo_rodada')).toUpperCase();
-      const labels = {R64:'64 avos',R32:'32 avos',R16:'Oitavas',QF:'Quartas',SF:'Semifinal',FINAL:'Final'};
+      const labels = {R64:'64 avos',R32:'32 avos',R16:'Oitavas',QF:'Quartas',SF:'Semifinal',FINAL:'Final',F:'Final',GROUP:'Fase de grupos',GROUP_STAGE:'Fase de grupos',GRUPO:'Fase de grupos',RR:'Fase de grupos',ROUND_ROBIN:'Fase de grupos'};
       return labels[phase] || labels[code] || field(row,'round_name','nome_rodada') || 'Rodada ' + roundNumber(row);
     }
+    function matchPhaseCode(row) {
+      return clean(field(row,'phase','fase','round_code','codigo_rodada')).toUpperCase();
+    }
+    function isGroupStageMatch(row) { return ['GROUP','GROUP_STAGE','GRUPO','RR','ROUND_ROBIN'].includes(matchPhaseCode(row)); }
+    function isFinalStageMatch(row) { return ['FINAL','F'].includes(matchPhaseCode(row)); }
     function matchId(row) { return String(field(row,'id','match_id','jogo_id')); }
     function winnerId(row) { return String(field(row,'winner_athlete_id','winner_id','vencedor_id')); }
     function playerId(row,slot) { return String(field(row,'side' + slot + '_athlete_id','player' + slot + '_id','jogador' + slot + '_id')); }
@@ -1583,6 +1747,7 @@
     function bracketBoardHtml(category) {
       const rows = matches().filter((row) => matchCategoryId(row) === String(category));
       if (!rows.length) return '<div class="empty-state">Chave ainda não publicada para esta classe.</div>';
+      if (isGroupKnockoutCategory(category) || rows.some(isGroupStageMatch)) return groupBoardHtml(category,rows);
       const rounds = new Map();
       rows.forEach((row) => { const number = roundNumber(row); if (!rounds.has(number)) rounds.set(number,[]); rounds.get(number).push(row); });
       const orderedRounds = Array.from(rounds.keys()).sort((a,b) => a-b).map((number) => ({
@@ -1611,6 +1776,170 @@
         final +
         (lower ? '<div class="bracket-branch bracket-lower" aria-label="Parte inferior da chave">' + lower + '</div>' : '') +
         '</div></div>';
+    }
+    function groupScoreNumber(value) {
+      const raw = clean(value);
+      if (/^[67]\d+$/.test(raw)) return Number(raw.charAt(0));
+      const parsed = Number(raw);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    function groupScoreExtra(value,superTie) {
+      const raw = clean(value);
+      if (!superTie && /^[67]\d+$/.test(raw)) return Number(raw.slice(1));
+      return null;
+    }
+    function groupScorePairs(row) {
+      const raw = clean(field(row,'score','placar'));
+      const pointSets = tournament().settings && tournament().settings.sport === 'PICKLEBALL';
+      if (!raw) return [];
+      if (raw.includes('|') && !/[xX]/.test(raw)) {
+        const sides = raw.split('|');
+        const side1 = clean(sides[0]).split(/[\s,;]+/).filter(Boolean);
+        const side2 = clean(sides[1]).split(/[\s,;]+/).filter(Boolean);
+        return side1.slice(0,Math.min(side1.length,side2.length)).map((value,index) => ({ side1: groupScoreNumber(value), side2: groupScoreNumber(side2[index]), side1Extra:groupScoreExtra(value,false), side2Extra:groupScoreExtra(side2[index],false), superTie:false }));
+      }
+      const pairs = [];
+      const pattern = /((?:ST|TB)\s*)?(\d+)\s*[xX\/-]\s*(\d+)/gi;
+      let pair;
+      while ((pair = pattern.exec(raw)) !== null) {
+        const superTie = Boolean(pair[1]);
+        pairs.push({ side1: pointSets ? Number(pair[2]) : groupScoreNumber(pair[2]), side2: pointSets ? Number(pair[3]) : groupScoreNumber(pair[3]), side1Extra:groupScoreExtra(pair[2],superTie || pointSets), side2Extra:groupScoreExtra(pair[3],superTie || pointSets), superTie:superTie && !pointSets });
+      }
+      return pairs;
+    }
+    function groupMatchBalance(row) {
+      return groupScorePairs(row).reduce((total,pair) => {
+        const setWinner = pair.side1 > pair.side2
+          ? 1
+          : (pair.side2 > pair.side1
+            ? 2
+            : (pair.side1Extra !== null && pair.side2Extra !== null && pair.side1Extra !== pair.side2Extra ? (pair.side1Extra > pair.side2Extra ? 1 : 2) : 0));
+        if (setWinner === 1) total.sets1 += 1;
+        if (setWinner === 2) total.sets2 += 1;
+        if (!pair.superTie) {
+          total.games1 += pair.side1;
+          total.games2 += pair.side2;
+        }
+        return total;
+      },{ sets1:0, sets2:0, games1:0, games2:0 });
+    }
+    function groupBalanceSort(a,b) {
+      return b.setBalance - a.setBalance || b.gameBalance - a.gameBalance || a.entryOrder - b.entryOrder;
+    }
+    function isCompletedGroupMatch(row) {
+      const status = clean(field(row,'status')).toUpperCase();
+      return Boolean(winnerId(row)) && ['FINISHED','WALKOVER','FINALIZED','FINALIZADO','ENCERRADO','COMPLETED'].includes(status);
+    }
+    function groupDirectMatch(rows,standingA,standingB) {
+      return rows.find((row) => isCompletedGroupMatch(row) && [playerId(row,1),playerId(row,2)].includes(standingA.id) && [playerId(row,1),playerId(row,2)].includes(standingB.id));
+    }
+    function groupStandingRows(rows,qualifierCount) {
+      const qualifyingPlaces = Math.max(1,Number(qualifierCount || 2));
+      const groupRows = rows.filter(isGroupStageMatch);
+      const standings = new Map();
+      let entryOrder = 0;
+      const ensureStanding = (row,slot) => {
+        const id = playerId(row,slot);
+        if (!id) return null;
+        if (!standings.has(id)) standings.set(id,{ id:id, name:playerName(row,slot), played:0, wins:0, losses:0, setsFor:0, setsAgainst:0, gamesFor:0, gamesAgainst:0, setBalance:0, gameBalance:0, entryOrder:entryOrder++, tiePending:false });
+        return standings.get(id);
+      };
+      groupRows.forEach((row) => { ensureStanding(row,1); ensureStanding(row,2); });
+      groupRows.filter(isCompletedGroupMatch).forEach((row) => {
+        const side1 = ensureStanding(row,1);
+        const side2 = ensureStanding(row,2);
+        const winner = winnerId(row);
+        if (!side1 || !side2 || !winner || ![side1.id,side2.id].includes(winner)) return;
+        side1.played += 1;
+        side2.played += 1;
+        if (winner === side1.id) { side1.wins += 1; side2.losses += 1; }
+        else { side2.wins += 1; side1.losses += 1; }
+        const balance = groupMatchBalance(row);
+        side1.setsFor += balance.sets1;
+        side1.setsAgainst += balance.sets2;
+        side2.setsFor += balance.sets2;
+        side2.setsAgainst += balance.sets1;
+        side1.gamesFor += balance.games1;
+        side1.gamesAgainst += balance.games2;
+        side2.gamesFor += balance.games2;
+        side2.gamesAgainst += balance.games1;
+      });
+      const rowsByWins = new Map();
+      standings.forEach((standing) => {
+        standing.setBalance = standing.setsFor - standing.setsAgainst;
+        standing.gameBalance = standing.gamesFor - standing.gamesAgainst;
+        if (!rowsByWins.has(standing.wins)) rowsByWins.set(standing.wins,[]);
+        rowsByWins.get(standing.wins).push(standing);
+      });
+      const ordered = [];
+      Array.from(rowsByWins.keys()).sort((a,b) => b-a).forEach((wins) => {
+        const tied = rowsByWins.get(wins);
+        const availableFinalSpots = Math.max(0,qualifyingPlaces - ordered.length);
+        if (tied.length === 2) {
+          const direct = groupDirectMatch(groupRows,tied[0],tied[1]);
+          const directWinner = direct && winnerId(direct);
+          if (directWinner) tied.sort((a,b) => a.id === directWinner ? -1 : (b.id === directWinner ? 1 : 0));
+          else {
+            tied.sort((a,b) => a.entryOrder - b.entryOrder);
+            tied.forEach((standing) => { standing.tiePending = true; });
+          }
+        } else if (tied.length > 2) {
+          tied.sort(groupBalanceSort);
+          if (availableFinalSpots > 0 && availableFinalSpots < tied.length) {
+            const lastInside = tied[availableFinalSpots - 1];
+            const firstOutside = tied[availableFinalSpots];
+            if (lastInside.setBalance === firstOutside.setBalance && lastInside.gameBalance === firstOutside.gameBalance) {
+              tied.forEach((standing) => {
+                standing.tiePending = standing.setBalance === lastInside.setBalance && standing.gameBalance === lastInside.gameBalance;
+              });
+            }
+          }
+        }
+        ordered.push(...tied);
+      });
+      return ordered;
+    }
+    function signedGroupBalance(value) { return value > 0 ? '+' + value : String(value || 0); }
+    function groupStandingsHtml(groupRows,finalMatch,qualifierCount) {
+      const qualifyingPlaces = Math.max(1,Number(qualifierCount || 2));
+      const standings = groupStandingRows(groupRows,qualifyingPlaces);
+      if (!standings.length) return '<div class="empty-state">A classificação aparecerá quando os jogos do grupo forem publicados.</div>';
+      const playerCount = standings.length;
+      const expectedMatches = playerCount >= 3 ? (playerCount * (playerCount - 1)) / 2 : 0;
+      const complete = playerCount >= (qualifyingPlaces === 1 ? 2 : 3) && groupRows.length === expectedMatches && groupRows.every(isCompletedGroupMatch);
+      const unresolved = complete && standings.some((standing) => standing.tiePending);
+      const finalistIds = new Set(finalMatch ? [playerId(finalMatch,1),playerId(finalMatch,2)].filter(Boolean) : []);
+      const status = finalistIds.size === 2
+        ? 'Finalistas definidos pela organização.'
+        : (!complete
+          ? 'Classificação provisória: ela muda conforme os resultados são lançados.'
+          : (unresolved ? 'O desempate ainda será definido pela organização.' : (qualifyingPlaces === 1 ? 'A primeira colocada é a campeã.' : 'Os dois primeiros colocados avançam para a final.')));
+      return '<div class="group-standings-wrap"><table class="group-standings"><caption class="sr-only">Classificação da fase de grupos</caption><thead><tr><th>Atleta</th><th><abbr title="Jogos">J</abbr></th><th><abbr title="Vitórias">V</abbr></th><th><abbr title="Derrotas">D</abbr></th><th><abbr title="Saldo de sets">SS</abbr></th><th><abbr title="Saldo de games">SG</abbr></th></tr></thead><tbody>' + standings.map((standing,index) => {
+        const finalist = finalistIds.has(standing.id) || (!finalistIds.size && complete && !unresolved && index < qualifyingPlaces);
+        return '<tr class="' + (finalist ? 'finalist' : '') + '"><td title="' + escapeHtml(standing.name) + '"><span class="group-position">' + (index + 1) + 'º</span>' + escapeHtml(standing.name) + '</td><td>' + standing.played + '</td><td>' + standing.wins + '</td><td>' + standing.losses + '</td><td>' + signedGroupBalance(standing.setBalance) + '</td><td>' + signedGroupBalance(standing.gameBalance) + '</td></tr>';
+      }).join('') + '</tbody></table><p class="group-standing-status ' + (unresolved ? 'attention' : '') + '">' + escapeHtml(status) + '</p></div>';
+    }
+    function groupBoardHtml(category,rows) {
+      const groupRows = rows.filter(isGroupStageMatch).slice().sort((a,b) => roundNumber(a) - roundNumber(b) || Number(field(a,'match_no','position','posicao_chave') || 0) - Number(field(b,'match_no','position','posicao_chave') || 0));
+      const finalMatch = rows.filter(isFinalStageMatch).slice().sort((a,b) => roundNumber(b) - roundNumber(a) || Number(field(a,'match_no','position','posicao_chave') || 0) - Number(field(b,'match_no','position','posicao_chave') || 0))[0] || null;
+      const roundRobin = categoryDrawFormat(category) === 'ROUND_ROBIN';
+      const qualifierCount = roundRobin ? 1 : 2;
+      const participantIds = new Set();
+      groupRows.forEach((row) => { [playerId(row,1),playerId(row,2)].filter(Boolean).forEach((id) => participantIds.add(id)); });
+      const participantCount = participantIds.size;
+      const rules = '<section class="group-rules" aria-labelledby="groupRulesTitle"><h3 id="groupRulesTitle">Como funciona</h3><ol class="group-rules-list"><li class="group-rule"><b>1</b><span>Todos contra todos: cada atleta enfrenta os outros uma vez.</span></li><li class="group-rule"><b>2</b><span>Cada vitória vale 1 ponto na classificação.</span></li><li class="group-rule"><b>3</b><span>' + (roundRobin ? 'A atleta com a melhor classificação é a campeã.' : 'Os dois melhores colocados disputam a final.') + '</span></li><li class="group-rule"><b>4</b><span>Empate entre dois: confronto direto. Empate entre três ou mais: saldo de sets e depois saldo de games. Persistindo, a organização define.</span></li><li class="group-rule"><b>5</b><span>O super tie vale como um set e não entra no saldo de games.</span></li></ol></section>';
+      const groupSummary = participantCount >= 3
+        ? participantCount + ' atletas · ' + groupRows.length + (groupRows.length === 1 ? ' jogo' : ' jogos')
+        : 'Todos contra todos';
+      const matchesHtml = '<section class="group-section"><div class="group-section-head"><div><h3>Fase de grupos</h3><p>Cada atleta enfrenta todos os outros uma vez.</p></div><span class="mini-chip">' + escapeHtml(groupSummary) + '</span></div><div class="group-match-grid">' + (groupRows.map(matchCardHtml).join('') || '<div class="empty-state">Jogos do grupo ainda não publicados.</div>') + '</div></section>';
+      const standingsHtml = '<section class="group-section"><div class="group-section-head"><div><h3>Classificação</h3><p>J: jogos · V: vitórias · D: derrotas · SS: saldo de sets · SG: saldo de games</p></div></div>' + groupStandingsHtml(groupRows,finalMatch,qualifierCount) + '</section>';
+      const finalHtml = '<section class="group-final" aria-label="Final"><div class="bracket-round-title">Final · 1º × 2º</div>' + (finalMatch ? '<section class="bracket-final-stage"><div class="bracket-match-grid">' + matchCardHtml(finalMatch) + '</div></section>' : '<div class="group-final-placeholder">A final será exibida aqui assim que for publicada pela organização.</div>') + '</section>';
+      const board = '<div class="group-board" data-group-category="' + escapeHtml(category) + '">' + rules + matchesHtml + standingsHtml + (roundRobin ? '' : finalHtml) + '</div>';
+      return tournamentSettings().sport === 'PICKLEBALL'
+        ? board.replaceAll('saldo de games','saldo de pontos').replaceAll('Saldo de games','Saldo de pontos').replaceAll('>SG<','>SP<').replace('SG:','SP:')
+          .replace('O super tie vale como um set e não entra no saldo de pontos.','Cada set vai até 10 pontos, com 2 de diferença. Melhor de 3 sets. Todos os pontos entram no desempate.')
+          .replaceAll('cada atleta','cada participante').replace('A atleta com a melhor classificação é a campeã.','O primeiro lugar da classificação é campeão, sem final.').replace('A primeira colocada é a campeã.','O primeiro lugar é campeão.')
+        : board;
     }
     function bracketStageHtml(label,roundMatches,depth,totalDepth) {
       if (!roundMatches.length) return '';
@@ -1648,8 +1977,32 @@
       }
       return matchDateSort(a,b) || matchId(a).localeCompare(matchId(b));
     }
+    function currentTournamentDateKey() {
+      const timeZone = clean(field(tournament(),'timezone')) || 'America/Sao_Paulo';
+      try {
+        const parts = new Intl.DateTimeFormat('en-US',{
+          timeZone,
+          year:'numeric',
+          month:'2-digit',
+          day:'2-digit'
+        }).formatToParts(new Date()).reduce((result,part) => {
+          if (part.type !== 'literal') result[part.type] = part.value;
+          return result;
+        },{});
+        return [parts.year,parts.month,parts.day].join('-');
+      } catch (error) {
+        const now = new Date();
+        return [now.getFullYear(),String(now.getMonth() + 1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+      }
+    }
+    function matchStaysOnPublicSchedule(row,todayKey) {
+      const dayKey = scheduleDayKey(row);
+      if (!dayKey) return false;
+      return !isFinalized(row) || dayKey >= todayKey;
+    }
     function scheduledGameRows() {
-      return matches().filter((row) => !isFinalized(row) && scheduleDayKey(row));
+      const todayKey = currentTournamentDateKey();
+      return matches().filter((row) => matchStaysOnPublicSchedule(row,todayKey));
     }
     function agendaCategories() {
       const ids = new Set(scheduledGameRows().map((row) => matchCategoryId(row)).filter(Boolean));
@@ -1675,7 +2028,7 @@
       });
       return Array.from(days.values()).map(agendaDayGroupHtml).join('');
     }
-    function agendaDayGroupHtml(rows) {
+    function agendaDayGroupHtml(rows,resultsMode) {
       const courts = new Map();
       rows.forEach((row) => {
         const court = clean(field(row,row.__kind === 'event' ? 'location' : 'court_name','quadra')) || (row.__kind === 'event' ? 'Torneio' : 'Quadra a definir');
@@ -1685,7 +2038,7 @@
       const courtGroups = Array.from(courts.entries()).sort((a,b) => a[0].localeCompare(b[0],'pt-BR',{numeric:true})).map(([court,items]) => {
         const isCourt = /^quadra\b/i.test(court);
         const courtLabel = isCourt ? court.replace(/^quadra\s*/i,'') : court;
-        return '<section class="agenda-court-group"><h4 class="agenda-court-title"><span>' + (isCourt?'Quadra':'Local') + '</span>' + escapeHtml(courtLabel) + '</h4><div class="agenda-court-games">' + items.sort(scheduleOrderSort).map((row) => row.__kind === 'event' ? agendaEventHtml(row,true) : agendaMatchHtml(row,true)).join('') + '</div></section>';
+        return '<section class="agenda-court-group"><h4 class="agenda-court-title"><span>' + (isCourt?'Quadra':'Local') + '</span>' + escapeHtml(courtLabel) + '</h4><div class="agenda-court-games">' + items.sort(scheduleOrderSort).map((row) => resultsMode === true ? resultMatchHtml(row) : (row.__kind === 'event' ? agendaEventHtml(row,true) : agendaMatchHtml(row,true))).join('') + '</div></section>';
       }).join('');
       return '<section class="agenda-day-group"><header class="agenda-day-title"><h3>' + escapeHtml(agendaDayLabel(rows[0])) + '</h3></header><div class="agenda-day-courts">' + courtGroups + '</div></section>';
     }
@@ -1701,10 +2054,16 @@
       const relativeTime = clean(field(row,'time_label','schedule_time_label'));
       return normalize(relativeTime).startsWith('apos') ? 'Após' : (relativeTime || 'A definir');
     }
+    function publicMatchContextLabel(row) {
+      const category = categoryName(matchCategoryId(row));
+      const stage = roundLabel(row);
+      if (isGroupKnockoutCategory(matchCategoryId(row)) || isGroupStageMatch(row) || isFinalStageMatch(row)) return [category,stage].filter(Boolean).join(' · ');
+      return category || stage;
+    }
     function agendaMatchHtml(row,grouped) {
       const date = matchDate(row);
       const day = date ? date.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : 'A definir';
-      return '<article class="agenda-card ' + (grouped?'grouped':'') + '"><div class="time-box"><div><strong>' + escapeHtml(publicScheduleTime(row)) + '</strong>' + (grouped?'':'<small>' + escapeHtml(day) + '</small>') + '</div></div><div><h3>' + escapeHtml(playerName(row,1)) + ' × ' + escapeHtml(playerName(row,2)) + '</h3><p>' + escapeHtml(categoryName(matchCategoryId(row)) || roundLabel(row)) + '</p></div>' + (grouped?'':'<span class="court-chip">' + escapeHtml(field(row,'court_name','quadra') || 'Quadra a definir') + '</span>') + '</article>';
+      return '<article class="agenda-card ' + (grouped?'grouped':'') + '"><div class="time-box"><div><strong>' + escapeHtml(publicScheduleTime(row)) + '</strong>' + (grouped?'':'<small>' + escapeHtml(day) + '</small>') + '</div></div><div><h3>' + escapeHtml(playerName(row,1)) + ' × ' + escapeHtml(playerName(row,2)) + '</h3><p>' + escapeHtml(publicMatchContextLabel(row)) + '</p></div>' + (grouped?'':'<span class="court-chip">' + escapeHtml(field(row,'court_name','quadra') || 'Quadra a definir') + '</span>') + '</article>';
     }
     function agendaEventHtml(row,grouped) {
       const date = matchDate(row);
@@ -1713,8 +2072,26 @@
 
     function scoreText(row) { const score = field(row,'score','placar'); if (typeof score === 'string') return score; const p1 = playerScore(row,1), p2 = playerScore(row,2); return p1 !== '' || p2 !== '' ? p1 + ' × ' + p2 : 'Finalizado'; }
     function resultsHtml() {
-      const rows = matches().filter(isFinalized).sort((a,b) => (matchDate(b)?.getTime()||0)-(matchDate(a)?.getTime()||0));
-      return '<div class="panel"><div class="panel-head"><div><h2>Resultados</h2><p>Placares confirmados pela organização.</p></div></div><div class="results-list">' + (rows.map((row) => { const winner = winnerId(row); return '<article class="result-card"><div class="result-player ' + (winner && playerId(row,1)===winner?'winner':'') + '">' + escapeHtml(playerName(row,1)) + '</div><span class="score-pill">' + escapeHtml(scoreText(row)) + '</span><div class="result-player ' + (winner && playerId(row,2)===winner?'winner':'') + '">' + escapeHtml(playerName(row,2)) + '</div></article>'; }).join('') || '<div class="empty-state">Nenhum resultado publicado.</div>') + '</div></div>';
+      const ids = new Set(matches().filter(isFinalized).map(matchCategoryId));
+      return '<div class="panel"><div class="panel-head"><h2>Resultados</h2></div><div class="filter-strip"><button type="button" class="filter-btn ' + (!state.resultsCategory?'active':'') + '" data-results-category="">Todos</button>' + categories().filter(row => ids.has(categoryId(row))).map(row => '<button type="button" class="filter-btn ' + (state.resultsCategory===categoryId(row)?'active':'') + '" data-results-category="' + escapeHtml(categoryId(row)) + '">' + escapeHtml(field(row,'name','nome')) + '</button>').join('') + '</div><div class="agenda-list results-list" id="resultsContent">' + resultsRowsHtml(state.resultsCategory) + '</div></div>';
+    }
+    function resultsRowsHtml(category) {
+      const rows = matches().filter(row => isFinalized(row) && (!category || matchCategoryId(row)===String(category))).sort((a,b) => (matchDate(b)?.getTime()||0)-(matchDate(a)?.getTime()||0));
+      const days = new Map();
+      rows.forEach(row => { const day = scheduleDayKey(row) || 'sem-data'; if (!days.has(day)) days.set(day,[]); days.get(day).push(row); });
+      return Array.from(days.values()).map(rows => agendaDayGroupHtml(rows,true)).join('') || '<div class="empty-state">Nenhum resultado publicado.</div>';
+    }
+    function resultMatchHtml(row) {
+      const winner = winnerId(row);
+      const pairs = groupScorePairs(row);
+      const players = [1,2].map(slot => {
+        const won = Boolean(winner && playerId(row,slot)===winner);
+        const score = pairs.length ? pairs.map(pair => (pair.superTie?'ST ':'') + pair['side'+slot] + (pair['side'+slot+'Extra']!==null?'('+pair['side'+slot+'Extra']+')':'')).join('  ') : playerScore(row,slot);
+        return '<div class="result-player ' + (won?'winner':'') + '"><span class="result-player-name">' + escapeHtml(playerName(row,slot)) + (won?'<small>Vencedor</small>':'') + '</span><b class="result-score" aria-label="Placar">' + escapeHtml(score) + '</b></div>';
+      }).join('');
+      const context = [categoryName(matchCategoryId(row)),roundLabel(row)].filter(Boolean).join(' · ');
+      const status = /walkover|w\.?o\.?/i.test(clean(field(row,'status'))+' '+clean(field(row,'score','placar'))) ? 'W.O.' : 'Finalizado';
+      return '<article class="result-card"><div class="result-context"><span>' + escapeHtml(context) + '</span><span class="result-status">' + status + '</span></div>' + players + (!pairs.length?'<p class="result-summary">' + escapeHtml(scoreText(row)) + '</p>':'') + '</article>';
     }
 
     function allSponsors() {
@@ -1728,11 +2105,13 @@
       });
     }
     function sponsorsHtml(insideAbout) {
-      const rows = allSponsors();
+      const rows = allSponsors().filter((row) => state.slug !== 'ilha-open-2026' || !/lotus/i.test([field(row,'name','nome'),field(row,'logo_url','image_url'),field(row,'link_url','url')].join(' ')));
+      if (state.slug === 'ilha-open-2026' && !rows.some((row) => /arrigoni/i.test(field(row,'name','nome')))) {
+        rows.push({ name: 'Arrigoni Contabilidade', logo_url: '/assets/branding/arrigoni-contabilidade.png', link_url: 'https://www.instagram.com/contabilidade.arrigoni/' });
+      }
       const cards = rows.length ? '<div class="sponsor-grid">' + rows.map((row) => { const href = sponsorHref(field(row,'link_url','url','website_url','instagram_url')); const logo = field(row,'logo_url','image_url'); const content = logo ? '<img src="' + escapeHtml(logo) + '" alt="' + escapeHtml(field(row,'name','nome')) + '" loading="lazy" />' : '<span>' + escapeHtml(field(row,'name','nome') || 'Parceiro') + '</span>'; return href ? '<a class="sponsor" href="' + escapeHtml(href) + '" target="_blank" rel="noopener">' + content + '</a>' : '<div class="sponsor">' + content + '</div>'; }).join('') + '</div>' : '<p class="sponsor-invite">As marcas parceiras serão apresentadas aqui.</p>';
-      const message = encodeURIComponent('Olá! Quero saber mais sobre as oportunidades de patrocínio do torneio Ilha Open 2026.');
       const sponsorText = clean(aboutEventSettings().sponsor_text) || 'Sua marca também pode fazer parte desta experiência. Apoie o esporte local, conecte-se com atletas e torcedores e ganhe destaque durante o torneio.';
-      const content = '<div class="panel-head"><div><h3>Parceiros</h3></div></div>' + cards + '<p class="sponsor-invite">' + escapeHtml(sponsorText) + '</p><a class="button full sponsor-cta" href="https://wa.me/5527999805814?text=' + message + '" target="_blank" rel="noopener" aria-label="Falar pelo WhatsApp para patrocinar o torneio">💬 Seja um patrocinador do torneio</a>';
+      const content = '<div class="panel-head"><div><h3>Parceiros</h3></div></div>' + cards + '<p class="sponsor-invite">' + escapeHtml(sponsorText) + '</p><a class="button full sponsor-cta" href="' + escapeHtml(tournamentSponsorUrl()) + '" target="_blank" rel="noopener" aria-label="Falar pelo WhatsApp para patrocinar o torneio">💬 Seja um patrocinador do torneio</a>';
       return insideAbout ? content : '<div class="panel">' + content + '</div>';
     }
 
@@ -1774,27 +2153,43 @@
       }
       const overlay = $('tournamentIntro');
       const video = $('tournamentIntroVideo');
-      const skip = $('tournamentIntroSkipBtn');
-      const loading = $('tournamentIntroLoading');
-      if (!overlay || !video || !skip) return Promise.resolve(false);
+      if (!overlay || !video) return Promise.resolve(false);
       return new Promise((resolve) => {
         let finished = false;
         let fallbackTimer = null;
+        let startupTimer = null;
+        let stallTimer = null;
+        let shown = false;
         const onEnded = () => finish('ended');
         const onError = () => finish('video-error');
-        const onSkip = () => finish('skipped');
-        const onPlaying = () => { if (loading) loading.hidden = true; };
+        const onPlaying = () => {
+          if (finished) return;
+          clearTimeout(startupTimer);
+          clearTimeout(stallTimer);
+          if (shown) return;
+          shown = true;
+          overlay.classList.remove('preparing');
+          overlay.setAttribute('aria-hidden','false');
+          setTournamentIntroBackgroundInert(true);
+          document.body.classList.add('modal-open');
+        };
+        const onWaiting = () => {
+          clearTimeout(stallTimer);
+          stallTimer = setTimeout(() => finish('stalled'),1200);
+        };
         const removeListeners = () => {
           video.removeEventListener('ended',onEnded);
           video.removeEventListener('error',onError);
           video.removeEventListener('playing',onPlaying);
-          skip.removeEventListener('click',onSkip);
+          video.removeEventListener('waiting',onWaiting);
         };
         const finish = (reason) => {
           if (finished) return;
           finished = true;
           overlay.dataset.closeReason = reason || 'closed';
           clearTimeout(fallbackTimer);
+          clearTimeout(startupTimer);
+          clearTimeout(stallTimer);
           removeListeners();
           overlay.classList.add('closing');
           setTimeout(() => {
@@ -1802,31 +2197,33 @@
             video.removeAttribute('src');
             video.load();
             overlay.hidden = true;
-            overlay.classList.remove('closing');
+            overlay.classList.remove('closing','preparing');
             overlay.setAttribute('aria-hidden','true');
             setTournamentIntroBackgroundInert(false);
             document.body.classList.remove('modal-open');
-            resolve(true);
-          },210);
+            resolve(shown);
+          },shown ? 210 : 0);
         };
         video.muted = true;
+        video.defaultMuted = true;
+        video.playsInline = true;
         video.src = introUrl;
         video.currentTime = 0;
         video.addEventListener('ended',onEnded);
         video.addEventListener('error',onError);
         video.addEventListener('playing',onPlaying);
-        skip.addEventListener('click',onSkip);
-        if (loading) loading.hidden = false;
+        video.addEventListener('waiting',onWaiting);
+        overlay.classList.add('preparing');
         overlay.hidden = false;
         overlay.dataset.closeReason = '';
         overlay.dataset.shownAt = String(Date.now());
-        overlay.setAttribute('aria-hidden','false');
-        setTournamentIntroBackgroundInert(true);
-        document.body.classList.add('modal-open');
+        overlay.setAttribute('aria-hidden','true');
+        startupTimer = setTimeout(() => finish('startup-timeout'),1800);
         fallbackTimer = setTimeout(() => finish('timeout'),15000);
-        setTimeout(() => skip.focus(),0);
-        const playback = video.play();
-        if (playback && typeof playback.catch === 'function') playback.catch(() => finish('play-error'));
+        try {
+          const playback = video.play();
+          if (playback && typeof playback.catch === 'function') playback.catch(() => finish('play-error'));
+        } catch (error) { finish('play-error'); }
       });
     }
 
@@ -2310,6 +2707,7 @@
       $('enableTournamentNotificationsBtn')?.addEventListener('click',toggleTournamentNotifications);
       document.querySelectorAll('[data-bracket-category]').forEach((button) => button.addEventListener('click', () => { state.bracketCategory = button.dataset.bracketCategory; document.querySelectorAll('[data-bracket-category]').forEach((item) => item.classList.toggle('active', item === button)); $('bracketContent').innerHTML = bracketBoardHtml(state.bracketCategory); }));
       document.querySelectorAll('[data-agenda-category]').forEach((button) => button.addEventListener('click', () => { state.agendaCategory = button.dataset.agendaCategory; document.querySelectorAll('[data-agenda-category]').forEach((item) => item.classList.toggle('active', item === button)); $('agendaContent').innerHTML = agendaRowsHtml(state.agendaCategory); }));
+      document.querySelectorAll('[data-results-category]').forEach(button => button.addEventListener('click', () => { state.resultsCategory = button.dataset.resultsCategory; document.querySelectorAll('[data-results-category]').forEach(item => item.classList.toggle('active',item===button)); $('resultsContent').innerHTML = resultsRowsHtml(state.resultsCategory); }));
       const search = $('registrationSearch'), category = $('registrationCategoryFilter');
       if (search && category) {
         const update = () => { state.registrationSearch = search.value; $('publicRegistrationList').innerHTML = registrationRowsHtml(category.value,search.value); };
@@ -2797,7 +3195,11 @@
 
     function openRegistration() {
       const item = tournament();
-      if (!isRegistrationOpen(item)) return;
+      if (!state.inviteMode && !isRegistrationOpen(item)) return;
+      if (item.settings && item.settings.registration_mode === 'ATHLETE_PACKAGES') {
+        location.href = '/inscricao-pickleball?torneio=' + encodeURIComponent(state.slug);
+        return;
+      }
       clearPaymentStatusMonitor(true);
       state.registrationTrigger = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
         ? document.activeElement
@@ -3518,6 +3920,34 @@
     $('familyRegistrationForm').addEventListener('submit',submitFamilyRegistration);
     document.addEventListener('keydown',handleRegistrationModalKeydown);
 
+    function scheduleArrigoniInvite() {
+      const key = 'ilha-open-2026:arrigoni-invite:alternate-v2';
+      if (state.slug !== 'ilha-open-2026' || state.registrationOnly || state.inviteMode || state.courtesyMode) return;
+      try {
+        const skip = localStorage.getItem(key) === 'skip';
+        localStorage.setItem(key, skip ? 'show' : 'skip');
+        if (skip) return;
+      } catch (_) { return; }
+      let attempts = 0;
+      const timer = setInterval(() => {
+        if (++attempts > 24) { clearInterval(timer); return; }
+        if (!state.snapshot || document.visibilityState !== 'visible' || document.body.classList.contains('modal-open') || document.querySelector('dialog[open]')) return;
+        clearInterval(timer);
+        const dialog = document.createElement('dialog');
+        dialog.className = 'arrigoni-invite';
+        dialog.setAttribute('aria-labelledby','arrigoniTitle');
+        dialog.innerHTML = '<button class="arrigoni-close" type="button" aria-label="Fechar convite">×</button><img src="/assets/branding/arrigoni-contabilidade.png" alt="Arrigoni Contabilidade" /><p class="eyebrow">Patrocinador do Ilha Open 2026</p><h2 id="arrigoniTitle">Quem apoia o nosso tênis merece sua torcida!</h2><p>A Arrigoni Contabilidade é nossa patrocinadora e apoia o tênis na nossa região. Siga a página e prestigie quem ajuda o esporte a crescer!</p><a class="button full" href="https://www.instagram.com/contabilidade.arrigoni/" target="_blank" rel="noopener noreferrer">Seguir no Instagram</a><a class="button full ghost" href="https://contate.me/contabilidadearrigoni" target="_blank" rel="noopener noreferrer">Entrar em contato</a><button class="arrigoni-later" type="button">Agora não</button>';
+        document.body.appendChild(dialog);
+        const previousFocus = document.activeElement;
+        const close = () => dialog.close();
+        dialog.querySelector('.arrigoni-close').addEventListener('click',close);
+        dialog.querySelector('.arrigoni-later').addEventListener('click',close);
+        dialog.querySelectorAll('a').forEach((link) => link.addEventListener('click',close));
+        dialog.addEventListener('close',() => { dialog.remove(); if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus(); });
+        dialog.showModal();
+      },5000);
+    }
+    setTimeout(scheduleArrigoniInvite,8000);
     initTournamentPwa();
     loadPage();
   </script>

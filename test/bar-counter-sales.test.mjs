@@ -25,7 +25,7 @@ test('ADM Bar oferece o balcão como comanda destacada e checkout por categorias
   assert.match(adminSource, /bar-counter-command-card has-money-value/);
   assert.match(adminSource, /data-bar-counter-open/);
   assert.match(adminSource, /id="barCounterHistoryBtn"[^>]*data-bar-counter-history-open/);
-  assert.match(adminSource, /barCounterCommandCard\(\) \+ looseCards/);
+  assert.match(adminSource, /barCounterCommandCard\(\) \+ barDayUseCommandCard\(\) \+ looseCards/);
   assert.match(adminSource, /id="barCounterSaleModal"/);
   assert.match(adminSource, /id="barCounterCategoryTabs"[^>]*role="group"/);
   assert.match(adminSource, /data-bar-counter-category=[^\n]*aria-pressed|aria-pressed=[^\n]*data-bar-counter-category=/);

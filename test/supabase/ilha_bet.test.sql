@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(34);
+select plan(36);
 
 select ok(
   to_regclass('public.tournament_prediction_audit_log') is not null
@@ -84,6 +84,7 @@ select ok(
       ('public.admin_finalize_tournament_prediction_campaign(uuid,uuid)'),
       ('public.admin_reopen_tournament_prediction_campaign(uuid,uuid)'),
       ('public.claim_tournament_prediction_access_email(uuid)'),
+      ('public.claim_tournament_prediction_access_email_retry(uuid)'),
       ('public.complete_tournament_prediction_access_email(uuid,boolean,text,text)')
     ) as rpc(signature)
     where has_function_privilege('anon', rpc.signature, 'EXECUTE')
@@ -242,6 +243,24 @@ select is(
   ),
   'SENT:1:true:0',
   'envio confirmado não volta para a fila nem é duplicado'
+);
+
+select lives_ok(
+  $$select public.claim_tournament_prediction_access_email_retry(
+    (select id from public.tournament_prediction_entries
+     where registration_request_id = '79000000-0000-4000-8000-000000000051'::uuid)
+  )$$,
+  'o administrador pode reservar um reenvio manual do código'
+);
+
+select is(
+  (
+    select status || ':' || attempt_count::text || ':' || (sent_at is null)::text
+    from public.tournament_prediction_access_email_deliveries
+    where campaign_id = '79000000-0000-4000-8000-000000000041'::uuid
+  ),
+  'SENDING:2:true',
+  'o reenvio manual reaproveita o ledger e registra uma nova tentativa'
 );
 
 select throws_ok(
@@ -441,7 +460,7 @@ where id = '79000000-0000-4000-8000-000000000031'::uuid;
 
 insert into public.tournament_matches (
   id, tournament_id, category_id, round_no, round_code, match_no,
-  side1_athlete_id, side2_athlete_id, winner_athlete_id, scheduled_at, status, published
+  side1_athlete_id, side2_athlete_id, scheduled_at, status, published
 ) values (
   '79000000-0000-4000-8000-000000000032'::uuid,
   '79000000-0000-4000-8000-000000000001'::uuid,
@@ -451,9 +470,8 @@ insert into public.tournament_matches (
   2,
   '79000000-0000-4000-8000-000000000021'::uuid,
   '79000000-0000-4000-8000-000000000022'::uuid,
-  '79000000-0000-4000-8000-000000000022'::uuid,
-  now() - interval '1 hour',
-  'CANCELLED',
+  now() + interval '22 hours',
+  'SCHEDULED',
   true
 );
 
@@ -466,6 +484,13 @@ insert into public.tournament_predictions (
   '79000000-0000-4000-8000-000000000032'::uuid,
   '79000000-0000-4000-8000-000000000022'::uuid
 );
+
+update public.tournament_matches
+set winner_athlete_id = '79000000-0000-4000-8000-000000000022'::uuid,
+    status = 'CANCELLED',
+    started_at = now() - interval '2 hours',
+    finished_at = now() - interval '1 hour'
+where id = '79000000-0000-4000-8000-000000000032'::uuid;
 
 update public.tournament_prediction_campaigns
 set status = 'LOCKED'

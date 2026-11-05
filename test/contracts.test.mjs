@@ -613,7 +613,7 @@ test('ADM oferece prévia mensal, geração confirmada e retentativa isolada por
   const updateSettings = functionSource(adminSource, 'updateMonthlyBillingSettings');
   assert.match(updateSettings, /requireClubPermission\('finance\.write'\)/);
   assert.match(updateSettings, /window\.confirm\(confirmation\)/);
-  assert.match(updateSettings, /cobranças Pix reais somente para os responsáveis ativados em Pix Asaas/);
+  assert.match(updateSettings, /cobranças reais somente para os responsáveis ativados em Pix Asaas/);
   assert.match(updateSettings, /Faturas já emitidas e a baixa automática dos pagamentos continuarão funcionando/);
   assert.match(functionSource(adminSource, 'loadMonthlyBillingWorkspace'), /loadMonthlyBillingPreview[\s\S]*loadMonthlyBillingSettings[\s\S]*loadMonthlyBillingEnrollments/);
   assert.match(adminSource, /opsState\.financeView === 'monthly'\) loadMonthlyBillingWorkspace\(false\)/);
@@ -679,7 +679,7 @@ test('ADM impede mudança manual do estado financeiro de cobrança gerenciada pe
   assert.match(enrollmentRequest, /p_billing_method:/);
   const updateEnrollment = functionSource(adminSource, 'updateMonthlyBillingEnrollment');
   assert.match(updateEnrollment, /window\.confirm\(confirmation\)/);
-  assert.match(updateEnrollment, /Nenhuma cobrança será criada agora/);
+  assert.match(updateEnrollment, /Na primeira ativação, sem faturas anteriores, a mensalidade vence hoje/);
   assert.match(updateEnrollment, /Faturas que já existem continuarão válidas/);
   assert.match(functionSource(adminSource, 'renderClientMonthlyBillingControl'), /Gerenciada pelo responsável/);
   assert.match(adminSource, /data-monthly-billing-enrollment/);
@@ -691,8 +691,9 @@ test('ADM impede mudança manual do estado financeiro de cobrança gerenciada pe
   assert.match(generateManual, /admin_generate_manual_app_monthly_billing/);
   assert.match(generateManual, /Nenhuma cobrança será criada ou enviada pelo Asaas/);
   const confirmManual = functionSource(adminSource, 'confirmManualMonthlyPayment');
-  assert.match(confirmManual, /admin_confirm_manual_monthly_payment/);
-  assert.match(confirmManual, /window\.confirm/);
+  assert.match(confirmManual, /invoiceCanReceiveManually\(invoice\)/);
+  assert.match(confirmManual, /invoiceReceiptTarget = invoice/);
+  assert.match(confirmManual, /invoiceReceiptModal/);
 
   const invoiceCard = functionSource(indexSource, 'invoiceCard');
   assert.match(invoiceCard, /invoiceManualPaymentLabel/);
@@ -718,7 +719,7 @@ test('Ilha Play lê campos seguros e mantém cobrança familiar visível para pl
 
   const invoices = functionSource(indexSource, 'buildMonthlyInvoices');
   assert.match(invoices, /isExemptClientPlan\(\)\s*&&\s*!hasFamilyBillingInvoice\(\)/);
-  assert.match(functionSource(indexSource, 'renderPayments'), /isExemptClientPlan\(\)\s*&&\s*!hasFamilyBillingInvoice\(\)/);
+  assert.match(functionSource(indexSource, 'renderPayments'), /isExemptClientPlan\(\)\s*&&\s*!hasCurrentFamilyAccount\(\)\s*&&\s*!hasFamilyBillingInvoice\(\)/);
   const familyInvoices = functionSource(indexSource, 'hasFamilyBillingInvoice');
   assert.match(familyInvoices, /family_billing/);
   assert.match(familyInvoices, /familyInvoiceItems/);
@@ -747,7 +748,7 @@ test('Ilha Play apresenta todos os estados mensais e atualização segura sem re
   assert.match(paymentAction, /\['PENDING', 'OVERDUE'\]\.includes\(providerStatus\)/);
   assert.doesNotMatch(paymentAction, /CONFIRMED/);
   assert.match(card, /!invoicePaymentActionAllowed\(invoice\)/);
-  const paymentClick = sourceSection(indexSource, "$('paymentList').addEventListener('click'", "$('pixModal').addEventListener('click'");
+  const paymentClick = sourceSection(indexSource, "$('view-payments').addEventListener('click'", "$('pixModal').addEventListener('click'");
   assert.match(paymentClick, /data-refresh-invoice/);
   assert.match(paymentClick, /refresh\(false\)/);
   assert.doesNotMatch(paymentClick, /app-monthly-billing|action:\s*'retry'/);
@@ -839,7 +840,8 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(tournamentSource, /Sua vaga fica reservada por 2 horas e só é confirmada após o pagamento\./);
   assert.match(tournamentSource, /Suas vagas ficam reservadas por 2 horas e só são confirmadas após o pagamento\./);
   assert.match(tournamentSource, /Seja um patrocinador do torneio/);
-  assert.match(tournamentSource, /wa\.me\/5527999805814/);
+  assert.match(functionSource(tournamentSource, 'tournamentContact'), /phone: '5527999805814'/);
+  assert.match(functionSource(tournamentSource, 'tournamentWhatsappUrl'), /tournamentContact\(\)\.phone/);
   assert.match(tournamentSource, /function tournamentTitleHtml/);
   assert.doesNotMatch(tournamentSource, />Ilha Play<|<p class="eyebrow">' \+ escapeHtml\(field\(item,'club_name'/);
   assert.doesNotMatch(functionSource(tournamentSource, 'renderTournament'), /short_description|Acompanhe todas as informações do torneio/);
@@ -858,7 +860,9 @@ test('Ilha Open oferece a Espacial correta por mais R$ 80 no mesmo pagamento', (
   assert.match(functionSource(tournamentSource, 'statusLabel'), /isRegistrationExplicitlyClosed\(row\)[\s\S]*Inscrições fechadas/);
   assert.match(functionSource(tournamentSource, 'statusClass'), /isRegistrationExplicitlyClosed\(row\)/);
   assert.match(tournamentSource, /\.meta-pill\.status-open[^}]*rgba\(37,211,102/);
-  assert.match(functionSource(tournamentSource, 'aboutHtml'), /about-contact-list[\s\S]*Instagram[\s\S]*wa\.me\/5527999805814[\s\S]*Ilha Tênis — Colatina[\s\S]*about-image[\s\S]*sponsorsHtml\(true\)/);
+  const aboutFunction = functionSource(tournamentSource, 'aboutHtml');
+  assert.match(aboutFunction, /about-contact-list[\s\S]*Instagram[\s\S]*whatsappUrl[\s\S]*Ilha Tênis — Colatina/);
+  assert.match(aboutFunction, /about-partners[^']*' \+ sponsorsHtml\(true\) \+ '[\s\S]*about-copy[\s\S]*contacts[\s\S]*about-image/);
   assert.match(adminSource, /id="tournamentLogoFile"[^>]*accept="image\/png/);
   assert.match(adminSource, /1600 × 600 px/);
   assert.match(functionSource(adminSource, 'uploadTournamentLogo'), /file\.size > 2 \* 1024 \* 1024/);
@@ -2816,10 +2820,11 @@ test('inscricao publica exige Turnstile e rate limit persistente sem PII em clar
   assert.match(tournamentRegisterSource, /p_ip_hash: ipHash/);
   assert.match(publicRegistrationRateLimitSource, /p_ip_hash is not null/);
   assert.match(publicRegistrationRateLimitSource, /where limits\.scope_key is not null/);
-  const networkLimit = tournamentRegisterSource.indexOf('consume_tournament_registration_network_rate_limits');
-  const captcha = tournamentRegisterSource.indexOf('captcha_verification');
-  const identityLimit = tournamentRegisterSource.indexOf('consume_tournament_registration_identity_rate_limit');
-  const tournamentLookup = tournamentRegisterSource.indexOf('tournament_lookup');
+  const protectedFlow = functionSource(tournamentRegisterSource, 'handleFamilyRegistration');
+  const networkLimit = protectedFlow.indexOf('consume_tournament_registration_network_rate_limits');
+  const captcha = protectedFlow.indexOf('captcha_verification');
+  const identityLimit = protectedFlow.indexOf('consume_tournament_registration_identity_rate_limit');
+  const tournamentLookup = protectedFlow.indexOf('tournament_lookup');
   assert.ok(networkLimit < captcha, 'limite de rede deve proteger a validação CAPTCHA');
   assert.ok(captcha < identityLimit, 'token inválido não pode consumir o limite de outra identidade');
   assert.ok(identityLimit < tournamentLookup, 'proteções devem anteceder leitura ou alteração do torneio');
@@ -2960,7 +2965,8 @@ test('build de produção inclui as regras de rotas limpas da Vercel', () => {
     vercelConfigSource,
     /"source"\s*:\s*"\/inscricoes\/:slug\/espacial"[\s\S]*?"destination"\s*:\s*"\/inscricoes\/espacial\/index\.html"/,
   );
-  assert.match(productionBuildSource, /developmentRootFiles\s*=\s*new Set\(\['package\.json'\]\)/);
+  assert.match(productionBuildSource, /config\/site-files\.json/);
+  assert.match(productionBuildSource, /Arquivo não publicável/);
   assert.doesNotMatch(productionBuildSource, /new Set\(\['package\.json',\s*'vercel\.json'\]\)/);
 });
 
@@ -3194,19 +3200,13 @@ test('membro manual pode iniciar incompleto e o responsavel confirma sem imperso
   assert.match(adminSource, /id="clientAreaPreviewBtn"[^>]*>Abrir área do cliente</);
   assert.match(adminSource, /window\.open\('about:blank', '_blank'\)/);
   assert.match(adminSource, /kind: 'ilha-client-readonly-preview-v1'/);
-  assert.match(adminSource, /previewWindow\.name = JSON\.stringify\(buildClientAreaPreviewPayload\(client\)\)/);
-  assert.match(adminSource, /previewWindow\.location\.replace\('\/client-preview'\)/);
+  assert.match(adminSource, /previewWindow\.name = JSON\.stringify\(snapshot\)/);
+  assert.match(adminSource, /previewWindow\.location\.replace\('\/\?clientPreview=1'\)/);
   assert.doesNotMatch(adminSource, /impersonat|access_token=.*client/i);
 
-  assert.match(clientPreviewSource, /Visualização pelo ADM · somente leitura/);
-  assert.match(clientPreviewSource, /window\.name = ''/);
-  assert.match(clientPreviewSource, /window\.opener = null/);
-  assert.match(clientPreviewSource, /data-page="home"/);
-  assert.match(clientPreviewSource, /data-page="play"/);
-  assert.match(clientPreviewSource, /data-page="lessons"/);
-  assert.match(clientPreviewSource, /data-page="payments"/);
-  assert.match(clientPreviewSource, /data-page="store"/);
-  assert.match(clientPreviewSource, /data-page="profile"/);
+  assert.match(clientPreviewSource, /location\.replace\("\/\?clientPreview=1"\)/);
+  assert.match(clientPreviewSource, /window\.name = ""/);
+  assert.match(indexSource, /client-area-preview\.js/);
   assert.doesNotMatch(clientPreviewSource, /SUPABASE_|supabase|fetch\s*\(|XMLHttpRequest|<form\b/i);
 });
 
@@ -3229,14 +3229,15 @@ test('membro familiar ativo vira aluno operacional e pode receber plano e aula n
   assert.match(adminSource, /lessonPlacementState\.prefillStudentName = student\.name/);
   assert.match(adminSource, /lessonStudentPickerSearch'\)\.value = lessonPlacementState\.prefillStudentName/);
   assert.match(adminSource, /function clubClientDirectory\(\)/);
-  assert.match(adminSource, /status === 'ATIVO' && Boolean\(member\.studentId\) && member\.responsibleConfirmationRequired !== true/);
+  assert.match(functionSource(adminSource, 'familyDirectoryClients'), /status === 'ATIVO' && Boolean\(member\.studentId\)/);
+  assert.doesNotMatch(functionSource(adminSource, 'familyDirectoryClients'), /responsibleConfirmationRequired/);
   assert.match(adminSource, /const allRows = clubClientDirectory\(\)\.map\(buildClientOverview\)/);
   assert.match(adminSource, /id: 'family-member:' \+ member\.id/);
-  assert.match(adminSource, /data-family-directory-open=/);
+  assert.match(functionSource(adminSource, 'renderClientCard'), /data-client-open=/);
   assert.match(adminSource, /data-family-directory-student=/);
   assert.match(adminSource, /Plano individual · cobrança na conta da família/);
-  assert.match(adminSource, /if \(studentId && String\(student\.id \|\| ''\) === studentId\) return true/);
-  assert.match(serviceWorkerSource, /ilha-play-v243-palpite-ilha/);
+  assert.match(functionSource(adminSource, 'findLessonStudentForClient'), /if \(studentId\) return lessonState.students.find/);
+  assert.match(serviceWorkerSource, /const CACHE_NAME = 'ilha-play-v[^']+'/);
 });
 
 test('grade de aulas usa cartões compactos e filtros responsivos', () => {
@@ -3436,7 +3437,7 @@ test('formulário do torneio explica o uso dos dados e usa política configurada
   assert.match(configuredPrivacy, /aboutEventSettings[\s\S]*privacy_url[\s\S]*privacy_policy_url/);
   const privacyNotice = functionSource(tournamentSource, 'configureRegistrationPrivacy');
   assert.match(privacyNotice, /Consultar aviso de privacidade/);
-  assert.match(privacyNotice, /wa\.me\/5527999805814/);
+  assert.match(privacyNotice, /tournamentWhatsappUrl\(/);
   assert.match(privacyNotice, /Falar com a organização sobre seus dados/);
 });
 

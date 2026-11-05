@@ -1,0 +1,62 @@
+// Fictional, affectionate game personas — not biographical claims about members.
+export const STORY_INTRO='A Copa do Legado começa hoje. Leandro organizou as chaves com a ajuda do ChatGPT e garante que foi tudo sorteio. A turma pediu o comprovante. Ele mudou de assunto.\n\nSeis chefes guardam as medalhas do circuito, Gael manda no pickleball e Renato está sempre atrasado para a aula. Para conquistar a grande taça, conheça o clube, aprenda os golpes do tênis e descubra por que até uma derrota vira aprendizado.\n\nDuas quadras de tênis, uma quadra de pickleball e uma casa mal-assombrada. Muitas aventuras esperam por você no Ilha Tênis de Colatina!';
+export const BIOS={
+ gael:'Gael escolheu uma raquete pequena para caber na mochila — afinal, sua confiança já ocupava todo o resto. Seu maior sonho é derrotar todos os adultos antes da hora do lanche. Mas atenção: para jogar pickleball na Ilha, primeiro você precisa da autorização dele.',
+ lourenco:'Lourenço pode até parecer inofensivo, mas batalha como um verdadeiro gigante. Seu mental é sua maior força: mesmo perdendo por 5 a 0, ele não desiste e continua lutando por cada bola. Boa sorte para vencer essa fera — porque ele só aceita que o jogo acabou depois do último ponto.',
+ gabriel:'Gabriel, o El Bigodón, cuida da pressão psicológica com o bigode e dos pontos com a raquete. Vive no estacionamento esperando a turma. Só perdeu de vista três bolinhas, que foram parar na quadra abandonada. Ajude a buscá-las e ele põe a Medalha da Parceria em jogo. O bigode vai fiscalizar a entrega!',
+ emerson:'Emerson descobriu como fazer uma cesta de bolas nunca acabar: dizer “só mais uma”. Mas um craque também precisa cuidar da quadra e respeitar os colegas. Ao lado da Quadra 2, ele ensina cinco combinados e prepara uma prova curta. Se você errar, ele explica com calma. Só mais uma… tentativa!',
+ davi:'Davi venceu a edição anterior da Copa do Legado e representa a nova geração do Ilha Tênis. Rápido e habilidoso, dá trabalho a qualquer adversário. Antes de aceitar um desafio, pede a prova de boas maneiras do Emerson. Quer vencer? Treine a raquete e o respeito: os dois fazem parte do jogo.',
+ evandro:'Evandro reclama de cansaço antes, durante e depois da partida. Mas seu novo treinamento físico o faz alcançar bolas que ninguém esperava. No banco da quadra azul, ele pede o Suco do Tenista de Felipe para criar coragem de levantar. O brilho do suco passa; a desculpa do cansaço nunca!',
+ andre:'André ganhou o apelido de “O Malvado” porque faz cara de final de campeonato até na fila do suco. Seu saque exige coragem e suas provocações são de brincadeira. Para testar sua paciência, manda ouvir uma história inteira do Beto. Quem volta da Lua sem desistir está pronto para desafiá-lo!',
+ romulo:'Rômulo é o último chefe da Copa. Seu slice, apelidado de “Facão”, passa tão baixo que parece pedir licença para as formigas. Para enfrentá-lo, Leandro pede a Foice Lendária, um amuleto escondido atrás da casa mal-assombrada. A Foice fica guardada: na quadra, vença com a raquete, mudando a direção e o ritmo.',
+ renato:'Se Renato não se atrasar, a aula começa! Perto da entrada lateral da Quadra 1, ele ensina saque, topspin, slice, deixada, direção e força. Mostra cada gesto na tela, espera sua vez e deixa repetir sem perder pontos. Atrasar pode; desistir de um aluno, nunca!',
+ beto:'Beto é o médico da turma e o Astronauta desta aventura. Jura que a casa mal-assombrada é sua nave disfarçada e que já foi buscar uma bolinha na Lua. Ouvir a viagem inteira rende a medalha extra da Paciência Intergaláctica. A volta tem três volumes — por sorte, André só pediu a primeira história.',
+ felipe:'Felipe tentou a carreira no tênis, mas a bola não colaborou muito. Preferiu trocar a raquete pela cozinha do Ilha Bar: agora prepara as porções e as bebidas mágicas dos tenistas! Seu Suco do Tenista mistura fruta, gelo e coragem para voltar à quadra. Ele cuida da turma depois das aulas e dá ao Evandro energia para levantar do banco — pelo menos por uma partida.',
+ leandro:'Leandro organiza a Copa com a poderosa ajuda do ChatGPT e garante que todas as chaves foram definidas por sorteio — embora ninguém tenha coragem de acreditar completamente. Sem encontrar um adversário à sua altura na Ilha, abandonou temporariamente as batalhas para guiar as novas lendas do tênis. Pelo menos essa é a versão contada por ele.',
+};
+export const ROSTER_BIOS={
+ gael:'O Pequeno General da quadra azul. Vive de pickleball, confiança e lanche.',
+ lourenco:'O Pequeno Gigante nunca desiste de uma bola — nem quando o placar parece decidido.',
+ gabriel:'El Bigodón usa a raquete para os pontos e o bigode para a pressão psicológica.',
+ emerson:'Professor da Quadra 2. Ensina respeito, estratégia e sempre pede “só mais uma”.',
+ davi:'Campeão da edição anterior e representante da nova geração do Ilha.',
+ evandro:'O Incansavelmente Cansado reclama sentado, mas alcança quase tudo quando a bola entra em jogo.',
+ andre:'O Malvado faz cara de final até na fila do suco e testa a coragem dos adversários.',
+ romulo:'Último chefe da Copa. Seu slice baixo e perigoso ganhou o apelido de Facão.',
+ renato:'Professor da Quadra 1. Ensina os golpes com calma — mesmo quando chega atrasado.',
+ beto:'Médico e Astronauta da turma. Diz que a casa antiga é sua nave disfarçada.',
+ felipe:'Trocou a carreira no tênis pelas porções e bebidas mágicas do Ilha Bar.',
+ leandro:'Guia da aventura e organizador da Copa. Garante que o sorteio foi totalmente imparcial.',
+ kalinca:'Mãe do Gael. Vive procurando o filho e lembrando o Pequeno General de beber água.',
+ malu:'Irmã do Gael e empreendedora da família. Vende camisas e quer sua vez no pickleball.',
+ higor:'O Desesperador. Uma lenda temporariamente afastada das quadras por causa do pé.',
+ vanessa:'A jogadora que os meninos insistem em chamar de tia — e ela insiste que não é.',
+ bernar:'Representante da BP Sport. Sempre tem uma raquete nova para indicar.',
+ scarlt:'Esposa do Beto. Procura a nave e tenta descobrir quando o Astronauta volta para casa.',
+ michele:'Chegou para jogar com Larissa, mas as duas parecem procurar uma à outra em lados opostos.',
+ larissa:'Marcada para jogar com Michele. Continua esperando bem longe dela.',
+ betinho:'Filho do Beto. Já aceitou que o pai viaja — muito, inclusive para o espaço.',
+};
+export const CHAT={
+ gael:'“Alto lá! Autorização do Pequeno General: concedida. Você tem até a hora do meu lanche para tentar ganhar. Depois disso, só com agendamento.”',
+ lourenco:'“Pequeno é meu tamanho, não minha vontade de ganhar. Enquanto tiver uma bola em jogo, pode guardar essa comemoração!”',
+ gabriel:'“El Bigodón chegou. A raquete devolve a bola; o bigode cuida da pressão psicológica. A rede já pediu para trocar de lado.”',
+ emerson:'“Só mais uma! Se você ouviu isso há meia hora, deve ser o eco. A última bola está aqui... em alguma dessas cestas.”',
+ davi:'“Campeão da edição anterior, prazer! Respeito todo adversário: dou bom dia antes de tentar passar a bola. E agradeço depois do jogo!”',
+ evandro:'“Estou morto de cansado. Aquela bola lá longe? Deixa comigo. Pronto, peguei. Agora posso continuar reclamando do cansaço.”',
+ andre:'“Até o suco aqui tem que vir com atitude de campeão. Entrou na quadra? Acabou a resenha. Errou uma fácil? A bronca é cortesia!”',
+ romulo:'“Chamam de slice. Eu chamo de Facão. A bola passa tão baixa que pede licença para a formiga. Mude o canto e o ritmo se quiser me vencer!”',
+ renato:'“Atrasado? Eu estava estudando um golpe novo no caminho! Pegue a raquete. Se eu descobrir o nome do golpe durante a aula, te aviso.”',
+ beto:'“Houston, encontramos outra bolinha na Lua. A viagem durou três meses; a história que vou contar dura um pouco mais. Senta aí!”',
+ felipe:'“No tênis eu tentei, mas não deu muito certo… Preferi caprichar nas porções e nas bebidas mágicas dos tenistas! Meu Suco do Tenista dá coragem para voltar à quadra. Só não promete acertar o saque, hahaha!”',
+ leandro:'“As chaves foram sorteadas! O ChatGPT é testemunha. Eu só não jogo porque faltam adversários à minha altura. Anota essa versão no passaporte.”',
+};
+export const BOSS_LINES={
+ lourenco:{before:'Medalha da Disciplina em jogo! O Pequeno Gigante disputa cada bola. Prepare seu gesto, mantenha o foco e só comemore depois do último ponto.',win:'“Acabou mesmo? Conferiu o placar? Tá bom... você ganhou. Mas já estou pronto para a revanche!”',lose:'“Eu avisei que não desisto! Prepare seu gesto antes de a bola chegar e venha de novo. Quero ver essa mesma vontade em você.”'},
+ gabriel:{before:'El Bigodón colocou a Medalha da Parceria em jogo. O bigode intimida, mas não devolve sozinho: varie seus golpes e encare a fera!',win:'“Você venceu. Meu bigode pediu revisão do ponto, mas a rede confirmou. Medalha sua; barbeiro por minha conta!”',lose:'“Não olhe para o bigode, olhe para a bola! Tente o slice para mudar o ritmo. O salão da revanche está aberto.”'},
+ davi:{before:'O campeão da edição anterior aceita seu desafio pela Medalha da Evolução. Alterne bolas no fundo e deixadas; a Next Gen também precisa correr!',win:'“Perdi?! Beleza, nova geração também aprende. Leva a medalha. Vou treinar enquanto você conta vantagem no bar.”',lose:'“Boa partida! Incline o gesto para me tirar do centro e alterne a força. Sua próxima chance começa na revanche.”'},
+ evandro:{before:'Medalha da Estratégia valendo. Não confunda reclamação com falta de fôlego: o novo físico dele alcança tudo. Faça-o mudar de direção!',win:'“Perdi, mas cheguei em todas... quase. Pode trazer a medalha até aqui? Hoje já corri o suficiente para a semana.”',lose:'“Falei que estava cansado, não que estava parado! Prepare uma jogada com a outra e me faça correr para o lado errado.”'},
+ andre:{before:'O Malvado colocou a Medalha da Coragem em jogo. Respire, cuide da bola e não deixe a cara de final dele decidir o seu ponto.',win:'“Você jogou bem. Pronto, falei. Leva a medalha antes que eu resolva reclamar da iluminação!”',lose:'“Essa bola era sua! Respire, prepare o gesto e tente outro canto. Quero ver você aprendendo. A revanche já está liberada!”'},
+ romulo:{before:'FINAL DA COPA! Tie-break de sete pontos. O Facão vem baixo: mude a direção e o ritmo para conquistar a última medalha. O amuleto fica guardado; aqui só tem raquete!',win:'“Meu Facão perdeu para sua estratégia. Justo. Vá comemorar no bar antes que Leandro diga que foi tudo ideia dele!”',lose:'“Corte limpo! Alterne slice, topspin e deixada para mudar o ritmo. O Facão não encerra histórias: sua revanche está garantida.”'},
+};
+export const FINALE='Leandro abre o caderno e anuncia: “Como previsto por mim e pelo ChatGPT: temos uma nova lenda!”\n\nA turma pede o comprovante do sorteio. Ele entrega a taça depressa.\n\nFelipe traz a porção de campeão. Lourenço já pede revanche, Gabriel ajeita o bigode e Evandro comemora sentado. André reclama do discurso. Rômulo admite que aquela estratégia merecia aplausos. Beto diz que viu a final da Lua.\n\nEmerson anuncia “só mais uma foto”. Renato chega bem na hora — desta vez!\n\nVocê conquistou a Taça do Legado e uma aura dourada para passear pelo clube. Aqui, a lenda não joga sozinha. Bem-vindo à turma!';

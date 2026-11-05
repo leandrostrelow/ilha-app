@@ -1,0 +1,70 @@
+/* Match chrome belongs in Pause, leaving the court and a truly centered score. */
+#gameDialog.match-mode>.dialog-header,#gameDialog.pickle-mode>.dialog-header,#gameDialog.ending-mode>.dialog-header,#gameDialog.results-mode>.dialog-header{display:none}
+#gameDialog.match-mode,#gameDialog.pickle-mode,#gameDialog.ending-mode,#gameDialog.results-mode{padding-top:0}
+#gameDialog .assisted-match:not(.lesson-mode) .scoreboard{position:relative;display:block;padding:8px 62px;min-height:64px;align-content:center}
+#gameDialog .assisted-match:not(.lesson-mode) .scoreboard>div:first-child{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;width:100%}
+#gameDialog .assisted-match:not(.lesson-mode) .scoreboard>div:first-child>span{min-width:0;max-width:none;font-size:11px;line-height:1.3;overflow-wrap:anywhere;text-align:center}
+#gameDialog .assisted-match:not(.lesson-mode) .match-stats{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:44px}
+#gameDialog .assisted-match:not(.lesson-mode) #matchScore{margin:0;text-align:center;white-space:nowrap;letter-spacing:1px;font-size:26px}
+#gameDialog .pickle-header{position:relative;display:block;padding:6px 70px;text-align:center;align-content:center}
+#gameDialog .pickle-header>div{display:grid;justify-items:center;gap:0}
+#gameDialog .pickle-header span{max-width:none;overflow-wrap:anywhere;font-size:10px}
+#gameDialog #picklePause{position:absolute;right:6px;top:50%;transform:translateY(-50%);min-width:56px}
+#gameDialog .pause-overlay{position:fixed;inset:0;z-index:25;justify-content:safe center;padding-top:max(24px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom))}
+#gameDialog .pause-overlay>*{flex-shrink:0}
+#campaignSaveWarning{position:absolute;top:max(8px,env(safe-area-inset-top));left:12px;right:12px;z-index:30;margin:auto;max-width:650px;padding:10px 14px;background:#fff0ba;color:#392a10;border:2px solid #c18a32;border-radius:8px;font:700 13px/1.5 system-ui;box-shadow:0 4px 16px #0007}
+
+/* A single stage for the ceremony, the cast close-ups and the final portrait. */
+#gameDialog .campaign-ending{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,1fr);align-items:center;gap:24px;padding:clamp(16px,3vw,40px);overflow:auto;background:radial-gradient(ellipse at 20% 15%,#314338,#091e24 75%)}
+#gameDialog .ending-scene{display:block;width:100%;height:auto;max-height:none;aspect-ratio:480/356;object-fit:contain;image-rendering:pixelated;border:2px solid #dbc89170;box-shadow:0 12px 42px #0006}
+#gameDialog .ending-copy{min-width:0;padding:0;max-width:650px}
+#gameDialog .ending-speaker{gap:14px;align-items:center}
+#gameDialog .ending-speaker canvas{width:64px;height:80px;flex:none}
+#gameDialog .ending-speaker h2{font-size:clamp(23px,2.8vw,36px);line-height:1.2;margin-top:10px;color:#fff0b7}
+#gameDialog #endingEyebrow{font-size:11px;letter-spacing:1.5px;line-height:1.7;color:#d2dba6}
+#gameDialog #endingText{font-size:clamp(17px,1.6vw,21px);line-height:1.65;margin:18px 0 24px;color:#edf0d9}
+#gameDialog .ending-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#gameDialog .ending-actions .primary{grid-column:1/-1;min-height:52px;font-size:16px;line-height:1.4}
+#gameDialog .ending-actions .text-button,#gameDialog #endingExit{font-size:13px;min-height:44px;padding:10px;border:1px solid #c3d08b55;border-radius:5px;color:#e5e9cf}
+#gameDialog #endingSkip{grid-column:1/-1;border:0;color:#b0c0b0}
+#gameDialog #endingCredits{font:13px/1.8 monospace;margin-top:24px;color:#b9cabb}
+#gameDialog .ending-actions button:disabled{opacity:.4;cursor:default}
+@media(max-width:700px){
+ #gameDialog .campaign-ending{grid-template-columns:1fr;align-content:start;gap:18px;padding:0 0 max(18px,env(safe-area-inset-bottom))}
+ #gameDialog .ending-scene{border-width:0 0 2px;box-shadow:0 6px 24px #0005}
+ #gameDialog .ending-copy{padding:0 20px}
+ #gameDialog .ending-speaker canvas{width:48px;height:60px}
+ #gameDialog .ending-speaker h2{font-size:24px;margin-top:6px}
+ #gameDialog #endingText{font-size:18px;line-height:1.55;margin:16px 0 20px}
+}
+@media(max-width:360px){
+ #gameDialog .assisted-match:not(.lesson-mode) .scoreboard{padding-inline:53px}
+ #gameDialog .assisted-match:not(.lesson-mode) .scoreboard>div:first-child{gap:4px}
+ #gameDialog .assisted-match:not(.lesson-mode) .scoreboard>div:first-child>span{font-size:9px}
+ #gameDialog .ending-copy{padding-inline:14px}
+ #gameDialog .ending-speaker h2{font-size:22px}
+}
+@media(max-height:560px) and (orientation:landscape){
+ #gameDialog .pause-overlay{display:grid;grid-template-columns:repeat(2,minmax(0,260px));align-content:safe center;justify-content:center;gap:8px;padding:14px}
+ #gameDialog .pause-overlay h2,#gameDialog .pause-overlay .pause-score,#gameDialog .pause-overlay .primary{grid-column:1/-1;max-width:none;width:100%;margin:0}
+ #gameDialog .pause-overlay h2{font-size:22px}
+ #gameDialog .pause-overlay button{width:100%;max-width:none}
+ #gameDialog .assisted-match:not(.lesson-mode){grid-template-areas:'lesson' 'stage' 'score' 'controls';grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) 52px 78px}
+ #gameDialog .assisted-match:not(.lesson-mode) .scoreboard{min-height:52px;padding-block:2px}
+ #gameDialog .assisted-match:not(.lesson-mode) .tennis-controls{padding:3px 12px;max-width:660px}
+ #gameDialog .assisted-match:not(.lesson-mode) .gesture-guide{gap:3px;font-size:9px}
+ #gameDialog .assisted-match:not(.lesson-mode) .gesture-guide>span{padding:2px}
+ #gameDialog .assisted-match:not(.lesson-mode) .gesture-guide b{font-size:16px}
+ #gameDialog .assisted-match:not(.lesson-mode) .gesture-guide small{font-size:9px;padding-top:0}
+ #gameDialog .pickle-area{grid-template-areas:'stage' 'score' 'controls' 'exit';grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) 58px 72px 30px}
+ #gameDialog .pickle-header{min-height:58px;padding-block:2px}
+ #gameDialog .pickle-controls{max-width:660px;justify-self:center;width:100%;padding:2px 12px}
+ #gameDialog .pickle-controls .gesture-guide>span{padding:2px}
+ #gameDialog .pickle-controls .gesture-guide b{font-size:16px}
+ #gameDialog .campaign-ending{grid-template-columns:minmax(0,1fr) minmax(280px,1fr);align-items:start;gap:16px;padding:12px}
+ #gameDialog .ending-scene{position:sticky;top:0;max-height:calc(100dvh - 24px);border-width:2px}
+ #gameDialog .ending-copy{padding:0 6px}
+ #gameDialog .ending-speaker canvas{width:40px;height:50px}
+ #gameDialog .ending-speaker h2{font-size:22px}
+ #gameDialog #endingText{font-size:16px;margin:10px 0 16px}
+}

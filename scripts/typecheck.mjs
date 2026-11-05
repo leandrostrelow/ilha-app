@@ -18,7 +18,7 @@ const entries = (await walk())
 function check(entry) {
   return new Promise((resolve, reject) => {
     const cwd = path.dirname(entry);
-    const child = spawn(executable, ['check', '--quiet', 'index.ts'], { cwd, stdio: 'inherit' });
+    const child = spawn(executable, ['check', '--quiet', '--node-modules-dir=none', 'index.ts'], { cwd, stdio: 'inherit' });
     child.on('error', reject);
     child.on('exit', (code) => code === 0 ? resolve() : reject(new Error(`${relative(entry)} falhou com codigo ${code}.`)));
   });

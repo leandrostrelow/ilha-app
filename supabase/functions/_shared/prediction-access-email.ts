@@ -60,16 +60,22 @@ export async function sendPredictionAccessEmail(
   campaign: Row,
   tournament: Row,
   accessCode: string,
+  options: { force?: boolean } = {},
 ) {
   const apiKey = (Deno.env.get("RESEND_API_KEY") || "").trim();
   const from = (Deno.env.get("PREDICTION_EMAIL_FROM") || "").trim();
   const replyTo = (Deno.env.get("PREDICTION_EMAIL_REPLY_TO") || "").trim();
   if (!predictionEmailConfigured()) return { status: "NOT_CONFIGURED" };
 
-  const claim = await client.rpc("claim_tournament_prediction_access_email", { p_entry_id: entry.id });
+  const force = options.force === true;
+  const claim = await client.rpc(
+    force ? "claim_tournament_prediction_access_email_retry" : "claim_tournament_prediction_access_email",
+    { p_entry_id: entry.id },
+  );
   if (claim.error) throw claim.error;
   const claimed = Array.isArray(claim.data) ? claim.data[0] : claim.data;
   if (!claimed?.delivery_id) return { status: "ALREADY_SENT" };
+  const attemptCount = Math.max(1, Number(claimed.attempt_count || 1));
 
   const publicUrl = safeUrl(`https://app.ilhatenis.com/bet?torneio=${encodeURIComponent(String(tournament.slug || ""))}`);
   const name = String(entry.full_name || "Participante").trim();
@@ -92,7 +98,9 @@ export async function sendPredictionAccessEmail(
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "Idempotency-Key": `ilha-bet-access/${entry.id}`,
+        "Idempotency-Key": force
+          ? `ilha-bet-access/${entry.id}/manual-${attemptCount}`
+          : `ilha-bet-access/${entry.id}`,
       },
       body: JSON.stringify({
         from,

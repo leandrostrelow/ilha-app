@@ -1,0 +1,35 @@
+/* A child-paced lesson: readable instructions below an unobstructed court. */
+#gameDialog:has(.lesson-mode:not([hidden])) .dialog-header{display:none}
+#gameDialog .play-area.lesson-mode{grid-template-areas:'score' 'stage' 'lesson';grid-template-rows:46px minmax(170px,1fr) auto;grid-template-columns:minmax(0,1fr)}
+#gameDialog .lesson-mode .tennis-controls,#gameDialog .lesson-mode .shot-status,#gameDialog .lesson-mode .game-hint{display:none}
+#gameDialog .lesson-mode .scoreboard{grid-area:score;position:static;margin:0;border:0;background:#12352e;padding:5px 14px;min-height:46px}
+#gameDialog .lesson-mode .scoreboard>div:first-child{display:flex;justify-content:space-between;gap:8px}
+#gameDialog .lesson-mode .scoreboard>div>span:last-child{display:none}
+#gameDialog .lesson-mode #playerName{font:700 14px monospace;max-width:none;color:#f4f3dc}
+#gameDialog .lesson-mode #matchScore{font:700 16px monospace;margin:0 14px;color:#d8f28b}
+#gameDialog .lesson-mode .match-stage{grid-area:stage}
+#gameDialog .lesson-mode #lessonHud{grid-area:lesson;border:0;border-top:3px solid #b5ce8d;background:#102f2c;box-shadow:inset 0 3px #294b3c;color:#f6f3db;padding:12px 18px max(14px,env(safe-area-inset-bottom));min-width:0;overflow:auto;max-height:55dvh}
+.coach-heading{display:flex;justify-content:space-between;gap:8px;font:700 11px/1.4 monospace;letter-spacing:.05em;color:#c9ddb6;margin-bottom:7px}
+#gameDialog #lessonHud #lessonTitle{display:block;font:800 clamp(21px,2.4vw,26px)/1.15 monospace;color:#ecf7be;text-shadow:2px 2px #021f20}
+#gameDialog #lessonHud #lessonText{font:600 18px/1.35 system-ui,sans-serif;margin:8px 0 0;color:#fffbe5}
+#gameDialog #lessonHud #lessonFeedback{font:14px/1.4 system-ui,sans-serif;margin:8px 0 10px;color:#d0e2d7;min-height:0}
+#gameDialog #lessonHud[data-phase=practice] #lessonFeedback{min-height:40px}
+.coach-demo{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;background:#051e1f80;border:1px solid #72968166}
+.coach-demo svg{width:140px;height:90px;overflow:visible;flex:none}.coach-demo span{font:12px/1.5 monospace;max-width:130px;color:#dcebac;padding:8px}
+.gesture-trail,.gesture-arrow{fill:none;stroke:#d8f490;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.gesture-trail{stroke-dasharray:4 7;stroke-width:3}.gesture-start{fill:#f7f4d6}
+.gesture-finger{animation:coach-drag 2.8s infinite;fill:#ffebc6;stroke:#0b1f26;stroke-width:2;filter:drop-shadow(2px 3px 0 #0007)}
+.gesture-finger .finger-touch{fill:#e8ffbb40;stroke:#edffc7;stroke-width:2;animation:coach-touch 2.8s infinite}
+.coach-actions{display:flex;gap:8px;align-items:center}.coach-actions button{min-height:46px;touch-action:manipulation;font:700 14px/1.3 monospace;padding:10px 12px;cursor:pointer;border-radius:2px}
+#gameDialog .coach-actions .primary{flex:1;background:#d5ed95;color:#113328;border:2px solid #f2ffce;box-shadow:3px 3px #557a4e;font-size:16px;margin:0}
+#coachReplay{background:transparent;color:#e4f0cd;border:1px solid #7a9e86;flex:1}
+.coach-actions button:disabled{opacity:.55;cursor:default}.coach-actions button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+#lessonHud[data-outcome=success]{border-top-color:#daf58e!important}#lessonHud[data-outcome=retry]{border-top-color:#f2c984!important}
+.coach-paused .gesture-finger,.coach-paused .finger-touch{animation-play-state:paused}
+#gameDialog .lesson-mode .pause-overlay{position:fixed;inset:0;width:100%;height:100%;max-height:none;z-index:20}
+@keyframes coach-drag{0%,18%{transform:translate(var(--finger-sx),var(--finger-sy));opacity:0}22%,32%{transform:translate(var(--finger-sx),var(--finger-sy));opacity:1}70%,82%{transform:translate(var(--finger-ex),var(--finger-ey));opacity:1}94%,100%{transform:translate(var(--finger-ex),var(--finger-ey));opacity:0}}
+@keyframes coach-touch{0%,22%,85%,100%{opacity:0}30%,72%{opacity:1}}
+@media(min-width:780px) and (orientation:landscape){#gameDialog .play-area.lesson-mode{grid-template-areas:'score score' 'stage lesson';grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:46px minmax(0,1fr)}#gameDialog .lesson-mode #lessonHud{max-height:none;align-self:stretch;display:flex;flex-direction:column;justify-content:center;border-top:0;border-left:3px solid #b5ce8d}.coach-demo svg{height:130px;width:170px}.coach-demo{flex-direction:column;gap:0}.coach-demo span{max-width:none}.coach-actions{flex-direction:column;align-items:stretch}}
+@media(max-height:540px) and (orientation:landscape){#gameDialog .play-area.lesson-mode{grid-template-areas:'stage lesson';grid-template-columns:minmax(0,1fr) 310px;grid-template-rows:minmax(0,1fr)}#gameDialog .lesson-mode .scoreboard{grid-area:auto;position:absolute;top:0;left:0;z-index:2;width:calc(100% - 310px);background:#102f2caa}#gameDialog .lesson-mode #lessonHud{max-height:100%;padding:10px;display:block}#gameDialog #lessonHud #lessonTitle{font-size:21px}#gameDialog #lessonHud #lessonText{font-size:16px}.coach-demo{flex-direction:row}.coach-demo svg{height:68px;width:105px}.coach-actions{flex-direction:row}.coach-actions button{font-size:12px!important;min-height:44px}}
+@media(prefers-reduced-motion:reduce){.gesture-finger,.gesture-finger .finger-touch{animation:none}.gesture-finger{transform:translate(var(--finger-ex),var(--finger-ey))}}
+@media(max-height:540px) and (orientation:landscape){#gameDialog #playArea.lesson-mode{grid-template-areas:'score lesson' 'stage lesson';grid-template-rows:46px minmax(0,1fr)}#gameDialog #playArea.lesson-mode .scoreboard{grid-area:score;position:static;width:100%;height:46px;min-height:0}}
+@media(max-height:680px) and (orientation:portrait){#gameDialog .lesson-mode #lessonHud{padding:10px 14px max(10px,env(safe-area-inset-bottom))}.coach-demo svg{height:64px;width:104px}#gameDialog #lessonHud #lessonFeedback{font-size:13px}}

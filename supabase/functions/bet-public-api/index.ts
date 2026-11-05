@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js@2.112.3/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import { appCorsHeaders } from "../_shared/cors.ts";
 import { derivePredictionAccessCode, sendPredictionAccessEmail } from "../_shared/prediction-access-email.ts";
+import { releasedPredictionWindow } from "../_shared/prediction-release-window.ts";
 
 type Row = Record<string, any>;
 type DbClient = SupabaseClient<any, "public", "public", any>;
@@ -268,30 +269,70 @@ function asIsoFromMatch(match: Row, tournament: Row) {
   return `${match.match_date}T${String(match.match_time).slice(0, 8)}${offset}`;
 }
 
-function predictionWindow(match: Row, tournament: Row) {
-  const timezone = String(tournament.timezone || "America/Sao_Paulo");
-  const offset = timezone === "America/Sao_Paulo" ? "-03:00" : "";
+function dateInTournamentTimezone(value: unknown, tournament: Row) {
+  const date = new Date(String(value || ""));
+  if (Number.isNaN(date.getTime())) return "";
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: String(tournament.timezone || "America/Sao_Paulo"),
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+  } catch (_error) {
+    return date.toISOString().slice(0, 10);
+  }
+}
+
+function matchAgendaDay(match: Row, tournament: Row) {
+  if (match.match_date) return String(match.match_date).slice(0, 10);
+  return match.scheduled_at ? dateInTournamentTimezone(match.scheduled_at, tournament) : "";
+}
+
+function predictionDayCutoffs(matches: Row[], tournament: Row) {
+  const cutoffs = new Map<string, string>();
+  for (const match of matches) {
+    const day = matchAgendaDay(match, tournament);
+    const exactTime = asIsoFromMatch(match, tournament);
+    const status = String(match.status || "").toUpperCase();
+    if (!day || !exactTime || status === "CANCELLED") continue;
+    const timestamp = new Date(exactTime).getTime();
+    if (!Number.isFinite(timestamp)) continue;
+    const current = cutoffs.get(day);
+    if (!current || timestamp < new Date(current).getTime()) {
+      cutoffs.set(day, new Date(timestamp).toISOString());
+    }
+  }
+  return cutoffs;
+}
+
+function predictionWindow(match: Row, tournament: Row, dayCutoffs: Map<string, string>) {
   const scheduledAt = asIsoFromMatch(match, tournament);
-  const reference = scheduledAt || (match.match_date ? `${match.match_date}T00:00:00${offset}` : "");
-  const referenceMs = reference ? new Date(reference).getTime() : Number.NaN;
+  const released = releasedPredictionWindow(match, matchAgendaDay(match, tournament), scheduledAt, String(tournament.timezone || "America/Sao_Paulo"));
+  if (released) return released;
+  const closesAt = dayCutoffs.get(matchAgendaDay(match, tournament)) || "";
+  const closesAtMs = closesAt ? new Date(closesAt).getTime() : Number.NaN;
   return {
     scheduledAt,
-    opensAt: Number.isFinite(referenceMs) ? new Date(referenceMs - 24 * 60 * 60 * 1000).toISOString() : "",
+    closesAt,
+    opensAt: Number.isFinite(closesAtMs) ? new Date(closesAtMs - 24 * 60 * 60 * 1000).toISOString() : "",
   };
 }
 
-function isMatchLocked(match: Row, tournament: Row) {
+function isMatchLocked(match: Row, tournament: Row, dayCutoffs: Map<string, string>) {
   const status = String(match.status || "").toUpperCase();
   if (!["PENDING", "SCHEDULED"].includes(status) || match.started_at || match.finished_at || match.winner_athlete_id) return true;
-  const window = predictionWindow(match, tournament);
+  const window = predictionWindow(match, tournament, dayCutoffs);
   if (!window.opensAt || Date.now() < new Date(window.opensAt).getTime()) return true;
-  return window.scheduledAt ? new Date(window.scheduledAt).getTime() <= Date.now() : false;
+  return !window.closesAt || new Date(window.closesAt).getTime() <= Date.now();
 }
 
-function matchLockReason(match: Row, tournament: Row) {
-  const window = predictionWindow(match, tournament);
+function matchLockReason(match: Row, tournament: Row, dayCutoffs: Map<string, string>) {
+  const window = predictionWindow(match, tournament, dayCutoffs);
   if (window.opensAt && Date.now() < new Date(window.opensAt).getTime()) return "UPCOMING";
-  return isMatchLocked(match, tournament) ? "CLOSED" : null;
+  return isMatchLocked(match, tournament, dayCutoffs) ? "CLOSED" : null;
 }
 
 function campaignAcceptsPredictions(campaign: Row) {
@@ -322,7 +363,7 @@ function assertNoError(error: Row | null) {
 async function selectCampaign(client: DbClient, tournamentSlug: string) {
   let tournament: Row | null = null;
   if (tournamentSlug) {
-    const tournamentResult = await client.from("tournaments").select("id,name,slug,logo_url,cover_url,status,is_published,starts_on,ends_on,timezone")
+    const tournamentResult = await client.from("tournaments").select("id,name,slug,logo_url,cover_url,status,is_published,starts_on,ends_on,timezone,whatsapp")
       .eq("slug", tournamentSlug).eq("is_published", true).neq("status", "ARCHIVED").maybeSingle();
     assertNoError(tournamentResult.error);
     tournament = tournamentResult.data as Row | null;
@@ -347,7 +388,7 @@ async function selectCampaign(client: DbClient, tournamentSlug: string) {
 
   const tournamentIds = [...new Set(orderedCampaigns.map((row) => row.tournament_id).filter(Boolean))];
   if (tournamentIds.length) {
-    const tournamentResult = await client.from("tournaments").select("id,name,slug,logo_url,cover_url,status,is_published,starts_on,ends_on,timezone")
+    const tournamentResult = await client.from("tournaments").select("id,name,slug,logo_url,cover_url,status,is_published,starts_on,ends_on,timezone,whatsapp")
       .in("id", tournamentIds).eq("is_published", true).neq("status", "ARCHIVED");
     assertNoError(tournamentResult.error);
     const tournaments = new Map(((tournamentResult.data || []) as Row[]).map((row) => [String(row.id), row]));
@@ -382,7 +423,7 @@ function calculateRanking(entries: Row[], predictions: Row[], matchMap: Map<stri
       predictions: entryPredictions.length,
       joined_at: entry.created_at,
     };
-  }).sort((left, right) => right.score - left.score || right.settled - left.settled ||
+  }).sort((left, right) => right.score - left.score || left.settled - right.settled ||
     String(left.joined_at).localeCompare(String(right.joined_at)) || String(left.entry_id).localeCompare(String(right.entry_id)))
     .map((row, index) => ({ ...row, position: index + 1 }));
 }
@@ -407,20 +448,31 @@ async function loadSnapshot(client: DbClient, tournamentSlug: string, participan
   const [categoryResult, matchResult, entryResult, predictionResult] = await Promise.all([
     client.from("tournament_categories").select("id,name,sort_order").eq("tournament_id", tournament.id)
       .eq("active", true).eq("is_published", true).order("sort_order").order("name"),
-    client.from("tournament_matches").select("id,category_id,round_no,round_code,phase,match_no,side1_athlete_id,side2_athlete_id,winner_athlete_id,score,court_name,match_date,match_time,scheduled_at,started_at,finished_at,status,sort_order,published")
+    client.from("tournament_matches").select("id,category_id,round_no,round_code,phase,match_no,side1_athlete_id,side2_athlete_id,winner_athlete_id,score,court_name,match_date,match_time,scheduled_at,started_at,finished_at,status,sort_order,published,prediction_opened_at,prediction_opened_on")
       .eq("tournament_id", tournament.id).eq("published", true).order("sort_order").order("round_no").order("match_no"),
     client.from("tournament_prediction_entries").select("id,public_name,status,created_at").eq("campaign_id", campaign.id),
     client.from("tournament_predictions").select("id,entry_id,match_id,predicted_winner_athlete_id,created_at,updated_at").eq("campaign_id", campaign.id),
   ]);
   [categoryResult.error, matchResult.error, entryResult.error, predictionResult.error].forEach(assertNoError);
-  const matches = ((matchResult.data || []) as Row[]).filter((match) => match.side1_athlete_id && match.side2_athlete_id);
-  const athleteIds = [...new Set(matches.flatMap((match) => [match.side1_athlete_id, match.side2_athlete_id, match.winner_athlete_id]).filter(Boolean))];
+  const completeMatches = ((matchResult.data || []) as Row[]).filter((match) => match.side1_athlete_id && match.side2_athlete_id);
+  const dayCutoffs = predictionDayCutoffs(completeMatches, tournament);
+  const matches = completeMatches.filter((match) => {
+    const day = matchAgendaDay(match, tournament);
+    const status = String(match.status || "").toUpperCase();
+    return Boolean(day && (dayCutoffs.has(day) || match.prediction_opened_on === day) && ["PENDING", "SCHEDULED"].includes(status));
+  });
+  const participantPredictions = ((predictionResult.data || []) as Row[])
+    .filter((prediction) => prediction.entry_id === participant?.entry.id);
+  const athleteIds = [...new Set([
+    ...completeMatches.flatMap((match) => [match.side1_athlete_id, match.side2_athlete_id, match.winner_athlete_id]),
+    ...participantPredictions.map((prediction) => prediction.predicted_winner_athlete_id),
+  ].filter(Boolean))];
   const athleteResult = athleteIds.length
     ? await client.from("tournament_athletes").select("id,full_name,nickname").in("id", athleteIds)
     : { data: [], error: null };
   assertNoError(athleteResult.error as Row | null);
   const athleteMap = new Map(((athleteResult.data || []) as Row[]).map((athlete) => [String(athlete.id), athlete]));
-  const matchMap = new Map(matches.map((match) => [String(match.id), match]));
+  const matchMap = new Map(completeMatches.map((match) => [String(match.id), match]));
   const entries = (entryResult.data || []) as Row[];
   const activeEntryIds = new Set(entries.filter((entry) => entry.status === "ACTIVE").map((entry) => String(entry.id)));
   const predictions = ((predictionResult.data || []) as Row[])
@@ -438,17 +490,40 @@ async function loadSnapshot(client: DbClient, tournamentSlug: string, participan
   const ranking = calculateRanking(entries, predictions, matchMap, campaign);
   const ownPredictions = participant
     ? predictions.filter((prediction) => prediction.entry_id === participant.entry.id)
-      .map((prediction) => ({ match_id: prediction.match_id, winner_athlete_id: prediction.predicted_winner_athlete_id, updated_at: prediction.updated_at }))
+      .map((prediction) => {
+        // History is independent of eligibility for NEW predictions. Never expose
+        // unpublished draws; retain the saved choice with an unavailable marker.
+        const match = matchMap.get(String(prediction.match_id));
+        return {
+          match_id: prediction.match_id,
+          winner_athlete_id: prediction.predicted_winner_athlete_id,
+          winner_name: athleteMap.get(String(prediction.predicted_winner_athlete_id))?.nickname ||
+            athleteMap.get(String(prediction.predicted_winner_athlete_id))?.full_name || "Atleta escolhido",
+          updated_at: prediction.updated_at,
+          match: match ? {
+            id: match.id, category_id: match.category_id,
+            phase: match.round_code || match.phase, match_no: match.match_no,
+            side1: { id: match.side1_athlete_id, name: athleteMap.get(String(match.side1_athlete_id))?.nickname || athleteMap.get(String(match.side1_athlete_id))?.full_name || "Atleta 1" },
+            side2: { id: match.side2_athlete_id, name: athleteMap.get(String(match.side2_athlete_id))?.nickname || athleteMap.get(String(match.side2_athlete_id))?.full_name || "Atleta 2" },
+            status: match.status, winner_athlete_id: isSettledMatch(match) ? match.winner_athlete_id : null,
+            score: match.score, match_date: match.match_date, match_time: match.match_time,
+            court_name: match.court_name, sort_order: match.sort_order, points: pointsForMatch(match, campaign),
+            locked: !campaignAcceptsPredictions(campaign) || isMatchLocked(match, tournament, dayCutoffs),
+          } : null,
+        };
+      })
     : [];
   const acceptingPredictions = campaignAcceptsPredictions(campaign);
   return {
     available: true,
+    server_now: new Date().toISOString(),
     tournament: {
       id: tournament.id,
       name: tournament.name,
       slug: tournament.slug,
       logo_url: tournament.logo_url,
       cover_url: tournament.cover_url,
+      whatsapp: tournament.whatsapp,
       starts_on: tournament.starts_on,
       ends_on: tournament.ends_on,
     },
@@ -472,7 +547,7 @@ async function loadSnapshot(client: DbClient, tournamentSlug: string, participan
       const side1 = athleteMap.get(String(match.side1_athlete_id));
       const side2 = athleteMap.get(String(match.side2_athlete_id));
       const total = totals.get(match.id) || { total: 0, side1: 0, side2: 0 };
-      const window = predictionWindow(match, tournament);
+      const window = predictionWindow(match, tournament, dayCutoffs);
       return {
         id: match.id,
         category_id: match.category_id,
@@ -485,13 +560,15 @@ async function loadSnapshot(client: DbClient, tournamentSlug: string, participan
         winner_athlete_id: match.winner_athlete_id,
         score: match.score,
         court_name: match.court_name,
+        sort_order: match.sort_order,
         match_date: match.match_date,
         match_time: match.match_time ? String(match.match_time).slice(0, 5) : null,
         scheduled_at: asIsoFromMatch(match, tournament) || null,
         prediction_opens_at: window.opensAt || null,
+        prediction_closes_at: window.closesAt || null,
         status: match.status,
-        locked: !acceptingPredictions || isMatchLocked(match, tournament),
-        lock_reason: acceptingPredictions ? matchLockReason(match, tournament) : "CLOSED",
+        locked: !acceptingPredictions || isMatchLocked(match, tournament, dayCutoffs),
+        lock_reason: acceptingPredictions ? matchLockReason(match, tournament, dayCutoffs) : "CLOSED",
         points: pointsForMatch(match, campaign),
       };
     }),
@@ -517,9 +594,9 @@ function mapDatabaseError(error: unknown): never {
   if (message.includes("campaign_not_found")) throw new ApiError("Palpite Ilha não encontrado.", 404, "campaign_not_found");
   if (message.includes("invalid_access")) throw new ApiError("Código ou cadastro não encontrado.", 401, "invalid_access");
   if (message.includes("entry_blocked")) throw new ApiError("Este cadastro está bloqueado. Fale com a organização.", 403, "entry_blocked");
-  if (message.includes("match_unavailable")) throw new ApiError("Este jogo ainda não está disponível para palpite.", 409, "match_unavailable");
-  if (message.includes("prediction_locked")) throw new ApiError("O jogo já começou ou o horário do palpite encerrou.", 409, "prediction_locked");
-  if (message.includes("prediction_not_open")) throw new ApiError("Este jogo abre para palpites 24 horas antes do horário marcado.", 409, "prediction_not_open");
+  if (message.includes("match_unavailable")) throw new ApiError("Este jogo ainda não está agendado para palpite.", 409, "match_unavailable");
+  if (message.includes("prediction_locked")) throw new ApiError("O prazo para palpitar neste jogo encerrou ou a partida já começou.", 409, "prediction_locked");
+  if (message.includes("prediction_not_open")) throw new ApiError("Os jogos deste dia abrem para palpites 24 horas antes do primeiro horário.", 409, "prediction_not_open");
   if (message.includes("request_conflict")) {
     throw new ApiError("Esta tentativa já foi usada com dados diferentes. Revise os dados e tente novamente.", 409, "request_conflict");
   }

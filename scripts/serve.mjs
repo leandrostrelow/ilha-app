@@ -32,8 +32,10 @@ function cleanPathname(rawUrl) {
 }
 
 function rewrittenPath(pathname) {
+  if (pathname === '/aulas' || pathname === '/aulas/') return '/aulas.html';
   if (pathname === '/favicon.ico') return '/icon.png';
   if (/^\/inscricoes\/[^/]+\/espacial(?:-convite)?\/?$/.test(pathname)) return '/inscricoes/espacial/index.html';
+  if (/^\/eventos(?:\/[^/]+)?\/?$/.test(pathname)) return '/eventos/index.html';
   if (/^\/(?:torneios|inscricoes)\/[^/]+(?:\/.*)?$/.test(pathname)) return '/torneios/index.html';
   if (pathname === '/torneios' || pathname === '/inscricoes') return '/torneios/index.html';
   if (pathname === '/menu' || pathname === '/cardapio') return '/menu/index.html';

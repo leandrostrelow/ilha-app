@@ -1,0 +1,240 @@
+/* Quiet retro finish: static grain, no repainting animation or blocked touches. */
+.game-launch::before,#gameDialog::after{content:'';position:absolute;inset:0;z-index:30;pointer-events:none;opacity:.045;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23fff' filter='url(%23g)' d='M0 0h96v96H0z'/%3E%3C/svg%3E");border-radius:inherit}
+#gameDialog .dialog-header{min-height:44px;background:#112a26}#dialogTitle>span{display:none!important}
+#gameDialog #fullscreenButton span{display:none}#gameDialog .dialog-header .icon-button{background:transparent;border-color:#d6dfca30;min-width:44px}
+#gameDialog .world-topbar{height:44px;background:#162f27;padding:0 12px;border:0}.world-location small,.world-location .live-dot,#changeCharacter,#openMap,#miniMapButton,.world-footer{display:none!important}
+#gameDialog .world-location strong{font:12px monospace;letter-spacing:0}.world-tools button{background:transparent;border:0}
+#gameDialog .world-mission{top:10px;left:12px;padding:0;border:0;box-shadow:none;background:none;max-width:none}
+#gameDialog .world-mission #missionButton{margin:0;padding:8px 12px;min-height:44px;background:#122c2466;border:1px solid #f2f2da80;border-radius:20px;font:12px monospace;color:#fff5da}
+#gameDialog .walk-pad#walkPad{width:112px;height:112px;background:#122d2422;border:2px solid #ecefd366;box-shadow:none;filter:none}
+#gameDialog .walk-pad#walkPad button{width:36px;height:36px;color:#faf2dacc;font-size:10px}
+#gameDialog #walkPad button:nth-child(1){left:36px;top:0}#gameDialog #walkPad button:nth-child(2){left:0;top:36px}#gameDialog #walkPad button:nth-child(4){right:0;top:36px}#gameDialog #walkPad button:nth-child(5){left:36px;bottom:0}
+#gameDialog #walkPad .joystick-knob{left:37px;top:37px;width:34px;height:34px;background:#e6ecc340;border:1px solid #fff9c999;box-shadow:none}
+#gameDialog .world-controls{left:18px;right:22px;bottom:22px}#nearbyHint{display:none}
+#gameDialog #interactButton{border-radius:50%;width:62px;height:62px;min-height:62px;padding:0;background:#af4d5c22;border:2px solid #efbbc088;box-shadow:none;color:#ffced3;font:bold 24px monospace;text-shadow:0 2px 3px #152319}
+#gameDialog #interactButton:disabled{opacity:.28}
+#gameDialog .world-story{max-width:510px;background:#142b27f5;color:#f3efd9;border:1px solid #b1c7b4;box-shadow:0 8px 32px #001c1c77;border-radius:10px;padding:18px;bottom:14px}
+#gameDialog .story-head h2{font:700 20px monospace;margin-top:0;color:#f3efd9}.story-head span{display:none}.story-head canvas{background:none;border:0}
+#gameDialog .world-story>p{font-size:14px;line-height:1.55;color:#f3efd9}.story-actions button{min-height:44px}.story-head{margin-bottom:8px}
+#gameDialog .world-story .story-actions button,#gameDialog #closeStory{background:#eff5dc10;color:#f3efd9;border:1px solid #d0dfbd55}
+#gameDialog .world-story .story-actions .primary{background:#d2ed98;color:#183d30;border-color:#e5f3c0;box-shadow:none}
+#gameDialog .play-area{position:relative;grid-template-areas:'lesson' 'score' 'stage' 'controls';grid-template-rows:auto 42px minmax(0,1fr) 174px;grid-template-columns:minmax(0,1fr)}
+#gameDialog .match-stats>span,#gameDialog .shot-status,#gameDialog .game-hint,#gameDialog .court-camera-bar,#gameDialog .special{display:none!important}
+#gameDialog .scoreboard{min-height:42px;padding:0 14px;background:#16352b;font:11px monospace}#gameDialog #matchScore{font-size:24px}
+#gameDialog .scoreboard>div:first-child>span{font-size:10px;max-width:110px}
+#gameDialog .tennis-controls{position:relative;align-items:center;justify-content:space-between;display:flex;gap:15px;width:100%;max-width:640px;padding:8px 22px;background:transparent}
+#gameDialog .shot-buttons{display:grid;grid-template:repeat(3,50px)/repeat(3,50px);gap:0;flex:none}
+#gameDialog .shot-button{display:flex;flex-direction:column;justify-content:center;gap:0;width:50px;height:50px;min-height:50px;padding:0;border-radius:50%;background:transparent;border:2px solid currentColor;box-shadow:none;color:var(--pad-color);text-shadow:0 2px 4px #0008;touch-action:manipulation}
+#gameDialog .shot-button b{font:700 22px/1 monospace}#gameDialog .shot-button small{display:block;font:8px/1.6 monospace;color:#f5f1dd}
+.snes-x{grid-area:1/2;--pad-color:#8eaff2}.snes-y{grid-area:2/1;--pad-color:#88d5a5}.snes-a{grid-area:2/3;--pad-color:#f2a0a9}.snes-b{grid-area:3/2;--pad-color:#eddc82}
+#gameDialog .shot-button[aria-pressed=true]{background:#ffffff12;box-shadow:0 0 0 3px #ffffff0a}#gameDialog .shot-button:disabled{opacity:.25}
+#gameDialog .shot-button.lesson-target{border-color:#fff9cc;box-shadow:0 0 0 4px #fff4b72a;animation:none}
+#gameDialog .move-buttons{gap:10px}#gameDialog .move-buttons button{border-radius:50%;border:2px solid #e3e9d077;background:transparent;color:#e3e9d0;width:48px;height:48px;font:20px monospace}
+#gameDialog .lesson-hud{background:linear-gradient(110deg,#1c3c31,#132e2b);padding:8px 14px;border:0;border-left:3px solid #ddeb98}#lessonTitle{font:11px monospace;color:#e7efa8}#lessonText{font-size:12px;line-height:1.35;margin-top:3px}#lessonFeedback{display:block;min-height:16px;margin-top:4px;font:10px/1.5 monospace;color:#adcdb8}
+#gameDialog .match-stage,#gameDialog .pickle-stage{background:radial-gradient(ellipse at center,#25483b,#102c29 80%)}
+#gameDialog .court-shell,#gameDialog #pickleCanvas{box-shadow:0 0 0 1px #dbecc029,0 12px 50px #001c224d}
+#gameDialog .scoreboard,#gameDialog .pickle-header{border-bottom:1px solid #dcdfb733;box-shadow:0 2px 0 #092c25}#gameDialog #matchScore,#gameDialog #pickleScore{color:#f3efc6;text-shadow:0 2px #102b27;font-family:monospace}
+#gameDialog .pickle-note{display:none}#gameDialog .pickle-controls button{background:transparent;border:2px solid #e9ebcb80;color:#e9ebcb;border-radius:50%;min-width:50px;height:50px;min-height:50px}#gameDialog #pickleServe{width:50px;min-width:50px;padding:0;font:700 22px monospace;color:#eddc82;border-color:#eddc82}#pickleStatus{font:11px monospace}
+@media(max-width:640px){.launch-copy .game-title-mark{max-width:220px}.launch-copy{top:18px}}
+@media(max-height:700px) and (orientation:portrait){#gameDialog .play-area{grid-template-rows:auto 36px minmax(0,1fr) 150px}#gameDialog .shot-buttons{grid-template:repeat(3,44px)/repeat(3,44px)}#gameDialog .shot-button{width:44px;height:44px;min-height:44px}}
+@media(max-height:580px) and (orientation:landscape){#gameDialog .play-area{grid-template-areas:'stage lesson' 'stage score' 'stage controls';grid-template-columns:minmax(0,1fr) 240px;grid-template-rows:auto 38px minmax(0,1fr)}#gameDialog .tennis-controls{padding:6px;gap:8px}#gameDialog .move-buttons{flex-direction:column;gap:8px}}
+/* Four-axis control; transparent surfaces preserve the retro controller feel. */
+#gameDialog .manual-match .court-shell{width:100%!important;height:100%!important}
+#gameDialog .match-pad{position:relative;flex:none;width:112px;height:112px;border:1px solid #cbdcc076;border-radius:50%;background:#e1ecd908;touch-action:none;user-select:none;color:#e5efd4;font:12px monospace}
+#gameDialog .match-pad[hidden],#gameDialog .move-buttons[hidden]{display:none}
+.match-pad>span{position:absolute;pointer-events:none}.match-pad .pad-up{top:9px;left:48px}.match-pad .pad-down{bottom:9px;left:48px}.match-pad .pad-left{top:48px;left:9px}.match-pad .pad-right{top:48px;right:9px}
+.match-pad .match-stick{left:37px;top:37px;width:36px;height:36px;border:1px solid #e5f3ca88;border-radius:50%;background:#e8f8dd25}
+#gameDialog .pickle-controls{justify-content:space-between;align-items:center;max-width:640px;width:100%;margin:auto;padding:8px 22px}
+#gameDialog .pickle-controls .shot-button{min-width:0;width:50px;height:50px;min-height:50px;border-color:var(--pad-color);color:var(--pad-color);padding:0}
+#gameDialog .pickle-area #pickleStatus{min-height:20px;padding:3px 8px}
+#gameDialog .pickle-header{padding:6px 15px}#gameDialog .pickle-header strong{font-size:24px;margin:2px}
+#gameDialog .pickle-area #pickleExit{padding:5px;margin-bottom:2px;min-height:32px}
+@media(max-width:360px),(max-height:580px) and (orientation:landscape){#gameDialog .match-pad{width:92px;height:92px}.match-pad .pad-up,.match-pad .pad-down{left:38px}.match-pad .pad-left,.match-pad .pad-right{top:38px}.match-pad .match-stick{left:27px;top:27px}#gameDialog .pickle-controls{padding:5px;gap:4px}#gameDialog .pickle-controls .shot-buttons,#gameDialog .tennis-controls .shot-buttons{grid-template:repeat(3,44px)/repeat(3,44px)}#gameDialog .pickle-controls .shot-button,#gameDialog .tennis-controls .shot-button{width:44px;height:44px;min-height:44px}}
+@media(max-height:580px) and (orientation:landscape){#gameDialog .pickle-area{grid-template-columns:minmax(0,1fr) 240px}}
+/* Thumb-sized controls. Keep the SNES diamond, without shrinking touch targets. */
+#gameDialog{--shot-size:68px;--stick-size:136px;--control-height:220px}
+#gameDialog .play-area{grid-template-rows:auto 42px minmax(0,1fr) var(--control-height)}
+#gameDialog .tennis-controls,#gameDialog .pickle-controls{padding:8px 16px;gap:12px;touch-action:none}
+#gameDialog .tennis-controls .shot-buttons,#gameDialog .pickle-controls .shot-buttons{grid-template:repeat(3,var(--shot-size))/repeat(3,var(--shot-size));gap:0}
+#gameDialog .tennis-controls .shot-button,#gameDialog .pickle-controls .shot-button{width:var(--shot-size);height:var(--shot-size);min-height:var(--shot-size);min-width:0;border:2px solid var(--pad-color);background:#ffffff08;touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none;transition:background .08s,box-shadow .08s,transform .08s}
+#gameDialog .shot-button b{font-size:29px}
+#gameDialog #pickleServe{width:var(--shot-size);min-width:0}
+#gameDialog .shot-button small{font-size:10px;line-height:1.6}
+#gameDialog .shot-button:active,#gameDialog .shot-button.is-pressing{background:#ffffff30;box-shadow:0 0 0 4px #ffffff18,inset 0 0 14px #ffffff25;transform:scale(.95)}
+#gameDialog .match-pad{width:var(--stick-size);height:var(--stick-size);border-width:2px;background:#ffffff08;font-size:16px;-webkit-tap-highlight-color:transparent}
+#gameDialog .match-pad .pad-up,#gameDialog .match-pad .pad-down{left:calc(50% - 8px)}
+#gameDialog .match-pad .pad-left,#gameDialog .match-pad .pad-right{top:calc(50% - 8px)}
+#gameDialog .match-pad .match-stick{width:44px;height:44px;left:calc(50% - 22px);top:calc(50% - 22px);background:#e8f8dd30}
+@media(max-width:400px){#gameDialog{--shot-size:64px;--stick-size:124px;--control-height:208px}#gameDialog .tennis-controls,#gameDialog .pickle-controls{padding-inline:12px;gap:8px}}
+@media(max-width:350px){#gameDialog{--shot-size:58px;--stick-size:112px;--control-height:190px}#gameDialog .tennis-controls,#gameDialog .pickle-controls{padding-inline:8px}}
+@media(max-height:580px) and (orientation:landscape){
+ #gameDialog{--shot-size:60px;--stick-size:112px;--control-height:196px}
+ #gameDialog .play-area{grid-template-columns:minmax(0,1fr) 320px;grid-template-rows:auto 38px minmax(0,1fr)}
+ #gameDialog .pickle-area{grid-template-columns:minmax(0,1fr) 320px}
+ #gameDialog .tennis-controls,#gameDialog .pickle-controls{padding:5px 8px;gap:8px}
+}
+@media(prefers-reduced-motion:reduce){#gameDialog .shot-button{transition:none}}
+/* Compact cartridge panels instead of a full-height sheet of paper. */
+.assisted-match .tennis-controls::before,.pickle-controls::before{content:'↑ Saque · ↓ Topspin\A ↔ Slice · Toque: deixada';white-space:pre-line;color:#e7efd8;font:700 14px/1.6 monospace;max-width:100%;text-align:center}
+#gameDialog .pickle-controls::before{content:'→ Saque · ← Topspin\A ↕ Slice · Toque: deixada'}
+#gameDialog .assisted-match .shot-buttons,#gameDialog .pickle-controls .shot-buttons{display:none}
+#gameDialog .assisted-match{--control-height:60px}
+#gameDialog .assisted-match .tennis-controls,#gameDialog .pickle-controls{justify-content:center;min-height:40px}
+@media(max-height:580px) and (orientation:landscape){#gameDialog .assisted-match,#gameDialog .pickle-area{grid-template-columns:minmax(0,1fr) 190px}}
+#gameDialog .assisted-match .movement-column{display:none}
+#gameDialog .shot-button.is-selected{background:#ffffff18;box-shadow:inset 0 0 0 3px #ffffff12}
+#gameDialog>#legacyProfile,#gameDialog>#legacyInfo{flex:0 1 auto;width:calc(100% - 32px);max-width:540px;min-height:0;max-height:calc(100% - 76px);margin:auto;padding:22px;background:#112d2b;color:#f6efcf;border:3px solid #94ae83;box-shadow:0 0 0 3px #071d20,6px 6px 0 #071d20;font-family:ui-monospace,monospace;scroll-padding:16px}
+#gameDialog #legacyProfile h2,#gameDialog #legacyInfo h2{font:800 clamp(20px,4vw,26px)/1.2 ui-monospace,monospace;letter-spacing:-.5px;color:#fff0c6;margin:8px 0 12px;text-shadow:2px 2px #061c20}
+#gameDialog #legacyProfile p,#gameDialog #legacyInfo p{font:13px/1.6 ui-monospace,monospace;color:#d2ddc3}
+#gameDialog #legacyProfile .eyebrow,#gameDialog #legacyInfo .eyebrow{font-size:10px;color:#cce779;letter-spacing:1.6px}
+#gameDialog #legacyProfile .profile-choices{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:none;margin:16px 0}
+#gameDialog #legacyProfile .profile-choices button{position:relative;width:100%;border:2px solid #698a77;border-radius:0;background:#183b33;color:#fff0c6;padding:10px;font:700 13px ui-monospace,monospace;box-shadow:3px 3px #061f22}
+#gameDialog #legacyProfile .profile-choices button[aria-pressed=true]{border-color:#d6ef87;background:#244936;box-shadow:0 0 0 2px #819c52,3px 3px #061f22}
+#gameDialog #legacyProfile .profile-choices button[aria-pressed=true]::after{content:'★';position:absolute;top:7px;right:9px;color:#d6ef87}
+#gameDialog #legacyProfile .profile-choices canvas{height:112px;width:90px;max-width:100%}
+#gameDialog #legacyProfile .profile-choices small{color:#b8c9ac;font:10px/1.4 ui-monospace,monospace;margin:5px 0 0}
+#gameDialog #legacyProfile label{font-size:12px}
+#gameDialog #legacyProfile input{max-width:none;border-radius:0;border:2px solid #8fa680;background:#071f25;color:#fff4d2;font:16px ui-monospace,monospace;padding:12px;margin:8px 0 12px;min-height:46px}
+#gameDialog #legacyProfile input::placeholder{color:#a9bfae}
+#gameDialog #legacyProfile #profileWarning{font-size:11px;color:#f0ce92;margin-bottom:12px}
+#gameDialog #profileWarning:empty{display:none}
+#gameDialog #legacyProfile .primary,#gameDialog #legacyInfo .primary{border:2px solid #dce7ad;border-radius:0;background:#cde887;color:#18382c;font:700 12px/1.5 ui-monospace,monospace;min-height:46px;box-shadow:3px 3px #526b43;padding:10px 14px}
+#gameDialog #profileSubmit{width:100%}
+#gameDialog #legacyProfile .text-button{display:block;margin:12px auto 0;color:#d4dfc7;font:12px ui-monospace,monospace;min-height:44px}
+#gameDialog #legacyInfoActions{display:grid;gap:12px;margin-top:20px}
+#gameDialog #legacyInfoActions .primary:not(:first-child){background:#183b33;color:#f6efcf;border-color:#849d79;box-shadow:3px 3px #071f22}
+@media(max-width:400px){#gameDialog>#legacyProfile,#gameDialog>#legacyInfo{width:calc(100% - 20px);padding:16px}#gameDialog #legacyProfile .profile-choices{gap:10px}}
+@media(max-height:580px) and (orientation:landscape){#gameDialog>#legacyProfile,#gameDialog>#legacyInfo{margin:10px auto;max-height:calc(100% - 66px);padding:16px}#gameDialog #legacyProfile .profile-choices canvas{height:80px;width:64px}}
+/* Court first, compact scoreboard and gesture cards underneath. */
+#gameDialog .assisted-match{grid-template-areas:'lesson' 'stage' 'score' 'controls';grid-template-rows:auto minmax(0,1fr) 64px 120px;grid-template-columns:minmax(0,1fr)}
+#gameDialog .pickle-area{position:relative;grid-template-areas:'stage' 'score' 'controls' 'exit';grid-template-rows:minmax(0,1fr) 64px 120px 32px;grid-template-columns:minmax(0,1fr)}
+#gameDialog #pickleStatus{display:none}
+#gameDialog .scoreboard,#gameDialog .pickle-header{border:0;border-top:2px solid #bed58555;background:#0a2527;padding:8px 14px;box-shadow:inset 0 -1px #c3da9b22;min-height:64px}
+#gameDialog .scoreboard>div:first-child{flex:1;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px}
+#gameDialog .scoreboard>div:first-child>span{font:bold 11px monospace;max-width:none}
+#gameDialog .scoreboard>div:first-child>span:last-child{grid-column:3;grid-row:1;text-align:right}
+#gameDialog #matchScore{grid-column:2;grid-row:1;font-size:28px;letter-spacing:3px;color:#e0f6a0}
+#gameDialog .pickle-header>div{display:flex;align-items:center;gap:16px;flex:1}#gameDialog .pickle-header span{font:bold 10px/1.4 monospace;max-width:130px}#gameDialog #pickleScore{font-size:28px;color:#e0f6a0;white-space:nowrap}
+#gameDialog .assisted-match .tennis-controls::before,#gameDialog .pickle-controls::before{content:none}
+.gesture-guide{display:none}
+#gameDialog .assisted-match .gesture-guide,#gameDialog .pickle-controls .gesture-guide{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;width:100%;font:10px/1.3 monospace;color:#f4eed3;text-align:center}
+.gesture-guide>span{padding:6px 2px;border:1px solid #c8dc9a42;background:#163a3480;border-radius:4px}.gesture-guide b{display:block;font:700 23px/1.2 monospace;color:#d4ee93}.gesture-guide small{grid-column:1/-1;font:10px monospace;color:#bacbb4;padding-top:2px}
+#gameDialog .pickle-stage{position:relative}
+#gameDialog .pause-overlay{z-index:5;gap:16px;padding:24px;background:#081d27ec;border:3px solid #b7ce86;box-shadow:inset 0 0 0 5px #143c34;backdrop-filter:blur(3px);text-align:center;overflow:auto}
+#gameDialog .pause-overlay h2{font:bold clamp(19px,4vw,28px)/1.3 monospace;color:#fff0c6;max-width:290px;text-shadow:2px 2px #000}
+#gameDialog .pause-overlay .eyebrow{font:10px monospace;color:#bdd99b;letter-spacing:2px}
+#gameDialog .pause-score{font:bold 24px monospace;color:#d6f28d}
+#gameDialog .pause-overlay button{min-height:44px;width:min(100%,260px);border:1px solid #bccf90;border-radius:3px;font:bold 12px monospace;padding:12px;background:#173a35;color:#f3efd3}
+#gameDialog .pause-overlay .primary{background:#d5ed93;color:#14312d;box-shadow:0 4px #71894c}
+@media(max-height:580px) and (orientation:landscape){#gameDialog .assisted-match{grid-template-areas:'lesson lesson' 'stage stage' 'score controls';grid-template-columns:1fr 1fr;grid-template-rows:auto minmax(0,1fr) 116px}#gameDialog .pickle-area{grid-template-areas:'stage stage' 'score controls' 'exit exit';grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,1fr) 116px 30px}#gameDialog .pause-overlay{gap:8px;padding:12px}#gameDialog .pause-overlay .eyebrow{display:none}}
+
+/* Full-height scenery; translucent menus keep the club visible on phones. */
+#gameDialog .legacy-menu{position:relative;background:#102f29;min-height:0}
+#gameDialog .legacy-backdrop{inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 55%;opacity:1}
+#gameDialog .legacy-menu::after{background:linear-gradient(90deg,#062329b8,transparent 85%),linear-gradient(0deg,#071f28a8,transparent 85%)}
+#gameDialog .legacy-menu-copy{width:min(100%,540px);min-height:100%;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:clamp(18px,4vh,36px) clamp(20px,4vw,42px)}
+#gameDialog .legacy-menu-copy .game-title-mark{width:min(76%,310px);height:auto;flex:none;margin:0 0 8px}
+#gameDialog .legacy-menu-buttons{margin:0;gap:7px;width:100%}
+#gameDialog .legacy-menu-buttons button,#gameDialog .free-play-button{min-height:46px;padding:12px 14px;background:#092b369c;border:1px solid #d9e5b86b;border-radius:0;box-shadow:2px 3px #021b2866;font:700 13px/1.25 monospace;color:#fff5cf;backdrop-filter:blur(3px)}
+#gameDialog .legacy-menu-buttons button:first-child{background:#23443bad;border-color:#e4eaba}
+#gameDialog .legacy-menu-buttons button:disabled{opacity:.45}
+#gameDialog .legacy-menu-buttons button:focus:not(:focus-visible){outline:none}
+#gameDialog .legacy-menu-buttons button:focus-visible,#gameDialog .free-play-button:focus-visible{outline:2px solid #daef8b;outline-offset:3px}
+#gameDialog .free-play-button{display:flex;justify-content:space-between;align-items:center;gap:10px;border-color:#d5ee92;background:#26493db3;order:1}
+#gameDialog .free-play-button span{font:11px monospace;color:#d5ee92}
+#gameDialog #legacySaveInfo{font:11px/1.5 monospace;color:#f1eed5;order:2;text-shadow:1px 1px #08232b;margin:0}
+#gameDialog .legacy-menu-copy .install-shortcut{order:3;margin:0}
+#gameDialog .world-story{max-width:550px;border:3px solid #dedbb5;border-radius:0;box-shadow:0 0 0 3px #102d2d,inset 0 0 0 3px #456052,5px 7px #071b2780;background:#102b2bec;padding:16px;max-height:calc(100% - 24px);overflow:auto;overscroll-behavior:contain}
+#gameDialog .story-head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+#gameDialog .story-head>div{flex:1;min-width:0}
+#gameDialog .story-head h2{font:bold clamp(16px,4vw,22px)/1.25 monospace;text-shadow:2px 2px #061d25;overflow-wrap:anywhere}
+#gameDialog .story-head span{display:block;font:9px/1.5 monospace;letter-spacing:1px;color:#d4ed96;margin-bottom:5px}
+#gameDialog .story-head canvas{width:54px;height:68px;object-fit:contain;image-rendering:pixelated;flex:none}
+#gameDialog .world-story>p{font:14px/1.65 monospace;margin:12px 0 16px;text-shadow:1px 1px #071c26}
+#gameDialog .world-story .story-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#gameDialog .world-story .story-actions button,#gameDialog #closeStory{font:bold 12px/1.4 monospace;border-radius:0;min-height:44px;padding:10px;border:1px solid #bfce9866;box-shadow:2px 2px #071c26}
+#gameDialog .story-actions button:first-child{grid-column:1/-1}
+#gameDialog .rival-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0 16px}
+#gameDialog .rival-picker button{display:flex;flex-direction:column;align-items:center;padding:8px 4px;gap:5px;background:#31534599;color:#fff2cf;border:1px solid #a4c484;border-radius:0;min-width:0}
+#gameDialog .rival-picker canvas{width:48px;height:60px;image-rendering:pixelated}
+#gameDialog .rival-picker strong{font:bold 12px monospace}
+#gameDialog .rival-picker small{font:9px/1.4 monospace;color:#d1e6af}
+@media(min-width:760px){#gameDialog .legacy-menu-copy{margin-left:4%}}
+@media(max-height:580px) and (orientation:landscape){#gameDialog .legacy-menu-copy{width:100%;max-width:800px;display:grid;grid-template-columns:1fr 1fr;align-content:center;gap:8px 24px;margin:auto;padding:14px 26px}#gameDialog .legacy-menu-copy .game-title-mark{grid-column:1;grid-row:1;width:min(100%,260px)}#gameDialog .legacy-menu-buttons{grid-column:2;grid-row:1/4}#gameDialog .legacy-menu-buttons button{min-height:38px;padding:8px 12px}#gameDialog .free-play-button,#gameDialog #legacySaveInfo{grid-column:1}#gameDialog .rival-picker canvas{height:40px;width:32px}}
+@media(prefers-reduced-motion:no-preference){#gameDialog .legacy-menu-copy{animation:menu-arrive .22s ease-out}@keyframes menu-arrive{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}}
+
+/* Exploration is the full canvas: touch destinations, contextual action. */
+#gameDialog.world-mode>.dialog-header{position:absolute;z-index:7;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));width:auto;min-height:44px;padding:0;background:none;border:0;box-shadow:none;pointer-events:none}
+#gameDialog.world-mode #dialogTitle{display:none}
+#gameDialog.world-mode>.dialog-header>div{gap:5px;pointer-events:auto}
+#gameDialog.world-mode>.dialog-header .icon-button{min-width:44px;min-height:44px;padding:8px;font:10px monospace;background:#102c2859;border:1px solid #e6efd16b;border-radius:18px;color:#fff6d6;backdrop-filter:blur(2px)}
+#gameDialog.world-mode .world-area{position:relative;overflow:hidden}
+#gameDialog.world-mode .world-stage{height:100%}
+#gameDialog .world-topbar{position:absolute;z-index:4;inset:0;height:auto;padding:0;background:none;pointer-events:none}
+#gameDialog .world-topbar .world-tools{position:absolute;top:max(10px,env(safe-area-inset-top));left:max(100px,calc(env(safe-area-inset-left) + 100px));pointer-events:auto}
+#gameDialog #worldMenu{width:44px;height:44px;padding:8px;background:#102c2859;border:1px solid #e6efd16b;border-radius:18px;color:#fff6d6;font:18px monospace;backdrop-filter:blur(2px)}
+#gameDialog .world-mission{top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));z-index:2}
+#gameDialog .world-mission #missionButton{font:11px monospace;padding:8px 10px}
+#gameDialog .world-location{position:absolute;bottom:max(18px,env(safe-area-inset-bottom));left:max(14px,env(safe-area-inset-left));max-width:calc(100% - 170px);padding:6px 8px;background:#0c29284d;border-radius:4px}
+#gameDialog .world-location strong{font:10px/1.4 monospace;color:#fff5d5;text-shadow:1px 2px #14251f}
+#gameDialog #walkPad{display:none!important}
+#gameDialog .world-controls{left:auto;right:max(14px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));max-width:155px}
+#gameDialog .world-interaction{max-width:100%}
+#gameDialog #nearbyHint{display:block;font:10px/1.3 monospace;margin-bottom:6px}
+#gameDialog #interactButton{width:auto;height:auto;min-width:120px;min-height:48px;border:1px solid #e9f4be99;border-radius:18px;padding:12px 16px;background:#163d2d88;color:#f2f7d9;font:bold 12px monospace;text-shadow:1px 1px #13291c;backdrop-filter:blur(2px)}
+#gameDialog #interactButton[hidden]{display:none}
+#gameDialog .walk-tutorial{position:absolute;z-index:2;top:76px;left:50%;transform:translateX(-50%);width:min(300px,calc(100% - 40px));padding:12px 14px;background:#122d267d;border:1px solid #e3edc275;border-radius:4px;color:#fff6db;text-align:center;pointer-events:none;font:11px/1.5 monospace;text-shadow:1px 1px #123126}
+#gameDialog .walk-tutorial b,#gameDialog .walk-tutorial span{display:block}
+#gameDialog .walk-tutorial b{margin-bottom:4px;color:#e0efa6}
+#gameDialog .world-area:has(.world-story:not([hidden])) .walk-tutorial,#gameDialog .world-area:has(.world-map:not([hidden])) .walk-tutorial,#gameDialog .world-area:has(.world-story:not([hidden])) .world-location,#gameDialog .world-controls[inert]{visibility:hidden}
+#gameDialog.world-mode .world-story,#gameDialog.world-mode .world-map{max-height:calc(100% - 90px)}
+
+/* Edge-to-edge world; safe areas protect controls, never paint green gutters. */
+#gameDialog.world-mode{padding:0}
+#gameDialog.world-mode>.dialog-header{top:auto;right:auto;left:calc(50% - 11px);bottom:calc(env(safe-area-inset-bottom) + 12px);height:44px;min-height:44px;width:156px}
+#gameDialog.world-mode>.dialog-header>div{display:flex;align-items:center;gap:6px;width:156px;height:44px}
+#gameDialog.world-mode>.dialog-header .icon-button{display:flex;align-items:center;justify-content:center;flex:0 0 44px;width:44px;height:44px;min-height:44px;margin:0;padding:0;box-sizing:border-box}
+#gameDialog.world-mode>.dialog-header #soundButton{flex-basis:56px;width:56px}
+#gameDialog #fullscreenButton{justify-content:center;gap:0}
+#gameDialog #fullscreenButton svg{display:block;flex:none;width:20px;height:20px;margin:0}
+#gameDialog.world-mode #fullscreenButton{background:#102c2859;border-color:#e6efd16b}
+#gameDialog.world-mode .world-topbar .world-tools{top:auto;left:calc(50% - 61px);bottom:calc(env(safe-area-inset-bottom) + 12px);height:44px}
+#gameDialog.world-mode .world-mission{top:auto;left:calc(50% - 147px);bottom:calc(env(safe-area-inset-bottom) + 12px);height:44px}
+#gameDialog.world-mode #missionButton{display:flex;align-items:center;justify-content:center;width:80px;height:44px;box-sizing:border-box;padding:0}
+#gameDialog.world-mode #worldMenu{display:flex;align-items:center;justify-content:center;box-sizing:border-box;margin:0;padding:0}
+#gameDialog.world-mode .world-location,#gameDialog.world-mode .world-controls{bottom:calc(env(safe-area-inset-bottom) + 76px)}
+#gameDialog.world-mode .walk-tutorial{top:calc(env(safe-area-inset-top) + 18px)}
+#gameDialog.world-mode .world-story{bottom:calc(env(safe-area-inset-bottom) + 72px);max-height:calc(100% - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 100px)}
+
+/* Three quiet exploration actions; sound remains available inside the menu. */
+#gameDialog.world-mode #fullscreenButton,#gameDialog.world-mode #soundButton{display:none}
+#gameDialog.world-mode>.dialog-header{left:calc(50% + 64px);width:44px}
+#gameDialog.world-mode>.dialog-header>div{width:44px}
+#gameDialog.world-mode .world-mission{left:calc(50% - 108px)}
+#gameDialog.world-mode .world-topbar .world-tools{left:calc(50% - 22px)}
+#gameDialog.world-mode #worldMenu{width:80px;font:12px monospace}
+
+/* Keep the exploration footer readable as one centered vertical stack. */
+#gameDialog.world-mode .world-location{left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:calc(100% - 28px);justify-content:center;text-align:center;bottom:calc(env(safe-area-inset-bottom) + 70px)}
+#gameDialog.world-mode .world-controls{left:50%;right:auto;transform:translateX(-50%);width:min(260px,calc(100% - 28px));max-width:none;justify-content:center;bottom:calc(env(safe-area-inset-bottom) + 112px)}
+#gameDialog.world-mode .world-interaction{display:flex;flex-direction:column;align-items:center;max-width:100%;text-align:center}
+#gameDialog.world-mode #nearbyHint{width:100%;text-align:center}
+#gameDialog.world-mode #interactButton{justify-content:center;margin-inline:auto}
+
+/* Menu scenery reaches the screen edges; settings live in Options. */
+#gameDialog.legacy-mode{padding:0;background:#102b29;isolation:isolate}
+#gameDialog>.legacy-scene-bg{display:none}
+#gameDialog.legacy-mode>.legacy-scene-bg{display:block;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.6;z-index:-1;pointer-events:none;image-rendering:pixelated}
+#gameDialog.legacy-mode>.dialog-header{position:absolute;z-index:8;top:calc(env(safe-area-inset-top) + 10px);right:calc(env(safe-area-inset-right) + 10px);padding:0;min-height:44px;background:none;border:0}
+#gameDialog.legacy-mode #dialogTitle,#gameDialog.legacy-mode #fullscreenButton,#gameDialog.legacy-mode #soundButton{display:none}
+#gameDialog.legacy-mode #closeGame{width:44px;height:44px;border-radius:0;background:#102b2966;color:#fff5cf}
+#gameDialog.legacy-mode .legacy-menu-copy{width:min(78%,360px);max-width:360px;margin-left:clamp(18px,5vw,64px);padding:calc(env(safe-area-inset-top) + 54px) 0 calc(env(safe-area-inset-bottom) + 24px);justify-content:center;gap:10px}
+#gameDialog.legacy-mode .legacy-menu-copy .game-title-mark{width:min(100%,260px);margin-bottom:16px}
+#gameDialog.legacy-mode .legacy-menu-buttons button,#gameDialog.legacy-mode .free-play-button{background:#102f326b;backdrop-filter:blur(2px);font-size:12px;min-height:44px;padding:10px 12px}
+#gameDialog.legacy-mode #legacyInfo{flex:0 1 auto;width:min(520px,calc(100% - 36px));margin:calc(env(safe-area-inset-top) + 70px) auto calc(env(safe-area-inset-bottom) + 22px);padding:24px;overflow:auto;background:#102b2bed}
+#gameDialog.legacy-mode #legacyInfo>.eyebrow{display:none}
+#gameDialog.legacy-mode #legacyInfo h2{font:bold 24px/1.2 monospace;margin:0 0 16px}
+#gameDialog.legacy-mode #legacyInfoText{font:13px/1.65 monospace}
+#gameDialog.legacy-mode #legacyInfoActions{display:grid;gap:10px}
+#gameDialog.legacy-mode #legacyInfoActions button{min-height:46px;margin:0;font:bold 13px monospace;background:#e3ebbf18;color:#fff4cf;border:1px solid #c9da9b88;box-shadow:none}
+@media(max-height:580px) and (orientation:landscape){#gameDialog.legacy-mode .legacy-menu-copy{width:calc(100% - 100px);max-width:720px;grid-template-columns:1fr 1fr;margin:auto;padding:16px 0;gap:8px 32px}#gameDialog.legacy-mode .legacy-menu-copy .game-title-mark{width:190px;margin:0}#gameDialog.legacy-mode #legacyInfo{margin-top:18px}}

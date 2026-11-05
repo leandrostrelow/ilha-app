@@ -1656,6 +1656,7 @@ async function handlePaymentStatus(
   request: Request,
   payload: JsonRecord,
   securityConfig: PublicRegistrationSecurityConfig,
+  packageInstructions = false,
 ) {
   let tracked;
   try {
@@ -1665,6 +1666,14 @@ async function handlePaymentStatus(
     throw error;
   }
   if (!tracked) return json(request, { error: "Acompanhamento não encontrado." }, 404);
+  if (packageInstructions) {
+    if (record(tracked.checkout.tournament.settings).registration_mode !== "ATHLETE_PACKAGES") {
+      return json(request, { error: "Acompanhamento não encontrado." }, 404);
+    }
+    // The unguessable checkout token grants access only to the matching package Pix.
+    // safePayment suppresses instructions for expired, settled or disputed charges.
+    return json(request, trackingCheckoutResponse(tracked.checkout, tracked.checkout.payment, true));
+  }
   return json(request, trackingCheckoutResponse(tracked.checkout));
 }
 
@@ -1926,6 +1935,67 @@ async function handleIndividualPaymentRetry(
   return response(localPayment, deferredPixRepairResponse(localPayment), deferredPix ? 202 : 200);
 }
 
+async function handlePackageRegistration(request: Request, payload: JsonRecord, config: PublicRegistrationSecurityConfig) {
+  const payerInput = record(payload.payer);
+  const payer = {
+    full_name: text(payerInput.full_name, 120), email: text(payerInput.email, 180).toLowerCase(),
+    phone: digits(payerInput.phone), cpf: digits(payerInput.cpf),
+  };
+  const token = text(payload.request_token, 80);
+  const slug = text(payload.tournament_slug, 100);
+  const athletes = Array.isArray(payload.athletes) ? payload.athletes.map(record) : [];
+  const entries = Array.isArray(payload.entries) ? payload.entries.map(record) : [];
+  if (!isUuid(token) || !/^[a-z0-9-]+$/.test(slug) || !isValidCpf(payer.cpf) || payer.full_name.length < 2 ||
+    !/^\S+@\S+\.\S+$/.test(payer.email) || !/^\d{10,13}$/.test(payer.phone) || payload.terms_accepted !== true) {
+    return json(request, { error: "Confira os dados do responsável e aceite as regras." }, 400);
+  }
+  if (athletes.length < 1 || athletes.length > 18 || entries.length < 1 || entries.length > 36 ||
+    athletes.some((a) => (Boolean(a.cpf) && !isValidCpf(digits(a.cpf))) || text(a.full_name, 120).length < 2 ||
+      (Boolean(a.birth_date) && !validBirthDate(text(a.birth_date, 10))) || !["MALE", "FEMALE", "NOT_INFORMED"].includes(String(a.gender)) ||
+      !/^[a-zA-Z0-9_-]{1,40}$/.test(String(a.key))) ||
+    new Set(athletes.map((a) => String(a.key))).size !== athletes.length ||
+    new Set(athletes.filter((a) => digits(a.cpf)).map((a) => digits(a.cpf))).size !== athletes.filter((a) => digits(a.cpf)).length ||
+    entries.some((e) => !isUuid(String(e.category_id)) || !Array.isArray(e.members) || e.members.length < 1 || e.members.length > 2)) {
+    return json(request, { error: "Confira os atletas e as classes. Cada atleta deve aparecer uma única vez na lista." }, 400);
+  }
+  const supabase = createClient(Deno.env.get("SUPABASE_URL") || "", serviceRoleKey(), {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const limited = await consumeSpatialNetworkLimit(request, supabase, config, "package-checkout");
+  if (!limited.allowed) return json(request, { error: "Muitas tentativas. Aguarde um pouco." }, 429, { "Retry-After": String(limited.retryAfter) });
+  if (!await verifyTurnstile(request, text(payload.captcha_token, 2048), config)) {
+    return json(request, { error: "Confirme novamente a proteção anti-robô." }, 400);
+  }
+  const identityHash = await hmacSha256(config.rateLimitSalt, `package:${payer.cpf}`);
+  const identity = await supabase.rpc("consume_tournament_registration_identity_rate_limit", { p_identity_hash: identityHash });
+  if (identity.error) throw identity.error;
+  if (!(Array.isArray(identity.data) ? identity.data[0] : identity.data)?.allowed) {
+    return json(request, { error: "Muitas tentativas. Aguarde alguns minutos." }, 429);
+  }
+  const lookup = await supabase.from("tournaments").select("*").eq("slug", slug).maybeSingle();
+  if (lookup.error) throw lookup.error;
+  if (!lookup.data || lookup.data.is_published !== true || record(lookup.data.settings).registration_mode !== "ATHLETE_PACKAGES") {
+    return json(request, { error: "Torneio não encontrado." }, 404);
+  }
+  const claim = await supabase.rpc("claim_tournament_package_checkout", {
+    p_tournament_id: lookup.data.id, p_request_token: token, p_payer: payer,
+    p_athletes: athletes.map((a) => ({ key: a.key, full_name: text(a.full_name, 120), cpf: digits(a.cpf) || null, birth_date: a.birth_date || null, gender: a.gender })),
+    p_entries: entries.map((e) => ({ category_id: e.category_id, members: e.members })),
+    p_provider_environment: asaasConfig().environment,
+  });
+  if (claim.error) {
+    if (["P0001", "22023"].includes(claim.error.code)) return json(request, { error: claim.error.message }, 409);
+    throw claim.error;
+  }
+  const claimed = record(claim.data);
+  if (claimed.expired === true) return json(request, { error: "A reserva expirou. Inicie uma nova inscrição.", expired: true }, 410);
+  const group = await supabase.from("tournament_registration_groups").select("*")
+    .eq("id", record(claimed.registration_group).id).single();
+  if (group.error) throw group.error;
+  return finishFamilyCheckout(request, supabase, group.data, (claimed.registrations as JsonRecord[]) || [],
+    lookup.data, "PIX", record(claimed.payment), claimed.payment_created === true);
+}
+
 async function handleFamilyRegistration(
   request: Request,
   payload: JsonRecord,
@@ -2129,6 +2199,9 @@ async function handleFamilyRegistration(
     if (tournamentResult.error) throw tournamentResult.error;
     const tournament = tournamentResult.data as JsonRecord | null;
     if (!tournament || tournament.is_published !== true) return json(request, { error: "Torneio não encontrado." }, 404);
+    if (record(tournament.settings).registration_mode === "ATHLETE_PACKAGES") {
+      return json(request, { error: "Use a inscrição por classes deste torneio." }, 400);
+    }
 
     failureStage = "family_payment_configuration";
     // Convites isentos não criam cobrança no provedor e devem continuar
@@ -2231,8 +2304,8 @@ async function handleFamilyRegistration(
     const now = Date.now();
     const opensAt = tournament.registration_opens_at ? Date.parse(String(tournament.registration_opens_at)) : null;
     const closesAt = tournament.registration_closes_at ? Date.parse(String(tournament.registration_closes_at)) : null;
-    if (tournament.status !== "REGISTRATION_OPEN" || tournament.registration_open !== true ||
-      (opensAt && now < opensAt) || (closesAt && now > closesAt)) {
+    if (!inviteMode && (tournament.status !== "REGISTRATION_OPEN" || tournament.registration_open !== true ||
+      (opensAt && now < opensAt) || (closesAt && now > closesAt))) {
       return json(request, { error: "As inscrições deste torneio estão fechadas." }, 409);
     }
     const allowedMethods = Array.isArray(tournament.allowed_payment_methods)
@@ -2255,7 +2328,7 @@ async function handleFamilyRegistration(
 
     for (const athleteInput of validatedAthletes) {
       const category = categoryMap.get(athleteInput.categoryId);
-      if (!category || category.active !== true || category.registration_open !== true) {
+      if (!category || category.active !== true || (!inviteMode && category.registration_open !== true)) {
         return json(request, { error: `A classe escolhida para ${athleteInput.fullName} não está disponível.` }, 409);
       }
       if (category.gender && ![athleteInput.gender, "MIXED", "OPEN"].includes(String(category.gender).toUpperCase())) {
@@ -2269,7 +2342,7 @@ async function handleFamilyRegistration(
       let additionalFee = 0;
       if (athleteInput.additionalCategoryId) {
         additionalCategory = categoryMap.get(athleteInput.additionalCategoryId) || null;
-        if (!additionalCategory || additionalCategory.active !== true || additionalCategory.registration_open !== true ||
+        if (!additionalCategory || additionalCategory.active !== true || (!inviteMode && additionalCategory.registration_open !== true) ||
           String(additionalCategory.code) !== text(addonRule.category_code, 40)) {
           return json(request, { error: `A Classe Espacial escolhida para ${athleteInput.fullName} não é válida.` }, 400);
         }
@@ -3106,8 +3179,8 @@ Deno.serve(async (request) => {
       if (invite.expires_at && Date.parse(String(invite.expires_at)) < Date.now()) {
         return json(request, { error: "Este convite expirou." }, 410);
       }
-      if (tournamentResult.data.status !== "REGISTRATION_OPEN" || tournamentResult.data.registration_open !== true) {
-        return json(request, { error: "As inscrições deste torneio estão fechadas." }, 409);
+      if (!["REGISTRATION_OPEN", "REGISTRATION_CLOSED", "IN_PROGRESS"].includes(String(tournamentResult.data.status || ""))) {
+        return json(request, { error: "Este torneio não aceita mais convites." }, 409);
       }
       return json(request, {
         captcha_provider: "turnstile",
@@ -3148,6 +3221,7 @@ Deno.serve(async (request) => {
     }
 
     const action = text(payload.action, 40).toLowerCase();
+    if (action === "package_checkout") return await handlePackageRegistration(request, payload, securityConfig);
     if (action === "spatial_courtesy_lookup") {
       failureStage = "spatial_courtesy_lookup";
       return await handleSpatialCourtesyLookup(request, payload, securityConfig);
@@ -3167,6 +3241,10 @@ Deno.serve(async (request) => {
     if (action === "payment_status") {
       failureStage = "payment_status";
       return await handlePaymentStatus(request, payload, securityConfig);
+    }
+    if (action === "package_payment_status") {
+      failureStage = "package_payment_status";
+      return await handlePaymentStatus(request, payload, securityConfig, true);
     }
     if (action === "retry_payment") {
       failureStage = "payment_retry";
@@ -3289,6 +3367,9 @@ Deno.serve(async (request) => {
       .maybeSingle();
     if (tournamentError) throw tournamentError;
     if (!tournament || !tournament.is_published) return json(request, { error: "Torneio não encontrado." }, 404);
+    if (record(tournament.settings).registration_mode === "ATHLETE_PACKAGES") {
+      return json(request, { error: "Use a inscrição por classes deste torneio." }, 400);
+    }
     const now = Date.now();
     const opensAt = tournament.registration_opens_at ? Date.parse(tournament.registration_opens_at) : null;
     const closesAt = tournament.registration_closes_at ? Date.parse(tournament.registration_closes_at) : null;

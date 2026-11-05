@@ -13,12 +13,17 @@
     access: null,
     activeTab: 'games',
     categoryId: '',
+    dayFilter: '',
     captchaWidgetId: null,
     captchaToken: '',
     captchaReady: false,
     savingMatchId: '',
     modalTrigger: null,
     pendingRegistrationRequestId: '',
+    refreshing: false,
+    sessionError: '',
+    serverTime: null,
+    serverTimeReceivedAt: 0,
   };
 
   const $ = (id) => document.getElementById(id);
@@ -96,6 +101,7 @@
 
   async function api(path = '', options = {}) {
     const response = await fetch(`${API_URL}${path}`, {
+      signal: AbortSignal.timeout(20000),
       ...options,
       headers: {
         apikey: runtimeConfig.publishableKey || '',
@@ -113,6 +119,11 @@
       const retryAfterSeconds = Number(response.headers.get('Retry-After') || body?.retry_after_seconds);
       if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) error.retryAfterSeconds = retryAfterSeconds;
       throw error;
+    }
+    const serverTime = Date.parse(body?.data?.server_now || '');
+    if (Number.isFinite(serverTime)) {
+      state.serverTime = serverTime;
+      state.serverTimeReceivedAt = performance.now();
     }
     return body;
   }
@@ -187,30 +198,45 @@
     return parts.join(' · ') || 'Horário a definir';
   }
 
+  function matchDayLabel(value) {
+    if (!value) return 'Dia a definir';
+    const date = new Date(`${String(value).slice(0, 10)}T12:00:00`);
+    if (Number.isNaN(date.getTime())) return String(value);
+    const label = new Intl.DateTimeFormat('pt-BR', {
+      weekday: 'short', day: '2-digit', month: '2-digit',
+    }).format(date).replace('.', '');
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
+  function matchSortOrder(match, fallback = 0) {
+    const rawOrder = match.sort_order;
+    const order = rawOrder === null || rawOrder === undefined || rawOrder === '' ? Number.NaN : Number(rawOrder);
+    return Number.isFinite(order) ? order : 100000 + fallback;
+  }
+
+  function sortAgendaMatches(matches) {
+    return matches.map((match, index) => ({ match, index })).sort((left, right) => {
+      const order = matchSortOrder(left.match, left.index) - matchSortOrder(right.match, right.index);
+      if (order) return order;
+      const leftTime = left.match.match_time || '99:99';
+      const rightTime = right.match.match_time || '99:99';
+      return leftTime.localeCompare(rightTime) || Number(left.match.match_no || 0) - Number(right.match.match_no || 0);
+    }).map((item) => item.match);
+  }
+
   function ownPickMap() {
     return new Map((state.data?.participant?.predictions || []).map((pick) => [pick.match_id, pick.winner_athlete_id]));
   }
 
   function renderHeader() {
-    const { tournament, campaign } = state.data;
-    $('tournamentName').textContent = tournament.name;
-    $('campaignStatus').textContent = statusLabel(campaign);
-    const windowParts = [];
-    if (campaign.closes_at) windowParts.push(`Até ${dateTimeLabel(campaign.closes_at)}`);
-    else if (tournament.ends_on) windowParts.push(`Torneio até ${dateLabel(tournament.ends_on)}`);
-    const matchCount = state.data.matches.length;
-    windowParts.push(`${matchCount} ${matchCount === 1 ? 'jogo disponível' : 'jogos disponíveis'}`);
-    $('campaignWindow').textContent = windowParts.join(' · ');
+    const { campaign } = state.data;
     $('heroTitle').firstChild.nodeValue = displayCampaignTitle(campaign.title);
-    $('tournamentLink').href = `/torneios/${encodeURIComponent(tournament.slug)}`;
     $('rulesText').textContent = campaign.rules_text || 'Escolha um atleta por jogo. Cada acerto soma os pontos definidos para a fase. O ranking usa somente os resultados oficiais lançados pela organização.';
     $('initialPoints').textContent = campaign.initial_round_points;
     $('semifinalPoints').textContent = campaign.semifinal_points;
     $('finalPoints').textContent = campaign.final_points;
     $('prizeCard').hidden = !campaign.prize;
     $('prizeText').textContent = campaign.prize || '';
-    $('joinButton').textContent = state.data.participant ? 'Ver meus jogos' : campaign.accepting_predictions ? 'Quero participar' : 'Palpites encerrados';
-    $('joinButton').disabled = !state.data.participant && !campaign.accepting_predictions;
   }
 
   function renderCategoryFilter() {
@@ -224,10 +250,18 @@
     else state.categoryId = '';
   }
 
-  function renderMatchCard(match, pickMap) {
+  function predictionDeadlineReached(match) {
+    const cutoff = Date.parse(match.prediction_closes_at || '');
+    const now = state.serverTime === null ? Date.now()
+      : state.serverTime + performance.now() - state.serverTimeReceivedAt;
+    return Number.isFinite(cutoff) && now >= cutoff;
+  }
+
+  function renderMatchCard(match, pickMap, categoryName) {
     const selected = pickMap.get(match.id) || '';
     const isSaving = state.savingMatchId === match.id;
-    const locked = Boolean(match.locked || isSaving);
+    const deadlineReached = predictionDeadlineReached(match);
+    const locked = Boolean(match.locked || deadlineReached || isSaving);
     const settled = Boolean(match.winner_athlete_id);
     const choice = (side) => {
       const isSelected = selected === side.id;
@@ -243,28 +277,39 @@
         ? `Resultado: ${escapeHtml(match.score || 'confirmado')}`
         : match.lock_reason === 'UPCOMING' && match.prediction_opens_at
           ? `Abre ${dateTimeLabel(match.prediction_opens_at)}`
-          : match.locked
+          : match.locked || deadlineReached
             ? 'Palpite encerrado'
             : selected ? 'Palpite salvo' : 'Aberto';
     return `<article class="match-card">
-      <div class="match-meta"><span>${escapeHtml(phaseLabel(match.phase))} · jogo ${escapeHtml(match.match_no || '')}</span><span class="points-badge">vale ${escapeHtml(match.points)} pt${Number(match.points) === 1 ? '' : 's'}</span></div>
+      <div class="match-meta"><span><strong>${escapeHtml(categoryName)}</strong><small>${escapeHtml(phaseLabel(match.phase))} · jogo ${escapeHtml(match.match_no || '')}</small></span><span class="points-badge">vale ${escapeHtml(match.points)} pt${Number(match.points) === 1 ? '' : 's'}</span></div>
       ${choice(match.side1)}${choice(match.side2)}
-      <div class="match-foot"><span>${escapeHtml(matchSchedule(match))}</span><strong class="${match.locked ? 'locked-badge' : selected ? 'saved-badge' : ''}">${stateLabel}</strong></div>
+      <div class="match-foot"><span>${escapeHtml(matchSchedule(match))}</span><strong class="${locked ? 'locked-badge' : selected ? 'saved-badge' : ''}">${stateLabel}</strong></div>
     </article>`;
   }
 
   function renderGames() {
     const pickMap = ownPickMap();
     const visible = state.data.matches.filter((match) => !state.categoryId || match.category_id === state.categoryId);
-    const categories = state.data.categories.filter((category) => visible.some((match) => match.category_id === category.id));
+    const days = [...new Set(visible.map((match) => match.match_date).filter(Boolean))].sort();
+    if (!days.includes(state.dayFilter)) state.dayFilter = days[0] || '';
+    $('gamesDayTabs').innerHTML = days.map((day) => {
+      const count = visible.filter((match) => match.match_date === day).length;
+      const active = day === state.dayFilter;
+      return `<button class="games-day-tab${active ? ' active' : ''}" type="button" role="tab" data-bet-day="${escapeHtml(day)}" aria-selected="${active}"><span>${escapeHtml(matchDayLabel(day))}</span><small>${count} ${count === 1 ? 'jogo' : 'jogos'}</small></button>`;
+    }).join('');
     if (!visible.length) {
-      $('gamesList').innerHTML = '<div class="empty-state"><strong>Nenhum jogo disponível aqui.</strong>Assim que a organização publicar os confrontos completos, eles aparecem automaticamente.</div>';
+      $('gamesList').innerHTML = '<div class="empty-state"><strong>Nenhum jogo agendado aqui.</strong>Assim que a organização colocar os confrontos na agenda, eles aparecem automaticamente.</div>';
       return;
     }
-    $('gamesList').innerHTML = categories.map((category) => {
-      const cards = visible.filter((match) => match.category_id === category.id).map((match) => renderMatchCard(match, pickMap)).join('');
-      return `<section class="category-group"><h3 class="category-title">${escapeHtml(category.name)}</h3><div class="match-grid">${cards}</div></section>`;
-    }).join('');
+    const categoryNames = new Map(state.data.categories.map((category) => [category.id, category.name]));
+    const selectedDayMatches = visible.filter((match) => match.match_date === state.dayFilter);
+    const courts = [...new Set(selectedDayMatches.map((match) => match.court_name || 'Sem quadra'))]
+      .sort((left, right) => left.localeCompare(right, 'pt-BR', { numeric: true }));
+    $('gamesList').innerHTML = `<div class="courts-grid">${courts.map((court) => {
+      const matches = sortAgendaMatches(selectedDayMatches.filter((match) => (match.court_name || 'Sem quadra') === court));
+      const cards = matches.map((match) => renderMatchCard(match, pickMap, categoryNames.get(match.category_id) || 'Classe')).join('');
+      return `<section class="court-group"><div class="court-heading"><div><span>Ordem da agenda</span><h3>${escapeHtml(court)}</h3></div><strong>${matches.length} ${matches.length === 1 ? 'jogo' : 'jogos'}</strong></div><div class="court-match-list">${cards}</div></section>`;
+    }).join('')}</div>`;
   }
 
   function renderMine() {
@@ -275,27 +320,55 @@
     $('leaveDeviceButton').hidden = !participant;
     accessEmpty.hidden = Boolean(participant);
     accessDetails.hidden = !participant;
+    $('historySummary').hidden = !participant;
+    $('historyHeading').hidden = !participant;
     if (!participant) {
+      $('historySummary').innerHTML = '';
       $('participantGreeting').textContent = 'Entre para ver e alterar suas escolhas.';
       $('myPickCount').textContent = '0';
-      $('myPicksList').innerHTML = '';
+      $('myPicksList').innerHTML = '<div class="empty-state"><strong>Entre para consultar seu histórico.</strong><p>Use o e-mail e o código do seu cadastro para ver todos os palpites.</p><button class="primary-button" type="button" data-open-registration>Acessar meus palpites</button></div>';
       return;
     }
     const picks = ownPickMap();
     $('participantGreeting').textContent = `${participant.name}, acompanhe aqui tudo que você escolheu.`;
     $('savedAccessCode').textContent = state.access?.access_code || '••••••••••';
     $('myPickCount').textContent = String(picks.size);
-    const selectedMatches = state.data.matches.filter((match) => picks.has(match.id));
-    if (!selectedMatches.length) {
+    const predictions = [...(participant.predictions || [])].sort((a, b) =>
+      String(b.updated_at || '').localeCompare(String(a.updated_at || '')) || String(a.match_id).localeCompare(String(b.match_id)));
+    const summary = { total: predictions.length, points: 0, correct: 0, missed: 0, pending: 0, unavailable: 0 };
+    for (const pick of predictions) {
+      const match = pick.match || state.data.matches.find((item) => item.id === pick.match_id);
+      const validSide = [match?.side1?.id, match?.side2?.id].includes(pick.winner_athlete_id);
+      if (!match || match.status === 'CANCELLED' || !validSide) { summary.unavailable++; continue; }
+      if (['FINISHED', 'WALKOVER'].includes(match.status) && match.winner_athlete_id) {
+        if (match.winner_athlete_id === pick.winner_athlete_id) { summary.correct++; summary.points += Number(match.points) || 0; }
+        else summary.missed++;
+      } else summary.pending++;
+    }
+    $('historySummary').innerHTML = [
+      ['Palpites', summary.total], ['Pontos', summary.points], ['Acertos', summary.correct],
+      ['Erros', summary.missed], ['Aguardando', summary.pending], ['Sem apuração', summary.unavailable],
+    ].map(([label, value]) => `<div class="summary-stat"><span>${label}</span><strong>${value}</strong></div>`).join('');
+    if (!predictions.length) {
       $('myPicksList').innerHTML = '<div class="empty-state"><strong>Seu cartão ainda está vazio.</strong>Abra a aba Jogos e escolha seus favoritos.</div>';
       return;
     }
-    $('myPicksList').innerHTML = selectedMatches.map((match) => {
-      const athleteId = picks.get(match.id);
-      const side = match.side1.id === athleteId ? match.side1 : match.side2;
-      const correct = match.winner_athlete_id ? match.winner_athlete_id === athleteId : null;
-      const outcome = correct === true ? `+${match.points} ponto${Number(match.points) === 1 ? '' : 's'}` : correct === false ? 'Não pontuou' : match.locked ? 'Aguardando resultado' : 'Ainda pode alterar';
-      return `<article class="my-pick"><div><strong>${escapeHtml(side.name)}</strong><small>${escapeHtml(phaseLabel(match.phase))} · ${escapeHtml(matchSchedule(match))}</small></div><span>${escapeHtml(outcome)}</span></article>`;
+    $('myPicksList').innerHTML = predictions.map((pick) => {
+      const match = pick.match || state.data.matches.find((item) => item.id === pick.match_id);
+      const athleteId = pick.winner_athlete_id;
+      const side = [match?.side1, match?.side2].find((item) => item?.id === athleteId);
+      const name = pick.winner_name || side?.name || 'Atleta escolhido';
+      const settled = match && ['FINISHED', 'WALKOVER'].includes(match.status) && match.winner_athlete_id;
+      const correct = settled && side ? match.winner_athlete_id === athleteId : null;
+      const outcome = !match ? 'Jogo indisponível para consulta'
+        : match.status === 'CANCELLED' ? 'Cancelado · sem pontuação'
+        : !side ? 'Confronto alterado · sem pontuação'
+        : correct === true ? `+${match.points} ponto${Number(match.points) === 1 ? '' : 's'}`
+        : correct === false ? 'Não pontuou' : match.locked ? 'Aguardando resultado' : 'Ainda pode alterar';
+      const category = state.data.categories.find((item) => item.id === match?.category_id)?.name || '';
+      const details = match ? [category, phaseLabel(match.phase), matchSchedule(match)].filter(Boolean).join(' · ') : 'Seu palpite continua salvo';
+      const opponents = match ? `${match.side1.name} × ${match.side2.name}` : '';
+      return `<article class="my-pick"><div><small>Seu palpite</small><strong>${escapeHtml(name)}</strong><small>${escapeHtml(opponents)}</small><small>${escapeHtml(details)}</small>${settled && match.score ? `<small>Placar: ${escapeHtml(match.score)}</small>` : ''}${pick.updated_at ? `<small>Salvo em ${escapeHtml(dateTimeLabel(pick.updated_at))}</small>` : ''}</div><span>${escapeHtml(outcome)}</span></article>`;
     }).join('');
   }
 
@@ -307,10 +380,12 @@
     }
     $('rankingList').innerHTML = rows.map((row) => `<article class="ranking-row ${row.position <= 3 ? 'top' : ''}">
       <span class="ranking-position">${escapeHtml(row.position)}º</span>
-      <div class="ranking-name"><strong>${escapeHtml(row.name)}</strong><small>${escapeHtml(row.predictions)} palpites</small></div>
-      <span class="ranking-stat">Pontos<b>${escapeHtml(row.score)}</b></span>
+      <div class="ranking-name"><strong>${escapeHtml(row.name)}</strong><small>${escapeHtml(row.predictions)} ${Number(row.predictions) === 1 ? 'palpite' : 'palpites'}</small></div>
+      <div class="ranking-metrics">
+      <span class="ranking-stat score">Pontos<b>${escapeHtml(row.score)}</b></span>
       <span class="ranking-stat">Acertos<b>${escapeHtml(row.correct)}</b></span>
       <span class="ranking-stat">Apurados<b>${escapeHtml(row.settled)}</b></span>
+      </div>
     </article>`).join('');
   }
 
@@ -517,11 +592,17 @@
   }
 
   async function savePick(matchId, athleteId) {
+    const match = state.data?.matches?.find((item) => item.id === matchId);
+    if (match && (match.locked || predictionDeadlineReached(match))) {
+      renderGames();
+      showToast('O prazo para palpitar neste jogo encerrou ou a partida já começou.');
+      return;
+    }
     if (!state.data?.participant || !state.access) {
       openRegistration('register');
       return;
     }
-    if (state.savingMatchId) return;
+    if (state.savingMatchId || state.refreshing) return;
     state.savingMatchId = matchId;
     renderGames();
     try {
@@ -534,7 +615,7 @@
       state.data = response.data;
       showToast('Palpite salvo. Boa sorte!');
     } catch (error) {
-      if (error.status === 401 || error.status === 403) forgetAccess();
+      if (['invalid_access', 'entry_blocked'].includes(error.code)) forgetAccess();
       showToast(error.message);
     } finally {
       state.savingMatchId = '';
@@ -548,8 +629,38 @@
     try {
       const response = await post('state', state.access);
       state.data = response.data;
+      state.sessionError = '';
     } catch (error) {
-      if (error.status === 401 || error.status === 403) forgetAccess();
+      if (['invalid_access', 'entry_blocked'].includes(error.code)) {
+        forgetAccess();
+        state.sessionError = error.message;
+      } else {
+        state.sessionError = 'Não foi possível carregar seus palpites. Seu código salvo não foi removido. Toque em Atualizar para tentar novamente.';
+      }
+    }
+  }
+
+  async function refreshSnapshot() {
+    if (state.refreshing || state.savingMatchId) return;
+    state.refreshing = true;
+    const access = state.access;
+    $('pullRefreshStatus').hidden = false;
+    $('pullRefreshStatus').textContent = 'Atualizando…';
+    try {
+      const response = state.access ? await post('state', state.access) : await api(`?torneio=${encodeURIComponent(state.slug)}`);
+      if (state.access !== access) return;
+      if (!response.data?.available) throw new Error('O desafio está temporariamente indisponível.');
+      state.data = response.data;
+      state.sessionError = '';
+      $('pageNotice').hidden = true;
+      render();
+      showToast('Palpites e resultados atualizados.');
+    } catch (error) {
+      if (['invalid_access', 'entry_blocked'].includes(error.code)) { forgetAccess(); render(); }
+      showNotice('Não foi possível atualizar', error.message || 'Tente novamente. Seus palpites continuam salvos.', true);
+    } finally {
+      state.refreshing = false;
+      $('pullRefreshStatus').hidden = true;
     }
   }
 
@@ -562,6 +673,33 @@
     }
   }
 
+  function whatsappNumber(value) {
+    const phone = String(value || '').replace(/\D/g, '');
+    if (phone.length === 10 || phone.length === 11) return '55' + phone;
+    if ((phone.length === 12 || phone.length === 13) && phone.startsWith('55')) return phone;
+    return '';
+  }
+
+  function requestLostAccess() {
+    $('formError').hidden = true;
+    const email = $('resumeEmail').value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      return setFormError(new Error('Informe primeiro o e-mail usado no cadastro.'));
+    }
+    const phone = whatsappNumber(state.data?.tournament?.whatsapp);
+    if (!phone) return setFormError(new Error('O WhatsApp da organização não está disponível agora.'));
+    const tournamentName = state.data?.tournament?.name || 'torneio';
+    const message = [
+      'Olá! Perdi meu código de acesso do Ilha Bet. 🎾',
+      '',
+      'Torneio: ' + tournamentName,
+      'E-mail do cadastro: ' + email,
+      '',
+      'Pode me ajudar a recuperar o acesso?'
+    ].join('\n');
+    window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
+  }
+
   function bindEvents() {
     document.addEventListener('click', (event) => {
       const target = event.target.closest('button, a');
@@ -569,14 +707,47 @@
       if (target.matches('[data-tab]')) switchTab(target.dataset.tab);
       if (target.matches('[data-open-registration]')) openRegistration('register');
       if (target.matches('[data-access-mode]')) setAccessMode(target.dataset.accessMode);
+      if (target.matches('[data-bet-day]')) { state.dayFilter = target.dataset.betDay; renderGames(); }
       if (target.matches('[data-pick]')) savePick(target.dataset.matchId, target.dataset.athleteId);
     });
-    $('joinButton').addEventListener('click', () => state.data?.participant ? switchTab('games') : state.data?.campaign?.accepting_predictions ? openRegistration('register') : showToast('Os palpites não estão abertos neste momento.'));
     $('openAccessButton').addEventListener('click', () => state.data?.participant ? switchTab('mine') : openRegistration('resume'));
     $('closeRegistrationButton').addEventListener('click', closeRegistration);
     $('registrationModal').addEventListener('click', (event) => { if (event.target === $('registrationModal')) closeRegistration(); });
     $('registerForm').addEventListener('submit', register);
     $('resumeForm').addEventListener('submit', resume);
+    $('lostAccessButton').addEventListener('click', requestLostAccess);
+    let pullStart = null;
+    let pullDistance = 0;
+    const clearPull = () => {
+      pullStart = null;
+      pullDistance = 0;
+      if (!state.refreshing) $('pullRefreshStatus').hidden = true;
+    };
+    document.addEventListener('touchstart', (event) => {
+      clearPull();
+      if (window.scrollY > 0 || event.touches.length !== 1 || state.refreshing || !state.data ||
+          event.target.closest('input, textarea, select, button, a, .tabs, .modal-backdrop')) return;
+      pullStart = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    }, { passive: true });
+    document.addEventListener('touchmove', (event) => {
+      if (!pullStart) return;
+      if (event.touches.length !== 1) { clearPull(); return; }
+      const dx = Math.abs(event.touches[0].clientX - pullStart.x);
+      const dy = event.touches[0].clientY - pullStart.y;
+      if (dy < 0 || dx > 35 || window.scrollY > 0) { clearPull(); return; }
+      pullDistance = dy;
+      if (dy > 15) {
+        if (event.cancelable) event.preventDefault();
+        $('pullRefreshStatus').hidden = false;
+        $('pullRefreshStatus').textContent = dy >= 85 ? 'Solte para atualizar' : 'Puxe para atualizar';
+      }
+    }, { passive: false });
+    document.addEventListener('touchend', () => {
+      const shouldRefresh = pullStart && pullDistance >= 85;
+      clearPull();
+      if (shouldRefresh) refreshSnapshot();
+    }, { passive: true });
+    document.addEventListener('touchcancel', clearPull, { passive: true });
     $('categoryFilter').addEventListener('change', (event) => { state.categoryId = event.target.value; renderGames(); });
     $('leaveDeviceButton').addEventListener('click', () => { forgetAccess(); render(); showToast('Acesso removido somente deste aparelho.'); });
     $('copyAccessCodeButton').addEventListener('click', () => copyText(state.access?.access_code || ''));
@@ -617,6 +788,20 @@
 
   async function init() {
     bindEvents();
+    // Close visible choices at the deadline even when the page stays open.
+    // The database independently enforces the same cutoff on every save.
+    setInterval(() => {
+      if (document.hidden || !state.data?.matches) return;
+      if (state.data.matches.some((match) => !match.locked && predictionDeadlineReached(match))) {
+        state.data.matches.forEach((match) => {
+          if (predictionDeadlineReached(match)) { match.locked = true; match.lock_reason = 'CLOSED'; }
+        });
+        renderGames();
+      }
+    }, 1000);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && state.data?.available) refreshSnapshot();
+    });
     try {
       const [config, snapshot] = await Promise.all([
         api('?config=1'),
@@ -630,7 +815,8 @@
       }
       state.slug = String(state.data.tournament?.slug || state.slug).trim().toLowerCase();
       await restoreSession();
-      $('pageNotice').hidden = true;
+      $('pageNotice').hidden = !state.sessionError;
+      if (state.sessionError) showNotice('Seus palpites ainda não carregaram', state.sessionError, true);
       $('workspace').hidden = false;
       render();
     } catch (error) {
