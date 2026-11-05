@@ -4,6 +4,13 @@ create extension if not exists pgtap with schema extensions;
 
 select plan(80);
 
+-- Keep the September month-end scenarios in the future on every CI run.
+create function pg_temp.ci_billing_month(offset_months integer) returns date
+language sql stable as $$
+  select (date_trunc('year', now() at time zone 'America/Sao_Paulo')
+    + interval '1 year 8 months' + offset_months * interval '1 month')::date;
+$$;
+
 select has_table('public', 'app_invoice_provider_payments', 'há snapshot privado 1:1 da cobrança mensal');
 select has_table('public', 'app_payment_customers', 'há mapeamento privado de customer por ambiente');
 select has_table('public', 'app_monthly_billing_runs', 'há auditoria privada das execuções mensais');
@@ -64,7 +71,7 @@ select lives_ok(
   $$insert into public.app_monthly_billing_runs (
       action, invoice_month, authorization_kind, status
     ) values (
-      'SCHEDULED', date '2026-09-01', 'INTERNAL', 'STARTED'
+      'SCHEDULED', pg_temp.ci_billing_month(0), 'INTERNAL', 'STARTED'
     )$$,
   'auditoria aceita a ação SCHEDULED usada pelo cron interno'
 );
@@ -72,7 +79,7 @@ select lives_ok(
   $$insert into public.app_monthly_billing_runs (
       action, invoice_month, authorization_kind, status
     ) values (
-      'RECONCILE', date '2026-09-01', 'INTERNAL', 'STARTED'
+      'RECONCILE', pg_temp.ci_billing_month(0), 'INTERNAL', 'STARTED'
     )$$,
   'auditoria aceita a ação RECONCILE usada pelo polling interno'
 );
@@ -153,7 +160,7 @@ insert into public.app_clients (
     2,
     31,
     'ATIVO',
-    'responsavel',
+    'aluno', -- This payer also studies; guardian-only accounts have no own plan.
     now(),
     now()
   ),
@@ -210,13 +217,13 @@ insert into public.app_family_members (
   );
 
 select lives_ok(
-  $$select public.generate_app_monthly_pix_billing(date '2026-09-01', null, 'SANDBOX')$$,
+  $$select public.generate_app_monthly_pix_billing(pg_temp.ci_billing_month(0), null, 'SANDBOX')$$,
   'a geração mensal sintética conclui sem chamar o provedor'
 );
 
 select is(
   (select count(*)::integer from public.app_payment_invoices
-    where invoice_month = date '2026-09-01'
+    where invoice_month = pg_temp.ci_billing_month(0)
       and client_id in (
         '71000000-0000-4000-8000-000000000001'::uuid,
         '71000000-0000-4000-8000-000000000002'::uuid,
@@ -227,30 +234,30 @@ select is(
 );
 select is(
   (select count(*)::integer from public.app_payment_invoices
-    where invoice_month = date '2026-09-01'
+    where invoice_month = pg_temp.ci_billing_month(0)
       and client_id = '71000000-0000-4000-8000-000000000003'::uuid),
   0,
   'dependente ativo não recebe cobrança própria'
 );
 select is(
   (select amount from public.app_payment_invoices
-    where invoice_month = date '2026-09-01'
+    where invoice_month = pg_temp.ci_billing_month(0)
       and client_id = '71000000-0000-4000-8000-000000000002'::uuid),
   150.00::numeric,
   'responsável soma membro com valor e normaliza componente opcional NULL para zero'
 );
 select is(
   (select due_date from public.app_payment_invoices
-    where invoice_month = date '2026-09-01'
+    where invoice_month = pg_temp.ci_billing_month(0)
       and client_id = '71000000-0000-4000-8000-000000000001'::uuid),
-  date '2026-09-30',
+  (pg_temp.ci_billing_month(1)-1),
   'vencimento 31 é limitado ao último dia da competência'
 );
 select is(
   (select sum(item.amount) from public.app_family_invoice_items as item
     join public.app_payment_invoices as invoice on invoice.id = item.invoice_id
     where invoice.client_id = '71000000-0000-4000-8000-000000000002'::uuid
-      and invoice.invoice_month = date '2026-09-01'),
+      and invoice.invoice_month = pg_temp.ci_billing_month(0)),
   150.00::numeric,
   'snapshot dos itens familiares fecha com o total da fatura'
 );
@@ -258,7 +265,7 @@ select is(
   (select count(*)::integer from public.app_family_invoice_items as item
     join public.app_payment_invoices as invoice on invoice.id = item.invoice_id
     where invoice.client_id = '71000000-0000-4000-8000-000000000002'::uuid
-      and invoice.invoice_month = date '2026-09-01'
+      and invoice.invoice_month = pg_temp.ci_billing_month(0)
       and item.family_member_id = '71000000-0000-4000-8000-000000000021'::uuid
       and item.amount = 0),
   1,
@@ -267,7 +274,7 @@ select is(
 select is(
   (select count(*)::integer from public.app_invoice_provider_payments as payment
     join public.app_payment_invoices as invoice on invoice.id = payment.invoice_id
-    where invoice.invoice_month = date '2026-09-01'
+    where invoice.invoice_month = pg_temp.ci_billing_month(0)
       and invoice.client_id in (
         '71000000-0000-4000-8000-000000000001'::uuid,
         '71000000-0000-4000-8000-000000000002'::uuid,
@@ -280,7 +287,7 @@ select is(
   (select count(*)::integer from public.financial_transactions as ledger
     join public.app_payment_invoices as invoice
       on invoice.id = ledger.app_payment_invoice_id
-    where invoice.invoice_month = date '2026-09-01'
+    where invoice.invoice_month = pg_temp.ci_billing_month(0)
       and invoice.client_id in (
         '71000000-0000-4000-8000-000000000001'::uuid,
         '71000000-0000-4000-8000-000000000002'::uuid
@@ -290,13 +297,13 @@ select is(
 );
 
 select lives_ok(
-  $$select public.generate_app_monthly_pix_billing(date '2026-09-01', null, 'SANDBOX')$$,
+  $$select public.generate_app_monthly_pix_billing(pg_temp.ci_billing_month(0), null, 'SANDBOX')$$,
   'repetir a geração é idempotente'
 );
 select is(
   (select count(*)::integer from public.app_invoice_provider_payments as payment
     join public.app_payment_invoices as invoice on invoice.id = payment.invoice_id
-    where invoice.invoice_month = date '2026-09-01'
+    where invoice.invoice_month = pg_temp.ci_billing_month(0)
       and invoice.client_id in (
         '71000000-0000-4000-8000-000000000001'::uuid,
         '71000000-0000-4000-8000-000000000002'::uuid
@@ -308,7 +315,7 @@ select is(
   (select count(*)::integer from public.financial_transactions as ledger
     join public.app_payment_invoices as invoice
       on invoice.id = ledger.app_payment_invoice_id
-    where invoice.invoice_month = date '2026-09-01'
+    where invoice.invoice_month = pg_temp.ci_billing_month(0)
       and invoice.client_id in (
         '71000000-0000-4000-8000-000000000001'::uuid,
         '71000000-0000-4000-8000-000000000002'::uuid
@@ -368,7 +375,7 @@ update public.app_clients
 select is(
   (select state
      from private.monthly_billing_candidates(
-       date '2026-09-01',
+       pg_temp.ci_billing_month(0),
        '71000000-0000-4000-8000-000000000001'::uuid
      )),
   'READY',
@@ -382,7 +389,7 @@ select public.fail_app_invoice_provider_dispatch(
   (
     select id from public.app_payment_invoices
      where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-       and invoice_month = date '2026-09-01'
+       and invoice_month = pg_temp.ci_billing_month(0)
   ),
   'Falha sintética sem dado pessoal.',
   false
@@ -391,7 +398,7 @@ select public.fail_app_invoice_provider_dispatch(
   (
     select id from public.app_payment_invoices
      where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-       and invoice_month = date '2026-09-01'
+       and invoice_month = pg_temp.ci_billing_month(0)
   ),
   'Falha sintética sem dado pessoal.',
   false
@@ -402,7 +409,7 @@ select is(
     where dedupe_key = 'monthly-billing-alert:' || (
       select id::text from public.app_payment_invoices
        where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-         and invoice_month = date '2026-09-01'
+         and invoice_month = pg_temp.ci_billing_month(0)
     ) || ':failed:adm:10000000-0000-4000-8000-000000000001'),
   1,
   'falha operacional alerta o ADM uma única vez sem depender da RLS do app'
@@ -415,20 +422,20 @@ update public.app_invoice_provider_payments
  where invoice_id = (
    select id from public.app_payment_invoices
     where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-      and invoice_month = date '2026-09-01'
+      and invoice_month = pg_temp.ci_billing_month(0)
  );
 update public.app_payment_invoices
    set status = 'AGUARDANDO',
        provider_status = 'CONFIRMED'
  where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-   and invoice_month = date '2026-09-01';
+   and invoice_month = pg_temp.ci_billing_month(0);
 
 select lives_ok(
   $$select public.complete_app_invoice_provider_dispatch(
       (
         select id from public.app_payment_invoices
          where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-           and invoice_month = date '2026-09-01'
+           and invoice_month = pg_temp.ci_billing_month(0)
       ),
       'SANDBOX',
       'cus_monthly_ci_2',
@@ -437,7 +444,7 @@ select lives_ok(
       'ilha-monthly-invoice:' || (
         select id::text from public.app_payment_invoices
          where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-           and invoice_month = date '2026-09-01'
+           and invoice_month = pg_temp.ci_billing_month(0)
       ),
       150,
       'PIX',
@@ -453,7 +460,7 @@ select is(
      from public.app_invoice_provider_payments as payment
      join public.app_payment_invoices as invoice on invoice.id = payment.invoice_id
     where invoice.client_id = '71000000-0000-4000-8000-000000000002'::uuid
-      and invoice.invoice_month = date '2026-09-01'),
+      and invoice.invoice_month = pg_temp.ci_billing_month(0)),
   'CONFIRMED:CONFIRMED',
   'complete não rebaixa CONFIRMED para resposta PENDING atrasada'
 );
@@ -466,7 +473,7 @@ select is(
       'ilha-monthly-invoice:' || (
         select id::text from public.app_payment_invoices
          where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-           and invoice_month = date '2026-09-01'
+           and invoice_month = pg_temp.ci_billing_month(0)
       ),
       150,
       null,
@@ -482,7 +489,7 @@ select set_config('ilha.monthly_billing_write', '', true);
 select throws_ok(
   $$update public.app_payment_invoices set amount = amount + 1
      where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-       and invoice_month = date '2026-09-01'$$,
+       and invoice_month = pg_temp.ci_billing_month(0)$$,
   '23514',
   'Valor, vencimento e composição ficam congelados após a emissão.',
   'valor da fatura emitida fica congelado'
@@ -492,7 +499,7 @@ select throws_ok(
      where invoice_id = (
        select id from public.app_payment_invoices
         where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-          and invoice_month = date '2026-09-01'
+          and invoice_month = pg_temp.ci_billing_month(0)
      )$$,
   '23514',
   'A composição familiar fica congelada após a emissão.',
@@ -508,7 +515,7 @@ select throws_ok(
      where invoice_id = (
        select id from public.app_payment_invoices
         where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-          and invoice_month = date '2026-09-01'
+          and invoice_month = pg_temp.ci_billing_month(0)
      )$$,
   '23514',
   'A composição familiar fica congelada após a emissão.',
@@ -518,7 +525,7 @@ select throws_ok(
   $$update public.app_payment_invoices
        set status = 'PAGA', payment_method = 'PIX', paid_at = now()
      where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-       and invoice_month = date '2026-09-01'$$,
+       and invoice_month = pg_temp.ci_billing_month(0)$$,
   '42501',
   'Campos do provedor só podem ser alterados pelo fluxo financeiro.',
   'finance.write não pode forjar baixa manual depois da emissão'
@@ -529,7 +536,7 @@ select throws_ok(
      where app_payment_invoice_id = (
        select id from public.app_payment_invoices
         where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-          and invoice_month = date '2026-09-01'
+          and invoice_month = pg_temp.ci_billing_month(0)
      )$$,
   '42501',
   'Lançamento mensal vinculado só pode ser conciliado pelo fluxo financeiro.',
@@ -550,7 +557,7 @@ select is(
       'ilha-monthly-invoice:' || (
         select id::text from public.app_payment_invoices
          where client_id = '71000000-0000-4000-8000-000000000001'::uuid
-           and invoice_month = date '2026-09-01'
+           and invoice_month = pg_temp.ci_billing_month(0)
       ),
       100,
       '2026-09-08T12:00:00-03:00'::timestamptz,
@@ -564,7 +571,7 @@ select is(
 select is(
   (select status from public.app_payment_invoices
     where client_id = '71000000-0000-4000-8000-000000000001'::uuid
-      and invoice_month = date '2026-09-01'),
+      and invoice_month = pg_temp.ci_billing_month(0)),
   'PAGA',
   'pagamento recebido baixa a fatura automaticamente'
 );
@@ -574,7 +581,7 @@ select is(
     where ledger.app_payment_invoice_id = (
       select id from public.app_payment_invoices
        where client_id = '71000000-0000-4000-8000-000000000001'::uuid
-         and invoice_month = date '2026-09-01'
+         and invoice_month = pg_temp.ci_billing_month(0)
     )),
   'RECEBIDO:PIX',
   'baixa recebida sincroniza o lançamento de receita do ADM'
@@ -588,7 +595,7 @@ select is(
       'ilha-monthly-invoice:' || (
         select id::text from public.app_payment_invoices
          where client_id = '71000000-0000-4000-8000-000000000001'::uuid
-           and invoice_month = date '2026-09-01'
+           and invoice_month = pg_temp.ci_billing_month(0)
       ),
       100,
       '2026-09-08T12:00:00-03:00'::timestamptz,
@@ -604,7 +611,7 @@ select is(
     where dedupe_key = 'monthly-invoice-paid:' || (
       select id::text from public.app_payment_invoices
        where client_id = '71000000-0000-4000-8000-000000000001'::uuid
-         and invoice_month = date '2026-09-01'
+         and invoice_month = pg_temp.ci_billing_month(0)
     )),
   1,
   'baixa notifica somente uma vez o responsável da fatura'
@@ -616,7 +623,7 @@ select is(
       (
         select id from public.app_payment_invoices
          where client_id = '71000000-0000-4000-8000-000000000001'::uuid
-           and invoice_month = date '2026-09-01'
+           and invoice_month = pg_temp.ci_billing_month(0)
       ),
       'Resposta perdida depois da baixa sintética.',
       false
@@ -632,7 +639,7 @@ select is(
      join public.financial_transactions as ledger
        on ledger.app_payment_invoice_id = invoice.id
     where invoice.client_id = '71000000-0000-4000-8000-000000000001'::uuid
-      and invoice.invoice_month = date '2026-09-01'),
+      and invoice.invoice_month = pg_temp.ci_billing_month(0)),
   'PAGA:RECEIVED:RECEBIDO',
   'fatura, provider e razão permanecem baixados após falha tardia'
 );
@@ -643,7 +650,7 @@ select is(
        (
          select id from public.app_payment_invoices
           where client_id = '71000000-0000-4000-8000-000000000001'::uuid
-            and invoice_month = date '2026-09-01'
+            and invoice_month = pg_temp.ci_billing_month(0)
        ),
        null,
        1
@@ -660,7 +667,7 @@ update public.app_invoice_provider_payments
  where invoice_id = (
    select id from public.app_payment_invoices
     where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-      and invoice_month = date '2026-09-01'
+      and invoice_month = pg_temp.ci_billing_month(0)
  );
 
 select is(
@@ -669,7 +676,7 @@ select is(
        (
          select id from public.app_payment_invoices
           where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-            and invoice_month = date '2026-09-01'
+            and invoice_month = pg_temp.ci_billing_month(0)
        ),
        null,
        1
@@ -682,7 +689,7 @@ select is(
     (
       select id from public.app_payment_invoices
        where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-         and invoice_month = date '2026-09-01'
+         and invoice_month = pg_temp.ci_billing_month(0)
     ),
     'Cobrança remota não encontrada no polling sintético.',
     false
@@ -696,7 +703,7 @@ update public.app_invoice_provider_payments
  where invoice_id = (
    select id from public.app_payment_invoices
     where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-      and invoice_month = date '2026-09-01'
+      and invoice_month = pg_temp.ci_billing_month(0)
  );
 select is(
   (select stored_pix_payload
@@ -704,7 +711,7 @@ select is(
        (
          select id from public.app_payment_invoices
           where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-            and invoice_month = date '2026-09-01'
+            and invoice_month = pg_temp.ci_billing_month(0)
        ),
        null,
        1,
@@ -722,13 +729,13 @@ update public.app_invoice_provider_payments
  where invoice_id = (
    select id from public.app_payment_invoices
     where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-      and invoice_month = date '2026-09-01'
+      and invoice_month = pg_temp.ci_billing_month(0)
  );
 select is(
   (select count(*)::integer
      from public.claim_app_invoice_provider_dispatch(
        null,
-       date '2026-09-01',
+       pg_temp.ci_billing_month(0),
        1
      )),
   1,
@@ -741,7 +748,7 @@ update public.app_invoice_provider_payments
  where invoice_id = (
    select id from public.app_payment_invoices
     where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-      and invoice_month = date '2026-09-01'
+      and invoice_month = pg_temp.ci_billing_month(0)
  );
 select is(
   (select count(*)::integer
@@ -754,7 +761,7 @@ update public.app_invoice_provider_payments
  where invoice_id = (
    select id from public.app_payment_invoices
     where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-      and invoice_month = date '2026-09-01'
+      and invoice_month = pg_temp.ci_billing_month(0)
  );
 select is(
   (select allow_provider_create::text
@@ -769,7 +776,7 @@ update public.app_invoice_provider_payments
  where invoice_id = (
    select id from public.app_payment_invoices
     where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-      and invoice_month = date '2026-09-01'
+      and invoice_month = pg_temp.ci_billing_month(0)
  );
 select is(
   (select count(*)::integer
@@ -783,7 +790,7 @@ select is(
        (
          select id from public.app_payment_invoices
           where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-            and invoice_month = date '2026-09-01'
+            and invoice_month = pg_temp.ci_billing_month(0)
        ),
        null,
        1,
@@ -800,7 +807,7 @@ update public.app_invoice_provider_payments
  where invoice_id = (
    select id from public.app_payment_invoices
     where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-      and invoice_month = date '2026-09-01'
+      and invoice_month = pg_temp.ci_billing_month(0)
  );
 select is(
   (select attempt_number
@@ -818,7 +825,7 @@ select is(
       'ilha-monthly-invoice:' || (
         select id::text from public.app_payment_invoices
          where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-           and invoice_month = date '2026-09-01'
+           and invoice_month = pg_temp.ci_billing_month(0)
       ),
       150,
       now(),
@@ -832,14 +839,14 @@ select is(
 select is(
   (select provider_status from public.app_payment_invoices
     where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-      and invoice_month = date '2026-09-01'),
+      and invoice_month = pg_temp.ci_billing_month(0)),
   'REVIEW_REQUIRED',
   'divergência do provider fica visível sem expor identificadores'
 );
 select is(
   (select state
      from private.monthly_billing_candidates(
-       date '2026-09-01',
+       pg_temp.ci_billing_month(0),
        '71000000-0000-4000-8000-000000000002'::uuid
      )),
   'FAILED',
@@ -851,7 +858,7 @@ select is(
     where dedupe_key = 'monthly-billing-alert:' || (
       select id::text from public.app_payment_invoices
        where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-         and invoice_month = date '2026-09-01'
+         and invoice_month = pg_temp.ci_billing_month(0)
     ) || ':review_required:adm:10000000-0000-4000-8000-000000000001'),
   1,
   'divergência cria alerta ADM deduplicado para revisão financeira'
@@ -860,11 +867,11 @@ select is(
 update public.app_payment_invoices
    set status = 'PAGA'
  where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-   and invoice_month = date '2026-09-01';
+   and invoice_month = pg_temp.ci_billing_month(0);
 select is(
   (select state
      from private.monthly_billing_candidates(
-       date '2026-09-01',
+       pg_temp.ci_billing_month(0),
        '71000000-0000-4000-8000-000000000002'::uuid
      )),
   'FAILED',
@@ -873,7 +880,7 @@ select is(
 update public.app_payment_invoices
    set status = 'AGUARDANDO'
  where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-   and invoice_month = date '2026-09-01';
+   and invoice_month = pg_temp.ci_billing_month(0);
 
 update public.app_clients
    set official_plan_code = 'isento',
@@ -883,7 +890,7 @@ update public.app_clients
 
 select lives_ok(
   $$select public.generate_app_monthly_pix_billing(
-      date '2026-10-01',
+      pg_temp.ci_billing_month(1),
       '71000000-0000-4000-8000-000000000002'::uuid,
       'SANDBOX'
     )$$,
@@ -892,7 +899,7 @@ select lives_ok(
 select is(
   (select amount from public.app_payment_invoices
     where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-      and invoice_month = date '2026-10-01'),
+      and invoice_month = pg_temp.ci_billing_month(1)),
   50.00::numeric,
   'plano base zero não apaga o valor dos membros ativos confirmados'
 );
@@ -917,7 +924,7 @@ insert into public.app_family_members (
 select is(
   (select reason
      from private.monthly_billing_candidates(
-       date '2026-11-01',
+       pg_temp.ci_billing_month(2),
        '71000000-0000-4000-8000-000000000002'::uuid
      )),
   'FAMILY_MEMBER_CONFIRMATION_PENDING',
@@ -925,7 +932,7 @@ select is(
 );
 select lives_ok(
   $$select public.generate_app_monthly_pix_billing(
-      date '2026-11-01',
+      pg_temp.ci_billing_month(2),
       '71000000-0000-4000-8000-000000000002'::uuid,
       'SANDBOX'
     )$$,
@@ -934,7 +941,7 @@ select lives_ok(
 select is(
   (select count(*)::integer from public.app_payment_invoices
     where client_id = '71000000-0000-4000-8000-000000000002'::uuid
-      and invoice_month = date '2026-11-01'),
+      and invoice_month = pg_temp.ci_billing_month(2)),
   0,
   'nenhuma fatura parcial é emitida enquanto há confirmação familiar pendente'
 );
@@ -943,9 +950,9 @@ insert into public.app_payment_invoices (
   client_id, invoice_month, amount, due_date
 ) values (
   '71000000-0000-4000-8000-000000000001'::uuid,
-  date '2026-12-01',
+  pg_temp.ci_billing_month(3),
   100,
-  date '2026-12-31'
+  (pg_temp.ci_billing_month(4)-1)
 );
 update public.app_clients
    set status = 'BLOQUEADO'
@@ -953,7 +960,7 @@ update public.app_clients
 select is(
   (select state
      from private.monthly_billing_candidates(
-       date '2026-12-01',
+       pg_temp.ci_billing_month(3),
        '71000000-0000-4000-8000-000000000001'::uuid
      )),
   'SKIPPED',
@@ -966,11 +973,11 @@ update public.app_clients
 update public.app_payment_invoices
    set amount = 90
  where client_id = '71000000-0000-4000-8000-000000000001'::uuid
-   and invoice_month = date '2026-12-01';
+   and invoice_month = pg_temp.ci_billing_month(3);
 select is(
   (select reason
      from private.monthly_billing_candidates(
-       date '2026-12-01',
+       pg_temp.ci_billing_month(3),
        '71000000-0000-4000-8000-000000000001'::uuid
      )),
   'DRAFT_SNAPSHOT_MISMATCH',
@@ -978,7 +985,7 @@ select is(
 );
 select lives_ok(
   $$select public.generate_app_monthly_pix_billing(
-      date '2026-12-01',
+      pg_temp.ci_billing_month(3),
       '71000000-0000-4000-8000-000000000001'::uuid,
       'SANDBOX'
     )$$,
@@ -989,7 +996,7 @@ select is(
     where invoice_id = (
       select id from public.app_payment_invoices
        where client_id = '71000000-0000-4000-8000-000000000001'::uuid
-         and invoice_month = date '2026-12-01'
+         and invoice_month = pg_temp.ci_billing_month(3)
     )),
   0,
   'rascunho divergente permanece sem provider payment'
@@ -1085,9 +1092,9 @@ select throws_ok(
       client_id, invoice_month, amount, due_date
     ) values (
       '71000000-0000-4000-8000-000000000001'::uuid,
-      date '2026-10-15',
+      (pg_temp.ci_billing_month(1)+14),
       100,
-      date '2026-10-31'
+      (pg_temp.ci_billing_month(2)-1)
     )$$,
   '23514',
   null,
