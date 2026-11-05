@@ -3,31 +3,161 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "redirects": [
-    { "source": "/inscricoes/ilha-open-2026-teste", "destination": "/inscricoes/ilha-open-2026", "permanent": false },
-    { "source": "/torneios/ilha-open-2026-teste", "destination": "/torneios/ilha-open-2026", "permanent": false },
-    { "source": "/clientes", "destination": "/", "permanent": true },
-    { "source": "/clientes/:path*", "destination": "/", "permanent": true },
-    { "source": "/index.html", "destination": "/", "permanent": true },
-    { "source": "/cliente", "destination": "/", "permanent": true },
-    { "source": "/alunos", "destination": "/", "permanent": true },
-    { "source": "/agenda", "destination": "/quadras", "permanent": true },
-    { "source": "/admin", "destination": "/adm", "permanent": false }
+    {
+      "source": "/inscricoes/ilha-open-2026-teste",
+      "destination": "/inscricoes/ilha-open-2026",
+      "permanent": false
+    },
+    {
+      "source": "/torneios/ilha-open-2026-teste",
+      "destination": "/torneios/ilha-open-2026",
+      "permanent": false
+    },
+    {
+      "source": "/clientes",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/clientes/:path*",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/cliente",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/alunos",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/agenda",
+      "destination": "/quadras",
+      "permanent": true
+    },
+    {
+      "source": "/admin",
+      "destination": "/adm",
+      "permanent": false
+    }
   ],
   "rewrites": [
-    { "source": "/inscricoes/:slug/espacial-convite", "destination": "/inscricoes/espacial" },
-    { "source": "/inscricoes/:slug/espacial", "destination": "/inscricoes/espacial" },
-    { "source": "/inscricoes/:slug", "destination": "/torneios" },
-    { "source": "/inscricoes/:slug/:path*", "destination": "/torneios" },
-    { "source": "/torneios", "destination": "/torneios" },
-    { "source": "/torneios/:slug", "destination": "/torneios" },
-    { "source": "/torneios/:slug/:path*", "destination": "/torneios" },
-    { "source": "/cardapio", "destination": "/menu/" },
-    { "source": "/quadras", "destination": "/" },
-    { "source": "/menu", "destination": "/menu/index.html" },
-    { "source": "/admbar", "destination": "/adm" },
-    { "source": "/admbar/:path*", "destination": "/adm" }
+    {
+      "source": "/eventos/:slug",
+      "destination": "/eventos"
+    },
+    {
+      "source": "/inscricoes/:slug/espacial-convite",
+      "destination": "/inscricoes/espacial"
+    },
+    {
+      "source": "/inscricoes/:slug/espacial",
+      "destination": "/inscricoes/espacial"
+    },
+    {
+      "source": "/inscricoes/:slug",
+      "destination": "/torneios"
+    },
+    {
+      "source": "/inscricoes/:slug/:path*",
+      "destination": "/torneios"
+    },
+    {
+      "source": "/torneios",
+      "destination": "/torneios"
+    },
+    {
+      "source": "/torneios/:slug",
+      "destination": "/torneios"
+    },
+    {
+      "source": "/torneios/:slug/:path*",
+      "destination": "/torneios"
+    },
+    {
+      "source": "/cardapio",
+      "destination": "/menu/"
+    },
+    {
+      "source": "/quadras",
+      "destination": "/"
+    },
+    {
+      "source": "/menu",
+      "destination": "/menu/index.html"
+    },
+    {
+      "source": "/admbar",
+      "destination": "/adm"
+    },
+    {
+      "source": "/admbar/:path*",
+      "destination": "/adm"
+    }
   ],
   "headers": [
+    {
+      "source": "/aulas",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/game2",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/game2/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/games",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/games/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/inscricao-pickleball",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [
@@ -35,107 +165,173 @@
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://challenges.cloudflare.com https://www.youtube.com https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com https://script.google.com https://script.googleusercontent.com; frame-src 'self' https:; media-src 'self' blob: https:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests"
         },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-        { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
         {
           "key": "Permissions-Policy",
-          "value": "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), autoplay=(self \"https://www.youtube.com\"), clipboard-write=(self), fullscreen=(self \"https://www.youtube.com\")"
+          "value": "accelerometer=(), camera=(self), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), autoplay=(self \"https://www.youtube.com\"), clipboard-write=(self), web-share=(self), fullscreen=(self \"https://www.youtube.com\")"
         }
       ]
     },
     {
       "source": "/service-worker.js",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/auto-update.js",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/app-version.json",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/adm",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/admbar",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/bar",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/menu",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/torneios",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/torneios/:path*",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/bet",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/bet/:path*",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/inscricoes/:slug/espacial-convite",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
       ]
     },
     {
       "source": "/inscricoes/:slug/espacial",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
       ]
     },
     {
       "source": "/quadras",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     }
-  ]
+  ],
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "framework": null
 }

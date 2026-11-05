@@ -1,5 +1,7 @@
 import "jsr:@supabase/functions-js@2.112.3/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
+import { reconcileStorePayment, storeProvider } from "../_shared/store-payment.ts";
+import { reconcileEventPayment } from "../_shared/event-payment.ts";
 
 type JsonRecord = Record<string, unknown>;
 type DbClient = SupabaseClient<any, "public", "public", any>;
@@ -433,6 +435,34 @@ Deno.serve(async (request) => {
 
     failureStage = "payment_lookup";
     const externalReference = text(providerPayment.externalReference, 180);
+    if (/^ilha-event:[0-9a-f-]{36}$/i.test(externalReference)) {
+      failureStage = "event_ticket_reconciliation";
+      const order = await supabase.from("bar_event_orders").select("*").eq("id", externalReference.slice(11)).single();
+      if (order.error || !order.data) throw new Error("Pedido de ingressos ainda não localizado.");
+      const currentPayment = await storeProvider(`/payments/${encodeURIComponent(providerPaymentId)}`);
+      await reconcileEventPayment(supabase, order.data, currentPayment);
+      const completed = await supabase.from("asaas_webhook_events").update({
+        status: "PROCESSED", processed_at: new Date().toISOString(), error: null,
+        processing_token: null, processing_started_at: null,
+      }).eq("event_id", eventId).eq("processing_token", processingToken).select("id").maybeSingle();
+      if (completed.error || !completed.data) throw new Error("Não foi possível finalizar o pagamento dos ingressos.");
+      return json({ received: true, event_tickets: true });
+    }
+    if (/^ilha-store:[0-9a-f-]{36}$/i.test(externalReference)) {
+      failureStage = "store_reconciliation";
+      const storeOrder = await supabase.from("app_store_orders").select("*").eq("id", externalReference.slice(11)).single();
+      if (storeOrder.error || !storeOrder.data) throw new Error("Pedido da loja ainda não localizado.");
+      // Read current provider state: duplicate/out-of-order webhooks cannot
+      // turn an already refunded payment back into paid.
+      const currentPayment = await storeProvider(`/payments/${encodeURIComponent(providerPaymentId)}`);
+      await reconcileStorePayment(supabase, storeOrder.data, currentPayment);
+      const completed = await supabase.from("asaas_webhook_events").update({
+        status: "PROCESSED", processed_at: new Date().toISOString(), error: null,
+        processing_token: null, processing_started_at: null,
+      }).eq("event_id", eventId).eq("processing_token", processingToken).select("id").maybeSingle();
+      if (completed.error || !completed.data) throw new Error("Não foi possível finalizar o evento da loja.");
+      return json({ received: true, store: true });
+    }
     const localPayment = await findTournamentPayment(
       supabase,
       providerEnvironment,

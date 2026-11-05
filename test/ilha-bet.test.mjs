@@ -12,11 +12,13 @@ test('Ilha Bet entra no build e possui página pública própria', async () => {
     read('bet/index.html'),
     read('bet/app.js')
   ]);
-  assert.match(build, /directories = \[[^\]]*'bet'/);
+  const siteFiles = JSON.parse(await read('config/site-files.json'));
+  for (const file of ['bet/index.html','bet/app.js','bet/styles.css']) assert.ok(siteFiles.includes(file));
+  assert.match(build, /config\/site-files\.json/);
   assert.match(html, /<title>Ilha Bet/);
   assert.match(html, /href="\/bet\/styles\.css"/);
   assert.match(html, /src="\/bet\/app\.js"/);
-  assert.match(html, /não há aposta, pagamento, depósito, saque, odds ou pontos convertidos em dinheiro/i);
+  assert.match(html, /Participação recreativa, gratuita e sem fins lucrativos/i);
   assert.match(html, /const SUPABASE_URL = ['"]https:\/\/lkqtgptebkgfwguykxhv\.supabase\.co/);
   assert.match(html, /const SUPABASE_ANON_KEY = ['"]sb_publishable_/);
   assert.doesNotMatch(app, /lkqtgptebkgfwguykxhv|sb_publishable_/);
@@ -34,15 +36,24 @@ test('acesso público guarda somente código e identificador no aparelho', async
 });
 
 test('resumo e filtros públicos permanecem corretos no celular', async () => {
-  const [app, styles] = await Promise.all([
+  const [app, styles, html, publicApi] = await Promise.all([
     read('bet/app.js'),
-    read('bet/styles.css')
+    read('bet/styles.css'),
+    read('bet/index.html'),
+    read('supabase/functions/bet-public-api/index.ts')
   ]);
-  assert.match(app, /matchCount === 1 \? 'jogo disponível' : 'jogos disponíveis'/);
+  assert.doesNotMatch(app, /\$\('campaignWindow'\)/);
   assert.doesNotMatch(app, /disponível\$\{[^}]+\? '' : 'is'\}/);
   assert.match(app, /categoryIdsWithMatches = new Set\(state\.data\.matches\.map/);
   assert.match(app, /availableCategories = state\.data\.categories\.filter/);
   assert.match(styles, /@media \(max-width: 800px\)[\s\S]*\.hero-score \{[^}]*background: var\(--teal\)/);
+  assert.match(html, /id="gamesDayTabs"/);
+  assert.match(app, /data-bet-day/);
+  assert.match(app, /function sortAgendaMatches/);
+  assert.match(app, /class="courts-grid"/);
+  assert.match(styles, /\.toast:empty \{ display: none; \}/);
+  assert.match(styles, /@media \(max-width: 800px\)[\s\S]*\.courts-grid \{ grid-template-columns: 1fr; \}/);
+  assert.match(publicApi, /sort_order: match\.sort_order/);
 });
 
 test('link simples escolhe a campanha ativa sem permitir fallback de slug inválido', async () => {
@@ -133,7 +144,7 @@ test('banco do Palpite Ilha mantém PII fechada e prêmio desligado no seed', as
 
 test('pgTAP cobre ledger, e-mail, grants, idempotência e finalização', async () => {
   const sql = await read('test/supabase/ilha_bet.test.sql');
-  assert.match(sql, /select plan\(34\)/);
+  assert.match(sql, /select plan\(36\)/);
   assert.match(sql, /tournament_prediction_requests/);
   assert.match(sql, /tournament_prediction_access_email_deliveries/);
   assert.match(sql, /retry exato não duplica palpite, ledger ou auditoria/);
@@ -145,28 +156,42 @@ test('pgTAP cobre ledger, e-mail, grants, idempotência e finalização', async 
 });
 
 test('código de acesso é enviado por e-mail com idempotência e sem quebrar o cadastro', async () => {
-  const [helper, publicApi, adminApi, html, app, migration] = await Promise.all([
+  const [helper, publicApi, adminApi, adminJs, html, app, migration, manualMigration] = await Promise.all([
     read('supabase/functions/_shared/prediction-access-email.ts'),
     read('supabase/functions/bet-public-api/index.ts'),
     read('supabase/functions/bet-admin-api/index.ts'),
+    read('adm/predictions.js'),
     read('bet/index.html'),
     read('bet/app.js'),
-    read('supabase/migrations/20260912115944_add_prediction_access_email_delivery.sql')
+    read('supabase/migrations/20260912115944_add_prediction_access_email_delivery.sql'),
+    read('supabase/migrations/20260914122406_add_prediction_manual_access_email.sql')
   ]);
   assert.match(helper, /https:\/\/api\.resend\.com\/emails/);
-  assert.match(helper, /"Idempotency-Key": `ilha-bet-access\/\$\{entry\.id\}`/);
+  assert.match(helper, /: `ilha-bet-access\/\$\{entry\.id\}`/);
   assert.match(helper, /RESEND_API_KEY/);
   assert.match(helper, /PREDICTION_EMAIL_FROM/);
   assert.match(helper, /AbortSignal\.timeout\(8_000\)/);
   assert.doesNotMatch(helper, /access_code=/);
   assert.match(publicApi, /sendPredictionAccessEmail[\s\S]*catch \(emailError\)[\s\S]*email_delivery: emailDelivery/);
   assert.match(adminApi, /action === "sendAccessEmails"/);
+  assert.match(adminApi, /action === "sendAccessEmail"/);
+  assert.match(adminApi, /action === "accessWhatsapp"/);
   assert.match(adminApi, /\.eq\("status", "ACTIVE"\)/);
+  assert.match(adminJs, /data-bet-email/);
+  assert.match(adminJs, /data-bet-whatsapp/);
+  assert.match(adminJs, /action: 'sendAccessEmail'/);
+  assert.match(adminJs, /action: 'accessWhatsapp'/);
   assert.match(html, /id="newAccessEmailStatus"/);
+  assert.match(html, /id="lostAccessButton"/);
   assert.match(app, /response\.email_delivery[\s\S]*Também enviamos uma cópia/);
+  assert.match(app, /function requestLostAccess[\s\S]*https:\/\/wa\.me\//);
   assert.match(migration, /force row level security/);
   assert.match(migration, /claim_tournament_prediction_access_email/);
   assert.match(migration, /complete_tournament_prediction_access_email/);
+  assert.match(manualMigration, /claim_tournament_prediction_access_email_retry/);
+  assert.match(manualMigration, /revoke all[\s\S]*from public, anon, authenticated/);
+  assert.match(manualMigration, /grant execute[\s\S]*to service_role/);
+  assert.match(helper, /manual-\$\{attemptCount\}/);
 });
 
 test('Edge Functions usam captcha, rate limit e dupla autorização administrativa', async () => {
@@ -189,20 +214,32 @@ test('Edge Functions usam captcha, rate limit e dupla autorização administrati
   assert.match(config, /\[functions\.bet-admin-api\]\s+verify_jwt = true/);
 });
 
-test('cada jogo abre para palpites somente nas 24 horas anteriores', async () => {
+test('somente jogos agendados aparecem e o primeiro horário do dia encerra os palpites', async () => {
   const [publicApi, app, html, migration] = await Promise.all([
     read('supabase/functions/bet-public-api/index.ts'),
     read('bet/app.js'),
     read('bet/index.html'),
-    read('supabase/migrations/20260911210000_open_predictions_one_day_before_match.sql')
+    read('supabase/migrations/20260914174048_schedule_prediction_day_window.sql')
   ]);
-  assert.match(publicApi, /referenceMs - 24 \* 60 \* 60 \* 1000/);
+  assert.match(publicApi, /function matchAgendaDay/);
+  assert.match(publicApi, /function predictionDayCutoffs/);
+  assert.match(publicApi, /timestamp < new Date\(current\)\.getTime\(\)/);
+  assert.match(publicApi, /dayCutoffs\.has\(day\) \|\| match\.prediction_opened_on === day/);
+  assert.match(publicApi, /matchMap = new Map\(completeMatches\.map/);
+  assert.match(publicApi, /closesAtMs - 24 \* 60 \* 60 \* 1000/);
   assert.match(publicApi, /prediction_opens_at: window\.opensAt/);
+  assert.match(publicApi, /prediction_closes_at: window\.closesAt/);
   assert.match(publicApi, /lock_reason: acceptingPredictions \? matchLockReason/);
   assert.match(app, /match\.lock_reason === 'UPCOMING'/);
   assert.match(app, /Abre \$\{dateTimeLabel\(match\.prediction_opens_at\)\}/);
-  assert.match(html, /Cada jogo abre para palpites 24 horas antes do horário marcado/);
-  assert.match(migration, /clock_timestamp\(\) < v_reference_at - interval '24 hours'/);
-  assert.match(migration, /before insert or update of predicted_winner_athlete_id/);
+  assert.doesNotMatch(html, /Mostramos somente os jogos que já estão na agenda/);
+  assert.doesNotMatch(html, /id="joinButton"|id="tournamentLink"|class="hero-score"/);
+  assert.match(migration, /function private\.tournament_prediction_day_cutoff/);
+  assert.match(migration, /select min\([\s\S]*candidate\.scheduled_at/);
+  assert.match(migration, /candidate\.match_date[\s\S]*= selected_match\.match_day/);
+  assert.match(migration, /clock_timestamp\(\) < v_day_cutoff - interval '24 hours'/);
+  assert.match(migration, /clock_timestamp\(\) >= v_day_cutoff/);
+  assert.match(migration, /v_match\.match_date is null and v_match\.scheduled_at is null/);
   assert.match(migration, /message = 'prediction_not_open'/);
+  assert.match(migration, /message = 'prediction_locked'/);
 });

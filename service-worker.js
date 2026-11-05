@@ -1,8 +1,9 @@
 const CACHE_PREFIX = 'ilha-play-v';
-const CACHE_NAME = 'ilha-play-v243-palpite-ilha';
+const CACHE_NAME = 'ilha-play-v333-finance-receipts';
 const CORE_ASSETS = [
   '/',
   '/index.html',
+  '/client-area-preview.js',
   '/auto-update.js',
   '/app-version.json',
   '/manifest.json',

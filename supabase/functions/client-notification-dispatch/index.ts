@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js@2.112.3/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import webpush from "npm:web-push@3.6.7";
+import { dispatchPredictionPushes } from "../_shared/prediction-push-dispatch.ts";
 
 type Dispatch = {
   dispatch_id: string;
@@ -15,6 +16,12 @@ type Dispatch = {
 
 function notificationTtlSeconds(eventType: string) {
   const normalized = String(eventType || "").toUpperCase();
+  if (normalized === "FATURA_MENSAL_LEMBRETE") {
+    const clock = new Intl.DateTimeFormat("en-GB", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).format(new Date());
+    const [hour, minute, second] = clock.split(":").map(Number);
+    return Math.max(0, Math.min(60, 86400 - hour * 3600 - minute * 60 - second));
+  }
+  if (normalized === "BET_JOGO_LIBERADO") return 30 * 60;
   if (normalized === "LEMBRETE_QUADRA") return 2 * 60 * 60;
   if (normalized === "CONVITE_QUADRA" || normalized === "CONVITE_QUADRA_ABERTO") {
     return 12 * 60 * 60;
@@ -23,7 +30,7 @@ function notificationTtlSeconds(eventType: string) {
 }
 
 function notificationSurface(eventType: string) {
-  const adminOnlyEvents = new Set(["NOVO_ALUNO", "TORNEIO_INSCRICAO", "FATURA_MENSAL_FALHA"]);
+  const adminOnlyEvents = new Set(["NOVO_ALUNO", "NOVO_INTERESSADO_AULA", "TORNEIO_INSCRICAO", "FATURA_MENSAL_FALHA"]);
   return adminOnlyEvents.has(String(eventType || "").toUpperCase()) ? "ADM" : "ILHA_PLAY";
 }
 
@@ -95,9 +102,6 @@ Deno.serve(async (request) => {
     const { data, error } = await supabase.rpc("claim_app_client_push_dispatches", { p_limit: 100 });
     if (error) throw error;
     const dispatches = (data || []) as Dispatch[];
-    if (!dispatches.length) {
-      return json({ processed: 0, sent: 0, partial: 0, without_subscription: 0, failed: 0 });
-    }
 
     // Fetch VAPID only when a claimed recipient actually has a browser
     // subscription. In-app notifications must still be finalized truthfully
@@ -124,9 +128,32 @@ Deno.serve(async (request) => {
     let partial = 0;
     let withoutSubscription = 0;
     let failed = 0;
+    // Public tournament visitors have no Ilha Play account. Their durable
+    // queue excludes endpoints already receiving the in-app client broadcast.
+    let predictionPushes = { processed: 0, sent: 0, failed: 0 };
+    try {
+      predictionPushes = await dispatchPredictionPushes(supabase, ensurePushConfiguration);
+    } catch (_predictionError) {
+      console.error("client-notification-dispatch prediction queue failure");
+      predictionPushes.failed = 1;
+    }
 
     for (const dispatch of dispatches) {
       try {
+        if (["FATURA_MENSAL_LEMBRETE", "FATURA_MENSAL_DISPONIVEL"].includes(dispatch.event_type)) {
+          const current = await supabase.rpc("monthly_payment_notification_is_current", {
+            p_notification_id: dispatch.notification_id,
+          });
+          if (current.error) throw current.error;
+          if (current.data !== true) {
+            const skipped = await supabase.from("app_client_notification_dispatches").update({
+              status: "FALHOU", last_error: "Lembrete encerrado: pago, desativado ou fora da janela diária.",
+              updated_at: new Date().toISOString(),
+            }).eq("id", dispatch.dispatch_id);
+            if (skipped.error) throw skipped.error;
+            continue;
+          }
+        }
         const subscriptionSurface = notificationSurface(dispatch.event_type);
         const { data: subscriptions, error: subscriptionsError } = await supabase
           .from("app_push_subscriptions")
@@ -246,6 +273,7 @@ Deno.serve(async (request) => {
       partial,
       without_subscription: withoutSubscription,
       failed,
+      tournament_predictions: predictionPushes,
     });
   } catch (error) {
     const code = error && typeof error === "object" && "code" in error

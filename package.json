@@ -12,10 +12,14 @@
     "deps:check": "node scripts/check-dependencies.mjs",
     "lint": "node scripts/lint.mjs && deno lint --no-config --rules-exclude=no-import-prefix,no-explicit-any supabase/functions/*/index.ts",
     "typecheck": "node scripts/typecheck.mjs",
-    "test": "node --test --test-reporter=spec",
+    "test": "node --test --test-reporter=spec test/*.test.mjs",
     "build": "node scripts/build.mjs",
-    "verify": "pnpm run deps:check && pnpm run lint && pnpm run typecheck && pnpm test && pnpm run build",
-    "serve": "node scripts/serve.mjs"
+    "verify": "pnpm run deps:check && pnpm run lint && pnpm run typecheck && pnpm test && pnpm run build && pnpm run test:edge",
+    "serve": "node scripts/serve.mjs",
+    "test:edge": "deno test --no-config --allow-env --allow-read --allow-write=tmp/pdfs test/*.test.ts",
+    "release:check": "node scripts/check-release.mjs",
+    "release:bump": "node scripts/bump-release.mjs",
+    "release:publish": "node scripts/publish-release.mjs"
   },
   "devDependencies": {
     "agent-browser": "0.34.0",

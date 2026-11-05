@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#112a26">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ilha Mistério">
+  <link rel="manifest" href="/game2/manifest.json">
+  <link rel="apple-touch-icon" sizes="180x180" href="/game2/assets/ilha-misterio-icon-180-v2.png">
+  <meta name="description" content="Ilha Tênis — O Mistério. Cure a turma em quadra, investigue com os pequenos detetives e descubra quem confundiu o tempero. Especial Halloween.">
+  <title>Ilha Tênis — O Mistério · Ilha Games</title>
+  <link rel="icon" type="image/png" sizes="192x192" href="/game2/assets/ilha-misterio-icon-192-v2.png">
+  <link rel="stylesheet" href="/game2/styles.css">
+  <link rel="stylesheet" href="/game2/world.css">
+  <link rel="stylesheet" href="/game2/tennis.css">
+  <link rel="stylesheet" href="/game2/adventure.css">
+  <link rel="stylesheet" href="/game2/legado.css">
+  <link rel="stylesheet" href="/game2/game-display.css">
+  <link rel="stylesheet" href="/game2/game-install.css">
+  <link rel="stylesheet" href="/game2/arcade-ui.css">
+  <link rel="stylesheet" href="/game2/campaign.css">
+  <link rel="stylesheet" href="/game2/lesson-tutorial.css">
+  <link rel="stylesheet" href="/game2/quick-play.css">
+  <link rel="stylesheet" href="/game2/game-polish.css">
+  <link rel="stylesheet" href="/game2/ending-album.css">
+  <link rel="stylesheet" href="/game2/halloween.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Voltar ao Ilha Play"><img src="/assets/branding/ilha-tenis-logo-light.png" alt="Ilha Tênis"><span>GAMES<span class="pixel-dot"></span></span></a>
+    <nav aria-label="Navegação"><a href="#jogos" class="nav-active">Jogos</a><button type="button" id="openRanking" class="nav-button">Ranking</button><a href="/" class="back-link">Voltar ao app <span aria-hidden="true">↗</span></a></nav>
+  </header>
+  <main class="game-home">
+    <section id="jogos" class="game-feature game-launch" aria-labelledby="tennis-title">
+      <canvas class="game-cover" data-club-preview="cover" width="768" height="768" aria-label="Mapa do Ilha Tênis em pixel art"></canvas>
+      <div class="launch-copy"><h1 id="tennis-title" class="sr-only">Ilha Tênis — O Mistério</h1><canvas data-game-logo width="390" height="264" class="game-title-mark" aria-hidden="true"></canvas></div>
+      <div class="launch-actions"><button class="primary play-button landing-play" id="openGame" type="button" disabled aria-busy="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span>Jogar</span><small>ENTRAR NA ILHA</small></button><button id="landingDisplayHelp" class="install-shortcut" type="button" hidden><img src="/game2/assets/ilha-misterio-icon-192-v2.png" width="44" height="44" alt=""><span><strong>Instalar jogo</strong><small>Na sua Tela de Início</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 16v5h16v-5"/></svg></button></div>
+    </section>
+  </main>
+  <dialog id="rankingDialog" class="ranking-dialog" aria-labelledby="ranking-title">
+    <div class="ranking-dialog-head"><span class="eyebrow">OS DONOS DA QUADRA</span><button type="button" class="icon-button" id="closeRanking" aria-label="Fechar ranking">✕</button></div>
+    <section id="ranking" class="ranking-panel" aria-labelledby="ranking-title"><div class="panel-top"><span class="eyebrow">RANKING</span><span aria-hidden="true" class="trophy">♜</span></div><h2 id="ranking-title">Ranking do clube<span>.</span></h2><p class="ranking-description">As melhores partidas do Ilha Tennis.</p><div class="ranking-head"><span>JOGADOR</span><span>RECORDE</span></div><ol id="leaderboard" class="leaderboard" aria-live="polite"><li class="rank-empty">Carregando o ranking…</li></ol><button type="button" class="text-button" id="refreshRanking">Atualizar ranking <span aria-hidden="true">↻</span></button><div class="personal-record"><span>SEU RECORDE NESTE NAVEGADOR</span><strong id="personalBest">— <small>PTS</small></strong></div><p class="ranking-footnote">Vale sua melhor partida, não a soma. Empatou? Mais pontos vencidos, mais devoluções e quem chegou primeiro.</p></section>
+  </dialog>
+  <dialog id="gameDialog" aria-labelledby="dialogTitle">
+    <canvas data-club-preview="cover" width="768" height="768" class="legacy-scene-bg" aria-hidden="true"></canvas>
+    <div class="dialog-header"><strong id="dialogTitle">ILHA TÊNIS <span>O MISTÉRIO</span></strong><div><button type="button" class="icon-button" id="fullscreenButton" aria-label="Entrar em tela cheia" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6"/></svg><span>Tela cheia</span></button><button type="button" class="icon-button" id="soundButton" aria-label="Ativar som" aria-pressed="false">Som off</button><button type="button" class="icon-button" id="closeGame" aria-label="Fechar jogo">✕</button></div></div>
+    <section id="legacyMenu" class="legacy-menu" hidden aria-labelledby="legacyTitle">
+      <canvas data-club-preview="cover" width="768" height="768" class="legacy-backdrop" aria-hidden="true"></canvas>
+      <div class="legacy-menu-copy"><h2 id="legacyTitle" class="sr-only">Ilha Tênis — O Mistério</h2><canvas data-game-logo width="390" height="264" class="game-title-mark" aria-hidden="true"></canvas>
+        <div class="legacy-menu-buttons"><button id="legacyNew" type="button">Novo jogo <span>▶</span></button><button id="legacyContinue" type="button">Continuar <span>↗</span></button><button id="legacyRoster" type="button">Conheça a galera <span>25</span></button><button id="legacyAbout" type="button">História <span>?</span></button><button id="legacyMusic" type="button">Ouvir músicas <span>♪</span></button><button id="legacyOptions" type="button">Opções <span>⚙</span></button></div><small id="legacySaveInfo">Uma nova história está esperando por você.</small>
+        <button id="legacyFree" class="free-play-button" type="button">Jogar livre <span>Monte sua partida →</span></button>
+        <button id="menuDisplayHelp" class="install-shortcut" type="button" hidden><img src="/game2/assets/ilha-misterio-icon-192-v2.png" width="40" height="40" alt=""><span><strong>Instalar jogo</strong><small>Um atalho para a sua aventura</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 16v5h16v-5"/></svg></button>
+      </div>
+    </section>
+    <section id="legacyProfile" class="legacy-paper" hidden aria-labelledby="profileTitle"><h2 id="profileTitle">Quem vai desvendar o mistério?</h2><form id="profileForm">
+<div id="profileNameStep"><label for="adventureName">Como a turma vai te chamar?</label><input id="adventureName" name="adventureName" maxlength="18" minlength="2" required autocomplete="nickname" placeholder="Seu nome ou apelido"><button id="profileNameNext" type="button" class="primary">Continuar →</button></div>
+<div id="profileGenderStep" hidden><h3>Você vai jogar como:</h3><div class="profile-genders"><button type="button" data-gender="player-m">Menino</button><button type="button" data-gender="player-f">Menina</button></div></div>
+<div id="profileAvatarStep" hidden><h3>Escolha seu personagem</h3><div id="profileChoices" class="profile-choices" role="group" aria-label="Seu personagem"></div><button type="submit" class="primary" id="profileSubmit">Começar aventura ▶</button></div>
+<p id="profileWarning" role="status"></p><button type="button" class="text-button" id="profileStepBack" hidden>← Voltar uma etapa</button><button type="button" class="text-button" id="profileCancel">Voltar ao menu</button></form></section>
+    <section id="legacyRosterArea" class="legacy-paper" hidden aria-labelledby="rosterTitle"><div class="legacy-page-heading"><div><p class="eyebrow">25 PERSONAGENS. UM MISTÉRIO.</p><h2 id="rosterTitle">Conheça a galera.</h2></div><button type="button" class="text-button" id="rosterBack">Voltar</button></div><p>Conheça a turma do clube e os pequenos detetives que vão ajudar na investigação.</p><div id="rosterCards" class="roster-grid"></div></section>
+    <section id="legacyInfo" class="legacy-paper" hidden aria-labelledby="legacyInfoTitle"><p class="eyebrow">ILHA TÊNIS — O MISTÉRIO</p><h2 id="legacyInfoTitle"></h2><p id="legacyInfoText"></p><div id="legacyInfoActions" class="story-actions"></div></section>
+    <section id="worldArea" class="world-area" hidden aria-label="Explore o clube">
+      <div class="world-topbar"><div class="world-location"><span class="live-dot"></span><div><small>ILHA TÊNIS · COLATINA</small><strong id="worldLocation">Portaria</strong></div></div><div class="world-tools"><button id="changeCharacter" type="button"><span aria-hidden="true">♟</span> <span id="worldCharacter">Visitante</span></button><button id="openMap" type="button">Mapa <span aria-hidden="true">▦</span></button><button id="worldMenu" type="button" aria-label="Menu da aventura">Menu</button><button id="medalsButton" type="button" aria-label="Abrir caderno de recuperações">Curas</button></div></div>
+      <div class="world-stage">
+        <canvas id="worldCanvas" width="900" height="600" tabindex="0" role="img" aria-label="Clube explorável. Toque no caminho para andar até lá. Perto de alguém, use Conversar. No teclado, setas ou WASD para andar e E para interagir. Missão mostra seu próximo destino."></canvas>
+        <div id="walkTutorial" class="walk-tutorial" hidden role="status"><b>Siga a marca amarela</b><span>Chegue perto do destino e toque em Interagir.</span></div>
+        <div class="world-mission" id="worldMission"><span hidden></span><p hidden></p><button id="missionButton" type="button" aria-label="Abrir missão atual">⚑ Missão</button></div>
+        <button type="button" id="miniMapButton" class="minimap-button" aria-label="Abrir mapa do clube"><canvas id="miniMap" width="144" height="144" aria-hidden="true"></canvas><span>MAPA DO CLUBE</span></button>
+        <div id="worldIntro" class="world-intro" hidden><h2>Bem-vindo ao Ilha Tênis</h2><button type="button" id="skipWorldIntro">Entrar no clube →</button></div>
+        <div class="world-controls" id="worldControls"><div id="walkPad" class="walk-pad" role="group" aria-label="Analógico para andar: arraste em qualquer direção"><button type="button" data-walk="0,-1" aria-label="Andar para cima">▲</button><button type="button" data-walk="-1,0" aria-label="Andar para a esquerda">◀</button><span class="joystick-knob" aria-hidden="true"></span><button type="button" data-walk="1,0" aria-label="Andar para a direita">▶</button><button type="button" data-walk="0,1" aria-label="Andar para baixo">▼</button></div><div class="world-interaction"><span id="nearbyHint"></span><button type="button" id="interactButton" disabled aria-label="Aproxime-se para conversar">A</button></div></div>
+        <section id="worldStory" class="world-story" hidden role="dialog" aria-modal="true" aria-labelledby="storyTitle" aria-describedby="storyText"><div class="story-head"><canvas id="storyPortrait" width="144" height="180" aria-hidden="true"></canvas><div><span id="storyEyebrow">RESENHA NO ILHA</span><h2 id="storyTitle"></h2></div><button type="button" id="closeStory" aria-label="Fechar conversa">✕</button></div><p id="storyText"></p><div id="storyExtras"></div><div id="storyActions" class="story-actions"></div></section>
+        <section id="worldMap" class="world-map" hidden role="dialog" aria-modal="true" aria-labelledby="mapTitle"><div class="map-heading"><div><p class="eyebrow">ESCOLHA UM DESTINO</p><h2 id="mapTitle">A nossa Ilha.</h2></div><button type="button" id="closeMap" class="icon-button" aria-label="Fechar mapa">✕</button></div><div class="map-content"><canvas data-club-preview="map" width="512" height="512" role="img" aria-label="Mapa completo: rua lateral à direita, entrada junto às casas, beach tênis e futevôlei acima, duas quadras de saibro, bar e deck à esquerda, pickleball abaixo e rio ao redor"></canvas><div><p>Escolha um lugar ou personagem. Seu jogador vai andando até lá.</p><div id="mapDestinations"></div></div></div></section>
+        <p id="worldError" class="world-error" role="alert" hidden>O mapa não carregou. Confira sua conexão e tente abrir o jogo novamente.</p>
+        <p id="worldLoading" class="world-loading" role="status" hidden>Preparando seu passeio…</p>
+      </div><div class="world-footer"><span>SETAS / WASD <i>para andar</i> · E <i>para conversar</i></span><span>Arraste o analógico ou toque no caminho.</span></div>
+    </section>
+    <section id="selection" class="selection"><p class="eyebrow">QUEM VAI PARA A QUADRA?</p><h2>Escolha seu jogador<span>.</span></h2><p class="selection-description">A turma do Ilha, em versão pixel.</p><div id="characters" class="characters" role="group" aria-label="Escolha um personagem"></div><form id="startForm"><label for="nickname">Seu apelido no ranking</label><input id="nickname" name="nickname" maxlength="18" minlength="2" required autocomplete="nickname" placeholder="Como a turma te chama?"><small>Seu apelido é público e fica salvo neste navegador.</small><div class="control-guide"><span><b>↔</b> Arraste ou use as setas</span><span><b>⚡</b> Especial: botão ou espaço</span></div><p class="start-status" id="startStatus" role="status"></p><button type="submit" class="primary" id="startButton">Entrar na quadra <span aria-hidden="true">▶</span></button><button type="button" class="text-button" id="practiceButton">Treinar sem entrar no ranking</button></form><p class="score-rules">Devolução: +10 · Ponto vencido: +100 · Vitória: +300<br>A partida termina em 90 segundos.</p></section>
+    <section id="playArea" class="play-area" hidden>
+      <section id="halloweenChallengeHud" class="halloween-challenge" hidden aria-label="Objetivo do tratamento"><div class="halloween-challenge-heading"><strong id="challengeTitle"></strong><button id="challengeHelp" type="button" aria-label="Ver objetivo e pausar" aria-describedby="challengeRule">Objetivo Ⅱ</button></div><b id="challengeProgress" role="timer" aria-live="off"></b><p id="challengeRule" hidden></p></section>
+      <section id="lessonHud" class="lesson-hud" hidden aria-label="Aula passo a passo"></section>
+      <div class="scoreboard"><div><span id="playerName">VOCÊ</span><strong id="matchScore">0 <small>×</small> 0</strong><span>COMPUTADOR</span></div><div class="match-stats"><span><small>TEMPO</small><b id="timeLeft">1:30</b></span><span><small>PONTOS</small><b id="liveScore">0</b></span><button id="pauseButton" type="button" class="icon-button" aria-label="Pausar e abrir menu">Ⅱ</button></div></div>
+      <div id="matchStage" class="match-stage"><div class="court-shell"><canvas id="gameCanvas" width="480" height="600" tabindex="0" role="img" aria-label="Quadra de tênis. Arraste e solte para preparar o golpe. Incline para mirar. Escape pausa."></canvas><div class="court-camera-bar"><span id="courtLabel">Quadra 1</span><button type="button" id="courtViewButton" aria-pressed="false">Ver 2 quadras</button></div><div id="pauseOverlay" class="pause-overlay" hidden><p class="eyebrow">RESPIRA E VOLTA</p><h2>Jogo pausado.</h2><button type="button" class="primary" id="resumeButton">Continuar ▶</button><button type="button" class="text-button" id="exitMatch">Sair desta partida</button></div></div></div>
+      <p id="shotStatus" class="shot-status" role="status">Prepare o saque</p>
+      <div class="tennis-controls">
+        <div class="gesture-guide" aria-label="Gestos para jogar"><span><b>↑</b>Saque</span><span><b>↓</b>Topspin</span><span><b>↔</b>Slice</span><span><b>◎</b>Toque · deixada</span><small>Arraste para mirar · solte para preparar</small><small class="risk-key"><i>● Margem</i><i>● Atenção</i><i>● Força / risco</i></small></div>
+        <div class="movement-column"><div id="matchPad" class="match-pad" role="group" aria-label="Direcional: mova em qualquer direção"><span class="pad-up">▲</span><span class="pad-left">◀</span><span class="match-stick"></span><span class="pad-right">▶</span><span class="pad-down">▼</span></div><div class="move-buttons"><button type="button" id="moveLeft" aria-label="Mover para a esquerda">◀</button><button type="button" id="moveRight" aria-label="Mover para a direita">▶</button></div><button type="button" id="specialButton" class="special" disabled><span>ESPECIAL</span><span id="chargeMeter" aria-hidden="true">▱ ▱ ▱</span></button></div>
+        <div class="shot-buttons" role="group" aria-label="Golpes de tênis">
+          <button type="button" id="sliceButton" class="shot-button snes-a" aria-pressed="false" aria-label="A: slice"><b>A</b><small>Slice</small></button>
+          <button type="button" id="topspinButton" class="shot-button snes-y" aria-pressed="true" aria-label="Y: topspin"><b>Y</b><small>Topspin</small></button>
+          <button type="button" id="serveButton" class="shot-button snes-b" disabled aria-label="B: saque"><b>B</b><small>Saque</small></button>
+          <button type="button" id="dropButton" class="shot-button snes-x" aria-pressed="false" aria-label="X: deixada"><b>X</b><small>Deixada</small></button>
+          <button type="button" id="lobButton" hidden aria-label="L: balão">Balão</button>
+        </div>
+      </div>
+      <p class="game-hint" id="gameHint">Arraste para escolher o golpe · toque curto para a deixada</p>
+    </section>
+    <section id="pickleArea" class="pickle-area" hidden aria-label="Pickleball arcade">
+      <div class="pickle-header"><div><span id="pickleNames">VOCÊ × GAEL</span><strong id="pickleScore">0 × 0</strong></div><button id="picklePause" type="button" class="icon-button">Pausar</button></div>
+      <div id="pickleStage" class="pickle-stage"><canvas id="pickleCanvas" width="544" height="400" tabindex="0" role="img" aria-label="Pickleball. Corrida automática. Arraste para a direita: saque; para a esquerda: topspin; para cima ou baixo: slice. Toque curto: deixada. O gesto e sua inclinação definem força e direção. Dois quiques no início; sem voleio na cozinha."></canvas></div>
+      <p id="pickleStatus" role="status"></p><div class="pickle-controls"><div id="picklePad" class="match-pad" role="group" aria-label="Direcional de pickleball"><span class="pad-up">▲</span><span class="pad-left">◀</span><span class="match-stick"></span><span class="pad-right">▶</span><span class="pad-down">▼</span></div><div class="shot-buttons" role="group" aria-label="Golpes de pickleball"><button id="pickleTopspin" class="shot-button snes-y" type="button" aria-label="Y: topspin"><b>Y</b><small>Topspin</small></button><button id="pickleSlice" class="shot-button snes-a" type="button" aria-label="A: slice"><b>A</b><small>Slice</small></button><button id="pickleDrop" class="shot-button snes-x" type="button" aria-label="X: deixada"><b>X</b><small>Deixada</small></button><button id="pickleServe" class="shot-button snes-b" type="button" aria-label="B: saque de pickleball"><b>B</b><small>Saque</small></button></div></div>
+      <p class="pickle-note">Arcade de brincadeira · regras simplificadas · primeiro a 5 pontos.</p><button id="pickleExit" type="button" class="text-button">Voltar ao clube</button>
+    </section>
+    <section id="endingArea" class="campaign-ending album-mode" hidden aria-labelledby="endingTitle">
+      <header class="album-heading"><span id="endingEyebrow"></span><h2 id="endingTitle" aria-live="polite"></h2></header>
+      <figure class="album-photo"><img id="endingPhoto" alt="" width="1536" height="1024" hidden><figcaption id="endingPhotoFallback" role="status">Revelando as lembranças…</figcaption></figure>
+      <section id="endingCreditViewport" class="album-credit-viewport" aria-label="Créditos da turma"><div id="endingCreditTrack" class="album-credit-track"></div></section>
+      <div class="album-controls">
+        <progress id="endingProgress" class="album-progress" value="0" max="1" aria-label="Progresso do álbum"></progress>
+        <div id="endingThanks" class="album-thanks" hidden>O mistério acabou. A turma voltou ao normal.<br>O clube continua aberto: encontre a turma e convide para outra partida.
+          <small>História e direção: Leandro e a turma da Ilha<br>Desenvolvimento assistido por Codex / OpenAI · Arte com IA<br>Músicas fornecidas para o projeto · Personagens e histórias fictícios e bem-humorados<br>Guarde sua aventura em Menu → Opções → Save e backup.</small>
+        </div>
+        <div class="ending-actions"><button id="endingPrev" type="button">← Anterior</button><button id="endingPause" type="button">Pausar Ⅱ</button><button id="endingNext" type="button">Próxima foto →</button><button id="endingSkip" type="button">Pular créditos</button></div>
+        <button id="endingExit" type="button" class="text-button">Voltar ao clube</button>
+      </div>
+    </section>
+    <section id="results" class="results" hidden><p class="eyebrow" id="resultEyebrow">FIM DE PARTIDA</p><h2 id="resultTitle">Boa partida!</h2><div class="result-score"><strong id="finalScore">0</strong><span>PONTOS</span></div><canvas id="resultPortrait" width="120" height="150" aria-label="Adversário vencido" hidden></canvas><p id="finalDetails"></p><p id="saveStatus" role="status"></p><button type="button" class="text-button" id="retrySave" hidden>Tentar salvar novamente</button><button type="button" class="primary" id="playAgain">Jogar de novo <span aria-hidden="true">↻</span></button><button type="button" class="text-button" id="viewRanking">Ver ranking do clube ↗</button></section>
+  </dialog>
+  <dialog id="displayHelp" class="display-help" aria-labelledby="displayHelpTitle" aria-describedby="displayHelpText">
+    <div class="install-heading"><div><span class="eyebrow">ILHA TÊNIS — O MISTÉRIO</span><span class="install-tag">SUA ILHA. SEU JOGO.</span></div><form method="dialog"><button type="submit" class="install-close" aria-label="Fechar instalação">✕</button></form></div>
+    <div class="install-preview"><img src="/game2/assets/ilha-misterio-icon-180-v2.png" width="80" height="80" alt="Ícone com a logo Ilha Tênis — O Mistério e as quadras do jogo"><div><strong>Ilha Mistério</strong><span>Da quadra para o seu celular.</span><small>Ícone exclusivo do jogo</small></div></div>
+    <h2 id="displayHelpTitle"></h2><p id="displayHelpText"></p><ol id="displayHelpSteps"></ol>
+    <button id="installGame" class="primary install-native" type="button" hidden>Instalar jogo</button>
+    <p id="installStatus" class="install-status" role="status" hidden></p>
+    <button id="copyGameLink" class="install-copy" type="button">Copiar link para abrir no navegador <span aria-hidden="true">↗</span></button>
+    <input id="gameInstallLink" type="url" readonly aria-label="Link do jogo para copiar" hidden>
+    <aside id="installIlhaPlay" class="install-play-note"><strong>Já usa o Ilha Play instalado?</strong><p>Quando o jogo abrir dentro dele, não precisa instalar outra vez. Esta opção é para ter um ícone só do Mistério.</p></aside>
+    <p class="display-help-note">Sua aventura é salva neste navegador. Outra instalação pode ter progresso separado. Instalar não garante jogo offline.</p>
+    <form method="dialog" class="install-dismiss"><button class="primary" type="submit">Continuar jogando</button></form>
+  </dialog>
+  <noscript><p class="noscript">Ative o JavaScript no navegador para jogar no Ilha Games.</p></noscript>
+  <script type="module" src="/game2/app.js"></script>
+</body>
+</html>

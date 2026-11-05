@@ -2247,6 +2247,19 @@
       align-items: center;
     }
 
+    #paymentCurrentMonth:not(:empty) { margin-bottom: 20px; padding: 16px; border: 1px solid var(--accent, #afdc2b); border-radius: 18px; }
+    #paymentCurrentMonth .invoice-card { margin: 0; }
+    #paymentCurrentMonth .invoice-actions button { white-space: normal; }
+    .payment-advance { margin:16px 0; border:1px solid #c7d9d0; border-radius:16px; padding:16px; }
+    .payment-advance summary { cursor:pointer; font-weight:800; }
+    .payment-advance-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:8px; margin:14px 0; }
+    .payment-advance-month { display:flex; align-items:flex-start; gap:8px; padding:12px; border:1px solid #d6e1db; border-radius:12px; min-width:0; text-transform:none; letter-spacing:0; }
+    .payment-advance-month:has(input:checked) { background:#eaf7ef; border-color:#16856d; }
+    .payment-advance-month input { width:18px; height:18px; flex:none; margin:2px 0; }
+    .payment-advance-month span { display:grid; gap:6px; font-size:13px; min-width:0; }
+    .payment-advance-month small { font-size:12px; }
+    .payment-advance-note { font-size:13px; line-height:1.6; overflow-wrap:anywhere; }
+    .payment-advance button { white-space:normal; }
     .payment-toolbar {
       display: flex;
       flex-wrap: wrap;
@@ -4591,6 +4604,8 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="/store-commerce.css?v=2">
+  <script src="/store-commerce.js?v=2"></script>
 </head>
 <body class="client-checking">
   <svg aria-hidden="true" style="display:none">
@@ -5092,6 +5107,8 @@
               <div class="muted">Acompanhe mensalidades, vencimentos e pagamentos.</div>
             </div>
           </div>
+          <div id="paymentCurrentMonth" class="invoice-list" aria-live="polite"></div>
+          <div id="paymentAdvance"></div>
           <div class="payment-toolbar">
             <div class="field">
               <label for="paymentMonth">Mês</label>
@@ -5150,7 +5167,10 @@
               <div class="muted">Produtos e serviços do clube.</div>
             </div>
           </div>
+          <div class="ilha-store-filters"><label>Buscar produto<input id="clientStoreSearch" type="search" placeholder="Camisa, tamanho, cor..." /></label><label>Categoria<select id="clientStoreCategory"><option value="">Todas</option><option>Camisas</option><option>Produtos</option><option>Acessórios</option><option>Serviços</option></select></label></div>
           <div class="store-grid" id="storeGrid"></div>
+          <button type="button" class="primary-btn" id="clientStorePosBtn" hidden>Equipe · venda presencial com Pix</button>
+          <div id="clientStoreOrders" class="ilha-store-orders-host"></div>
         </div>
       </section>
     </section>
@@ -5190,6 +5210,10 @@
       </div>
       <form id="clientCourtBookingForm">
         <div class="court-dialog-body">
+          <div class="field full" id="clientCourtFamilyField" hidden>
+            <label for="clientCourtFamilyMember">Reservar para qual filho?</label>
+            <select id="clientCourtFamilyMember"></select>
+          </div>
           <div class="field full">
             <label for="clientCourtOpponentSelect" id="clientCourtOpponentLabel">Com quem você vai jogar?</label>
             <select id="clientCourtOpponentSelect" required>
@@ -5291,6 +5315,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
   <script src="/assets/vendor/qrcode-generator.js"></script>
+  <script src="/client-area-preview.js"></script>
   <script>
     const SUPABASE_URL = 'https://lkqtgptebkgfwguykxhv.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_zcX8te5g99p0bA12xy_E-A_MTyNpJNx';
@@ -5335,6 +5360,7 @@
     ];
 
     let session = null;
+    const clientPreviewMode = window.IlhaClientPreview.mode;
     let client = null;
     let pendingSignup = null;
     let demoMode = false;
@@ -5344,6 +5370,14 @@
     let storeProducts = storeProductSeed.slice();
     let storeRequests = [];
     let paymentInvoices = [];
+    let monthlyPaymentOptions = [];
+    let monthlyPaymentOptionsError = false;
+    let monthlyPixBusy = false;
+    let advancePaymentOptions = [];
+    let advancePaymentOptionsError = false;
+    let advancePaymentSelected = new Set();
+    let advancePaymentExpanded = false;
+    let advancePaymentMessage = '';
     let familyInvoiceItems = [];
     let announcements = [];
     let dismissedNotificationKeys = new Set();
@@ -5413,6 +5447,7 @@
     }
 
     function storageSet(storage, key, value) {
+      if (clientPreviewMode) return false;
       try {
         const target = typeof storage === 'string' ? window[storage] : storage;
         if (!target) return false;
@@ -5424,6 +5459,7 @@
     }
 
     function storageRemove(storage, key) {
+      if (clientPreviewMode) return false;
       try {
         const target = typeof storage === 'string' ? window[storage] : storage;
         if (target) target.removeItem(key);
@@ -5893,6 +5929,7 @@
     }
 
     async function renderClientPushState(options) {
+      if (clientPreviewMode) return;
       options = options || {};
       const card = $('clientPushConsent');
       const button = $('clientEnableNotificationsBtn');
@@ -6226,7 +6263,9 @@
         return String(item.schedule_date) === String(dateValue);
       });
       const configured = normalizeClientCourtTimes(schedule && schedule.slot_times);
-      return configured.length ? configured : clientCourtDefaultTimes;
+      return configured.length ? configured : (plainDateDayOfWeek(dateValue) === 0
+        ? Array.from({ length: 14 }, function (_, i) { return String(i + 7).padStart(2, '0') + ':00'; })
+        : clientCourtDefaultTimes.slice());
     }
 
     function clientCourtScheduleForDate(dateValue) {
@@ -6251,7 +6290,9 @@
     }
 
     function isClientCourtFixedBlock(dateValue, court, time) {
-      return false;
+      const schedule = clientCourtScheduleForDate(dateValue);
+      return isClientCourtWeekend(dateValue) && clientCourtNames.includes(court) && ['16:00', '17:00'].includes(time)
+        && !(schedule && schedule.released_default_slots || []).includes(court + '|' + time);
     }
 
     function clientCourtAvailabilityAt(dateValue, court, time) {
@@ -6301,13 +6342,12 @@
       const plan = linkedClientPlan();
       if (!client || !plan) return;
       const code = String(plan.code || '').toLowerCase();
-      const allowsOverrides = code === 'isento' || code === 'personalizado';
       client.official_plan_id = plan.id || client.official_plan_id || null;
       client.official_plan_code = plan.code || client.official_plan_code || '';
       client.official_plan_name = plan.name || client.official_plan_name || '';
       if (code === 'isento') client.plan_amount = 0;
-      else if (!allowsOverrides) client.plan_amount = Number(plan.amount || 0);
-      if (!allowsOverrides) client.weekly_lessons = Number(plan.weekly_lessons || 0);
+      else if (client.plan_amount == null || client.plan_amount === '') client.plan_amount = Number(plan.amount || 0);
+      if (client.weekly_lessons == null || client.weekly_lessons === '') client.weekly_lessons = Number(plan.weekly_lessons || 0);
     }
 
     function isPlanCancellationEffective() {
@@ -6343,6 +6383,12 @@
       return Boolean(client &&
         String(client.status || 'ATIVO').toUpperCase() === 'ATIVO' &&
         client.registration_completed_at);
+    }
+
+    function activeCourtFamilyMembers() {
+      return (familySummary && familySummary.members || []).filter(function (member) {
+        return String(member.status || '').toUpperCase() === 'ATIVO';
+      });
     }
 
     function myClientCourtBooking(dateValue) {
@@ -6392,6 +6438,7 @@
     }
 
     async function loadClientCourtData(showFeedback) {
+      if (clientPreviewMode) { renderClientCourts(); return; }
       if (!session || courtDataLoading) {
         renderClientCourts();
         return;
@@ -6409,7 +6456,7 @@
         const endDate = addPlainDateDays(startDate, 45);
         const userId = session.user && session.user.id;
         const results = await Promise.all([
-          rest('app_court_schedule_days?select=schedule_date,enabled,notes,slot_times&schedule_date=gte.' + startDate + '&schedule_date=lte.' + endDate + '&order=schedule_date.asc', { auth: true }),
+          rest('app_court_schedule_days?select=schedule_date,enabled,notes,slot_times,released_default_slots&schedule_date=gte.' + startDate + '&schedule_date=lte.' + endDate + '&order=schedule_date.asc', { auth: true }),
           rest('rpc/get_app_court_availability', { method: 'POST', body: { p_start_date: startDate, p_end_date: endDate }, prefer: 'return=representation' }),
           rest('app_court_bookings?select=id,client_id,client_name,opponent_client_id,opponent_name,booking_date,starts_at,court_name,status,notes,challenge_kind,challenge_expires_at,challenge_invited_at,challenge_responded_at&or=(client_id.eq.' + encodeURIComponent(userId) + ',opponent_client_id.eq.' + encodeURIComponent(userId) + ')&status=neq.CANCELADO&booking_date=gte.' + startDate + '&order=booking_date.asc,starts_at.asc', { auth: true }),
           rest('rpc/get_active_court_opponents', { method: 'POST', body: {}, prefer: 'return=representation' }),
@@ -6488,6 +6535,7 @@
     }
 
     async function initClientCourtRealtime() {
+      if (clientPreviewMode) return;
       if (!session || !session.access_token || !window.supabase || !window.supabase.createClient) return;
       const userId = String(session.user && session.user.id || '');
       if (!userId) return;
@@ -6597,6 +6645,9 @@
       if (!dayList || !board || !ownBox) return;
       renderCourtChallenges();
       const canBook = canClientBookCourt();
+      const guardianOnly = client && client.client_type === 'responsavel';
+      $('clientCourtChallengeBtn').hidden = guardianOnly;
+      if (guardianOnly) courtChallengeSelecting = false;
       if (planGate) {
         planGate.hidden = canBook;
         planGate.innerHTML = canBook ? '' : '<div><strong>Cadastro ativo necessário</strong><span>Assim que seu cadastro estiver ativo, você poderá confirmar horários.</span></div>';
@@ -6639,7 +6690,7 @@
             return '<button class="client-court-slot busy" type="button" disabled><span class="client-court-time">' + time + '</span><span><strong>Dia bloqueado</strong><small>' + escapeHtml(dayBlockReason) + '</small></span><span class="client-court-badge">Bloqueado</span></button>';
           }
           if (fixed && !booking) {
-            return '<button class="client-court-slot busy" type="button" disabled><span class="client-court-time">' + time + '</span><span><strong>Bloqueado</strong><small>Horário fixo do clube</small></span><span class="client-court-badge">Bloqueado</span></button>';
+            return '<button class="client-court-slot busy" type="button" disabled><span class="client-court-time">' + time + '</span><span><strong>Bloqueado</strong><small>Horário reservado pelo clube</small></span><span class="client-court-badge">Bloqueado</span></button>';
           }
           if (booking) {
             const mine = Boolean(booking.is_mine);
@@ -6670,8 +6721,18 @@
       }
       const parts = String(slotKey || '').split('|');
       if (parts.length !== 3) return;
+      if (isClientCourtFixedBlock(parts[0], parts[1], parts[2])) {
+        toast('Este horário está bloqueado pelo clube.');
+        return;
+      }
       selectedCourtSlot = { date: parts[0], court: parts[1], time: parts[2] };
       courtBookingMode = courtChallengeSelecting ? 'challenge' : 'booking';
+      const guardianOnly = client && client.client_type === 'responsavel';
+      $('clientCourtFamilyField').hidden = !guardianOnly;
+      $('clientCourtFamilyMember').required = guardianOnly;
+      $('clientCourtFamilyMember').innerHTML = '<option value="">Selecione um filho</option>' + activeCourtFamilyMembers().map(function (member) {
+        return '<option value="' + escapeHtml(member.id) + '">' + escapeHtml(member.full_name) + '</option>';
+      }).join('');
       $('clientCourtModalTitle').textContent = courtBookingMode === 'challenge' ? 'Chamar adversário' : parts[1] + ' às ' + parts[2];
       $('clientCourtModalSubtitle').textContent = clientCourtDayLabel(parts[0]) + (courtBookingMode === 'challenge' ? ' · ' + parts[1] + ' às ' + parts[2] : '');
       $('clientCourtOpponentLabel').textContent = courtBookingMode === 'challenge' ? 'Quem você quer chamar?' : 'Com quem você vai jogar?';
@@ -6833,6 +6894,14 @@
       const selectedOpponent = courtOpponents.find(function (opponent) {
         return String(opponent.id || '') === String(opponentChoice || '');
       });
+      const guardianOnly = client && client.client_type === 'responsavel';
+      const familyMember = guardianOnly ? activeCourtFamilyMembers().find(function (member) {
+        return member.id === $('clientCourtFamilyMember').value;
+      }) : null;
+      if (guardianOnly && !familyMember) {
+        toast('Selecione um filho ativo da sua família.');
+        return;
+      }
       const opponentName = opponentChoice === '__guest__'
         ? $('clientCourtOpponent').value.trim()
         : String(selectedOpponent && selectedOpponent.full_name || '').trim();
@@ -6854,7 +6923,8 @@
           myCourtBookings.push({
             id: demoCourtId(),
             client_id: currentUser().id,
-            client_name: client && client.full_name || 'Cliente Ilha Demo',
+            client_name: familyMember ? familyMember.full_name : (client && client.full_name || 'Cliente Ilha Demo'),
+            family_member_id: familyMember ? familyMember.id : null,
             opponent_client_id: opponentChoice === '__guest__' ? null : opponentChoice,
             opponent_name: opponentName,
             booking_date: selectedCourtSlot.date,
@@ -6868,16 +6938,16 @@
           toast('Quadra reservada somente na demonstração.');
           return;
         }
-        await rest('rpc/book_my_app_court', {
+        await rest('rpc/' + (familyMember ? 'book_my_family_court' : 'book_my_app_court'), {
           method: 'POST',
-          body: {
+          body: Object.assign(familyMember ? { p_family_member_id: familyMember.id } : {}, {
             p_booking_date: selectedCourtSlot.date,
             p_starts_at: selectedCourtSlot.time,
             p_court_name: selectedCourtSlot.court,
             p_opponent_name: opponentName,
             p_notes: $('clientCourtNotes').value.trim() || null,
             p_opponent_client_id: opponentChoice === '__guest__' ? null : opponentChoice
-          },
+          }),
           prefer: 'return=representation'
         });
         closeClientCourtBooking();
@@ -7128,6 +7198,7 @@
     }
 
     async function rest(path, options) {
+      if (clientPreviewMode) throw new Error('Visualização somente leitura.');
       options = options || {};
       const requireAuth = options.auth !== false;
       if (requireAuth && session && !session.demo) await ensureFreshSession();
@@ -7168,6 +7239,7 @@
     }
 
     function readStored(key, fallback) {
+      if (clientPreviewMode) return fallback;
       try {
         const raw = storageGet('localStorage', key);
         return raw ? JSON.parse(raw) : fallback;
@@ -7178,6 +7250,7 @@
     }
 
     function writeStored(key, value) {
+      if (clientPreviewMode) return false;
       return storageSet('localStorage', key, JSON.stringify(value));
     }
 
@@ -7283,6 +7356,10 @@
       sessionRestoreAttempt = 0;
       session = null;
       client = null;
+      advancePaymentOptions = [];
+      advancePaymentSelected.clear();
+      advancePaymentMessage = '';
+      advancePaymentExpanded = false;
       demoMode = false;
       storageRemove('localStorage', SESSION_KEY);
       storageRemove('sessionStorage', DEMO_SESSION_KEY);
@@ -7409,6 +7486,7 @@
     }
 
     async function ensureClient(fullName, phone) {
+      if (clientPreviewMode) return client;
       if (demoMode || (session && session.demo)) {
         const stored = readStored(storageKey(FALLBACK_PROFILE_KEY), {});
         client = {
@@ -7502,6 +7580,7 @@
 
     function mapStoreProductRow(row) {
       return {
+        category: row.category || 'Produtos', size: row.size || '', color: row.color || '',
         id: row.id || '',
         code: row.code || '',
         name: row.name || 'Produto',
@@ -7580,7 +7659,7 @@
 
     const CLIENT_PAYMENT_INVOICE_BASE_FIELDS = 'id,client_id,invoice_month,description,plan_code,plan_name,amount,due_date,status,payment_method,paid_at,pix_payload,notes,created_at';
     const CLIENT_PAYMENT_INVOICE_FAMILY_FIELDS = CLIENT_PAYMENT_INVOICE_BASE_FIELDS + ',family_billing';
-    const CLIENT_PAYMENT_INVOICE_SAFE_FIELDS = CLIENT_PAYMENT_INVOICE_FAMILY_FIELDS + ',provider_status,pix_expires_at,last_payment_error,issued_at';
+    const CLIENT_PAYMENT_INVOICE_SAFE_FIELDS = CLIENT_PAYMENT_INVOICE_FAMILY_FIELDS + ',provider_status,pix_expires_at,last_payment_error,issued_at,received_method,received_on';
 
     async function loadClientPaymentInvoices() {
       const suffix = '&client_id=eq.' + encodeURIComponent(session.user.id) + '&order=invoice_month.desc';
@@ -7598,6 +7677,7 @@
     }
 
     function hasLessonPlan() {
+      if (client && client.client_type === 'responsavel') return false;
       const code = String(client && client.official_plan_code || '').toLowerCase();
       const name = String(currentClientPlanName()).toLowerCase();
       return Number(client && client.weekly_lessons || 0) > 0 || code.indexOf('aulas_') === 0 || name.indexOf('aula') >= 0;
@@ -7639,12 +7719,17 @@
     }
 
     async function loadClientData() {
+      if (clientPreviewMode) { window.IlhaClientPreview.apply(); return; }
       if (!session || demoMode || (session && session.demo)) {
         appPlans = officialPlanSeed.map(mapPlanRow);
         storeProducts = storeProductSeed.map(mapStoreProductRow);
         planRequests = readStored(storageKey('ilha-client-plan-requests'), []);
         storeRequests = readStored(storageKey('ilha-client-store-requests'), []);
         paymentInvoices = readStored(storageKey('ilha-client-payment-invoices'), []).map(mapPaymentInvoiceRow);
+        monthlyPaymentOptions = readStored(storageKey('ilha-client-monthly-payment-options'), []);
+        monthlyPaymentOptionsError = false;
+        advancePaymentOptions = [];
+        advancePaymentOptionsError = false;
         familyInvoiceItems = readStored(storageKey('ilha-client-family-invoice-items'), []);
         announcements = [];
         familySummary = readStored(storageKey('ilha-client-family-summary'), {
@@ -7674,7 +7759,9 @@
         rest('app_notification_dismissals?select=source_type,source_id&user_id=eq.' + encodeURIComponent(session.user.id), { auth: true }),
         rest('app_store_products?select=*&active=eq.true&order=display_order.asc,name.asc', { auth: true }),
         rest('rpc/get_my_family_summary', { method: 'POST', body: {} }),
-        rest('app_family_invoice_items?select=id,invoice_id,family_member_id,beneficiary_client_id,item_type,description,amount,created_at&order=created_at.asc', { auth: true })
+        rest('app_family_invoice_items?select=id,invoice_id,family_member_id,beneficiary_client_id,item_type,description,amount,created_at&order=created_at.asc', { auth: true }),
+        rest('rpc/get_my_monthly_payment_options', { method: 'POST', body: {} }),
+        rest('rpc/get_my_advance_payment_options', { method: 'POST', body: {} })
       ]);
       const errors = results.filter(function (result) { return result.status === 'rejected'; }).map(function (result) { return result.reason; });
       const fulfilled = function (index) { return results[index].status === 'fulfilled'; };
@@ -7717,6 +7804,10 @@
         familyLoadError = results[8].reason;
       }
       if (fulfilled(9)) familyInvoiceItems = value(9);
+      monthlyPaymentOptionsError = !fulfilled(10);
+      monthlyPaymentOptions = fulfilled(10) && Array.isArray(value(10)) ? value(10) : [];
+      advancePaymentOptionsError = !fulfilled(11);
+      advancePaymentOptions = fulfilled(11) && Array.isArray(value(11)) ? value(11) : [];
       const previousLessons = myLessons.slice();
       try {
         await loadMyLessons();
@@ -8097,6 +8188,7 @@
     }
 
     async function restore() {
+      if (clientPreviewMode) { window.IlhaClientPreview.activate(); return; }
       clearTimeout(sessionRestoreRetryTimer);
       sessionRestoreRetryTimer = 0;
       if (isPreviewEnvironment() && new URLSearchParams(window.location.search).get('preview') === 'pending') {
@@ -8197,6 +8289,7 @@
 
     function schedulePendingAccessRefresh() {
       clearTimeout(pendingAccessRefreshTimer);
+      if (clientPreviewMode) return;
       pendingAccessRefreshTimer = setTimeout(function () {
         checkPendingApproval(false).catch(function () {});
       }, 30000);
@@ -8254,6 +8347,7 @@
     }
 
     function logout() {
+      if (clientPreviewMode) { window.close(); return; }
       const token = session && session.access_token;
       const isDemo = session && session.demo;
       clearSession();
@@ -8270,13 +8364,21 @@
     function showView(view) {
       const allowedViews = ['home', 'plans', 'payments', 'courts', 'lessons', 'profile', 'notifications', 'store'];
       if (!allowedViews.includes(view)) view = 'home';
+      const familyDetailsRequired = hasPendingFamilyDetails();
+      if (familyDetailsRequired && !['profile', 'payments', 'notifications'].includes(view)) {
+        view = 'profile';
+        toast('Complete os dados da sua família para continuar. Suas cobranças continuam disponíveis.');
+      }
       if (view === 'lessons' && !hasLessonPlan()) view = 'home';
       if (view === 'payments' && isFamilyDependent()) {
         view = 'profile';
         toast('As cobranças desta conta ficam com o responsável financeiro da família.');
       }
       document.body.classList.toggle('client-home-view', view === 'home');
-      const resetViewScroll = function () { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); };
+      const resetViewScroll = function () {
+        if (familyDetailsRequired && view === 'profile' && $('familyPanel')) $('familyPanel').scrollIntoView({ block: 'start', behavior: 'auto' });
+        else window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      };
       resetViewScroll();
       window.requestAnimationFrame(resetViewScroll);
       window.setTimeout(resetViewScroll, 180);
@@ -8290,6 +8392,18 @@
       if (view === 'notifications') {
         markCurrentAnnouncementsRead();
       }
+      if (clientPreviewMode) {
+        if (view === 'lessons') renderMyLessons();
+        if (view === 'courts') renderClientCourts();
+        return;
+      }
+      if (view === 'store') {
+        clientStoreCommerce().loadOrders();
+        refresh(true).catch(function () {});
+        fetch(SUPABASE_URL + '/functions/v1/store-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + (session && session.access_token || '') }, body: JSON.stringify({ action: 'capabilities' }) })
+          .then(function (response) { return response.ok ? response.json() : {}; })
+          .then(function (result) { $('clientStorePosBtn').hidden = result.can_sell !== true; }).catch(function () { $('clientStorePosBtn').hidden = true; });
+      } else if (clientCommerce) clientCommerce.close();
       if (view === 'plans') {
         refresh(true).catch(function () {
           toast('Não consegui atualizar o plano agora.');
@@ -8570,6 +8684,12 @@
         status.classList.remove('limited');
         $('homePlanMeta').textContent = 'Reservas liberadas · plano pode ser definido depois';
       }
+      if (hasCurrentFamilyAccount()) {
+        $('homePlanName').textContent = 'Conta familiar';
+        $('homePlanMeta').textContent = money(familySummary.total_monthly_amount) + ' por mês' + (dueDay ? ' · vencimento dia ' + dueDay : '');
+        status.textContent = 'Responsável financeiro';
+        status.classList.remove('limited');
+      }
       renderHomeBooking();
     }
 
@@ -8680,7 +8800,7 @@
       if (member.minor_without_cpf_declared) meta.push('Menor sem CPF confirmado');
       const needsConfirmation = member.needs_details_confirmation === true;
       const confirmation = needsConfirmation ?
-        '<div class="family-confirm-callout"><span>A equipe adicionou este membro. Confirme o vínculo e informe somente os dados que você tiver.</span><button class="ghost-btn" type="button" data-family-confirm-toggle="' + escapeHtml(member.id) + '">Revisar e confirmar</button></div>' +
+        '<div class="family-confirm-callout"><span>Cadastro obrigatório: revise o vínculo e complete os dados deste membro. A cobrança liberada pelo clube não dispensa esta etapa.</span><button class="ghost-btn" type="button" data-family-confirm-toggle="' + escapeHtml(member.id) + '">Revisar e confirmar</button></div>' +
         '<form class="family-confirm-form" data-family-confirm-form="' + escapeHtml(member.id) + '" hidden>' +
           '<label class="family-minor-declaration full"><input type="checkbox" name="minor_without_cpf" ' + (member.minor_without_cpf_declared ? 'checked ' : '') + '/><span><strong>Este membro é menor de idade e não possui CPF</strong><span>Marque esta opção quando não houver CPF. A data de nascimento também pode ficar em branco.</span></span></label>' +
           '<div class="field" data-family-birth-field><label>Data de nascimento <span>(opcional)</span></label><input type="date" name="birth_date" autocomplete="off" max="' + escapeHtml(localDateString()) + '" value="' + escapeHtml(member.birth_date || '') + '" /></div>' +
@@ -8693,6 +8813,13 @@
         '<div class="family-member-meta">' + meta.map(function (item) { return '<span>' + escapeHtml(item) + '</span>'; }).join('<span aria-hidden="true">•</span>') + '</div>' +
         (member.is_minor && String(member.status || '').toUpperCase() === 'ATIVO' ? '<div class="family-minor-schedule"><div><strong>Aulas</strong><span>' + familyScheduleText(member.lessons, 'lesson') + '</span></div><div><strong>Próximas reservas</strong><span>' + familyScheduleText(member.upcoming_bookings, 'booking') + '</span></div></div>' : '') + confirmation +
       '</article>';
+    }
+
+    function hasPendingFamilyDetails() {
+      return !isFamilyDependent() && Boolean(familySummary && Array.isArray(familySummary.members) &&
+        familySummary.members.some(function (member) {
+          return ['ATIVO', 'PENDENTE'].includes(String(member.status || '').toUpperCase()) && member.needs_details_confirmation === true;
+        }));
     }
 
     function renderFamily() {
@@ -8726,6 +8853,14 @@
       list.innerHTML = members.length
         ? members.map(renderFamilyMember).join('')
         : '<div class="family-empty">Nenhum membro vinculado. Você pode solicitar um novo cadastro pelo botão acima.</div>';
+      if (hasPendingFamilyDetails()) {
+        summaryBox.hidden = false;
+        summaryBox.insertAdjacentHTML('beforeend', '<div role="alert"><strong>Complete o cadastro da família</strong><span>A liberação da cobrança não substitui o cadastro. Confirme os dados dos membros abaixo para voltar às demais áreas do app. Pagamentos e avisos continuam disponíveis.</span></div>');
+        list.querySelectorAll('[data-family-confirm-form]').forEach(function (form) {
+          form.hidden = false;
+          updateFamilyConfirmationFields(form);
+        });
+      }
       const requestedMemberId = new URLSearchParams(window.location.search).get('family_member');
       if (requestedMemberId) {
         const requestedForm = list.querySelector('[data-family-confirm-form="' + CSS.escape(requestedMemberId) + '"]');
@@ -8886,6 +9021,10 @@
     }
 
     function renderPlans() {
+      if (hasCurrentFamilyAccount() && String(client && client.client_type || '') === 'responsavel') {
+        $('planGrid').innerHTML = currentFamilyAccountHtml() + '<p class="muted">Você é o responsável financeiro. Os planos e as aulas pertencem aos dependentes e podem ser consultados na aba Família.</p>';
+        return;
+      }
       const planName = currentClientPlanName();
       const declaredPlanName = client && client.declared_plan_name || '';
       const amount = Number(client && client.plan_amount || 0);
@@ -9066,7 +9205,7 @@
       const status = String(invoice && invoice.status || 'ABERTA').trim().toUpperCase();
       const providerStatus = String(invoice && invoice.provider_status || '').trim().toUpperCase();
       if (['FAILED', 'ERROR', 'REVIEW_REQUIRED', 'REFUND_PENDING', 'CHARGEBACK', 'DISPUTED', 'PARTIALLY_REFUNDED'].includes(providerStatus)) return 'FALHA';
-      if (['DELETED', 'REFUNDED'].includes(providerStatus)) return 'CANCELADA';
+      if (['DELETED', 'REFUNDED', 'CANCELLED', 'CANCELED'].includes(providerStatus)) return 'CANCELADA';
       if (['RECEIVED', 'RECEIVED_IN_CASH'].includes(providerStatus)) return 'PAGA';
       if (providerStatus === 'RECONCILING') return 'GERANDO';
       if (providerStatus === 'CONFIRMED') return 'AGUARDANDO';
@@ -9119,7 +9258,7 @@
     }
 
     function renderPaymentFilters(invoices) {
-      const years = Array.from(new Set(invoices.map(function (invoice) {
+      const years = Array.from(new Set(invoices.concat(monthlyPaymentOptions).map(function (invoice) {
         return parseLocalDate(invoice.invoice_month || isoMonth(parseLocalDate(localDateString()))).getFullYear();
       }).concat([plainDateParts(localDateString()).year]))).sort();
       $('paymentMonth').innerHTML = '<option value="all">Todos</option>' + monthNames.map(function (name, index) {
@@ -9149,7 +9288,9 @@
         return '<div class="invoice-family-item"><span>' + escapeHtml(item.description || (item.item_type === 'RESPONSAVEL' ? 'Responsável' : 'Membro')) + '</span><strong>' + money(item.amount || 0) + '</strong></div>';
       }).join('') + '</div>' : '';
       const cardClass = paid ? 'is-paid' : status === 'VENCIDA' ? 'is-late' : status === 'GERANDO' ? 'is-generating' : status === 'FALHA' ? 'is-failed' : status === 'CANCELADA' ? 'is-cancelled' : 'is-open';
-      const providerNote = invoiceProviderNeedsReview(invoice)
+      const providerNote = status === 'CANCELADA'
+        ? '<div class="invoice-provider-note">Cobrança cancelada. Registro histórico, sem valor a pagar.</div>'
+        : invoiceProviderNeedsReview(invoice)
         ? '<div class="invoice-provider-note is-error">Este pagamento está em revisão. Não pague novamente; atualize a fatura ou fale com o clube.</div>'
         : invoicePixExpired(invoice) && status !== 'PAGA'
           ? '<div class="invoice-provider-note is-error">O código Pix expirou. Atualize a fatura para consultar uma via válida.</div>'
@@ -9159,20 +9300,25 @@
               ? '<div class="invoice-provider-note">Estamos preparando o seu Pix. Atualize em instantes para acompanhar.</div>'
               : status === 'FALHA'
                 ? '<div class="invoice-provider-note is-error">O Pix não ficou disponível. Atualize a fatura; se continuar assim, fale com o clube.</div>' : '';
-      const expiry = invoice.pix_expires_at && !invoicePixExpired(invoice)
+      const expiry = !paid && status !== 'CANCELADA' && invoice.pix_expires_at && !invoicePixExpired(invoice)
         ? '<span>Pix disponível até ' + escapeHtml(new Date(invoice.pix_expires_at).toLocaleString('pt-BR')) + '</span>' : '';
       const familyPill = invoice.family_billing || familyItems.length ? '<span class="pill good">Conta familiar</span>' : '';
       const manualPaymentLabel = invoiceManualPaymentLabel(invoice);
-      const manualPaymentNote = manualPaymentLabel && !paid
+      const manualPaymentNote = paid && invoice.received_method
+        ? '<div class="invoice-provider-note">Pagamento recebido pelo clube por ' + escapeHtml(invoice.received_method === 'CASH' ? 'dinheiro' : 'Pix direto') + '.</div>'
+        : manualPaymentLabel && !paid && status !== 'CANCELADA'
         ? '<div class="invoice-provider-note">Forma combinada: ' + escapeHtml(manualPaymentLabel) + '. O clube confirmará a baixa após receber o pagamento.</div>' : '';
       let action = '';
       if (paid) action = '<span class="pill status-paid">PAGO</span>';
       else if (status === 'CANCELADA') action = '';
       else if (manualPaymentLabel) action = '<span class="pill">PAGAR NO CLUBE</span>';
+      else if (monthlyPaymentOptions.some(function (option) { return option.invoice_id === invoice.id && option.state === 'AVAILABLE'; })) {
+        action = '<button class="primary-btn" type="button" data-generate-monthly-pix="' + escapeHtml(invoice.invoice_month) + '"' + (monthlyPixBusy ? ' disabled' : '') + '>Gerar Pix</button>';
+      }
       else if (status === 'GERANDO' || status === 'FALHA' || !invoicePaymentActionAllowed(invoice)) {
         action = '<button class="ghost-btn" type="button" data-refresh-invoice="' + escapeHtml(invoice.id || '') + '">Atualizar fatura</button>';
       } else {
-        action = '<button class="primary-btn" type="button" data-open-pix="' + escapeHtml(invoice.id) + '">Ver Pix</button>';
+        action = '<button class="primary-btn" type="button" data-open-pix="' + escapeHtml(invoice.id) + '">Ver fatura e pagar</button>';
       }
       return '<article class="invoice-card ' + cardClass + '">' +
         '<div>' +
@@ -9284,43 +9430,219 @@
       }
     }
 
+    function hasCurrentFamilyAccount() {
+      return Boolean(familySummary && familySummary.is_billing_responsible &&
+        (familySummary.members || []).some(function (member) { return member.status === 'ATIVO'; }));
+    }
+
+    function currentFamilyAccountHtml() {
+      if (!hasCurrentFamilyAccount()) return '';
+      const members = (familySummary.members || []).filter(function (member) { return member.status === 'ATIVO'; });
+      const own = String(client && client.client_type || '') === 'responsavel' ? 0 : Number(client && client.plan_amount || 0);
+      const rows = (own > 0 ? [{ full_name: 'Seu plano individual', monthly_amount: own }] : []).concat(members);
+      const incomplete = members.some(function (member) { return member.monthly_amount == null; });
+      return '<article class="invoice-card" data-current-family-account><div class="invoice-main"><strong>Mensalidade atual da família</strong>' +
+        '<div class="invoice-family-items">' + rows.map(function (member) {
+          return '<div class="invoice-family-item"><span>' + escapeHtml(member.full_name) + '</span><strong>' + (member.monthly_amount == null ? 'Valor a definir' : money(member.monthly_amount)) + '</strong></div>';
+        }).join('') + '</div><p class="muted">' + (incomplete ? 'Total parcial: há valores a definir. ' : '') +
+        'Cobrança única no responsável. Esta é a composição atual do cadastro, não uma nova fatura.</p></div>' +
+        '<div class="invoice-actions"><span>Total mensal</span><strong class="invoice-value">' + money(familySummary.total_monthly_amount) + '</strong></div></article>';
+    }
+
+    function monthlyPaymentOptionCard(option) {
+      const available = ['AVAILABLE', 'REISSUABLE'].includes(option.state);
+      const needsReview = option.state === 'BLOCKED' || Boolean(option.reason && !available);
+      const note = option.state === 'TOO_EARLY' ? 'Pix disponível a partir de ' + formatShortDate(option.available_on) + ' (15 dias antes do vencimento).' + (needsReview ? ' O valor ainda precisa de revisão do clube.' : '')
+        : option.state === 'REISSUABLE' ? 'A cobrança anterior foi cancelada. Gere uma nova fatura com o valor atualizado abaixo.'
+        : available ? 'Gere a fatura deste mês e pague por Pix. Se ela já existir, vamos abrir a mesma cobrança.'
+        : option.reason === 'INVOICE_CANCELLED' ? 'A cobrança anterior foi cancelada. O clube precisa liberar uma nova via para este vencimento. Esta mensalidade não foi transferida para o mês seguinte.'
+        : 'O clube precisa revisar o cadastro antes de emitir esta mensalidade.';
+      // A cancelled snapshot is history, never the amount of a replacement.
+      const amount = needsReview ? '<span>Valor em revisão</span>' : '<strong class="invoice-value">' + money(option.amount) + '</strong>';
+      return '<article class="invoice-card" data-monthly-option="' + escapeHtml(option.invoice_month) + '"><div><h3>Mensalidade de ' + escapeHtml(invoiceMonthLabel(option.invoice_month)) + '</h3><p>' + escapeHtml(note) + '</p><span>Vencimento ' + escapeHtml(formatShortDate(option.scheduled_due_date || option.due_date)) + '</span></div><div class="invoice-actions">' + amount +
+        (available ? '<button class="primary-btn" type="button" data-generate-monthly-pix="' + escapeHtml(option.invoice_month) + '"' + (monthlyPixBusy ? ' disabled' : '') + '>' + (monthlyPixBusy ? 'Preparando fatura…' : option.state === 'REISSUABLE' ? 'Gerar nova fatura' : 'Gerar fatura do mês') + '</button>' : '') + '</div></article>';
+    }
+
+    function renderAdvancePayments() {
+      const host = $('paymentAdvance');
+      if (!advancePaymentOptions.length && !advancePaymentOptionsError) { host.innerHTML = ''; return; }
+      const selectable = advancePaymentOptions.filter(function (row) { return ['AVAILABLE','REISSUABLE'].includes(row.state); });
+      advancePaymentSelected = new Set(Array.from(advancePaymentSelected).filter(function (month) { return selectable.some(function (row) { return row.invoice_month === month; }); }));
+      host.innerHTML = '<details class="payment-advance"' + (advancePaymentExpanded ? ' open' : '') + '><summary>Antecipar mensalidades · escolha os meses</summary>' +
+        '<p class="payment-advance-note">Quer pagar 2, 3 ou mais meses? Selecione abaixo. Será gerado um Pix para cada mês, com o valor atual do plano. Cada mês ficará pago após a confirmação do seu Pix.</p>' +
+        (advancePaymentOptionsError ? '<p role="alert">Não foi possível consultar os meses. <button type="button" class="ghost-btn" data-refresh-invoices>Atualizar</button></p>' : '') +
+        '<div class="payment-advance-grid">' + advancePaymentOptions.map(function (row) {
+          const enabled = ['AVAILABLE','REISSUABLE'].includes(row.state);
+          const payable = row.state === 'PAYABLE' && paymentInvoices.some(function (i) { return i.id === row.invoice_id && invoicePaymentActionAllowed(i); });
+          return '<label class="payment-advance-month"><input type="checkbox" data-advance-month="' + escapeHtml(row.invoice_month) + '"' + (advancePaymentSelected.has(row.invoice_month) ? ' checked' : '') + (!enabled || monthlyPixBusy ? ' disabled' : '') + '><span><strong>' + escapeHtml(invoiceMonthLabel(row.invoice_month)) + '</strong><b>' + money(row.amount) + '</b><small>' +
+            (row.state === 'PAID' ? 'Pago' : row.state === 'CONFIRMED' ? 'Pagamento confirmado' : payable ? 'Pix disponível' : enabled ? 'Disponível para antecipar' : 'Aguardando revisão do clube') + '</small>' +
+            (payable ? '<button type="button" class="ghost-btn" data-open-pix="' + escapeHtml(row.invoice_id) + '">Abrir Pix</button>' : '') + '</span></label>';
+        }).join('') + '</div><p data-advance-total class="payment-advance-note"></p><button type="button" class="primary-btn" data-advance-generate' + (monthlyPixBusy || !advancePaymentSelected.size ? ' disabled' : '') + '>' + (monthlyPixBusy ? 'Preparando mensalidades…' : 'Gerar Pix dos meses selecionados') + '</button><p class="payment-advance-note" role="status">' + escapeHtml(advancePaymentMessage) + '</p></details>';
+      host.querySelector('details').addEventListener('toggle', function (event) { advancePaymentExpanded = event.target.open; });
+      host.querySelectorAll('[data-advance-month]').forEach(function (input) { input.addEventListener('change', function () {
+        if (input.checked) advancePaymentSelected.add(input.dataset.advanceMonth); else advancePaymentSelected.delete(input.dataset.advanceMonth);
+        updateAdvanceTotal();
+      }); });
+      updateAdvanceTotal();
+    }
+
+    function updateAdvanceTotal() {
+      const total = advancePaymentOptions.filter(function (row) { return advancePaymentSelected.has(row.invoice_month); }).reduce(function (sum, row) { return sum + Number(row.amount || 0); }, 0);
+      const host = $('paymentAdvance');
+      if (host.querySelector('[data-advance-total]')) host.querySelector('[data-advance-total]').textContent = advancePaymentSelected.size + ' mês(es) · Soma dos Pix: ' + money(total);
+      if (host.querySelector('[data-advance-generate]')) host.querySelector('[data-advance-generate]').disabled = monthlyPixBusy || !advancePaymentSelected.size;
+    }
+
+    async function generateAdvancePayments() {
+      if (monthlyPixBusy || !advancePaymentSelected.size) return;
+      if (clientPreviewMode || demoMode || session && session.demo) throw new Error('A emissão de Pix só está disponível na conta real do cliente.');
+      if (!session || !session.access_token) throw new Error('Entre novamente na sua conta.');
+      const ownerId = session.user.id;
+      const ownerToken = session.access_token;
+      const months = Array.from(advancePaymentSelected).sort();
+      monthlyPixBusy = true; advancePaymentExpanded = true; advancePaymentMessage = ''; renderPayments();
+      let prepared = 0;
+      try {
+        for (const month of months) {
+          if (!session || session.user.id !== ownerId) throw new Error('A conta foi desconectada. Entre novamente para continuar.');
+          const response = await fetch(SUPABASE_URL + '/functions/v1/app-monthly-billing', {
+            method:'POST', headers:{'Content-Type':'application/json',apikey:SUPABASE_ANON_KEY,Authorization:'Bearer ' + ownerToken},
+            body:JSON.stringify({action:'client_advance',invoiceMonth:month})
+          });
+          const result = await response.json();
+          if (!response.ok || result.error) throw new Error(invoiceMonthLabel(month) + ': ' + (result.error || 'Não foi possível confirmar a emissão. Atualize antes de tentar novamente.'));
+          prepared++; advancePaymentSelected.delete(month);
+        }
+        advancePaymentMessage = prepared + ' mensalidade(s) preparada(s). Abra e pague cada Pix abaixo. Se estiver em processamento, toque em Atualizar em instantes.';
+      } catch (error) { advancePaymentMessage = (prepared ? prepared + ' mensalidade(s) já preparada(s). ' : '') + error.message; }
+      finally {
+        if (session && session.user.id === ownerId) {
+          await loadClientData().catch(function () {});
+        }
+        monthlyPixBusy = false;
+        if (session && session.user.id === ownerId) renderPayments();
+        else advancePaymentMessage = '';
+      }
+    }
+
     function renderPayments() {
       const toolbar = document.querySelector('.payment-toolbar');
+      const currentPanel = $('paymentCurrentMonth');
+      currentPanel.innerHTML = '';
+      $('paymentAdvance').innerHTML = '';
       if (isFamilyDependent()) {
         if (toolbar) toolbar.hidden = true;
         const responsible = familySummary && familySummary.billing_responsible;
         $('paymentList').innerHTML = '<div class="empty"><strong>Cobrança familiar</strong><br />As cobranças desta conta ficam centralizadas com ' + escapeHtml(responsible && responsible.full_name || 'o responsável financeiro') + '.</div>';
         return;
       }
-      if (isExemptClientPlan() && !hasFamilyBillingInvoice() && !paymentInvoicesLoadError) {
+      if (isExemptClientPlan() && !hasCurrentFamilyAccount() && !hasFamilyBillingInvoice() && !paymentInvoicesLoadError) {
         if (toolbar) toolbar.hidden = true;
         $('paymentList').innerHTML = '<div class="empty"><strong>Plano isento</strong><br />Não há mensalidades ou vencimentos para este plano.</div>';
         return;
       }
       if (toolbar) toolbar.hidden = false;
+      renderAdvancePayments();
       const invoices = buildMonthlyInvoices();
+      const currentMonth = localDateString().slice(0, 7) + '-01';
+      const currentOption = monthlyPaymentOptions.find(function (option) { return option.invoice_month === currentMonth && option.reason !== 'EXEMPT_PLAN'; });
+      if (currentOption && !monthlyPaymentOptionsError) {
+        const currentInvoice = invoices.find(function (invoice) { return invoice.id === currentOption.invoice_id; });
+        const card = currentInvoice && ['PAYABLE', 'PAID', 'CONFIRMED'].includes(currentOption.state)
+          ? invoiceCard(currentInvoice) : monthlyPaymentOptionCard(currentOption);
+        currentPanel.innerHTML = '<h3 style="margin:0">Fatura deste mês</h3>' + card;
+      }
       renderPaymentFilters(invoices);
       const list = filteredInvoices();
+      const active = list.filter(function (invoice) { return invoiceEffectiveStatus(invoice) !== 'CANCELADA' && !(currentPanel.innerHTML && currentOption && currentOption.invoice_id === invoice.id); });
+      const cancelled = list.filter(function (invoice) { return invoiceEffectiveStatus(invoice) === 'CANCELADA'; });
       const loadWarning = paymentInvoicesLoadError
         ? '<div class="invoice-load-message is-error" role="alert">Não foi possível atualizar suas faturas. Os dados já carregados foram mantidos.<br /><button class="ghost-btn" type="button" data-refresh-invoices>Tentar atualizar</button></div>' : '';
       const empty = invoices.length
         ? '<div class="empty"><strong>Nenhuma cobrança neste filtro</strong><br />Escolha outro período ou veja todas.<br /><button class="ghost-btn" type="button" data-clear-invoice-filter>Ver todas</button></div>'
         : '<div class="empty"><strong>Nenhuma cobrança emitida</strong><br />As faturas oficiais disponibilizadas pelo clube aparecerão aqui.<br /><button class="ghost-btn" type="button" data-refresh-invoices>Atualizar</button></div>';
-      $('paymentList').innerHTML = loadWarning + (list.length ? list.map(invoiceCard).join('') : empty);
+      const history = cancelled.length ? '<details class="invoice-cancelled-history"><summary>Histórico de cobranças canceladas (' + cancelled.length + ') · sem valor a pagar</summary>' + cancelled.map(invoiceCard).join('') + '</details>' : '';
+      const currentEmpty = cancelled.length ? '<div class="empty"><strong>Nenhuma cobrança ativa neste período</strong><br />As cobranças canceladas abaixo não precisam ser pagas.</div>' : empty;
+      const options = monthlyPaymentOptions.filter(function (option) {
+        if (currentPanel.innerHTML && option.invoice_month === currentMonth) return false;
+        if (option.state === 'PAID' || option.reason === 'EXEMPT_PLAN') return false;
+        const date = parseLocalDate(option.invoice_month);
+        if (paymentFilter.month !== 'all' && String(date.getMonth() + 1) !== String(paymentFilter.month)) return false;
+        if (paymentFilter.year !== 'all' && String(date.getFullYear()) !== String(paymentFilter.year)) return false;
+        // Keep a cancelled current cycle visible as awaiting review, even though
+        // its old invoice is tucked away in history. Never move it to next month.
+        return !option.invoice_id || option.reason === 'INVOICE_CANCELLED' || option.state === 'REISSUABLE';
+      }).sort(function (a, b) { return String(a.invoice_month).localeCompare(String(b.invoice_month)); });
+      const upcoming = options.filter(function (option) { return option.invoice_month <= currentMonth || option.state !== 'TOO_EARLY'; }).map(monthlyPaymentOptionCard).join('');
+      const forecasts = options.filter(function (option) { return option.invoice_month > currentMonth && option.state === 'TOO_EARLY'; }).map(monthlyPaymentOptionCard).join('');
+      const future = forecasts ? '<details class="invoice-future-preview"' + (paymentFilter.month !== 'all' ? ' open' : '') + '><summary>Previsão dos próximos meses · ainda não liberada</summary>' + forecasts + '</details>' : '';
+      const optionsWarning = monthlyPaymentOptionsError ? '<div class="invoice-load-message is-error" role="alert">Não foi possível consultar a liberação do próximo Pix. <button class="ghost-btn" data-refresh-invoices>Atualizar</button></div>' : '';
+      $('paymentList').innerHTML = currentFamilyAccountHtml() + loadWarning + optionsWarning + upcoming + (active.length ? active.map(invoiceCard).join('') : upcoming || forecasts || currentPanel.innerHTML ? '' : currentEmpty) + future + history;
     }
 
+    async function generateMyMonthlyPix(month) {
+      if (monthlyPixBusy) return;
+      if (clientPreviewMode || demoMode || session && session.demo) throw new Error('A emissão de Pix só está disponível na conta real do cliente.');
+      if (!session || !session.access_token) throw new Error('Entre novamente na sua conta.');
+      monthlyPixBusy = true;
+      renderPayments();
+      try {
+        toast('Preparando seu Pix. Aguarde...');
+        const response = await fetch(SUPABASE_URL + '/functions/v1/app-monthly-billing', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + session.access_token },
+          body: JSON.stringify({ action: 'client_generate', invoiceMonth: month })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Não foi possível preparar o Pix. Atualize e tente novamente.');
+        await loadClientData();
+        renderAll();
+        const invoice = paymentInvoices.find(function (item) { return item.id === result.invoiceId; });
+        if (invoice && invoicePaymentActionAllowed(invoice)) openPixModal(invoice);
+        else if (result.error) throw new Error(result.error);
+        else toast('O Pix está sendo preparado. Toque em Atualizar em instantes.');
+      } catch (error) {
+        // An uncertain response can still have created/settled the invoice.
+        // Refresh before offering another attempt; the backend is idempotent.
+        await loadClientData().catch(function () {});
+        throw error;
+      } finally { monthlyPixBusy = false; renderPayments(); }
+    }
+
+    let clientCommerce;
+    function clientStoreCommerce() {
+      if (!clientCommerce) clientCommerce = window.IlhaStore.create({
+        ordersHost: $('clientStoreOrders'), notify: toast,
+        clients: function () { return []; },
+        products: function () { return storeProducts.map(function (p) { return Object.assign({}, p, { price: p.amount }); }); },
+        refresh: async function () { await loadClientData(); renderStore(); },
+        call: async function (body) {
+          if (demoMode || session && session.demo) throw new Error('Compras Pix indisponíveis na demonstração.');
+          if (!session) throw new Error('Entre na sua conta para comprar.');
+          const response = await fetch(SUPABASE_URL + '/functions/v1/store-checkout', { method: 'POST',
+            headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + session.access_token }, body: JSON.stringify(body) });
+          const result = await response.json();
+          if (!response.ok) { const error = new Error(result.error || 'Não foi possível acessar a loja.'); error.orderId = result.order_id; throw error; }
+          return result;
+        }
+      });
+      return clientCommerce;
+    }
     function renderStore() {
-      const availableProducts = storeProducts.filter(storeProductAvailable);
+      const search = $('clientStoreSearch').value.trim().toLocaleLowerCase('pt-BR');
+      const category = $('clientStoreCategory').value;
+      const availableProducts = storeProducts.filter(storeProductAvailable).filter(function (p) {
+        return (!category || p.category === category) && (!search || [p.name,p.size,p.color,p.description].join(' ').toLocaleLowerCase('pt-BR').includes(search));
+      });
       $('storeGrid').innerHTML = availableProducts.map(function (product) {
         const request = storeRequests.find(function (item) { return item.product_code === product.code && ['SOLICITADO', 'EM_ANALISE', 'APROVADO'].includes(String(item.status || '').toUpperCase()); });
         return '<article class="store-card">' +
           '<img src="' + escapeHtml(product.image || '/logo.png') + '" alt="' + escapeHtml(product.name) + '" />' +
           '<div class="store-card-body">' +
-            '<div><h3>' + escapeHtml(product.name) + '</h3><p>' + escapeHtml(product.description) + '</p></div>' +
+            '<div><span class="ilha-store-badge">' + escapeHtml(product.category) + '</span><h3>' + escapeHtml([product.name, product.size, product.color].filter(Boolean).join(' · ')) + '</h3><p>' + escapeHtml(product.description) + '</p></div>' +
             '<div class="store-card-footer"><div><div class="store-card-price">' + (Number(product.amount || 0) > 0 ? money(product.amount) : 'Consulte o valor') + '</div>' +
               (product.trackStock ? '<div class="store-card-stock">' + escapeHtml(Number(product.stock || 0) === 1 ? 'Última unidade' : Number(product.stock || 0) + ' unidades disponíveis') + '</div>' : '') +
             '</div>' +
-            (request ? '<span class="pill warn">' + escapeHtml(request.status) + '</span>' : '<button class="primary-btn" type="button" data-store-request="' + escapeHtml(product.code) + '">Solicitar</button>') + '</div>' +
+            (Number(product.amount) > 0 ? '<button class="primary-btn" type="button" data-store-buy="' + escapeHtml(product.id) + '">Comprar · Pix</button>' : (request ? '<span class="pill warn">' + escapeHtml(request.status) + '</span>' : '<button class="primary-btn" type="button" data-store-request="' + escapeHtml(product.code) + '">Consultar</button>')) + '</div>' +
           '</div>' +
         '</article>';
       }).join('') || '<div class="empty"><strong>Loja em atualização</strong><br />Nenhum produto disponível no momento.</div>';
@@ -9538,6 +9860,7 @@
     }
 
     async function refresh(silent) {
+      if (clientPreviewMode) { await window.IlhaClientPreview.refresh(); return; }
       if (!session) return;
       await ensureClient(null, null);
       await loadClientData();
@@ -9556,7 +9879,7 @@
       $('familyBirthDate').max = today;
       updateRegistrationConditionalFields('signup');
       updateRegistrationConditionalFields('complete');
-      ensureClientServiceWorker().catch(function () {});
+      if (!clientPreviewMode) ensureClientServiceWorker().catch(function () {});
       listenForClientAppUpdates();
       setupPullToRefresh();
       setupSwipeBack();
@@ -9741,7 +10064,16 @@
           });
         }
       });
-      $('paymentList').addEventListener('click', function (event) {
+      $('view-payments').addEventListener('click', function (event) {
+        if (event.target.closest('[data-advance-generate]')) {
+          generateAdvancePayments().catch(function (error) { toast(error.message); });
+          return;
+        }
+        const generateBtn = event.target.closest('[data-generate-monthly-pix]');
+        if (generateBtn) {
+          generateMyMonthlyPix(generateBtn.dataset.generateMonthlyPix).catch(function (error) { toast(error.message); });
+          return;
+        }
         const refreshBtn = event.target.closest('[data-refresh-invoice], [data-refresh-invoices]');
         if (refreshBtn) {
           runButtonTask(refreshBtn, function () { return refresh(false); }).catch(function () {
@@ -9809,9 +10141,19 @@
         renderPayments();
       });
       $('storeGrid').addEventListener('click', function (event) {
+        const buyBtn = event.target.closest('[data-store-buy]');
+        if (buyBtn) {
+          const product = clientStoreCommerce();
+          const selected = storeProducts.find(function (p) { return p.id === buyBtn.dataset.storeBuy; });
+          if (selected) product.checkout(Object.assign({}, selected, { price: selected.amount }), false);
+          return;
+        }
         const requestBtn = event.target.closest('[data-store-request]');
         if (requestBtn) runButtonTask(requestBtn, function () { return requestStoreProduct(requestBtn.dataset.storeRequest); });
       });
+      $('clientStorePosBtn').addEventListener('click', function () { clientStoreCommerce().checkout(null, true); });
+      $('clientStoreSearch').addEventListener('input', renderStore);
+      $('clientStoreCategory').addEventListener('change', renderStore);
       document.addEventListener('visibilitychange', function () {
         if (!document.hidden && session) {
           if (document.body.classList.contains('client-checking')) {
@@ -9827,6 +10169,7 @@
         if (session && document.body.classList.contains('client-checking')) restore();
       });
       window.addEventListener('storage', function (event) {
+        if (clientPreviewMode) return;
         if (event.key !== SESSION_KEY) return;
         if (!event.newValue) {
           if (session && !session.demo) {
@@ -10035,6 +10378,10 @@
           toast('Não foi possível ativar as notificações agora.');
         });
       });
+      if (clientPreviewMode) {
+        Promise.resolve().then(restore).catch(function () { lock('Não foi possível abrir a consulta. Reabra pelo ADM.'); });
+        return;
+      }
       initClientInstallPrompt();
       const clientStartup = Promise.resolve().then(function () {
         return restore();

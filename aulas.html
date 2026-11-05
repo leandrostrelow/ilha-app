@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#083f4b">
+  <meta name="description" content="Comece ou evolua no tênis no Ilha Tênis Colatina. Conte seus horários e nossa equipe ajuda a encontrar sua turma.">
+  <title>Aulas de tênis · Ilha Tênis Colatina</title>
+  <link rel="icon" href="/icon.png">
+  <link rel="stylesheet" href="/aulas.css">
+  <style>
+    .choices label:has(input:checked){border-color:#8fbe00;background:#f3fbdc;color:#466000;box-shadow:inset 0 0 0 1px #8fbe00}
+    .choices input,.consent input{accent-color:#8fbe00}
+  </style>
+  <script src="/aulas.js" defer></script>
+</head>
+<body>
+  <header class="aulas-header"><a href="/aulas" aria-label="Ilha Tênis · Aulas"><img src="/assets/branding/ilha-tenis-logo-light.png" alt="Ilha Tênis" width="160" height="70"></a><span>COLATINA · ES</span></header>
+  <main class="aulas-layout">
+    <section class="aulas-card">
+      <div id="formHeading"><span class="eyebrow">INTERESSE EM AULAS</span><h2>Vamos nos conhecer?</h2><p class="muted">Rapidinho. Depois, continuamos pelo WhatsApp.</p></div>
+      <form id="leadForm">
+        <fieldset><legend><span>01</span> Sobre o aluno</legend>
+          <label for="nome">Nome do aluno *</label><input id="nome" name="nome" autocomplete="name" maxlength="120" minlength="2" required>
+          <div class="form-grid"><div><label for="telefone">WhatsApp com DDD *</label><input id="telefone" name="telefone" type="tel" autocomplete="tel" placeholder="(27) 99999-9999" maxlength="20" required></div><div><label for="idade">Idade <small>opcional</small></label><input id="idade" name="idade" type="number" inputmode="numeric" min="1" max="110"></div></div>
+          <fieldset class="choice-group"><legend>As aulas são para quem? *</legend><div class="choices"><label><input type="radio" name="publico" value="Adulto" required> Adulto</label><label><input type="radio" name="publico" value="Criança"> Criança</label></div></fieldset>
+          <div id="responsavelSection" hidden><label for="responsavel">Nome do responsável *</label><input id="responsavel" name="responsavel" maxlength="120" minlength="2"><p class="helper">Use o WhatsApp do responsável acima.</p></div>
+          <label for="genero">Gênero <small>opcional</small></label><select id="genero" name="genero"><option value="">Selecione</option><option>Masculino</option><option>Feminino</option><option>Prefiro não informar</option></select>
+        </fieldset>
+        <fieldset><legend><span>02</span> Seu melhor horário</legend>
+          <fieldset class="choice-group"><legend>Dias disponíveis</legend><div class="choices days"><label><input type="checkbox" name="dias_disponiveis" value="Segunda"> Seg</label><label><input type="checkbox" name="dias_disponiveis" value="Terça"> Ter</label><label><input type="checkbox" name="dias_disponiveis" value="Quarta"> Qua</label><label><input type="checkbox" name="dias_disponiveis" value="Quinta"> Qui</label><label><input type="checkbox" name="dias_disponiveis" value="Sexta"> Sex</label></div><p class="helper">Pode marcar mais de um. Se ainda não sabe, combine com a equipe.</p></fieldset>
+          <fieldset class="choice-group"><legend>Período preferido *</legend><div class="choices"><label><input type="radio" name="periodo" value="Manhã" required> Manhã</label><label><input type="radio" name="periodo" value="Tarde"> Tarde</label><label><input type="radio" name="periodo" value="Noite"> Noite</label></div></fieldset>
+          <fieldset class="choice-group"><legend>Quantas vezes por semana? *</legend><div class="choices plans"><label><input type="radio" name="frequencia" value="1x: R$250" required><span>1 vez <strong style="color:#8fbe00">R$ 250,00</strong></span></label><label><input type="radio" name="frequencia" value="2x: R$350"><span>2 vezes <strong style="color:#8fbe00">R$ 350,00</strong></span></label></div><p class="helper">Confirme condições e disponibilidade com a equipe.</p></fieldset>
+        </fieldset>
+        <fieldset><legend><span>03</span> Seu momento no tênis</legend>
+          <fieldset class="choice-group"><legend>Já fez aula de tênis?</legend><div class="choices"><label><input type="radio" name="ja_fez_aula" value="Não" checked> Ainda não</label><label><input type="radio" name="ja_fez_aula" value="Sim"> Já fiz</label></div></fieldset>
+          <div id="nivelSection" hidden><label for="nivel">Qual é seu nível?</label><select id="nivel" name="nivel"><option value="">Vamos descobrir juntos</option><option>Iniciante</option><option>Intermediário</option><option>Avançado</option></select></div>
+          <label for="objetivo">O que você busca?</label><select id="objetivo" name="objetivo"><option value="">Selecione, se quiser</option><option>Aprender do zero</option><option>Lazer</option><option>Competir</option></select>
+          <fieldset class="choice-group"><legend>Como conheceu o Ilha? *</legend><div class="choices discovery"><label><input type="radio" name="como_conheceu" value="Instagram" required> Instagram</label><label><input type="radio" name="como_conheceu" value="Google"> Google</label><label><input type="radio" name="como_conheceu" value="Indicação"> Indicação</label><label><input type="radio" name="como_conheceu" value="Passando em frente"> Passando em frente</label><label><input type="radio" name="como_conheceu" value="Evento ou torneio"> Evento ou torneio</label><label><input type="radio" name="como_conheceu" value="WhatsApp"> WhatsApp</label><label><input type="radio" name="como_conheceu" value="Outro"> Outro</label></div></fieldset>
+          <label for="observacoes">Quer contar mais alguma coisa? <small>opcional</small></label><textarea id="observacoes" name="observacoes" rows="3" maxlength="1500" placeholder="Horário específico, dúvidas ou outras informações..."></textarea>
+        </fieldset>
+        <div class="honeypot" aria-hidden="true"><label for="website">Não preencha este campo</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
+        <label class="consent"><input type="checkbox" id="consent" name="consent" required><span>Autorizo o Ilha Tênis e seus professores a usar estes dados para organizar as aulas e falar comigo pelo WhatsApp. Se o aluno for menor, sou seu responsável. *</span></label>
+        <p id="formError" class="form-error" role="alert" hidden></p>
+        <button class="submit" id="submitBtn" type="submit">Quero jogar no Ilha <span aria-hidden="true">↗</span></button>
+        <p class="enrollment-note">Preencher não faz matrícula nem reserva horário. A equipe conversa com você para combinar a melhor turma.</p>
+      </form>
+      <div id="formSuccess" class="success-panel" role="status" tabindex="-1" hidden><div class="success-icon" aria-hidden="true">✓</div><span class="eyebrow">INTERESSE RECEBIDO</span><h2>Obrigado pelo interesse!</h2><p>Recebemos suas informações. Nossa equipe vai analisar sua disponibilidade e buscar a melhor opção de turma e horário para você.</p><p>Como a procura pelas aulas está alta e as vagas são limitadas, nosso retorno pode levar um pouco mais de tempo. Agradecemos a compreensão — entraremos em contato pelo WhatsApp assim que encontrarmos a melhor solução.</p><p class="muted">Não precisa preencher novamente.</p><a href="/aulas">Cadastrar outro aluno</a></div>
+    </section>
+  </main>
+  <footer>Ilha Tênis Colatina · Muito além de um jogo.</footer>
+</body>
+</html>

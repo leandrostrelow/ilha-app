@@ -5,6 +5,8 @@ import {
   type SupabaseClient,
 } from "npm:@supabase/supabase-js@2.57.4";
 import { appCorsHeaders } from "../_shared/cors.ts";
+import { registerMonthlyInvoiceReceipt } from "../_shared/monthly-invoice-receipt.ts";
+import { registerMonthlyReceiptBatch } from "../_shared/monthly-receipt-batch.ts";
 
 type JsonRecord = Record<string, unknown>;
 type DbClient = SupabaseClient<any, "public", "public", any>;
@@ -345,7 +347,7 @@ function validateRemotePayment(
       "A referência da cobrança divergiu do snapshot local.",
     );
   }
-  if (billingType !== "PIX") {
+  if (billingType !== "PIX" && !(billingType === "RECEIVED_IN_CASH" && ["RECEIVED", "RECEIVED_IN_CASH"].includes(String(payment.status)))) {
     throw new ProviderInvariantError("A cobrança retornada não é Pix.");
   }
   if (moneyCents(payment.value) !== moneyCents(claim.expected_amount)) {
@@ -367,6 +369,9 @@ async function syncAsaasCustomerContact(
   environment: string,
 ) {
   try {
+    const remote = await asaasRequest(`/customers/${encodeURIComponent(customerId)}`);
+    const ownsMonthlyCustomer = text(remote.externalReference, 180) ===
+      `ilha-monthly-customer:${text(client.id, 60)}`;
     const updated = await asaasRequest(
       `/customers/${encodeURIComponent(customerId)}`,
       {
@@ -376,9 +381,10 @@ async function syncAsaasCustomerContact(
           cpfCnpj: cpf,
           email: text(client.email, 160) || undefined,
           mobilePhone: text(client.phone, 20).replace(/\D/g, "") || undefined,
-          // Production delivery remains enabled at Asaas. We intentionally do
-          // not overwrite externalReference on customers discovered by CPF.
-          notificationDisabled: environment !== "PRODUCTION",
+          // The app owns the D-5..D+5 daily reminder policy. Never modify
+          // notification settings on a shared customer discovered by CPF.
+          ...(ownsMonthlyCustomer || environment === "SANDBOX"
+            ? { notificationDisabled: true } : {}),
         }),
       },
     );
@@ -484,7 +490,7 @@ async function ensureAsaasCustomer(
           email: text(client.email, 160) || undefined,
           mobilePhone: text(client.phone, 20).replace(/\D/g, "") || undefined,
           externalReference,
-          notificationDisabled: environment === "SANDBOX",
+          notificationDisabled: true,
         }),
       });
     } catch (error) {
@@ -842,7 +848,7 @@ async function authenticate(
   const canWrite = !writePermission.error && writePermission.data === true;
   if (!canRead && !canWrite) {
     return {
-      kind: "FORBIDDEN",
+      kind: "CLIENT",
       userId: userResult.data.user.id,
       canWrite: false,
     };
@@ -902,7 +908,84 @@ Deno.serve(async (request: Request) => {
       adminClient,
     );
     if (!auth) return json(request, { error: "Credencial inválida." }, 401);
-    if (auth.kind === "FORBIDDEN") {
+    const body = record(parsedBody);
+    const action = text(body.action, 20).toLowerCase();
+    if (action === "record_receipt" || action === "record_months") {
+      if (auth.kind !== "USER" || !auth.canWrite || !auth.userId) {
+        return json(request, { error: "Seu acesso não permite registrar recebimentos." }, 403);
+      }
+      try {
+        const receipt = await (action === "record_months" ? registerMonthlyReceiptBatch : registerMonthlyInvoiceReceipt)(body, auth.userId, asaasConfig().environment,
+          (name, args) => adminClient!.rpc(name, args), asaasRequest, safePaymentSnapshot);
+        return json(request, receipt);
+      } catch (error) {
+        return json(request, { error: error instanceof Error ? error.message : "Não foi possível confirmar a baixa. Atualize a fatura." }, 409);
+      }
+    }
+    if (action === "client_generate" || action === "client_advance" || action === "activation_generate") {
+      const activation = action === "activation_generate";
+      let clientId = auth.userId;
+      let month = invoiceMonth(body.invoiceMonth);
+      if (activation) {
+        if (auth.kind !== "INTERNAL") return json(request, { error: "A ativação automática exige autorização interna." }, 403);
+        clientId = text(body.clientId, 60);
+        if (!isUuid(clientId) || Object.keys(body).some((key) => !["action", "clientId"].includes(key))) {
+          return json(request, { error: "Ativação inválida." }, 400);
+        }
+        const enrollment = await adminClient.from("app_monthly_billing_enrollments")
+          .select("enabled,billing_method,first_due_date").eq("client_id", clientId).maybeSingle();
+        if (enrollment.error) throw enrollment.error;
+        const firstDue = text(enrollment.data?.first_due_date, 10);
+        month = firstDue ? firstDue.slice(0, 7) + "-01" : "";
+        if (!enrollment.data?.enabled || enrollment.data.billing_method !== "ASAAS_PIX" || month !== saoPauloCycle().month) {
+          return json(request, { error: "A primeira mensalidade não está habilitada neste mês." }, 409);
+        }
+      } else {
+      // No caller-supplied client/invoice/amount is accepted. A finance user
+      // using their own app receives exactly the same restricted flow.
+      if (auth.kind === "INTERNAL" || !auth.userId) return json(request, { error: "Entre na sua conta." }, 403);
+      if (!month || Object.keys(body).some((key) => !["action", "invoiceMonth"].includes(key))) {
+        return json(request, { error: "Solicitação de mensalidade inválida." }, 400);
+      }
+      }
+      if (!clientId || !month) return json(request, { error: "Mensalidade inválida." }, 400);
+      executionStage = "CLIENT_PREPARE";
+      const prepared = await adminClient.rpc(action === "client_advance" ? "prepare_client_advance_pix" : "prepare_client_monthly_pix", {
+        p_client_id: clientId,
+        p_invoice_month: month,
+        p_provider_environment: asaasConfig().environment,
+      });
+      if (prepared.error) throw prepared.error;
+      const target = record(prepared.data);
+      const invoiceId = text(target.invoiceId, 60);
+      if (!isUuid(invoiceId)) return json(request, { error: target.error, state: target.state }, 409);
+      if (target.state === "PAYABLE") return json(request, { invoiceId, state: "PAYABLE" });
+      const run = await adminClient.from("app_monthly_billing_runs").insert({
+        action: "GENERATE", invoice_month: month, requested_invoice_id: invoiceId,
+        requested_by: auth.userId, authorization_kind: activation ? "INTERNAL" : "USER", status: "STARTED",
+      }).select("id").single();
+      if (run.error) throw run.error;
+      runId = String(run.data.id);
+      executionStage = "CLIENT_DISPATCH";
+      const claimed = await adminClient.rpc("claim_app_invoice_provider_dispatch", {
+        p_invoice_id: invoiceId, p_invoice_month: month, p_batch_limit: 1, p_include_ready: true,
+      });
+      if (claimed.error) throw claimed.error;
+      const claims = Array.isArray(claimed.data) ? claimed.data.map(record) : [];
+      // An absent/busy claim NEVER falls back to another account or a batch.
+      if (claims.some((claim) => claim.client_id !== clientId || claim.invoice_id !== invoiceId)) {
+        throw new ProviderInvariantError("A mensalidade não pertence a esta conta.");
+      }
+      const results = await processInBatches(adminClient, claims);
+      const failed = results.some((result) => result.state === "FAILED");
+      const completed = await adminClient.from("app_monthly_billing_runs").update({
+        status: failed ? "PARTIAL" : "SUCCEEDED", summary: { selfService: !activation, firstActivation: activation, processed: results.length },
+        completed_at: new Date().toISOString(),
+      }).eq("id", runId);
+      if (completed.error) throw completed.error;
+      return json(request, { invoiceId, state: failed ? "FAILED" : "PROCESSING", error: results.find((result) => result.error)?.error || null });
+    }
+    if (auth.kind === "CLIENT") {
       return json(
         request,
         { error: "Seu acesso não permite gerar cobranças." },
@@ -910,8 +993,6 @@ Deno.serve(async (request: Request) => {
       );
     }
 
-    const body = record(parsedBody);
-    const action = text(body.action, 20).toLowerCase();
     if (
       !new Set(["preview", "generate", "retry", "scheduled", "reconcile"])
         .has(action)
@@ -973,10 +1054,8 @@ Deno.serve(async (request: Request) => {
       .single();
     if (settings.error) throw settings.error;
     const billingEnabled = settings.data.enabled === true;
-    const generationDayReached = currentCycle.day >=
-      Number(settings.data.generation_day || 1);
     const shouldGenerate = action === "generate" ||
-      (action === "scheduled" && billingEnabled && generationDayReached);
+      (action === "scheduled" && billingEnabled);
     const maxBatchSize = Math.max(
       1,
       Math.min(25, Number(settings.data.max_batch_size) || 10),
@@ -1011,8 +1090,8 @@ Deno.serve(async (request: Request) => {
     let individualGenerationFailure: JsonRecord | null = null;
     if (shouldGenerate) {
       const generated = await adminClient.rpc(
-        "generate_enrolled_app_monthly_pix_billing",
-        {
+        action === "scheduled" ? "generate_due_app_monthly_pix_billing" : "generate_enrolled_app_monthly_pix_billing",
+        action === "scheduled" ? { p_provider_environment: config.environment } : {
           p_invoice_month: month,
           p_client_id: requestedClientId || null,
           p_provider_environment: config.environment,
@@ -1126,10 +1205,8 @@ Deno.serve(async (request: Request) => {
       remainingReady,
       reconciliationMayRemain,
       generationPaused: action === "scheduled" && !billingEnabled,
-      generationDeferred: action === "scheduled" && billingEnabled &&
-          !generationDayReached
-        ? "GENERATION_DAY_NOT_REACHED"
-        : null,
+      generationDeferred: null,
+      advanceDays: 15,
     };
     executionStage = "RUN_COMPLETE";
     const completedRun = await adminClient.from("app_monthly_billing_runs")

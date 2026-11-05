@@ -1086,7 +1086,7 @@ select
   'Palpite Ilha · ' || tournament.name,
   'OPEN',
   true,
-  now(),
+  least(now(), coalesce(tournament.starts_on::timestamp at time zone coalesce(tournament.timezone, 'America/Sao_Paulo'), now())),
   case
     when tournament.ends_on is not null
     then (tournament.ends_on + time '23:59:59') at time zone coalesce(tournament.timezone, 'America/Sao_Paulo')

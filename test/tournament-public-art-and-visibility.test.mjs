@@ -57,12 +57,14 @@ test('página pública mostra classes somente quando a chave existe', () => {
   assert.match(publicPage, /if \(!ids\.some\(\(id\) => visibleCategoryIds\.has\(id\)\)\) return false/);
 });
 
-test('página pública prioriza as duas classes espaciais e comunica as chaves pendentes', () => {
+test('página pública ordena classes numericamente e joga as finalizadas para o fim', () => {
   const categories = sourceSection(publicPage, 'function publicDrawCategories()', '\n    function categoryName');
   const brackets = sourceSection(publicPage, 'function bracketsHtml()', '\n    function bracketBoardHtml');
   const schedule = sourceSection(publicPage, 'function scheduleHtml()', '\n    function scoreText');
-  assert.match(categories, /'ESP-A-M': 0, 'ESP-B-M': 1/);
-  assert.match(categories, /a\.index - b\.index/);
+  assert.match(categories, /publicDrawCategoryFinished/);
+  assert.match(categories, /Number\(a\.finished\) - Number\(b\.finished\)/);
+  assert.match(categories, /a\.order\.number - b\.order\.number/);
+  assert.match(categories, /localeCompare\(b\.order\.name, 'pt-BR', \{ numeric: true \}\)/);
   assert.match(brackets, /Aviso: as chaves das demais classes serão publicadas em breve\./);
   assert.match(publicPage, /\.public-update-notice/);
   assert.doesNotMatch(brackets, /Selecione a classe e acompanhe o caminho até a final\./);
@@ -120,11 +122,15 @@ test('chave pública mostra BYE nas folgas da primeira rodada como o ADM', () =>
 
 test('agenda pública exibe somente dias e classes que possuem jogos', () => {
   const schedule = sourceSection(publicPage, 'function scheduledGameRows()', '\n    function agendaMatchHtml');
-  assert.match(schedule, /!isFinalized\(row\) && scheduleDayKey\(row\)/);
+  assert.match(publicPage, /function currentTournamentDateKey\(\)/);
+  assert.match(publicPage, /timeZone = clean\(field\(tournament\(\),'timezone'\)\) \|\| 'America\/Sao_Paulo'/);
+  assert.match(publicPage, /function matchStaysOnPublicSchedule\(row,todayKey\)/);
+  assert.match(publicPage, /return !isFinalized\(row\) \|\| dayKey >= todayKey/);
+  assert.match(schedule, /matchStaysOnPublicSchedule\(row,todayKey\)/);
   assert.match(schedule, /const gameDays = new Set\(gameRows\.map\(scheduleDayKey\)\)/);
   assert.match(schedule, /events\(\)\.filter\(\(row\) => gameDays\.has\(scheduleDayKey\(row\)\)\)/);
   assert.match(schedule, /agendaCategories\(\)\.map/);
-  assert.match(schedule, /function agendaDayGroupHtml\(rows\)/);
+  assert.match(schedule, /function agendaDayGroupHtml\(rows,resultsMode\)/);
   assert.match(schedule, /class="agenda-day-group"/);
   assert.match(schedule, /class="agenda-court-group"/);
   assert.match(publicPage, /function scheduleOrderValue\(row\)/);
@@ -172,4 +178,28 @@ test('arte da agenda prioriza os nomes e reduz o destaque do horário', () => {
   assert.match(poster, /shortName\(player1, 30\)/);
   assert.match(poster, /'× ' \+ shortName\(player2, 30\)/);
   assert.match(poster, /maxRows <= 3 \? 112/);
+});
+
+test('arte da agenda destaca finais em dourado e mostra a data legível', () => {
+  const poster = sourceSection(adminPage, 'function drawAgendaPosterCard', '\n    function drawInstagramBracket');
+  assert.match(poster, /function isAgendaFinalMatch\(match\)/);
+  assert.match(poster, /gold: '#d7a51d'/);
+  assert.match(poster, /soft: '#fff4ca'/);
+  assert.match(poster, /drawFitText\(ctx, 'FINAL'/);
+  assert.match(poster, /strokeStyle = isFinal \? finalColors\.line : colors\.line/);
+  assert.match(poster, /names\[date\.getUTCDay\(\)\] \+ ', ' \+ day\.slice\(8, 10\) \+ '\/' \+ day\.slice\(5, 7\)/);
+});
+
+test('arte da agenda pode ser salva ou compartilhada pelo celular', () => {
+  const exporter = sourceSection(adminPage, 'let generatedImageExport = null;', '\n    function loadInstagramBackground()');
+  const agendaDownload = sourceSection(adminPage, 'async function downloadAgendaDayImage(day)', '\n    let generatedImageExport = null;');
+  assert.match(agendaDownload, /await canvasToPngBlob\(canvas\)/);
+  assert.match(agendaDownload, /if \(!isMobileImageExport\(\)\) downloadGeneratedImage\(\)/);
+  assert.match(exporter, /canvas\.toBlob/);
+  assert.match(exporter, /new File\(\[blob\], safeName, \{ type: 'image\/png' \}\)/);
+  assert.match(exporter, /navigator\.canShare\(\{ files: \[file\] \}\)/);
+  assert.match(exporter, /await navigator\.share\(\{/);
+  assert.match(exporter, /Compartilhar \/ salvar/);
+  assert.match(exporter, /Salvar Imagem, Instagram, WhatsApp/);
+  assert.match(exporter, /window\.open\(generatedImageExport\.url, '_blank', 'noopener'\)/);
 });

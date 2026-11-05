@@ -186,13 +186,13 @@ test('customer mensal reutiliza CPF/CNPJ exato sem criar duplicata', () => {
   assert.match(migration, /resolution_started_at[\s\S]*interval '3 minutes'/i);
   assert.match(migration, /resolution_token = p_resolution_token/i);
   assert.match(migration, /provider_create_attempted_at[\s\S]*resultado ambíguo e exige revisão/i);
-  assert.match(edgeFunction, /async function syncAsaasCustomerContact[\s\S]*method: "PUT"[\s\S]*notificationDisabled: environment !== "PRODUCTION"/i);
+  assert.match(edgeFunction, /async function syncAsaasCustomerContact[\s\S]*ownsMonthlyCustomer[\s\S]*method: "PUT"[\s\S]*notificationDisabled: true/i);
   assert.match(edgeFunction, /status === "ACTIVE" && mappedId[\s\S]*syncAsaasCustomerContact/i);
   assert.match(functionBody, /let reusedCustomer = Boolean\(customer\)[\s\S]*if \(reusedCustomer\)[\s\S]*syncAsaasCustomerContact/i);
   const customerSync = edgeFunction.match(
     /async function syncAsaasCustomerContact\([\s\S]*?\n}\n\nasync function ensureAsaasCustomer/
   )?.[0] || '';
-  assert.doesNotMatch(customerSync, /externalReference,/);
+  assert.doesNotMatch(customerSync.slice(customerSync.indexOf('body: JSON.stringify')), /\bexternalReference\s*[:,]/);
   assert.match(customerSync, /try \{[\s\S]*asaasRequest[\s\S]*updatedCpf[\s\S]*catch \(error\)[\s\S]*return false/);
   assert.match(customerSync, /catch \(error\)[\s\S]*error instanceof ProviderInvariantError\) throw error[\s\S]*return false/);
   assert.doesNotMatch(customerSync, /throw new AmbiguousProviderResultError/);
@@ -327,7 +327,9 @@ test('configuração operacional começa pausada, exige permissão e deixa audit
   assert.match(migration, /authorization_kind[\s\S]*case when is_service then 'INTERNAL' else 'USER' end/i);
   assert.doesNotMatch(edgeFunction, /action === "generate" && !billingEnabled/);
   assert.match(edgeFunction, /generate_enrolled_app_monthly_pix_billing/);
-  assert.match(edgeFunction, /action === "scheduled" && billingEnabled && generationDayReached/);
+  assert.match(edgeFunction, /action === "scheduled" && billingEnabled/);
+  assert.match(edgeFunction, /generate_due_app_monthly_pix_billing/);
+  assert.doesNotMatch(edgeFunction, /generationDayReached/);
   assert.match(migration, /'reconciliationIntervalMinutes', 15[\s\S]*'paymentPollingIntervalMinutes', 60/);
 });
 

@@ -35,9 +35,10 @@ test('Vercel aplica proteções HTTP globais sem bloquear recursos usados pelo a
   assert.equal(headers.get('referrer-policy'), 'strict-origin-when-cross-origin');
 
   const permissions = headers.get('permissions-policy') || '';
-  for (const denied of ['camera=()', 'microphone=()', 'geolocation=()', 'payment=()', 'usb=()']) {
+  for (const denied of ['microphone=()', 'geolocation=()', 'payment=()', 'usb=()']) {
     assert.match(permissions, new RegExp(denied.replace(/[()]/g, '\\$&')));
   }
+  assert.match(permissions, /camera=\(self\)/);
   assert.match(permissions, /clipboard-write=\(self\)/);
   assert.match(permissions, /fullscreen=\(self "https:\/\/www\.youtube\.com"\)/);
 
