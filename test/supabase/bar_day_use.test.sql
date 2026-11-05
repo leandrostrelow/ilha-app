@@ -1,4 +1,6 @@
 begin;
+create extension if not exists pgtap with schema extensions;
+select plan(1);
 -- Entire fixture is rolled back. No payment gateway or messaging calls.
 do $$
 declare
@@ -120,4 +122,6 @@ begin
      or has_table_privilege('anon','public.bar_day_use_customers','SELECT') then raise exception 'Anonymous access exposed'; end if;
 end;
 $$;
+select pass('Day Use: permissões, recebimentos, idempotência, validade e cancelamento');
+select * from finish();
 rollback;

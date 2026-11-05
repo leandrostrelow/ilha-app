@@ -53,3 +53,7 @@ A publicação `dpl_1aS7uynej49BcsZTHuB5MKha85CC`, de 21/10, foi recuperada por 
 Foram recuperadas também as 20 Edge Functions publicadas. O módulo compartilhado de pagamento corresponde à publicação mais recente que o utiliza. Nenhuma função ou migration foi aplicada em produção durante essa sincronização. O histórico de migrations locais tem timestamps diferentes dos remotos; ele não deve ser reenviado cegamente ao banco.
 
 A antiga pasta de trabalho contém alterações e materiais preservados. Novos trabalhos devem partir da `main` sincronizada; não publique aquela pasta antiga por CLI.
+
+## Testes do banco
+
+`config/supabase-ci-tests.json` mantém os oito contratos pgTAP que já faziam parte da CI e acrescenta o contrato de Day Use com dados fictícios. Todas as migrations são reaplicadas em banco descartável. Os demais arquivos SQL recuperados são cenários manuais antigos, alguns dependentes de cadastros específicos; precisam de fixtures sintéticas antes de entrar na CI. Não os execute no banco dos clientes. A preparação falha se uma suíte listada não tiver um plano pgTAP.

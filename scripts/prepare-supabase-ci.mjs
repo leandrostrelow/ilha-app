@@ -94,11 +94,14 @@ export async function prepareSupabaseCiProject(target) {
     path.join(destinationMigrations, dayUseFixture)
   );
   const sourceTests = path.join(projectRoot, 'test', 'supabase');
-  const testNames = (await readdir(sourceTests))
-    .filter((name) => name.endsWith('.test.sql'))
-    .sort();
-  if (!testNames.length) throw new Error('A CI local precisa de ao menos um contrato SQL do Supabase.');
+  // The recovered integration scripts include historical, data-dependent manual
+  // scenarios. Only self-contained synthetic pgTAP suites belong in CI.
+  const testNames = JSON.parse(await readFile(path.join(projectRoot, 'config', 'supabase-ci-tests.json'), 'utf8'));
+  if (!Array.isArray(testNames) || !testNames.length || new Set(testNames).size !== testNames.length || testNames.some(name => !/^[a-z0-9_]+\.test\.sql$/.test(name))) {
+    throw new Error('Manifesto de contratos SQL da CI inválido.');
+  }
   for (const name of testNames) {
+    if (!/\b(?:plan|no_plan)\s*\(/.test(await readFile(path.join(sourceTests, name), 'utf8'))) throw new Error(`Contrato sem plano pgTAP: ${name}`);
     await cp(path.join(sourceTests, name), path.join(destinationTests, name));
   }
 
