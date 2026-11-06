@@ -5,6 +5,7 @@ import {
   type SupabaseClient,
 } from "npm:@supabase/supabase-js@2.57.4";
 import { appCorsHeaders } from "../_shared/cors.ts";
+import { recordHistoricalMonthlyReceipt } from "../_shared/historical-monthly-receipt.ts";
 import { reviewReversedMonthlyReceipt } from "../_shared/monthly-receipt-reversal.ts";
 import { registerMonthlyInvoiceReceipt } from "../_shared/monthly-invoice-receipt.ts";
 import { registerMonthlyReceiptBatch } from "../_shared/monthly-receipt-batch.ts";
@@ -911,12 +912,14 @@ Deno.serve(async (request: Request) => {
     if (!auth) return json(request, { error: "Credencial inválida." }, 401);
     const body = record(parsedBody);
     const action = text(body.action, 20).toLowerCase();
-    if (action === "review_reversal") {
+    if (action === "review_reversal" || action === "historical_receipt") {
       if (auth.kind !== "USER" || !auth.canWrite || !auth.userId) {
         return json(request, { error: "Seu acesso não permite reconciliar recebimentos." }, 403);
       }
       try {
-        const result = await reviewReversedMonthlyReceipt(body, auth.userId, asaasConfig().environment,
+        const result = action === "historical_receipt"
+          ? await recordHistoricalMonthlyReceipt(body, auth.userId, (name, args) => adminClient!.rpc(name, args))
+          : await reviewReversedMonthlyReceipt(body, auth.userId, asaasConfig().environment,
           (name, args) => adminClient!.rpc(name, args), asaasRequest, safePaymentSnapshot);
         return json(request, result);
       } catch (error) {

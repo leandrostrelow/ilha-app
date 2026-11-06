@@ -41,3 +41,9 @@ Não há botão novo no site nesta entrega: a operação é uma ação administr
 ## Cobrança cancelada com dia incorreto
 
 Preservar a fatura cancelada e verificar que não existe outra via ativa no Asaas e no Ilha. Aplicar a regra de vencimento contratual somente após aprovação e conferência do banco. A nova via deve usar o fluxo existente de reemissão auditada, que vincula o histórico e impede duas faturas ativas na mesma competência; nunca restaurar a via antiga apenas no provedor. Conferir valor, competência e vencimento propostos antes de emitir. Um pagamento da competência anterior não deve quitar a próxima.
+
+## Pix histórico que ainda não tem fatura nem lançamento
+
+A ação administrativa `historical_receipt` exige `clientId`, `invoiceMonth`, `amount`, `dueDate`, `receivedOn` e `reason`. O ator vem da sessão com `finance.write`. Só aceita competências anteriores ao mês atual, valor e datas reais informados explicitamente e aluno sem composição familiar. Se existir qualquer fatura naquele mês, ou lançamento mensal pelo mesmo nome/competência, bloqueia para revisão; não duplica nem substitui registros.
+
+Na mesma transação cria uma fatura local histórica e usa os procedimentos existentes `prepare_monthly_invoice_receipt` e `complete_monthly_invoice_receipt`, com método `CLUB_PIX`. Não chama o Asaas nem altera o preço recorrente atual. Preserva ator, motivo, valor histórico e data real no recebimento; financeiro e fatura ficam vinculados. Repetir exatamente o mesmo registro não duplica a receita. Antes de executar, conferir também variantes de nome nos lançamentos legados e cobranças removidas no provedor. Esta é a segunda migration da entrega e também depende de revisão e implantação separada.
