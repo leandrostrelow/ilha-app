@@ -34,7 +34,7 @@ select set_config('ilha.monthly_billing_write','1',true);
 update app_invoice_provider_payments set status='FAILED',last_error='Synthetic invalid_dueDate refusal' where invoice_id=(select id from target);
 update app_payment_invoices set provider_status='FAILED',status='ABERTA' where id=(select id from target);
 select private.sync_app_invoice_financial_transaction((select id from target),'FAILED',null);
-create function pg_temp.reschedule(v text default null,proof jsonb default null,checked timestamptz default null,newdate date default (date_trunc('month',now() at time zone 'America/Sao_Paulo')+interval '1 month-1 day')::date) returns jsonb language sql as $$
+create function pg_temp.reschedule(v text default null,proof jsonb default null,checked timestamptz default null,newdate date default (date_trunc('month',now() at time zone 'America/Sao_Paulo')+interval '1 month' - interval '1 day')::date) returns jsonb language sql as $$
  select public.prepare_failed_reissue_reschedule(id,'79000000-0000-4000-8000-000000000002',250,m,m+4,newdate,'Synthetic authorized extension after refusal.',v,proof,checked) from target cross join cycle;
 $$;
 update app_invoice_provider_payments set provider_payment_id='pay_must_block' where invoice_id=(select id from target);
@@ -51,7 +51,7 @@ select throws_ok($$select pg_temp.reschedule((select v from absence),(select jso
 select is(pg_temp.reschedule(v,proof,clock_timestamp())->>'state','READY_DISPATCH','create authorized replacement') from absence;
 select is(pg_temp.reschedule()->>'invoiceId',(select new_invoice_id::text from private.monthly_reissue_reschedules),'retry reuses same invoice');
 select ok((select i.status='CANCELADA' and i.due_date=m+4 and i.superseded_at is not null and f.status='CANCELADO' from target join app_payment_invoices i on i.id=target.id join financial_transactions f on f.app_payment_invoice_id=i.id cross join cycle),'failed original date and ledger preserved');
-select ok((select i.due_date=(date_trunc('month',now() at time zone 'America/Sao_Paulo')+interval '1 month-1 day')::date and i.amount=250 and i.paid_at is null and p.status='READY' and f.due_date=i.due_date from private.monthly_reissue_reschedules a join app_payment_invoices i on i.id=a.new_invoice_id join app_invoice_provider_payments p on p.invoice_id=i.id join financial_transactions f on f.app_payment_invoice_id=i.id),'invoice provider and ledger agree without payment');
+select ok((select i.due_date=(date_trunc('month',now() at time zone 'America/Sao_Paulo')+interval '1 month' - interval '1 day')::date and i.amount=250 and i.paid_at is null and p.status='READY' and f.due_date=i.due_date from private.monthly_reissue_reschedules a join app_payment_invoices i on i.id=a.new_invoice_id join app_invoice_provider_payments p on p.invoice_id=i.id join financial_transactions f on f.app_payment_invoice_id=i.id),'invoice provider and ledger agree without payment');
 select is((select count(*)::int from app_payment_invoices where client_id='79000000-0000-4000-8000-000000000002' and invoice_month=(select m from cycle) and superseded_at is null),1,'one active invoice');
 select ok((select status='PAGA' and amount=230 from app_payment_invoices where client_id='79000000-0000-4000-8000-000000000002' and invoice_month=(select (m-interval '1 month')::date from cycle)),'paid prior month untouched');
 select ok((select reversed_at is not null and completed_at is null from private.monthly_invoice_receipts where invoice_id='79000000-0000-4000-8000-000000000022'),'reversed receipt intact');
