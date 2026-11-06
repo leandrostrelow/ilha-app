@@ -30,3 +30,9 @@ test('reemissão usa dados da fatura original e exige novo vencimento explícito
  assert.throws(()=>build(v,config));
  assert.throws(()=>build(v,{...c,invoices:[{...c.invoices[0],supersededAt:'2026-11-06'}]}));
 });
+test('reagendamento exige substituta recusada e data explícita sem registrar recebimento',()=>{
+ const c={...config,invoices:[{...config.invoices[0],status:'ABERTA',providerStatus:'FAILED'}]};
+ const v={action:'reschedule_failed',invoiceId:'synthetic-invoice',newDueDate:'2026-11-06',reason:values.reason,confirmed:true};
+ assert.deepEqual(build(v,c),{action:'reschedule_failed',invoiceId:'synthetic-invoice',expectedAmount:250,invoiceMonth:'2026-11-01',oldDueDate:'2026-11-03',newDueDate:'2026-11-06',reason:values.reason});
+ assert.throws(()=>build(v,config)); assert.throws(()=>build({...v,confirmed:false},c));
+});
