@@ -11,3 +11,9 @@ Uma transação com bloqueio por competência confere a versão da fatura, cance
 O envio da substituta usa o dispatcher existente, sua busca por referência externa e seus claims. Retentativas da operação retornam a mesma substituta. Se o cancelamento remoto ocorrer e a transação local falhar por concorrência, repita a mesma operação para conferir novamente; não restaure a antiga nem gere outra cobrança por fora. Se o envio ficar PROCESSING/FAILED, confira os registros e repita com os mesmos dados. Só declare concluído quando Ilha e Asaas tiverem identificadores, valor, vencimento e situação correspondentes.
 
 Não há migração de dados em lote nem atualização direta de valor/vencimento de faturas emitidas. Outubro quitado e auditorias anteriores não são modificados. Aplique somente a migration desta entrega após revisar histórico remoto e CI; publique separadamente a Edge Function e o site pelo fluxo em docs/publicacao.md.
+
+## Substituta recusada por vencimento passado
+
+`reschedule_failed` permite uma prorrogação expressamente autorizada, com motivo, apenas da substituta individual de uma reemissão auditada que esteja FAILED, sem identificador remoto nem recebimento. A nova data deve ser posterior à anterior, não vencida e dentro da competência atual. Não modifica o dia contratual das próximas mensalidades.
+
+Antes de substituir, consulta o Asaas pela referência externa e exige resposta completa e vazia. Resposta ambígua, cobrança encontrada, alteração concorrente, família ou recebimento bloqueiam a operação. Cancela localmente a tentativa recusada (que não existe no Asaas), preserva seu vencimento, registra a autorização em `monthly_reissue_reschedules` e prepara uma única substituta com financeiro correspondente. Não desativa o congelamento de faturas. O dispatcher normal emite a nova cobrança. Retentativas com os mesmos dados reutilizam o ID já criado.

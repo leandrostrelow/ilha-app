@@ -1,3 +1,4 @@
+import { prepareFailedReissueReschedule } from "../_shared/failed-reissue-reschedule.ts";
 import { prepareAuditedMonthlyReissue } from "../_shared/audited-monthly-reissue.ts";
 // deno-lint-ignore-file no-import-prefix no-explicit-any
 import "jsr:@supabase/functions-js@2.112.3/edge-runtime.d.ts";
@@ -913,9 +914,11 @@ Deno.serve(async (request: Request) => {
     if (!auth) return json(request, { error: "Credencial inválida." }, 401);
     const body = record(parsedBody);
     const action = text(body.action, 20).toLowerCase();
-    if (action === "audited_reissue") {
+    if (action === "audited_reissue" || action === "reschedule_failed") {
       if (auth.kind !== "USER" || !auth.canWrite || !auth.userId) return json(request, {error:"Seu acesso não permite reemitir cobranças."},403);
-      const target = await prepareAuditedMonthlyReissue(body,auth.userId,asaasConfig().environment,
+      const target = action === "reschedule_failed"
+        ? await prepareFailedReissueReschedule(body,auth.userId,asaasConfig().environment,(name,args)=>adminClient!.rpc(name,args),asaasRequest)
+        : await prepareAuditedMonthlyReissue(body,auth.userId,asaasConfig().environment,
         (name,args)=>adminClient!.rpc(name,args),asaasRequest,safePaymentSnapshot);
       const invoiceId = text(target.invoiceId,60), clientId = text(target.clientId,60);
       if (!isUuid(invoiceId) || !isUuid(clientId)) throw new Error("Substituta inválida.");
