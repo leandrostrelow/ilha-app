@@ -3,7 +3,8 @@
 O GitHub é a fonte de verdade do código publicado. Leia `docs/publicacao.md` antes de publicar.
 
 - Comece com `git fetch origin` e uma branch `codex/...` criada da `origin/main` atual. Se a pasta contiver trabalho pendente, crie um worktree; não apague, resete ou misture mudanças de outras tarefas.
-- Toda mudança vai por pull request, com CI aprovado e revisão. Não use push direto ou force push na `main`.
+- Toda mudança vai por pull request, com branch atualizada, revisão técnica do diff e CI aprovado. Desde 06/11/2026, a aprovação de outra pessoa não é obrigatória. Preserve os três checks obrigatórios; não use push direto, force push ou bypass na `main`.
+- Ao integrar PRs em sequência, atualize o próximo com a nova `origin/main`, revise o resultado e aguarde novamente todos os testes antes do merge. Merge não equivale a implantação.
 - Os arquivos públicos estão listados em `config/site-files.json`. Inclua novos recursos nessa lista. Não publique arquivos de trabalho, segredos, backups ou dados de clientes.
 - Para alterações no site, rode `pnpm run release:bump` uma vez por entrega e inclua os arquivos de versão/cache no commit. Rode `pnpm run verify`.
 - A Vercel gera builds de teste a partir do GitHub. Atribuição automática do domínio oficial deve continuar desativada.

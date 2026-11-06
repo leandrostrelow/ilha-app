@@ -31,7 +31,7 @@ Não há botão novo no site nesta entrega: a operação é uma ação administr
 
 ## Implantação e conferência
 
-1. Aguardar CI e revisão de outra pessoa. Reconciliar integralmente o histórico remoto de migrations, pois os timestamps recuperados diferem do remoto.
+1. Aguardar CI e concluir a revisão técnica. Aprovação de outra pessoa é opcional, conforme `docs/publicacao.md`. Reconciliar integralmente o histórico remoto de migrations, pois os timestamps recuperados diferem do remoto.
 2. Conferir as definições remotas dos dois procedimentos de recebimento. A migration aborta se não encontrar o trecho esperado. Aplicar somente a migration desta entrega; não fazer `db push` de migrations antigas.
 3. Publicar separadamente a Edge Function revisada. Não há alteração do site, domínio ou publicação Vercel necessária.
 4. Antes da operação, conferir competência, valor, vencimento emitido, pagamento real, cancelamento do recebimento remoto e ausência de outro pagamento. Se faltar informação, pedir ao responsável.

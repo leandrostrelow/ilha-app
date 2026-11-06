@@ -25,12 +25,12 @@ git commit -m "Descreve a mudança"
 git push -u origin HEAD
 ```
 
-Abra um pull request para `main`. O GitHub exige branch atualizada, verificações aprovadas e revisão da outra pessoa. Os testes de banco recriam apenas um banco descartável no GitHub Actions. Nunca usam o banco dos clientes.
+Abra um pull request para `main`. Desde 06/11/2026, aprovação de outra pessoa não é obrigatória. Antes do merge, faça revisão técnica do diff e mantenha a branch atualizada e as três verificações obrigatórias aprovadas: `Lint, tipos, testes e build`, `Migrations em Postgres real e pgTAP` e `Publicação consistente`. Não use bypass de proteção. Ao integrar mais de um PR, atualize o seguinte com a nova `origin/main`, revise a integração e aguarde uma nova execução completa dos testes. Os testes de banco recriam apenas um banco descartável no GitHub Actions. Nunca usam o banco dos clientes.
 
 ## Conferir e publicar
 
 1. Confira o preview da Vercel. Um preview deste projeto ainda consulta os serviços existentes: testes visuais e leituras são adequados; testes de pagamento, cadastro, exclusão ou envio precisam de staging sintético.
-2. Depois da revisão e dos testes, faça o merge.
+2. Depois da revisão técnica e dos testes obrigatórios aprovados, faça o merge pelo PR. Aprovação de outra pessoa é opcional. O merge integra o código, mas não implanta banco, Edge Functions nem publica o domínio.
 3. Aguarde também o CI da `main` e o build Vercel de produção ficarem prontos. Confira o SHA completo do merge. Esse build fica preparado, sem mudar o domínio oficial.
 4. Com a CLI da Vercel autenticada na sua própria conta, publique o build aprovado:
 
@@ -59,3 +59,9 @@ A antiga pasta de trabalho contém alterações e materiais preservados. Novos t
 `config/supabase-ci-tests.json` mantém os oito contratos pgTAP que já faziam parte da CI e acrescenta o contrato de Day Use com dados fictícios. Todas as migrations são reaplicadas em banco descartável. Os demais arquivos SQL recuperados são cenários manuais antigos, alguns dependentes de cadastros específicos; precisam de fixtures sintéticas antes de entrar na CI. Não os execute no banco dos clientes. A preparação falha se uma suíte listada não tiver um plano pgTAP.
 
 A reconstrução também recupera a função de chaveamento atômico que já existia no banco remoto e nos scripts antigos. As migrations de 05/11 restringem a execução direta de duas funções de trigger e qualificam uma coluna ambígua na preparação de recebimentos familiares. Essas duas correções ficam versionadas e testadas localmente; não foram aplicadas ao banco remoto nesta entrega de publicação.
+
+## Banco e Edge Functions
+
+São entregas separadas da publicação do site. Compare o histórico remoto completo e as definições afetadas com as migrations revisadas, identificando diferenças de timestamp e dependências. Aplique somente as migrations necessárias, registre cada aplicação no histórico e confira o resultado; não reenvie a cadeia antiga para produção. Publique apenas as Edge Functions necessárias, a partir do commit integrado e com CI aprovado.
+
+Execute operações financeiras autorizadas pelos fluxos administrativos, preservando histórico, motivo, datas reais e consistência entre fatura, recebimento, financeiro e Asaas. Testes de mutação continuam restritos a dados sintéticos. Ao concluir, informe separadamente código integrado, componentes implantados, site publicado e ajustes efetivamente conferidos nas faturas.
