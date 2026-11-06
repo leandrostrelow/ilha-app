@@ -8,7 +8,7 @@ insert into app_plans(id,code,name,type,amount,weekly_lessons,default_due_day,ac
 insert into auth.users(id,email,raw_app_meta_data,raw_user_meta_data) values ('79000000-0000-4000-8000-000000000001','reissue1@tests.invalid','{"provider":"email","providers":["email"]}','{"app_context":"public"}');
 insert into app_clients(id,full_name,email,phone,cpf,official_plan_id,official_plan_code,official_plan_name,plan_amount,weekly_lessons,due_day,status,client_type,registration_completed_at,email_verified_at)
 values ('79000000-0000-4000-8000-000000000001','Synthetic reissue 1','reissue1@tests.invalid','27999990001','11144477735','79000000-0000-4000-8000-000000000010','ci-reissue','Synthetic reissue',250,1,5,'ATIVO','aluno',now(),now());
-insert into app_monthly_billing_enrollments(client_id,enabled,first_due_date,billing_method) select '79000000-0000-4000-8000-000000000001',true,m-1,'ASAAS_PIX' from cycle;
+insert into app_monthly_billing_enrollments(client_id,enabled,first_due_date,billing_method,enabled_at) select '79000000-0000-4000-8000-000000000001',true,m-1,'ASAAS_PIX',now() from cycle;
 insert into app_payment_invoices(id,client_id,invoice_month,amount,due_date,status,provider_status) select '79000000-0000-4000-8000-000000000021','79000000-0000-4000-8000-000000000001',m,250,m+2,'CANCELADA','CANCELLED' from cycle;
 insert into app_invoice_provider_payments(invoice_id,provider_environment,provider_customer_id,provider_payment_id,external_reference,expected_amount,status,safe_snapshot)
 values ('79000000-0000-4000-8000-000000000021','SANDBOX','cus_1','pay_1','ilha-monthly-invoice:79000000-0000-4000-8000-000000000021',250,'CANCELLED','{}');
@@ -16,7 +16,7 @@ select private.sync_app_invoice_financial_transaction('79000000-0000-4000-8000-0
 insert into auth.users(id,email,raw_app_meta_data,raw_user_meta_data) values ('79000000-0000-4000-8000-000000000002','reissue2@tests.invalid','{"provider":"email","providers":["email"]}','{"app_context":"public"}');
 insert into app_clients(id,full_name,email,phone,cpf,official_plan_id,official_plan_code,official_plan_name,plan_amount,weekly_lessons,due_day,status,client_type,registration_completed_at,email_verified_at)
 values ('79000000-0000-4000-8000-000000000002','Synthetic reissue 2','reissue2@tests.invalid','27999990002','52998224725','79000000-0000-4000-8000-000000000010','ci-reissue','Synthetic reissue',250,1,5,'ATIVO','aluno',now(),now());
-insert into app_monthly_billing_enrollments(client_id,enabled,first_due_date,billing_method) select '79000000-0000-4000-8000-000000000002',true,m-1,'ASAAS_PIX' from cycle;
+insert into app_monthly_billing_enrollments(client_id,enabled,first_due_date,billing_method,enabled_at) select '79000000-0000-4000-8000-000000000002',true,m-1,'ASAAS_PIX',now() from cycle;
 insert into app_payment_invoices(id,client_id,invoice_month,amount,due_date,status,provider_status) select '79000000-0000-4000-8000-000000000022','79000000-0000-4000-8000-000000000002',m,250,m+2,'AGUARDANDO','REVIEW_REQUIRED' from cycle;
 insert into app_invoice_provider_payments(invoice_id,provider_environment,provider_customer_id,provider_payment_id,external_reference,expected_amount,status,safe_snapshot)
 values ('79000000-0000-4000-8000-000000000022','SANDBOX','cus_2','pay_2','ilha-monthly-invoice:79000000-0000-4000-8000-000000000022',250,'REVIEW_REQUIRED','{}');
