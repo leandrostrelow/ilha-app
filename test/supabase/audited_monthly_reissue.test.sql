@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(17);
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 create temporary table cycle as select date_trunc('month',now() at time zone 'America/Sao_Paulo')::date as m;
 insert into app_plans(id,code,name,type,amount,weekly_lessons,default_due_day,active) values
@@ -42,5 +42,7 @@ select ok((select bool_and(i.due_date=m+4 and i.amount=250 and i.paid_at is null
 select ok((select bool_and(i.status='CANCELADA' and i.due_date=m+2 and i.superseded_at is not null and f.status='CANCELADO') from private.monthly_invoice_reissues a join app_payment_invoices i on i.id=a.old_invoice_id join financial_transactions f on f.app_payment_invoice_id=i.id cross join cycle),'old emitted dates and cancelled ledgers preserved');
 select ok((select status='PAGA' and amount=230 and received_on=(m-interval '1 month')::date+5 from app_payment_invoices cross join cycle where client_id='79000000-0000-4000-8000-000000000002' and invoice_month=(m-interval '1 month')::date),'previous paid month untouched');
 select ok(not has_function_privilege('authenticated','public.prepare_audited_monthly_reissue(uuid,uuid,numeric,date,date,date,text,text,jsonb,timestamptz)','EXECUTE') and not has_table_privilege('service_role','private.monthly_invoice_reissues','DELETE'),'service-only operation and immutable audit');
+select is(public.apply_app_invoice_payment_reconciliation('pay_2','SANDBOX','RECEIVED_IN_CASH','ilha-monthly-invoice:79000000-0000-4000-8000-000000000022',250,now(),'late-original-receipt','{"payment":{"billing_type":"RECEIVED_IN_CASH"}}')->>'reason','STATUS_REGRESSION','late webhook cannot revive original payment');
+select ok((select reversed_at is not null and completed_at is null from private.monthly_invoice_receipts where invoice_id='79000000-0000-4000-8000-000000000022') and (select before_state->>'original_paid_at'='2020-01-01' from private.monthly_receipt_reversal_reviews where invoice_id='79000000-0000-4000-8000-000000000022'),'reversed receipt and its original audit survive replacement');
 select * from finish();
 rollback;
