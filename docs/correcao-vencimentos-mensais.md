@@ -14,7 +14,7 @@ Na primeira ativação, `first_due_date` guardava o dia da ativação e tinha pr
 
 ## Aplicação após revisão
 
-1. Aprovar a CI, incluindo `monthly_due_day.test.sql`, e obter revisão de outra pessoa.
+1. Aprovar a CI, incluindo `monthly_due_day.test.sql`, e concluir a revisão técnica.
 2. Reconciliar integralmente o histórico remoto antes da aplicação. A consulta de 06/11/2026 encontrou `first_monthly_payment_on_activation` remoto em `20261007202933` e `dependent_billing_due_day` em `20261009170915`; os timestamps diferem dos arquivos recuperados no Git. Não rodar `supabase db push` com todo o diretório.
 3. Conferir as definições remotas de `private.first_monthly_due_date` e `private.monthly_billing_candidates_ignoring`. A nova migration aborta se o trecho esperado não corresponder.
 4. Aplicar somente esta migration em uma entrega de banco explicitamente autorizada e registrar sua versão no histórico pelo procedimento de manutenção do projeto.
