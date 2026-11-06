@@ -23289,6 +23289,7 @@
                 <button class="ghost-btn" type="button" id="clientInvoiceOpenFinanceBtn">Abrir Mensalidades</button>
               </div>
               <section class="monthly-receipts" id="clientMonthlyReceipts" aria-label="Mensalidades por mês"></section>
+              <section class="monthly-receipts" id="clientMonthlyReconciliation" aria-label="Conciliação administrativa"></section>
               <details class="client-invoice-editor" id="clientInvoiceEditor" data-club-permission="finance.write">
                 <summary id="clientInvoiceEditorSummary">Adicionar registro manual (sem Pix automático)</summary>
                 <p class="client-invoice-editor-copy" id="clientInvoiceEditorCopy">Use somente para registrar uma cobrança antiga ou recebida fora do Asaas. Esta opção não cria Pix e não envia cobrança ao aluno.</p>
@@ -26437,6 +26438,7 @@
   <link rel="stylesheet" href="/adm/day-use.css?v=20261007-day-use-periods">
   <link rel="stylesheet" href="/adm/monthly-receipts.css?v=20261009-1">
   <script src="/adm/monthly-receipts.js?v=20261009-1"></script>
+  <script src="/adm/monthly-reconciliation.js"></script>
   <script src="/adm/day-use.js?v=20261008-day-use-month-total"></script>
   <script>
     window.addEventListener('error', function (event) {
@@ -35959,6 +35961,11 @@ const colors = tournamentArtPalette({
       });
       const historicalOwnerIds = new Set([String(client.id)].concat(familyContextForClient(client).rows.map(function (member) { return String(member.memberClientId || ''); }).filter(Boolean)));
       const invoices = opsData.paymentInvoices.filter(function (invoice) { return historicalOwnerIds.has(String(invoice.clientId)); }).slice().sort(function (a, b) { return String(b.invoiceMonth || '').localeCompare(String(a.invoiceMonth || '')); });
+      if (window.IlhaMonthlyReconciliation) window.IlhaMonthlyReconciliation.mount($('clientMonthlyReconciliation'), {
+        clientId: client.id, today: localDateString(), invoices: invoices.filter(function (row) { return String(row.clientId) === String(client.id); }),
+        canWrite: canUseClubPermission('finance.write') && !isAdminDemoMode(), send: sendMonthlyReceiptBatch,
+        changed: async function () { await loadOpsData(true); opsState.monthlyBillingLoaded = false; }
+      });
       $('clientInvoiceList').innerHTML = invoices.length ? invoices.map(function (invoice) {
         const managed = invoiceIsProviderManaged(invoice);
         const manualMethod = invoice.receivedMethod || (monthlyBillingMethodIsManual(invoice.paymentMethod) ? normalizeMonthlyBillingMethod(invoice.paymentMethod) : '');
@@ -47599,7 +47606,7 @@ const colors = tournamentArtPalette({
         ? 'Consultando a ativação segura...'
         : enabled
           ? billingMethod === 'ASAAS_PIX'
-            ? 'Pix Asaas habilitado. A primeira mensalidade vence na ativação e o Pix é preparado automaticamente. O aluno também pode gerar a fatura no Financeiro do app; a baixa é automática.'
+            ? 'Pix Asaas habilitado. A mensalidade respeita o dia de vencimento cadastrado e o Pix é preparado automaticamente. O aluno também pode gerar a fatura no Financeiro do app; a baixa é automática.'
             : 'Ativada em ' + monthlyBillingMethodLabel(billingMethod) + '. O sistema cria o lançamento interno e o ADM confirma o recebimento.'
           : 'Desativada. Escolha a forma de pagamento e ative quando este aluno entrar na cobrança mensal.';
       button.textContent = saving ? 'Salvando...' : !loaded ? 'Carregando...' : enabled ? 'Desativar cobrança' : 'Ativar cobrança';
@@ -48319,7 +48326,7 @@ const colors = tournamentArtPalette({
       let response = await send();
       if (response.status === 401) { await refreshAdminSession(adminSession); response = await send(); }
       const data = await response.json();
-      if (!response.ok || !['COMPLETED', 'PARTIAL'].includes(data.state)) throw new Error(data.error || 'Recebimento não confirmado.');
+      if (!response.ok || !(body.action === 'review_reversal' ? ['REVIEW_REQUIRED'] : ['COMPLETED', 'PARTIAL']).includes(data.state)) throw new Error(data.error || 'Recebimento não confirmado.');
       return data;
     }
 
