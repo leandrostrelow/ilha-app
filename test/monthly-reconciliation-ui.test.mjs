@@ -22,3 +22,11 @@ test('exige permissão, confirmação e motivo e bloqueia fatura substituída',(
  assert.throws(()=>build({...values,reason:''},config));
  assert.throws(()=>build({...values,action:'review_reversal',invoiceId:'synthetic-invoice'},{...config,invoices:[{...config.invoices[0],supersededAt:'2026-11-06'}]}));
 });
+test('reemissão usa dados da fatura original e exige novo vencimento explícito',()=>{
+ const c={...config,invoices:[{...config.invoices[0],status:'AGUARDANDO',providerStatus:'REVIEW_REQUIRED'}]};
+ const v={action:'audited_reissue',invoiceId:'synthetic-invoice',newDueDate:'2026-11-05',reason:values.reason,confirmed:true};
+ assert.deepEqual(build(v,c),{action:'audited_reissue',invoiceId:'synthetic-invoice',expectedAmount:250,invoiceMonth:'2026-11-01',oldDueDate:'2026-11-03',newDueDate:'2026-11-05',reason:values.reason});
+ assert.throws(()=>build({...v,newDueDate:''},c));
+ assert.throws(()=>build(v,config));
+ assert.throws(()=>build(v,{...c,invoices:[{...c.invoices[0],supersededAt:'2026-11-06'}]}));
+});

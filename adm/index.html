@@ -48326,7 +48326,7 @@ const colors = tournamentArtPalette({
       let response = await send();
       if (response.status === 401) { await refreshAdminSession(adminSession); response = await send(); }
       const data = await response.json();
-      if (!response.ok || !(body.action === 'review_reversal' ? ['REVIEW_REQUIRED'] : ['COMPLETED', 'PARTIAL']).includes(data.state)) throw new Error(data.error || 'Recebimento não confirmado.');
+      if (!response.ok || !(body.action === 'audited_reissue' ? ['REISSUED', 'PROCESSING'] : body.action === 'review_reversal' ? ['REVIEW_REQUIRED'] : ['COMPLETED', 'PARTIAL']).includes(data.state)) throw new Error(data.error || 'Recebimento não confirmado.');
       return data;
     }
 

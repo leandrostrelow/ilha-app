@@ -1,3 +1,4 @@
+import { prepareAuditedMonthlyReissue } from "../_shared/audited-monthly-reissue.ts";
 // deno-lint-ignore-file no-import-prefix no-explicit-any
 import "jsr:@supabase/functions-js@2.112.3/edge-runtime.d.ts";
 import {
@@ -912,6 +913,26 @@ Deno.serve(async (request: Request) => {
     if (!auth) return json(request, { error: "Credencial inválida." }, 401);
     const body = record(parsedBody);
     const action = text(body.action, 20).toLowerCase();
+    if (action === "audited_reissue") {
+      if (auth.kind !== "USER" || !auth.canWrite || !auth.userId) return json(request, {error:"Seu acesso não permite reemitir cobranças."},403);
+      const target = await prepareAuditedMonthlyReissue(body,auth.userId,asaasConfig().environment,
+        (name,args)=>adminClient!.rpc(name,args),asaasRequest,safePaymentSnapshot);
+      const invoiceId = text(target.invoiceId,60), clientId = text(target.clientId,60);
+      if (!isUuid(invoiceId) || !isUuid(clientId)) throw new Error("Substituta inválida.");
+      const claimed = await adminClient.rpc("claim_app_invoice_provider_dispatch", {
+        p_invoice_id: invoiceId, p_invoice_month: body.invoiceMonth, p_batch_limit: 1, p_include_ready: true,
+      });
+      if (claimed.error) throw claimed.error;
+      const claims = Array.isArray(claimed.data) ? claimed.data.map(record) : [];
+      if (claims.some(c=>c.invoice_id!==invoiceId || c.client_id!==clientId)) throw new Error("Claim fora da fatura substituta.");
+      const results = await processInBatches(adminClient,claims);
+      const current = await adminClient.from("app_payment_invoices").select("id,amount,due_date,provider_status,paid_at").eq("id",invoiceId).single();
+      if (current.error) throw current.error;
+      const issued = record(current.data);
+      const done = ["PENDING","OVERDUE"].includes(text(issued.provider_status,40)) && !issued.paid_at &&
+        Number(issued.amount)===Number(body.expectedAmount) && issued.due_date===body.newDueDate;
+      return json(request,{state:done?"REISSUED":"PROCESSING",invoiceId,error:results.find(r=>r.error)?.error || null});
+    }
     if (action === "review_reversal" || action === "historical_receipt") {
       if (auth.kind !== "USER" || !auth.canWrite || !auth.userId) {
         return json(request, { error: "Seu acesso não permite reconciliar recebimentos." }, 403);
