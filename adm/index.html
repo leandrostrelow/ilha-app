@@ -36120,6 +36120,15 @@ const colors = tournamentArtPalette({
       return years < 18;
     }
 
+    function clientIsMinor(client) {
+      // A known birth date takes precedence over legacy responsible fields.
+      // Keep the responsible fallback for registrations without a birth date.
+      if (/^\d{4}-\d{2}-\d{2}$/.test(String(client.birthDate || ''))) {
+        return isMinorBirthDate(client.birthDate);
+      }
+      return Boolean(client.guardian || client.guardianPhone);
+    }
+
     function updateClientMinorFields() {
       const minor = $('clientEditMinor').checked;
       $('clientGuardianFields').hidden = !minor;
@@ -37010,7 +37019,7 @@ const colors = tournamentArtPalette({
       $('clientEditBirthDate').value = client.birthDate || '';
       $('clientEditGuardian').value = client.guardian || '';
       $('clientEditGuardianPhone').value = client.guardianPhone || '';
-      $('clientEditMinor').checked = Boolean(client.guardian || client.guardianPhone || isMinorBirthDate(client.birthDate));
+      $('clientEditMinor').checked = clientIsMinor(client);
       $('clientEditGuardianOnly').checked = client.type === 'responsavel';
       updateClientMinorFields();
       const currentStatus = String(client.status || 'PENDENTE').trim().toUpperCase();
