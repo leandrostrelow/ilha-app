@@ -8510,9 +8510,32 @@
       return type + ':' + id;
     }
 
+    function monthlyReminderInvoiceId(item) {
+      if (item.source_type !== 'client' || item.event_type !== 'FATURA_MENSAL_LEMBRETE') return '';
+      try {
+        return new URL(item.link_url, 'https://app.ilhatenis.com').searchParams.get('invoice') || '';
+      } catch (_) { return ''; }
+    }
+
     function visibleAnnouncements() {
-      return announcements.filter(function (item) {
-        return announcementMatchesClient(item) && !dismissedNotificationKeys.has(notificationSourceKey(item));
+      const seenInvoices = new Set();
+      const invoices = new Map(paymentInvoices.map(function (invoice) { return [String(invoice.id), invoice]; }));
+      return announcements.slice().sort(function (a, b) {
+        return String(b.published_at || '').localeCompare(String(a.published_at || ''));
+      }).filter(function (item) {
+        if (!announcementMatchesClient(item)) return false;
+        const invoiceId = monthlyReminderInvoiceId(item);
+        if (invoiceId) {
+          // Select the newest reminder before dismissals so clearing it cannot
+          // uncover an older reminder for the same invoice.
+          if (seenInvoices.has(invoiceId)) return false;
+          seenInvoices.add(invoiceId);
+          const invoice = invoices.get(invoiceId);
+          if (invoice && (invoice.paid_at ||
+              ['PAGA', 'CANCELADA'].includes(invoiceEffectiveStatus(invoice)) ||
+              String(invoice.provider_status || '').toUpperCase() === 'CONFIRMED')) return false;
+        }
+        return !dismissedNotificationKeys.has(notificationSourceKey(item));
       });
     }
 
