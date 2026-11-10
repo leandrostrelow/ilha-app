@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(15);
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 insert into auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
 values('81000000-0000-4000-8000-000000000001','family-pause@tests.invalid','{"provider":"email","providers":["email"]}','{"app_context":"public"}');
@@ -13,9 +13,12 @@ create function pg_temp.set_pause(paused boolean, version timestamptz default nu
  select public.admin_set_family_billing_paused(id,paused,coalesce(version,updated_at),'Synthetic temporary billing pause')
  from public.app_family_members where id='81000000-0000-4000-8000-000000000002';
 $$;
+select public.admin_authorize_family_billing(id,updated_at) from app_family_members where id='81000000-0000-4000-8000-000000000002';
 select public.admin_generate_family_invoice('81000000-0000-4000-8000-000000000001','2026-10-01','2026-10-05');
 select is((select amount from app_payment_invoices where client_id='81000000-0000-4000-8000-000000000001' and invoice_month='2026-10-01'),700::numeric,'initial family invoice includes both');
 select is((pg_temp.set_pause(true)->>'billing_paused')::boolean,true,'pause succeeds');
+select is((select amount from private.monthly_billing_candidates('2027-01-01','81000000-0000-4000-8000-000000000001')),350::numeric,'automatic billing preview excludes paused dependent');
+select is((private.client_family_summary_data('81000000-0000-4000-8000-000000000001')->>'total_monthly_amount')::numeric,350::numeric,'client summary excludes paused dependent');
 select ok((select status='ATIVO' and monthly_amount=350 and billing_paused from app_family_members where id='81000000-0000-4000-8000-000000000002'),'contract price and active relationship preserved');
 select is((select amount from app_payment_invoices where client_id='81000000-0000-4000-8000-000000000001' and invoice_month='2026-10-01'),700::numeric,'existing invoice untouched');
 select public.admin_generate_family_invoice('81000000-0000-4000-8000-000000000001','2026-11-01','2026-11-05');
@@ -23,6 +26,7 @@ select is((select amount from app_payment_invoices where client_id='81000000-000
 select is((select count(*)::int from app_family_invoice_items f join app_payment_invoices i on i.id=f.invoice_id where i.client_id='81000000-0000-4000-8000-000000000001' and i.invoice_month='2026-11-01' and f.item_type='MEMBRO'),0,'paused dependent absent from new invoice snapshot');
 select throws_ok($$select pg_temp.set_pause(false,'2000-01-01')$$,'40001','O cadastro mudou. Reabra a ficha e confira o valor novamente.','stale version blocked');
 select is((pg_temp.set_pause(false)->>'billing_paused')::boolean,false,'resume succeeds');
+select is((select amount from private.monthly_billing_candidates('2027-01-01','81000000-0000-4000-8000-000000000001')),700::numeric,'automatic billing preview restores original price');
 select public.admin_generate_family_invoice('81000000-0000-4000-8000-000000000001','2026-12-01','2026-12-05');
 select is((select amount from app_payment_invoices where client_id='81000000-0000-4000-8000-000000000001' and invoice_month='2026-12-01'),700::numeric,'resumed member restores contracted amount for next invoice');
 select is((select count(*)::int from private.family_billing_pause_audit where family_member_id='81000000-0000-4000-8000-000000000002'),2,'both transitions audited');
