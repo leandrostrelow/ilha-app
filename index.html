@@ -8818,7 +8818,8 @@
       const meta = [];
       if (member.birth_date) meta.push('Nascimento: ' + formatShortDate(member.birth_date));
       if (member.phone) meta.push(formatPhone(member.phone));
-      if (Number(member.monthly_amount || 0) > 0) meta.push('Valor mensal: ' + money(member.monthly_amount));
+      if (Number(member.monthly_amount || 0) > 0) meta.push('Valor contratado: ' + money(member.monthly_amount));
+      if (member.billing_paused) meta.push('Cobrança pausada');
       meta.push(member.has_play_access ? 'Ilha Play liberado' : 'Sem acesso próprio ao app');
       if (member.minor_without_cpf_declared) meta.push('Menor sem CPF confirmado');
       const needsConfirmation = member.needs_details_confirmation === true;
@@ -9463,10 +9464,10 @@
       const members = (familySummary.members || []).filter(function (member) { return member.status === 'ATIVO'; });
       const own = String(client && client.client_type || '') === 'responsavel' ? 0 : Number(client && client.plan_amount || 0);
       const rows = (own > 0 ? [{ full_name: 'Seu plano individual', monthly_amount: own }] : []).concat(members);
-      const incomplete = members.some(function (member) { return member.monthly_amount == null; });
+      const incomplete = members.some(function (member) { return !member.billing_paused && member.monthly_amount == null; });
       return '<article class="invoice-card" data-current-family-account><div class="invoice-main"><strong>Mensalidade atual da família</strong>' +
         '<div class="invoice-family-items">' + rows.map(function (member) {
-          return '<div class="invoice-family-item"><span>' + escapeHtml(member.full_name) + '</span><strong>' + (member.monthly_amount == null ? 'Valor a definir' : money(member.monthly_amount)) + '</strong></div>';
+          return '<div class="invoice-family-item"><span>' + escapeHtml(member.full_name) + '</span><strong>' + (member.billing_paused ? 'Cobrança pausada' : member.monthly_amount == null ? 'Valor a definir' : money(member.monthly_amount)) + '</strong></div>';
         }).join('') + '</div><p class="muted">' + (incomplete ? 'Total parcial: há valores a definir. ' : '') +
         'Cobrança única no responsável. Esta é a composição atual do cadastro, não uma nova fatura.</p></div>' +
         '<div class="invoice-actions"><span>Total mensal</span><strong class="invoice-value">' + money(familySummary.total_monthly_amount) + '</strong></div></article>';

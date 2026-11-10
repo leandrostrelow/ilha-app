@@ -12,7 +12,7 @@ function fixture() {
     students: [{ id: 'student-joaquim', phone: '27999999999', weeklyLessons: 1 }, { id: 'student-nina', phone: '27999999999', weeklyLessons: 2 }], plans: [], planRequests: [] };
   const ctx = vm.createContext({ opsData, lessonState: { students: opsData.students },
     operationalStudentById: id => opsData.students.find(s => s.id === id) });
-  for (const name of ['familyMemberById','familyClientById','activeFamilyLinkForClient','familyDirectoryClients','clubClientDirectory','findClientByKey','findLessonStudentForClient','familyContextForClient','billingAccountComposition','findClientRequest','findPlanByValue']) vm.runInContext(fn(adm, name), ctx);
+  for (const name of ['familyMemberById','familyClientById','activeFamilyLinkForClient','familyDirectoryClients','clubClientDirectory','findClientByKey','findLessonStudentForClient','familyContextForClient','familyMemberBillingAmount','billingAccountComposition','findClientRequest','findPlanByValue']) vm.runInContext(fn(adm, name), ctx);
   return { ctx, opsData };
 }
 test('membros pendentes de confirmação já aparecem como alunos com ficha própria', () => {

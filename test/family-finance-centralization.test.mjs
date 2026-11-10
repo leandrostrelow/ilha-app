@@ -7,7 +7,7 @@ const fn=name=>source.match(new RegExp('    function '+name+'\\([^]*?\\n    \\}'
 function setup(){
  const data={clients:[{id:'payer',name:'Higor',type:'responsavel',planAmount:0},{id:'child',name:'Micheli',planAmount:350}],familyMembers:[{id:'family',billingResponsibleId:'payer',memberClientId:'child',fullName:'Micheli',monthlyAmount:350,status:'ATIVO'}]};
  const ctx=vm.createContext({opsData:data,findClientPlan:()=>({amount:500,weeklyLessons:2}),normalizeMonthlyBillingMethod:x=>x,monthlyBillingMethodIsManual:x=>x==='CASH'});
- for(const name of ['activeFamilyLinkForClient','familyClientById','familyContextForClient','billingAccountComposition','syncClientsWithPlanCatalog','monthlyBillingCandidateNeedsGeneration','monthlyBillingCandidateNeedsManualGeneration']) vm.runInContext(fn(name),ctx);
+ for(const name of ['activeFamilyLinkForClient','familyClientById','familyContextForClient','familyMemberBillingAmount','billingAccountComposition','syncClientsWithPlanCatalog','monthlyBillingCandidateNeedsGeneration','monthlyBillingCandidateNeedsManualGeneration']) vm.runInContext(fn(name),ctx);
  return {data,ctx};
 }
 test('responsável sem jogar paga somente o total dos dependentes, sem duplicidade',()=>{
@@ -46,4 +46,15 @@ test('centralização usa os registros existentes e não reatribui nem apaga fat
  assert.doesNotMatch(source,/function saveBillingAccountSettings/);
  assert.doesNotMatch(fn('selectClientProfileTab'),/openBillingAccount/);
  assert.doesNotMatch(fn('openBillingAccount'),/openFinanceModule|setClubMode/);
+});
+test('pausa exclui só o valor da dependente e retomada preserva o contrato e vínculo',()=>{
+ const {ctx,data}=setup();
+ data.clients[0].type='aluno'; data.clients[0].planAmount=350;
+ const member=data.familyMembers[0];
+ assert.equal(ctx.billingAccountComposition(data.clients[0]).total,700);
+ member.billingPaused=true;
+ assert.equal(ctx.billingAccountComposition(data.clients[0]).total,350);
+ assert.equal(member.monthlyAmount,350); assert.equal(member.status,'ATIVO');
+ member.billingPaused=false;
+ assert.equal(ctx.billingAccountComposition(data.clients[0]).total,700);
 });
