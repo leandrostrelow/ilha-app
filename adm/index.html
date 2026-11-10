@@ -34328,6 +34328,7 @@ const colors = tournamentArtPalette({
         responsibleConfirmationRequired: row.responsible_confirmation_required === true,
         responsibleConfirmedAt: row.responsible_confirmed_at || '',
         billingAuthorizedAt: row.billing_authorized_at || '',
+        billingPaused: row.billing_paused === true,
         updatedAt: row.updated_at || '',
         minorWithoutCpfDeclared: row.minor_without_cpf_declared === true,
         notes: row.notes || '',
@@ -36200,8 +36201,12 @@ const colors = tournamentArtPalette({
       const responsible = familyClientById(context.responsibleId) || context.responsible || client || {};
       const ownCents = responsible.type === 'responsavel' ? 0 : Math.round(Number(responsible.planAmount || 0) * 100);
       const members = context.rows.filter(function (member) { return String(member.status || '').toUpperCase() === 'ATIVO'; });
-      const memberCents = members.reduce(function (sum, member) { return sum + Math.round(Number(member.monthlyAmount || 0) * 100); }, 0);
+      const memberCents = members.reduce(function (sum, member) { return sum + Math.round(familyMemberBillingAmount(member) * 100); }, 0);
       return { context: context, responsible: responsible, members: members, own: ownCents / 100, total: (ownCents + memberCents) / 100 };
+    }
+
+    function familyMemberBillingAmount(member) {
+      return member.billingPaused ? 0 : Number(member.monthlyAmount || 0);
     }
 
     function billingCompositionHtml(client) {
@@ -36209,7 +36214,7 @@ const colors = tournamentArtPalette({
       const line = function (name, amount) { return '<div class="client-family-invoice-item"><span>' + escapeHtml(name) + '</span><strong>' + money(amount) + '</strong></div>'; };
       return '<div class="ops-list-card"><strong>Composição mensal atual</strong><div class="muted">Pagador: ' + escapeHtml(account.responsible.name || 'Responsável') + '. Não altera faturas já emitidas.</div>' +
         line((account.responsible.name || 'Responsável') + (account.responsible.type === 'responsavel' ? ' · não joga / sem valor próprio' : ' · valor próprio'), account.own) +
-        account.members.map(function (member) { return line(member.fullName + ' · dependente', Number(member.monthlyAmount || 0)); }).join('') +
+        account.members.map(function (member) { return line(member.fullName + (member.billingPaused ? ' · cobrança pausada' : ' · dependente'), familyMemberBillingAmount(member)); }).join('') +
         line('Total da conta', account.total) + '</div>';
     }
 
@@ -36479,7 +36484,9 @@ const colors = tournamentArtPalette({
           ? 'Contato: ' + (member.contactResponsibleName || context.responsible.name || 'responsável') + ' · ' + (barPhoneLabel(member.contactResponsiblePhone || context.responsible.phone) || 'telefone pendente')
           : (barPhoneLabel(member.phone || memberClient.phone) || memberClient.email || 'Contato não informado');
         const accessLabel = memberClient.email ? 'Reenviar acesso' : 'Liberar Ilha Play';
-        const amountLabel = member.monthlyAmount === '' ? 'Valor opcional' : money(member.monthlyAmount || 0);
+        const amountLabel = (member.monthlyAmount === '' ? 'Valor opcional' : money(member.monthlyAmount || 0)) + (member.billingPaused ? ' · cobrança pausada' : '');
+        const pauseAction = canUseClubPermission('finance.write') && status === 'ATIVO'
+          ? '<button class="small-btn" type="button" data-family-pause-billing="' + escapeHtml(member.id) + '">' + (member.billingPaused ? 'Retomar cobrança' : 'Pausar cobrança') + '</button>' : '';
         const billingAction = canUseClubPermission('finance.write') && status === 'ATIVO' && member.responsibleConfirmationRequired && !member.billingAuthorizedAt
           ? '<button class="small-btn" type="button" data-family-authorize-billing="' + escapeHtml(member.id) + '">Liberar cobrança</button>'
           : member.billingAuthorizedAt && member.responsibleConfirmationRequired ? '<span class="ops-pill good">Cobrança liberada · dados pendentes</span>' : '';
@@ -36501,7 +36508,7 @@ const colors = tournamentArtPalette({
           '<div class="client-family-member-main"><strong>' + escapeHtml(member.fullName || memberClient.name || 'Membro') + '</strong><small>' + escapeHtml(familyRelationshipLabel(member.relationship)) + ' · ' + escapeHtml(ageLabel) + '</small><small>' + escapeHtml(contact) + '</small>' + (member.responsibleConfirmationRequired ? '<span class="ops-pill warn">Aguardando confirmação do responsável</span>' : '') + '</div>' +
           '<div class="client-family-member-detail"><small>Nascimento</small><strong>' + escapeHtml(familyBirthDateLabel(member.birthDate)) + '</strong><small>' + escapeHtml(maskedFamilyCpf(member.cpf)) + '</small></div>' +
           '<div class="client-family-member-detail"><small>Cobrado de ' + escapeHtml(context.responsible.name || 'responsável') + '</small><strong>' + escapeHtml(amountLabel) + '</strong><div class="ops-meta">' + familyStatusPill(status) + (member.studentId ? '<span class="ops-pill good">Aluno do clube</span>' : '') + (memberClient.email ? '<span class="ops-pill good">Com acesso</span>' : '<span class="ops-pill">Sem acesso</span>') + '</div></div>' +
-          '<div class="client-family-member-actions">' + billingAction + openClient + operationalStudentAction + actions + '</div>' +
+          '<div class="client-family-member-actions">' + pauseAction + billingAction + openClient + operationalStudentAction + actions + '</div>' +
         '</article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum membro vinculado. Este aluno pode ser definido como responsável financeiro ao adicionar a primeira pessoa.</div>';
     }
@@ -36699,6 +36706,32 @@ const colors = tournamentArtPalette({
         button.disabled = false;
         button.textContent = 'Salvar membro';
       }
+    }
+
+    async function pauseFamilyBillingAction(memberId, button) {
+      const member = familyMemberById(memberId);
+      if (!member || button.disabled) return;
+      try {
+        requireClubPermission('finance.write');
+        const paused = !member.billingPaused;
+        const reason = window.prompt((paused ? 'Pausar' : 'Retomar') + ' a cobrança de ' + member.fullName +
+          '? Valor contratado: ' + (member.monthlyAmount === '' ? 'não definido' : money(member.monthlyAmount)) +
+          '. Só afeta novas mensalidades. Acesso, vínculo e aulas não mudam. A retomada depende também da cobrança do responsável estar ativada. Informe o motivo:');
+        if (reason === null) return;
+        if (reason.trim().length < 5 || reason.trim().length > 500) throw new Error('Informe um motivo de 5 a 500 caracteres.');
+        button.disabled = true;
+        if (isAdminDemoMode()) member.billingPaused = paused;
+        else {
+          await supabaseRest('rpc/admin_set_family_billing_paused', { method: 'POST', body: {
+            p_family_member_id: member.id, p_paused: paused, p_expected_updated_at: member.updatedAt, p_reason: reason.trim()
+          }});
+          await loadFamilyMembersData();
+        }
+        refreshClientFamilyDisplay(findClientByKey(opsState.selectedClientId));
+        renderClientsModule();
+        toast(paused ? 'Cobrança da dependente pausada. Faturas existentes preservadas.' : 'Cobrança retomada para novas mensalidades.');
+      } catch (error) { reportActionError(error); }
+      finally { button.disabled = false; }
     }
 
     async function authorizeFamilyBillingAction(memberId, button) {
@@ -37266,7 +37299,7 @@ const colors = tournamentArtPalette({
       return {
         billing_responsible: { id: context.responsibleId, full_name: responsible.name, phone: responsible.phone || '' },
         is_billing_responsible: context.selectedIsResponsible,
-        total_monthly_amount: context.memberLink ? 0 : own + account.members.reduce(function (sum, member) { return sum + Number(member.monthlyAmount || 0); }, 0),
+        total_monthly_amount: context.memberLink ? 0 : own + account.members.reduce(function (sum, member) { return sum + familyMemberBillingAmount(member); }, 0),
         members: context.rows.filter(function (member) { return !context.memberLink || member.memberClientId === client.id; }).map(function (member) {
           const minor = familyMemberIsMinor(member);
           const memberClient = familyClientById(member.memberClientId);
@@ -37274,6 +37307,7 @@ const colors = tournamentArtPalette({
             id: member.id, full_name: member.fullName, relationship: member.relationship,
             birth_date: member.birthDate || '', phone: member.phone || '', status: member.status,
             monthly_amount: context.memberLink ? null : member.monthlyAmount,
+            billing_paused: member.billingPaused === true,
             has_play_access: Boolean(member.memberClientId), is_minor: minor,
             has_cpf: Boolean(member.cpf), minor_without_cpf_declared: member.minorWithoutCpfDeclared,
             responsible_confirmation_required: member.responsibleConfirmationRequired,
@@ -50603,7 +50637,7 @@ const colors = tournamentArtPalette({
         const month = $('clientInvoiceMonth').value;
         if (!month) throw new Error('Escolha o mês da fatura.');
         const amount = familyBilling
-          ? Number(client.planAmount || 0) + activeFamilyMembers.reduce(function (sum, member) { return sum + Number(member.monthlyAmount || 0); }, 0)
+          ? Number(client.planAmount || 0) + activeFamilyMembers.reduce(function (sum, member) { return sum + familyMemberBillingAmount(member); }, 0)
           : parseOptionalMoney($('clientInvoiceAmount').value);
         const dueDate = $('clientInvoiceDue').value || invoiceDueDate(month, client.dueDay || 10);
         const status = $('clientInvoiceStatus').value || 'ABERTA';
@@ -50687,7 +50721,7 @@ const colors = tournamentArtPalette({
           opsData.familyInvoiceItems = opsData.familyInvoiceItems.filter(function (item) { return String(item.invoiceId) !== String(mapped.id); });
           opsData.familyInvoiceItems.push({ id: localId('family-item'), invoiceId: mapped.id, familyMemberId: '', beneficiaryClientId: client.id, itemType: 'RESPONSAVEL', description: client.name, amount: Number(client.planAmount || 0) });
           activeFamilyMembers.forEach(function (member) {
-            if (member.monthlyAmount === '') return;
+            if (member.monthlyAmount === '' || member.billingPaused) return;
             opsData.familyInvoiceItems.push({ id: localId('family-item'), invoiceId: mapped.id, familyMemberId: member.id, beneficiaryClientId: member.memberClientId, itemType: 'MEMBRO', description: member.fullName, amount: Number(member.monthlyAmount || 0) });
           });
         }
@@ -52433,6 +52467,8 @@ const colors = tournamentArtPalette({
           confirmFamilyMemberAction(familyConfirmBtn.dataset.familyConfirm, familyConfirmBtn);
           return;
         }
+        const pauseBillingBtn = event.target.closest('[data-family-pause-billing]');
+        if (pauseBillingBtn) { pauseFamilyBillingAction(pauseBillingBtn.dataset.familyPauseBilling, pauseBillingBtn); return; }
         const familyBillingBtn = event.target.closest('[data-family-authorize-billing]');
         if (familyBillingBtn) {
           authorizeFamilyBillingAction(familyBillingBtn.dataset.familyAuthorizeBilling, familyBillingBtn);
