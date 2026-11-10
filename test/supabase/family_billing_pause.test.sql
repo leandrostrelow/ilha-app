@@ -7,8 +7,8 @@ values('81000000-0000-4000-8000-000000000001','family-pause@tests.invalid','{"pr
 insert into public.app_clients(id,full_name,email,phone,cpf,plan_amount,weekly_lessons,due_day,status,client_type,registration_completed_at,email_verified_at)
 values('81000000-0000-4000-8000-000000000001','Synthetic pause payer','family-pause@tests.invalid','27999990001','11144477735',350,2,5,'ATIVO','aluno',now(),now());
 select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"authenticated","email":"ci-protected-admin@tests.invalid"}',true);
-insert into public.app_family_members(id,billing_responsible_id,full_name,relationship,monthly_amount,status,birth_date,contact_responsible_name,contact_responsible_phone)
-values('81000000-0000-4000-8000-000000000002','81000000-0000-4000-8000-000000000001','Synthetic dependent','Filho(a)',350,'ATIVO','2015-01-01','Synthetic pause payer','27999990001');
+insert into public.app_family_members(id,billing_responsible_id,full_name,relationship,monthly_amount,status,birth_date,contact_responsible_name,contact_responsible_phone,reviewed_at)
+values('81000000-0000-4000-8000-000000000002','81000000-0000-4000-8000-000000000001','Synthetic dependent','Filho(a)',350,'ATIVO','2015-01-01','Synthetic pause payer','27999990001',now());
 create function pg_temp.set_pause(paused boolean, version timestamptz default null) returns jsonb language sql as $$
  select public.admin_set_family_billing_paused(id,paused,coalesce(version,updated_at),'Synthetic temporary billing pause')
  from public.app_family_members where id='81000000-0000-4000-8000-000000000002';
