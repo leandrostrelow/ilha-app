@@ -93,11 +93,17 @@ begin
     execute definition;
   end loop;
   definition:=pg_get_functiondef('public.prepare_monthly_receipt_batch(uuid,uuid,uuid,jsonb,text,date,text)'::regprocedure);
-  if position('billing_responsible_id=p_client_id and status=''ATIVO''' in definition)=0 then
-    raise exception 'Unexpected receipt batch definition';
+  -- The recovered remote routine predates the local alias qualification.
+  -- Support both reviewed definitions without replaying any older migration.
+  if position('member.billing_responsible_id=p_client_id and member.status=''ATIVO''' in definition)>0 then
+    definition:=replace(definition,'member.billing_responsible_id=p_client_id and member.status=''ATIVO''',
+      'member.billing_responsible_id=p_client_id and member.status=''ATIVO'' and not member.billing_paused');
+  elsif position('billing_responsible_id=p_client_id and status=''ATIVO''' in definition)>0 then
+    definition:=replace(definition,'billing_responsible_id=p_client_id and status=''ATIVO''',
+      'billing_responsible_id=p_client_id and status=''ATIVO'' and not billing_paused');
+  else raise exception 'Unexpected receipt batch definition';
   end if;
-  execute replace(definition,'billing_responsible_id=p_client_id and status=''ATIVO''',
-    'billing_responsible_id=p_client_id and status=''ATIVO'' and not billing_paused');
+  execute definition;
   definition:=pg_get_functiondef('private.client_family_summary_data(uuid)'::regprocedure);
   if position('member_total.status = ''ATIVO''' in definition)=0 or position('''monthly_amount'', case' in definition)=0 then
     raise exception 'Unexpected family summary definition';
