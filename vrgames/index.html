@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#183e32"><meta name="description" content="Chegue ao Ilha Tênis, entre na quadra e aprenda suas primeiras rebatidas. Uma experiência para computador e Meta Quest.">
+  <title>Ilha Tênis — Primeiros passos</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23d8ed77'/%3E%3Cpath d='M12 9Q46 32 12 55M52 9Q18 32 52 55' fill='none' stroke='%23183e32' stroke-width='4'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/vrgames/style.css">
+</head>
+<body>
+  <main id="experience" aria-label="Quadra virtual do Ilha Tênis">
+    <canvas id="scene" aria-label="Clube Ilha Tênis em 3D. Use os botões da aula para avançar." tabindex="0"></canvas>
+    <div class="vignette"></div>
+    <header>
+      <div class="brand"><img src="/assets/branding/ilha-tenis-logo-light.png" alt="Ilha Tênis"><span class="brand-divider"></span><div>PRIMEIROS PASSOS<small>O clube. A quadra. Você.</small></div></div>
+      <div class="header-actions"><a class="icon-button back-games" href="/games">← Games</a><button type="button" id="restart" class="icon-button" hidden>Voltar ao clube</button><button type="button" id="sound" class="icon-button" aria-pressed="false" title="Ativar som">Som desligado</button><button type="button" id="help" class="icon-button" aria-label="Como jogar">?</button></div>
+    </header>
+    <nav id="club-tour" class="club-tour" aria-label="Conhecer o clube"><button type="button" data-view="entry" aria-pressed="true">Entrada</button><button type="button" data-view="courts" aria-pressed="false">Quadras</button><button type="button" data-view="bar" aria-pressed="false">Ilha Bar</button></nav><div class="session-label"><span class="live-dot"></span> AULA EXPERIMENTAL <span class="version">01</span></div>
+    <aside id="lesson-card" class="lesson-card">
+      <div class="eyebrow"><span id="chapter">01 / BEM-VINDO AO CLUBE</span><span class="mini-ball">◒</span></div>
+      <h1 id="title">Seu primeiro ponto<br>começa aqui.</h1>
+      <p id="description">Entre na quadra do Ilha Tênis. O Renato vai guiar você, uma bola de cada vez.</p>
+      <div id="coach" class="coach"><span class="avatar">R</span><div><strong>Renato</strong><span>Seu guia nesta primeira aula</span></div></div>
+      <div id="progress-box" class="progress-box" hidden><div><span id="goal-label">Preparação</span><strong id="goal-value">0 / 3</strong></div><div class="progress-track"><i id="progress-fill"></i></div></div>
+      <p id="feedback" class="feedback" role="status" aria-live="polite">Sem pressa. Vamos começar pelo começo.</p>
+      <button type="button" id="action" class="primary">Entrar na quadra <span>↗</span></button>
+      <div id="aim-controls" class="aim-controls" hidden aria-label="Direção da devolução"><button type="button" data-aim="-0.36">← Esquerda</button><button type="button" data-aim="0">Centro</button><button type="button" data-aim="0.36">Direita →</button></div><div class="xr-actions"><button type="button" id="vr" class="secondary" disabled>Verificando Quest…</button><button type="button" id="mr" class="secondary" hidden>Treinar em realidade mista</button></div>
+      <p id="xr-note" class="micro">No computador, mova o mouse para controlar a raquete.</p>
+      <div class="hand-row"><span>Raquete na mão</span><div class="segmented"><button type="button" data-hand="left" aria-pressed="false">Esquerda</button><button type="button" data-hand="right" aria-pressed="true">Direita</button></div></div>
+    </aside>
+    <div id="score" class="score" hidden><div><span>DEVOLUÇÕES</span><strong id="returns">00</strong></div><div><span>NO ALVO</span><strong id="targets">00</strong></div><button type="button" id="pause" title="Pausar a aula">Pausar</button></div>
+    <div id="court-label" class="court-label"><span>ILHA TÊNIS</span><strong>Duas quadras.<br>Uma nova história.</strong><small>Colatina · cenário baseado nas fotos do clube</small></div>
+    <footer><ol id="journey"><li class="current"><b>01</b><span>Chegar</span></li><li><b>02</b><span>Preparar</span></li><li><b>03</b><span>Rebater</span></li><li><b>04</b><span>Mirar</span></li></ol><span class="footer-note">TREINO GUIADO · SEM CRONÔMETRO</span></footer>
+    <div id="fade"></div>
+    <div id="loading" class="loading"><span class="loader-ball"></span><p>Chegando ao Ilha…</p></div>
+    <div id="fatal" class="fatal" hidden><h2>Não conseguimos abrir a quadra.</h2><p id="fatal-message"></p><button type="button" onclick="location.reload()">Tentar novamente</button></div>
+  </main>
+  <dialog id="help-dialog"><button type="button" id="close-help" class="dialog-close" aria-label="Fechar ajuda">×</button><div class="eyebrow">SUA PRIMEIRA AULA</div><h2>Uma bola de cada vez.</h2><p><strong>No computador:</strong> mova o mouse ou arraste o dedo na cena para posicionar a raquete. A rebatida acontece no contato com a bola. Espaço inicia ou pausa; R centraliza a raquete.</p><p><strong>No Quest:</strong> abra este link no navegador do headset e escolha “Entrar em VR”. O gatilho avança as instruções e pausa o exercício. Rebata movimentando a raquete, sem apertar o gatilho. O botão de segurar da mão da raquete reposiciona o treino à sua frente.</p><p><strong>Realidade mista:</strong> quando disponível, a quadra virtual dá lugar ao seu ambiente, com bolas e alvos para o mesmo treino.</p><p>O exercício usa bolas lentas, uma área de contato ampliada e devolução assistida para facilitar os primeiros contatos. É uma introdução ao jogo; a técnica do movimento deve ser ajustada com o professor.</p><p>Jogue dentro de uma área livre para movimentar os braços, com as alças dos controles presas. No Quest, os limites do sistema continuam sendo sua referência.</p><p class="micro">Conceitos: bola dentro das linhas, passagem sobre a rede e no máximo um quique antes da devolução. Nesta aula, treinamos após o primeiro quique. <a href="https://www.itftennis.com/en/about-us/organisation/tennis-glossary/" target="_blank" rel="noreferrer">ITF</a> · <a href="https://www.lta.org.uk/play/how-to-get-started/rules-scoring/" target="_blank" rel="noreferrer">LTA</a></p></dialog>
+  <script type="module" src="/vrgames/main.js"></script>
+  <script>window.addEventListener('error',event=>{if(event.message&&/WebGL|Failed to|Error creating/i.test(event.message)){document.getElementById('loading').hidden=true;document.getElementById('fatal').hidden=false;document.getElementById('fatal-message').textContent='Abra em um navegador com WebGL 2, como o navegador do Quest ou o Chrome atualizado.'}});</script>
+</body>
+</html>
