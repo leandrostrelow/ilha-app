@@ -59,3 +59,14 @@ test('logout durante leitura descarta dados da sessão anterior',async()=>{
  const pending=f.board.refresh();f.board.reset();finish([{id:'old',full_name:'Private old session',status:'PENDENTE'}]);await pending;
  assert.doesNotMatch(f.elements.get('homeNewStudents').innerHTML,/Private old session/);
 });
+
+test('falha sem emissão não é fatura vencida; cobranças emitidas e manuais continuam visíveis',()=>{
+ const failed={provider_status:'FAILED',issued_at:null};
+ const rows=[invoice('unissued',failed),invoice('issued',{...failed,issued_at:'2026-11-01T12:00:00Z'}),invoice('unknown',{provider_status:'FAILED'}),invoice('manual'),invoice('pending',{issued_at:null,provider_status:'PENDING'})];
+ assert.deepEqual(classify([],rows).overdue.map(x=>x.id),['issued','manual','pending','unknown']);
+ assert.equal(classify([],rows).payments.length,0);
+});
+test('consulta carrega a data de emissão para distinguir tentativas com falha',async()=>{
+ const f=controllerFixture();await f.board.refresh();
+ assert.match(f.calls.find(p=>p.startsWith('app_payment_invoices?')),/issued_at/);
+});

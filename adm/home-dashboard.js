@@ -6,11 +6,12 @@
     const unique = Array.from(new Map(invoices.map(row => [String(row.id), row])).values());
     const cancelled = row => Boolean(row.superseded_at) || ['CANCELADA', 'CANCELADO', 'ESTORNADA'].includes(upper(row.status)) || ['CANCELLED', 'CANCELED', 'DELETED', 'REFUNDED'].includes(upper(row.provider_status));
     const confirmed = row => !cancelled(row) && ['CONFIRMED', 'RECEIVED'].includes(upper(row.provider_status));
+    const failedBeforeIssue = row => upper(row.provider_status) === 'FAILED' && row.issued_at === null;
     const settled = row => Boolean(row.paid_at) || ['PAGA', 'PAGO'].includes(upper(row.status)) || ['CONFIRMED', 'RECEIVED', 'RECEIVED_IN_CASH'].includes(upper(row.provider_status));
     return {
       students: clients.filter(row => upper(row.status) === 'PENDENTE' && !row.registration_deleted_at).sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || ''))),
       payments: unique.filter(row => confirmed(row) && !hidden.has(String(row.id))).sort((a, b) => String(b.paid_at || b.updated_at || '').localeCompare(String(a.paid_at || a.updated_at || ''))),
-      overdue: unique.filter(row => !cancelled(row) && !settled(row) && Number(row.amount) > 0 && /^\d{4}-\d{2}-\d{2}$/.test(row.due_date || '') && row.due_date < today).sort((a, b) => a.due_date.localeCompare(b.due_date) || String(a.id).localeCompare(String(b.id)))
+      overdue: unique.filter(row => !cancelled(row) && !settled(row) && !failedBeforeIssue(row) && Number(row.amount) > 0 && /^\d{4}-\d{2}-\d{2}$/.test(row.due_date || '') && row.due_date < today).sort((a, b) => a.due_date.localeCompare(b.due_date) || String(a.id).localeCompare(String(b.id)))
     };
   }
 
@@ -45,7 +46,7 @@
       const task = (async () => {
         const results = await Promise.allSettled([
           canClients ? ctx.read('app_clients?select=id,full_name,status,created_at,registration_deleted_at&status=eq.PENDENTE&registration_deleted_at=is.null&order=created_at.desc,id.asc') : Promise.resolve([]),
-          canFinance ? ctx.read('app_payment_invoices?select=id,client_id,invoice_month,amount,due_date,status,paid_at,provider_status,superseded_at,updated_at,app_clients(full_name)&superseded_at=is.null&or=(due_date.lt.' + ctx.today() + ',provider_status.in.(CONFIRMED,RECEIVED))&order=due_date.asc,id.asc') : Promise.resolve([]),
+          canFinance ? ctx.read('app_payment_invoices?select=id,client_id,invoice_month,amount,due_date,status,paid_at,provider_status,superseded_at,updated_at,issued_at,app_clients(full_name)&superseded_at=is.null&or=(due_date.lt.' + ctx.today() + ',provider_status.in.(CONFIRMED,RECEIVED))&order=due_date.asc,id.asc') : Promise.resolve([]),
           canFinance ? ctx.read('admin_dashboard_payment_dismissals?select=invoice_id&user_id=eq.' + encodeURIComponent(userId) + '&order=invoice_id.asc') : Promise.resolve([])
         ]);
         if (version !== generation || userId !== ctx.userId() || epoch !== ctx.epoch()) return;
