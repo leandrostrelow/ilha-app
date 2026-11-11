@@ -1,0 +1,30 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(13);
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+insert into auth.users(id,email,raw_app_meta_data,raw_user_meta_data) values ('78000000-0000-4000-8000-000000000001','adjust@tests.invalid','{"provider":"email","providers":["email"]}','{"app_context":"public"}');
+insert into app_clients(id,full_name,email,due_day,status,client_type) values ('78000000-0000-4000-8000-000000000001','Synthetic adjustment','adjust@tests.invalid',25,'ATIVO','aluno');
+insert into app_payment_invoices(id,client_id,invoice_month,amount,due_date,status,provider_status) values ('78000000-0000-4000-8000-000000000021','78000000-0000-4000-8000-000000000001','2026-11-01',350,'2026-11-05','VENCIDA','OVERDUE');
+insert into app_invoice_provider_payments(invoice_id,provider_environment,provider_customer_id,provider_payment_id,external_reference,expected_amount,status)
+values ('78000000-0000-4000-8000-000000000021','SANDBOX','cus_test','pay_test','invoice_test',350,'OVERDUE');
+select private.sync_app_invoice_financial_transaction('78000000-0000-4000-8000-000000000021','OVERDUE',null);
+create function pg_temp.adjust(v text default null,proof jsonb default null,checked timestamptz default null,newday date default '2026-11-25',operation text default 'due_date',old date default '2026-11-05') returns jsonb language sql as $$
+ select public.adjust_unpaid_monthly_invoice('78000000-0000-4000-8000-000000000021','78000000-0000-4000-8000-000000000001',operation,350,'2026-11-01',old,newday,'Synthetic authorized adjustment for tests.',v,proof,checked);
+$$;
+create temporary table evidence as select pg_temp.adjust()->>'version' as v,'{"payment":{"id":"pay_test","customer":"cus_test","external_reference":"invoice_test","value":350,"billing_type":"PIX","due_date":"2026-11-25","status":"PENDING","deleted":false}}'::jsonb as proof;
+select throws_ok($$select pg_temp.adjust(null,null,null,'2026-11-26')$$,'P0001','Novo vencimento deve corresponder à competência e ao dia cadastrado.','reject unregistered due day');
+select throws_ok($$select pg_temp.adjust('stale',(select proof from evidence),clock_timestamp())$$,'P0001','Dados alterados durante a conferência; consulte novamente.','reject stale identity');
+select throws_ok($$select pg_temp.adjust((select v from evidence),(select proof from evidence),clock_timestamp()-interval '1 minute')$$,'P0001','Asaas não comprova o ajuste sem recebimento desta cobrança.','reject stale remote proof');
+select throws_ok($$select pg_temp.adjust((select v from evidence),(select jsonb_set(proof,'{payment,value}','351') from evidence),clock_timestamp())$$,'P0001','Asaas não comprova o ajuste sem recebimento desta cobrança.','reject amount mismatch');
+select throws_ok($$select pg_temp.adjust((select v from evidence),(select jsonb_set(proof,'{payment,payment_date}','"2026-11-06"') from evidence),clock_timestamp())$$,'P0001','Asaas não comprova o ajuste sem recebimento desta cobrança.','reject remote receipt');
+select is(pg_temp.adjust(v,proof,clock_timestamp())->>'state','COMPLETED','apply verified date') from evidence;
+select ok((select i.due_date='2026-11-25' and f.due_date=i.due_date and i.status='AGUARDANDO' and f.status='ABERTO' and p.status='PENDING' and i.paid_at is null and f.paid_at is null from app_payment_invoices i join app_invoice_provider_payments p on p.invoice_id=i.id join financial_transactions f on f.app_payment_invoice_id=i.id where i.id='78000000-0000-4000-8000-000000000021'),'invoice provider and ledger coordinated without receipt');
+select is(pg_temp.adjust()->>'state','COMPLETED','retry idempotent');
+select is((select count(*)::int from private.monthly_invoice_adjustments),1,'one immutable audit');
+create temporary table cancel_evidence as select pg_temp.adjust(null,null,null,null,'cancel','2026-11-25')->>'version' as v,jsonb_set(proof,'{payment,deleted}','true') as proof from evidence;
+select is(pg_temp.adjust(v,proof,clock_timestamp(),null,'cancel','2026-11-25')->>'state','COMPLETED','verified cancellation') from cancel_evidence;
+select ok((select i.status='CANCELADA' and p.status='CANCELLED' and f.status='CANCELADO' and i.paid_at is null from app_payment_invoices i join app_invoice_provider_payments p on p.invoice_id=i.id join financial_transactions f on f.app_payment_invoice_id=i.id where i.id='78000000-0000-4000-8000-000000000021'),'cancellation preserves all records');
+select ok(not has_function_privilege('authenticated','public.adjust_unpaid_monthly_invoice(uuid,uuid,text,numeric,date,date,date,text,text,jsonb,timestamptz)','EXECUTE') and not has_table_privilege('service_role','private.monthly_invoice_adjustments','UPDATE'),'service coordinator only and immutable audit');
+select set_config('request.jwt.claims','{"role":"authenticated"}',true);
+select throws_ok($$select pg_temp.adjust()$$,'42501','Acesso negado.','direct authenticated call denied');
+select * from finish();rollback;
