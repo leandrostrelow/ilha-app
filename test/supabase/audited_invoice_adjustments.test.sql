@@ -6,12 +6,12 @@ insert into auth.users(id,email,raw_app_meta_data,raw_user_meta_data) values ('7
 insert into app_clients(id,full_name,email,due_day,status,client_type) values ('78000000-0000-4000-8000-000000000001','Synthetic adjustment','adjust@tests.invalid',25,'ATIVO','aluno');
 insert into app_payment_invoices(id,client_id,invoice_month,amount,due_date,status,provider_status) values ('78000000-0000-4000-8000-000000000021','78000000-0000-4000-8000-000000000001','2026-11-01',350,'2026-11-05','VENCIDA','OVERDUE');
 insert into app_invoice_provider_payments(invoice_id,provider_environment,provider_customer_id,provider_payment_id,external_reference,expected_amount,status)
-values ('78000000-0000-4000-8000-000000000021','SANDBOX','cus_test','pay_test','invoice_test',350,'OVERDUE');
+values ('78000000-0000-4000-8000-000000000021','SANDBOX','cus_test','pay_test','ilha-monthly-invoice:78000000-0000-4000-8000-000000000021',350,'OVERDUE');
 select private.sync_app_invoice_financial_transaction('78000000-0000-4000-8000-000000000021','OVERDUE',null);
 create function pg_temp.adjust(v text default null,proof jsonb default null,checked timestamptz default null,newday date default '2026-11-25',operation text default 'due_date',old date default '2026-11-05') returns jsonb language sql as $$
  select public.adjust_unpaid_monthly_invoice('78000000-0000-4000-8000-000000000021','78000000-0000-4000-8000-000000000001',operation,350,'2026-11-01',old,newday,'Synthetic authorized adjustment for tests.',v,proof,checked);
 $$;
-create temporary table evidence as select pg_temp.adjust()->>'version' as v,'{"payment":{"id":"pay_test","customer":"cus_test","external_reference":"invoice_test","value":350,"billing_type":"PIX","due_date":"2026-11-25","status":"PENDING","deleted":false}}'::jsonb as proof;
+create temporary table evidence as select pg_temp.adjust()->>'version' as v,'{"payment":{"id":"pay_test","customer":"cus_test","external_reference":"ilha-monthly-invoice:78000000-0000-4000-8000-000000000021","value":350,"billing_type":"PIX","due_date":"2026-11-25","status":"PENDING","deleted":false}}'::jsonb as proof;
 select throws_ok($$select pg_temp.adjust(null,null,null,'2026-11-26')$$,'P0001','Novo vencimento deve corresponder à competência e ao dia cadastrado.','reject unregistered due day');
 select throws_ok($$select pg_temp.adjust('stale',(select proof from evidence),clock_timestamp())$$,'P0001','Dados alterados durante a conferência; consulte novamente.','reject stale identity');
 select throws_ok($$select pg_temp.adjust((select v from evidence),(select proof from evidence),clock_timestamp()-interval '1 minute')$$,'P0001','Asaas não comprova o ajuste sem recebimento desta cobrança.','reject stale remote proof');
