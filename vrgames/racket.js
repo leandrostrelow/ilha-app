@@ -1,6 +1,7 @@
 import * as T from './vendor/three.module.min.js';
+import {EQUIPMENT} from './quest-input.js';
 
-// Metres; keep the grip origin and .40 m contact centre used by the lessons/XR.
+// Metres. Each sport keeps its handle at the tracked grip origin.
 // Geometry and materials are shared by the desktop, controllers and bar display.
 let template;
 const up=new T.Vector3(0,1,0);
@@ -74,22 +75,32 @@ function makeTennis(parent,paint,carbon,black,lime){
 function paddleShape(kind){
  const s=new T.Shape();
  if(kind==='beach'){
-  s.moveTo(-.045,.229);s.bezierCurveTo(-.083,.251,-.131,.287,-.135,.397);s.bezierCurveTo(-.141,.515,-.089,.573,0,.576);s.bezierCurveTo(.089,.573,.141,.515,.135,.397);s.bezierCurveTo(.131,.287,.083,.251,.045,.229);s.closePath();
-  for(let row=0;row<5;row++)for(let col=-2;col<=2;col++){const x=col*.037,y=.319+row*.044;if(row===0&&Math.abs(col)===2)continue;const hole=new T.Path();hole.absarc(x,y,.0078,0,Math.PI*2,true);s.holes.push(hole);}
+  s.moveTo(-.018,.073);s.lineTo(-.039,.112);s.bezierCurveTo(-.09,.129,-.121,.197,-.121,.267);s.bezierCurveTo(-.121,.367,-.078,.406,0,.406);s.bezierCurveTo(.078,.406,.121,.367,.121,.267);s.bezierCurveTo(.121,.197,.09,.129,.039,.112);s.lineTo(.018,.073);s.closePath();
+  for(let row=0;row<6;row++)for(let col=-2;col<=2;col++){if((row===0||row===5)&&Math.abs(col)===2)continue;const hole=new T.Path();hole.absarc(col*.035,.172+row*.035,.0065,0,Math.PI*2,true);s.holes.push(hole);}
  }else{
-  s.moveTo(-.032,.233);s.lineTo(-.091,.276);s.quadraticCurveTo(-.108,.29,-.108,.322);s.lineTo(-.108,.513);s.quadraticCurveTo(-.108,.550,-.071,.550);s.lineTo(.071,.550);s.quadraticCurveTo(.108,.550,.108,.513);s.lineTo(.108,.322);s.quadraticCurveTo(.108,.29,.091,.276);s.lineTo(.032,.233);s.closePath();
+  s.moveTo(-.016,.065);s.lineTo(-.070,.102);s.quadraticCurveTo(-.096,.115,-.096,.144);s.lineTo(-.096,.307);s.quadraticCurveTo(-.096,.337,-.065,.337);s.lineTo(.065,.337);s.quadraticCurveTo(.096,.337,.096,.307);s.lineTo(.096,.144);s.quadraticCurveTo(.096,.115,.070,.102);s.lineTo(.016,.065);s.closePath();
  }
  return s;
 }
+function makeGrip(parent,kind,grip,black,lime){
+ const length=kind==='tennis'?.174:kind==='beach'?.144:.130,top=length/2,bottom=-length/2;
+ cylinder(parent,.0163,.0176,length,0,grip);
+ cylinder(parent,.018,.0218,.019,bottom-.009,black);
+ cylinder(parent,.0182,.0182,.006,top+.003,black);
+ cylinder(parent,.0219,.0219,.003,bottom-.014,lime);
+ const pts=[];for(let i=0;i<=200;i++){const t=i/200,a=t*Math.PI*2*(kind==='tennis'?7.6:6),y=bottom+t*length,r=.0176-t*.0013,oct=r*Math.cos(Math.PI/8)/Math.cos(((a+Math.PI/8)%(Math.PI/4))-Math.PI/8);pts.push([Math.cos(a)*oct,y,Math.sin(a)*oct]);}
+ tube(parent,pts,.00055,material('grip-seam',0xa5aaa0,.85,0),200,4);
+ label(parent,'ILHA',.022,.006,0,top+.002,.0185);
+}
 function makePaddle(parent,kind,carbon,black,lime){
  const g=new T.Group();g.name=kind;parent.add(g);const shape=paddleShape(kind);
- cylinder(g,.018,.014,.15,.154,carbon);
- const body=mesh(g,new T.ExtrudeGeometry(shape,{depth:.013,steps:1,bevelEnabled:true,bevelSegments:2,bevelSize:.003,bevelThickness:.002,curveSegments:18}),black);body.position.z=-.0065;
- const surface=new T.ShapeGeometry(shape,18);for(const side of [-1,1]){const face=mesh(g,surface,carbon);face.position.z=side*.009;face.material.side=T.DoubleSide;}
- // Colour at the shoulders and a printed club identity, leaving actual beach holes open.
- for(const side of [-1,1])tube(g,[[side*.087,.293,.010],[side*.100,.329,.010],[side*.103,.367,.010]],.0025,kind==='beach'?lime:material('blue',0x5ba6c5,.35),12,5);
- label(g,'ILHA',.089,.018,0,kind==='beach'?.548:.463,.010);
- label(g,kind==='beach'?'BEACH':'PICKLEBALL',.068,.010,0,kind==='beach'?.270:.431,.010);
+ const body=mesh(g,new T.ExtrudeGeometry(shape,{depth:kind==='pickle'?.016:.020,steps:1,bevelEnabled:true,bevelSegments:2,bevelSize:.0025,bevelThickness:.0018,curveSegments:18}),black);body.position.z=kind==='pickle'?-.008:-.010;
+ const faceDepth=kind==='pickle'?.010:.012,surface=new T.ShapeGeometry(shape,18);
+ for(const side of [-1,1]){const face=mesh(g,surface,carbon);face.position.z=side*faceDepth;face.material.side=T.DoubleSide;}
+ const color=kind==='beach'?lime:material('blue',0x5ba6c5,.35);
+ for(const side of [-1,1])for(const front of [-1,1])tube(g,[[side*.075,.14,faceDepth*front],[side*.091,.174,faceDepth*front],[side*.092,.207,faceDepth*front]],.0024,color,12,5);
+ label(g,'ILHA',.08,.018,0,kind==='beach'?.382:.255,faceDepth+.0005);
+ label(g,kind==='beach'?'BEACH 50':'PICKLE 16',.07,.009,0,kind==='beach'?.128:.225,faceDepth+.0005);
  return g;
 }
 function buildTemplate(){
@@ -97,16 +108,9 @@ function buildTemplate(){
  const paint=material('paint',0x234b43,.28,.3),black=material('rubber',0x172024,.63,0),lime=material('accent',0xc2d787,.34,.1);
  const carbon=new T.MeshStandardMaterial({color:0x909b9b,map:texture('carbon'),roughness:.42,metalness:.22});
  const gripMap=texture('grip'),grip=new T.MeshStandardMaterial({color:0xf4f1e7,map:gripMap,bumpMap:gripMap,bumpScale:.0004,roughness:.9});
- cylinder(g,.0163,.0176,.174,-.003,grip);
- cylinder(g,.018,.0218,.019,-.0995,black);
- cylinder(g,.0182,.0182,.006,.087,black);
- cylinder(g,.0219,.0219,.003,-.103,lime);
- // Helical overgrip seam follows the eight flat faces of the handle.
- const pts=[];for(let i=0;i<=280;i++){const t=i/280,a=t*Math.PI*2*7.6,y=-.088+t*.172,r=.0176-(y+.09)/.18*.0013,oct=r*Math.cos(Math.PI/8)/Math.cos(((a+Math.PI/8)%(Math.PI/4))-Math.PI/8);pts.push([Math.cos(a)*oct,y,Math.sin(a)*oct]);}
- tube(g,pts,.00055,material('grip-seam',0xa5aaa0,.85,0),280,4);
- label(g,'ILHA',.022,.006,0,.086,.0185);
- makeTennis(g,paint,carbon,black,lime);makePaddle(g,'beach',carbon,black,lime);makePaddle(g,'pickle',carbon,black,lime);
- g.getObjectByName('beach').visible=g.getObjectByName('pickle').visible=false;
+ const tennis=makeTennis(g,paint,carbon,black,lime),beach=makePaddle(g,'beach',carbon,black,lime),pickle=makePaddle(g,'pickle',carbon,black,lime);
+ for(const [kind,model]of [['tennis',tennis],['beach',beach],['pickle',pickle]])makeGrip(model,kind,grip,black,lime);
+ beach.visible=pickle.visible=false;
  const head=new T.Object3D();head.name='contact-centre';head.position.y=.4;g.add(head);return g;
 }
 export function makeRacket(){
@@ -114,5 +118,5 @@ export function makeRacket(){
 }
 export function setRacketStyle(racket,kind){
  const next=kind==='beach'||kind==='pickle'?kind:'tennis';if(racket.userData.kind===next)return;
- racket.userData.kind=next;for(const style of ['tennis','beach','pickle'])racket.getObjectByName(style).visible=style===next;
+ racket.userData.kind=next;racket.userData.head.position.y=EQUIPMENT[next].head;for(const style of ['tennis','beach','pickle'])racket.getObjectByName(style).visible=style===next;
 }
