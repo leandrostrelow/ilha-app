@@ -1,5 +1,7 @@
 import * as T from './vendor/three.module.min.js';
 import {registerTrunk,clearTrunks} from './navigation.js';
+import {makeRacket} from './racket.js';
+export {makeRacket,setRacketStyle} from './racket.js';
 const detailMaps=new Map();
 const cache=new Map(),cube=new T.BoxGeometry(1,1,1),crown=new T.IcosahedronGeometry(1,2),cylinders=new Map();
 function detailMap(kind){
@@ -167,16 +169,7 @@ export function buildWorld(scene){
  instanceScenery(g);return g;
 }
 
-export function makeRacket(){
- const g=new T.Group();cyl(g,.019,.025,.22,0x213c32,0,.035,0,10);cyl(g,.012,.012,.16,0xd9e4cd,0,.21,0,8);
- const frame=new T.Mesh(new T.TorusGeometry(.17,.016,6,32),mat(0xd4eb7c));frame.position.y=.40;frame.scale.y=1.26;g.add(frame);
- const pts=[];for(let x=-.135;x<.15;x+=.034){const y=.206*Math.sqrt(1-x*x/(.16*.16));pts.push([x,.40-y,0],[x,.40+y,0]);}for(let y=-.17;y<.19;y+=.034){const x=.16*Math.sqrt(1-y*y/(.206*.206));pts.push([-x,.40+y,0],[x,.40+y,0]);}const strings=lines(g,pts,0xecead7,.85);
- const face=new T.Mesh(new T.CircleGeometry(.153,40),new T.MeshStandardMaterial({color:0x30634c,roughness:.65,side:T.DoubleSide}));face.position.set(0,.4,0);face.scale.y=1.26;face.visible=false;g.add(face);const stripe=box(face,.16,.025,.003,0xe1eabd,0,.025,.004);stripe.rotation.z=-.25;g.userData.strings=strings;g.userData.face=face;g.userData.frame=frame;
- const head=new T.Object3D();head.position.y=.4;g.add(head);g.userData.head=head;return g;
-}
 export function makeCoach(parent){
  const g=new T.Group();parent.add(g);g.position.set(-3.3,0,-3.8);cyl(g,.27,.22,.63,0x35654b,0,1.12,0,7);const head=new T.Mesh(new T.IcosahedronGeometry(.18,2),mat(0xd3a779));head.position.y=1.64;g.add(head);cyl(g,.19,.2,.06,0xf5edcf,0,1.81,0,12);box(g,.24,.035,.18,0xf5edcf,0,1.8,.14);for(const x of [-.13,.13]){box(g,.19,.25,.21,0xeee5ce,x,.76,0);cyl(g,.065,.07,.52,0xc99d72,x,.42,0);box(g,.14,.12,.27,0xf4edda,x,.1,.07);const arm=cyl(g,.055,.07,.57,0xd3a779,x*2.55,1.1,0);arm.rotation.z=x>0?.16:-.16;}
  board(g,'RENATO','VAMOS COMEÇAR?',1.15,.43,0,2.18,0,'#f6f1df','#31513a');return g;
 }
-
-export function setRacketStyle(racket,kind){if(racket.userData.kind===kind)return;racket.userData.kind=kind;const paddle=kind==='beach'||kind==='pickle';racket.userData.strings.visible=!paddle;racket.userData.face.visible=paddle;racket.userData.face.material.color.setHex(kind==='beach'?0x244f44:0x446c9b);}

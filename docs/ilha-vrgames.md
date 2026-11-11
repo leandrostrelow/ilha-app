@@ -33,3 +33,7 @@ O botão “Explorar o clube a pé” abre o passeio. A proximidade de cada esta
 Os novos módulos `club.js`, `navigation.js` e `club-sports.js` separam interação, navegação e física dos minijogos. As colisões e os feeds possuem testes de trajetória, passagem pelo portão, bloqueio de paredes, normalização diagonal, zona morta dos controles e giro ao redor da cabeça. Os arquivos continuam incluídos e versionados no manifesto/build.
 
 A atualização visual adiciona céu com nuvens suaves, materiais com textura e relevo, copa com mais geometria, folhas de palmeira, garrafas na geladeira, detalhes no revestimento do bar e sombras estáticas de maior definição. A iluminação do cenário é estática para evitar recalcular o mapa de sombras a cada quadro. O teste real de controles e desempenho no Quest 3 continua necessário.
+
+## Raquetes
+
+`racket.js` constrói os modelos compartilhados pelo jogador, controles e decoração do bar. O modelo de tênis tem aro oval de seção fina, garganta aberta, 16 cordas verticais e 19 horizontais em geometria 3D, ilhoses, proteção no topo, cabo octogonal e costura helicoidal do overgrip. O acabamento usa grafite, verde e identidade Ilha; não reproduz uma marca comercial. Beach tennis tem face perfurada e pickleball tem face sólida com bordas arredondadas. Materiais e geometrias são reutilizados entre cópias; cordas e ilhoses usam instâncias. O ponto de contato continua a 0,40 m da origem do controle e a assistência de colisão da aula permanece igual.
