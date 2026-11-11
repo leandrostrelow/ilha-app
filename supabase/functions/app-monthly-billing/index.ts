@@ -1,3 +1,4 @@
+import { adjustMonthlyInvoice } from "../_shared/audited-invoice-adjustment.ts";
 import { prepareFailedReissueReschedule } from "../_shared/failed-reissue-reschedule.ts";
 import { prepareAuditedMonthlyReissue } from "../_shared/audited-monthly-reissue.ts";
 // deno-lint-ignore-file no-import-prefix no-explicit-any
@@ -914,6 +915,12 @@ Deno.serve(async (request: Request) => {
     if (!auth) return json(request, { error: "Credencial inválida." }, 401);
     const body = record(parsedBody);
     const action = text(body.action, 20).toLowerCase();
+    if (action === "adjust_invoice") {
+      if (auth.kind !== "USER" || !auth.canWrite || !auth.userId) return json(request, {error:"Seu acesso não permite ajustar cobranças."},403);
+      const result = await adjustMonthlyInvoice(body,auth.userId,asaasConfig().environment,
+        (name,args)=>adminClient!.rpc(name,args),asaasRequest,safePaymentSnapshot);
+      return json(request,result);
+    }
     if (action === "audited_reissue" || action === "reschedule_failed") {
       if (auth.kind !== "USER" || !auth.canWrite || !auth.userId) return json(request, {error:"Seu acesso não permite reemitir cobranças."},403);
       const target = action === "reschedule_failed"
