@@ -103,7 +103,7 @@ await writeFile(halloweenHtmlPath,halloweenHtml);
 
 // Version the complete VR module graph, including vendored Three.js imports.
 // The app service worker caches script URLs, so changing only main.js is insufficient.
-const vrModules = ['main.js', 'world.js', 'physics.js', 'xr-placement.js', 'vendor/three.module.min.js', 'vendor/three.core.min.js'];
+const vrModules = ['main.js', 'world.js', 'physics.js', 'xr-placement.js', 'navigation.js', 'club-sports.js', 'club.js', 'vendor/three.module.min.js', 'vendor/three.core.min.js'];
 for (const module of vrModules) {
   const file = path.join(destination, 'vrgames', module);
   const source = await readFile(file, 'utf8');
