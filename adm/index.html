@@ -22322,6 +22322,7 @@
   </style>
   <link rel="stylesheet" href="/store-commerce.css?v=2">
   <script src="/store-commerce.js?v=2"></script>
+  <link rel="stylesheet" href="/adm/home-dashboard.css">
 </head>
 <body class="adm-locked">
   <svg aria-hidden="true" style="display:none">
@@ -22637,69 +22638,23 @@
         </div>
       </div>
 
-      <section class="club-shortcuts" aria-labelledby="clubShortcutsTitle">
-        <div class="club-shortcuts-head">
-          <span class="club-shortcuts-kicker">Acesso rápido</span>
-          <h2 id="clubShortcutsTitle">Atalhos importantes</h2>
-          <p>Acesse as áreas mais usadas do ADM sem precisar procurar no menu.</p>
+      <div class="home-work-toolbar"><p id="homeDashboardStatus" role="status">Acompanhamento do dia</p><button type="button" class="ghost-btn" id="homeDashboardRefresh">Atualizar</button></div>
+      <div id="homeWorkDashboard" class="home-work-grid">
+        <section class="home-work-panel" data-club-permission="clients.read" aria-labelledby="homeNewStudentsTitle">
+          <header class="home-work-heading"><div><h2 id="homeNewStudentsTitle">NOVOS ALUNOS</h2><p>Cadastros aguardando sua ativação.</p></div><span class="home-work-count" id="homeNewStudentsCount">0</span></header>
+          <div class="home-work-list" id="homeNewStudents" aria-live="polite"></div>
+        </section>
+        <div class="home-work-finance" data-club-permission="finance.read">
+          <section class="home-work-panel payments" aria-labelledby="homeConfirmedTitle">
+            <header class="home-work-heading"><div><h2 id="homeConfirmedTitle">PAGAMENTOS CONFIRMADOS</h2><p>Mensalidades confirmadas pelo Asaas.</p></div><span class="home-work-count" id="homeConfirmedCount">0</span></header>
+            <div class="home-work-list" id="homeConfirmedPayments" aria-live="polite"></div>
+          </section>
+          <section class="home-work-panel overdue" aria-labelledby="homeOverdueTitle">
+            <header class="home-work-heading"><div><h2 id="homeOverdueTitle">INADIMPLENTES</h2><p>Faturas em aberto com vencimento até ontem.</p></div><span class="home-work-count" id="homeOverdueCount">0</span></header>
+            <div class="home-work-list" id="homeOverdueInvoices" aria-live="polite"></div>
+          </section>
         </div>
-        <div class="club-shortcut-grid">
-          <button class="club-shortcut-card" type="button" data-home-module="club-clients" data-club-permission="clients.read">
-            <span class="club-shortcut-icon" aria-hidden="true"><svg><use href="#admin-icon-users"></use></svg></span>
-            <span class="club-shortcut-copy">
-              <strong>Alunos</strong>
-              <small>Consulte cadastros, planos e libere novos acessos.</small>
-            </span>
-            <span class="club-shortcut-arrow" aria-hidden="true">›</span>
-          </button>
-          <button class="club-shortcut-card primary" type="button" data-home-tournament-tab="settings" data-club-permission="tournaments">
-            <span class="club-shortcut-icon" aria-hidden="true"><svg><use href="#admin-icon-trophy"></use></svg></span>
-            <span class="club-shortcut-copy">
-              <strong>Torneio</strong>
-              <small>Edite classes, inscrições, agenda e configurações.</small>
-            </span>
-            <span class="club-shortcut-arrow" aria-hidden="true">›</span>
-          </button>
-          <button class="club-shortcut-card primary" type="button" data-home-tournament-tab="dashboard" data-club-permission="tournaments">
-            <span class="club-shortcut-icon" aria-hidden="true"><svg><use href="#admin-icon-calendar"></use></svg></span>
-            <span class="club-shortcut-copy">
-              <strong>Info do torneio</strong>
-              <small>Acompanhe as últimas inscrições e movimentações.</small>
-            </span>
-            <span class="club-shortcut-arrow" aria-hidden="true">›</span>
-          </button>
-          <button class="club-shortcut-card" type="button" data-home-module="club-announcements" data-club-permission="announcements">
-            <span class="club-shortcut-icon" aria-hidden="true"><svg><use href="#admin-icon-megaphone"></use></svg></span>
-            <span class="club-shortcut-copy">
-              <strong>Comunicados</strong>
-              <small>Crie avisos e escolha exatamente quem deve recebê-los.</small>
-            </span>
-            <span class="club-shortcut-arrow" aria-hidden="true">›</span>
-          </button>
-        </div>
-        <div class="club-shortcuts-empty" id="clubShortcutsUnavailable" hidden>Use o menu lateral para acessar os módulos liberados para o seu perfil.</div>
-      </section>
-
-      <section class="club-notifications" aria-labelledby="homeNotificationsTitle" data-club-permission="communication">
-        <div class="club-notifications-head">
-          <div class="club-notifications-title">
-            <span class="club-notifications-bell" aria-hidden="true"><svg><use href="#admin-icon-bell"></use></svg></span>
-            <div>
-              <h2 id="homeNotificationsTitle">Notificações</h2>
-              <div class="muted">Novas inscrições e avisos importantes do ADM.</div>
-            </div>
-            <span class="club-notification-count" id="homeNotificationUnread" hidden>0</span>
-          </div>
-          <div class="club-notifications-actions">
-            <button class="ghost-btn" type="button" id="homeNotificationsRefreshBtn">Atualizar</button>
-            <button class="ghost-btn" type="button" id="homeNotificationsReadAllBtn">Marcar como lidas</button>
-            <button class="danger-btn" type="button" id="homeNotificationsClearBtn">Limpar notificações</button>
-          </div>
-        </div>
-        <div class="club-notification-list" id="homeNotificationList" aria-live="polite">
-          <div class="club-notification-empty">Carregando notificações...</div>
-        </div>
-      </section>
+      </div>
 
     </section>
 
@@ -26432,6 +26387,7 @@
 
   <script src="../assets/vendor/qrcode-generator.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+  <script src="/adm/home-dashboard.js"></script>
   <script src="/adm/predictions.js"></script>
   <script src="/adm/leads.js"></script>
   <script src="/adm/events.js?v=20261007-casal"></script>
@@ -34035,6 +33991,20 @@ const colors = tournamentArtPalette({
     let homeNotificationsLoaded = false;
     let homeNotificationsLoadPromise = null;
     let adminRealtimeClient = null;
+    const operationalDashboard = window.IlhaHomeDashboard.create({
+      userId: function () { return adminSession && adminSession.user && adminSession.user.id; },
+      epoch: function () { return adminSessionEpoch; },
+      can: canUseClubPermission, today: localDateString, money: money, escape: escapeHtml,
+      visible: function () { return document.body.classList.contains('club-home') && !document.body.classList.contains('adm-locked'); },
+      read: supabaseRestAll, write: supabaseRest, error: reportActionError,
+      openClient: async function (id, finance) {
+        requireClubPermission('clients.read');
+        await loadOpsData(true);
+        openClientsModule();
+        openClientModal(id, finance ? 'Finance' : 'Info');
+      }
+    });
+
 
     function beginBarAction(key, form) {
       if (barActionLocks.has(key)) return false;
@@ -34075,6 +34045,7 @@ const colors = tournamentArtPalette({
       });
       document.body.classList.add(mode);
       updateAdminNav(mode);
+      if (mode !== 'club-home') operationalDashboard.stop();
       if (mode !== 'club-courts' && courtRefreshTimer) {
         clearInterval(courtRefreshTimer);
         courtRefreshTimer = null;
@@ -35532,7 +35503,7 @@ const colors = tournamentArtPalette({
     }
 
     function renderHomeDashboard() {
-      renderHomeNotifications();
+      operationalDashboard.refresh();
     }
 
     function mapHomeNotificationRow(row) {
@@ -35605,6 +35576,7 @@ const colors = tournamentArtPalette({
     }
 
     async function loadHomeNotifications(force) {
+      if (!$('homeNotificationList')) return;
       if (!canUseClubPermission('communication') || !adminSession || !adminSession.user) return;
       if (isAdminDemoMode()) {
         if (!homeNotificationsLoaded || force) homeNotifications = demoHomeNotifications();
@@ -39325,6 +39297,9 @@ const colors = tournamentArtPalette({
           table: 'app_client_notifications',
           filter: 'user_id=eq.' + adminSession.user.id
         }, handleAdminNotificationInsert)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'app_payment_invoices' }, function () { operationalDashboard.refresh(); })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'app_clients' }, function () { operationalDashboard.refresh(); })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'admin_dashboard_payment_dismissals', filter: 'user_id=eq.' + adminSession.user.id }, function () { operationalDashboard.refresh(); })
         .subscribe();
     }
 
@@ -48919,6 +48894,7 @@ const colors = tournamentArtPalette({
 
     function clearAdminSession() {
       if (window.IlhaDayUse) window.IlhaDayUse.reset();
+      operationalDashboard.reset();
       if (window.IlhaMonthlyReceipts) window.IlhaMonthlyReceipts.reset();
       clearTimeout(adminSessionRefreshTimer);
       clearTimeout(adminSessionRestoreTimer);
@@ -49780,10 +49756,7 @@ const colors = tournamentArtPalette({
 
     function showClubHome() {
       if (!setClubMode('club-home')) return;
-      renderHomeNotifications();
-      loadHomeNotifications(false).catch(function (error) {
-        console.warn('Não foi possível carregar as notificações do ADM.', error && error.message);
-      });
+      operationalDashboard.start();
     }
 
     function openTournamentModule(preferredTab) {
@@ -52198,29 +52171,7 @@ const colors = tournamentArtPalette({
           if (action) action();
         });
       });
-      $('homeNotificationsRefreshBtn').addEventListener('click', function () {
-        loadHomeNotifications(true).catch(reportActionError);
-      });
-      $('homeNotificationsReadAllBtn').addEventListener('click', function () {
-        markAllHomeNotificationsRead().catch(reportActionError);
-      });
-      $('homeNotificationsClearBtn').addEventListener('click', function () {
-        clearHomeNotifications().catch(reportActionError);
-      });
-      $('homeNotificationList').addEventListener('click', function (event) {
-        const openButton = event.target.closest('[data-home-notification-open]');
-        if (openButton) {
-          openHomeNotification(openButton.dataset.homeNotificationOpen);
-          return;
-        }
-        const readButton = event.target.closest('[data-home-notification-read]');
-        if (readButton) {
-          markHomeNotificationRead(readButton.dataset.homeNotificationRead).catch(reportActionError);
-          return;
-        }
-        const deleteButton = event.target.closest('[data-home-notification-delete]');
-        if (deleteButton) deleteHomeNotification(deleteButton.dataset.homeNotificationDelete).catch(reportActionError);
-      });
+      operationalDashboard.bind();
       document.querySelectorAll('[data-home-action]').forEach(function (btn) {
         btn.addEventListener('click', function () {
           if (IS_BAR_ADMIN_SURFACE) {
