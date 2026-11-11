@@ -11,6 +11,8 @@ const obstacles = [
  [5.95,6.05,8.6,15.4], [-27.55,-18.45,-19.05,-18.95], [-27.55,-27.45,-19,-1]
 ];
 const trunks=[];
+let people=[];
+export function setPeopleColliders(value){people=value;}
 export function registerTrunk(x,z,radius){trunks.push({x,z,radius});}
 export function clearTrunks(){trunks.length=0;}
 for(let i=0;i<6;i++){const x=-18.5+i*2.5;obstacles.push([x-.85,x+.85,-49.75,-46.25]);}
@@ -18,6 +20,7 @@ obstacles.push([-15.75,-14.45,-21.85,-20.75],[-11.25,-9.95,-21.85,-20.75]);
 export function canStand(x,z,radius=.23){
  if(x < -27 || x > 30.4 || z < -57 || z > 20.5)return false;
  if(trunks.some(t=>Math.hypot(t.x-x,t.z-z)<t.radius+radius))return false;
+ if(people.some(p=>Math.hypot(p.x-x,p.z-z)<p.radius+radius))return false;
  return !obstacles.some(([left,right,back,front])=>{
   const px=Math.max(left,Math.min(right,x)),pz=Math.max(back,Math.min(front,z));
   return (x-px)**2+(z-pz)**2<radius**2;

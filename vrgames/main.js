@@ -3,6 +3,15 @@ import {buildWorld,makeRacket,makeCoach,board,makeSky,setRacketStyle} from './wo
 import {makeFeed,advanceBall,racketContact,returnBall,clamp} from './physics.js';
 import {alignPlayer} from './xr-placement.js';
 import {createClub,PLACES} from './club.js';
+import {EQUIPMENT,questSettings,racketMount,trackedController,createQuestButtons,worldViewer} from './quest-input.js';
+import {createQuestMenu} from './quest-menu.js';
+import {thumbstick} from './navigation.js';
+import {createClubLife} from './club-life.js';
+
+let savedControls;try{savedControls=JSON.parse(localStorage.getItem('ilha-quest-controls-v1')||'{}');}catch{}
+const controls=questSettings(savedControls||{}),questButtons=createQuestButtons();
+let questMenu=null,setupKind='tennis';
+function saveControls(){try{localStorage.setItem('ilha-quest-controls-v1',JSON.stringify(controls));}catch{}}
 
 const $=id=>document.getElementById(id),canvas=$('scene');
 let renderer;
@@ -12,7 +21,7 @@ renderer.xr.enabled=true;renderer.xr.setReferenceSpaceType('local-floor');
 const sky=makeSky(),scene=new T.Scene();scene.background=sky;scene.fog=new T.Fog(0xc4d9d7,65,170);
 scene.add(new T.HemisphereLight(0xeef4e7,0x8d805d,1.5));const sun=new T.DirectionalLight(0xffedcd,2.1);sun.position.set(-25,40,15);scene.add(sun);renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-50,right:50,top:45,bottom:-65,near:1,far:140});sun.shadow.bias=-.001;sun.shadow.normalBias=.04;renderer.shadowMap.autoUpdate=false;renderer.shadowMap.needsUpdate=true;
 const rig=new T.Group();scene.add(rig);const camera=new T.PerspectiveCamera(58,1,.05,180);rig.add(camera);
-const world=buildWorld(scene),training=new T.Group();scene.add(training);const coach=makeCoach(training);
+const world=buildWorld(scene),clubLife=createClubLife(world),training=new T.Group();scene.add(training);const coach=makeCoach(training);
 const racket=makeRacket();scene.add(racket);racket.position.set(.48,.58,-.8);
 const ballMesh=new T.Mesh(new T.SphereGeometry(.055,14,10),new T.MeshStandardMaterial({color:0xd7f057,emissive:0x6f7914,emissiveIntensity:.13,roughness:.8}));training.add(ballMesh);ballMesh.visible=false;
 const seams=new T.Line(new T.BufferGeometry().setFromPoints(Array.from({length:49},(_,i)=>{const a=i*Math.PI/24;return new T.Vector3(Math.cos(a)*.0555,Math.sin(a)*.0555,0);})),new T.LineBasicMaterial({color:0xf5f6cb}));ballMesh.add(seams);
@@ -29,16 +38,18 @@ const hudCanvas=document.createElement('canvas');hudCanvas.width=1400;hudCanvas.
 const hud=new T.Mesh(new T.PlaneGeometry(2.5,1),new T.MeshBasicMaterial({map:hudTexture,transparent:true,depthTest:false}));hud.renderOrder=10;hud.visible=false;scene.add(hud);hud.position.set(0,2.5,-3.5);
 
 let club=null;
-let stage=0,hits=0,totalHits=0,totalTargets=0,feedIndex=0,attempts=0,ball=null,nextFeed=0,paused=false,started=false,stageComplete=false,readyTime=0,hand='right',xrMode=null,pendingPlacement=null,sessionRequest=false,simTime=0;
+let stage=0,hits=0,totalHits=0,totalTargets=0,feedIndex=0,attempts=0,ball=null,nextFeed=0,paused=false,started=false,stageComplete=false,readyTime=0,hand=controls.hand,xrMode=null,pendingPlacement=null,sessionRequest=false,simTime=0;
 let aim=0,feedback='Sem pressa. Vamos começar pelo começo.',lastHud=0,soundOn=false,audioContext=null,lastHitTime=-10,previousRacket=null,previousHead=null,strokeVelocity=new T.Vector3();
+const liveHead=new T.Vector3(),liveForward=new T.Vector3();
+function updateView(frame){return worldViewer(frame?.getViewerPose(renderer.xr.getReferenceSpace()),rig,camera,liveHead,liveForward);}
 const inputControllers=[],v1=new T.Vector3(),v2=new T.Vector3(),inverse=new T.Matrix4(),previousMatrix=new T.Matrix4(),q1=new T.Quaternion();
 const lessons=[
  {chapter:'01 / BEM-VINDO AO CLUBE',title:'Entre no clube.\nEscolha seu jogo.',desc:'Passeie pelo Ilha, treine tênis, jogue beach tennis e pickleball ou faça uma pausa no bar.',action:'Entrar na quadra',xr:'Gatilho para entrar na quadra'},
- {chapter:'02 / POSIÇÃO DE ESPERA',title:'Prepare a raquete.',desc:'Olhe para a rede e deixe a raquete à frente do corpo, perto da cintura. Encaixe a cabeça da raquete no aro iluminado por um instante.',action:'Centralizar raquete',xr:'Encaixe a raquete no aro. Segurar: reposicionar'},
+ {chapter:'02 / POSIÇÃO DE ESPERA',title:'Prepare a raquete.',desc:'Olhe para a rede e deixe a raquete à frente do corpo, perto da cintura. Encaixe a cabeça da raquete no aro iluminado por um instante.',action:'Centralizar raquete',xr:'Encaixe a raquete no aro · X: ajustar pegada'},
  {chapter:'03 / SUA PRIMEIRA REBATIDA',title:'Espere o quique.\nEncontre a bola.',desc:'A bola vem devagar para o lado da sua raquete. Depois do primeiro quique, leve a raquete até ela. Faça 3 devoluções dentro da quadra.',action:'Começar as bolas',xr:'Gatilho para começar · Movimento para rebater'},
  {chapter:'04 / DIREÇÃO DA BOLA',title:'Agora, mire\nno espaço verde.',desc:'O alvo alterna entre esquerda e direita. Aponte levemente a face da raquete para o lado desejado. No computador, use os botões de mira ou A/D para escolher a direção.',action:'Começar o desafio',xr:'Gatilho para começar · Incline a face para mirar'},
  {chapter:'AULA CONCLUÍDA',title:'Seu primeiro treino.\nSeu próximo ponto.',desc:'Você preparou a raquete, rebateu depois do quique e direcionou a devolução. A bola deve cruzar a rede e cair dentro das linhas. Agora é continuar praticando!',action:'Treinar livremente',xr:'Gatilho para treinar livremente'},
- {chapter:'TREINO LIVRE',title:'Mais uma bola?',desc:'Continue no seu ritmo. Procure o contato à frente do corpo e acompanhe a bola até ela cruzar a rede. Aqui, o treino não tem fim nem cronômetro.',action:'Pausar o treino',xr:'Gatilho pausa ou continua · Segurar reposiciona'}
+ {chapter:'TREINO LIVRE',title:'Mais uma bola?',desc:'Continue no seu ritmo. Procure o contato à frente do corpo e acompanhe a bola até ela cruzar a rede. Aqui, o treino não tem fim nem cronômetro.',action:'Pausar o treino',xr:'A: pausar / continuar · X: ajustes · B: clube'}
 ];
 
 function tell(message){feedback=message;$('feedback').textContent=message;paintHud();}
@@ -56,7 +67,7 @@ function paintHud(){
  hc.clearRect(0,0,1400,560);hc.fillStyle='rgba(246,244,229,.96)';hc.beginPath();hc.roundRect(0,0,1400,560,35);hc.fill();hc.fillStyle='#638048';hc.font='600 28px sans-serif';hc.fillText(lessons[stage].chapter,55,57);hc.fillStyle='#203d2d';hc.font='700 55px sans-serif';hc.fillText(lessons[stage].title.replace('\n',' '),55,130);
  const short=stage===0?'Bem-vindo ao Ilha Tênis. Aperte o gatilho para entrar na quadra 01.':stage===1?'Encaixe a raquete no aro, à frente da cintura.':stage===2?'Espere um quique e rebata. Devolva por cima da rede, dentro das linhas.':stage===3?'Incline a face da raquete para o lado do alvo verde.':lessons[stage].desc;
  wrapText(short,55,195,1280,43,'34px sans-serif');hc.fillStyle='#537343';wrapText(paused?'PAUSADO · Gatilho para continuar':feedback,55,320,1280,40,'600 32px sans-serif');
- hc.fillStyle='#1b402d';hc.fillRect(40,423,1320,95);hc.fillStyle='#eff3d8';hc.font='29px sans-serif';hc.fillText(stageComplete?'Boa! Gatilho para a próxima parte.':started&&stage>=2?'Rebata com o movimento · Gatilho pausa · Segurar reposiciona':lessons[stage].xr,65,480);
+ hc.fillStyle='#1b402d';hc.fillRect(40,423,1320,95);hc.fillStyle='#eff3d8';hc.font='29px sans-serif';hc.fillText(stageComplete?'Boa! Gatilho para a próxima parte.':started&&stage>=2?'Rebata com o movimento · A: pausar · X: ajustes · B: clube':lessons[stage].xr,65,480);
  if(stage===2||stage===3){hc.textAlign='right';hc.font='700 30px sans-serif';hc.fillText(`${hits}/3`,1300,65);hc.textAlign='left';}hudTexture.needsUpdate=true;
 }
 function sound(freq=450,duration=.08,volume=.035){if(!soundOn)return;try{audioContext??=new(window.AudioContext||window.webkitAudioContext)();if(audioContext.state==='suspended')audioContext.resume();const osc=audioContext.createOscillator(),gain=audioContext.createGain();osc.type='sine';osc.frequency.setValueAtTime(freq,audioContext.currentTime);osc.frequency.exponentialRampToValueAtTime(freq*.65,audioContext.currentTime+duration);gain.gain.setValueAtTime(volume,audioContext.currentTime);gain.gain.exponentialRampToValueAtTime(.0001,audioContext.currentTime+duration);osc.connect(gain).connect(audioContext.destination);osc.start();osc.stop(audioContext.currentTime+duration);}catch{}}
@@ -99,48 +110,99 @@ function completeAttempt(result){
  else if(stage===3&&good)setTarget();updateUI();
 }
 
-for(let i=0;i<2;i++){
- const controller=renderer.xr.getController(i),grip=renderer.xr.getControllerGrip(i),bat=makeRacket();grip.add(bat);rig.add(controller,grip);const item={controller,grip,bat,source:null};inputControllers.push(item);bat.visible=false;
- controller.addEventListener('connected',e=>{item.source=e.data;bat.visible=e.data.handedness===hand;previousRacket=null;});controller.addEventListener('disconnected',()=>{item.source=null;bat.visible=false;previousRacket=null;});
- controller.addEventListener('selectstart',()=>{if(!item.source||item.source.handedness===hand)primary();});
- controller.addEventListener('squeezestart',()=>{if(item.source?.handedness===hand){if(club?.active){if(club.mode==='walk')club.nextPlace();else club.exit();return;}placePlayer(stage===0);if(started&&!paused)togglePause();tell('Posição ajustada. Gatilho para continuar.');}});
+function pauseForMenu(){if(started&&!paused)togglePause();club?.pause();previousRacket=null;previousHead=null;}
+function backToClub(){if(questMenu?.open){questMenu.setOpen(false);return;}if(stage>0){setStage(0);club.walk();club.visit('courts');}else if(club.playing||club.mode==='bar')club.exit();else openQuestMenu();}
+function openQuestMenu(){setupKind=EQUIPMENT[club?.mode]?club.mode:'tennis';questMenu.toggle();}
+function recenterQuest(){questMenu.setOpen(false);pauseForMenu();if(stage>0)placePlayer();else club.recenter();previousRacket=null;previousHead=null;club.clearContact();}
+function triggerAction(item){
+ if(!item.tracked)return;if(questMenu.open){questMenu.choose();return;}if(item.source?.handedness!==hand)return;
+ // Trigger pressure during a swing must not pause the rally.
+ if(club.playing){if(!club.running)club.action();return;}
+ if(started&&!paused&&!stageComplete)return;primary();
 }
-function activeRacket(){if(!renderer.xr.isPresenting)return racket;return inputControllers.find(c=>c.source?.handedness===hand)?.bat??null;}
-function changeHand(h){hand=h;document.querySelectorAll('[data-hand]').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.hand===h)));for(const c of inputControllers)c.bat.visible=c.source?.handedness===h;prepareRing.position.x=h==='right'?.48:-.48;racket.position.x=prepareRing.position.x;previousRacket=null;previousHead=null;if(ball?.active){ball.active=false;ballMesh.visible=false;ballShadow.visible=false;nextFeed=simTime+2;}tell(`Raquete na mão ${h==='right'?'direita':'esquerda'}.`);}
-$('restart').onclick=()=>transition(()=>{setStage(0);placePlayer(true);club.walk();});document.querySelectorAll('[data-aim]').forEach(b=>b.onclick=()=>{aim=Number(b.dataset.aim);racket.rotation.y=-aim;document.querySelectorAll('[data-aim]').forEach(el=>el.setAttribute('aria-pressed',String(el===b)));tell(`Mira: ${aim===0?'centro':aim<0?'esquerda':'direita'}.`);});$('action').onclick=()=>stage===0?beginTennis():primary();$('pause').onclick=togglePause;document.querySelectorAll('[data-hand]').forEach(b=>b.onclick=()=>changeHand(b.dataset.hand));
+for(let i=0;i<2;i++){
+ const controller=renderer.xr.getController(i),grip=renderer.xr.getControllerGrip(i),bat=makeRacket();grip.add(bat);rig.add(controller,grip);const item={controller,grip,bat,source:null,tracked:false,mountKey:''};inputControllers.push(item);bat.visible=false;
+ controller.addEventListener('connected',e=>{questButtons.clear();item.source=e.data;item.tracked=false;item.mountKey='';previousRacket=null;});
+ controller.addEventListener('disconnected',()=>{if(item.source?.handedness===hand)pauseForMenu();questButtons.clear();item.source=null;item.tracked=false;bat.visible=false;previousRacket=null;previousHead=null;club?.clearContact();});
+ controller.addEventListener('selectstart',()=>triggerAction(item));
+}
+function activeRacket(){if(!renderer.xr.isPresenting)return racket;return inputControllers.find(c=>c.tracked&&c.source?.handedness===hand)?.bat??null;}
+function changeHand(h){hand=h;controls.hand=h;saveControls();document.querySelectorAll('[data-hand]').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.hand===h)));prepareRing.position.x=h==='right'?.48:-.48;racket.position.x=prepareRing.position.x;club?.refreshRacket();previousRacket=null;previousHead=null;club?.clearContact();if(ball?.active){ball.active=false;ballMesh.visible=false;ballShadow.visible=false;nextFeed=simTime+2;}tell(`Raquete na mão ${h==='right'?'direita':'esquerda'}.`);}
+function updateQuest(frame,time){
+ const presenting=renderer.xr.isPresenting,session=renderer.xr.getSession(),visible=presenting&&session?.visibilityState==='visible'&&!document.hidden;
+ for(const item of inputControllers){
+  let pose=null;if(visible&&frame&&item.source?.gripSpace)pose=frame.getPose(item.source.gripSpace,renderer.xr.getReferenceSpace());
+  const tracked=trackedController(item.source,pose,visible);
+  if(item.tracked!==tracked&&item.source?.handedness===hand){previousRacket=null;previousHead=null;club?.clearContact();if(!tracked)pauseForMenu();}
+  item.tracked=tracked;
+  for(const event of questButtons.sample(item.source,time,tracked)){
+   if(event==='menu')openQuestMenu();
+   else if(event==='action'){if(questMenu.open)questMenu.choose();else primary();}
+   else if(event==='back')backToClub();
+   else if(event==='recenter')recenterQuest();
+  }
+ }
+ const sources=inputControllers.filter(c=>c.tracked).map(c=>c.source);
+ if(questMenu.open)questMenu.stick(thumbstick(sources.find(s=>s.handedness==='left')),thumbstick(sources.find(s=>s.handedness==='right')));
+ const kind=questMenu.open?setupKind:EQUIPMENT[club.mode]?club.mode:'tennis';setRacketStyle(racket,kind);
+ for(const item of inputControllers){
+  setRacketStyle(item.bat,kind);const key=JSON.stringify([kind,item.source?.handedness,controls]);
+  if(key!==item.mountKey){const mount=racketMount(controls,kind,item.source?.handedness||hand);item.bat.position.copy(mount.position);item.bat.quaternion.copy(mount.quaternion);item.mountKey=key;previousRacket=null;previousHead=null;club.clearContact();}
+ }
+ return sources;
+}
+$('restart').onclick=()=>transition(backToClub);document.querySelectorAll('[data-aim]').forEach(b=>b.onclick=()=>{aim=Number(b.dataset.aim);racket.rotation.y=-aim;document.querySelectorAll('[data-aim]').forEach(el=>el.setAttribute('aria-pressed',String(el===b)));tell(`Mira: ${aim===0?'centro':aim<0?'esquerda':'direita'}.`);});$('action').onclick=()=>stage===0?beginTennis():primary();$('pause').onclick=togglePause;document.querySelectorAll('[data-hand]').forEach(b=>b.onclick=()=>changeHand(b.dataset.hand));
 $('sound').onclick=()=>{soundOn=!soundOn;$('sound').textContent=soundOn?'Som ligado':'Som desligado';$('sound').setAttribute('aria-pressed',String(soundOn));sound();};
-$('help').onclick=()=>{if(started&&!paused)togglePause();$('help-dialog').showModal();};$('close-help').onclick=()=>$('help-dialog').close();
+$('help').onclick=()=>{pauseForMenu();$('help-dialog').showModal();};$('close-help').onclick=()=>$('help-dialog').close();
 let pointerDown=false;
 function moveRacket(event){if(club?.playing){club.pointerRacket(event);return;}if(renderer.xr.isPresenting||stage===0||stage===4)return;const rect=canvas.getBoundingClientRect();const p=new T.Vector3((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1,.5).unproject(camera);const dir=p.sub(camera.position).normalize(),t=(-.8-camera.position.z)/dir.z;const hit=camera.position.clone().addScaledVector(dir,t);racket.position.set(clamp(hit.x,-1.25,1.25),clamp(hit.y-.4,-.05,1.5),-.8);}
 canvas.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'||pointerDown)moveRacket(e);});canvas.addEventListener('pointerdown',e=>{pointerDown=true;canvas.setPointerCapture(e.pointerId);moveRacket(e);canvas.focus();});canvas.addEventListener('pointerup',()=>pointerDown=false);canvas.addEventListener('pointercancel',()=>pointerDown=false);
-window.addEventListener('keydown',e=>{if(club?.active)return;if($('help-dialog').open||['INPUT','SELECT'].includes(document.activeElement?.tagName))return;if(e.code==='Space'){if(document.activeElement?.tagName==='BUTTON')return;e.preventDefault();primary();}if(e.code==='KeyR'&&stage>0){placePlayer();tell('Raquete centralizada.');}if(stage>0&&['ArrowLeft','KeyA','ArrowRight','KeyD'].includes(e.code)){e.preventDefault();aim=clamp(aim+(['ArrowLeft','KeyA'].includes(e.code)?-.12:.12),-.55,.55);racket.rotation.y=-aim;tell(`Mira: ${Math.abs(aim)<.08?'centro':aim<0?'esquerda':'direita'}.`);}if(e.code==='Escape'&&started&&!paused)togglePause();});
+window.addEventListener('keydown',e=>{if(questMenu?.open||club?.active)return;if($('help-dialog').open||['INPUT','SELECT'].includes(document.activeElement?.tagName))return;if(e.code==='Space'){if(document.activeElement?.tagName==='BUTTON')return;e.preventDefault();primary();}if(e.code==='KeyR'&&stage>0){placePlayer();tell('Raquete centralizada.');}if(stage>0&&['ArrowLeft','KeyA','ArrowRight','KeyD'].includes(e.code)){e.preventDefault();aim=clamp(aim+(['ArrowLeft','KeyA'].includes(e.code)?-.12:.12),-.55,.55);racket.rotation.y=-aim;tell(`Mira: ${Math.abs(aim)<.08?'centro':aim<0?'esquerda':'direita'}.`);}if(e.code==='Escape'&&started&&!paused)togglePause();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&started&&!paused)togglePause();});window.addEventListener('blur',()=>{if(!renderer.xr.isPresenting&&started&&!paused)togglePause();});
 
 async function enterXR(mode){
- if(sessionRequest||renderer.xr.isPresenting)return;sessionRequest=true;let session;
+ if(sessionRequest||renderer.xr.isPresenting)return;sessionRequest=true;questMenu.setOpen(false);let session;
  try{session=await navigator.xr.requestSession(mode,{requiredFeatures:['local-floor'],optionalFeatures:['bounded-floor']});xrMode=mode;await renderer.xr.setSession(session);renderer.xr.setFoveation(1);$('experience').classList.add('xr-active');camera.position.set(0,0,0);camera.rotation.set(0,0,0);racket.visible=false;hud.visible=true;world.visible=mode!=='immersive-ar';scene.background=mode==='immersive-ar'?null:sky;scene.fog=mode==='immersive-ar'?null:new T.Fog(0xc4d9d7,65,170);renderer.setClearAlpha(mode==='immersive-ar'?0:1);setStage(mode==='immersive-ar'?1:0);placePlayer(mode!=='immersive-ar');if(mode==='immersive-vr')club.walk();
-  session.addEventListener('visibilitychange',()=>{if(session.visibilityState!=='visible'&&started&&!paused)togglePause();});
+  session.addEventListener('visibilitychange',()=>{if(session.visibilityState!=='visible'){pauseForMenu();questButtons.clear();club.clearInput();}});
  }catch(e){if(session){try{await session.end();}catch{}}tell(`Não foi possível entrar ${mode==='immersive-ar'?'em realidade mista':'em VR'}. ${e.name==='NotAllowedError'?'Autorize a sessão no navegador do Quest.':'Tente abrir o link diretamente no navegador do Quest.'}`);}
  finally{sessionRequest=false;}
 }
-renderer.xr.addEventListener('sessionend',()=>{club.menu();xrMode=null;pendingPlacement=null;hud.visible=false;racket.visible=true;world.visible=true;scene.background=sky;scene.fog=new T.Fog(0xc4d9d7,65,170);renderer.setClearAlpha(1);$('experience').classList.remove('xr-active');camera.fov=58;resize();setStage(0);placePlayer(true);updateUI();});
+renderer.xr.addEventListener('sessionend',()=>{questMenu.setOpen(false);questButtons.clear();for(const item of inputControllers){item.tracked=false;item.bat.visible=false;}club.menu();xrMode=null;pendingPlacement=null;hud.visible=false;racket.visible=true;world.visible=true;scene.background=sky;scene.fog=new T.Fog(0xc4d9d7,65,170);renderer.setClearAlpha(1);$('experience').classList.remove('xr-active');camera.fov=58;resize();setStage(0);placePlayer(true);updateUI();});
 $('vr').onclick=()=>enterXR('immersive-vr');$('mr').onclick=()=>enterXR('immersive-ar');
 async function detectXR(){
  if(!isSecureContext){$('vr').textContent='Quest: abra o link HTTPS';$('xr-note').textContent='Para VR, abra o link publicado com HTTPS no navegador do Quest.';return;}
  if(!navigator.xr){$('vr').textContent='Abra no Quest para jogar em VR';return;}
- try{const [vr,ar]=await Promise.all([navigator.xr.isSessionSupported('immersive-vr'),navigator.xr.isSessionSupported('immersive-ar')]);$('vr').disabled=!vr;$('vr').textContent=vr?'Entrar em VR no Quest':'VR indisponível neste navegador';$('mr').hidden=!ar;if(vr)$('xr-note').textContent='No Quest, use os controles. Escolha a mão da raquete abaixo.';}catch{$('vr').textContent='VR indisponível neste navegador';}
+ try{const [vr,ar]=await Promise.all([navigator.xr.isSessionSupported('immersive-vr'),navigator.xr.isSessionSupported('immersive-ar')]);$('vr').disabled=!vr;$('vr').textContent=vr?'Entrar em VR no Quest':'VR indisponível neste navegador';$('mr').hidden=!ar;if(vr)$('xr-note').textContent='Quest: A agir · B voltar · X ajustes · segure Y centralizar.';}catch{$('vr').textContent='VR indisponível neste navegador';}
 }
 club=createClub({scene,camera,rig,renderer,canvas,teleport:(pos,look)=>placeAt(new T.Vector3(...pos),new T.Vector3(...look)),startTennis:beginTennis,getRacket:activeRacket,getHand:()=>hand,feedback:kind=>{sound(kind==='bounce'?230:kind==='point'?880:kind==='drink'?690:490,.1);if(kind==='hit')haptic();}});
+function questItems(){
+ const kind=setupKind,a=controls.adjustments[kind],save=()=>{saveControls();questMenu.refresh();};
+ const adjust=(key,delta,min,max)=>{a[key]=clamp(a[key]+delta,min,max);save();};
+ const go=id=>{questMenu.setOpen(false);setStage(0);club.walk();club.visit(id);};
+ return [
+  {label:'Voltar ao jogo',run:()=>questMenu.setOpen(false)},
+  {label:'Mão da raquete: '+(hand==='right'?'Direita':'Esquerda'),run:()=>{changeHand(hand==='right'?'left':'right');save();}},
+  {label:'Ajustar raquete: '+EQUIPMENT[kind].name,run:()=>{const all=Object.keys(EQUIPMENT);setupKind=all[(all.indexOf(kind)+1)%all.length];}},
+  {label:'Pegada: '+(controls.grips[kind]==='semiwestern'?'Semi-western':'Continental'),run:()=>{if(kind==='tennis')controls.grips.tennis=controls.grips.tennis==='semiwestern'?'continental':'semiwestern';save();}},
+  {name:'inclinação',label:'Inclinação: '+a.pitch+'°',adjust:true,run:d=>adjust('pitch',d*5,-35,35)},
+  {name:'face',label:'Giro da face: '+a.roll+'°',adjust:true,run:d=>adjust('roll',d*5,-45,45)},
+  {name:'cabo',label:'Encaixe do cabo: '+a.offset+' cm',adjust:true,run:d=>adjust('offset',d,-4,4)},
+  ...[['courts','Ir para o tênis'],['beach','Ir para o beach tennis'],['pickle','Ir para o pickleball'],['bar','Ir para o Ilha Bar'],['entry','Ir para a entrada']].map(([id,label])=>({label,run:()=>go(id)})),
+  {label:'Som: '+(soundOn?'ligado':'desligado'),run:()=>$('sound').click()},
+  {label:'Restaurar encaixe desta raquete',run:()=>{controls.adjustments[kind]={pitch:0,roll:0,offset:0};controls.grips[kind]=EQUIPMENT[kind].grip;save();}}
+ ];
+}
+questMenu=createQuestMenu({scene,renderer,items:questItems,pause:pauseForMenu,getView:()=>({head:liveHead,forward:liveForward})});$('quest-settings').onclick=openQuestMenu;changeHand(hand);
 function resize(){const r=$('experience').getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix();}window.addEventListener('resize',resize);resize();
 placePlayer(true);updateUI();detectXR();$('loading').hidden=true;
 
 let lastTime=0;
 renderer.setAnimationLoop((time,frame)=>{
- const dt=Math.min((time-lastTime)/1000||.016,.04);lastTime=time;if(pendingPlacement&&frame)placeXR(frame);club.update(dt,frame);hud.visible=renderer.xr.isPresenting&&!club.active;
+ const dt=Math.min((time-lastTime)/1000||.016,.04);lastTime=time;updateView(frame);const sources=updateQuest(frame,time/1000);if(pendingPlacement&&frame)placeXR(frame);club.update(dt,frame,questMenu.open,sources);hud.visible=renderer.xr.isPresenting&&!club.active&&!questMenu.open;updateView(frame);clubLife.update(dt,liveHead);
  const bat=activeRacket();if(bat){bat.updateWorldMatrix(true,true);const head=bat.userData.head;head.getWorldPosition(v1);if(previousHead)strokeVelocity.copy(v1).sub(previousHead).divideScalar(Math.max(dt,.001));else strokeVelocity.set(0,0,0);previousHead=v1.clone();
-  if(stage===1){const within=Math.abs(v1.x-prepareRing.position.x)<.25&&Math.abs(v1.y-prepareRing.position.y)<.26&&Math.abs(v1.z-prepareRing.position.z)<.35;readyTime=within?readyTime+dt:Math.max(0,readyTime-dt*1.5);prepareRing.material.color.setHex(within?0xffffff:0xd9ed8d);if(readyTime>=1.1){setStage(2);sound(640,.14);}else if(time-lastHud>120){updateUI();lastHud=time;}}
+  if(stage===1&&!questMenu.open){const within=Math.abs(v1.x-prepareRing.position.x)<.25&&Math.abs(v1.y-prepareRing.position.y)<.26&&Math.abs(v1.z-prepareRing.position.z)<.35;readyTime=within?readyTime+dt:Math.max(0,readyTime-dt*1.5);prepareRing.material.color.setHex(within?0xffffff:0xd9ed8d);if(readyTime>=1.1){setStage(2);sound(640,.14);}else if(time-lastHud>120){updateUI();lastHud=time;}}
  }
- if(!paused){simTime+=dt;
+ if(!paused&&!questMenu.open&&(!renderer.xr.isPresenting||(bat&&renderer.xr.getSession()?.visibilityState==='visible'))){simTime+=dt;
   if(started&&!stageComplete&&stage>=2&&stage!==4&&(!ball||!ball.active)&&simTime>=nextFeed){ball=makeFeed(hand==='right'?1:-1,feedIndex++);attempts++;landing.position.x=ball.p.x;landing.visible=true;ballMesh.visible=ballShadow.visible=true;tell('Olhe a bola. Espere o quique.');}
   if(ball?.active){
    const steps=Math.ceil(dt/(1/180)),step=dt/steps;let previousBall={...ball.p};
@@ -158,7 +220,7 @@ renderer.setAnimationLoop((time,frame)=>{
   if(ball&&!ball.active){ballMesh.visible=false;ballShadow.visible=false;}
  }
  if(bat&&ball?.active){previousRacket={ball:{...ball.p}};previousMatrix.copy(bat.userData.head.matrixWorld).invert();}else previousRacket=null;
- setRacketStyle(racket,club.mode);for(const c of inputControllers)setRacketStyle(c.bat,club.mode);const hasRacket=(stage>0&&stage!==4)||club.playing;racket.visible=!renderer.xr.isPresenting&&hasRacket;for(const c of inputControllers)c.bat.visible=renderer.xr.isPresenting&&c.source?.handedness===hand&&hasRacket;renderer.render(scene,camera);
+ const hasRacket=(stage>0&&stage!==4)||club.playing||questMenu.open;racket.visible=!renderer.xr.isPresenting&&hasRacket&&!questMenu.open;for(const c of inputControllers)c.bat.visible=renderer.xr.isPresenting&&c.tracked&&c.source?.handedness===hand&&hasRacket;renderer.render(scene,camera);
 });
 
 for(const button of document.querySelectorAll('[data-view]'))button.addEventListener('click',()=>{if(stage!==0)return;clubView=button.dataset.view;transition(()=>{if(club.active)club.visit(clubView);else placePlayer(true);});for(const other of document.querySelectorAll('[data-view]'))other.setAttribute('aria-pressed',String(other===button));});

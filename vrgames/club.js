@@ -2,6 +2,8 @@ import * as T from './vendor/three.module.min.js';
 import {moveOnGround,walkDelta,thumbstick,turnAroundHead} from './navigation.js';
 import {SPORTS,sportFeed,sportReturn,stepSport} from './club-sports.js';
 import {racketContact,clamp} from './physics.js';
+import {setRacketStyle} from './racket.js';
+import {EQUIPMENT} from './quest-input.js';
 
 export const PLACES = {
  entry:{name:'Entrada',pos:[26.3,0,-46.8],look:[0,1,-36]},
@@ -21,7 +23,7 @@ const $=id=>document.getElementById(id);
 
 export function createClub({scene,camera,rig,renderer,canvas,teleport,startTennis,getRacket,getHand,feedback=()=>{}}){
  let mode='menu',nearest=null,message='',clock=0,feedAt=0,ball=null,returns=0,hits=0,feedIndex=0,running=false,complete=false,aim=0;
- let turnLatch=false,drag=null,lastUI='',selectedDrink=0,served=false,sipUntil=0,travelIndex=0;
+ let inputLocked=false,currentPlace='entry',turnLatch=false,drag=null,lastUI='',selectedDrink=0,served=false,sipUntil=0,travelIndex=0;
  const keys=new Set(),buttons=new Set(),forward=new T.Vector3(),head=new T.Vector3(),lookEuler=new T.Euler(0,0,0,'YXZ');
  const root=new T.Group();scene.add(root);
  const ballMesh=new T.Mesh(new T.SphereGeometry(.055,16,12),new T.MeshStandardMaterial({color:0xf2bc61,roughness:.7}));root.add(ballMesh);ballMesh.visible=false;
@@ -58,13 +60,13 @@ export function createClub({scene,camera,rig,renderer,canvas,teleport,startTenni
  function clearGame(){ball=null;ballMesh.visible=ballShade.visible=target.visible=cup.visible=false;previousBall=previousInverse=null;running=false;complete=false;served=false;sipUntil=0;clearInput();}
  function menu(){clearGame();mode='menu';halo.visible=hud.visible=false;updateUI();}
  function walk(){clearGame();nearest=null;mode='walk';message='Passeie e chegue perto de uma atividade. Use E ou o botão para interagir.';updateUI();canvas.focus();}
- function visit(id){const place=PLACES[id];if(!place)return;clearInput();teleport(place.pos,place.look);if(mode!=='menu')walk();}
+ function visit(id){const place=PLACES[id];if(!place)return;currentPlace=id;document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===id)));clearInput();teleport(place.pos,place.look);if(mode!=='menu')walk();}
  function exit(){if(mode==='walk'){menu();return;}const destination=mode==='bar'?'bar':mode;walk();if(PLACES[destination])visit(destination);}
  function nextPlace(){travelIndex=(travelIndex+1)%Object.keys(PLACES).length;visit(Object.keys(PLACES)[travelIndex]);}
  function targetPosition(){target.position.set((hits%2===0?-1:1)*(mode==='beach'?1.9:1.45),.075,SPORTS[mode].landing);}
- function placeRacket(){const bat=getRacket();if(!bat||renderer.xr.isPresenting)return;const c=SPORTS[mode];const p=root.localToWorld(new T.Vector3(getHand()==='left'?-.48:.48,mode==='beach'?.88:.83,c.contact));bat.position.copy(p);bat.rotation.set(0,c.yaw-aim,0);}
+ function placeRacket(){const bat=getRacket();if(!bat||renderer.xr.isPresenting)return;setRacketStyle(bat,mode);const c=SPORTS[mode];const p=root.localToWorld(new T.Vector3(getHand()==='left'?-.48:.48,(mode==='beach'?1.28:1.23)-EQUIPMENT[mode].head,c.contact));bat.position.copy(p);bat.rotation.set(0,c.yaw-aim,0);}
  function sport(kind){
-  clearGame();mode=kind;returns=hits=feedIndex=0;aim=0;message=kind==='beach'?'Aqui a bola não pode quicar: encontre a bola no ar.':'Espere um quique. A cozinha é a faixa perto da rede.';
+  clearGame();mode=kind;currentPlace=kind;returns=hits=feedIndex=0;aim=0;message=kind==='beach'?'Aqui a bola não pode quicar: encontre a bola no ar.':'Espere um quique. A cozinha é a faixa perto da rede.';
   const c=SPORTS[kind];root.position.set(c.x,0,c.z);root.rotation.y=c.yaw;root.updateMatrixWorld(true);
   const pos=root.localToWorld(new T.Vector3(0,0,c.eye)),look=root.localToWorld(new T.Vector3(0,1.3,0));teleport(pos.toArray(),look.toArray());placeRacket();target.visible=true;targetPosition();ballMesh.material.color.setHex(kind==='beach'?0xf2b258:0xd5ee57);updateUI();
  }
@@ -88,9 +90,9 @@ export function createClub({scene,camera,rig,renderer,canvas,teleport,startTenni
   $('club-title').textContent=title;$('club-description').textContent=detail;$('club-status').textContent=message;$('club-action').textContent=label;$('club-action').disabled=mode==='walk'&&!nearest;$('club-score').hidden=!playing;$('club-score').textContent=`Devoluções: ${returns} · Alvos: ${hits}/3`;
   document.querySelectorAll('[data-drink]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.drink)===selectedDrink)));
   document.querySelectorAll('[data-club-aim]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.clubAim)===aim)));
-  const hint=mode==='walk'?'Esquerdo: andar · Direito: girar · Segurar: próximo lugar':mode==='bar'?'Direito: escolher bebida · Gatilho: pedir / tomar · Segurar: sair':'Gatilho: começar / pausar · Segurar: voltar ao passeio';
+  const hint=mode==='walk'?'Esquerdo: andar · Direito: girar · X: destinos e ajustes':mode==='bar'?'Direito: bebida · A / gatilho: pedir / tomar · B: sair':'A: começar / pausar · B: passeio · X: ajustar raquete';
   const key=[title,label,message,hits,returns].join('|');if(key===lastUI)return;lastUI=key;
-  ctx.clearRect(0,0,1024,320);ctx.fillStyle='rgba(245,244,228,.95)';ctx.beginPath();ctx.roundRect(0,0,1024,320,25);ctx.fill();ctx.fillStyle='#244536';ctx.font='700 39px sans-serif';ctx.fillText(title,32,58);ctx.font='26px sans-serif';ctx.fillText(playing?`Devoluções: ${returns}    Alvos: ${hits}/3`:mode==='bar'?drinks[selectedDrink].name:'PASSEIO LIVRE',32,104);ctx.font='23px sans-serif';ctx.fillText(hint,32,157);ctx.fillStyle='#214734';ctx.fillRect(24,201,976,91);ctx.fillStyle='#f3f7da';ctx.font='600 29px sans-serif';ctx.fillText('Gatilho: '+label,44,256);hudTexture.needsUpdate=true;
+  ctx.clearRect(0,0,1024,320);ctx.fillStyle='rgba(245,244,228,.95)';ctx.beginPath();ctx.roundRect(0,0,1024,320,25);ctx.fill();ctx.fillStyle='#244536';ctx.font='700 39px sans-serif';ctx.fillText(title,32,58);ctx.font='26px sans-serif';ctx.fillText(playing?`Devoluções: ${returns}    Alvos: ${hits}/3`:mode==='bar'?drinks[selectedDrink].name:'PASSEIO LIVRE',32,104);ctx.font='23px sans-serif';ctx.fillText(hint,32,157);ctx.fillStyle='#214734';ctx.fillRect(24,201,976,91);ctx.fillStyle='#f3f7da';ctx.font='600 29px sans-serif';ctx.fillText('A: '+label,44,256);hudTexture.needsUpdate=true;
  }
  function finish(result){
   if(result.type==='in'){returns++;if(Math.abs(result.x-target.position.x)<1.3&&Math.abs(result.z-target.position.z)<1.25){hits++;feedback('point');message='No alvo! Boa devolução.';}else message='Dentro! Agora tente o lado iluminado.';}
@@ -112,10 +114,11 @@ export function createClub({scene,camera,rig,renderer,canvas,teleport,startTenni
   }
   previousBall={...ball.p};ballMesh.position.set(ball.p.x,ball.p.y,ball.p.z);ballShade.position.set(ball.p.x,.07,ball.p.z);ballMesh.visible=ballShade.visible=ball.active;
  }
- function update(dt,frame){
+ function update(dt,frame,blocked=false,trackedSources=null){
   if(mode==='menu'){hud.visible=halo.visible=false;return;}
-  const session=renderer.xr.getSession();if(document.hidden||$('help-dialog').open||(session&&session.visibilityState!=='visible')){clearInput();return;}
-  clock+=dt;headPose(frame);const sources=Array.from(session?.inputSources||[]),left=thumbstick(sources.find(s=>s.handedness==='left')),right=thumbstick(sources.find(s=>s.handedness==='right'));
+  const session=renderer.xr.getSession();if(blocked||document.hidden||$('help-dialog').open||(session&&session.visibilityState!=='visible')){clearInput();inputLocked=true;hud.visible=false;return;}
+  clock+=dt;headPose(frame);const sources=trackedSources??Array.from(session?.inputSources||[]),left=thumbstick(sources.find(s=>s.handedness==='left')),right=thumbstick(sources.find(s=>s.handedness==='right'));
+  if(inputLocked){if(Math.abs(left.x)+Math.abs(left.y)+Math.abs(right.x)+Math.abs(right.y)>.25)return;inputLocked=false;}
   if(Math.abs(right.x)<.25)turnLatch=false;
   if(mode==='walk'){
    if(Math.abs(right.x)>.6&&!turnLatch){turn(-Math.sign(right.x)*Math.PI/6);turnLatch=true;}
@@ -123,10 +126,10 @@ export function createClub({scene,camera,rig,renderer,canvas,teleport,startTenni
    const input={x:left.x+Number(keys.has('KeyD')||buttons.has('right'))-Number(keys.has('KeyA')||buttons.has('left')),y:left.y+Number(keys.has('KeyW')||keys.has('ArrowUp')||buttons.has('forward'))-Number(keys.has('KeyS')||keys.has('ArrowDown')||buttons.has('back'))};move(input,dt);
    const next=stations.find(s=>Math.hypot(s.x-head.x,s.z-head.z)<s.radius)||null;if(next!==nearest){nearest=next;message=next?'Você chegou. Use E, o gatilho ou o botão para começar.':'Passeie pelo clube ou escolha um destino no alto da tela.';updateUI();}
    halo.visible=Boolean(nearest);if(nearest)halo.position.set(nearest.x,.08,nearest.z);
-  }else{halo.visible=false;if(mode==='bar'&&Math.abs(right.x)>.6&&!turnLatch){setDrink(selectedDrink+Math.sign(right.x));turnLatch=true;}if(SPORTS[mode])updateGame(dt);}
-  hud.visible=renderer.xr.isPresenting;hud.position.copy(head).addScaledVector(forward,1.8);hud.position.y-=.63;hud.lookAt(head);
+  }else{halo.visible=false;if(mode==='bar'&&Math.abs(right.x)>.6&&!turnLatch){setDrink(selectedDrink+Math.sign(right.x));turnLatch=true;}if(SPORTS[mode]&&(!renderer.xr.isPresenting||getRacket()))updateGame(dt);}
+  hud.visible=renderer.xr.isPresenting;hud.scale.setScalar(.63);hud.position.copy(head).addScaledVector(forward,1.55);hud.position.x+=forward.z*(getHand()==='right'?.65:-.65);hud.position.z-=forward.x*(getHand()==='right'?.65:-.65);hud.position.y-=.46;hud.lookAt(head);
   cup.visible=mode==='bar'&&(served||sipUntil>clock);if(cup.visible){
-   const bat=getRacket();if(renderer.xr.isPresenting&&bat){bat.getWorldPosition(cup.position);bat.getWorldQuaternion(cup.quaternion);cup.position.y+=.12;}
+   const bat=getRacket();if(renderer.xr.isPresenting&&bat){const holder=bat.parent||bat;holder.getWorldPosition(cup.position);holder.getWorldQuaternion(cup.quaternion);cup.position.y+=.12;}
    else{camera.updateMatrixWorld();cup.position.set(.32,sipUntil>clock?-.12:-.34,sipUntil>clock?-.42:-.7).applyMatrix4(camera.matrixWorld);cup.quaternion.copy(camera.quaternion);cup.rotateZ(-.12);}
   }
  }
@@ -134,7 +137,7 @@ export function createClub({scene,camera,rig,renderer,canvas,teleport,startTenni
   if(!SPORTS[mode]||renderer.xr.isPresenting)return;const bat=getRacket();if(!bat)return;
   const rect=canvas.getBoundingClientRect(),p=new T.Vector3((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1,.5).unproject(camera);
   const localCamera=root.worldToLocal(camera.position.clone()),localPoint=root.worldToLocal(p),dir=localPoint.sub(localCamera).normalize(),t=(SPORTS[mode].contact-localCamera.z)/dir.z;
-  const hit=localCamera.addScaledVector(dir,t);hit.x=clamp(hit.x,-1.25,1.25);hit.y=clamp(hit.y-.4,-.05,1.7);bat.position.copy(root.localToWorld(hit));bat.rotation.set(0,SPORTS[mode].yaw-aim,0);
+  const hit=localCamera.addScaledVector(dir,t);hit.x=clamp(hit.x,-1.25,1.25);hit.y=clamp(hit.y-EQUIPMENT[mode].head,-.05,1.7);bat.position.copy(root.localToWorld(hit));bat.rotation.set(0,SPORTS[mode].yaw-aim,0);
  }
  $('explore').onclick=walk;$('club-action').onclick=action;$('club-exit').onclick=exit;
  document.querySelectorAll('[data-drink]').forEach(b=>b.onclick=()=>setDrink(Number(b.dataset.drink)));
@@ -149,13 +152,16 @@ export function createClub({scene,camera,rig,renderer,canvas,teleport,startTenni
  canvas.addEventListener('pointermove',e=>{if(mode==='walk'&&drag?.id===e.pointerId&&!renderer.xr.isPresenting){lookEuler.setFromQuaternion(camera.quaternion,'YXZ');lookEuler.y-=(e.clientX-drag.x)*.004;lookEuler.x=clamp(lookEuler.x-(e.clientY-drag.y)*.003,-.9,.9);camera.quaternion.setFromEuler(lookEuler);drag.x=e.clientX;drag.y=e.clientY;}});
  for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,()=>drag=null);
  window.addEventListener('keydown',e=>{
-  if(mode==='menu'||$('help-dialog').open||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;
+  if(mode==='menu'||$('help-dialog').open||$('quest-dialog').open||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;
   if(mode==='walk'&&['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)){e.preventDefault();keys.add(e.code);}
   if((e.code==='KeyE'||(e.code==='Space'&&document.activeElement?.tagName!=='BUTTON'))&&!e.repeat){e.preventDefault();action();}
   if(e.code==='Escape'){e.preventDefault();exit();}
   if(SPORTS[mode]&&['KeyA','KeyD'].includes(e.code)){e.preventDefault();setAim(e.code==='KeyA'?-.36:.36);}
  });
+ function recenter(){if(SPORTS[mode]){const c=SPORTS[mode],pos=root.localToWorld(new T.Vector3(0,0,c.eye)),look=root.localToWorld(new T.Vector3(0,1.3,0));teleport(pos.toArray(),look.toArray());}else if(mode==='bar')teleport(PLACES.bar.pos,PLACES.bar.look);else visit(currentPlace);clearContact();}
+ function clearContact(){previousBall=previousInverse=null;}
+ function refreshRacket(){clearContact();if(SPORTS[mode]){ball=null;ballMesh.visible=ballShade.visible=false;feedAt=clock+1.4;placeRacket();}}
  function suspend(){clearInput();if(SPORTS[mode]&&running){running=false;message='Treino pausado. Continue quando quiser.';updateUI();}}
  window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>{if(!renderer.xr.isPresenting)suspend();});document.addEventListener('visibilitychange',()=>{if(document.hidden)suspend();});
- return {get active(){return mode!=='menu';},get playing(){return Boolean(SPORTS[mode]);},get mode(){return mode;},menu,walk,visit,exit,nextPlace,action,update,pointerRacket,clearInput};
+ return {get running(){return running;},pause:suspend,recenter,clearContact,refreshRacket,get active(){return mode!=='menu';},get playing(){return Boolean(SPORTS[mode]);},get mode(){return mode;},menu,walk,visit,exit,nextPlace,action,update,pointerRacket,clearInput};
 }
