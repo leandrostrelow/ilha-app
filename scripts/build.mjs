@@ -75,7 +75,7 @@ for (const asset of ['ambient-npcs.js', 'club-etiquette.js', 'abandoned-court.js
     await writeFile(modulePath, content.replaceAll(`'./${asset}'`, `'./${asset}?v=${hash}'`));
   }
 }
-for (const asset of ['app.js', 'styles.css', 'world.css', 'tennis.css', 'adventure.css', 'legado.css', 'game-display.css', 'game-install.css', 'arcade-ui.css', 'campaign.css', 'lesson-tutorial.css', 'quick-play.css', 'game-polish.css', 'ending-album.css']) {
+for (const asset of ['app.js', 'styles.css', 'world.css', 'tennis.css', 'adventure.css', 'legado.css', 'game-display.css', 'game-install.css', 'arcade-ui.css', 'campaign.css', 'lesson-tutorial.css', 'quick-play.css', 'game-polish.css', 'ending-album.css', 'vr-link.css']) {
   const content = await readFile(path.join(destination, 'games', asset));
   const hash = createHash('sha256').update(content).digest('hex').slice(0, 16);
   gamesHtml = gamesHtml.replaceAll(`/games/${asset}"`, `/games/${asset}?v=${hash}"`);
@@ -100,6 +100,22 @@ for(const asset of halloweenFiles.filter(name=>/\.(js|css)$/.test(name))){
   halloweenHtml=halloweenHtml.replaceAll('/game2/'+asset+'"','/game2/'+asset+'?v='+hash+'"');
 }
 await writeFile(halloweenHtmlPath,halloweenHtml);
+
+// Version the complete VR module graph, including vendored Three.js imports.
+// The app service worker caches script URLs, so changing only main.js is insufficient.
+const vrModules = ['main.js', 'world.js', 'physics.js', 'xr-placement.js', 'vendor/three.module.min.js', 'vendor/three.core.min.js'];
+for (const module of vrModules) {
+  const file = path.join(destination, 'vrgames', module);
+  const source = await readFile(file, 'utf8');
+  await writeFile(file, source.replace(/(['"])\.\/([^'"]+\.js)\1/g, (_match, quote, name) => `${quote}./${name}?v=${version.version}${quote}`));
+}
+const vrHtmlPath = path.join(destination, 'vrgames/index.html');
+let vrHtml = await readFile(vrHtmlPath, 'utf8');
+for (const asset of ['main.js', 'style.css']) {
+  const hash = createHash('sha256').update(await readFile(path.join(destination, 'vrgames', asset))).digest('hex').slice(0, 16);
+  vrHtml = vrHtml.replaceAll(`/vrgames/${asset}"`, `/vrgames/${asset}?v=${hash}"`);
+}
+await writeFile(vrHtmlPath, vrHtml);
 
 await writeFile(path.join(destination, 'build-meta.json'), JSON.stringify({ version: version.version, timezone: 'America/Sao_Paulo' }, null, 2) + '\n');
 console.log(`Build estatico concluido em dist/ (versao ${version.version}).`);
