@@ -9,6 +9,24 @@ create table private.monthly_invoice_adjustments (
  created_at timestamptz not null default now()
 );
 revoke all on private.monthly_invoice_adjustments from public,anon,authenticated,service_role;
+-- The existing immutable snapshot guard remains in place. Only the due-date
+-- clause accepts a service-side correction backed by this transaction's audit.
+create function private.is_audited_invoice_due_change(p_id uuid,p_old date,p_new date)
+returns boolean language sql security definer set search_path='' as $$
+ select coalesce(auth.jwt()->>'role','')='service_role' and exists(
+ select 1 from private.monthly_invoice_adjustments a
+ where a.id::text=current_setting('ilha.invoice_due_adjustment',true) and a.invoice_id=p_id
+ and a.operation='due_date' and a.old_due_date=p_old and a.new_due_date=p_new
+ and a.created_at=now() and a.remote_proof#>>'{payment,due_date}'=p_new::text
+ and a.remote_proof#>>'{payment,deleted}'='false');
+$$;
+revoke all on function private.is_audited_invoice_due_change(uuid,date,date) from public,anon,authenticated,service_role;
+do $$ declare definition text;needle text:='or new.due_date is distinct from old.due_date';begin
+ definition:=pg_get_functiondef('private.guard_app_payment_invoice_billing_snapshot()'::regprocedure);
+ if (length(definition)-length(replace(definition,needle,'')))/length(needle)<>1 then
+ raise exception 'Snapshot guard changed; review migration before deployment.';end if;
+ execute replace(definition,needle,'or (new.due_date is distinct from old.due_date and not private.is_audited_invoice_due_change(old.id,old.due_date,new.due_date))');
+end;$$;
 create function public.adjust_unpaid_monthly_invoice(
  p_invoice_id uuid,p_actor_id uuid,p_operation text,p_expected_amount numeric,p_invoice_month date,
  p_old_due_date date,p_new_due_date date,p_reason text,
@@ -16,7 +34,7 @@ create function public.adjust_unpaid_monthly_invoice(
 ) returns jsonb language plpgsql security definer set search_path='' as $$
 declare i public.app_payment_invoices%rowtype;p public.app_invoice_provider_payments%rowtype;
  f public.financial_transactions%rowtype;c public.app_clients%rowtype;
- before_state jsonb;revision text;remote_status text;next_status text;target_date date;
+ adjustment_id uuid;before_state jsonb;revision text;remote_status text;next_status text;target_date date;
 begin
  if coalesce(auth.jwt()->>'role','')<>'service_role' then raise exception 'Acesso negado.' using errcode='42501';end if;
  if p_actor_id is null or not exists(select 1 from auth.users where id=p_actor_id)
@@ -68,6 +86,9 @@ begin
  or coalesce(p_snapshot#>>'{payment,payment_date}','')<>'' or coalesce(p_snapshot#>>'{payment,client_payment_date}','')<>''
  then raise exception 'Asaas não comprova o ajuste sem recebimento desta cobrança.';end if;
  next_status:=case when p_operation='cancel' then 'CANCELLED' else remote_status end;
+ insert into private.monthly_invoice_adjustments(invoice_id,actor_id,operation,old_due_date,new_due_date,reason,before_state,remote_proof)
+ values(i.id,p_actor_id,p_operation,p_old_due_date,p_new_due_date,trim(p_reason),before_state,p_snapshot) returning id into adjustment_id;
+ perform pg_catalog.set_config('ilha.invoice_due_adjustment',adjustment_id::text,true);
  perform pg_catalog.set_config('ilha.monthly_billing_write','1',true);
  update public.app_invoice_provider_payments set status=next_status,safe_snapshot=p_snapshot,last_event_at=now(),updated_at=now(),
  next_reconciliation_at=case when next_status='CANCELLED' then null else now()+interval '1 hour' end where id=p.id;
@@ -76,8 +97,7 @@ begin
  notes=concat_ws(E'\n',nullif(notes,''),'Ajuste administrativo auditado: '||trim(p_reason)),updated_at=now() where id=i.id;
  update public.financial_transactions set due_date=target_date,updated_at=now() where id=f.id;
  perform private.sync_app_invoice_financial_transaction(i.id,next_status,null);
- insert into private.monthly_invoice_adjustments(invoice_id,actor_id,operation,old_due_date,new_due_date,reason,before_state,remote_proof)
- values(i.id,p_actor_id,p_operation,p_old_due_date,p_new_due_date,trim(p_reason),before_state,p_snapshot);
+ perform pg_catalog.set_config('ilha.invoice_due_adjustment','',true);
  return jsonb_build_object('state','COMPLETED','invoiceId',i.id,'dueDate',target_date,'providerStatus',next_status,'providerPaymentId',p.provider_payment_id);
 end;$$;
 revoke all on function public.adjust_unpaid_monthly_invoice(uuid,uuid,text,numeric,date,date,date,text,text,jsonb,timestamptz) from public,anon,authenticated,service_role;

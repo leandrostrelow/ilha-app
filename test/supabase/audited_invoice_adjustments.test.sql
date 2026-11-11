@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(14);
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 insert into auth.users(id,email,raw_app_meta_data,raw_user_meta_data) values ('78000000-0000-4000-8000-000000000001','adjust@tests.invalid','{"provider":"email","providers":["email"]}','{"app_context":"public"}');
 insert into app_clients(id,full_name,email,due_day,status,client_type) values ('78000000-0000-4000-8000-000000000001','Synthetic adjustment','adjust@tests.invalid',25,'ATIVO','aluno');
@@ -20,6 +20,7 @@ select throws_ok($$select pg_temp.adjust((select v from evidence),(select jsonb_
 select is(pg_temp.adjust(v,proof,clock_timestamp())->>'state','COMPLETED','apply verified date') from evidence;
 select ok((select i.due_date='2026-11-25' and f.due_date=i.due_date and i.status='AGUARDANDO' and f.status='ABERTO' and p.status='PENDING' and i.paid_at is null and f.paid_at is null from app_payment_invoices i join app_invoice_provider_payments p on p.invoice_id=i.id join financial_transactions f on f.app_payment_invoice_id=i.id where i.id='78000000-0000-4000-8000-000000000021'),'invoice provider and ledger coordinated without receipt');
 select is(pg_temp.adjust()->>'state','COMPLETED','retry idempotent');
+select throws_ok($$update app_payment_invoices set due_date='2026-11-26' where id='78000000-0000-4000-8000-000000000021'$$,'23514','Valor, vencimento e composição ficam congelados após a emissão.','direct changes remain blocked after audited adjustment');
 select is((select count(*)::int from private.monthly_invoice_adjustments),1,'one immutable audit');
 create temporary table cancel_evidence as select pg_temp.adjust(null,null,null,null,'cancel','2026-11-25')->>'version' as v,jsonb_set(proof,'{payment,deleted}','true') as proof from evidence;
 select is(pg_temp.adjust(v,proof,clock_timestamp(),null,'cancel','2026-11-25')->>'state','COMPLETED','verified cancellation') from cancel_evidence;
