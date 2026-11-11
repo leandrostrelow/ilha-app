@@ -25,7 +25,7 @@ function texture(kind){
   ctx.fillStyle='#efeee7';ctx.fillRect(0,0,256,256);
   for(let y=4;y<256;y+=12)for(let x=4;x<256;x+=12){ctx.fillStyle='#b8b9b1';ctx.beginPath();ctx.arc(x+(y%24?3:0),y,.7,0,Math.PI*2);ctx.fill();}
  }
- const map=new T.CanvasTexture(c);map.colorSpace=T.SRGBColorSpace;map.wrapS=map.wrapT=T.RepeatWrapping;map.anisotropy=4;return map;
+ const map=new T.CanvasTexture(c);map.colorSpace=T.SRGBColorSpace;map.wrapS=map.wrapT=T.RepeatWrapping;map.anisotropy=4;if(kind==='carbon')map.repeat.set(8,8);return map;
 }
 function label(parent,text,w,h,x,y,z,angle=0,color='#e3efc6'){
  const c=document.createElement('canvas');c.width=512;c.height=96;const ctx=c.getContext('2d');ctx.fillStyle=color;ctx.font='700 68px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,256,49,500);
