@@ -34000,7 +34000,7 @@ const colors = tournamentArtPalette({
       openClient: async function (id, finance) {
         requireClubPermission('clients.read');
         await loadOpsData(true);
-        openClientsModule();
+        if (!finance) openClientsModule();
         openClientModal(id, finance ? 'Finance' : 'Info');
       }
     });
