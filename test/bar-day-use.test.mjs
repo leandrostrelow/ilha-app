@@ -58,3 +58,18 @@ test('PII and financial writes are permission-scoped and history cannot be direc
  assert.match(sql,/create function private.bar_record_day_use[\s\S]*?security definer set search_path=''/);
  assert.match(sql,/set status='CANCELADO',updated_at=now\(\) where day_use_pass_id=p_id/);
 });
+test('monthly tab ignores receipt period and hidden kind filter; exposes only latest active/expired passes',()=>{
+ const sandbox={window:{},document:{addEventListener(){}},setInterval(){}};vm.runInNewContext(client,sandbox);
+ const {filterPasses}=sandbox.window.IlhaDayUse;
+ const mk=(id,kind,paid_on,expires_on,status)=>({id,kind,paid_on,expires_on,status,bar_day_use_customers:{full_name:'Pessoa de Teste',phone:'5527999991111'}});
+ const data=[mk('expired','MENSAL','2026-10-01','2026-10-31','VENCIDO'),mk('soon','MENSAL','2026-10-20','2026-11-19','ATIVO'),mk('active','MENSAL','2026-11-12','2026-12-12','ATIVO'),mk('old','MENSAL','2026-09-01','2026-10-01','RENOVADO'),mk('daily','DIARIO','2026-11-12','2026-11-13','ATIVO'),mk('cancelled','MENSAL','2026-11-12','2026-12-12','CANCELADO')];
+ const options={tab:'monthly',kind:'DIARIO',status:'ATUAIS',query:'',bounds:{from:'2026-11-12',to:'2026-11-12'},receivedOnly:true,day:'2026-11-12'};
+ const ids=o=>Array.from(filterPasses(data,{...options,...o},r=>r.status),r=>r.id);
+ assert.deepEqual(ids({}),['expired','soon','active']);
+ assert.deepEqual(ids({status:'VENCIDO'}),['expired']);
+ assert.deepEqual(ids({status:'PROXIMOS'}),['soon']);
+ assert.deepEqual(ids({query:'not found'}),[]);
+ assert.deepEqual(ids({query:'999991111'}),['expired','soon','active']);
+ assert.deepEqual(ids({tab:'daily',status:'TODOS',kind:'MENSAL'}),['daily']);
+ assert.deepEqual(ids({tab:'receipts',kind:'MENSAL',status:'ATIVO'}),['active']);
+});

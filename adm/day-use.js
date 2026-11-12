@@ -9,9 +9,10 @@
   const label=k=>k==='MENSAL'?'Mensal':'Diário';
   const method=k=>({PIX:'Pix recebido',DINHEIRO:'Dinheiro',CARTAO_CREDITO:'Cartão de crédito',CARTAO_DEBITO:'Cartão de débito'}[k]||k);
   const phoneLabel=v=>String(v||'').replace(/^55(\d{2})(\d{4,5})(\d{4})$/,'($1) $2-$3');
-  let ctx,key='',rows=[],plans=[],loading=false,loaded=false,last=0,error='',busy=false,request=null,focusBefore=null;
+  let ctx,key='',rows=[],plans=[],customers=[],loading=false,loaded=false,last=0,error='',busy=false,request=null,focusBefore=null;
   let latestMonthly=new Map();
-  let query='',kind='TODOS',status='TODOS',period='HOJE',receivedOnly=false,reportMonth=today().slice(0,7),refreshAgain=false;
+  let tab='monthly',invite=null;
+  let query='',kind='TODOS',status='ATUAIS',period='HOJE',receivedOnly=false,reportMonth=today().slice(0,7),refreshAgain=false;
   const modal=()=>document.getElementById('dayUseDialog');
   const person=r=>r.bar_day_use_customers||{};
   const sorted=()=>rows.slice().sort((a,b)=>(b.paid_on+' '+b.created_at+' '+b.id).localeCompare(a.paid_on+' '+a.created_at+' '+a.id));
@@ -84,7 +85,7 @@
     ctx=context;key=context.sessionKey;
     if(ctx.canRead()&&!loading&&Date.now()-last>30000)refresh();
   }
-  function reset(){key='';ctx=null;rows=[];plans=[];latestMonthly=new Map();loaded=false;error='';last=0;request=null;busy=false;loading=false;query='';kind='TODOS';status='TODOS';period='HOJE';receivedOnly=false;reportMonth=today().slice(0,7);refreshAgain=false;modal()?.remove();}
+  function reset(){key='';ctx=null;rows=[];plans=[];customers=[];tab='monthly';invite=null;latestMonthly=new Map();loaded=false;error='';last=0;request=null;busy=false;loading=false;query='';kind='TODOS';status='ATUAIS';period='HOJE';receivedOnly=false;reportMonth=today().slice(0,7);refreshAgain=false;modal()?.remove();}
   async function refresh(force=false){
     if(!ctx?.canRead())return;
     if(loading){if(force)refreshAgain=true;return;}
@@ -94,10 +95,11 @@
       if(modal()?.open&&ctx.refreshCommands)await ctx.refreshCommands(true);
       const data=ctx.demo()?ctx.demoData():await Promise.all([
         ctx.read('bar_day_use_passes?select=*,bar_day_use_customers(full_name,phone,deleted_at,delete_reason)&order=paid_on.desc,created_at.desc,id.desc'),
-        ctx.read('bar_day_use_plans?select=*,bar_products(id,name,sale_price,active)&order=kind.asc')
+        ctx.read('bar_day_use_plans?select=*,bar_products(id,name,sale_price,active)&order=kind.asc'),
+        ctx.read('bar_day_use_customers?select=id,full_name,phone,created_at,deleted_at&order=created_at.desc')
       ]);
       if(epoch!==key)return;
-      [rows,plans]=data;loaded=true;error='';
+      [rows,plans]=data;customers=data[2]||Array.from(new Map(rows.map(r=>[r.customer_id,{id:r.customer_id,...person(r)}])).values());loaded=true;error='';
       latestMonthly=new Map();for(const row of sorted())if(row.kind==='MENSAL'&&!row.cancelled_at&&!latestMonthly.has(row.customer_id))latestMonthly.set(row.customer_id,row.id);
     }catch(e){if(epoch===key)error=e.message||'Falha ao atualizar Day Use.';}
     finally{if(epoch===key){loading=false;paintCard();renderList();if(refreshAgain){refreshAgain=false;refresh(true);}}}
@@ -106,8 +108,18 @@
   function skeleton(){
     if(modal())return;
     const el=document.createElement('dialog');el.id='dayUseDialog';el.className='day-use-dialog';
-    el.innerHTML='<header class="du-heading"><div><span class="du-eyebrow">ILHA BAR / BEACH TENNIS</span><h2>Day Use</h2><p>Recebimentos, pessoas e validade em um só lugar.</p></div><button class="ghost-btn" type="button" data-du-close aria-label="Fechar Day Use">Fechar ×</button></header><div class="du-notice" id="duNotice" role="status"></div><div class="du-metrics" id="duMetrics"></div><div class="du-period-toolbar"><label>Período<select id="duPeriod"><option value="HOJE">Hoje</option><option value="SEMANA">Últimos 7 dias</option><option value="MES">Mensal</option><option value="TODOS">Todos os períodos</option></select></label><label id="duMonthLabel" hidden>Mês<input type="month" id="duMonth" value="'+reportMonth+'"></label><label>Pagamentos<select id="duReceipt"><option value="TODOS">Todos os lançamentos</option><option value="RECEBIDOS">Somente recebidos / quitados</option></select></label></div><div class="du-toolbar"><label>Buscar pessoa<input id="duSearch" type="search" placeholder="Nome ou telefone"></label><label>Tipo<select id="duKind"><option value="TODOS">Diário e mensal</option><option value="DIARIO">Day Use diário</option><option value="MENSAL">Day Use mensal</option></select></label><label>Situação<select id="duStatus"><option value="ATUAIS">Cadastros atuais</option><option value="TODOS" selected>Todo o histórico</option><option value="ATIVO">Ativos</option><option value="VENCIDO">Vencidos</option><option value="CANCELADO">Cancelados</option><option value="EXCLUIDO">Excluídos</option></select></label><button class="ghost-btn" type="button" data-du-refresh>Atualizar</button><button class="primary-btn" type="button" data-du-new>+ Registrar pagamento</button></div><div id="duEditor" hidden></div><section class="du-command-report" id="duCommandReport"></section><h3 class="du-register-heading">Pagamentos registrados no Day Use</h3><div class="du-list-meta" id="duListMeta"></div><div class="du-list" id="duList"></div><p class="du-footnote">Mensal: 30 dias corridos a partir do pagamento. Diário: válido na data paga. Vencimento não gera cobrança automática. Vendas antigas de Day Use continuam no financeiro original; não registre novamente valores já recebidos.</p>';
+    el.innerHTML=`<header class="du-heading"><div><span class="du-eyebrow">ILHA BAR / BEACH TENNIS</span><h2>Day Use</h2><p>Mensalistas, diárias e recebimentos organizados.</p></div><button class="ghost-btn" type="button" data-du-close aria-label="Fechar Day Use">Fechar ×</button></header>
+      <div class="du-notice" id="duNotice" role="status"></div><div class="du-metrics" id="duMetrics"></div>
+      <div class="du-tabs" role="tablist" aria-label="Gerenciar Day Use">${[['monthly','Mensalistas'],['daily','Diárias'],['receipts','Recebimentos'],['customers','Cadastros']].map(([id,name])=>`<button type="button" role="tab" id="duTab-${id}" aria-controls="duPanel" data-du-tab="${id}">${name}</button>`).join('')}</div>
+      <section id="duPanel" role="tabpanel" tabindex="0"><div class="du-section-heading"><div><h3 id="duSectionTitle"></h3><p id="duSectionHint"></p></div><div class="du-top-actions"><button class="ghost-btn" type="button" data-du-refresh>Atualizar</button><button class="primary-btn" type="button" data-du-new>+ Registrar pagamento</button></div></div>
+      <div id="duInvite" class="du-invite" hidden><div><strong>Cadastro pelo celular</strong><p>Envie um link individual para a pessoa preencher nome e WhatsApp. O pagamento é registrado depois pela equipe.</p></div><button class="ghost-btn" type="button" data-du-invite>Criar link de cadastro</button><div id="duInviteResult" hidden></div></div>
+      <div class="du-period-toolbar"><label>Período<select id="duPeriod"><option value="HOJE">Hoje</option><option value="SEMANA">Últimos 7 dias</option><option value="MES">Mensal</option><option value="TODOS">Todos os períodos</option></select></label><label id="duMonthLabel" hidden>Mês<input type="month" id="duMonth" value="${reportMonth}"></label><label>Pagamentos<select id="duReceipt"><option value="TODOS">Todos os lançamentos</option><option value="RECEBIDOS">Somente recebidos / quitados</option></select></label></div>
+      <div class="du-toolbar"><label>Buscar pessoa<input id="duSearch" type="search" placeholder="Nome ou telefone"></label><label id="duKindLabel">Tipo<select id="duKind"><option value="TODOS">Diário e mensal</option><option value="DIARIO">Day Use diário</option><option value="MENSAL">Day Use mensal</option></select></label><label>Situação<select id="duStatus"></select></label></div>
+      <div id="duEditor" hidden></div><div class="du-list-meta" id="duListMeta" role="status"></div><div class="du-list" id="duList"></div><section class="du-command-report" id="duCommandReport"></section></section>
+      <p class="du-footnote">Mensal: 30 dias a partir do pagamento. Diário: válido na data paga. A cobrança pelo WhatsApp é enviada manualmente. Registre apenas valores realmente recebidos; lançamentos das comandas já entram no financeiro do bar.</p>`;
     document.body.append(el);
+    configureTab();
+    el.querySelector('.du-tabs').addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const tabs=[...el.querySelectorAll('[data-du-tab]')],index=tabs.indexOf(e.target);const next=e.key==='Home'?0:e.key==='End'?tabs.length-1:(index+(e.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;tabs[next].click();tabs[next].focus();});
     el.addEventListener('cancel',e=>{if(busy)e.preventDefault();});
     el.addEventListener('close',()=>{if(!busy&&document.getElementById('duEditor')){document.getElementById('duEditor').hidden=true;focusBefore?.focus?.();}});
     el.addEventListener('input',e=>{if(e.target.id==='duSearch'){query=e.target.value;renderList();}if(['duPaidOn','duPlan'].includes(e.target.id))preview();});
@@ -117,15 +129,65 @@
       if(b.hasAttribute('data-du-close'))el.close();
       if(b.hasAttribute('data-du-refresh'))await refresh(true);
       if(b.hasAttribute('data-du-new'))editor();
+      if(b.dataset.duTab){tab=b.dataset.duTab;status=tab==='monthly'?'ATUAIS':tab==='customers'?'CADASTRADOS':'TODOS';document.getElementById('duEditor').hidden=true;configureTab();renderList();}
+      if(b.hasAttribute('data-du-invite'))await createInvite(b);
+      if(b.hasAttribute('data-du-copy')){try{await navigator.clipboard.writeText(invite.url);notice('Link copiado. Envie para uma pessoa.');}catch{document.getElementById('duInviteUrl').select();notice('Selecione e copie o link abaixo.');}}
       if(b.closest('.du-more'))b.closest('.du-more').open=false;
       if(b.dataset.duCommand){el.close();ctx.openCommand?.(b.dataset.duCommand);}
-      if(b.dataset.duRenew)editor(rows.find(r=>r.id===b.dataset.duRenew));
-      if(b.dataset.duEdit)editor(rows.find(r=>r.id===b.dataset.duEdit),'edit');
-      if(b.dataset.duCancel)editor(rows.find(r=>r.id===b.dataset.duCancel),'cancel');
-      if(b.dataset.duDelete)editor(rows.find(r=>r.id===b.dataset.duDelete),'delete');
+      if(b.dataset.duRenew)editor(findRow(b.dataset.duRenew));
+      if(b.dataset.duEdit)editor(findRow(b.dataset.duEdit),'edit');
+      if(b.dataset.duCancel)editor(findRow(b.dataset.duCancel),'cancel');
+      if(b.dataset.duDelete)editor(findRow(b.dataset.duDelete),'delete');
       if(b.hasAttribute('data-du-dismiss'))document.getElementById('duEditor').hidden=true;
     });
     el.addEventListener('submit',save);
+  }
+  function configureTab(){
+    const titles={monthly:['Mensalistas','Veja todos os mensais atuais e quem precisa renovar, independente da data em que pagou.'],daily:['Diárias','Acessos registrados e Day Use lançados nas comandas no período escolhido.'],receipts:['Recebimentos','Consulte pagamentos diretos e comandas, com filtros por período e tipo.'],customers:['Cadastros','Pessoas cadastradas, inclusive as que ainda não têm um pagamento registrado.']};
+    document.getElementById('duPanel').setAttribute('aria-labelledby','duTab-'+tab);
+    modal().querySelectorAll('[data-du-tab]').forEach(b=>{b.setAttribute('aria-selected',String(b.dataset.duTab===tab));b.tabIndex=b.dataset.duTab===tab?0:-1;});
+    document.getElementById('duSectionTitle').textContent=titles[tab][0];document.getElementById('duSectionHint').textContent=titles[tab][1];
+    modal().querySelector('.du-period-toolbar').hidden=!['daily','receipts'].includes(tab);
+    document.getElementById('duKindLabel').hidden=tab!=='receipts';
+    document.getElementById('duInvite').hidden=!ctx.canWrite()||tab!=='customers';
+    const options=tab==='monthly'?[['ATUAIS','Todos os mensalistas'],['ATIVO','Ativos'],['PROXIMOS','Vencem em até 7 dias'],['VENCIDO','Vencidos']]:tab==='customers'?[['CADASTRADOS','Cadastros atuais'],['SEM_PAGAMENTO','Sem pagamento registrado'],['EXCLUIDO','Excluídos']]:[['TODOS','Todo o histórico'],['ATIVO','Ativos'],['VENCIDO','Vencidos'],['CANCELADO','Cancelados'],['EXCLUIDO','Excluídos']];
+    document.getElementById('duStatus').innerHTML=options.map(([value,name])=>'<option value="'+value+'"'+(value===status?' selected':'')+'>'+name+'</option>').join('');
+  }
+  // Monthly membership follows the latest pass, not the receipt date filter.
+  function filterPasses(data,options,getState){
+    const {tab,kind,status,query,bounds,receivedOnly,day}=options,q=query.toLocaleLowerCase('pt-BR').trim(),digits=q.replace(/\D/g,'');
+    return data.filter(r=>{
+      const p=person(r),s=getState(r);
+      if(q&&!String(p.full_name||'').toLocaleLowerCase('pt-BR').includes(q)&&!(digits&&String(p.phone||'').includes(digits)))return false;
+      if(tab==='monthly')return r.kind==='MENSAL'&&['ATIVO','VENCIDO'].includes(s)&&(status==='ATUAIS'||s===status||(status==='PROXIMOS'&&s==='ATIVO'&&r.expires_on<=shift(day,7)));
+      if(!inRange(r.paid_on,bounds)||(receivedOnly&&r.cancelled_at))return false;
+      if(tab==='daily'?r.kind!=='DIARIO':kind!=='TODOS'&&r.kind!==kind)return false;
+      return status==='TODOS'||s===status;
+    });
+  }
+  function findRow(id){return rows.find(r=>r.id===id)||customers.filter(c=>'customer-'+c.id===id).map(c=>({id,customer_id:c.id,kind:'MENSAL',bar_day_use_customers:c}))[0];}
+  function renderCustomers(){
+    const q=query.toLocaleLowerCase('pt-BR').trim(),digits=q.replace(/\D/g,'');
+    const paid=new Set(rows.filter(r=>!r.cancelled_at).map(r=>r.customer_id));
+    const matches=customers.filter(c=>(status==='EXCLUIDO'?c.deleted_at:!c.deleted_at)&&(status!=='SEM_PAGAMENTO'||!paid.has(c.id))&&(!q||c.full_name.toLocaleLowerCase('pt-BR').includes(q)||(digits&&c.phone.includes(digits))));
+    document.getElementById('duListMeta').textContent=loaded?matches.length+' cadastro(s)':'Carregando cadastros…';
+    document.getElementById('duList').innerHTML=matches.map(c=>{const id='customer-'+c.id,editable=ctx.canWrite()&&!c.deleted_at;return '<article class="du-person"><div class="du-person-main"><strong>'+esc(c.full_name)+'</strong><a href="https://wa.me/'+esc(c.phone)+'" target="_blank" rel="noopener noreferrer">'+esc(phoneLabel(c.phone))+'</a></div><div class="du-dates"><span class="du-badge">'+(c.deleted_at?'Excluído':paid.has(c.id)?'Possui pagamentos':'Sem pagamento registrado')+'</span></div><div class="du-actions">'+(editable?'<button class="small-btn du-renew" type="button" data-du-renew="'+id+'">Registrar pagamento</button><details class="du-more"><summary>Mais opções ⌄</summary><div class="du-more-panel"><button type="button" class="small-btn" data-du-edit="'+id+'">Editar cadastro</button><button type="button" class="small-btn du-danger" data-du-delete="'+id+'">Excluir cadastro</button></div></details>':'')+'</div></article>';}).join('')||'<div class="lesson-empty-state">Nenhum cadastro neste filtro. Use o link acima para convidar uma pessoa.</div>';
+  }
+  async function createInvite(button){
+    if(!ctx.canWrite())return;
+    if(ctx.demo()){notice('O link de cadastro fica disponível no painel conectado. A demonstração não cria convites reais.');return;}
+    const epoch=key,operationCtx=ctx;busy=true;button.disabled=true;
+    try{
+      if(!ctx.canPersist())throw Error('Atualize a conexão antes de criar o link.');
+      const response=await operationCtx.write('bar_create_day_use_invite',{}),result=Array.isArray(response)?response[0]:response;
+      if(epoch!==key)return;
+      if(!/^[a-f0-9]{64}$/.test(result?.token||''))throw Error('Não foi possível criar o link. Tente novamente.');
+      invite={url:location.origin+'/day-use#token='+result.token,expires:result.expires_at};
+      const output=document.getElementById('duInviteResult');output.hidden=false;
+      output.innerHTML='<label>Link individual · válido até '+date(invite.expires)+'<input id="duInviteUrl" readonly value="'+esc(invite.url)+'"></label><div class="du-invite-actions"><button type="button" class="small-btn" data-du-copy>Copiar link</button><a class="small-btn du-whatsapp" href="https://wa.me/?text='+encodeURIComponent('Olá! Preencha seu cadastro do Beach Tennis do Ilha por este link individual: '+invite.url)+'" target="_blank" rel="noopener noreferrer">Enviar pelo WhatsApp</a></div><small>Um link para cada pessoa. Se precisar cadastrar outra, crie um novo link.</small>';
+      notice('Link pronto para enviar. O cadastro aparecerá na aba Cadastros.');
+    }catch(e){if(epoch===key)notice(e.message||'Não foi possível criar o link.',true);}
+    finally{busy=false;button.disabled=false;}
   }
   async function open(mode){
     if(!ctx?.canRead())return;
@@ -136,35 +198,30 @@
   function renderList(){
     if(!modal()?.open)return;
     const m=metrics(),bounds=reportBounds();
-    const periodRows=rows.filter(r=>!r.cancelled_at&&inRange(r.paid_on,bounds)&&(kind==='TODOS'||r.kind===kind));
-    const periodCommands=commands(true).filter(r=>kind==='TODOS'||r.kind===kind);
+    const metricKind=tab==='daily'?'DIARIO':tab==='receipts'?kind:'TODOS';
+    const periodRows=rows.filter(r=>!r.cancelled_at&&inRange(r.paid_on,bounds)&&(metricKind==='TODOS'||r.kind===metricKind));
+    const periodCommands=commands(true).filter(r=>metricKind==='TODOS'||r.kind===metricKind);
     const dailyCount=periodRows.filter(r=>r.kind==='DIARIO').length+periodCommands.filter(r=>r.kind==='DIARIO').reduce((sum,r)=>sum+r.quantity,0);
     const monthBounds=periodBounds('MES',today());
     const monthDirect=rows.filter(r=>!r.cancelled_at&&inRange(r.paid_on,monthBounds)).reduce((sum,r)=>sum+Number(r.amount),0);
     const monthCommands=commandReport(ctx?.commandSnapshot?.(),plans,{bounds:monthBounds,receivedOnly:true}).reduce((sum,r)=>sum+r.amount,0);
-    document.getElementById('duMetrics').innerHTML=[['Mensais ativos',m.active],['Mensais vencidos',m.expired],['Diários · '+periodText(),dailyCount],['Recebido no mês · '+today().slice(0,7).split('-').reverse().join('/'),loading?'Carregando…':error?'Indisponível':money(monthDirect+monthCommands)]].map(([t,v])=>'<article><span>'+t+'</span><strong>'+v+'</strong></article>').join('');
-    document.getElementById('duMetrics').lastElementChild.insertAdjacentHTML('beforeend','<small>Pagamentos diretos + itens Day Use de comandas quitadas. Mês atual, independente dos filtros.</small>');
+    document.getElementById('duMetrics').innerHTML=[['Mensais ativos',m.active],['Mensais vencidos',m.expired],['Diários · '+(['daily','receipts'].includes(tab)?periodText():'Hoje'),['daily','receipts'].includes(tab)?dailyCount:m.daily],['Recebido no mês · '+today().slice(0,7).split('-').reverse().join('/'),loading?'Carregando…':error?'Indisponível':money(monthDirect+monthCommands)]].map(([t,v])=>'<article><span>'+t+'</span><strong>'+v+'</strong></article>').join('');
+    document.getElementById('duMetrics').lastElementChild.insertAdjacentHTML('beforeend','<small title="Mês atual, independente dos filtros. Soma pagamentos diretos e itens Day Use de comandas totalmente quitadas.">Diretos + comandas quitadas</small>');
     if(error)notice(error,true);
     document.querySelector('[data-du-new]').disabled=!loaded||!ctx.canWrite();
-    renderCommands();
-    const q=query.toLocaleLowerCase('pt-BR').trim(),digits=q.replace(/\D/g,'');
-    const matches=sorted().filter(r=>{
-      const p=person(r),s=state(r);
-      if(!inRange(r.paid_on,bounds)||(receivedOnly&&r.cancelled_at))return false;
-      if(kind!=='TODOS'&&r.kind!==kind)return false;
-      if(q&&!p.full_name.toLocaleLowerCase('pt-BR').includes(q)&&!(digits&&p.phone.includes(digits)))return false;
-      if(status==='ATUAIS')return r.kind==='MENSAL'?['ATIVO','VENCIDO'].includes(s):r.paid_on===today()&&!['CANCELADO','EXCLUIDO'].includes(s);
-      return status==='TODOS'||s===status;
-    });
+    document.getElementById('duCommandReport').hidden=!['daily','receipts'].includes(tab);
+    if(['daily','receipts'].includes(tab))renderCommands();
+    const matches=filterPasses(sorted(),{tab,kind,status,query,bounds,receivedOnly,day:today()},state);
+    if(tab==='customers'){renderCustomers();return;}
     document.getElementById('duListMeta').textContent=loaded?matches.length+' registro(s) neste filtro':'Carregando Day Use…';
     document.getElementById('duList').innerHTML=matches.map(r=>{
       const p=person(r),s=state(r),editable=ctx.canWrite()&&!p.deleted_at;
-      return '<article class="du-person"><div class="du-person-main"><strong>'+esc(p.full_name)+'</strong><a href="https://wa.me/'+esc(p.phone)+'" target="_blank" rel="noopener">'+esc(phoneLabel(p.phone))+'</a><small>'+esc(label(r.kind))+' · '+money(r.amount)+' · '+esc(method(r.payment_method))+'</small></div><div class="du-dates"><span>Pago em <b>'+date(r.paid_on)+'</b></span><span>'+(r.kind==='MENSAL'?'Vence em <b>'+date(r.expires_on):'Válido em <b>'+date(r.paid_on))+'</b></span><span class="du-badge du-'+s.toLowerCase()+'">'+({ATIVO:'Ativo',VENCIDO:'Vencido',CANCELADO:'Cancelado',RENOVADO:'Renovado',EXCLUIDO:'Excluído'}[s])+'</span></div><div class="du-actions"><div class="du-primary-actions">'+(editable?'<button type="button" class="small-btn du-renew" data-du-renew="'+r.id+'">'+(r.kind==='MENSAL'?'Renovar':'Novo diário')+'</button>':'')+(!p.deleted_at&&!r.cancelled_at&&s!=='RENOVADO'?'<a class="small-btn du-whatsapp" href="'+esc(whatsappUrl(r))+'" target="_blank" rel="noopener noreferrer" aria-label="Preparar cobrança de '+esc(p.full_name)+' no WhatsApp">WhatsApp</a>':'')+'</div>'+(editable?'<details class="du-more"><summary>Mais opções <span aria-hidden="true">⌄</span></summary><div class="du-more-panel"><button type="button" class="small-btn" data-du-edit="'+r.id+'">Editar cadastro</button>'+(!r.cancelled_at?'<button type="button" class="small-btn du-danger" data-du-cancel="'+r.id+'">Cancelar pagamento</button>':'')+'<button type="button" class="small-btn du-danger" data-du-delete="'+r.id+'">Excluir cadastro</button></div></details>':'')+'</div>'+(r.cancelled_at?'<p class="du-cancel-reason">'+esc(r.cancel_reason)+'</p>':'')+'</article>';
+      return '<article class="du-person"><div class="du-person-main"><strong>'+esc(p.full_name)+'</strong><a href="https://wa.me/'+esc(p.phone)+'" target="_blank" rel="noopener">'+esc(phoneLabel(p.phone))+'</a><small>'+esc(label(r.kind))+' · '+money(r.amount)+' · '+esc(method(r.payment_method))+'</small></div><div class="du-dates"><span>Pago em <b>'+date(r.paid_on)+'</b></span><span>'+(r.kind==='MENSAL'?'Vence em <b>'+date(r.expires_on):'Válido em <b>'+date(r.paid_on))+'</b></span><span class="du-badge du-'+s.toLowerCase()+'">'+({ATIVO:'Ativo',VENCIDO:'Vencido',CANCELADO:'Cancelado',RENOVADO:'Renovado',EXCLUIDO:'Excluído'}[s])+'</span></div><div class="du-actions"><div class="du-primary-actions">'+(editable?'<button type="button" class="small-btn du-renew" data-du-renew="'+r.id+'">'+(r.kind==='MENSAL'?'Renovar':'Novo diário')+'</button>':'')+(!p.deleted_at&&!r.cancelled_at&&s!=='RENOVADO'?'<a class="small-btn du-whatsapp" href="'+esc(whatsappUrl(r))+'" target="_blank" rel="noopener noreferrer" aria-label="Preparar cobrança de '+esc(p.full_name)+' no WhatsApp">Enviar cobrança</a>':'')+'</div>'+(editable?'<details class="du-more"><summary>Mais opções <span aria-hidden="true">⌄</span></summary><div class="du-more-panel"><button type="button" class="small-btn" data-du-edit="'+r.id+'">Editar cadastro</button>'+(!r.cancelled_at?'<button type="button" class="small-btn du-danger" data-du-cancel="'+r.id+'">Cancelar pagamento</button>':'')+'<button type="button" class="small-btn du-danger" data-du-delete="'+r.id+'">Excluir cadastro</button></div></details>':'')+'</div>'+(r.cancelled_at?'<p class="du-cancel-reason">'+esc(r.cancel_reason)+'</p>':'')+'</article>';
     }).join('')||'<div class="lesson-empty-state">'+(loaded?'Nenhum Day Use neste filtro.':'Aguarde o carregamento.')+'</div>';
   }
   function renderCommands(){
     const output=document.getElementById('duCommandReport');if(!output)return;
-    const data=commands(true).filter(r=>(kind==='TODOS'||r.kind===kind)&&(!query.trim()||r.names.toLocaleLowerCase('pt-BR').includes(query.trim().toLocaleLowerCase('pt-BR'))));
+    const data=commands(true).filter(r=>(tab==='daily'?r.kind==='DIARIO':kind==='TODOS'||r.kind===kind)&&(!query.trim()||r.names.toLocaleLowerCase('pt-BR').includes(query.trim().toLocaleLowerCase('pt-BR'))));
     const qty=data.reduce((n,r)=>n+r.quantity,0),amount=data.reduce((n,r)=>n+r.amount,0);
     output.innerHTML='<header><div><h3>Day Use nas comandas</h3><p>'+esc(periodText())+' · '+(receivedOnly?'data da quitação':'data do lançamento')+' · fechamento às 6h</p></div><strong>'+qty+' Day Use(s) · '+money(amount)+'</strong></header><p class="du-command-note">Valor dos itens, não das parcelas recebidas. No filtro de recebidos, entram apenas comandas totalmente quitadas no período. Pagamentos parciais não são atribuídos a produtos.</p><div class="du-command-list">'+data.map(r=>'<article><div><strong>'+esc(r.names)+'</strong><small>'+esc(label(r.kind))+' · '+r.quantity+' × Day Use · '+money(r.amount)+'</small></div><span class="du-badge '+(r.payment==='Comanda paga'?'du-ativo':'du-vencido')+'">'+r.payment+'</span><div class="du-command-links">'+r.orders.map(o=>'<button type="button" class="small-btn" data-du-command="'+esc(o.id)+'">'+(o.source==='BALCAO'?'Balcão':'Comanda')+' '+esc(o.commandNumber||'Ver')+'</button>').join('')+'</div></article>').join('')+'</div>'+(!data.length?'<p>Nenhum Day Use lançado nas comandas neste período e filtro.</p>':'');
   }
@@ -183,7 +240,7 @@
     const p=row?person(row):{},box=document.getElementById('duEditor');request={id:crypto.randomUUID(),payload:null};
     box.hidden=false;
     const contact='<label>Nome completo<input name="full_name" required minlength="5" maxlength="120" value="'+esc(p.full_name)+'" autocomplete="off"'+(row&&mode==='pay'?' readonly':'')+'></label><label>Telefone com DDD<input name="phone" required inputmode="tel" minlength="10" maxlength="20" value="'+esc(p.phone)+'"'+(row&&mode==='pay'?' readonly':'')+'></label>';
-    box.innerHTML='<form id="duForm" data-mode="'+mode+'" data-row="'+esc(row?.id)+'"><div class="du-editor-title"><h3>'+({pay:row?'Registrar novo pagamento':'Registrar pagamento recebido',edit:'Editar cadastro',cancel:'Cancelar pagamento',delete:'Excluir cadastro'}[mode])+'</h3><button class="ghost-btn" type="button" data-du-dismiss>Fechar</button></div>'+(mode==='delete'?'<p>Excluir <strong>'+esc(p.full_name)+'</strong> da lista? Todos os pagamentos deste cadastro serão cancelados no financeiro: <strong>'+money(rows.filter(r=>r.customer_id===row.customer_id&&!r.cancelled_at).reduce((sum,r)=>sum+Number(r.amount),0))+'</strong>. Use esta opção para testes ou cadastros incorretos. O histórico fica preservado em Excluídos; não há devolução automática de dinheiro.</p><label>Motivo<textarea name="reason" required minlength="5" maxlength="500" placeholder="Ex.: cadastro de teste"></textarea></label><label class="du-confirm"><input type="checkbox" required> Confirmo a exclusão do cadastro e o cancelamento dos pagamentos vinculados.</label>':mode==='cancel'?'<p>Cancelar '+esc(p.full_name)+' · '+money(row.amount)+' de '+date(row.paid_on)+'. O recebimento sairá dos totais do financeiro, sem apagar o histórico. Devoluções por Pix ou cartão devem ser feitas no banco ou na maquininha.</p><label>Motivo<textarea name="reason" required minlength="5" maxlength="500"></textarea></label>':'<div class="du-form-grid">'+contact+(mode==='pay'?'<label>Tipo de Day Use<select name="kind" id="duPlan">'+plans.map(plan=>'<option value="'+plan.kind+'"'+((row?.kind||'DIARIO')===plan.kind?' selected':'')+'>'+label(plan.kind)+' · '+money(plan.bar_products.sale_price)+'</option>').join('')+'</select></label><label>Data em que recebeu<input name="paid_on" id="duPaidOn" type="date" required min="2020-01-01" max="'+today()+'" value="'+today()+'"></label><label>Como recebeu?<select name="payment_method" required><option value="">Selecione</option>'+['PIX','DINHEIRO','CARTAO_DEBITO','CARTAO_CREDITO'].map(m=>'<option value="'+m+'">'+method(m)+'</option>').join('')+'</select></label><div class="du-preview" id="duPreview"></div>':'')+'</div>')+'<p class="du-error" id="duFormError" role="alert"></p><button class="primary-btn" type="submit">'+({pay:'Confirmar pagamento recebido',edit:'Salvar cadastro',cancel:'Confirmar cancelamento',delete:'Excluir cadastro e cancelar pagamentos'}[mode])+'</button></form>';
+    box.innerHTML='<form id="duForm" data-mode="'+mode+'" data-row="'+esc(row?.id)+'"><div class="du-editor-title"><h3>'+({pay:row?'Registrar novo pagamento':'Registrar pagamento recebido',edit:'Editar cadastro',cancel:'Cancelar pagamento',delete:'Excluir cadastro'}[mode])+'</h3><button class="ghost-btn" type="button" data-du-dismiss>Fechar</button></div>'+(mode==='delete'?'<p>Excluir <strong>'+esc(p.full_name)+'</strong> da lista? Todos os pagamentos deste cadastro serão cancelados no financeiro: <strong>'+money(rows.filter(r=>r.customer_id===row.customer_id&&!r.cancelled_at).reduce((sum,r)=>sum+Number(r.amount),0))+'</strong>. Use esta opção para testes ou cadastros incorretos. O histórico fica preservado em Excluídos; não há devolução automática de dinheiro.</p><label>Motivo<textarea name="reason" required minlength="5" maxlength="500" placeholder="Ex.: cadastro de teste"></textarea></label><label class="du-confirm"><input type="checkbox" required> Confirmo a exclusão do cadastro e o cancelamento dos pagamentos vinculados.</label>':mode==='cancel'?'<p>Cancelar '+esc(p.full_name)+' · '+money(row.amount)+' de '+date(row.paid_on)+'. O recebimento sairá dos totais do financeiro, sem apagar o histórico. Devoluções por Pix ou cartão devem ser feitas no banco ou na maquininha.</p><label>Motivo<textarea name="reason" required minlength="5" maxlength="500"></textarea></label>':'<div class="du-form-grid">'+contact+(mode==='pay'?'<label>Tipo de Day Use<select name="kind" id="duPlan">'+plans.map(plan=>'<option value="'+plan.kind+'"'+((row?.kind||(tab==='daily'?'DIARIO':'MENSAL'))===plan.kind?' selected':'')+'>'+label(plan.kind)+' · '+money(plan.bar_products.sale_price)+'</option>').join('')+'</select></label><label>Data em que recebeu<input name="paid_on" id="duPaidOn" type="date" required min="2020-01-01" max="'+today()+'" value="'+today()+'"></label><label>Como recebeu?<select name="payment_method" required><option value="">Selecione</option>'+['PIX','DINHEIRO','CARTAO_DEBITO','CARTAO_CREDITO'].map(m=>'<option value="'+m+'">'+method(m)+'</option>').join('')+'</select></label><div class="du-preview" id="duPreview"></div>':'')+'</div>')+'<p class="du-error" id="duFormError" role="alert"></p><button class="primary-btn" type="submit">'+({pay:'Confirmar pagamento recebido',edit:'Salvar cadastro',cancel:'Confirmar cancelamento',delete:'Excluir cadastro e cancelar pagamentos'}[mode])+'</button></form>';
     if(mode==='pay')preview();box.scrollIntoView({block:'nearest',behavior:'smooth'});box.querySelector('input:not([readonly]),textarea,select')?.focus();
   }
   function preview(){
@@ -193,7 +250,7 @@
   }
   async function save(e){
     if(e.target.id!=='duForm')return;e.preventDefault();if(busy)return;
-    const f=e.target,mode=f.dataset.mode,values=Object.fromEntries(new FormData(f)),row=rows.find(r=>r.id===f.dataset.row),epoch=key,operationCtx=ctx;
+    const f=e.target,mode=f.dataset.mode,values=Object.fromEntries(new FormData(f)),row=findRow(f.dataset.row),epoch=key,operationCtx=ctx;
     const failure=document.getElementById('duFormError');failure.textContent='';
     try{
       if(!ctx.canWrite())throw Error('Sem permissão para registrar Day Use.');
@@ -217,5 +274,5 @@
   }
   document.addEventListener('click',e=>{const b=e.target.closest('[data-day-use-open]');if(b)open(b.dataset.dayUseOpen);});
   setInterval(()=>{if(ctx&&!document.hidden&&document.body.classList.contains('club-bar')){refresh();paintCard();if(modal()?.open)renderList();}},30000);
-  window.IlhaDayUse={ensure,card,refresh,open,state,metrics,reset,commandReport,periodBounds};
+  window.IlhaDayUse={filterPasses,ensure,card,refresh,open,state,metrics,reset,commandReport,periodBounds};
 })();

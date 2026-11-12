@@ -28,7 +28,7 @@ if (!/^\d{4}-\d{2}-\d{2}\.\d{4}$/.test(String(version.version || ''))) {
 }
 
 // Keep lead forms and the administrative module in the same release.
-for (const [page, assets] of [['aulas.html', ['aulas.js','aulas.css']], ['adm/index.html', ['adm/leads.js','adm/leads.css','adm/events.js','adm/events.css']], ['eventos/index.html', ['eventos/public.js','eventos/public.css']]]) {
+for (const [page, assets] of [['day-use/index.html', ['day-use/register.js','day-use/styles.css']], ['aulas.html', ['aulas.js','aulas.css']], ['adm/index.html', ['adm/leads.js','adm/leads.css','adm/events.js','adm/events.css','adm/day-use.js','adm/day-use.css']], ['eventos/index.html', ['eventos/public.js','eventos/public.css']]]) {
   const file = path.join(destination, page);
   let html = await readFile(file, 'utf8');
   for (const asset of assets) {
