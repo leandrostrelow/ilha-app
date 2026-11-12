@@ -11,7 +11,7 @@ test('somente cadastros pendentes não excluídos precisam de ativação',()=>{
 });
 test('inadimplência inclui ontem, exclui hoje e futuro, sem esconder bloqueados por perfil',()=>{
  const rows=[invoice('yesterday'),invoice('today',{due_date:'2026-11-11'}),invoice('future',{due_date:'2026-11-12'}),invoice('unknown',{due_date:null}),invoice('zero',{amount:0}),invoice('old',{due_date:'2026-09-30'})];
- assert.deepEqual(classify([],rows).overdue.map(x=>x.id),['old','yesterday']);
+ assert.deepEqual(classify([],rows).overdue.map(x=>x.id),['yesterday','old']);
 });
 test('pagamento Asaas move a fatura de inadimplentes para confirmados sem duplicação',()=>{
  const row=invoice('a');assert.equal(classify([],[row]).overdue.length,1);
@@ -47,6 +47,7 @@ test('erro de consulta não anuncia ausência de inadimplentes',async()=>{
  const f=controllerFixture({read:async()=>{throw Error('offline');}});await f.board.refresh();
  assert.match(f.elements.get('homeOverdueInvoices').innerHTML,/Falha ao carregar/);
  assert.doesNotMatch(f.elements.get('homeOverdueInvoices').innerHTML,/Nenhuma fatura/);
+ assert.equal(f.elements.get('homeOverdueTotal').textContent,'—');
 });
 test('perfil sem financeiro não consulta faturas nem avisos de pagamento',async()=>{
  const f=controllerFixture({can:p=>p==='clients.read'});await f.board.refresh();
@@ -69,4 +70,12 @@ test('falha sem emissão não é fatura vencida; cobranças emitidas e manuais c
 test('consulta carrega a data de emissão para distinguir tentativas com falha',async()=>{
  const f=controllerFixture();await f.board.refresh();
  assert.match(f.calls.find(p=>p.startsWith('app_payment_invoices?')),/issued_at/);
+});
+
+test('total soma somente faturas vencidas únicas e acompanha o pagamento',async()=>{
+ const a=invoice('a',{amount:'170.15'}),b=invoice('b',{amount:'350.10'});
+ const rows=[a,a,b,invoice('paid',{status:'PAGA'}),invoice('cancelled',{status:'CANCELADA'}),invoice('future',{due_date:'2026-11-25'})];
+ const f=controllerFixture({read:async p=>p.startsWith('app_payment_invoices?')?rows:[]});
+ await f.board.refresh();assert.equal(f.elements.get('homeOverdueTotal').textContent,'520.25');
+ a.status='PAGA';await f.board.refresh();assert.equal(f.elements.get('homeOverdueTotal').textContent,'350.1');
 });
