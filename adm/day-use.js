@@ -109,7 +109,7 @@
     if(modal())return;
     const el=document.createElement('dialog');el.id='dayUseDialog';el.className='day-use-dialog';
     el.innerHTML=`<header class="du-heading"><div><span class="du-eyebrow">ILHA BAR / BEACH TENNIS</span><h2>Day Use</h2></div><button class="ghost-btn" type="button" data-du-close aria-label="Fechar Day Use">Fechar ×</button></header>
-      <div class="du-notice" id="duNotice" role="status"></div><div class="du-metrics" id="duMetrics"></div>
+      <div class="du-notice" id="duNotice" role="status"></div><button type="button" class="du-new-registrations" id="duNewRegistrations" data-du-pending hidden></button><div class="du-metrics" id="duMetrics"></div>
       <div class="du-tabs" role="tablist" aria-label="Gerenciar Day Use">${[['monthly','Mensalistas'],['daily','Diárias'],['receipts','Recebimentos']].map(([id,name])=>`<button type="button" role="tab" id="duTab-${id}" aria-controls="duPanel" data-du-tab="${id}">${name}</button>`).join('')}</div>
       <section id="duPanel" role="tabpanel" tabindex="0"><div class="du-section-heading"><div><h3 id="duSectionTitle"></h3></div><div class="du-top-actions"><button class="ghost-btn" type="button" data-du-refresh>Atualizar</button><button class="primary-btn" type="button" data-du-new>+ Registrar pagamento</button></div></div>
       <div id="duInvite" class="du-invite" hidden><div><strong>Novo mensalista</strong></div><button class="ghost-btn" type="button" data-du-invite>Gerar link de cadastro</button><div id="duInviteResult" hidden></div></div>
@@ -129,6 +129,7 @@
       if(b.hasAttribute('data-du-close'))el.close();
       if(b.hasAttribute('data-du-refresh'))await refresh(true);
       if(b.hasAttribute('data-du-new'))editor();
+      if(b.hasAttribute('data-du-pending')){tab='monthly';status='SEM_PAGAMENTO';configureTab();renderList();document.getElementById('duList').scrollIntoView({block:'nearest',behavior:'smooth'});}
       if(b.dataset.duTab){tab=b.dataset.duTab;status=tab==='monthly'?'ATUAIS':tab==='customers'?'CADASTRADOS':'TODOS';document.getElementById('duEditor').hidden=true;configureTab();renderList();}
       if(b.hasAttribute('data-du-invite'))await createInvite(b);
       if(b.hasAttribute('data-du-copy')){try{await navigator.clipboard.writeText(invite.url);notice('Link copiado. Envie para uma pessoa.');}catch{document.getElementById('duInviteUrl').select();notice('Selecione e copie o link abaixo.');}}
@@ -197,6 +198,9 @@
   function notice(message,bad=false){const n=document.getElementById('duNotice');if(n){n.textContent=message;n.classList.toggle('is-error',bad);}}
   function renderList(){
     if(!modal()?.open)return;
+    const paidCustomers=new Set(rows.filter(r=>!r.cancelled_at).map(r=>r.customer_id));
+    const pendingCount=customers.filter(c=>!c.deleted_at&&!paidCustomers.has(c.id)).length;
+    const pendingButton=document.getElementById('duNewRegistrations');pendingButton.hidden=!pendingCount;pendingButton.textContent='Novos cadastros · '+pendingCount+' aguardando pagamento →';
     const m=metrics(),bounds=reportBounds();
     const metricKind=tab==='daily'?'DIARIO':tab==='receipts'?kind:'TODOS';
     const periodRows=rows.filter(r=>!r.cancelled_at&&inRange(r.paid_on,bounds)&&(metricKind==='TODOS'||r.kind===metricKind));
