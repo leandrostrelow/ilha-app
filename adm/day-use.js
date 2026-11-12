@@ -110,9 +110,9 @@
     const el=document.createElement('dialog');el.id='dayUseDialog';el.className='day-use-dialog';
     el.innerHTML=`<header class="du-heading"><div><span class="du-eyebrow">ILHA BAR / BEACH TENNIS</span><h2>Day Use</h2></div><button class="ghost-btn" type="button" data-du-close aria-label="Fechar Day Use">Fechar ×</button></header>
       <div class="du-notice" id="duNotice" role="status"></div><div class="du-metrics" id="duMetrics"></div>
-      <div class="du-tabs" role="tablist" aria-label="Gerenciar Day Use">${[['monthly','Mensalistas'],['daily','Diárias'],['receipts','Recebimentos'],['customers','Cadastros']].map(([id,name])=>`<button type="button" role="tab" id="duTab-${id}" aria-controls="duPanel" data-du-tab="${id}">${name}</button>`).join('')}</div>
+      <div class="du-tabs" role="tablist" aria-label="Gerenciar Day Use">${[['monthly','Mensalistas'],['daily','Diárias'],['receipts','Recebimentos']].map(([id,name])=>`<button type="button" role="tab" id="duTab-${id}" aria-controls="duPanel" data-du-tab="${id}">${name}</button>`).join('')}</div>
       <section id="duPanel" role="tabpanel" tabindex="0"><div class="du-section-heading"><div><h3 id="duSectionTitle"></h3></div><div class="du-top-actions"><button class="ghost-btn" type="button" data-du-refresh>Atualizar</button><button class="primary-btn" type="button" data-du-new>+ Registrar pagamento</button></div></div>
-      <div id="duInvite" class="du-invite" hidden><div><strong>Cadastro pelo celular</strong><p>Envie um link individual para a pessoa preencher nome e WhatsApp. O pagamento é registrado depois pela equipe.</p></div><button class="ghost-btn" type="button" data-du-invite>Criar link de cadastro</button><div id="duInviteResult" hidden></div></div>
+      <div id="duInvite" class="du-invite" hidden><div><strong>Cadastro pelo celular</strong></div><button class="ghost-btn" type="button" data-du-invite>Criar link de cadastro</button><div id="duInviteResult" hidden></div></div>
       <div class="du-period-toolbar"><label>Período<select id="duPeriod"><option value="HOJE">Hoje</option><option value="SEMANA">Últimos 7 dias</option><option value="MES">Mensal</option><option value="TODOS">Todos os períodos</option></select></label><label id="duMonthLabel" hidden>Mês<input type="month" id="duMonth" value="${reportMonth}"></label><label>Pagamentos<select id="duReceipt"><option value="TODOS">Todos os lançamentos</option><option value="RECEBIDOS">Somente recebidos / quitados</option></select></label></div>
       <div class="du-toolbar"><label>Buscar pessoa<input id="duSearch" type="search" placeholder="Nome ou telefone"></label><label id="duKindLabel">Tipo<select id="duKind"><option value="TODOS">Diário e mensal</option><option value="DIARIO">Day Use diário</option><option value="MENSAL">Day Use mensal</option></select></label><label>Situação<select id="duStatus"></select></label></div>
       <div id="duEditor" hidden></div><div class="du-list-meta" id="duListMeta" role="status"></div><div class="du-list" id="duList"></div><section class="du-command-report" id="duCommandReport"></section></section>
@@ -149,8 +149,8 @@
     document.getElementById('duSectionTitle').textContent=titles[tab][0];
     modal().querySelector('.du-period-toolbar').hidden=!['daily','receipts'].includes(tab);
     document.getElementById('duKindLabel').hidden=tab!=='receipts';
-    document.getElementById('duInvite').hidden=!ctx.canWrite()||tab!=='customers';
-    const options=tab==='monthly'?[['ATUAIS','Todos os mensalistas'],['ATIVO','Ativos'],['PROXIMOS','Vencem em até 7 dias'],['VENCIDO','Vencidos']]:tab==='customers'?[['CADASTRADOS','Cadastros atuais'],['SEM_PAGAMENTO','Sem pagamento registrado'],['EXCLUIDO','Excluídos']]:[['TODOS','Todo o histórico'],['ATIVO','Ativos'],['VENCIDO','Vencidos'],['CANCELADO','Cancelados'],['EXCLUIDO','Excluídos']];
+    document.getElementById('duInvite').hidden=!ctx.canWrite()||tab!=='monthly';
+    const options=tab==='monthly'?[['ATUAIS','Todos os mensalistas'],['SEM_PAGAMENTO','Aguardando pagamento'],['ATIVO','Ativos'],['PROXIMOS','Vencem em até 7 dias'],['VENCIDO','Vencidos']]:tab==='customers'?[['CADASTRADOS','Cadastros atuais'],['SEM_PAGAMENTO','Sem pagamento registrado'],['EXCLUIDO','Excluídos']]:[['TODOS','Todo o histórico'],['ATIVO','Ativos'],['VENCIDO','Vencidos'],['CANCELADO','Cancelados'],['EXCLUIDO','Excluídos']];
     document.getElementById('duStatus').innerHTML=options.map(([value,name])=>'<option value="'+value+'"'+(value===status?' selected':'')+'>'+name+'</option>').join('');
   }
   // Monthly membership follows the latest pass, not the receipt date filter.
@@ -185,7 +185,7 @@
       invite={url:location.origin+'/day-use#token='+result.token,expires:result.expires_at};
       const output=document.getElementById('duInviteResult');output.hidden=false;
       output.innerHTML='<label>Link individual · válido até '+date(invite.expires)+'<input id="duInviteUrl" readonly value="'+esc(invite.url)+'"></label><div class="du-invite-actions"><button type="button" class="small-btn" data-du-copy>Copiar link</button><a class="small-btn du-whatsapp" href="https://wa.me/?text='+encodeURIComponent('Olá! Preencha seu cadastro do Beach Tennis do Ilha por este link individual: '+invite.url)+'" target="_blank" rel="noopener noreferrer">Enviar pelo WhatsApp</a></div><small>Um link para cada pessoa. Se precisar cadastrar outra, crie um novo link.</small>';
-      notice('Link pronto para enviar. O cadastro aparecerá na aba Cadastros.');
+      notice('Link pronto para enviar. A pessoa aparecerá em Mensalistas, aguardando pagamento.');
     }catch(e){if(epoch===key)notice(e.message||'Não foi possível criar o link.',true);}
     finally{busy=false;button.disabled=false;}
   }
@@ -212,7 +212,7 @@
     document.getElementById('duCommandReport').hidden=!['daily','receipts'].includes(tab);
     if(['daily','receipts'].includes(tab))renderCommands();
     const matches=filterPasses(sorted(),{tab,kind,status,query,bounds,receivedOnly,day:today()},state);
-    if(tab==='customers'){renderCustomers();return;}
+    if(tab==='monthly'&&status==='SEM_PAGAMENTO'){renderCustomers();return;}
     document.getElementById('duListMeta').textContent=loaded?matches.length+' registro(s) neste filtro':'Carregando Day Use…';
     document.getElementById('duList').innerHTML=matches.map(r=>{
       const p=person(r),s=state(r),editable=ctx.canWrite()&&!p.deleted_at;
