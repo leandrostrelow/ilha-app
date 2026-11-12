@@ -109,10 +109,10 @@
     if(modal())return;
     const el=document.createElement('dialog');el.id='dayUseDialog';el.className='day-use-dialog';
     el.innerHTML=`<header class="du-heading"><div><span class="du-eyebrow">ILHA BAR / BEACH TENNIS</span><h2>Day Use</h2></div><button class="ghost-btn" type="button" data-du-close aria-label="Fechar Day Use">Fechar ×</button></header>
-      <div class="du-notice" id="duNotice" role="status"></div><div class="du-metrics" id="duMetrics"></div>
+      <div class="du-notice" id="duNotice" role="status"></div><button type="button" class="du-new-registrations" id="duNewRegistrations" data-du-pending hidden></button><div class="du-metrics" id="duMetrics"></div>
       <div class="du-tabs" role="tablist" aria-label="Gerenciar Day Use">${[['monthly','Mensalistas'],['daily','Diárias'],['receipts','Recebimentos']].map(([id,name])=>`<button type="button" role="tab" id="duTab-${id}" aria-controls="duPanel" data-du-tab="${id}">${name}</button>`).join('')}</div>
       <section id="duPanel" role="tabpanel" tabindex="0"><div class="du-section-heading"><div><h3 id="duSectionTitle"></h3></div><div class="du-top-actions"><button class="ghost-btn" type="button" data-du-refresh>Atualizar</button><button class="primary-btn" type="button" data-du-new>+ Registrar pagamento</button></div></div>
-      <div id="duInvite" class="du-invite" hidden><div><strong>Cadastro pelo celular</strong></div><button class="ghost-btn" type="button" data-du-invite>Criar link de cadastro</button><div id="duInviteResult" hidden></div></div>
+      <div id="duInvite" class="du-invite" hidden><div><strong>Novo mensalista</strong></div><button class="ghost-btn" type="button" data-du-invite>Gerar link de cadastro</button><div id="duInviteResult" hidden></div></div>
       <div class="du-period-toolbar"><label>Período<select id="duPeriod"><option value="HOJE">Hoje</option><option value="SEMANA">Últimos 7 dias</option><option value="MES">Mensal</option><option value="TODOS">Todos os períodos</option></select></label><label id="duMonthLabel" hidden>Mês<input type="month" id="duMonth" value="${reportMonth}"></label><label>Pagamentos<select id="duReceipt"><option value="TODOS">Todos os lançamentos</option><option value="RECEBIDOS">Somente recebidos / quitados</option></select></label></div>
       <div class="du-toolbar"><label>Buscar pessoa<input id="duSearch" type="search" placeholder="Nome ou telefone"></label><label id="duKindLabel">Tipo<select id="duKind"><option value="TODOS">Diário e mensal</option><option value="DIARIO">Day Use diário</option><option value="MENSAL">Day Use mensal</option></select></label><label>Situação<select id="duStatus"></select></label></div>
       <div id="duEditor" hidden></div><div class="du-list-meta" id="duListMeta" role="status"></div><div class="du-list" id="duList"></div><section class="du-command-report" id="duCommandReport"></section></section>
@@ -129,9 +129,10 @@
       if(b.hasAttribute('data-du-close'))el.close();
       if(b.hasAttribute('data-du-refresh'))await refresh(true);
       if(b.hasAttribute('data-du-new'))editor();
+      if(b.hasAttribute('data-du-pending')){tab='monthly';status='SEM_PAGAMENTO';configureTab();renderList();document.getElementById('duList').scrollIntoView({block:'nearest',behavior:'smooth'});}
       if(b.dataset.duTab){tab=b.dataset.duTab;status=tab==='monthly'?'ATUAIS':tab==='customers'?'CADASTRADOS':'TODOS';document.getElementById('duEditor').hidden=true;configureTab();renderList();}
       if(b.hasAttribute('data-du-invite'))await createInvite(b);
-      if(b.hasAttribute('data-du-copy')){try{await navigator.clipboard.writeText(invite.url);notice('Link copiado. Envie para uma pessoa.');}catch{document.getElementById('duInviteUrl').select();notice('Selecione e copie o link abaixo.');}}
+      if(b.hasAttribute('data-du-copy')){try{await navigator.clipboard.writeText(invite.url);notice('Link fixo copiado.');}catch{document.getElementById('duInviteUrl').select();notice('Copie o link abaixo.');}}
       if(b.closest('.du-more'))b.closest('.du-more').open=false;
       if(b.dataset.duCommand){el.close();ctx.openCommand?.(b.dataset.duCommand);}
       if(b.dataset.duRenew)editor(findRow(b.dataset.duRenew));
@@ -179,12 +180,12 @@
     const epoch=key,operationCtx=ctx;busy=true;button.disabled=true;
     try{
       if(!ctx.canPersist())throw Error('Atualize a conexão antes de criar o link.');
-      const response=await operationCtx.write('bar_create_day_use_invite',{}),result=Array.isArray(response)?response[0]:response;
+      const response=await operationCtx.write('bar_enable_day_use_public_registration',{}),result=Array.isArray(response)?response[0]:response;
       if(epoch!==key)return;
-      if(!/^[a-f0-9]{64}$/.test(result?.token||''))throw Error('Não foi possível criar o link. Tente novamente.');
-      invite={url:location.origin+'/day-use#token='+result.token,expires:result.expires_at};
+      if(result?.enabled!==true)throw Error('Não foi possível criar o link. Tente novamente.');
+      invite={url:location.origin+'/day-use',expires:result.expires_at};
       const output=document.getElementById('duInviteResult');output.hidden=false;
-      output.innerHTML='<label>Link individual · válido até '+date(invite.expires)+'<input id="duInviteUrl" readonly value="'+esc(invite.url)+'"></label><div class="du-invite-actions"><button type="button" class="small-btn" data-du-copy>Copiar link</button><a class="small-btn du-whatsapp" href="https://wa.me/?text='+encodeURIComponent('Olá! Preencha seu cadastro do Beach Tennis do Ilha por este link individual: '+invite.url)+'" target="_blank" rel="noopener noreferrer">Enviar pelo WhatsApp</a></div><small>Um link para cada pessoa. Se precisar cadastrar outra, crie um novo link.</small>';
+      output.innerHTML='<label>Link fixo para cadastro e QR Code<input id="duInviteUrl" readonly value="'+esc(invite.url)+'"></label><div class="du-invite-actions"><button type="button" class="small-btn" data-du-copy>Copiar link</button><a class="small-btn du-whatsapp" href="https://wa.me/?text='+encodeURIComponent('Olá! Preencha seu cadastro do Beach Tennis do Ilha por este link: '+invite.url)+'" target="_blank" rel="noopener noreferrer">Enviar pelo WhatsApp</a></div>';
       notice('Link pronto para enviar. A pessoa aparecerá em Mensalistas, aguardando pagamento.');
     }catch(e){if(epoch===key)notice(e.message||'Não foi possível criar o link.',true);}
     finally{busy=false;button.disabled=false;}
@@ -197,6 +198,9 @@
   function notice(message,bad=false){const n=document.getElementById('duNotice');if(n){n.textContent=message;n.classList.toggle('is-error',bad);}}
   function renderList(){
     if(!modal()?.open)return;
+    const paidCustomers=new Set(rows.filter(r=>!r.cancelled_at).map(r=>r.customer_id));
+    const pendingCount=customers.filter(c=>!c.deleted_at&&!paidCustomers.has(c.id)).length;
+    const pendingButton=document.getElementById('duNewRegistrations');pendingButton.hidden=!pendingCount;pendingButton.textContent='Novos cadastros · '+pendingCount+' aguardando pagamento →';
     const m=metrics(),bounds=reportBounds();
     const metricKind=tab==='daily'?'DIARIO':tab==='receipts'?kind:'TODOS';
     const periodRows=rows.filter(r=>!r.cancelled_at&&inRange(r.paid_on,bounds)&&(metricKind==='TODOS'||r.kind===metricKind));
