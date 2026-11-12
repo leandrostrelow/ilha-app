@@ -12,6 +12,7 @@ begin
     insert into auth.users(id,email,raw_app_meta_data,raw_user_meta_data) values(uid,email,'{"provider":"email","providers":["email"]}','{}');
     insert into public.profiles(id,email,full_name,role,permissions,active) values(uid,email,'QA Registration','bar',case when uid=staff then '["bar.orders"]'::jsonb else '["bar.finance"]'::jsonb end,true)
       on conflict(id) do update set role='bar',permissions=excluded.permissions,active=true;
+    insert into public.app_clients(id,full_name,email) values(uid,'QA Registration',email) on conflict(id) do nothing;
     insert into public.protected_access_accounts(email,full_name,role,permissions,active) values(email,'QA Registration','bar',case when uid=staff then '["bar.orders"]'::jsonb else '["bar.finance"]'::jsonb end,true);
   end loop;
   select count(*) into before_customers from public.bar_day_use_customers;
@@ -66,6 +67,7 @@ begin
   if (select count(*) from public.bar_day_use_customers)<>before_customers+1 then raise exception 'Contact duplicated'; end if;
   select id into strict customer from public.bar_day_use_customers where full_name='QA Beach Pessoa' and phone='5527999992222' and created_by=staff;
   if (select count(*) from public.bar_day_use_passes)<>before_passes or (select count(*) from public.bar_financial_entries)<>before_finance then raise exception 'Registration created financial activity'; end if;
+  if (select count(*) from public.app_client_notifications where event_type='NOVO_CADASTRO_DAY_USE' and dedupe_key like 'day-use-registration:'||customer::text||':%')<>2 then raise exception 'Staff notifications missing or duplicated'; end if;
   if (select count(*) from day_use_private.bar_day_use_invites where customer_id=customer and used_at is not null)<>2 then raise exception 'Audit trail missing'; end if;
   update public.bar_day_use_customers set deleted_at=now(),delete_reason='QA removal' where id=customer;
   perform set_config('role','anon',true);
