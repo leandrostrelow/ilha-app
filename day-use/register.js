@@ -10,7 +10,7 @@
   const base='https://lkqtgptebkgfwguykxhv.supabase.co';
   async function rpc(name,payload){
     const r=await fetch(base+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:key,'Content-Type':'application/json'},credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(30000),body:JSON.stringify(payload)});
-    const result=await r.json();if(!r.ok||result.ok===false)throw Error('Não foi possível confirmar o envio. Tente novamente sem alterar os dados.');return result;
+    const result=await r.json();if(!r.ok||result.ok===false){const safe=['Informe seu nome completo.','Informe um telefone válido com DDD.','Cadastro indisponível. Fale com a equipe do Ilha.','Muitas tentativas. Aguarde um pouco e tente novamente.','Reabra a página para enviar o comprovante.','Envie a imagem antes de concluir.'];throw Error(safe.includes(result.message)?result.message:'Não foi possível confirmar o envio. Confira os dados e tente novamente.');}return result;
   }
   form.addEventListener('submit',async e=>{
     e.preventDefault();if(sending)return;
@@ -21,7 +21,7 @@
     const proof=form.elements.proof.files[0];
     if(proof&&(!['image/jpeg','image/png','image/webp'].includes(proof.type)||proof.size>5242880||!proof.size)){feedback.textContent='Escolha uma imagem JPG, PNG ou WebP de até 5 MB.';return;}
     const fingerprint=JSON.stringify([name,digits,proof?.name,proof?.size,proof?.lastModified]);
-    if(attempt&&attempt!==fingerprint){feedback.textContent='Tente novamente com os mesmos dados ou recarregue a página para fazer um novo envio.';return;}attempt=fingerprint;
+    if(attempt&&attempt!==fingerprint)requestId=crypto.randomUUID();attempt=fingerprint;
     sending=true;feedback.textContent='Enviando…';form.querySelectorAll('input,button').forEach(el=>el.disabled=true);
     try{
       if(proof){

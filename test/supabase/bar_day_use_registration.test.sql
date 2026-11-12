@@ -74,10 +74,10 @@ begin
   if (select count(*) from day_use_private.bar_day_use_invites where customer_id=customer and used_at is not null)<>3 then raise exception 'Audit trail missing'; end if;
   update public.bar_day_use_customers set deleted_at=now(),delete_reason='QA removal' where id=customer;
   perform set_config('role','anon',true);
-  rejected:=false;
-  begin perform public.bar_submit_day_use_registration(blocked_invite->>'token','QA Beach Pessoa','27999992222'); exception when others then if sqlerrm not like 'Não foi possível concluir%' then raise; end if; rejected:=true; end;
-  if not rejected then raise exception 'Deleted contact revived'; end if;
+  perform public.bar_submit_day_use_registration(blocked_invite->>'token','QA Beach Pessoa','27999992222');
   perform set_config('role','postgres',true);
+  if (select deleted_at from public.bar_day_use_customers where id=customer) is not null or (select count(*) from day_use_private.customer_reregistrations where customer_id=customer and previous_delete_reason='QA removal')<>1 then raise exception 'Re-registration did not preserve removal audit'; end if;
+  if (select count(*) from public.bar_day_use_passes)<>before_passes or (select count(*) from public.bar_financial_entries)<>before_finance then raise exception 'Re-registration changed finances'; end if;
   perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
   perform set_config('role','authenticated',true);
   for i in 6..30 loop perform public.bar_create_day_use_invite(); end loop;
