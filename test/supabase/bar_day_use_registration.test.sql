@@ -79,7 +79,7 @@ begin
   perform set_config('role','postgres',true);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
   perform set_config('role','authenticated',true);
-  for i in 5..30 loop perform public.bar_create_day_use_invite(); end loop;
+  for i in 6..30 loop perform public.bar_create_day_use_invite(); end loop;
   rejected:=false;
   begin perform public.bar_create_day_use_invite(); exception when others then if sqlerrm not like 'Limite de convites%' then raise; end if; rejected:=true; end;
   if not rejected then raise exception 'Invite rate limit bypassed'; end if;
