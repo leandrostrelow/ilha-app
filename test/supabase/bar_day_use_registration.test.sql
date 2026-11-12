@@ -15,6 +15,7 @@ begin
     insert into public.app_clients(id,full_name,email) values(uid,'QA Registration',email) on conflict(id) do nothing;
     insert into public.protected_access_accounts(email,full_name,role,permissions,active) values(email,'QA Registration','bar',case when uid=staff then '["bar.orders"]'::jsonb else '["bar.finance"]'::jsonb end,true);
   end loop;
+  delete from day_use_private.public_registration_settings;
   select count(*) into before_customers from public.bar_day_use_customers;
   select count(*) into before_passes from public.bar_day_use_passes;
   select count(*) into before_finance from public.bar_financial_entries;
