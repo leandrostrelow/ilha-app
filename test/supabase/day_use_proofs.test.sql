@@ -1,0 +1,44 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(1);
+do $$
+declare staff uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid(); uid uuid; email text; ticket jsonb; again jsonb; request uuid:=gen_random_uuid(); bad boolean; before_passes bigint; before_finance bigint;
+begin
+ foreach uid in array array[staff,outsider] loop
+  email:='qa-proof-'||uid||'@tests.invalid';
+  insert into auth.users(id,email,raw_app_meta_data,raw_user_meta_data) values(uid,email,'{"provider":"email","providers":["email"]}','{}');
+  insert into public.profiles(id,email,full_name,role,permissions,active) values(uid,email,'QA Proof','bar',case when uid=staff then '["bar.orders"]'::jsonb else '["bar.kitchen"]'::jsonb end,true) on conflict(id) do update set role='bar',permissions=excluded.permissions,active=true;
+  insert into public.app_clients(id,full_name,email) values(uid,'QA Proof',email) on conflict(id) do nothing;
+  insert into public.protected_access_accounts(email,full_name,role,permissions,active) values(email,'QA Proof','bar',case when uid=staff then '["bar.orders"]'::jsonb else '["bar.kitchen"]'::jsonb end,true);
+ end loop;
+ delete from day_use_private.public_registration_settings;
+ select count(*) into before_passes from public.bar_day_use_passes;
+ select count(*) into before_finance from public.bar_financial_entries;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);perform set_config('role','authenticated',true);
+ perform public.bar_enable_day_use_public_registration();
+ perform set_config('request.jwt.claims','{"role":"anon"}',true);perform set_config('role','anon',true);
+ ticket:=public.bar_begin_day_use_proof(request,'QA Comprovante Pessoa','27999994444','png');
+ again:=public.bar_begin_day_use_proof(request,'QA Comprovante Pessoa','27999994444','png');
+ if ticket<>again then raise exception 'Upload retry changed capability'; end if;
+ bad:=false;begin perform public.bar_begin_day_use_proof(request,'QA Outra Pessoa','27999994444','png');exception when others then if sqlerrm not like 'Reabra a página%' then raise;end if;bad:=true;end;
+ if not bad then raise exception 'Upload request rebound';end if;
+ bad:=false;begin insert into storage.objects(bucket_id,name) values('day-use-proofs','unknown/foreign.png');exception when insufficient_privilege then bad:=true;end;
+ if not bad then raise exception 'Arbitrary upload accepted';end if;
+ bad:=false;begin perform public.bar_finish_day_use_proof(request);exception when others then if sqlerrm not like 'Envie a imagem%' then raise;end if;bad:=true;end;
+ if not bad then raise exception 'Empty upload finalized';end if;
+ insert into storage.objects(bucket_id,name,metadata) values('day-use-proofs',ticket->>'path','{"mimetype":"image/png","size":100}');
+ perform public.bar_finish_day_use_proof(request);perform public.bar_finish_day_use_proof(request);
+ if exists(select 1 from storage.objects where bucket_id='day-use-proofs') then raise exception 'Anonymous read private image';end if;
+ if has_table_privilege('anon','public.bar_day_use_proofs','SELECT') then raise exception 'Anonymous read contacts';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',outsider,'role','authenticated','user_metadata',jsonb_build_object('role','admin'))::text,true);perform set_config('role','authenticated',true);
+ if exists(select 1 from public.bar_day_use_proofs where id=request) or exists(select 1 from storage.objects where bucket_id='day-use-proofs') then raise exception 'Unrelated staff read image';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
+ if (select count(*) from public.bar_day_use_proofs where id=request and uploaded_at is not null)<>1 or (select count(*) from storage.objects where bucket_id='day-use-proofs')<>1 then raise exception 'Authorized staff cannot view proof';end if;
+ perform set_config('role','postgres',true);
+ if (select count(*) from public.app_client_notifications where event_type='COMPROVANTE_DAY_USE' and dedupe_key like 'day-use-proof:'||request::text||':%')<>1 then raise exception 'Notification missing or duplicated';end if;
+ if (select count(*) from public.bar_day_use_passes)<>before_passes or (select count(*) from public.bar_financial_entries)<>before_finance then raise exception 'Image submission changed finances';end if;
+ if (select public or file_size_limit<>5242880 or allowed_mime_types<>array['image/jpeg','image/png','image/webp'] from storage.buckets where id='day-use-proofs') then raise exception 'Unsafe bucket';end if;
+end $$;
+select pass('Day Use proof: capability upload, idempotency, private reading, staff permissions, notifications and no finance mutation');
+select * from finish();
+rollback;

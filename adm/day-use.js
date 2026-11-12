@@ -9,7 +9,7 @@
   const label=k=>k==='MENSAL'?'Mensal':'Diário';
   const method=k=>({PIX:'Pix recebido',DINHEIRO:'Dinheiro',CARTAO_CREDITO:'Cartão de crédito',CARTAO_DEBITO:'Cartão de débito'}[k]||k);
   const phoneLabel=v=>String(v||'').replace(/^55(\d{2})(\d{4,5})(\d{4})$/,'($1) $2-$3');
-  let ctx,key='',rows=[],plans=[],customers=[],loading=false,loaded=false,last=0,error='',busy=false,request=null,focusBefore=null;
+  let ctx,key='',rows=[],plans=[],customers=[],proofs=[],loading=false,loaded=false,last=0,error='',busy=false,request=null,focusBefore=null;
   let latestMonthly=new Map();
   let tab='monthly',invite=null;
   let query='',kind='TODOS',status='ATUAIS',period='HOJE',receivedOnly=false,reportMonth=today().slice(0,7),refreshAgain=false;
@@ -85,7 +85,7 @@
     ctx=context;key=context.sessionKey;
     if(ctx.canRead()&&!loading&&Date.now()-last>30000)refresh();
   }
-  function reset(){key='';ctx=null;rows=[];plans=[];customers=[];tab='monthly';invite=null;latestMonthly=new Map();loaded=false;error='';last=0;request=null;busy=false;loading=false;query='';kind='TODOS';status='ATUAIS';period='HOJE';receivedOnly=false;reportMonth=today().slice(0,7);refreshAgain=false;modal()?.remove();}
+  function reset(){if(proofObjectUrl){URL.revokeObjectURL(proofObjectUrl);proofObjectUrl='';}key='';ctx=null;rows=[];plans=[];customers=[];proofs=[];tab='monthly';invite=null;latestMonthly=new Map();loaded=false;error='';last=0;request=null;busy=false;loading=false;query='';kind='TODOS';status='ATUAIS';period='HOJE';receivedOnly=false;reportMonth=today().slice(0,7);refreshAgain=false;modal()?.remove();}
   async function refresh(force=false){
     if(!ctx?.canRead())return;
     if(loading){if(force)refreshAgain=true;return;}
@@ -96,10 +96,11 @@
       const data=ctx.demo()?ctx.demoData():await Promise.all([
         ctx.read('bar_day_use_passes?select=*,bar_day_use_customers(full_name,phone,deleted_at,delete_reason)&order=paid_on.desc,created_at.desc,id.desc'),
         ctx.read('bar_day_use_plans?select=*,bar_products(id,name,sale_price,active)&order=kind.asc'),
-        ctx.read('bar_day_use_customers?select=id,full_name,phone,created_at,deleted_at&order=created_at.desc')
+        ctx.read('bar_day_use_customers?select=id,full_name,phone,created_at,deleted_at&order=created_at.desc'),
+        ctx.read('bar_day_use_proofs?select=id,customer_id,object_path,uploaded_at&uploaded_at=not.is.null&order=uploaded_at.desc')
       ]);
       if(epoch!==key)return;
-      [rows,plans]=data;customers=data[2]||Array.from(new Map(rows.map(r=>[r.customer_id,{id:r.customer_id,...person(r)}])).values());loaded=true;error='';
+      [rows,plans]=data;proofs=data[3]||[];customers=data[2]||Array.from(new Map(rows.map(r=>[r.customer_id,{id:r.customer_id,...person(r)}])).values());loaded=true;error='';
       latestMonthly=new Map();for(const row of sorted())if(row.kind==='MENSAL'&&!row.cancelled_at&&!latestMonthly.has(row.customer_id))latestMonthly.set(row.customer_id,row.id);
     }catch(e){if(epoch===key)error=e.message||'Falha ao atualizar Day Use.';}
     finally{if(epoch===key){loading=false;paintCard();renderList();if(refreshAgain){refreshAgain=false;refresh(true);}}}
@@ -114,7 +115,7 @@
       <section id="duPanel" role="tabpanel" tabindex="0"><div class="du-section-heading"><div><h3 id="duSectionTitle"></h3></div><div class="du-top-actions"><button class="ghost-btn" type="button" data-du-refresh>Atualizar</button><button class="primary-btn" type="button" data-du-new>+ Registrar pagamento</button></div></div>
       <div id="duInvite" class="du-invite" hidden><div><strong>Novo mensalista</strong></div><button class="ghost-btn" type="button" data-du-invite>Gerar link de cadastro</button><div id="duInviteResult" hidden></div></div>
       <div class="du-period-toolbar"><label>Período<select id="duPeriod"><option value="HOJE">Hoje</option><option value="SEMANA">Últimos 7 dias</option><option value="MES">Mensal</option><option value="TODOS">Todos os períodos</option></select></label><label id="duMonthLabel" hidden>Mês<input type="month" id="duMonth" value="${reportMonth}"></label><label>Pagamentos<select id="duReceipt"><option value="TODOS">Todos os lançamentos</option><option value="RECEBIDOS">Somente recebidos / quitados</option></select></label></div>
-      <div class="du-toolbar"><label>Buscar pessoa<input id="duSearch" type="search" placeholder="Nome ou telefone"></label><label id="duKindLabel">Tipo<select id="duKind"><option value="TODOS">Diário e mensal</option><option value="DIARIO">Day Use diário</option><option value="MENSAL">Day Use mensal</option></select></label><label>Situação<select id="duStatus"></select></label></div>
+      <button type="button" class="ghost-btn" id="duProofs" data-du-proofs hidden>Comprovantes recebidos</button><div class="du-toolbar"><label>Buscar pessoa<input id="duSearch" type="search" placeholder="Nome ou telefone"></label><label id="duKindLabel">Tipo<select id="duKind"><option value="TODOS">Diário e mensal</option><option value="DIARIO">Day Use diário</option><option value="MENSAL">Day Use mensal</option></select></label><label>Situação<select id="duStatus"></select></label></div>
       <div id="duEditor" hidden></div><div class="du-list-meta" id="duListMeta" role="status"></div><div class="du-list" id="duList"></div><section class="du-command-report" id="duCommandReport"></section></section>
       `;
     document.body.append(el);
@@ -129,6 +130,8 @@
       if(b.hasAttribute('data-du-close'))el.close();
       if(b.hasAttribute('data-du-refresh'))await refresh(true);
       if(b.hasAttribute('data-du-new'))editor();
+      if(b.hasAttribute('data-du-proofs')){tab='monthly';status='COMPROVANTES';configureTab();renderList();}
+      if(b.dataset.duProof)await viewProof(b.dataset.duProof);
       if(b.hasAttribute('data-du-pending')){tab='monthly';status='SEM_PAGAMENTO';configureTab();renderList();document.getElementById('duList').scrollIntoView({block:'nearest',behavior:'smooth'});}
       if(b.dataset.duTab){tab=b.dataset.duTab;status=tab==='monthly'?'ATUAIS':tab==='customers'?'CADASTRADOS':'TODOS';document.getElementById('duEditor').hidden=true;configureTab();renderList();}
       if(b.hasAttribute('data-du-invite'))await createInvite(b);
@@ -151,7 +154,7 @@
     modal().querySelector('.du-period-toolbar').hidden=!['daily','receipts'].includes(tab);
     document.getElementById('duKindLabel').hidden=tab!=='receipts';
     document.getElementById('duInvite').hidden=!ctx.canWrite()||tab!=='monthly';
-    const options=tab==='monthly'?[['ATUAIS','Todos os mensalistas'],['SEM_PAGAMENTO','Aguardando pagamento'],['ATIVO','Ativos'],['PROXIMOS','Vencem em até 7 dias'],['VENCIDO','Vencidos']]:tab==='customers'?[['CADASTRADOS','Cadastros atuais'],['SEM_PAGAMENTO','Sem pagamento registrado'],['EXCLUIDO','Excluídos']]:[['TODOS','Todo o histórico'],['ATIVO','Ativos'],['VENCIDO','Vencidos'],['CANCELADO','Cancelados'],['EXCLUIDO','Excluídos']];
+    const options=tab==='monthly'?[['ATUAIS','Todos os mensalistas'],['SEM_PAGAMENTO','Aguardando pagamento'],['COMPROVANTES','Comprovantes recebidos'],['ATIVO','Ativos'],['PROXIMOS','Vencem em até 7 dias'],['VENCIDO','Vencidos']]:tab==='customers'?[['CADASTRADOS','Cadastros atuais'],['SEM_PAGAMENTO','Sem pagamento registrado'],['EXCLUIDO','Excluídos']]:[['TODOS','Todo o histórico'],['ATIVO','Ativos'],['VENCIDO','Vencidos'],['CANCELADO','Cancelados'],['EXCLUIDO','Excluídos']];
     document.getElementById('duStatus').innerHTML=options.map(([value,name])=>'<option value="'+value+'"'+(value===status?' selected':'')+'>'+name+'</option>').join('');
   }
   // Monthly membership follows the latest pass, not the receipt date filter.
@@ -173,6 +176,21 @@
     const matches=customers.filter(c=>(status==='EXCLUIDO'?c.deleted_at:!c.deleted_at)&&(status!=='SEM_PAGAMENTO'||!paid.has(c.id))&&(!q||c.full_name.toLocaleLowerCase('pt-BR').includes(q)||(digits&&c.phone.includes(digits))));
     document.getElementById('duListMeta').textContent=loaded?matches.length+' cadastro(s)':'Carregando cadastros…';
     document.getElementById('duList').innerHTML=matches.map(c=>{const id='customer-'+c.id,editable=ctx.canWrite()&&!c.deleted_at;return '<article class="du-person"><div class="du-person-main"><strong>'+esc(c.full_name)+'</strong><a href="https://wa.me/'+esc(c.phone)+'" target="_blank" rel="noopener noreferrer">'+esc(phoneLabel(c.phone))+'</a></div><div class="du-dates"><span class="du-badge">'+(c.deleted_at?'Excluído':paid.has(c.id)?'Possui pagamentos':'Sem pagamento registrado')+'</span></div><div class="du-actions">'+(editable?'<button class="small-btn du-renew" type="button" data-du-renew="'+id+'">Registrar pagamento</button><details class="du-more"><summary>Mais opções ⌄</summary><div class="du-more-panel"><button type="button" class="small-btn" data-du-edit="'+id+'">Editar cadastro</button><button type="button" class="small-btn du-danger" data-du-delete="'+id+'">Excluir cadastro</button></div></details>':'')+'</div></article>';}).join('')||'<div class="lesson-empty-state">Nenhum cadastro neste filtro. Use o link acima para convidar uma pessoa.</div>';
+  }
+  function renderProofs(){
+    const q=query.trim().toLocaleLowerCase('pt-BR');
+    const matches=proofs.filter(r=>{const c=customers.find(c=>c.id===r.customer_id);return c&&(!q||c.full_name.toLocaleLowerCase('pt-BR').includes(q)||c.phone.includes(q.replace(/\D/g,''))&&/\d/.test(q));});
+    document.getElementById('duListMeta').textContent=matches.length+' comprovante(s) · confira antes de registrar o pagamento';
+    document.getElementById('duList').innerHTML=matches.map(r=>{const c=customers.find(c=>c.id===r.customer_id);return '<article class="du-person"><div class="du-person-main"><strong>'+esc(c.full_name)+'</strong><small>'+esc(phoneLabel(c.phone))+'</small></div><div class="du-dates"><span>Enviado em '+date(r.uploaded_at)+'</span><span class="du-badge">Comprovante enviado</span></div><div class="du-actions"><button class="small-btn" type="button" data-du-proof="'+esc(r.id)+'">Ver comprovante</button>'+(ctx.canWrite()&&!c.deleted_at?'<button class="small-btn du-renew" type="button" data-du-renew="customer-'+esc(c.id)+'">Registrar pagamento</button>':'')+'</div></article>';}).join('')||'<div class="lesson-empty-state">Nenhum comprovante neste filtro.</div>';
+  }
+  let proofObjectUrl='';
+  async function viewProof(id){
+    const proof=proofs.find(r=>r.id===id),epoch=key;if(!proof||!ctx.loadProof)return;
+    try{
+      notice('Abrindo comprovante…');const blob=await ctx.loadProof(proof.object_path);if(epoch!==key)return;
+      if(proofObjectUrl)URL.revokeObjectURL(proofObjectUrl);proofObjectUrl=URL.createObjectURL(blob);
+      const box=document.getElementById('duEditor');box.hidden=false;box.innerHTML='<div class="du-editor-title"><h3>Comprovante de pagamento</h3><button type="button" class="ghost-btn" data-du-dismiss>Fechar</button></div><img class="du-proof-image" alt="Comprovante enviado pelo cliente" src="'+esc(proofObjectUrl)+'">';box.scrollIntoView({block:'nearest',behavior:'smooth'});notice('');
+    }catch(e){notice(e.message||'Não foi possível abrir o comprovante.',true);}
   }
   async function createInvite(button){
     if(!ctx.canWrite())return;
@@ -198,6 +216,7 @@
   function notice(message,bad=false){const n=document.getElementById('duNotice');if(n){n.textContent=message;n.classList.toggle('is-error',bad);}}
   function renderList(){
     if(!modal()?.open)return;
+    const proofButton=document.getElementById('duProofs');proofButton.hidden=tab!=='monthly'||!proofs.length;proofButton.textContent='Comprovantes recebidos · '+proofs.length;
     const paidCustomers=new Set(rows.filter(r=>!r.cancelled_at).map(r=>r.customer_id));
     const pendingCount=customers.filter(c=>!c.deleted_at&&!paidCustomers.has(c.id)).length;
     const pendingButton=document.getElementById('duNewRegistrations');pendingButton.hidden=!pendingCount;pendingButton.textContent='Novos cadastros · '+pendingCount+' aguardando pagamento →';
@@ -216,6 +235,7 @@
     document.getElementById('duCommandReport').hidden=!['daily','receipts'].includes(tab);
     if(['daily','receipts'].includes(tab))renderCommands();
     const matches=filterPasses(sorted(),{tab,kind,status,query,bounds,receivedOnly,day:today()},state);
+    if(tab==='monthly'&&status==='COMPROVANTES'){renderProofs();return;}
     if(tab==='monthly'&&status==='SEM_PAGAMENTO'){renderCustomers();return;}
     document.getElementById('duListMeta').textContent=loaded?matches.length+' registro(s) neste filtro':'Carregando Day Use…';
     document.getElementById('duList').innerHTML=matches.map(r=>{

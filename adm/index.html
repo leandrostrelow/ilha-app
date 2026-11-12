@@ -39659,6 +39659,15 @@ const colors = tournamentArtPalette({
 
     function barDayUseContext() {
       return {
+        loadProof: async function (path) {
+          requireAdminSession();
+          if (!/^[a-f0-9-]{36}\/[a-f0-9-]{36}\.(jpg|png|webp)$/.test(path)) throw new Error('Comprovante inválido.');
+          const response = await fetchWithAdminTimeout(supabaseBaseUrl() + '/storage/v1/object/authenticated/day-use-proofs/' + encodeStoragePath(path), { headers: supabaseHeaders(true) }, ADMIN_REQUEST_TIMEOUT_MS);
+          if (!response.ok) throw new Error('Não foi possível carregar o comprovante.');
+          const blob = await response.blob();
+          if (!['image/jpeg', 'image/png', 'image/webp'].includes(blob.type)) throw new Error('Formato de comprovante inválido.');
+          return blob;
+        },
         commandSnapshot: function () { return { orders: opsData.barOrders || [], items: opsData.barOrderItems || [], finance: opsData.barFinance || [], day: barOperationalDateString(), dateKey: barOperationalDateKey }; },
         refreshCommands: async function (history) { if (history) await loadBarHistoryData(true); else await loadBarData(true); if (opsState.barLoadError) throw new Error(opsState.barLoadError); },
         openCommand: openBarCommandModal,
