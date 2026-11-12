@@ -85,7 +85,7 @@
     ctx=context;key=context.sessionKey;
     if(ctx.canRead()&&!loading&&Date.now()-last>30000)refresh();
   }
-  function reset(){if(proofObjectUrl){URL.revokeObjectURL(proofObjectUrl);proofObjectUrl='';}key='';ctx=null;rows=[];plans=[];customers=[];proofs=[];tab='monthly';invite=null;latestMonthly=new Map();loaded=false;error='';last=0;request=null;busy=false;loading=false;query='';kind='TODOS';status='ATUAIS';period='HOJE';receivedOnly=false;reportMonth=today().slice(0,7);refreshAgain=false;modal()?.remove();}
+  function reset(){document.getElementById('duProofViewer')?.close();key='';ctx=null;rows=[];plans=[];customers=[];proofs=[];tab='monthly';invite=null;latestMonthly=new Map();loaded=false;error='';last=0;request=null;busy=false;loading=false;query='';kind='TODOS';status='ATUAIS';period='HOJE';receivedOnly=false;reportMonth=today().slice(0,7);refreshAgain=false;modal()?.remove();}
   async function refresh(force=false){
     if(!ctx?.canRead())return;
     if(loading){if(force)refreshAgain=true;return;}
@@ -131,7 +131,7 @@
       if(b.hasAttribute('data-du-refresh'))await refresh(true);
       if(b.hasAttribute('data-du-new'))editor();
       if(b.hasAttribute('data-du-proofs')){tab='monthly';status='COMPROVANTES';configureTab();renderList();}
-      if(b.dataset.duProof)await viewProof(b.dataset.duProof);
+      if(b.dataset.duProof){e.preventDefault();e.stopPropagation();await viewProof(b.dataset.duProof);return;}
       if(b.hasAttribute('data-du-pending')){tab='monthly';status='SEM_PAGAMENTO';configureTab();renderList();document.getElementById('duList').scrollIntoView({block:'nearest',behavior:'smooth'});}
       if(b.dataset.duTab){tab=b.dataset.duTab;status=tab==='monthly'?'ATUAIS':tab==='customers'?'CADASTRADOS':'TODOS';document.getElementById('duEditor').hidden=true;configureTab();renderList();}
       if(b.hasAttribute('data-du-invite'))await createInvite(b);
@@ -183,14 +183,24 @@
     document.getElementById('duListMeta').textContent=matches.length+' comprovante(s) · confira antes de registrar o pagamento';
     document.getElementById('duList').innerHTML=matches.map(r=>{const c=customers.find(c=>c.id===r.customer_id);return '<article class="du-person"><div class="du-person-main"><strong>'+esc(c.full_name)+'</strong><small>'+esc(phoneLabel(c.phone))+'</small></div><div class="du-dates"><span>Enviado em '+date(r.uploaded_at)+'</span><span class="du-badge">Comprovante enviado</span></div><div class="du-actions"><button class="small-btn" type="button" data-du-proof="'+esc(r.id)+'">Ver comprovante</button>'+(ctx.canWrite()&&!c.deleted_at?'<button class="small-btn du-renew" type="button" data-du-renew="customer-'+esc(c.id)+'">Registrar pagamento</button>':'')+'</div></article>';}).join('')||'<div class="lesson-empty-state">Nenhum comprovante neste filtro.</div>';
   }
-  let proofObjectUrl='';
   async function viewProof(id){
     const proof=proofs.find(r=>r.id===id),epoch=key;if(!proof||!ctx.loadProof)return;
+    document.getElementById('duProofViewer')?.close();
+    const viewer=document.createElement('dialog');viewer.id='duProofViewer';viewer.className='du-proof-viewer';
+    viewer.setAttribute('aria-labelledby','duProofTitle');
+    viewer.innerHTML='<header><h3 id="duProofTitle">Comprovante de pagamento</h3><button type="button" autofocus aria-label="Fechar comprovante">Fechar ×</button></header><p role="status">Carregando comprovante…</p><img class="du-proof-image" alt="Comprovante enviado pelo cliente" hidden>';
+    document.body.append(viewer);viewer.showModal();
+    viewer.querySelector('button').addEventListener('click',()=>viewer.close());
+    viewer.addEventListener('click',e=>{e.stopPropagation();});
+    let objectUrl='';
+    viewer.addEventListener('close',()=>{if(objectUrl)URL.revokeObjectURL(objectUrl);viewer.remove();},{once:true});
     try{
-      notice('Abrindo comprovante…');const blob=await ctx.loadProof(proof.object_path);if(epoch!==key)return;
-      if(proofObjectUrl)URL.revokeObjectURL(proofObjectUrl);proofObjectUrl=URL.createObjectURL(blob);
-      const box=document.getElementById('duEditor');box.hidden=false;box.innerHTML='<div class="du-editor-title"><h3>Comprovante de pagamento</h3><button type="button" class="ghost-btn" data-du-dismiss>Fechar</button></div><img class="du-proof-image" alt="Comprovante enviado pelo cliente" src="'+esc(proofObjectUrl)+'">';box.scrollIntoView({block:'nearest',behavior:'smooth'});notice('');
-    }catch(e){notice(e.message||'Não foi possível abrir o comprovante.',true);}
+      const blob=await ctx.loadProof(proof.object_path);if(epoch!==key||!viewer.open)return;
+      objectUrl=URL.createObjectURL(blob);
+      const img=viewer.querySelector('img');img.src=objectUrl;
+      await img.decode();if(!viewer.open)return;
+      img.hidden=false;viewer.querySelector('[role="status"]').hidden=true;
+    }catch(e){if(viewer.open)viewer.querySelector('[role="status"]').textContent=e.message||'Não foi possível abrir o comprovante. Feche e tente novamente.';}
   }
   async function createInvite(button){
     if(!ctx.canWrite())return;
