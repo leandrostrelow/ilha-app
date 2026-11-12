@@ -24,6 +24,7 @@ begin
   begin perform public.bar_create_day_use_invite(); exception when insufficient_privilege then rejected:=true; end;
   if not rejected then raise exception 'Read-only staff created invite'; end if;
   perform set_config('request.jwt.claims',jsonb_build_object('sub',staff,'role','authenticated')::text,true);
+  perform public.bar_enable_day_use_public_registration();
   invite:=public.bar_create_day_use_invite();
   other_invite:=public.bar_create_day_use_invite();
   expired_invite:=public.bar_create_day_use_invite();
@@ -61,6 +62,7 @@ begin
   rejected:=false;
   begin perform public.bar_submit_day_use_registration(invite->>'token','QA Outra Pessoa','27999993333'); exception when others then if sqlerrm not like 'Este link já foi utilizado%' then raise; end if; rejected:=true; end;
   if not rejected then raise exception 'Used token overwritten'; end if;
+  perform public.bar_submit_day_use_public_registration('QA Beach Pessoa','27999992222');
   -- A second invitation for the same contact must not create a duplicate.
   perform public.bar_submit_day_use_registration(other_invite->>'token','qa beach pessoa','27999992222');
   perform set_config('role','postgres',true);
@@ -68,7 +70,7 @@ begin
   select id into strict customer from public.bar_day_use_customers where full_name='QA Beach Pessoa' and phone='5527999992222' and created_by=staff;
   if (select count(*) from public.bar_day_use_passes)<>before_passes or (select count(*) from public.bar_financial_entries)<>before_finance then raise exception 'Registration created financial activity'; end if;
   if (select count(*) from public.app_client_notifications where event_type='NOVO_CADASTRO_DAY_USE' and dedupe_key like 'day-use-registration:'||customer::text||':%')<>2 then raise exception 'Staff notifications missing or duplicated'; end if;
-  if (select count(*) from day_use_private.bar_day_use_invites where customer_id=customer and used_at is not null)<>2 then raise exception 'Audit trail missing'; end if;
+  if (select count(*) from day_use_private.bar_day_use_invites where customer_id=customer and used_at is not null)<>3 then raise exception 'Audit trail missing'; end if;
   update public.bar_day_use_customers set deleted_at=now(),delete_reason='QA removal' where id=customer;
   perform set_config('role','anon',true);
   rejected:=false;

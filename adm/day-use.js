@@ -132,7 +132,7 @@
       if(b.hasAttribute('data-du-pending')){tab='monthly';status='SEM_PAGAMENTO';configureTab();renderList();document.getElementById('duList').scrollIntoView({block:'nearest',behavior:'smooth'});}
       if(b.dataset.duTab){tab=b.dataset.duTab;status=tab==='monthly'?'ATUAIS':tab==='customers'?'CADASTRADOS':'TODOS';document.getElementById('duEditor').hidden=true;configureTab();renderList();}
       if(b.hasAttribute('data-du-invite'))await createInvite(b);
-      if(b.hasAttribute('data-du-copy')){try{await navigator.clipboard.writeText(invite.url);notice('Link copiado. Envie para uma pessoa.');}catch{document.getElementById('duInviteUrl').select();notice('Selecione e copie o link abaixo.');}}
+      if(b.hasAttribute('data-du-copy')){try{await navigator.clipboard.writeText(invite.url);notice('Link fixo copiado.');}catch{document.getElementById('duInviteUrl').select();notice('Copie o link abaixo.');}}
       if(b.closest('.du-more'))b.closest('.du-more').open=false;
       if(b.dataset.duCommand){el.close();ctx.openCommand?.(b.dataset.duCommand);}
       if(b.dataset.duRenew)editor(findRow(b.dataset.duRenew));
@@ -180,12 +180,12 @@
     const epoch=key,operationCtx=ctx;busy=true;button.disabled=true;
     try{
       if(!ctx.canPersist())throw Error('Atualize a conexão antes de criar o link.');
-      const response=await operationCtx.write('bar_create_day_use_invite',{}),result=Array.isArray(response)?response[0]:response;
+      const response=await operationCtx.write('bar_enable_day_use_public_registration',{}),result=Array.isArray(response)?response[0]:response;
       if(epoch!==key)return;
-      if(!/^[a-f0-9]{64}$/.test(result?.token||''))throw Error('Não foi possível criar o link. Tente novamente.');
-      invite={url:location.origin+'/day-use#token='+result.token,expires:result.expires_at};
+      if(result?.enabled!==true)throw Error('Não foi possível criar o link. Tente novamente.');
+      invite={url:location.origin+'/day-use',expires:result.expires_at};
       const output=document.getElementById('duInviteResult');output.hidden=false;
-      output.innerHTML='<label>Link individual · válido até '+date(invite.expires)+'<input id="duInviteUrl" readonly value="'+esc(invite.url)+'"></label><div class="du-invite-actions"><button type="button" class="small-btn" data-du-copy>Copiar link</button><a class="small-btn du-whatsapp" href="https://wa.me/?text='+encodeURIComponent('Olá! Preencha seu cadastro do Beach Tennis do Ilha por este link individual: '+invite.url)+'" target="_blank" rel="noopener noreferrer">Enviar pelo WhatsApp</a></div>';
+      output.innerHTML='<label>Link fixo para cadastro e QR Code<input id="duInviteUrl" readonly value="'+esc(invite.url)+'"></label><div class="du-invite-actions"><button type="button" class="small-btn" data-du-copy>Copiar link</button><a class="small-btn du-whatsapp" href="https://wa.me/?text='+encodeURIComponent('Olá! Preencha seu cadastro do Beach Tennis do Ilha por este link: '+invite.url)+'" target="_blank" rel="noopener noreferrer">Enviar pelo WhatsApp</a></div>';
       notice('Link pronto para enviar. A pessoa aparecerá em Mensalistas, aguardando pagamento.');
     }catch(e){if(epoch===key)notice(e.message||'Não foi possível criar o link.',true);}
     finally{busy=false;button.disabled=false;}
