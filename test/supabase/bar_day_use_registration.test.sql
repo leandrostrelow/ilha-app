@@ -29,7 +29,7 @@ begin
   blocked_invite:=public.bar_create_day_use_invite();
   if (invite->>'token') !~ '^[a-f0-9]{64}$' or (invite->>'expires_at')::timestamptz <> now()+interval '7 days' then raise exception 'Invalid capability'; end if;
   perform set_config('role','postgres',true);
-  update private.bar_day_use_invites set expires_at=now()-interval '1 second' where token_hash=encode(extensions.digest(expired_invite->>'token','sha256'),'hex');
+  update day_use_private.bar_day_use_invites set expires_at=now()-interval '1 second' where token_hash=encode(extensions.digest(expired_invite->>'token','sha256'),'hex');
   perform set_config('request.jwt.claims','{"role":"anon"}',true);
   perform set_config('role','anon',true);
   rejected:=false;
@@ -39,7 +39,7 @@ begin
   begin perform * from public.bar_day_use_customers; exception when insufficient_privilege then rejected:=true; end;
   if not rejected then raise exception 'Anonymous read contacts'; end if;
   rejected:=false;
-  begin perform * from private.bar_day_use_invites; exception when insufficient_privilege then rejected:=true; end;
+  begin perform * from day_use_private.bar_day_use_invites; exception when insufficient_privilege then rejected:=true; end;
   if not rejected then raise exception 'Anonymous read invite secrets'; end if;
   rejected:=false;
   begin perform public.bar_submit_day_use_registration(repeat('0',64),'QA Beach Pessoa','27999992222'); exception when others then if sqlerrm not like 'Link inválido%' then raise; end if; rejected:=true; end;
@@ -66,7 +66,7 @@ begin
   if (select count(*) from public.bar_day_use_customers)<>before_customers+1 then raise exception 'Contact duplicated'; end if;
   select id into strict customer from public.bar_day_use_customers where full_name='QA Beach Pessoa' and phone='5527999992222' and created_by=staff;
   if (select count(*) from public.bar_day_use_passes)<>before_passes or (select count(*) from public.bar_financial_entries)<>before_finance then raise exception 'Registration created financial activity'; end if;
-  if (select count(*) from private.bar_day_use_invites where customer_id=customer and used_at is not null)<>2 then raise exception 'Audit trail missing'; end if;
+  if (select count(*) from day_use_private.bar_day_use_invites where customer_id=customer and used_at is not null)<>2 then raise exception 'Audit trail missing'; end if;
   update public.bar_day_use_customers set deleted_at=now(),delete_reason='QA removal' where id=customer;
   perform set_config('role','anon',true);
   rejected:=false;
