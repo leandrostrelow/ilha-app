@@ -14,11 +14,11 @@ revoke all on public.bar_day_use_proofs from public,anon,authenticated,service_r
 grant select on public.bar_day_use_proofs to authenticated;
 create policy day_use_proofs_staff on public.bar_day_use_proofs for select to authenticated using(uploaded_at is not null and ((select public.has_bar_permission('bar.orders')) or (select public.has_bar_permission('bar.finance'))));
 create function day_use_private.begin_proof(p_request_id uuid,p_name text,p_phone text,p_extension text) returns jsonb language plpgsql security definer set search_path='' as $$
-declare r public.bar_day_use_proofs; result jsonb; phone text:=regexp_replace(coalesce(p_phone,''),'\D','','g'); name text:=regexp_replace(btrim(coalesce(p_name,'')),'\s+',' ','g'); fingerprint text; customer uuid;
+declare r public.bar_day_use_proofs; result jsonb; v_phone text:=regexp_replace(coalesce(p_phone,''),'\D','','g'); v_name text:=regexp_replace(btrim(coalesce(p_name,'')),'\s+',' ','g'); fingerprint text; customer uuid;
 begin
  if p_request_id is null or p_extension not in('jpg','png','webp') or p_extension is null then raise exception 'Arquivo inválido.'; end if;
- if length(phone) in(10,11) then phone:='55'||phone; end if;
- fingerprint:=encode(extensions.digest(lower(name)||':'||phone||':'||p_extension,'sha256'),'hex');
+ if length(v_phone) in(10,11) then v_phone:='55'||v_phone; end if;
+ fingerprint:=encode(extensions.digest(lower(v_name)||':'||v_phone||':'||p_extension,'sha256'),'hex');
  perform pg_advisory_xact_lock(hashtextextended('day-use-proof:'||p_request_id::text,0));
  select * into r from public.bar_day_use_proofs where id=p_request_id;
  if found then
@@ -27,7 +27,7 @@ begin
  end if;
  result:=day_use_private.submit_public_registration(p_name,p_phone);
  if coalesce((result->>'ok')::boolean,false) is not true then return result; end if;
- select id into strict customer from public.bar_day_use_customers c where c.phone=begin_proof.phone and c.name_key=lower(begin_proof.name) and c.deleted_at is null;
+ select id into strict customer from public.bar_day_use_customers c where c.phone=v_phone and c.name_key=lower(v_name) and c.deleted_at is null;
  insert into public.bar_day_use_proofs(id,customer_id,object_path,payload_hash) values(p_request_id,customer,p_request_id::text||'/'||gen_random_uuid()::text||'.'||p_extension,fingerprint) returning * into r;
  return jsonb_build_object('path',r.object_path,'uploaded',false);
 end $$;
