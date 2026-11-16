@@ -79,3 +79,23 @@ test('total soma somente faturas vencidas únicas e acompanha o pagamento',async
  await f.board.refresh();assert.equal(f.elements.get('homeOverdueTotal').textContent,'520.25');
  a.status='PAGA';await f.board.refresh();assert.equal(f.elements.get('homeOverdueTotal').textContent,'350.1');
 });
+
+
+test('aviso mostra a data registrada do pagamento no fuso de Brasília',async()=>{
+ for (const [paid_at, expected] of [
+  ['2026-11-15T01:30:00Z','Pago em 14/11/2026'],
+  ['2026-11-15T15:00:00Z','Pago em 15/11/2026'],
+  ['2026-11-15','Pago em 15/11/2026'],
+  [null,'Data do pagamento não informada'],
+  ['invalid','Data do pagamento não informada']
+ ]) {
+  const rows=[invoice('paid',{provider_status:'RECEIVED',paid_at,updated_at:'2026-11-16T15:00:00Z'})];
+  const f=controllerFixture({read:async p=>p.startsWith('app_payment_invoices?')?rows:[]});
+  await f.board.refresh();
+  const html=f.elements.get('homeConfirmedPayments').innerHTML;
+  assert.ok(html.includes(expected),html);
+  assert.match(html,/Confirmado pelo Asaas/);
+  assert.match(html,/RESOLVIDO/);
+  assert.doesNotMatch(html,/Pago em 16\/11\/2026/);
+ }
+});
