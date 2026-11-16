@@ -27,8 +27,8 @@ if (!/^\d{4}-\d{2}-\d{2}\.\d{4}$/.test(String(version.version || ''))) {
   throw new Error('app-version.json possui formato de versao invalido.');
 }
 
-// Keep lead forms and the administrative module in the same release.
-for (const [page, assets] of [['day-use/index.html', ['day-use/register.js','day-use/styles.css']], ['aulas.html', ['aulas.js','aulas.css']], ['adm/index.html', ['adm/leads.js','adm/leads.css','adm/events.js','adm/events.css','adm/day-use.js','adm/day-use.css']], ['eventos/index.html', ['eventos/public.js','eventos/public.css']]]) {
+// Keep public pages, lead forms and the administrative module in the same release.
+for (const [page, assets] of [['cresol/index.html', ['cresol/app.js', 'cresol/styles.css']], ['day-use/index.html', ['day-use/register.js','day-use/styles.css']], ['aulas.html', ['aulas.js','aulas.css']], ['adm/index.html', ['adm/leads.js','adm/leads.css','adm/events.js','adm/events.css','adm/day-use.js','adm/day-use.css']], ['eventos/index.html', ['eventos/public.js','eventos/public.css']]]) {
   const file = path.join(destination, page);
   let html = await readFile(file, 'utf8');
   for (const asset of assets) {
