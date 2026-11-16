@@ -4,6 +4,7 @@
   const dots = [...document.querySelectorAll('.chapter-dots a')];
   const currentChapter = document.querySelector('#current-chapter');
   const currentTitle = document.querySelector('#current-title');
+  document.querySelector('#total-chapters').textContent = `/ ${String(sections.length).padStart(2, '0')}`;
   const previous = document.querySelector('#previous-chapter');
   const next = document.querySelector('#next-chapter');
   const progress = document.querySelector('#reading-progress');
@@ -121,6 +122,36 @@
       else return;
       event.preventDefault();
       selectEvent(target, true);
+    });
+  });
+
+  const gameIdeas = [
+    { title: 'A Cresol no cenário.', copy: 'Banners virtuais nas quadras, placas nos caminhos e pontos de marca no clube digital. Uma presença integrada ao ambiente que o jogador explora.' },
+    { title: 'Um desafio para jogar junto.', copy: 'Missões temáticas e desafios de tênis ou pickleball com a identidade da campanha Cresol. Uma forma de aproximar a marca da participação e da evolução dos jogadores.' },
+    { title: 'Conquistas que ficam.', copy: 'Medalhas digitais, selos comemorativos e itens visuais de campanha podem celebrar a participação dos jogadores e prolongar a lembrança da parceria.' }
+  ];
+  const gameTabs = [...document.querySelectorAll('[data-game-idea]')];
+  const gameIdeaPanel = document.querySelector('#game-idea');
+  function selectGameIdea(index, moveFocus = false) {
+    gameTabs.forEach((tab, position) => { tab.setAttribute('aria-selected', String(position === index)); tab.tabIndex = position === index ? 0 : -1; });
+    gameIdeaPanel.setAttribute('aria-labelledby', gameTabs[index].id);
+    document.querySelector('#game-idea-number').textContent = String(index + 1).padStart(2, '0');
+    document.querySelector('#game-idea-title').textContent = gameIdeas[index].title;
+    document.querySelector('#game-idea-copy').textContent = gameIdeas[index].copy;
+    animatePanel(gameIdeaPanel);
+    if (moveFocus) gameTabs[index].focus();
+  }
+  gameTabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => selectGameIdea(index));
+    tab.addEventListener('keydown', event => {
+      let target = index;
+      if (event.key === 'ArrowRight') target = (index + 1) % gameTabs.length;
+      else if (event.key === 'ArrowLeft') target = (index - 1 + gameTabs.length) % gameTabs.length;
+      else if (event.key === 'Home') target = 0;
+      else if (event.key === 'End') target = gameTabs.length - 1;
+      else return;
+      event.preventDefault();
+      selectGameIdea(target, true);
     });
   });
 
