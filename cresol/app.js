@@ -76,7 +76,7 @@
   menu.addEventListener('click', event => { if (event.target.closest('a')) closeMenu(); });
   document.addEventListener('click', event => { if (!menu.hidden && !menu.contains(event.target) && !menuButton.contains(event.target)) closeMenu(); });
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && !menu.hidden) closeMenu(true); });
-  window.matchMedia('(min-width: 761px)').addEventListener('change', event => { if (event.matches) closeMenu(); });
+  window.matchMedia('(min-width: 1001px)').addEventListener('change', event => { if (event.matches) closeMenu(); });
 
   const events = [
     { name: 'Jogos de Verão Colatina', timing: '2027 · NOVA EDIÇÃO PREVISTA', copy: 'Tênis, beach tennis, futevôlei e vôlei em uma experiência que reúne atletas e comunidade. A proposta contempla a presença da Cresol na próxima edição.', date: 'Data de 2027 a confirmar.', image: 'jogos-de-verao.jpg', alt: 'Arte original dos Jogos de Verão Colatina com tênis, beach tennis, futevôlei e vôlei', note: 'Arte da edição anterior' },
