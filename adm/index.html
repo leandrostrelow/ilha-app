@@ -48390,6 +48390,18 @@ const colors = tournamentArtPalette({
       await loadOpsData(true);
       const invoice = (opsData.paymentInvoices || []).find(function (item) { return item.id === row.id; });
       if (!invoice || !invoiceCanReceiveManually(invoice)) throw new Error('A fatura mudou ou exige conciliação. Atualize e confira a ficha.');
+      if (action === 'amount') {
+        if (!invoiceIsProviderManaged(invoice)) throw new Error('Esta correção é destinada a cobranças Pix emitidas no Asaas.');
+        const value = window.prompt('Corrigir o valor desta fatura conforme a composição atual do cadastro. Informe o total correto em reais. O vencimento será preservado.', String(invoice.amount));
+        if (value === null) return;
+        const newAmount = Number(value.replace(',', '.'));
+        if (!Number.isFinite(newAmount) || newAmount <= 0 || newAmount === Number(invoice.amount)) throw new Error('Informe um novo valor positivo.');
+        const reason = window.prompt('Informe o motivo da correção (mínimo de 10 caracteres):');
+        if (reason === null) return;
+        if (!window.confirm('Corrigir somente esta fatura de ' + money(invoice.amount) + ' para ' + money(newAmount) + '?\n' + invoiceMonthLabel(invoice.invoiceMonth) + ' · vence ' + financeDateLabel(invoice.dueDate) + '\nA composição deve corresponder ao cadastro atual. Nenhum pagamento será registrado.')) return;
+        await sendMonthlyReceiptBatch({ action: 'adjust_amount', invoiceId: invoice.id, expectedAmount: Number(invoice.amount), newAmount: newAmount, invoiceMonth: invoice.invoiceMonth, oldDueDate: invoice.dueDate, reason: reason.trim() });
+        await loadOpsData(true); await operationalDashboard.refresh(); toast('Valor corrigido no Asaas e no financeiro. Histórico preservado.'); return;
+      }
       if (action === 'receipt') { confirmManualMonthlyPayment(invoice.id); $('invoiceReceiptDate').value = ''; return; }
       if (action === 'suspend') { await openDashboardSuspension(invoice); return; }
       if (action !== 'remind') return;
