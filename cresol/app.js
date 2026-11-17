@@ -45,7 +45,7 @@
   window.addEventListener('resize', requestNavigationUpdate);
   window.addEventListener('load', updateNavigation);
   document.addEventListener('keydown', event => {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.target.closest('a, button, input, textarea, select, [role="tab"], [role="tabpanel"], [contenteditable="true"]')) return;
+    if (document.querySelector('#tour-dialog[open]') || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.target.closest('a, button, input, textarea, select, [role="tab"], [role="tabpanel"], [contenteditable="true"]')) return;
     if (event.key === 'PageDown' || event.key === 'ArrowDown') { event.preventDefault(); goToSection(activeSection + 1); }
     if (event.key === 'PageUp' || event.key === 'ArrowUp') { event.preventDefault(); goToSection(activeSection - 1); }
   });
