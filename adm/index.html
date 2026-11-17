@@ -48390,6 +48390,24 @@ const colors = tournamentArtPalette({
       await loadOpsData(true);
       const invoice = (opsData.paymentInvoices || []).find(function (item) { return item.id === row.id; });
       if (!invoice || !invoiceCanReceiveManually(invoice)) throw new Error('A fatura mudou ou exige conciliação. Atualize e confira a ficha.');
+      if (action === 'competence') {
+        if (!invoiceIsProviderManaged(invoice)) throw new Error('Esta conciliação exige cobrança Asaas vinculada.');
+        const sourceMonth = window.prompt('Informe a competência anterior em que o pagamento Asaas foi classificado incorretamente (AAAA-MM):');
+        if (sourceMonth === null) return;
+        const sources = (opsData.paymentInvoices || []).filter(function (item) { return item.clientId === invoice.clientId && item.invoiceMonth === sourceMonth.trim() + '-01' && item.status === 'PAGA' && item.providerStatus === 'RECEIVED'; });
+        if (sources.length !== 1) throw new Error('É necessário um único pagamento confirmado no Asaas nessa competência. Confira a ficha.');
+        const source = sources[0];
+        const clubPaidOn = window.prompt('Para quitar a competência anterior, informe a data real do OUTRO pagamento, por Pix direto ao clube (AAAA-MM-DD). Este fluxo exige dois pagamentos distintos:');
+        if (clubPaidOn === null) return;
+        const clubDueDate = window.prompt('Vencimento original da mensalidade paga por Pix do clube (AAAA-MM-DD):');
+        if (clubDueDate === null) return;
+        const reason = window.prompt('Motivo da conciliação e confirmação dos dois recebimentos (mínimo de 10 caracteres):');
+        if (reason === null) return;
+        const sourcePaidOn = String(source.paidAt || '').slice(0, 10);
+        if (!window.confirm('Conciliar ' + money(invoice.amount) + ' em cada mês?\n' + sourceMonth.trim() + ': Pix do clube recebido em ' + clubPaidOn + '.\n' + invoiceMonthLabel(invoice.invoiceMonth) + ': pagamento Asaas já recebido em ' + sourcePaidOn + '.\nA cobrança em aberto será cancelada por duplicidade. O recebimento Asaas e seu vencimento original serão preservados; apenas a competência será corrigida.')) return;
+        await sendMonthlyReceiptBatch({ action: 'reconcile_months', sourceId: source.id, targetId: invoice.id, amount: Number(invoice.amount), sourceMonth: source.invoiceMonth, targetMonth: invoice.invoiceMonth, sourcePaidOn: sourcePaidOn, clubPaidOn: clubPaidOn.trim(), clubDueDate: clubDueDate.trim(), reason: reason.trim() });
+        await loadOpsData(true); await operationalDashboard.refresh(); toast('Competências conciliadas, sem duplicar recebimentos.'); return;
+      }
       if (action === 'amount') {
         if (!invoiceIsProviderManaged(invoice)) throw new Error('Esta correção é destinada a cobranças Pix emitidas no Asaas.');
         const value = window.prompt('Corrigir o valor desta fatura conforme a composição atual do cadastro. Informe o total correto em reais. O vencimento será preservado.', String(invoice.amount));
