@@ -48390,7 +48390,7 @@ const colors = tournamentArtPalette({
       await loadOpsData(true);
       const invoice = (opsData.paymentInvoices || []).find(function (item) { return item.id === row.id; });
       if (!invoice || !invoiceCanReceiveManually(invoice)) throw new Error('A fatura mudou ou exige conciliação. Atualize e confira a ficha.');
-      if (action === 'receipt') { confirmManualMonthlyPayment(invoice.id); return; }
+      if (action === 'receipt') { confirmManualMonthlyPayment(invoice.id); $('invoiceReceiptDate').value = ''; return; }
       if (action === 'suspend') { await openDashboardSuspension(invoice); return; }
       if (action !== 'remind') return;
       const client = findClientByKey(invoice.clientId);

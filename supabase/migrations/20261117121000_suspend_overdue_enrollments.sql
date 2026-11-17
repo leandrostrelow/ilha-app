@@ -49,7 +49,7 @@ create trigger prevent_suspended_lesson_enrollment before insert or update on pu
 create function public.admin_overdue_suspension(p_invoice_id uuid,p_payer boolean default false,p_member_ids uuid[] default '{}',p_reason text default null,p_version text default null,p_apply boolean default false)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare i public.app_payment_invoices%rowtype;c public.app_clients%rowtype; f public.financial_transactions%rowtype;
- members jsonb; before_state jsonb; revision text; all_members uuid[]; clients uuid[]; students uuid[];
+ members jsonb; before_state jsonb; revision text; all_members uuid[]; clients uuid[]; selected_student_ids uuid[];
  m public.app_family_members%rowtype; a private.overdue_enrollment_suspensions%rowtype;
 begin
  if auth.uid() is null or not coalesce(public.has_club_permission('finance.write'),false)
@@ -78,8 +78,8 @@ begin
  from public.app_family_members t where billing_responsible_id=c.id and status='ATIVO';
  before_state:=jsonb_build_object('client',to_jsonb(c),'members',members,
  'enrollment',(select to_jsonb(e) from public.app_monthly_billing_enrollments e where client_id=c.id));
- revision:=md5(before_state::text);
- if not p_apply and p_reason is null then return jsonb_build_object('state','PREVIEW','version',revision,'payerName',c.full_name,'members',
+ revision:=md5((before_state||jsonb_build_object('invoiceIdentity',jsonb_build_array(i.id,i.amount,i.due_date,i.invoice_month,i.payment_method)))::text);
+ if not p_apply and p_reason is null then return jsonb_build_object('state','PREVIEW','version',revision,'payerName',c.full_name,'amount',i.amount,'dueDate',i.due_date,'invoiceMonth',i.invoice_month,'members',
  (select coalesce(jsonb_agg(jsonb_build_object('id',x->>'id','name',x->>'full_name')),'[]') from jsonb_array_elements(members) x));end if;
  if p_version is null or p_version<>revision then raise exception 'O cadastro mudou. Reabra a operação antes de continuar.';end if;
  if length(trim(coalesce(p_reason,''))) not between 10 and 400 or (not p_payer and cardinality(p_member_ids)=0)
@@ -103,10 +103,10 @@ begin
  clients:=case when p_payer then array[c.id] else '{}'::uuid[] end;
  select clients||coalesce(array_agg(member_client_id) filter(where member_client_id is not null),'{}'::uuid[]) into clients
  from public.app_family_members where id=any(p_member_ids);
- select coalesce(array_agg(id),'{}'::uuid[]) into students from public.students where app_client_id=any(clients)
+ select coalesce(array_agg(id),'{}'::uuid[]) into selected_student_ids from public.students where app_client_id=any(clients)
  or id in(select student_id from public.app_family_members where id=any(p_member_ids));
- before_state:=before_state||jsonb_build_object('students',(select jsonb_agg(to_jsonb(s)) from public.students s where id=any(students)),
- 'lessons',(select jsonb_agg(to_jsonb(e)) from public.lesson_enrollments e where student_id=any(students)));
+ before_state:=before_state||jsonb_build_object('invoice',to_jsonb(i),'ledger',to_jsonb(f),'students',(select jsonb_agg(to_jsonb(s)) from public.students s where id=any(selected_student_ids)),
+ 'lessons',(select jsonb_agg(to_jsonb(e)) from public.lesson_enrollments e where student_id=any(selected_student_ids)));
  insert into private.overdue_enrollment_suspensions values(i.id,auth.uid(),trim(p_reason),p_payer,p_member_ids,before_state,now());
  foreach p_invoice_id in array clients loop
  perform public.admin_set_app_monthly_billing_enrollment(p_invoice_id,false,coalesce((select billing_method from public.app_monthly_billing_enrollments where client_id=p_invoice_id),'ASAAS_PIX'));
@@ -115,8 +115,8 @@ begin
  for m in select * from public.app_family_members where id=any(p_member_ids) loop
  update public.app_family_members set billing_paused=true,billing_pause_reason=trim(p_reason),classes_suspended=true where id=m.id;
  end loop;
- update public.lesson_enrollments set active=false,updated_at=now() where student_id=any(students) and active;
- update public.students set status='INATIVO',relationship_status='INATIVO',updated_at=now() where id=any(students);
+ update public.lesson_enrollments set active=false,updated_at=now() where student_id=any(selected_student_ids) and active;
+ update public.students set status='INATIVO',relationship_status='INATIVO',updated_at=now() where id=any(selected_student_ids);
  return jsonb_build_object('state','COMPLETED');
 end;$$;
 revoke all on function public.admin_overdue_suspension(uuid,boolean,uuid[],text,text,boolean) from public,anon,authenticated,service_role;
@@ -129,7 +129,7 @@ create table private.enrollment_resumptions (
 revoke all on private.enrollment_resumptions from public,anon,authenticated,service_role;
 create function public.admin_resume_suspended_enrollment(p_client_id uuid default null,p_member_id uuid default null,p_reason text default null)
 returns jsonb language plpgsql security definer set search_path='' as $$
-declare clients uuid[]; members uuid[]; students uuid[]; before_state jsonb;
+declare clients uuid[]; members uuid[]; selected_student_ids uuid[]; before_state jsonb;
 begin
  if auth.uid() is null or not coalesce(public.has_club_permission('finance.write'),false)
  or not coalesce(public.has_club_permission('clients.write'),false) or not coalesce(public.has_club_permission('classes'),false) then
@@ -147,13 +147,13 @@ begin
  clients:=array[p_client_id];
  end if;
  select clients||coalesce(array_agg(member_client_id) filter(where member_client_id is not null),'{}'::uuid[]) into clients from public.app_family_members where id=any(members);
- select coalesce(array_agg(id),'{}'::uuid[]) into students from public.students where app_client_id=any(clients) or id in(select student_id from public.app_family_members where id=any(members));
+ select coalesce(array_agg(id),'{}'::uuid[]) into selected_student_ids from public.students where app_client_id=any(clients) or id in(select student_id from public.app_family_members where id=any(members));
  before_state:=jsonb_build_object('clients',(select jsonb_agg(to_jsonb(c)) from public.app_clients c where id=any(clients)),
  'members',(select jsonb_agg(to_jsonb(m)) from public.app_family_members m where id=any(members)));
  insert into private.enrollment_resumptions(actor_id,client_id,member_id,reason,before_state) values(auth.uid(),p_client_id,p_member_id,trim(p_reason),before_state);
  update public.app_family_members set classes_suspended=false where id=any(members);
  update public.app_clients set status='ATIVO',notes=concat_ws(E'\n',nullif(notes,''),'Inscrição retomada: '||trim(p_reason)),updated_at=now() where id=any(clients) and status='SUSPENSO';
- update public.students set status='ATIVO',relationship_status='ATIVO',updated_at=now() where id=any(students)
+ update public.students set status='ATIVO',relationship_status='ATIVO',updated_at=now() where id=any(selected_student_ids)
  and not exists(select 1 from public.app_clients c where c.id=app_client_id and c.client_type='responsavel');
  return jsonb_build_object('state','COMPLETED');
 end;$$;

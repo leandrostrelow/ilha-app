@@ -11,6 +11,7 @@
   }
   async function open(ctx, invoice) {
     const preview = await ctx.preview(invoice.id);
+    if (Number(preview.amount) !== Number(invoice.amount) || preview.dueDate !== invoice.dueDate || preview.invoiceMonth !== invoice.invoiceMonth) throw new Error('A fatura mudou. Atualize a lista antes de continuar.');
     const dialog = document.createElement('dialog');
     dialog.className = 'overdue-action-dialog';
     dialog.setAttribute('aria-labelledby', 'overdueSuspendTitle');
