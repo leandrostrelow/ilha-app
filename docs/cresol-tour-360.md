@@ -28,7 +28,7 @@ Para atualizar, troque as imagens do ponto, a miniatura e os dados do link em `c
 
 O mapa inicia na foto aérea tratada, com opção para ver a foto original. A ilustração saiu da interface e da lista de arquivos publicados. O tour mostra apenas as sete fotos reais, sem camadas de patrocínio ou comparativo Cresol.
 
-As propostas de aplicação ficam juntas em `#previa-cresol`, dentro do capítulo “Sua marca no Ilha”. Duas montagens estáticas mostram banners predominantemente laranja em tênis e areia/deck. Cada uma abre em um diálogo ampliado, fecha por botão/Escape e devolve o foco à imagem de origem. A marca vem exclusivamente do PNG original `cresol/assets/cresol-original.png`, em branco por CSS, projetado sobre as peças. A edição por IA fornece o cenário com tecido laranja sem letras ou símbolos.
+As propostas de aplicação ficam juntas em `#previa-cresol`, dentro do capítulo “Sua marca no Ilha”. Duas montagens estáticas mostram banners predominantemente laranja ao fundo das quadras de tênis e areia/deck, com as laterais livres. A marcação lateral interna da quadra de tênis ao fundo foi restaurada na montagem. Cada uma abre em um diálogo ampliado, fecha por botão/Escape e devolve o foco à imagem de origem. A marca vem exclusivamente do PNG original `cresol/assets/cresol-original.png`, em branco por CSS, projetado sobre as peças. A edição por IA fornece o cenário com tecido laranja sem letras ou símbolos.
 
 `brand-projection.js` calcula a homografia; `sponsor-placements.js` registra os quatro cantos de cada aplicação nas fotos 1448 × 1086. `sponsor-mockups.js` recalcula a projeção quando a imagem é redimensionada. O diálogo remove seus elementos/observação ao fechar. Não há chamadas a serviços, gravações ou backend.
 
@@ -46,4 +46,4 @@ As quatro fotos de drone agora têm cópias tratadas: iluminação, cor, superf�
 
 O calendário proposto de 2027 contempla duas etapas do Cincate e duas da Copa Dupla Falta, ambas com datas a confirmar, além dos eventos anteriores.
 
-Nas mudanças de capítulo, duas bolinhas percorrem a tela por cerca de um segundo. A camada não recebe cliques nem foco, tem frequência limitada, para quando a página fica oculta e respeita `prefers-reduced-motion`. Não executa enquanto há diálogo aberto.
+Nas mudanças de capítulo, duas bolinhas percorrem a tela por cerca de um segundo. Elas medem 90 px no computador e 62 px no celular, com rastros e espaçamento proporcionais. A camada não recebe cliques nem foco, tem frequência limitada, para quando a página fica oculta e respeita `prefers-reduced-motion`. Não executa enquanto há diálogo aberto.
