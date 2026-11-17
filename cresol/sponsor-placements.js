@@ -1,5 +1,5 @@
 // Coordinates in the 1448 × 1086 photographs. The original Cresol PNG is
-// projected only onto the blank orange fabric behind the far baselines.
+// projected onto blank orange fabric at the far baselines and the sand-court corner.
 export const MOCKUP_WIDTH = 1448;
 export const MOCKUP_HEIGHT = 1086;
 export const SPONSOR_PLACEMENTS = {
@@ -15,6 +15,7 @@ export const SPONSOR_PLACEMENTS = {
     [[520,220],[560,211],[562,230],[522,239]],
     [[709,191],[751,178],[751,196],[709,209]],
     [[782,166],[816,155],[816,174],[782,185]],
+    [[1131,312],[1187,347],[1182,366],[1127,331]],
     [[313,204],[330,202],[326,220],[309,222]],
     [[839,92],[857,91],[853,108],[835,110]]
   ]
