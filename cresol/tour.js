@@ -1,3 +1,5 @@
+import { createBrandingLayer } from './tour-branding.js';
+
 (() => {
   'use strict';
   const dialog = document.querySelector('#tour-dialog');
@@ -11,6 +13,11 @@
   const next = document.querySelector('#tour-next');
   const viewControls = [...document.querySelectorAll('[data-pan-control]')];
   const fullscreen = document.querySelector('#tour-fullscreen');
+  const brandingSwitch = document.querySelector('#tour-branding-switch');
+  const brandingButtons = [...document.querySelectorAll('[data-tour-branding]')];
+  const simulationLabel = document.querySelector('#tour-simulation-label');
+  let brandMode = false;
+  let brandingLayer = null;
   let viewer = null;
   let current = 0;
   let opener = null;
@@ -23,10 +30,16 @@
     previous.disabled = value || current === 0;
     next.disabled = value || current === places.length - 1;
     sceneSelect.disabled = value;
+    brandingButtons.forEach(button => { button.disabled = value; });
     viewControls.forEach(button => { button.disabled = value; });
   }
-  function showInfo(index) {
+  function showInfo(index, simulated = false) {
     current = index;
+    brandMode = simulated && places[index].id === 'areia';
+    brandingLayer?.hide();
+    brandingSwitch.hidden = places[index].id !== 'areia';
+    simulationLabel.hidden = !brandMode;
+    brandingButtons.forEach(button => button.setAttribute('aria-pressed', String((button.dataset.tourBranding === 'cresol') === brandMode)));
     const place = places[index];
     document.querySelector('#tour-dialog-title').textContent = place.title;
     document.querySelector('#tour-original').href = place.url;
@@ -44,25 +57,27 @@
     return supportsLarge;
   }
   function failed() {
+    brandingLayer?.hide();
     status.textContent = 'Não foi possível abrir a vista 360°. Tente outro ponto ou use “Abrir foto”.';
     setLoading(false);
     viewControls.forEach(button => { button.disabled = true; });
   }
-  function openTour(id, source) {
+  function openTour(id, source, simulated = false) {
     const index = places.findIndex(place => place.id === id);
     if (index < 0 || !window.pannellum || typeof dialog.showModal !== 'function') return false;
     opener = source;
     dialog.showModal();
     document.documentElement.classList.add('tour-is-open');
-    showInfo(index);
+    showInfo(index, simulated);
     widePanorama = useLargePanorama();
     const scenes = Object.fromEntries(places.map(place => [place.id, {
       type: 'equirectangular', panorama: widePanorama ? place.url.replace('-4096.webp', '-6144.webp') : place.url,
       preview: `/cresol/assets/tour/ponto-${place.number}-preview.webp`, pitch: 0, yaw: ({ deck: 85, pickleball: 90 })[place.id] || 0, hfov: 100
     }]));
+    scenes['areia--cresol'] = { ...scenes.areia };
     try {
       viewer = window.pannellum.viewer(panorama, {
-        default: { firstScene: id, sceneFadeDuration: reducedMotion.matches ? 0 : 350, autoLoad: true, showControls: false,
+        default: { firstScene: brandMode ? 'areia--cresol' : id, sceneFadeDuration: reducedMotion.matches ? 0 : 350, autoLoad: true, showControls: false,
           escapeHTML: true, minHfov: 45, maxHfov: 115, mouseZoom: true, keyboardZoom: true,
           strings: { loadingLabel: 'Abrindo o Ilha…', loading: 'Carregando', loadButtonLabel: 'Abrir foto 360°',
             genericWebGLError: 'A vista 360° não está disponível neste navegador. Use “Abrir foto”.',
@@ -70,7 +85,13 @@
             fileAccessError: 'Não foi possível carregar esta foto. Tente outro ponto ou use “Abrir foto”.' }
         }, scenes
       });
-      viewer.on('load', () => { if (!dialog.open) return; status.textContent = ''; setLoading(false); });
+      brandingLayer = createBrandingLayer(document.querySelector('.tour-viewer-wrap'), viewer);
+      viewer.on('load', () => {
+        if (!dialog.open) return;
+        status.textContent = '';
+        setLoading(false);
+        if (brandMode && viewer.getScene() === 'areia--cresol') brandingLayer?.show();
+      });
       viewer.on('error', failed);
       requestAnimationFrame(() => viewer?.resize());
     } catch { failed(); }
@@ -81,10 +102,17 @@
     showInfo(index);
     try { viewer.loadScene(places[index].id); } catch { failed(); }
   }
-  [...pins, ...document.querySelectorAll('[data-tour-open]')].forEach(link => {
+  brandingButtons.forEach(button => button.addEventListener('click', () => {
+    const simulated = button.dataset.tourBranding === 'cresol';
+    if (!viewer || loading || places[current].id !== 'areia' || simulated === brandMode) return;
+    const pitch = viewer.getPitch(), yaw = viewer.getYaw(), hfov = viewer.getHfov();
+    showInfo(current, simulated);
+    try { viewer.loadScene(simulated ? 'areia--cresol' : 'areia', pitch, yaw, hfov); } catch { failed(); }
+  }));
+  [...pins, ...document.querySelectorAll('[data-tour-open], [data-tour-preview]')].forEach(link => {
     link.addEventListener('click', event => {
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-      if (openTour(link.dataset.tourScene || link.dataset.tourOpen, link)) event.preventDefault();
+      if (openTour(link.dataset.tourScene || link.dataset.tourOpen || link.dataset.tourPreview, link, Boolean(link.dataset.tourPreview))) event.preventDefault();
     });
   });
   previous.addEventListener('click', () => selectScene(current - 1));
@@ -94,6 +122,8 @@
   dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
   dialog.addEventListener('close', () => {
     if (document.fullscreenElement === dialog) document.exitFullscreen().catch(() => {});
+    brandingLayer?.destroy();
+    brandingLayer = null;
     viewer?.destroy();
     viewer = null;
     panorama.replaceChildren();
@@ -122,9 +152,9 @@
   const mapImage = document.querySelector('#tour-map-image');
   const mapButtons = [...document.querySelectorAll('[data-map-view]')];
   mapButtons.forEach(button => button.addEventListener('click', () => {
-    const photo = button.dataset.mapView === 'photo';
-    mapImage.src = `/cresol/assets/tour/${photo ? 'foto-aerea' : 'mapa-ilustrado'}.webp`;
-    mapImage.alt = photo ? 'Foto aérea original do Ilha Tênis, com pontos para abrir as fotos 360°' : 'Mapa ilustrado do Ilha a partir da foto de drone, com pontos para abrir as fotos 360°';
+    const original = button.dataset.mapView === 'original';
+    mapImage.src = `/cresol/assets/tour/${original ? 'foto-aerea' : 'foto-aerea-tratada'}.webp`;
+    mapImage.alt = original ? 'Foto aérea original do Ilha Tênis, com pontos para abrir as fotos 360°' : 'Foto aérea do Ilha com tratamento de cor e luz e pontos para abrir as fotos 360°';
     mapButtons.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
   }));
 })();
