@@ -99,3 +99,13 @@ test('aviso mostra a data registrada do pagamento no fuso de Brasília',async()=
   assert.doesNotMatch(html,/Pago em 16\/11\/2026/);
  }
 });
+
+test('ações financeiras aparecem somente para quem pode alterar o financeiro',async()=>{
+ for (const allowed of [true,false]) {
+  const f=controllerFixture({can:p=>p==='finance.write'?allowed:true,read:async p=>p.startsWith('app_payment_invoices?')?[invoice('a')]:[]});
+  await f.board.refresh();const html=f.elements.get('homeOverdueInvoices').innerHTML;
+  assert.equal(html.includes('data-dashboard-action="receipt"'),allowed);
+  assert.equal(html.includes('data-dashboard-action="remind"'),allowed);
+  assert.equal(html.includes('data-dashboard-action="suspend"'),allowed);
+ }
+});

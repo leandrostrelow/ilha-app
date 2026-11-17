@@ -23040,6 +23040,7 @@
                   <option value="PENDENTE">Pendente</option>
                   <option value="ATIVO">Ativo</option>
                   <option value="BLOQUEADO">Bloqueado</option>
+                  <option value="SUSPENSO" disabled>Inscrição suspensa</option>
                 </select>
               </div>
               <div class="field">
@@ -26388,6 +26389,7 @@
 
   <script src="../assets/vendor/qrcode-generator.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+  <script src="/adm/overdue-actions.js"></script>
   <script src="/adm/home-dashboard.js"></script>
   <script src="/adm/predictions.js"></script>
   <script src="/adm/leads.js"></script>
@@ -33998,6 +34000,7 @@ const colors = tournamentArtPalette({
       can: canUseClubPermission, today: localDateString, money: money, escape: escapeHtml,
       visible: function () { return document.body.classList.contains('club-home') && !document.body.classList.contains('adm-locked'); },
       read: supabaseRestAll, write: supabaseRest, error: reportActionError,
+      invoiceAction: handleDashboardInvoiceAction,
       openClient: async function (id, finance) {
         requireClubPermission('clients.read');
         await loadOpsData(true);
@@ -34301,6 +34304,7 @@ const colors = tournamentArtPalette({
         responsibleConfirmedAt: row.responsible_confirmed_at || '',
         billingAuthorizedAt: row.billing_authorized_at || '',
         billingPaused: row.billing_paused === true,
+        classesSuspended: row.classes_suspended === true,
         updatedAt: row.updated_at || '',
         minorWithoutCpfDeclared: row.minor_without_cpf_declared === true,
         notes: row.notes || '',
@@ -35488,7 +35492,7 @@ const colors = tournamentArtPalette({
           birthDate: member.birthDate || '',
           guardian: member.contactResponsibleName || responsible.name || '',
           guardianPhone: member.contactResponsiblePhone || responsible.phone || '',
-          status: String(member.status || 'PENDENTE').toUpperCase(),
+          status: member.classesSuspended ? 'SUSPENSO' : String(member.status || 'PENDENTE').toUpperCase(),
           officialPlanName: student.planName || '',
           weeklyLessons: Number(student.weeklyLessons || 0),
           planAmount: member.monthlyAmount === '' ? null : Number(member.monthlyAmount || 0),
@@ -36459,7 +36463,7 @@ const colors = tournamentArtPalette({
         const accessLabel = memberClient.email ? 'Reenviar acesso' : 'Liberar Ilha Play';
         const amountLabel = (member.monthlyAmount === '' ? 'Valor opcional' : money(member.monthlyAmount || 0)) + (member.billingPaused ? ' · cobrança pausada' : '');
         const pauseAction = canUseClubPermission('finance.write') && status === 'ATIVO'
-          ? '<button class="small-btn" type="button" data-family-pause-billing="' + escapeHtml(member.id) + '">' + (member.billingPaused ? 'Retomar cobrança' : 'Pausar cobrança') + '</button>' : '';
+          ? '<button class="small-btn" type="button" data-family-pause-billing="' + escapeHtml(member.id) + '">' + (member.classesSuspended ? 'Retomar inscrição' : member.billingPaused ? 'Retomar cobrança' : 'Pausar cobrança') + '</button>' : '';
         const billingAction = canUseClubPermission('finance.write') && status === 'ATIVO' && member.responsibleConfirmationRequired && !member.billingAuthorizedAt
           ? '<button class="small-btn" type="button" data-family-authorize-billing="' + escapeHtml(member.id) + '">Liberar cobrança</button>'
           : member.billingAuthorizedAt && member.responsibleConfirmationRequired ? '<span class="ops-pill good">Cobrança liberada · dados pendentes</span>' : '';
@@ -36684,6 +36688,7 @@ const colors = tournamentArtPalette({
     async function pauseFamilyBillingAction(memberId, button) {
       const member = familyMemberById(memberId);
       if (!member || button.disabled) return;
+      if (member.classesSuspended) { await resumeSuspendedEnrollment(null, member.id); return; }
       try {
         requireClubPermission('finance.write');
         const paused = !member.billingPaused;
@@ -37448,6 +37453,7 @@ const colors = tournamentArtPalette({
     function clientOperationalState(client) {
       const raw = String(client && client.status || '').toUpperCase();
       const today = localDateString();
+      if (raw === 'SUSPENSO') return { key: 'cancelado', label: 'Inscrição suspensa', className: 'is-cancelled' };
       if (['CANCELADO', 'CANCELADA', 'INATIVO'].includes(raw)) {
         return { key: 'cancelado', label: 'Cancelado', className: 'is-cancelled' };
       }
@@ -47611,6 +47617,12 @@ const colors = tournamentArtPalette({
       if (!status || !button || !methodSelect || !client) return;
       const generateButton = $('clientMonthlyBillingGenerateBtn');
       generateButton.hidden = true;
+      button.dataset.resumeSuspendedClient = '';
+      if (client.status === 'SUSPENSO') {
+        status.textContent = 'Inscrição suspensa. Retome o cadastro e depois confira cobrança e horários.';
+        button.textContent = 'Retomar inscrição'; button.disabled = !canUseClubPermission('clients.write') || !canUseClubPermission('classes') || !canUseClubPermission('finance.write');
+        button.dataset.resumeSuspendedClient = client.id; methodSelect.disabled = true; return;
+      }
       const family = familyContextForClient(client);
       if (family.memberLink) {
         status.textContent = 'Este membro está incluído na cobrança de ' + (family.responsible && family.responsible.name || 'seu responsável financeiro') + '.';
@@ -48341,6 +48353,53 @@ const colors = tournamentArtPalette({
       }
     }
 
+    async function resumeSuspendedEnrollment(clientId, memberId) {
+      try {
+        requireClubPermission('finance.write'); requireClubPermission('clients.write'); requireClubPermission('classes');
+        const reason = window.prompt('Retomar a inscrição? No caso do responsável, inclui os dependentes suspensos. Cobranças e horários não serão reativados automaticamente: confira-os depois na ficha. Informe o motivo:');
+        if (reason === null) return;
+        await supabaseRest('rpc/admin_resume_suspended_enrollment', { method: 'POST', body: { p_client_id: clientId, p_member_id: memberId, p_reason: reason.trim() } });
+        await loadOpsData(true);
+        const selected = findClientByKey(opsState.selectedClientId);
+        if (selected) openClientModal(selected.id, 'Finance');
+        toast('Inscrição retomada. Confira a cobrança e os horários antes de reativá-los.');
+      } catch (error) { reportActionError(error); }
+    }
+
+    async function openDashboardSuspension(invoice) {
+      requireClubPermission('clients.write');
+      requireClubPermission('classes');
+      return window.IlhaOverdueActions.open({
+        escape: escapeHtml, summary: function (item) { return invoiceMonthLabel(item.invoiceMonth) + ' · ' + money(item.amount) + ' · vence ' + financeDateLabel(item.dueDate); },
+        managed: invoiceIsProviderManaged,
+        preview: function (id) { return supabaseRest('rpc/admin_overdue_suspension', { method: 'POST', body: { p_invoice_id: id } }); },
+        prepare: async function (selection) {
+          const result = await supabaseRest('rpc/admin_overdue_suspension', { method: 'POST', body: Object.assign({}, selection, { p_apply: false }) });
+          if (!result || !['PREPARED', 'COMPLETED'].includes(result.state)) throw new Error('Confira a suspensão antes de continuar.');
+          return result;
+        },
+        cancel: function (item, reason) { return sendMonthlyReceiptBatch({ action: 'adjust_invoice', operation: 'cancel', invoiceId: item.id, expectedAmount: Number(item.amount), invoiceMonth: item.invoiceMonth, oldDueDate: item.dueDate, reason: reason }); },
+        finish: function (selection) { return supabaseRest('rpc/admin_overdue_suspension', { method: 'POST', body: Object.assign({}, selection, { p_apply: true }) }); },
+        changed: async function () { await loadOpsData(true); await operationalDashboard.refresh(); }, notify: toast
+      }, invoice);
+    }
+
+    async function handleDashboardInvoiceAction(action, row) {
+      requireClubPermission('finance.write');
+      if (isAdminDemoMode()) throw new Error('As ações financeiras não estão disponíveis na demonstração.');
+      await loadOpsData(true);
+      const invoice = (opsData.paymentInvoices || []).find(function (item) { return item.id === row.id; });
+      if (!invoice || !invoiceCanReceiveManually(invoice)) throw new Error('A fatura mudou ou exige conciliação. Atualize e confira a ficha.');
+      if (action === 'receipt') { confirmManualMonthlyPayment(invoice.id); return; }
+      if (action === 'suspend') { await openDashboardSuspension(invoice); return; }
+      if (action !== 'remind') return;
+      const client = findClientByKey(invoice.clientId);
+      if (!window.confirm('Reenviar aviso de cobrança para ' + (client && client.name || 'o aluno') + '?\n' + invoiceMonthLabel(invoice.invoiceMonth) + ' · ' + money(invoice.amount) + ' · vence ' + financeDateLabel(invoice.dueDate) + '\nO aviso aparecerá no app. O push depende das notificações habilitadas no aparelho.')) return;
+      const result = await supabaseRest('rpc/admin_resend_overdue_reminder', { method: 'POST', body: { p_invoice_id: invoice.id, p_request_id: crypto.randomUUID() } });
+      if (!result || result.state !== 'QUEUED') throw new Error('O reenvio não foi confirmado. Confira antes de repetir.');
+      toast('Aviso solicitado no app. O push seguirá a fila de notificações.');
+    }
+
     let invoiceReceiptTarget = null;
     let invoiceReceiptBusy = false;
 
@@ -48414,6 +48473,7 @@ const colors = tournamentArtPalette({
         if (invoiceIsProviderManaged(invoice)) invoice.providerStatus = 'RECEIVED';
         invoiceReceiptBusy = false;
         closeInvoiceReceipt();
+        operationalDashboard.refresh();
         toast('Pagamento registrado somente nesta fatura. Próximas cobranças mantidas.');
         await loadOpsData(true);
         opsState.monthlyBillingLoaded = false;
@@ -52310,6 +52370,7 @@ const colors = tournamentArtPalette({
         finally { this.disabled = false; }
       });
       $('clientMonthlyBillingToggleBtn').addEventListener('click', function () {
+        if (this.dataset.resumeSuspendedClient) { resumeSuspendedEnrollment(this.dataset.resumeSuspendedClient, null); return; }
         updateMonthlyBillingEnrollment(
           this.dataset.monthlyBillingClient,
           this.dataset.monthlyBillingEnabled !== 'true',
