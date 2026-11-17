@@ -35955,7 +35955,7 @@ const colors = tournamentArtPalette({
           ? '<div class="client-invoice-provider-state"><strong>' + escapeHtml(monthlyBillingMethodLabel(manualMethod)) + '</strong><span>' + (String(invoice.status || '').toUpperCase() === 'PAGA' ? 'Recebimento confirmado manualmente pelo clube.' : 'Aguardando o pagamento e a confirmação manual no ADM.') + '</span></div>' : '';
         const historicalOwner = String(invoice.clientId) !== String(client.id) ? familyClientById(invoice.clientId) : null;
         const historicalLabel = historicalOwner ? '<div class="muted">Histórico anterior de ' + escapeHtml(historicalOwner.name) + ' · registro original preservado</div>' : '';
-        manualDetail += historicalLabel + invoiceReceiptButton(invoice);
+        manualDetail += historicalLabel + invoiceReceiptButton(invoice) + (invoice.status === 'CANCELADA' && String(invoice.notes || '').includes('Suspensão de inscrição:') && canUseClubPermission('finance.write') && canUseClubPermission('clients.write') && canUseClubPermission('classes') ? '<button type="button" class="small-btn" data-invoice-suspension-review="' + escapeHtml(invoice.id) + '">Conferir suspensão</button>' : '');
         return '<article class="ops-list-card"><div class="ops-list-main"><div><strong>' + escapeHtml(invoiceMonthLabel(invoice.invoiceMonth)) + '</strong><div class="muted">' + escapeHtml(invoice.planName || invoice.description || 'Mensalidade') + ' | vence ' + escapeHtml(invoice.dueDate ? financeDateLabel(invoice.dueDate) : 'a definir') + '</div></div><div class="ops-meta">' + statusPill(invoice.status) + (manualMethod ? '<span class="ops-pill">' + escapeHtml(monthlyBillingMethodLabel(manualMethod)) + '</span>' : '') + (invoice.familyBilling ? '<span class="ops-pill good">Conta familiar</span>' : '') + '<span class="finance-total">' + money(invoice.amount) + '</span></div></div>' + providerDetail + manualDetail + (invoice.notes ? '<div class="muted" style="margin-top:8px">' + escapeHtml(invoice.notes) + '</div>' : '') + renderFamilyInvoiceItems(invoice) + '</article>';
       }).join('') : '<div class="lesson-empty-state">Nenhuma fatura criada para este aluno.</div>';
       fillClientInvoiceDefaults(client);
@@ -48378,7 +48378,7 @@ const colors = tournamentArtPalette({
           if (!result || !['PREPARED', 'COMPLETED'].includes(result.state)) throw new Error('Confira a suspensão antes de continuar.');
           return result;
         },
-        cancel: function (item, reason) { return sendMonthlyReceiptBatch({ action: 'adjust_invoice', operation: 'cancel', invoiceId: item.id, expectedAmount: Number(item.amount), invoiceMonth: item.invoiceMonth, oldDueDate: item.dueDate, reason: reason }); },
+        cancel: function (item, reason) { return sendMonthlyReceiptBatch({ action: 'adjust_invoice', operation: 'cancel', invoiceId: item.id, expectedAmount: Number(item.amount), invoiceMonth: item.invoiceMonth, oldDueDate: item.dueDate, reason: 'Suspensão de inscrição: ' + reason }); },
         finish: function (selection) { return supabaseRest('rpc/admin_overdue_suspension', { method: 'POST', body: Object.assign({}, selection, { p_apply: true }) }); },
         changed: async function () { await loadOpsData(true); await operationalDashboard.refresh(); }, notify: toast
       }, invoice);
@@ -52459,6 +52459,12 @@ const colors = tournamentArtPalette({
       $('invoiceReceiptClose').addEventListener('click', closeInvoiceReceipt);
       $('invoiceReceiptForm').addEventListener('submit', saveInvoiceReceipt);
       $('clientModal').addEventListener('click', function (event) {
+        const suspensionReview = event.target.closest('[data-invoice-suspension-review]');
+        if (suspensionReview) {
+          const invoice = opsData.paymentInvoices.find(item => item.id === suspensionReview.dataset.invoiceSuspensionReview);
+          if (invoice) openDashboardSuspension(invoice).catch(reportActionError);
+          return;
+        }
         const receiptBtn = event.target.closest('[data-monthly-billing-confirm-manual]');
         if (receiptBtn) { confirmManualMonthlyPayment(receiptBtn.dataset.monthlyBillingConfirmManual); return; }
         const invoicePixBtn = event.target.closest('[data-client-invoice-pix]');

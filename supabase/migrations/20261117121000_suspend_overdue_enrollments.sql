@@ -64,6 +64,7 @@ begin
  raise exception 'Fatura anterior ao vínculo familiar. Confira a ficha do responsável antes de suspender.';end if;
  perform 1 from public.app_family_members where billing_responsible_id=c.id order by id for update;
  select * into a from private.overdue_enrollment_suspensions where invoice_id=i.id;
+ if found and p_reason is null then return jsonb_build_object('state','COMPLETED');end if;
  if found and p_reason is not null then
  if a.payer is distinct from p_payer or not (a.member_ids @> p_member_ids and a.member_ids <@ p_member_ids) or a.reason is distinct from trim(p_reason) then
  raise exception 'Esta fatura já concluiu outra suspensão. Confira o histórico.';end if;

@@ -11,6 +11,7 @@
   }
   async function open(ctx, invoice) {
     const preview = await ctx.preview(invoice.id);
+    if (preview.state === 'COMPLETED') { ctx.notify('A suspensão desta fatura já foi concluída. Confira as inscrições na ficha.'); return; }
     if (Number(preview.amount) !== Number(invoice.amount) || preview.dueDate !== invoice.dueDate || preview.invoiceMonth !== invoice.invoiceMonth) throw new Error('A fatura mudou. Atualize a lista antes de continuar.');
     const dialog = document.createElement('dialog');
     dialog.className = 'overdue-action-dialog';
@@ -22,7 +23,7 @@
       preview.members.map(member => '<label><input type="checkbox" name="member" value="' + e(member.id) + '"> ' + e(member.name) + '</label>').join('') + '</fieldset>' +
       (preview.members.length ? '<p>Dependentes podem ser selecionados individualmente. Para suspender o responsável pagador, selecione toda a família.</p>' : '') +
       '<p>Os selecionados sairão dos alunos ativos e das aulas. A cobrança futura será desativada para o responsável ou pausada para os dependentes selecionados. O cadastro e o histórico serão preservados.</p>' +
-      '<label>Motivo da suspensão<textarea name="reason" required minlength="10" maxlength="400"></textarea></label>' +
+      '<label>Motivo da suspensão<textarea name="reason" required minlength="10" maxlength="360"></textarea></label>' +
       '<label><input type="checkbox" name="consent" required> Confirmo o cancelamento desta fatura e a suspensão dos selecionados.</label>' +
       '<p role="alert" class="overdue-action-error" hidden></p><button type="button" class="ghost-btn" data-review hidden>Revisar dados atuais</button><div class="overdue-action-buttons"><button type="button" data-close class="ghost-btn">Voltar</button><button type="submit" class="primary-btn">Cancelar fatura e suspender</button></div></form>';
     document.body.append(dialog);
