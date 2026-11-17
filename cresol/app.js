@@ -10,6 +10,7 @@
   const progress = document.querySelector('#reading-progress');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let activeSection = 0;
+  let navigationReady = false;
   let scheduled = false;
 
   function updateNavigation() {
@@ -19,6 +20,8 @@
     sections.forEach((section, index) => {
       if (section.getBoundingClientRect().top <= checkpoint) visible = index;
     });
+    if (navigationReady && visible !== activeSection) document.dispatchEvent(new CustomEvent('ilha:chapterchange', { detail: { direction: visible > activeSection ? 1 : -1 } }));
+    navigationReady = true;
     activeSection = visible;
     currentChapter.textContent = String(visible + 1).padStart(2, '0');
     currentTitle.textContent = sections[visible].dataset.title;
@@ -45,7 +48,7 @@
   window.addEventListener('resize', requestNavigationUpdate);
   window.addEventListener('load', updateNavigation);
   document.addEventListener('keydown', event => {
-    if (document.querySelector('#tour-dialog[open]') || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.target.closest('a, button, input, textarea, select, [role="tab"], [role="tabpanel"], [contenteditable="true"]')) return;
+    if (document.querySelector('dialog[open]') || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.target.closest('a, button, input, textarea, select, [role="tab"], [role="tabpanel"], [contenteditable="true"]')) return;
     if (event.key === 'PageDown' || event.key === 'ArrowDown') { event.preventDefault(); goToSection(activeSection + 1); }
     if (event.key === 'PageUp' || event.key === 'ArrowUp') { event.preventDefault(); goToSection(activeSection - 1); }
   });
@@ -82,7 +85,8 @@
     { name: 'Jogos de Verão Colatina', timing: '2027 · NOVA EDIÇÃO PREVISTA', copy: 'Tênis, beach tennis, futevôlei e vôlei em uma experiência que reúne atletas e comunidade. A proposta contempla a presença da Cresol na próxima edição.', date: 'Data de 2027 a confirmar.', image: 'jogos-de-verao.jpg', alt: 'Arte original dos Jogos de Verão Colatina com tênis, beach tennis, futevôlei e vôlei', note: 'Arte da edição anterior' },
     { name: 'Open de Tênis', timing: '2027 · REFERÊNCIA: MAIO', copy: 'Um encontro regional de tênis com participação de atletas de diversas cidades. Oportunidade para naming rights, presença de marca e relacionamento ao longo da competição.', date: 'Mês de referência da proposta. Data e formato de 2027 a confirmar.', image: 'quadras.jpg', alt: 'Quadras de saibro do Ilha Tênis Colatina', note: 'Estrutura do clube' },
     { name: 'Etapa Estadual de Tênis · FET', timing: '2027 · DATA EM NEGOCIAÇÃO', copy: 'Proposta de etapa oficial da Federação de Tênis, reunindo atletas de todo o estado e ampliando a conexão do clube com o circuito capixaba.', date: 'Realização e data sujeitas à confirmação com a Federação.', image: 'evandro.jpg', alt: 'Atleta jogando tênis no saibro do Ilha', note: 'Registro do acervo do Ilha' },
-    { name: '2ª etapa Cincate', timing: '2027 · REFERÊNCIA: SETEMBRO', copy: 'Continuação do circuito, com participação regional e público ligado ao esporte. A marca pode acompanhar jogos, materiais da competição e momentos de premiação.', date: 'Mês de referência da proposta. Calendário de 2027 a confirmar.', image: 'quadras.jpg', alt: 'Vista das quadras de tênis do Ilha durante o dia', note: 'Estrutura do clube' },
+    { name: 'Cincate · 2 etapas', timing: '2027 · DUAS ETAPAS', copy: 'Duas etapas do Cincate para reunir atletas da região e ampliar a presença da Cresol no circuito. A marca acompanha a comunicação, as partidas e as premiações de cada etapa.', date: 'Datas das duas etapas a confirmar.', image: 'drone/tenis-tratada-800.webp', alt: 'Vista aérea tratada das quadras de tênis do Ilha', note: '2 etapas previstas · imagem tratada do clube' },
+    { name: 'Copa Dupla Falta · 2 etapas', timing: '2027 · DUAS ETAPAS', copy: 'Duas etapas da Copa Dupla Falta no calendário proposto do Ilha. Novas oportunidades de presença de marca, relacionamento com os participantes e ativações da Cresol durante os eventos.', date: 'Datas das duas etapas a confirmar.', image: 'drone/ilha-vista-aerea-tratada-800.webp', alt: 'Vista aérea tratada do Ilha Tênis Colatina', note: '2 etapas previstas · imagem tratada do clube' },
     { name: 'Torneios de Beach Tennis', timing: '2027 · AO LONGO DO ANO', copy: 'Competições periódicas que mobilizam alunos, frequentadores e convidados. Diferentes momentos para a Cresol participar da energia das quadras de areia.', date: 'Edições e datas a definir no calendário anual.', image: 'ilha-aerea.jpg', alt: 'Vista aérea das quadras de areia e tênis do Ilha', note: 'Estrutura do clube' },
     { name: 'Quarta Universitária', timing: '2027 · AO LONGO DO ANO', copy: 'Música, convivência e integração entre alunos e convidados. Uma experiência social para aproximar a marca do público e criar novas conexões.', date: 'Programação e datas a confirmar.', image: 'convivencia.jpg', alt: 'Público reunido na área de convivência do Ilha à noite', note: 'Registro aprimorado com IA' },
     { name: 'Torneio Interno', timing: '2027 · CALENDÁRIO DO CLUBE', copy: 'Uma competição para valorizar quem vive o Ilha no dia a dia. Atletas e alunos compartilham desafios, evolução e a celebração de cada conquista.', date: 'Data e formato da próxima edição a confirmar.', image: 'evandro.jpg', alt: 'Atleta do clube durante uma partida de tênis', note: 'Registro do acervo do Ilha' },
@@ -155,17 +159,4 @@
     });
   });
 
-  const spots = [
-    { name: 'Acesso às quadras', copy: 'Bandeiras verticais nas entradas e junto aos acessos. A Cresol recebe os atletas e acompanha o fluxo de quem chega para jogar.' },
-    { name: 'Alambrados e laterais', copy: 'Banners nos alambrados das quadras de tênis e beach tennis, com visibilidade durante jogos, treinos e registros de fotos e vídeos.' },
-    { name: 'Circulação e convivência', copy: 'Placas e peças de marca no caminho entre quadras, arquibancadas e área social. Presença nos momentos de pausa, encontro e celebração.' }
-  ];
-  const pins = [...document.querySelectorAll('[data-spot]')];
-  pins.forEach((pin, index) => pin.addEventListener('click', () => {
-    pins.forEach((item, position) => item.setAttribute('aria-pressed', String(position === index)));
-    document.querySelector('#spot-number').textContent = String(index + 1).padStart(2, '0');
-    document.querySelector('#spot-name').textContent = spots[index].name;
-    document.querySelector('#spot-copy').textContent = spots[index].copy;
-    animatePanel(document.querySelector('.spot-readout'));
-  }));
 })();
