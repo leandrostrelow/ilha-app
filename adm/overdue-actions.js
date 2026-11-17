@@ -23,12 +23,13 @@
       '<p>Os selecionados sairão dos alunos ativos e das aulas. A cobrança futura será desativada para o responsável ou pausada para os dependentes selecionados. O cadastro e o histórico serão preservados.</p>' +
       '<label>Motivo da suspensão<textarea name="reason" required minlength="10" maxlength="400"></textarea></label>' +
       '<label><input type="checkbox" name="consent" required> Confirmo o cancelamento desta fatura e a suspensão dos selecionados.</label>' +
-      '<p role="alert" class="overdue-action-error" hidden></p><div class="overdue-action-buttons"><button type="button" data-close class="ghost-btn">Voltar</button><button type="submit" class="primary-btn">Cancelar fatura e suspender</button></div></form>';
+      '<p role="alert" class="overdue-action-error" hidden></p><button type="button" class="ghost-btn" data-review hidden>Revisar dados atuais</button><div class="overdue-action-buttons"><button type="button" data-close class="ghost-btn">Voltar</button><button type="submit" class="primary-btn">Cancelar fatura e suspender</button></div></form>';
     document.body.append(dialog);
     let busy = false;
     const form = dialog.querySelector('form'), error = dialog.querySelector('[role="alert"]');
     const close = () => { if (!busy) { dialog.close(); dialog.remove(); } };
     dialog.querySelector('[data-close]').addEventListener('click', close);
+    dialog.querySelector('[data-review]').addEventListener('click', () => { if (!busy) { close(); open(ctx, invoice).catch(error => ctx.notify(error.message)); } });
     dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
     form.addEventListener('submit', async event => {
       event.preventDefault();
@@ -47,6 +48,7 @@
         await ctx.changed(); busy = false; close(); ctx.notify('Fatura cancelada e inscrições selecionadas suspensas. Histórico preservado.');
       } catch (failure) {
         editable = failure.beforeMutation === true;
+        dialog.querySelector('[data-review]').hidden = false;
         error.hidden = false;
         error.textContent = (failure && failure.message || 'Falha ao concluir.') + ' A operação pode ter concluído o cancelamento antes desta falha. Confira a ficha; repetir esta mesma operação não cria outra cobrança.';
       } finally {

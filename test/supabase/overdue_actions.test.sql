@@ -6,10 +6,8 @@ insert into auth.users(id,email,raw_app_meta_data,raw_user_meta_data) values ('8
 insert into app_clients(id,full_name,email,due_day,status,client_type) values ('83000000-0000-4000-8000-000000000001','Synthetic overdue','overdue@tests.invalid',5,'ATIVO','aluno');
 insert into app_monthly_billing_enrollments(client_id,enabled,enabled_at,billing_method) values('83000000-0000-4000-8000-000000000001',true,now(),'CASH');
 insert into app_payment_invoices(id,client_id,invoice_month,amount,due_date,status,payment_method) values ('83000000-0000-4000-8000-000000000021','83000000-0000-4000-8000-000000000001','2020-01-01',350,'2020-01-05','VENCIDA','CASH');
--- Reuse the production manual-ledger synchronizer if invoice triggers have created the entry.
-insert into financial_transactions(app_payment_invoice_id,type,description,amount,due_date,status,payment_method)
-select '83000000-0000-4000-8000-000000000021','RECEITA','Synthetic monthly debt',350,'2020-01-05','VENCIDO','DINHEIRO'
-where not exists(select 1 from financial_transactions where app_payment_invoice_id='83000000-0000-4000-8000-000000000021');
+select private.ensure_app_invoice_financial_transaction('83000000-0000-4000-8000-000000000021');
+select set_config('ilha.monthly_billing_write','',true);
 select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"authenticated","email":"ci-protected-admin@tests.invalid"}',true);
 select is(public.admin_resend_overdue_reminder('83000000-0000-4000-8000-000000000021','83000000-0000-4000-8000-000000000031')->>'state','QUEUED','admin can remind a debt older than five days');
 select is(public.admin_resend_overdue_reminder('83000000-0000-4000-8000-000000000021','83000000-0000-4000-8000-000000000031')->>'state','QUEUED','retry idempotent');

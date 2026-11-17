@@ -34,6 +34,18 @@ end;$$;
 revoke all on function private.keep_suspended_student_inactive() from public,anon,authenticated,service_role;
 create trigger keep_suspended_student_inactive before insert or update on public.students for each row execute function private.keep_suspended_student_inactive();
 
+
+create function private.prevent_suspended_lesson_enrollment() returns trigger
+language plpgsql security definer set search_path='' as $$
+begin
+ if new.active and (exists(select 1 from public.students s join public.app_clients c on c.id=s.app_client_id where s.id=new.student_id and c.status='SUSPENSO')
+ or exists(select 1 from public.app_family_members m where m.student_id=new.student_id and m.classes_suspended)) then
+ raise exception 'Retome a inscrição antes de incluir o aluno nas aulas.';end if;
+ return new;
+end;$$;
+revoke all on function private.prevent_suspended_lesson_enrollment() from public,anon,authenticated,service_role;
+create trigger prevent_suspended_lesson_enrollment before insert or update on public.lesson_enrollments for each row execute function private.prevent_suspended_lesson_enrollment();
+
 create function public.admin_overdue_suspension(p_invoice_id uuid,p_payer boolean default false,p_member_ids uuid[] default '{}',p_reason text default null,p_version text default null,p_apply boolean default false)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare i public.app_payment_invoices%rowtype;c public.app_clients%rowtype; f public.financial_transactions%rowtype;
@@ -48,6 +60,8 @@ begin
  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('ilha-monthly-billing:'||i.invoice_month::text,0));
  select * into strict i from public.app_payment_invoices where id=p_invoice_id for update;
  select * into strict c from public.app_clients where id=i.client_id for update;
+ if exists(select 1 from public.app_family_members where member_client_id=c.id and billing_responsible_id<>c.id and status in ('ATIVO','PENDENTE')) then
+ raise exception 'Fatura anterior ao vínculo familiar. Confira a ficha do responsável antes de suspender.';end if;
  perform 1 from public.app_family_members where billing_responsible_id=c.id order by id for update;
  select * into a from private.overdue_enrollment_suspensions where invoice_id=i.id;
  if found and p_reason is not null then

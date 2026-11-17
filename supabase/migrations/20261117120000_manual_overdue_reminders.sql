@@ -19,6 +19,7 @@ returns boolean language sql stable security definer set search_path='' as $$
  and ((i.payment_method in ('CLUB_PIX','CASH') and coalesce(i.provider_status,'') not in ('CONFIRMED','RECEIVED','RECEIVED_IN_CASH','CANCELLED'))
  or (i.provider_status in ('PENDING','OVERDUE') and nullif(trim(i.pix_payload),'') is not null
  and (i.pix_expires_at is null or i.pix_expires_at>now())))
+ and not exists(select 1 from public.app_family_members m where m.member_client_id=i.client_id and m.billing_responsible_id<>i.client_id and m.status in ('ATIVO','PENDENTE'))
  and not exists(select 1 from private.monthly_invoice_receipts r where r.invoice_id=i.id and r.reversed_at is null));
 $$;
 revoke all on function private.overdue_invoice_is_payable(uuid) from public,anon,authenticated,service_role;
