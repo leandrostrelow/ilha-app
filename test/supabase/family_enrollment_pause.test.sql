@@ -9,8 +9,8 @@ insert into public.app_clients(id,full_name,email,phone,cpf,birth_date,plan_amou
 ('85000000-0000-4000-8000-000000000001','Synthetic pause payer','pause-payer@tests.invalid','27999990001','11144477735','1980-01-01',350,0,5,'ATIVO','cliente',now(),now()),
 ('85000000-0000-4000-8000-000000000003','Synthetic registered member','pause-member@tests.invalid','27999990002','52998224725','1985-01-01',0,0,5,'ATIVO','cliente',now(),now());
 select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"authenticated","email":"ci-protected-admin@tests.invalid"}',true);
-insert into public.app_family_members(id,billing_responsible_id,full_name,relationship,monthly_amount,status,birth_date,cpf,reviewed_at)
-values('85000000-0000-4000-8000-000000000002','85000000-0000-4000-8000-000000000001','Synthetic provisional member','CONJUGE',250,'ATIVO','1985-01-01','52998224725',now());
+insert into public.app_family_members(id,billing_responsible_id,full_name,relationship,monthly_amount,status,birth_date,cpf,contact_responsible_name,contact_responsible_phone,reviewed_at)
+values('85000000-0000-4000-8000-000000000002','85000000-0000-4000-8000-000000000001','Synthetic provisional member','CONJUGE',250,'ATIVO','1985-01-01','52998224725','Synthetic pause payer','27999990001',now());
 create temporary table original_student as select student_id from app_family_members where id='85000000-0000-4000-8000-000000000002';
 select public.admin_link_family_member('85000000-0000-4000-8000-000000000002','85000000-0000-4000-8000-000000000003',null);
 select is((select count(*)::int from students where app_client_id='85000000-0000-4000-8000-000000000003'),1,'linking keeps one operational student');
