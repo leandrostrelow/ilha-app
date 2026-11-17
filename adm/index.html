@@ -36464,6 +36464,8 @@ const colors = tournamentArtPalette({
         const amountLabel = (member.monthlyAmount === '' ? 'Valor opcional' : money(member.monthlyAmount || 0)) + (member.billingPaused ? ' · cobrança pausada' : '');
         const pauseAction = canUseClubPermission('finance.write') && status === 'ATIVO'
           ? '<button class="small-btn" type="button" data-family-pause-billing="' + escapeHtml(member.id) + '">' + (member.classesSuspended ? 'Retomar inscrição' : member.billingPaused ? 'Retomar cobrança' : 'Pausar cobrança') + '</button>' : '';
+        const suspensionAction = status === 'ATIVO' && !member.classesSuspended && canWrite && canUseClubPermission('finance.write') && canUseClubPermission('classes')
+          ? '<button class="small-btn" type="button" data-family-suspend="' + escapeHtml(member.id) + '">Pausar aulas e cobrança</button>' : '';
         const billingAction = canUseClubPermission('finance.write') && status === 'ATIVO' && member.responsibleConfirmationRequired && !member.billingAuthorizedAt
           ? '<button class="small-btn" type="button" data-family-authorize-billing="' + escapeHtml(member.id) + '">Liberar cobrança</button>'
           : member.billingAuthorizedAt && member.responsibleConfirmationRequired ? '<span class="ops-pill good">Cobrança liberada · dados pendentes</span>' : '';
@@ -36484,8 +36486,8 @@ const colors = tournamentArtPalette({
         return '<article class="client-family-member ' + (status === 'PENDENTE' ? 'is-pending' : status === 'REJEITADO' ? 'is-rejected' : '') + '" data-family-member-card="' + escapeHtml(member.id || '') + '">' +
           '<div class="client-family-member-main"><strong>' + escapeHtml(member.fullName || memberClient.name || 'Membro') + '</strong><small>' + escapeHtml(familyRelationshipLabel(member.relationship)) + ' · ' + escapeHtml(ageLabel) + '</small><small>' + escapeHtml(contact) + '</small>' + (member.responsibleConfirmationRequired ? '<span class="ops-pill warn">Aguardando confirmação do responsável</span>' : '') + '</div>' +
           '<div class="client-family-member-detail"><small>Nascimento</small><strong>' + escapeHtml(familyBirthDateLabel(member.birthDate)) + '</strong><small>' + escapeHtml(maskedFamilyCpf(member.cpf)) + '</small></div>' +
-          '<div class="client-family-member-detail"><small>Cobrado de ' + escapeHtml(context.responsible.name || 'responsável') + '</small><strong>' + escapeHtml(amountLabel) + '</strong><div class="ops-meta">' + familyStatusPill(status) + (member.studentId ? '<span class="ops-pill good">Aluno do clube</span>' : '') + (memberClient.email ? '<span class="ops-pill good">Com acesso</span>' : '<span class="ops-pill">Sem acesso</span>') + '</div></div>' +
-          '<div class="client-family-member-actions">' + pauseAction + billingAction + openClient + operationalStudentAction + actions + '</div>' +
+          '<div class="client-family-member-detail"><small>Cobrado de ' + escapeHtml(context.responsible.name || 'responsável') + '</small><strong>' + escapeHtml(amountLabel) + '</strong><div class="ops-meta">' + familyStatusPill(status) + (member.classesSuspended ? '<span class="ops-pill warn">Inscrição suspensa</span>' : '') + (member.studentId ? '<span class="ops-pill good">Aluno do clube</span>' : '') + (memberClient.email ? '<span class="ops-pill good">Com acesso</span>' : '<span class="ops-pill">Sem acesso</span>') + '</div></div>' +
+          '<div class="client-family-member-actions">' + pauseAction + suspensionAction + billingAction + openClient + operationalStudentAction + actions + '</div>' +
         '</article>';
       }).join('') || '<div class="lesson-empty-state">Nenhum membro vinculado. Este aluno pode ser definido como responsável financeiro ao adicionar a primeira pessoa.</div>';
     }
@@ -36683,6 +36685,28 @@ const colors = tournamentArtPalette({
         button.disabled = false;
         button.textContent = 'Salvar membro';
       }
+    }
+
+    async function suspendFamilyEnrollmentAction(memberId, button) {
+      const member = familyMemberById(memberId);
+      if (!member || button.disabled) return;
+      try {
+        requireClubPermission('clients.write'); requireClubPermission('finance.write'); requireClubPermission('classes');
+        const reason = window.prompt('Pausar aulas e cobrança de ' + member.fullName + '? Apenas esta pessoa sairá dos alunos ativos e dos horários de aula. O vínculo familiar e o valor contratado serão preservados. Faturas já emitidas não serão canceladas nem alteradas. Informe o motivo:');
+        if (reason === null) return;
+        if (reason.trim().length < 5 || reason.trim().length > 500) throw new Error('Informe um motivo de 5 a 500 caracteres.');
+        button.disabled = true;
+        if (isAdminDemoMode()) throw new Error('Operação disponível somente no ambiente administrativo autenticado.');
+        await supabaseRest('rpc/admin_suspend_family_enrollment', { method: 'POST', body: {
+          p_member_id: member.id, p_expected_updated_at: member.updatedAt, p_reason: reason.trim()
+        }});
+        const selectedId = opsState.selectedClientId;
+        await loadOpsData(true);
+        if (findClientByKey(selectedId)) openClientModal(selectedId, 'Family');
+        renderHomeDashboard();
+        toast('Aulas e cobrança pausadas. Faturas existentes preservadas.');
+      } catch (error) { reportActionError(error); }
+      finally { button.disabled = false; }
     }
 
     async function pauseFamilyBillingAction(memberId, button) {
@@ -52525,6 +52549,8 @@ const colors = tournamentArtPalette({
           confirmFamilyMemberAction(familyConfirmBtn.dataset.familyConfirm, familyConfirmBtn);
           return;
         }
+        const suspendFamilyBtn = event.target.closest('[data-family-suspend]');
+        if (suspendFamilyBtn) { suspendFamilyEnrollmentAction(suspendFamilyBtn.dataset.familySuspend, suspendFamilyBtn); return; }
         const pauseBillingBtn = event.target.closest('[data-family-pause-billing]');
         if (pauseBillingBtn) { pauseFamilyBillingAction(pauseBillingBtn.dataset.familyPauseBilling, pauseBillingBtn); return; }
         const familyBillingBtn = event.target.closest('[data-family-authorize-billing]');
