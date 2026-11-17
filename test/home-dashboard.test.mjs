@@ -94,7 +94,7 @@ test('aviso mostra a data registrada do pagamento no fuso de Brasília',async()=
   await f.board.refresh();
   const html=f.elements.get('homeConfirmedPayments').innerHTML;
   assert.ok(html.includes(expected),html);
-  assert.match(html,/Confirmado pelo Asaas/);
+  assert.match(html,/Vencimento 10\/11\/2026/);
   assert.match(html,/RESOLVIDO/);
   assert.doesNotMatch(html,/Pago em 16\/11\/2026/);
  }
