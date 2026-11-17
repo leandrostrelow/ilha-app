@@ -1,5 +1,3 @@
-import { createBrandingLayer } from './tour-branding.js';
-
 (() => {
   'use strict';
   const dialog = document.querySelector('#tour-dialog');
@@ -13,11 +11,6 @@ import { createBrandingLayer } from './tour-branding.js';
   const next = document.querySelector('#tour-next');
   const viewControls = [...document.querySelectorAll('[data-pan-control]')];
   const fullscreen = document.querySelector('#tour-fullscreen');
-  const brandingSwitch = document.querySelector('#tour-branding-switch');
-  const brandingButtons = [...document.querySelectorAll('[data-tour-branding]')];
-  const simulationLabel = document.querySelector('#tour-simulation-label');
-  let brandMode = false;
-  let brandingLayer = null;
   let viewer = null;
   let current = 0;
   let opener = null;
@@ -30,16 +23,10 @@ import { createBrandingLayer } from './tour-branding.js';
     previous.disabled = value || current === 0;
     next.disabled = value || current === places.length - 1;
     sceneSelect.disabled = value;
-    brandingButtons.forEach(button => { button.disabled = value; });
     viewControls.forEach(button => { button.disabled = value; });
   }
-  function showInfo(index, simulated = false) {
+  function showInfo(index) {
     current = index;
-    brandMode = simulated && places[index].id === 'areia';
-    brandingLayer?.hide();
-    brandingSwitch.hidden = places[index].id !== 'areia';
-    simulationLabel.hidden = !brandMode;
-    brandingButtons.forEach(button => button.setAttribute('aria-pressed', String((button.dataset.tourBranding === 'cresol') === brandMode)));
     const place = places[index];
     document.querySelector('#tour-dialog-title').textContent = place.title;
     document.querySelector('#tour-original').href = place.url;
@@ -57,27 +44,25 @@ import { createBrandingLayer } from './tour-branding.js';
     return supportsLarge;
   }
   function failed() {
-    brandingLayer?.hide();
     status.textContent = 'Não foi possível abrir a vista 360°. Tente outro ponto ou use “Abrir foto”.';
     setLoading(false);
     viewControls.forEach(button => { button.disabled = true; });
   }
-  function openTour(id, source, simulated = false) {
+  function openTour(id, source) {
     const index = places.findIndex(place => place.id === id);
     if (index < 0 || !window.pannellum || typeof dialog.showModal !== 'function') return false;
     opener = source;
     dialog.showModal();
     document.documentElement.classList.add('tour-is-open');
-    showInfo(index, simulated);
+    showInfo(index);
     widePanorama = useLargePanorama();
     const scenes = Object.fromEntries(places.map(place => [place.id, {
       type: 'equirectangular', panorama: widePanorama ? place.url.replace('-4096.webp', '-6144.webp') : place.url,
       preview: `/cresol/assets/tour/ponto-${place.number}-preview.webp`, pitch: 0, yaw: ({ deck: 85, pickleball: 90 })[place.id] || 0, hfov: 100
     }]));
-    scenes['areia--cresol'] = { ...scenes.areia };
     try {
       viewer = window.pannellum.viewer(panorama, {
-        default: { firstScene: brandMode ? 'areia--cresol' : id, sceneFadeDuration: reducedMotion.matches ? 0 : 350, autoLoad: true, showControls: false,
+        default: { firstScene: id, sceneFadeDuration: reducedMotion.matches ? 0 : 350, autoLoad: true, showControls: false,
           escapeHTML: true, minHfov: 45, maxHfov: 115, mouseZoom: true, keyboardZoom: true,
           strings: { loadingLabel: 'Abrindo o Ilha…', loading: 'Carregando', loadButtonLabel: 'Abrir foto 360°',
             genericWebGLError: 'A vista 360° não está disponível neste navegador. Use “Abrir foto”.',
@@ -85,12 +70,10 @@ import { createBrandingLayer } from './tour-branding.js';
             fileAccessError: 'Não foi possível carregar esta foto. Tente outro ponto ou use “Abrir foto”.' }
         }, scenes
       });
-      brandingLayer = createBrandingLayer(document.querySelector('.tour-viewer-wrap'), viewer);
       viewer.on('load', () => {
         if (!dialog.open) return;
         status.textContent = '';
         setLoading(false);
-        if (brandMode && viewer.getScene() === 'areia--cresol') brandingLayer?.show();
       });
       viewer.on('error', failed);
       requestAnimationFrame(() => viewer?.resize());
@@ -102,17 +85,10 @@ import { createBrandingLayer } from './tour-branding.js';
     showInfo(index);
     try { viewer.loadScene(places[index].id); } catch { failed(); }
   }
-  brandingButtons.forEach(button => button.addEventListener('click', () => {
-    const simulated = button.dataset.tourBranding === 'cresol';
-    if (!viewer || loading || places[current].id !== 'areia' || simulated === brandMode) return;
-    const pitch = viewer.getPitch(), yaw = viewer.getYaw(), hfov = viewer.getHfov();
-    showInfo(current, simulated);
-    try { viewer.loadScene(simulated ? 'areia--cresol' : 'areia', pitch, yaw, hfov); } catch { failed(); }
-  }));
-  [...pins, ...document.querySelectorAll('[data-tour-open], [data-tour-preview]')].forEach(link => {
+  [...pins, ...document.querySelectorAll('[data-tour-open]')].forEach(link => {
     link.addEventListener('click', event => {
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-      if (openTour(link.dataset.tourScene || link.dataset.tourOpen || link.dataset.tourPreview, link, Boolean(link.dataset.tourPreview))) event.preventDefault();
+      if (openTour(link.dataset.tourScene || link.dataset.tourOpen, link)) event.preventDefault();
     });
   });
   previous.addEventListener('click', () => selectScene(current - 1));
@@ -122,8 +98,6 @@ import { createBrandingLayer } from './tour-branding.js';
   dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
   dialog.addEventListener('close', () => {
     if (document.fullscreenElement === dialog) document.exitFullscreen().catch(() => {});
-    brandingLayer?.destroy();
-    brandingLayer = null;
     viewer?.destroy();
     viewer = null;
     panorama.replaceChildren();

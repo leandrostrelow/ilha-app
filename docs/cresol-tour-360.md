@@ -24,18 +24,26 @@ Para atualizar, troque as imagens do ponto, a miniatura e os dados do link em `c
 - Tela cheia não foi disponibilizada pelo navegador integrado; a mensagem de alternativa funcionou e o tour continuou utilizável. A visualização já ocupa a tela no celular.
 - Console sem erros. `pnpm run verify` passou. Imagens de alta resolução permanecem fora do Git.
 
-## Revisão: foto aérea e prévia Cresol
+## Separação entre tour real e proposta visual
 
-O mapa agora inicia na foto aérea tratada, com opção para ver a foto original. A ilustração saiu da interface e da lista de arquivos publicados.
+O mapa inicia na foto aérea tratada, com opção para ver a foto original. A ilustração saiu da interface e da lista de arquivos publicados. O tour mostra apenas as sete fotos reais, sem camadas de patrocínio ou comparativo Cresol.
 
-`#previa-cresol` abre uma primeira simulação nas quadras de areia. A foto panorâmica original de alta resolução continua sendo a base da visita. A edição por IA fornece apenas pequenos recortes de tecido verde/laranja; uma camada projetada acompanha a orientação, inclinação e zoom do visualizador. O logo mostrado vem exclusivamente de `cresol/assets/cresol-original.png`, com transparência preservada e filtro CSS para branco. A arte da marca não é redesenhada pela IA. A primeira geração que continha logos sintetizados foi descartada e não é publicada.
+As propostas de aplicação ficam juntas em `#previa-cresol`, dentro do capítulo “Sua marca no Ilha”. Duas montagens estáticas mostram banners predominantemente laranja em tênis e areia/deck. Cada uma abre em um diálogo ampliado, fecha por botão/Escape e devolve o foco à imagem de origem. A marca vem exclusivamente do PNG original `cresol/assets/cresol-original.png`, em branco por CSS, projetado sobre as peças. A edição por IA fornece o cenário com tecido laranja sem letras ou símbolos.
 
-O comparativo preserva a direção e o zoom da câmera. Trocar de ponto ou fechar a visita oculta/remove as peças. A simulação é identificada permanentemente no visualizador; o link de imagem abre a foto original. A composição de patrocínio é uma prévia interativa, não uma instalação existente nem uma exportação final de todas as sete panorâmicas.
+`brand-projection.js` calcula a homografia; `sponsor-placements.js` registra os quatro cantos de cada aplicação nas fotos 1448 × 1086. `sponsor-mockups.js` recalcula a projeção quando a imagem é redimensionada. O diálogo remove seus elementos/observação ao fechar. Não há chamadas a serviços, gravações ou backend.
 
-Validação adicional: testes da projeção esférica e transformação dos quatro cantos da arte original; conservação da transparência do PNG; comparação antes/depois, giro, troca para outra cena, layout móvel e carregamento da mesma fonte de logo do cabeçalho. O arquivo original da marca permanece sem alterações.
+Validação: correspondência dos quatro cantos, coordenadas e matrizes em tamanhos distintos, transparência do PNG original, ampliação e fechamento dos dois estudos, retorno do foco, layout móvel e navegação 360° sem simulação. Os antigos tecidos/miniatura de simulação 360° e a antiga montagem verde não são mais publicados.
 
 ## Novos registros de drone — novembro de 2026
 
 Quatro fotos fornecidas pelo proprietário na pasta `DRONE/NOVEMBRO 2026` entram na apresentação: `DJI_0663.JPG` na abertura, `DJI_0626.JPG` na seção do clube, `DJI_0631.JPG` no cartão de pickleball e `DJI_0647.JPG` no cartão das quadras de areia. Os dois cartões abrem as fotos 360° correspondentes pelo mesmo visualizador do mapa.
 
 As imagens foram exportadas em WebP de 800 e 1600 pixels de largura, com orientação corrigida e sem metadados da câmera. O conteúdo das fotografias permanece original; o enquadramento visível se adapta ao espaço da página. Os JPGs originais permanecem preservados fora do repositório. Carregamento responsivo e lazy loading nos registros abaixo da abertura.
+
+## Tratamento fotográfico, calendário e transições
+
+As quatro fotos de drone agora têm cópias tratadas: iluminação, cor, superfícies das quadras e acabamento das linhas. São imagens ilustrativas de acabamento, identificadas na seção do clube. Os arquivos originais continuam preservados. Exportações responsivas de 800 e 1448 pixels; os cenários dos estudos visuais são versões separadas.
+
+O calendário proposto de 2027 contempla duas etapas do Cincate e duas da Copa Dupla Falta, ambas com datas a confirmar, além dos eventos anteriores.
+
+Nas mudanças de capítulo, duas bolinhas percorrem a tela por cerca de um segundo. A camada não recebe cliques nem foco, tem frequência limitada, para quando a página fica oculta e respeita `prefers-reduced-motion`. Não executa enquanto há diálogo aberto.
