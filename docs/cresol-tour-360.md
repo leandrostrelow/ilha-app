@@ -23,3 +23,13 @@ Para atualizar, troque as imagens do ponto, a miniatura e os dados do link em `c
 - Layout conferido em 1280 × 720, 390 × 844 e 320 × 740; sem overflow horizontal. Marcadores móveis ampliados junto com a foto.
 - Tela cheia não foi disponibilizada pelo navegador integrado; a mensagem de alternativa funcionou e o tour continuou utilizável. A visualização já ocupa a tela no celular.
 - Console sem erros. `pnpm run verify` passou. Imagens de alta resolução permanecem fora do Git.
+
+## Revisão: foto aérea e prévia Cresol
+
+O mapa agora inicia na foto aérea tratada, com opção para ver a foto original. A ilustração saiu da interface e da lista de arquivos publicados.
+
+`#previa-cresol` abre uma primeira simulação nas quadras de areia. A foto panorâmica original de alta resolução continua sendo a base da visita. A edição por IA fornece apenas pequenos recortes de tecido verde/laranja; uma camada projetada acompanha a orientação, inclinação e zoom do visualizador. O logo mostrado vem exclusivamente de `cresol/assets/cresol-original.png`, com transparência preservada e filtro CSS para branco. A arte da marca não é redesenhada pela IA. A primeira geração que continha logos sintetizados foi descartada e não é publicada.
+
+O comparativo preserva a direção e o zoom da câmera. Trocar de ponto ou fechar a visita oculta/remove as peças. A simulação é identificada permanentemente no visualizador; o link de imagem abre a foto original. A composição de patrocínio é uma prévia interativa, não uma instalação existente nem uma exportação final de todas as sete panorâmicas.
+
+Validação adicional: testes da projeção esférica e transformação dos quatro cantos da arte original; conservação da transparência do PNG; comparação antes/depois, giro, troca para outra cena, layout móvel e carregamento da mesma fonte de logo do cabeçalho. O arquivo original da marca permanece sem alterações.
