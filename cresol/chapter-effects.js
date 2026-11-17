@@ -25,7 +25,7 @@
       layer.append(ball);
       const start = forward ? -150 : width + 150;
       const end = forward ? width + 150 : -150;
-      const offset = index * 55;
+      const offset = index * (width <= 760 ? 78 : 110);
       const pass = ball.animate([
         { transform: `translate3d(${start}px,${height * .56 - offset}px,0)`, opacity: 0 },
         { transform: `translate3d(${width * (forward ? .2 : .8)}px,${height * .68 - offset}px,0)`, opacity: .95, offset: .28 },
