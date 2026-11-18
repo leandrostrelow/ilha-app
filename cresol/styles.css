@@ -263,6 +263,7 @@
 .bar-real-gallery .bar-real-main{grid-row:span 2}
 .bar-real-gallery a{display:block;height:100%}
 .bar-real-gallery img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.bar-real-gallery .bar-real-food img{object-position:center bottom}
 .bar-real-gallery a:hover img{transform:scale(1.025)}
 .bar-real-gallery figcaption{position:absolute;left:0;right:0;bottom:0;padding:30px 20px 17px;color:#fff;background:linear-gradient(transparent,#002c24d9);font-size:13px;font-weight:700;pointer-events:none}
 .bar-instagram-credit{display:inline-block;font-size:12px;margin-top:18px;text-decoration:underline;text-underline-offset:4px;font-weight:700}
@@ -282,3 +283,21 @@
 .social-links>a.social-youtube:hover{border-color:#ff0033}
 @media(max-width:1100px){.social-links>a.social-card{grid-template-columns:44px minmax(0,1fr) auto;padding:22px 16px;gap:12px}.social-card .social-brand,.social-card .social-brand-ilha{width:44px;height:44px}.social-card .social-brand img{width:38px;height:38px}.social-card.social-youtube .social-brand img{width:44px;height:38px}.social-card .social-brand-ilha img{width:34px;height:auto}.social-links .social-card strong{font-size:18px}}
 @media(max-width:760px){.social-links>a.social-card{grid-template-columns:52px minmax(0,1fr) auto;padding:24px 20px;gap:16px}.social-card .social-brand,.social-card .social-brand-ilha{width:52px;height:52px}.social-card .social-brand img{width:44px;height:44px}.social-card.social-youtube .social-brand img{width:52px;height:44px}.social-card .social-brand-ilha img{width:40px;height:auto}.social-links .social-card strong{font-size:21px}}
+
+/* Abertura da proposta com fotografias reais do clube. */
+.proposal-story{position:relative;isolation:isolate;min-height:540px;margin-bottom:65px;padding:54px;border-radius:18px;overflow:hidden;background:var(--deep);color:var(--cream);display:flex;flex-direction:column;justify-content:space-between;gap:48px}
+.proposal-story-photos{position:absolute;inset:0;z-index:-2}
+.proposal-story-photos img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 56%;opacity:0;transition:opacity .65s ease}
+.proposal-story-photos img.is-active{opacity:1}
+.proposal-story:after{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#003e32ed 0%,#003e32aa 45%,#003e3220 80%),linear-gradient(0deg,#002b24a8,transparent 45%)}
+.proposal-story-copy{max-width:560px}
+.proposal-story-copy>.eyebrow{color:#ffb576;font-size:10px}
+.proposal-story h3{font-size:clamp(43px,5vw,72px);letter-spacing:-.055em;line-height:1.04;margin:25px 0}
+.proposal-story-copy>p:last-child{max-width:470px;font-size:16px;line-height:1.75}
+.proposal-story-footer{display:flex;justify-content:space-between;align-items:center;gap:20px}
+.proposal-story-footer>span{font-size:10px}
+.proposal-view-controls{display:flex;gap:8px}
+.proposal-view-controls button{min-height:42px;border:1px solid #ffffff70;border-radius:24px;padding:11px 15px;background:#003e3266;color:var(--cream);font-size:11px}
+.proposal-view-controls button[aria-pressed=true]{background:var(--cream);color:var(--green);border-color:var(--cream)}
+.proposal-view-controls button:focus-visible{outline-color:var(--cream)}
+@media(max-width:760px){.proposal-story{min-height:560px;padding:30px 23px;margin-bottom:45px;border-radius:12px;gap:35px}.proposal-story h3{font-size:43px;margin:22px 0}.proposal-story-copy>p:last-child{font-size:14px;line-height:1.75}.proposal-story:after{background:linear-gradient(90deg,#003e32e8,#003e3285),linear-gradient(0deg,#002b24a8,transparent 45%)}.proposal-story-photos img{object-position:42% center}.proposal-story-footer{align-items:flex-start;flex-direction:column;gap:14px}.proposal-view-controls button{font-size:10px;padding:10px 12px}}
