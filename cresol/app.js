@@ -10,7 +10,6 @@
   const progress = document.querySelector('#reading-progress');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let activeSection = 0;
-  let navigationReady = false;
   let scheduled = false;
 
   function updateNavigation() {
@@ -20,8 +19,6 @@
     sections.forEach((section, index) => {
       if (section.getBoundingClientRect().top <= checkpoint) visible = index;
     });
-    if (navigationReady && visible !== activeSection) document.dispatchEvent(new CustomEvent('ilha:chapterchange', { detail: { direction: visible > activeSection ? 1 : -1 } }));
-    navigationReady = true;
     activeSection = visible;
     currentChapter.textContent = String(visible + 1).padStart(2, '0');
     currentTitle.textContent = sections[visible].dataset.title;
