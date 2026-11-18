@@ -78,13 +78,45 @@
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && !menu.hidden) closeMenu(true); });
   window.matchMedia('(min-width: 1001px)').addEventListener('change', event => { if (event.matches) closeMenu(); });
 
-  const proposalViews = [...document.querySelectorAll('[data-proposal-view]')];
-  const proposalPhotos = [...document.querySelectorAll('[data-proposal-image]')];
-  proposalViews.forEach(button => button.addEventListener('click', () => {
-    const view = button.dataset.proposalView;
-    proposalViews.forEach(control => control.setAttribute('aria-pressed', String(control === button)));
-    proposalPhotos.forEach(photo => photo.classList.toggle('is-active', photo.dataset.proposalImage === view));
-  }));
+  const proposalVideo = document.querySelector('#proposal-video');
+  const proposalVideoToggle = document.querySelector('#proposal-video-toggle');
+  let proposalVisible = false;
+  let proposalPlaybackRequested = !reducedMotion.matches;
+  function updateProposalVideoButton() {
+    proposalVideoToggle.textContent = proposalVideo.paused ? 'Reproduzir vídeo' : 'Pausar vídeo';
+  }
+  function syncProposalVideo() {
+    if (!proposalVisible || document.hidden || !proposalPlaybackRequested) {
+      proposalVideo.pause();
+      return;
+    }
+    if (!proposalVideo.getAttribute('src')) proposalVideo.src = proposalVideo.dataset.src;
+    proposalVideo.muted = true;
+    proposalVideo.play().catch(updateProposalVideoButton);
+  }
+  proposalVideoToggle.addEventListener('click', () => {
+    proposalPlaybackRequested = proposalVideo.paused;
+    syncProposalVideo();
+  });
+  proposalVideo.addEventListener('play', updateProposalVideoButton);
+  proposalVideo.addEventListener('pause', updateProposalVideoButton);
+  proposalVideo.addEventListener('error', () => {
+    proposalVideoToggle.hidden = true;
+  });
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(entries => {
+      proposalVisible = entries[0].isIntersecting;
+      syncProposalVideo();
+    }, { threshold: .15 }).observe(document.querySelector('.proposal-story'));
+  } else {
+    proposalVisible = true;
+    syncProposalVideo();
+  }
+  document.addEventListener('visibilitychange', syncProposalVideo);
+  reducedMotion.addEventListener('change', () => {
+    proposalPlaybackRequested = !reducedMotion.matches;
+    syncProposalVideo();
+  });
 
   const events = [
     { name: 'Jogos de Verão Colatina', timing: '2027 · PREVISTO PARA FEVEREIRO', copy: 'Tênis, beach tennis, futevôlei e vôlei. Na edição de 2026, o espaço recebeu mais de 2 mil pessoas. Opção de ativação: espaço Cresol na recepção e desafio de precisão nos intervalos.', date: 'Previsto para fevereiro de 2027. Datas a confirmar com a organização.', image: 'eventos/jogos-verao-2026-capa.jpg', imageKind: 'video', alt: 'Vídeo dos Jogos de Verão Colatina 2026, publicado pela Prefeitura de Colatina', note: 'Registro da edição de 2026', video: 'eventos/jogos-verao-2026.mp4', videoLabel: 'Jogos de Verão Colatina 2026', videoCredit: 'Prefeitura de Colatina', videoLink: 'https://www.instagram.com/reel/DVqzT0tET0R/' },
