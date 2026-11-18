@@ -60,3 +60,15 @@ A imagem reconstruída `convivencia.jpg` foi retirada da apresentação e do man
 - Instagram: `Instagram_Glyph_Gradient.png`, preservado do pacote oficial `IG_brand_asset_pack_2023.zip`, disponibilizado em https://www.meta.com/pt-br/brand/resources/instagram/instagram-brand/.
 - YouTube: `yt_icon_red_digital.png`, preservado do pacote oficial `youtube-icon.zip`, disponibilizado em https://brand.youtube/youtube-icon. Sem recoloração ou redesenho das marcas.
 - Os cartões usam ícones maiores, nomes e acessos dos canais. Ilha Play usa a marca original do clube e informa reservas, aulas, eventos e estado em desenvolvimento.
+
+
+## Ajuste comercial e enquadramento — 18/11/2026
+A apresentação do clube passou a destacar visibilidade recorrente, relacionamento e oportunidades de contato com potenciais cooperados. O cartão dos petiscos agora utiliza `cresol/assets/bar/porcao-ilha-bar.jpg`, JPEG original da terceira foto do mesmo carrossel público do Ilha Bar, preservado byte a byte. O enquadramento é ancorado na base para mostrar a porção, sem cortar o assunto principal. A foto anterior saiu do manifesto público.
+
+A arte do Ilha Play foi editada pela ferramenta integrada ImageGen e salva em `cresol/assets/digital/ilha-play-raquete-corrigida.png`. Prompt: corrigir apenas a raquete verde, deixando cabeça oval simétrica, garganta em Y e cabo no mesmo eixo vertical; manter arco de luz, plataforma de saibro, bola à direita e espaço central para o celular. Não adicionar textos, marcas ou aparelho. A imagem original permanece no acervo.
+O botão “Conversar com o Ilha” e sua nota de abertura do Instagram foram retirados do investimento a pedido do usuário.
+
+Antes do investimento, o bloco “Um ano de Cresol no Ilha” apresenta duas vistas aéreas reais, selecionáveis por botões, sem reprodução automática. Fontes: `DJI_0614.JPG` e `DJI_0662.JPG`, da pasta de drone NOVEMBRO 2026 enviada pelo proprietário. As versões WebP de 960 e 1800 pixels foram somente redimensionadas/comprimidas, sem alterar o local; gradientes de leitura são aplicados por CSS.
+
+Prompt integral da correção da raquete (ImageGen integrado):
+> Use case: precise-object-edit. Edit target: the supplied square Ilha Play campaign background. Correct ONLY the malformed green tennis racket at the left. Replace it with a photorealistic, structurally correct dark forest green tennis racket standing upright, with a straight grip and shaft, a symmetric Y-shaped throat and an evenly oval head centered on the same straight vertical axis as the handle. All racket geometry must be aligned, no bent neck, no warped frame. Regular straight woven strings. Keep the racket in the leftmost quarter of the image, with the whole oval head visible inside the image and the handle reaching the lower left foreground. Preserve the warm ivory background, orange arch of light, orange tennis court platform, right-side lime tennis ball, lighting, square framing and broad clear central area for the existing HTML phone overlay. Do not add any phone, text, letters or logos. Preserve every other element. High quality realistic product photography.

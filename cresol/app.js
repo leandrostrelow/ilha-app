@@ -78,6 +78,14 @@
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && !menu.hidden) closeMenu(true); });
   window.matchMedia('(min-width: 1001px)').addEventListener('change', event => { if (event.matches) closeMenu(); });
 
+  const proposalViews = [...document.querySelectorAll('[data-proposal-view]')];
+  const proposalPhotos = [...document.querySelectorAll('[data-proposal-image]')];
+  proposalViews.forEach(button => button.addEventListener('click', () => {
+    const view = button.dataset.proposalView;
+    proposalViews.forEach(control => control.setAttribute('aria-pressed', String(control === button)));
+    proposalPhotos.forEach(photo => photo.classList.toggle('is-active', photo.dataset.proposalImage === view));
+  }));
+
   const events = [
     { name: 'Jogos de Verão Colatina', timing: '2027 · PREVISTO PARA FEVEREIRO', copy: 'Tênis, beach tennis, futevôlei e vôlei. Na edição de 2026, o espaço recebeu mais de 2 mil pessoas. Opção de ativação: espaço Cresol na recepção e desafio de precisão nos intervalos.', date: 'Previsto para fevereiro de 2027. Datas a confirmar com a organização.', image: 'eventos/jogos-verao-2026-capa.jpg', imageKind: 'video', alt: 'Vídeo dos Jogos de Verão Colatina 2026, publicado pela Prefeitura de Colatina', note: 'Registro da edição de 2026', video: 'eventos/jogos-verao-2026.mp4', videoLabel: 'Jogos de Verão Colatina 2026', videoCredit: 'Prefeitura de Colatina', videoLink: 'https://www.instagram.com/reel/DVqzT0tET0R/' },
     { name: 'Open de Tênis Cresol', timing: '2027 · REFERÊNCIA: MAIO', copy: 'Torneio regional com atletas de diferentes cidades. Opção de ativação: nome Cresol no torneio, materiais de competição e painel de premiação.', date: 'Mês de referência da proposta. Data e formato de 2027 a confirmar.', image: 'eventos/open-cresol-fundo.webp', imageKind: 'open', alt: 'Capa do Open de Tênis Cresol 2027, com bola de tênis sobre o saibro', note: 'Proposta de identidade do torneio' },
