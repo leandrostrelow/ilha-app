@@ -1,6 +1,6 @@
 # Tour 360° da apresentação Cresol
 
-A seção `/cresol/#tour` liga nove pontos do mapa às fotos reais do clube. O visitante pode alternar foto tratada/original, abrir uma vista, girar, aproximar, trocar de ponto e voltar ao mapa. O diálogo mantém o foco e bloqueia a navegação por capítulos enquanto está aberto.
+A seção `/cresol/#tour` liga oito pontos do mapa às fotos reais do clube. O visitante pode alternar foto tratada/original, abrir uma vista, girar, aproximar, trocar de ponto e voltar ao mapa. O diálogo mantém o foco e bloqueia a navegação por capítulos enquanto está aberto.
 
 ## Origem e atualização
 
@@ -26,7 +26,7 @@ Para atualizar, troque as imagens do ponto, a miniatura e os dados do link em `c
 
 ## Separação entre tour real e proposta visual
 
-O mapa inicia na foto aérea tratada, com opção para ver a foto original. A ilustração saiu da interface e da lista de arquivos publicados. O tour mostra apenas as nove fotos reais, sem camadas de patrocínio ou comparativo Cresol.
+O mapa inicia na foto aérea tratada, com opção para ver a foto original. A ilustração saiu da interface e da lista de arquivos publicados. O tour mostra apenas as oito fotos reais, sem camadas de patrocínio ou comparativo Cresol.
 
 As propostas de aplicação ficam juntas em `#previa-cresol`, dentro do capítulo “Aplicações da marca”. Duas montagens estáticas mostram banners predominantemente laranja ao fundo das quadras de tênis e areia/deck. Na areia, uma faixa localizada no canto do alambrado direito complementa os banners de fundo. A marcação lateral interna da quadra de tênis ao fundo foi restaurada na montagem. Cada uma abre em um diálogo ampliado, fecha por botão/Escape e devolve o foco à imagem de origem. A marca vem exclusivamente do PNG original `cresol/assets/cresol-original.png`, em branco por CSS, projetado sobre as peças. A edição por IA fornece o cenário com tecido laranja sem letras ou símbolos.
 
@@ -55,3 +55,7 @@ Os arquivos `IMG_20261117_090701_00_002.insp` e `IMG_20261117_090825_00_003.insp
 Cada nova cena tem WebP 4096/6144 e miniatura 480 × 300 sem metadados. Entram no mapa, nos cartões de ambientes, no seletor e na sequência anterior/próximo. O bloco Ilha Bar também tem dois acessos diretos. Os pontos antigos mantêm sua numeração e seus arquivos. Posições no mapa são aproximadas.
 
 Apenas conversão de formato, redução de tamanho e projeção da miniatura foram feitas nas exportações; não houve reconstrução de ambientes nem aplicação de patrocínio nas fotos 360°. Os INSP e JPGs de alta resolução permanecem fora dos arquivos publicados.
+
+## Remoção da vista das mesas — 18/11/2026
+
+A pedido do proprietário, o ponto 09 “Ilha Bar · mesas” foi retirado do mapa, dos cartões, do seletor e dos atalhos do bloco Ilha Bar. O tour passa a ter oito pontos e termina na vista do balcão (08). As três imagens do ponto 09 saíram do manifesto de publicação; os arquivos de trabalho e os originais permanecem preservados. O registro anterior descreve a inclusão inicial das duas fotos.
