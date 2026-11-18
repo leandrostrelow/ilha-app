@@ -30,3 +30,33 @@ Imagem real do replay enviada pelo proprietário, preservada em `cresol/assets/d
 
 Arte `cresol/assets/digital/ilha-play-arte.webp`: fundo gerado pela ferramenta integrada; interface e marcas originais em HTML/CSS. Prompt:
 Use case: ads-marketing. Create a premium square 3D sports campaign background for ILHA PLAY, a tennis club app in development in Colatina Brazil. The website will overlay its own phone interface and ORIGINAL brand logos in the center, so do NOT draw a phone, screen, text or logo. Contemporary art direction: warm ivory studio background, a bold sculptural orange court-shaped plinth at the bottom with fine white tennis markings, a beautiful dark forest-green tennis racket rising diagonally from the lower left edge and a richly textured yellow-lime tennis ball in the lower right foreground. Broad soft orange arch of light behind the center, subtle clay particles near floor, cinematic soft shadows and tactile high-quality materials. Large clean empty central area (middle 55% of image width and upper 85% height) for a phone overlay; keep racket and ball on the periphery. Clean polished advertising still life, orange dominant accents and deep green, no people, no lettering, no symbols, no fake logos. Square 1:1.
+
+
+## Atualização de fotos, clube, jogo e eventos — 18/11/2026
+
+- A capa de Ilha Tênis: Legado é o PNG original enviado por Leandro, exibido inteiro e com acesso a `/games`. A marca Cresol fica fora da arte para preservar título e QR.
+- A seção 02 reúne o texto do clube e os três sócios em cartões menores. A informação de que é o único clube de tênis de Colatina foi fornecida pelo responsável pelo clube.
+- O ponto 360 do bar passou a se chamar apenas “Ilha Bar”.
+- Fotos originais, sem reconstrução por IA: `momentos/atletas-ilha.jpg` (1440×1800), extraída da publicação pública https://www.instagram.com/ilhateniscolatina/p/C7PCMF1Mlp7/ de 21/05/2024; `momentos/premiacao-ilha-open.jpg` e `momentos/encontros-ilha.jpg` (3024×4032), da publicação pública em colaboração com o Ilha https://www.instagram.com/dralarabragacardio/p/DdxF5Gnidn-/ de 26/09/2026. Os JPEGs foram preservados byte a byte. A seção foi renomeada “Registros do Ilha”, pois reúne registros de mais de um ano.
+- “Quarta Universitária” foi substituída por “Eventos”, com festas, música e futebol no Ilha Bar. As artes de Festa Cincate e Quarta de Futebol são PNGs originais fornecidos pelo usuário, apresentados inteiros e identificados como divulgação de 2026.
+- Vídeo público da festa de encerramento do Cincate: https://www.instagram.com/reel/De7AZfwxfUn/ (25/10/2026), publicado por Ilha Tênis e Ilha Bar. Cópia local em H.264/AAC, derivada das faixas públicas de 720p e áudio observadas no player; sem cortes. Capa extraída no segundo 2. O player troca a fonte, capa e crédito entre Jogos de Verão e Festa Cincate, sem reprodução automática e com pausa ao sair da seção.
+
+
+### Ilha Summer e Torneio Interno
+
+- Fontes enviadas por Leandro: `summer ilha tenis duplas.jpg`, `feed.jpg` e `TORNEIO INTERNO DE TENIS 25/CARTAZ.jpg` no acervo de eventos do Dropbox.
+- Edição via ImageGen: remover apenas o logo antigo nas duas artes Summer, reconstituindo o saibro/areia; preservar títulos, datas, valores, atleta, folhas e TennisUp. Nenhum logo novo foi solicitado no Summer.
+- No cartaz do Torneio Interno, substituir o logo antigo pelo logo atual branco e verde fornecido em `cresol/assets/ilha.png`, preservando o restante da composição e o texto.
+- Arquivos editados em `cresol/assets/eventos/{summer-tenis-sem-logo,summer-beach-sem-logo,torneio-interno-logo-atual}.png`. As duas artes Summer aparecem juntas; cartazes podem ser ampliados. Datas e valores impressos são identificados como referência de edição anterior, não como agenda ou preço confirmado de 2027.
+
+
+### Fotos reais do Ilha Bar
+
+A imagem reconstruída `convivencia.jpg` foi retirada da apresentação e do manifesto de publicação a pedido do usuário. A nova galeria usa três JPEGs originais (2268×2268), sem edição por IA, da publicação pública https://www.instagram.com/bardoilha/p/DbqYLstnGCy/ de 05/08/2026, também exibida no perfil do Ilha: deck e encontros, balcão/ambiente e petiscos. O cardápio e o acesso 360 continuam disponíveis, acompanhados do link de @bardoilha.
+
+
+### Marcas oficiais das redes
+
+- Instagram: `Instagram_Glyph_Gradient.png`, preservado do pacote oficial `IG_brand_asset_pack_2023.zip`, disponibilizado em https://www.meta.com/pt-br/brand/resources/instagram/instagram-brand/.
+- YouTube: `yt_icon_red_digital.png`, preservado do pacote oficial `youtube-icon.zip`, disponibilizado em https://brand.youtube/youtube-icon. Sem recoloração ou redesenho das marcas.
+- Os cartões usam ícones maiores, nomes e acessos dos canais. Ilha Play usa a marca original do clube e informa reservas, aulas, eventos e estado em desenvolvimento.
