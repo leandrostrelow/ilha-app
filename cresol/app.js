@@ -82,12 +82,12 @@
   window.matchMedia('(min-width: 1001px)').addEventListener('change', event => { if (event.matches) closeMenu(); });
 
   const events = [
-    { name: 'Jogos de Verão Colatina', timing: '2027 · NOVA EDIÇÃO PREVISTA', copy: 'Tênis, beach tennis, futevôlei e vôlei. Opção de ativação: espaço Cresol na recepção e desafio de precisão nos intervalos.', date: 'Data de 2027 a confirmar.', image: 'jogos-de-verao.jpg', alt: 'Arte original dos Jogos de Verão Colatina com tênis, beach tennis, futevôlei e vôlei', note: 'Arte da edição anterior' },
-    { name: 'Open de Tênis', timing: '2027 · REFERÊNCIA: MAIO', copy: 'Torneio regional com atletas de diferentes cidades. Opção de ativação: nome Cresol no torneio, materiais de competição e painel de premiação.', date: 'Mês de referência da proposta. Data e formato de 2027 a confirmar.', image: 'quadras.jpg', alt: 'Quadras de saibro do Ilha Tênis Colatina', note: 'Estrutura do clube' },
-    { name: 'Etapa Estadual de Tênis · FET', timing: '2027 · DATA EM NEGOCIAÇÃO', copy: 'Etapa estadual em negociação com a Federação de Tênis. Opção de ativação: placas nas quadras e marca nos conteúdos da cobertura, a combinar com a organização.', date: 'Realização e data sujeitas à confirmação com a Federação.', image: 'evandro.jpg', alt: 'Atleta jogando tênis no saibro do Ilha', note: 'Registro do acervo do Ilha' },
+    { name: 'Jogos de Verão Colatina', timing: '2027 · PREVISTO PARA FEVEREIRO', copy: 'Tênis, beach tennis, futevôlei e vôlei. Na edição de 2026, o espaço recebeu mais de 2 mil pessoas. Opção de ativação: espaço Cresol na recepção e desafio de precisão nos intervalos.', date: 'Previsto para fevereiro de 2027. Datas a confirmar com a organização.', image: 'eventos/jogos-verao-2026-capa.jpg', imageKind: 'video', alt: 'Vídeo dos Jogos de Verão Colatina 2026, publicado pela Prefeitura de Colatina', note: 'Registro da edição de 2026' },
+    { name: 'Open de Tênis Cresol', timing: '2027 · REFERÊNCIA: MAIO', copy: 'Torneio regional com atletas de diferentes cidades. Opção de ativação: nome Cresol no torneio, materiais de competição e painel de premiação.', date: 'Mês de referência da proposta. Data e formato de 2027 a confirmar.', image: 'eventos/open-cresol-fundo.webp', imageKind: 'open', alt: 'Capa do Open de Tênis Cresol 2027, com bola de tênis sobre o saibro', note: 'Proposta de identidade do torneio' },
+    { name: 'Etapa Estadual de Tênis · FET', timing: '2027 · DATA EM NEGOCIAÇÃO', copy: 'Etapa estadual em negociação com a Federação Espírito-Santense de Tênis. Opção de ativação: placas nas quadras e marca nos conteúdos da cobertura, a combinar com a organização.', date: 'Realização e data sujeitas à confirmação com a Federação.', image: 'eventos/fet-original.jpg', imageKind: 'federation', alt: 'Logo oficial da Federação Espírito-Santense de Tênis — FET', note: 'Federação Espírito-Santense de Tênis' },
     { name: 'Cincate · 1ª etapa', timing: '2027 · PRIMEIRA ETAPA', copy: 'O Cincate é o Circuito Noroeste Capixaba de Tênis. A primeira das duas etapas previstas no Ilha em 2027 integra o calendário regional. Opção de ativação: marca Cresol nas chamadas e nos clipes das partidas.', date: 'Data da primeira etapa a confirmar.', image: 'cincate-original.png', imageKind: 'logo', alt: 'Logo original do Cincate — Circuito Noroeste Capixaba de Tênis', note: 'Cincate · logo original' },
     { name: 'Cincate · 2ª etapa', timing: '2027 · SEGUNDA ETAPA', copy: 'Segunda etapa do Circuito Noroeste Capixaba de Tênis prevista no Ilha em 2027, dando sequência à participação do clube no circuito regional. Opção de ativação: marca Cresol no painel de premiação e nas fotos de pódio.', date: 'Data da segunda etapa a confirmar.', image: 'cincate-original.png', imageKind: 'logo', alt: 'Logo original do Cincate — Circuito Noroeste Capixaba de Tênis', note: 'Cincate · logo original' },
-    { name: 'Copa Dupla Falta · 2 etapas', timing: '2027 · DUAS ETAPAS', copy: 'Duas etapas previstas. Opção de ativação: desafio de duplas nos intervalos e entrega de troféus com representante da Cresol.', date: 'Datas das duas etapas a confirmar.', image: 'drone/ilha-vista-aerea-tratada-800.webp', alt: 'Vista aérea tratada do Ilha Tênis Colatina', note: '2 etapas previstas · imagem tratada do clube' },
+    { name: 'Copa Dupla Falta · 2 etapas', timing: '2027 · DUAS ETAPAS', copy: 'O maior torneio entre equipes do Espírito Santo, com duas etapas previstas no Ilha em 2027. Opção de ativação: desafio de duplas nos intervalos e entrega de troféus com representante da Cresol.', date: 'Datas das duas etapas a confirmar. As cidades na capa são referência da edição de 2026.', image: 'eventos/copa-dupla-falta-2027.webp', imageKind: 'poster', alt: 'Copa Dupla Falta 2027 — duas etapas; arte com as equipes da edição de 2026: Aimorés, Aracruz, Barra de São Francisco, Colatina, Linhares e São Mateus', note: 'Capa criada a partir das artes do torneio' },
     { name: 'Torneios de Beach Tennis', timing: '2027 · AO LONGO DO ANO', copy: 'Torneios ao longo do ano. Opção de ativação: clínica de beach tennis para cooperados e desafio de precisão com a identidade Cresol.', date: 'Edições e datas a definir no calendário anual.', image: 'ilha-aerea.jpg', alt: 'Vista aérea das quadras de areia e tênis do Ilha', note: 'Estrutura do clube' },
     { name: 'Quarta Universitária', timing: '2027 · AO LONGO DO ANO', copy: 'Evento social com música para alunos e convidados. Opção de ativação: recepção Cresol no Ilha Bar e painel para fotos.', date: 'Programação e datas a confirmar.', image: 'convivencia.jpg', alt: 'Público reunido na área de convivência do Ilha à noite', note: 'Registro aprimorado com IA' },
     { name: 'Torneio Interno', timing: '2027 · CALENDÁRIO DO CLUBE', copy: 'Competição entre alunos e atletas do clube. Opção de ativação: melhores momentos com a marca e entrega de medalhas na premiação.', date: 'Data e formato da próxima edição a confirmar.', image: 'evandro.jpg', alt: 'Atleta do clube durante uma partida de tênis', note: 'Registro do acervo do Ilha' },
@@ -95,6 +95,21 @@
   ];
   const tabs = [...document.querySelectorAll('[data-event]')];
   const eventPanel = document.querySelector('#event-panel');
+  const eventVideo = document.querySelector('#event-video');
+  const eventVideoCredit = document.querySelector('#event-video-credit');
+  const eventVideoPlay = document.querySelector('#event-video-play');
+  eventVideoPlay.addEventListener('click', () => {
+    eventVideo.play().catch(() => { eventVideoPlay.hidden = false; });
+  });
+  eventVideo.addEventListener('play', () => { eventVideoPlay.hidden = true; });
+  eventVideo.addEventListener('pause', () => { eventVideoPlay.hidden = false; });
+  const eventOpenCover = document.querySelector('#event-open-cover');
+  new IntersectionObserver(entries => {
+    if (!entries[0].isIntersecting) eventVideo.pause();
+  }).observe(eventVideo);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) eventVideo.pause();
+  });
   function animatePanel(element) {
     if (reducedMotion.matches) return;
     element.classList.remove('panel-changing');
@@ -110,6 +125,12 @@
     document.querySelector('#event-copy').textContent = selected.copy;
     document.querySelector('#event-date').textContent = selected.date;
     const image = document.querySelector('#event-image');
+    eventVideo.pause();
+    eventVideoPlay.hidden = selected.imageKind !== 'video';
+    eventVideo.hidden = selected.imageKind !== 'video';
+    eventVideoCredit.hidden = selected.imageKind !== 'video';
+    eventOpenCover.hidden = selected.imageKind !== 'open';
+    image.hidden = selected.imageKind === 'video';
     image.src = `/cresol/assets/${selected.image}`;
     image.alt = selected.alt;
     eventPanel.dataset.imageKind = selected.imageKind || 'photo';
