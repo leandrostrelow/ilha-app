@@ -58,7 +58,7 @@
     widePanorama = useLargePanorama();
     const scenes = Object.fromEntries(places.map(place => [place.id, {
       type: 'equirectangular', panorama: widePanorama ? place.url.replace('-4096.webp', '-6144.webp') : place.url,
-      preview: `/cresol/assets/tour/ponto-${place.number}-preview.webp`, pitch: 0, yaw: ({ deck: 85, pickleball: 90 })[place.id] || 0, hfov: 100
+      preview: `/cresol/assets/tour/ponto-${place.number}-preview.webp`, pitch: 0, yaw: ({ deck: 85, pickleball: 90, 'bar-mesas': 180 })[place.id] || 0, hfov: 100
     }]));
     try {
       viewer = window.pannellum.viewer(panorama, {

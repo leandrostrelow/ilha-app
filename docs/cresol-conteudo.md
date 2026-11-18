@@ -24,3 +24,9 @@ Pedidos posteriores do proprietário: incluir pickleball, Ilha Bar, Ilha Play, o
 As opções novas são sugestões para seleção e definição conjunta. Não foram implementadas no app ou no jogo, não constituem confirmação de evento e não alteram o preço da proposta. O texto público mantém essa distinção de forma breve.
 
 As onze notas laterais foram removidas. Títulos, legendas, navegação, textos dos eventos e abas do jogo usam descrições diretas. Logos, fotos, simulações, tour 360°, transições e valores permanecem preservados.
+
+## Cincate — logo e duas etapas
+
+As duas etapas de 2027 agora aparecem separadamente no calendário. O nome Circuito Noroeste Capixaba de Tênis vem da logo original fornecida pelo proprietário; a descrição regional e a continuidade do circuito se baseiam na página 8 do PDF. As datas permanecem a confirmar. Cada etapa apresenta uma opção de ativação Cresol.
+
+`cresol/assets/cincate-original.png` é cópia byte a byte de `01_MARCA_E_INSTITUCIONAL/LOGOS/cincate.png`. A marca é mostrada inteira, com proporção e cores originais, sem filtros nem reconstrução.

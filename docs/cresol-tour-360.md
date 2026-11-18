@@ -1,6 +1,6 @@
 # Tour 360° da apresentação Cresol
 
-A seção `/cresol/#tour` liga sete pontos do mapa às fotos reais do clube. O visitante pode alternar foto tratada/original, abrir uma vista, girar, aproximar, trocar de ponto e voltar ao mapa. O diálogo mantém o foco e bloqueia a navegação por capítulos enquanto está aberto.
+A seção `/cresol/#tour` liga nove pontos do mapa às fotos reais do clube. O visitante pode alternar foto tratada/original, abrir uma vista, girar, aproximar, trocar de ponto e voltar ao mapa. O diálogo mantém o foco e bloqueia a navegação por capítulos enquanto está aberto.
 
 ## Origem e atualização
 
@@ -26,9 +26,9 @@ Para atualizar, troque as imagens do ponto, a miniatura e os dados do link em `c
 
 ## Separação entre tour real e proposta visual
 
-O mapa inicia na foto aérea tratada, com opção para ver a foto original. A ilustração saiu da interface e da lista de arquivos publicados. O tour mostra apenas as sete fotos reais, sem camadas de patrocínio ou comparativo Cresol.
+O mapa inicia na foto aérea tratada, com opção para ver a foto original. A ilustração saiu da interface e da lista de arquivos publicados. O tour mostra apenas as nove fotos reais, sem camadas de patrocínio ou comparativo Cresol.
 
-As propostas de aplicação ficam juntas em `#previa-cresol`, dentro do capítulo “Sua marca no Ilha”. Duas montagens estáticas mostram banners predominantemente laranja ao fundo das quadras de tênis e areia/deck. Na areia, uma faixa localizada no canto do alambrado direito complementa os banners de fundo. A marcação lateral interna da quadra de tênis ao fundo foi restaurada na montagem. Cada uma abre em um diálogo ampliado, fecha por botão/Escape e devolve o foco à imagem de origem. A marca vem exclusivamente do PNG original `cresol/assets/cresol-original.png`, em branco por CSS, projetado sobre as peças. A edição por IA fornece o cenário com tecido laranja sem letras ou símbolos.
+As propostas de aplicação ficam juntas em `#previa-cresol`, dentro do capítulo “Aplicações da marca”. Duas montagens estáticas mostram banners predominantemente laranja ao fundo das quadras de tênis e areia/deck. Na areia, uma faixa localizada no canto do alambrado direito complementa os banners de fundo. A marcação lateral interna da quadra de tênis ao fundo foi restaurada na montagem. Cada uma abre em um diálogo ampliado, fecha por botão/Escape e devolve o foco à imagem de origem. A marca vem exclusivamente do PNG original `cresol/assets/cresol-original.png`, em branco por CSS, projetado sobre as peças. A edição por IA fornece o cenário com tecido laranja sem letras ou símbolos.
 
 `brand-projection.js` calcula a homografia; `sponsor-placements.js` registra os quatro cantos de cada aplicação nas fotos 1448 × 1086. `sponsor-mockups.js` recalcula a projeção quando a imagem é redimensionada. O diálogo remove seus elementos/observação ao fechar. Não há chamadas a serviços, gravações ou backend.
 
@@ -47,3 +47,11 @@ As quatro fotos de drone agora têm cópias tratadas: iluminação, cor, superf�
 O calendário proposto de 2027 contempla duas etapas do Cincate e duas da Copa Dupla Falta, ambas com datas a confirmar, além dos eventos anteriores.
 
 Nas mudanças de capítulo, duas bolinhas percorrem a tela por cerca de um segundo. Elas medem 90 px no computador e 62 px no celular, com rastros e espaçamento proporcionais. A camada não recebe cliques nem foco, tem frequência limitada, para quando a página fica oculta e respeita `prefers-reduced-motion`. Não executa enquanto há diálogo aberto.
+
+## Ilha Bar — 18/11/2026
+
+Os arquivos `IMG_20261117_090701_00_002.insp` e `IMG_20261117_090825_00_003.insp`, encontrados na mesma pasta Camera01, acrescentam o balcão (ponto 08) e a área de mesas (ponto 09). Ambos foram exportados no Insta360 Studio como panoramas equiretangulares de 11904 × 5952. O ponto 09 inicia com yaw 180° para mostrar as mesas; o balcão inicia em 0°.
+
+Cada nova cena tem WebP 4096/6144 e miniatura 480 × 300 sem metadados. Entram no mapa, nos cartões de ambientes, no seletor e na sequência anterior/próximo. O bloco Ilha Bar também tem dois acessos diretos. Os pontos antigos mantêm sua numeração e seus arquivos. Posições no mapa são aproximadas.
+
+Apenas conversão de formato, redução de tamanho e projeção da miniatura foram feitas nas exportações; não houve reconstrução de ambientes nem aplicação de patrocínio nas fotos 360°. Os INSP e JPGs de alta resolução permanecem fora dos arquivos publicados.
