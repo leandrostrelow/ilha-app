@@ -30,3 +30,11 @@ As onze notas laterais foram removidas. Títulos, legendas, navegação, textos 
 As duas etapas de 2027 agora aparecem separadamente no calendário. O nome Circuito Noroeste Capixaba de Tênis vem da logo original fornecida pelo proprietário; a descrição regional e a continuidade do circuito se baseiam na página 8 do PDF. As datas permanecem a confirmar. Cada etapa apresenta uma opção de ativação Cresol.
 
 `cresol/assets/cincate-original.png` é cópia byte a byte de `01_MARCA_E_INSTITUCIONAL/LOGOS/cincate.png`. A marca é mostrada inteira, com proporção e cores originais, sem filtros nem reconstrução.
+
+## Marcas e parceiros — 18/11/2026
+
+Faixa discreta ao final dos registros de 2026: Lotus Formaturas, Plus Delivery, Viafor Ford, Mais Visão Ótica, Grupo Atmos e Prefeitura de Colatina. Os cinco apoios comerciais foram informados pelo proprietário; a Prefeitura é identificada especificamente como realizadora dos Jogos de Verão, conforme o pedido.
+
+As quatro logos já publicadas na raiz foram comparadas byte a byte com os arquivos fornecidos. O Grupo Atmos usa uma cópia integral do PNG enviado. A marca da Prefeitura foi obtida do cabeçalho do site oficial <https://www.colatina.es.gov.br/> em 18/11/2026 (WebP incorporado na imagem de id `jfe`; SHA256 `afa5ce32940d737f348037bd70f9e810ff50f024b16e77915afecee48143fc8b`).
+
+Os círculos, o fundo branco e a centralização são feitos por CSS. As marcas mantêm desenho, proporção e cores originais. A imagem Atmos é ampliada apenas no contêiner para compensar a margem branca do arquivo, mantendo toda a marca visível. A Cresol continua destacada como destinatária da proposta master.
