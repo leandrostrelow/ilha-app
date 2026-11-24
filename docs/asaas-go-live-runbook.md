@@ -54,6 +54,44 @@ real que já seria devida naquele mês, consulte-a no Asaas e no Ilha Play e só
 então processe as demais. O retry sempre busca a `externalReference` antes de um
 novo POST, inclusive depois de timeout ou erro 5xx ambíguo.
 
+## Política de avisos das mensalidades
+
+O financeiro permite consultar e aplicar a política Asaas de WhatsApp em lotes.
+Ela habilita somente `PAYMENT_DUEDATE_WARNING` nos offsets 5 e 0, para o cliente,
+e desabilita os demais eventos e canais, inclusive avisos ao fornecedor. São dois
+avisos programados por cobrança pendente; pagamento antecipado, criação tardia,
+telefone sem WhatsApp e regras de calendário do Asaas podem reduzir ou deslocar
+os envios. Esta política não altera os avisos internos do Ilha Play.
+
+O destinatário é o responsável financeiro atual da família. Dependentes não
+são habilitados separadamente; menor sem família usa o contato do responsável
+cadastrado. A identidade fiscal do cliente não é substituída pela do responsável.
+Telefone inválido, vínculo ambíguo ou customer Asaas pertencente a outra integração
+exigem revisão. O lote não cria clientes, cobranças ou pagamentos.
+
+Antes de ativar um customer, a função confere o cadastro, desliga temporariamente
+os avisos, atualiza as regras e lê a configuração novamente. Só então habilita o
+envio e registra a auditoria. Em falhas, tenta bloquear novamente os avisos do
+customer da integração; uma pausa não confirmada aparece como falha para revisão.
+A emissão do Pix continua independente dessa configuração.
+Novos customers permanecem bloqueados até essa verificação. A política inicia
+desativada na migration e só é ativada pela ação administrativa autorizada.
+
+Use `notify_preview` antes de `notify_apply` e confira os resultados de todos os
+lotes, inclusive os bloqueados e os cadastros ainda sem customer. A aplicação
+requer `finance.write`; clientes e chamadas do cron não podem ativar a política.
+Não use envios manuais a clientes reais para testar a configuração.
+
+**Cobranças antigas:** a central de ajuda do Asaas informa que cobranças criadas
+com avisos ativos podem conservar os agendamentos anteriores. A leitura das
+preferências do customer não prova o cancelamento dessa fila. Não afirme que o
+limite retroativo de dois envios foi garantido apenas porque o lote concluiu;
+confira no Asaas ou com o suporte quando houver agendamento anterior. Não cancele
+nem reemita cobranças para alterar notificações.
+
+Referências: [atualização em lote](https://docs.asaas.com/reference/atualizar-notificacoes-existentes-em-lote)
+e [desativação de notificações](https://central.ajuda.asaas.com/hc/pt-br/articles/31998232571803).
+
 ## 2. E2E financeiro válido em staging
 
 Este é o roteiro operacional completo. Ele usa somente o projeto Supabase
