@@ -22,3 +22,9 @@ for(const changes of [{status:'RECEIVED'},{status:'CONFIRMED'},{paymentDate:'202
 }
 Deno.test('provider refusal cannot update local records',async()=>{const f=fixture();let blocked=false;try{await run(body,'actor','SANDBOX',f.rpc,(_p,init)=>init?Promise.reject(Error('refused')):Promise.resolve(remote),p=>({payment:p}),pix);}catch{blocked=true;}assert(blocked&&f.count()===1);});
 Deno.test('payment during correction blocks final commit',async()=>{const f=fixture();let reads=0,blocked=false;try{await run(body,'actor','SANDBOX',f.rpc,(_p,init)=>Promise.resolve(init?{}:++reads===1?remote:{...remote,value:350,status:'RECEIVED'}),p=>({payment:p}),pix);}catch{blocked=true;}assert(blocked&&f.count()===1);});
+Deno.test('pending future invoice amount increase preserves charge, due date and Pix method',async()=>{
+ const f=fixture({value:351,dueDate:'2026-12-05',status:'PENDING'});
+ const result=await run({...body,expectedAmount:351,newAmount:520,invoiceMonth:'2026-12-01',oldDueDate:'2026-12-05'},'actor','SANDBOX',f.rpc,f.request,p=>({payment:p}),pix);
+ assert(result.state==='COMPLETED'&&f.count()===2&&f.writes.length===1&&f.writes[0].method==='PUT');
+ assert(JSON.stringify(JSON.parse(String(f.writes[0].body)))===JSON.stringify({value:520,dueDate:'2026-12-05',billingType:'PIX'}));
+});

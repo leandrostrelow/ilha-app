@@ -36,3 +36,22 @@ test('reagendamento exige substituta recusada e data explícita sem registrar re
  assert.deepEqual(build(v,c),{action:'reschedule_failed',invoiceId:'synthetic-invoice',expectedAmount:250,invoiceMonth:'2026-11-01',oldDueDate:'2026-11-03',newDueDate:'2026-11-06',reason:values.reason});
  assert.throws(()=>build(v,config)); assert.throws(()=>build({...v,confirmed:false},c));
 });
+
+const pendingInvoice={id:'synthetic-open',status:'AGUARDANDO',providerStatus:'PENDING',amount:351,invoiceMonth:'2026-12-01',dueDate:'2026-12-05'};
+const adjustment={action:'adjust_amount',invoiceId:pendingInvoice.id,newAmount:'520',reason:'Correção do valor conforme composição familiar cadastrada.',confirmed:true};
+const adjustmentConfig={...config,today:'2026-11-24',invoices:[pendingInvoice]};
+test('corrige fatura futura com valores originais e sem transmitir recebimento ou novo vencimento',()=>{
+ assert.deepEqual(build({...adjustment,expectedAmount:1,invoiceMonth:'2027-01-01',newDueDate:'2026-12-31',receivedOn:'2026-11-24'},adjustmentConfig),{
+  action:'adjust_amount',invoiceId:pendingInvoice.id,expectedAmount:351,newAmount:520,invoiceMonth:'2026-12-01',oldDueDate:'2026-12-05',reason:adjustment.reason
+ });
+});
+test('correção de valor bloqueia fatura paga, cancelada, substituída, em revisão e sem vínculo Asaas pendente',()=>{
+ for(const change of [{status:'PAGA'},{status:'CANCELADA'},{status:'ESTORNADA'},{providerStatus:'RECEIVED'},{providerStatus:'CONFIRMED'},{providerStatus:'REVIEW_REQUIRED'},{providerStatus:''},{paidAt:'2026-11-24'},{supersededAt:'2026-11-24'}])
+  assert.throws(()=>build(adjustment,{...adjustmentConfig,invoices:[{...pendingInvoice,...change}]}));
+ assert.throws(()=>build({...adjustment,invoiceId:'another-invoice'},adjustmentConfig));
+});
+test('correção de valor exige permissão, conferência, motivo e valor monetário diferente válido',()=>{
+ assert.throws(()=>build(adjustment,{...adjustmentConfig,canWrite:false}));
+ for(const change of [{confirmed:false},{reason:''},{newAmount:''},{newAmount:'351'},{newAmount:'0'},{newAmount:'-1'},{newAmount:'520.001'},{newAmount:'NaN'},{newAmount:'Infinity'}])
+  assert.throws(()=>build({...adjustment,...change},adjustmentConfig));
+});
