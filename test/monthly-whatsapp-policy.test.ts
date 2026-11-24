@@ -8,13 +8,18 @@ function assert(value:unknown,message='Assertion failed'):asserts value {if(!val
 function clone<T>(value:T):T{return JSON.parse(JSON.stringify(value));}
 function fixture(options:Data={}) {
  let currentTarget={...target,...(options.target as Data||{})}, customer:Data={id:customerId,cpfCnpj:target.cpf,externalReference:`ilha-monthly-customer:${id}`,notificationDisabled:true,mobilePhone:target.phone,...(options.customer as Data||{})};
- let rules:Data[]=clone(defaults), targetReads=0, ruleReads=0;
+ let rules:Data[]=clone(defaults), targetReads=0, ruleReads=0,scopeReads=0;
  const requests:{path:string;method:string;body:Data}[]=[], audits:Data[]=[], rpcCalls:{name:string;args:Data}[]=[];
  const rpc=async(name:string,args:Data={})=>{
   rpcCalls.push({name,args});
   if(name==='get_monthly_whatsapp_target'){
    targetReads++;if(options.changeTarget && targetReads>1)currentTarget={...currentTarget,targetVersion:'b'.repeat(32)};
    return {data:clone(currentTarget),error:null};
+  }
+  if(name==='get_monthly_whatsapp_customer_scope') {
+   scopeReads++;
+   return {data:{state:'READY',reason:null,clientId:id,customerId,targetVersion:currentTarget.targetVersion,scopeVersion:options.changeScope&&scopeReads>1?'d'.repeat(32):'c'.repeat(32),
+    allowedExternalReferences:[`tournament-athlete:${id}`],monthlyPayments:[{providerPaymentId:'pay_monthly_synthetic',externalReference:`ilha-monthly:${id}`}],hasOtherActiveProduct:false,...(options.scope as Data||{})},error:null};
   }
   if(name==='record_monthly_whatsapp_result'){
    audits.push(clone(args));
@@ -29,6 +34,11 @@ function fixture(options:Data={}) {
  const request=async(path:string,init?:RequestInit)=>{
   const method=init?.method||'GET',body=init?.body?JSON.parse(String(init.body)):{};
   requests.push({path,method,body});
+  if(path.startsWith('/payments?')&&method==='GET') {
+   const data=(options.payments as Data[]|undefined)||[{id:'pay_tournament_synthetic',customer:customerId,status:'RECEIVED',externalReference:`tournament-registration:${id}`,deleted:false},{id:'pay_monthly_synthetic',customer:customerId,status:'PENDING',externalReference:`ilha-monthly:${id}`,deleted:false}];
+   const offset=Number(new URL('https://synthetic.invalid'+path).searchParams.get('offset'));
+   return {data:clone(data.slice(offset,offset+100)),totalCount:data.length,hasMore:offset+100<data.length,offset};
+  }
   if(path===`/customers/${customerId}/notifications`&&method==='GET') {
    ruleReads++;
    if(options.failRulesReadback && ruleReads>1)return {data:clone(rules.slice(0,-1))};
@@ -65,7 +75,7 @@ for(const [label,mutate] of [
  ['duplicate id',(r:Data[])=>[...r,{...r[2]}]],
  ['foreign customer',(r:Data[])=>r.map((x,i)=>i===0?{...x,customer:'cus_other'}:x)],
  ['unknown enabled channel',(r:Data[])=>r.map((x,i)=>i===0?{...x,newEnabledForCustomer:true}:x)],
- ['missing channel',(r:Data[])=>r.map((x,i)=>{if(i!==0)return x;const copy={...x};delete copy.smsEnabledForCustomer;return copy;})],
+ ['invalid channel type',(r:Data[])=>r.map((x,i)=>i===0?{...x,smsEnabledForCustomer:'false'}:x)],
 ] as [string,(rows:Data[])=>Data[]][]) {
  Deno.test('planner fails closed: '+label,()=>{let blocked=false;try{plan({data:mutate(clone(defaults))},customerId);}catch{blocked=true;}assert(blocked);});
 }
@@ -196,4 +206,180 @@ Deno.test('unknown global flag is paused explicitly before reporting a disabled 
   assert(result.state===(failDisable?'FAILED':'BLOCKED'));
   assert(!f.requests.some(r=>r.path==='/notifications/batch'));
  }
+});
+
+Deno.test('preview diagnoses known unknown fields without considering them false or changing provider data',async()=>{
+ const f=fixture();const rows:Data[]=clone(defaults);
+ delete rows[0].phoneCallEnabledForCustomer;
+ rows[1].phoneCallEnabledForCustomer=null;
+ f.setRules(rows);
+ const result=await preview(target,f.request),diagnostics=result.diagnostics as Data,issues=diagnostics.notificationChannels as Data[];
+ assert(result.state==='READY'&&!result.configured);
+ assert(issues.some(i=>i.field==='phoneCallEnabledForCustomer'&&i.type==='MISSING'&&i.event==='PAYMENT_DUEDATE_WARNING'));
+ assert(issues.some(i=>i.field==='phoneCallEnabledForCustomer'&&i.type==='NULL'));
+ const serialized=JSON.stringify(diagnostics);
+ assert(!serialized.includes(customerId)&&!serialized.includes(target.cpf)&&!serialized.includes(target.phone));
+ assert(f.requests.every(r=>r.method==='GET'));
+ assert(f.getRules()[1].phoneCallEnabledForCustomer===null&&!('phoneCallEnabledForCustomer' in f.getRules()[0]));
+});
+
+Deno.test('known unknown fields can be configured only after explicit boolean write and exact readback',async()=>{
+ const f=fixture({customer:{notificationDisabled:false}}),rows:Data[]=clone(defaults);
+ delete rows[0].phoneCallEnabledForCustomer;rows[1].phoneCallEnabledForCustomer=null;
+ f.setRules(rows);
+ const result=await apply(id,'actor','SANDBOX',f.rpc,f.request);
+ assert(result.state==='APPLIED');
+ const writes=f.requests.filter(r=>r.method==='PUT'),batchWrite=writes.find(r=>r.path==='/notifications/batch');
+ assert(writes[0].body.notificationDisabled===true);
+ assert(batchWrite&&(batchWrite.body.notifications as Data[]).every(row=>flags.every(flag=>typeof row[flag]==='boolean')));
+ assert(f.getRules().every(row=>row.phoneCallEnabledForCustomer===false));
+ assert(((result.diagnostics as Data).notificationChannels as Data[]).length===2);
+});
+
+Deno.test('unknown fields persisting after write never count as disabled and prevent global activation',async()=>{
+ for(const value of [null,undefined]) {
+  const f=fixture(),rows:Data[]=clone(defaults);rows[0].phoneCallEnabledForCustomer=value;f.setRules(rows);
+  let written=false;
+  const result=await apply(id,'actor','SANDBOX',f.rpc,async(path,init)=>{
+   const response=await f.request(path,init);
+   if(path==='/notifications/batch')written=true;
+   if(written&&path.endsWith('/notifications'))(response.data as Data[])[0].phoneCallEnabledForCustomer=value;
+   return response;
+  });
+  assert(result.state==='BLOCKED'&&result.reason==='NOTIFICATION_READBACK_MISMATCH');
+  assert(result.notificationDisabled===true&&!f.requests.some(r=>r.body.notificationDisabled===false));
+  assert(((result.diagnostics as Data).verificationChannels as Data[]).some(i=>i.field==='phoneCallEnabledForCustomer'&&i.type===(value===null?'NULL':'MISSING')));
+ }
+});
+
+Deno.test('known field with unexpected type is blocked and its value is absent from diagnostic output',async()=>{
+ const f=fixture(),rows:Data[]=clone(defaults);rows[0].smsEnabledForCustomer='sensitive-provider-value';f.setRules(rows);
+ const result=await preview(target,f.request);
+ assert(result.state==='BLOCKED'&&result.reason==='INVALID_NOTIFICATION_CHANNEL');
+ assert(!JSON.stringify(result.diagnostics).includes('sensitive-provider-value'));
+ assert(f.requests.every(r=>r.method==='GET'));
+});
+
+Deno.test('readback schema errors are labeled separately from the original provider configuration',async()=>{
+ const f=fixture();let written=false;
+ const result=await apply(id,'actor','SANDBOX',f.rpc,async(path,init)=>{
+  const response=await f.request(path,init);if(path==='/notifications/batch')written=true;
+  if(written&&path.endsWith('/notifications'))(response.data as Data[])[0].smsEnabledForCustomer='unexpected';
+  return response;
+ });
+ assert(result.state==='BLOCKED'&&result.reason==='INVALID_NOTIFICATION_CHANNEL'&&result.notificationDisabled===true);
+ const diagnostics=result.diagnostics as Data;
+ assert((diagnostics.notificationChannels as Data[]).length===0&&(diagnostics.verificationChannels as Data[]).some(i=>i.field==='smsEnabledForCustomer'&&i.type==='STRING'));
+ assert(!JSON.stringify(diagnostics).includes('unexpected'));
+});
+Deno.test('unknown channels and events never leak arbitrary provider fields in diagnostics',async()=>{
+ const f=fixture();const rows:Data[]=clone(defaults);
+ rows[2].event='sensitive-event';rows[2]['sensitive-field-EnabledForCustomer']={secret:'sensitive-value'};
+ f.setRules(rows);
+ const result=await preview(target,f.request),diagnostics=result.diagnostics as Data;
+ assert(result.reason==='UNKNOWN_NOTIFICATION_CHANNEL');
+ assert((diagnostics.notificationChannels as Data[]).some(i=>i.field==='UNKNOWN_CHANNEL'&&i.type==='OBJECT'&&i.event==='UNKNOWN_EVENT'));
+ assert(!JSON.stringify(diagnostics).includes('sensitive'));
+ const applied=await apply(id,'actor','SANDBOX',f.rpc,f.request);
+ assert(applied.state==='BLOCKED'&&applied.reason==='UNKNOWN_NOTIFICATION_CHANNEL');
+ assert(!f.requests.some(r=>r.path==='/notifications/batch'));
+});
+
+Deno.test('diagnostic size limit never suppresses validation of a late unsupported channel',async()=>{
+ const events=['PAYMENT_CREATED','PAYMENT_UPDATED','PAYMENT_RECEIVED','PAYMENT_OVERDUE','PAYMENT_DUEDATE_WARNING','SEND_LINHA_DIGITAVEL','UNRECOGNIZED'];
+ const rows:Data[]=events.flatMap((event,i)=>[null,undefined].map((value,j)=>({id:`not_many_${i}_${j}`,customer:customerId,event,scheduleOffset:j===0?0:10,enabled:true,...Object.fromEntries(flags.map(flag=>[flag,value]))})));
+ rows.push({...defaults[2],id:'not_late_unknown',newEnabledForCustomer:true});
+ const f=fixture();f.setRules(rows);
+ const result=await preview(target,f.request);
+ assert(result.state==='BLOCKED'&&result.reason==='UNKNOWN_NOTIFICATION_CHANNEL');
+ assert(((result.diagnostics as Data).notificationChannels as Data[]).length===64);
+ assert(f.requests.every(r=>r.method==='GET'));
+ rows[rows.length-1]={...defaults[2],id:'not_late_invalid',smsEnabledForCustomer:'false'};f.setRules(rows);
+ const invalid=await preview(target,f.request);
+ assert(invalid.state==='BLOCKED'&&invalid.reason==='INVALID_NOTIFICATION_CHANNEL');
+});
+Deno.test('identity diagnostics distinguish empty and foreign references without adopting or leaking them',async()=>{
+ for(const [externalReference,referenceKind] of [[null,'EMPTY'],['','EMPTY'],['foreign-private-value','FOREIGN'],[`ilha-monthly-customer:${id}`,'OWNED']] as const) {
+  const f=fixture({customer:{externalReference,deleted:false}}),result=await preview(target,f.request);
+  const identity=(result.diagnostics as Data).identity as Data;
+  assert(identity.idMatches===true&&identity.documentMatches===true&&identity.referenceKind===referenceKind&&identity.deleted===false);
+  assert(referenceKind==='OWNED'||result.state==='BLOCKED');
+  assert(!JSON.stringify(identity).includes('foreign-private-value')&&!JSON.stringify(identity).includes(id));
+  assert(f.requests.every(r=>r.method==='GET'));
+ }
+ const f=fixture({customer:{id:'cus_foreign',cpfCnpj:'98765432100'}}),result=await preview(target,f.request);
+ const identity=(result.diagnostics as Data).identity as Data;
+ assert(identity.idMatches===false&&identity.documentMatches===false&&identity.deleted===null&&result.state==='BLOCKED');
+});
+
+Deno.test('unexpected provider errors do not expose response bodies through diagnostics',async()=>{
+ const result=await preview(target,async()=>{throw new Error('CPF 12345678909 private response');});
+ assert(result.reason==='PROVIDER_POLICY_FAILED'&&JSON.stringify(result.diagnostics)==='{}');
+ assert(!JSON.stringify(result).includes('12345678909'));
+});
+
+Deno.test('known reused customer needs exact database scope and only monthly active remote payments',async()=>{
+ const ref=`tournament-athlete:${id}`,f=fixture({customer:{externalReference:ref}});
+ const check=await preview(target,f.request,f.rpc,'SANDBOX');
+ assert(check.state==='READY'&&(check.diagnostics as Data).scopeVerified===true&&f.requests.every(r=>r.method==='GET'));
+ const result=await apply(id,'actor','SANDBOX',f.rpc,f.request);
+ assert(result.state==='APPLIED'&&f.getCustomer().externalReference===ref);
+ assert(f.requests.every(r=>r.method!=='PUT'||!('externalReference' in r.body)));
+ assert(!f.requests.some(r=>r.path.startsWith('/payments')&&r.method!=='GET'));
+ assert(!JSON.stringify(result.diagnostics).includes(ref));
+});
+
+Deno.test('reused customer with another active product, unproven reference or divergent scope is never mutated',async()=>{
+ const ref=`tournament-athlete:${id}`;
+ for(const options of [
+  {scope:{hasOtherActiveProduct:true}},
+  {scope:{state:'BLOCKED'}},
+  {scope:{allowedExternalReferences:['tournament-athlete:other']}},
+  {scope:{targetVersion:'e'.repeat(32)}},
+  {scope:{customerId:'cus_other'}},
+  {scope:{scopeVersion:null}},
+  {payments:[{id:'pay_foreign',customer:customerId,status:'PENDING',externalReference:'store:foreign'}]},
+  {payments:[{id:'pay_monthly_synthetic',customer:customerId,status:'OVERDUE',externalReference:'foreign'}]},
+  {payments:[{id:'pay_not_mapped',customer:customerId,status:'PENDING',externalReference:`ilha-monthly:${id}`}]},
+  {payments:[{id:'pay_unrecognized',customer:customerId,status:'NEW_UNKNOWN_STATUS'}]},
+  {payments:[{id:'pay_foreign_customer',customer:'cus_other',status:'RECEIVED'}]},
+ ]) {
+  const f=fixture({customer:{externalReference:ref},...options}),result=await apply(id,'actor','SANDBOX',f.rpc,f.request);
+  assert(result.state==='BLOCKED',JSON.stringify(options));assert(f.requests.every(r=>r.method==='GET'));
+ }
+});
+
+Deno.test('reused scope pagination must be complete, stable and duplicate-free',async()=>{
+ const ref=`tournament-athlete:${id}`;
+ for(const invalid of [
+  {data:[],totalCount:1,hasMore:false},
+  {data:[],totalCount:1,hasMore:true},
+  {data:[],totalCount:0,hasMore:null},
+  {data:[],totalCount:501,hasMore:true},
+  {data:[],totalCount:0,hasMore:false,offset:1},
+  {data:[{id:'pay_duplicate',customer:customerId,status:'RECEIVED'},{id:'pay_duplicate',customer:customerId,status:'RECEIVED'}],totalCount:2,hasMore:false},
+ ]) {
+  const f=fixture({customer:{externalReference:ref}});
+  const result=await apply(id,'actor','SANDBOX',f.rpc,async(path,init)=>path.startsWith('/payments?')?invalid:f.request(path,init));
+  assert(result.state==='BLOCKED'&&f.requests.every(r=>r.method==='GET'));
+ }
+ const payments=Array.from({length:101},(_,i)=>({id:`pay_settled_${i}`,customer:customerId,status:'RECEIVED'}));
+ const f=fixture({customer:{externalReference:ref},payments});
+ assert((await apply(id,'actor','SANDBOX',f.rpc,f.request)).state==='APPLIED');
+ assert(f.requests.some(r=>r.path.endsWith('offset=100')));
+});
+
+Deno.test('scope change or new foreign debt during configuration prevents enabling reused customer',async()=>{
+ const ref=`tournament-athlete:${id}`;
+ const f=fixture({customer:{externalReference:ref},changeScope:true});
+ const changed=await apply(id,'actor','SANDBOX',f.rpc,f.request);
+ assert(changed.state==='BLOCKED'&&changed.reason==='CUSTOMER_SCOPE_CHANGED'&&changed.notificationDisabled===true);
+ assert(!f.requests.some(r=>r.body.notificationDisabled===false));
+ const g=fixture({customer:{externalReference:ref}});let paymentReads=0;
+ const newDebt=await apply(id,'actor','SANDBOX',g.rpc,async(path,init)=>{
+  if(path.startsWith('/payments?')&&++paymentReads>1)return {data:[{id:'pay_new',customer:customerId,status:'PENDING',externalReference:'other'}],totalCount:1,hasMore:false};
+  return g.request(path,init);
+ });
+ assert(newDebt.state==='BLOCKED'&&newDebt.reason==='OTHER_ACTIVE_CUSTOMER_PAYMENT'&&newDebt.notificationDisabled===true);
+ assert(!g.requests.some(r=>r.body.notificationDisabled===false));
 });

@@ -20,9 +20,51 @@
     CUSTOMER_READBACK_MISMATCH: 'O Asaas não confirmou o contato gravado.', AUDIT_REJECTED: 'Não foi possível registrar a conferência. Requer revisão.', AUDIT_FAILED: 'Não foi possível registrar a conferência. Requer revisão.',
     GLOBAL_DISABLE_UNCONFIRMED: 'O Asaas não confirmou a pausa dos avisos. Requer revisão.', GLOBAL_DISABLE_NOT_CONFIRMED: 'O Asaas não confirmou a pausa dos avisos. Requer revisão.',
     PROVIDER_POLICY_FAILED: 'Falha na comunicação com o Asaas. Consulte novamente.', POLICY_STATE_UNAVAILABLE: 'Não foi possível conferir a política de avisos.',
+    POLICY_DEADLINE_EXCEEDED: 'A conferência atingiu o limite de tempo. Consulte a situação novamente.',
+    CUSTOMER_SCOPE_BLOCKED: 'O cadastro compartilhado no Asaas precisa de revisão.', CUSTOMER_SCOPE_UNVERIFIED: 'Não foi possível confirmar o uso deste cadastro no Asaas.',
+    REMOTE_PAYMENT_SCOPE_INCOMPLETE: 'Não foi possível conferir todas as cobranças deste cadastro no Asaas.', REMOTE_PAYMENT_SCOPE_UNVERIFIED: 'As cobranças deste cadastro no Asaas precisam de revisão.',
+    OTHER_ACTIVE_CUSTOMER_PAYMENT: 'Há outra cobrança ativa neste cadastro do Asaas.', CUSTOMER_SCOPE_CHANGED: 'O uso deste cadastro mudou durante a conferência. Consulte novamente.',
     POLICY_DISABLED: 'A política de avisos foi desativada. Consulte novamente.'
   };
   function reasonLabel(reason) { return reasons[reason] || 'Não foi possível confirmar esta conta. Requer revisão.'; }
+  const diagnosticFields = {
+    emailEnabledForProvider: 'E-mail da conta Asaas', smsEnabledForProvider: 'SMS da conta Asaas',
+    emailEnabledForCustomer: 'E-mail do pagador', smsEnabledForCustomer: 'SMS do pagador',
+    phoneCallEnabledForCustomer: 'Ligação para o pagador', whatsappEnabledForCustomer: 'WhatsApp do pagador',
+    UNKNOWN_CHANNEL: 'Canal não reconhecido'
+  };
+  const diagnosticTypes = { MISSING: 'ausente', NULL: 'nulo', BOOLEAN: 'sim/não', STRING: 'texto', NUMBER: 'número', ARRAY: 'lista', OBJECT: 'objeto', OTHER: 'outro tipo' };
+  const diagnosticEvents = {
+    PAYMENT_CREATED: 'Cobrança criada', PAYMENT_UPDATED: 'Cobrança atualizada', PAYMENT_RECEIVED: 'Pagamento recebido',
+    PAYMENT_OVERDUE: 'Cobrança vencida', PAYMENT_DUEDATE_WARNING: 'Aviso de vencimento', SEND_LINHA_DIGITAVEL: 'Linha digitável', UNKNOWN_EVENT: 'Evento não reconhecido'
+  };
+  function diagnosticLines(diagnostics) {
+    // Render only known labels and value kinds, never provider/customer values.
+    if (!diagnostics || typeof diagnostics !== 'object' || Array.isArray(diagnostics)) return [];
+    const lines = [], identity = diagnostics.identity;
+    const ownLabel = (map, key) => typeof key === 'string' && Object.prototype.hasOwnProperty.call(map, key) ? map[key] : '';
+    if (identity && typeof identity === 'object' && !Array.isArray(identity)) {
+      if (typeof identity.idMatches === 'boolean') lines.push('Cadastro no Asaas: ' + (identity.idMatches ? 'confere' : 'divergente'));
+      if (typeof identity.documentMatches === 'boolean') lines.push('Documento do pagador: ' + (identity.documentMatches ? 'confere' : 'divergente'));
+      const reference = ownLabel({ OWNED: 'do Ilha', EMPTY: 'sem referência', FOREIGN: 'outra referência' }, identity.referenceKind);
+      if (reference) lines.push('Vínculo da conta: ' + reference);
+      if (typeof identity.deleted === 'boolean' || identity.deleted === null) lines.push('Cadastro excluído no Asaas: ' + (identity.deleted === null ? 'não informado' : identity.deleted ? 'sim' : 'não'));
+    }
+    [['notificationChannels', ''], ['verificationChannels', 'Após salvar: ']].forEach(([key, prefix]) => {
+      if (!Array.isArray(diagnostics[key])) return;
+      diagnostics[key].slice(0, 64).forEach(channel => {
+        if (!channel || typeof channel !== 'object' || Array.isArray(channel)) return;
+        const field = ownLabel(diagnosticFields, channel.field), type = ownLabel(diagnosticTypes, channel.type), event = ownLabel(diagnosticEvents, channel.event);
+        if (field && type && event) lines.push(prefix + field + ' · ' + event + ': ' + type);
+      });
+    });
+    return Array.from(new Set(lines));
+  }
+  function diagnosticMarkup(item) {
+    if (!['BLOCKED', 'FAILED'].includes(item.state)) return '';
+    const lines = diagnosticLines(item.diagnostics);
+    return lines.length ? '<details class="monthly-notification-diagnostics"><summary>Detalhes da conferência</summary>' + lines.map(line => '<p>' + esc(line) + '</p>').join('') + '</details>' : '';
+  }
   function summarize(items) {
     const count = { total: items.length, configured: 0, ready: 0, blocked: 0, waiting: 0, failed: 0 };
     items.forEach(item => {
@@ -132,7 +174,7 @@
       field('list').innerHTML = state.items.map(item => '<li><div><strong>' + esc(item.name || 'Conta sem nome') + '</strong>' +
         '<span>' + esc(item.maskedPhone || 'Telefone não disponível') + (item.recipientKind === 'GUARDIAN' ? ' · Responsável pelo menor' : item.isFamily ? ' · Responsável familiar' : '') + '</span></div><div><strong>' + esc(item.configured && item.state === 'READY' ? 'Configurada' : labels[item.state]) + '</strong>' +
         (item.reason ? '<span>' + esc(reasonLabel(item.reason)) + '</span>' : '') +
-        (item.notificationDisabled === true ? '<span>Avisos pausados no Asaas</span>' : item.state === 'READY' && !item.configured && item.notificationDisabled === false ? '<span>Configuração diferente da política</span>' : '') + '</div></li>').join('');
+        (item.notificationDisabled === true ? '<span>Avisos pausados no Asaas</span>' : item.state === 'READY' && !item.configured && item.notificationDisabled === false ? '<span>Configuração diferente da política</span>' : '') + diagnosticMarkup(item) + '</div></li>').join('');
     }
     async function attempt(task) {
       try { await task(); } catch (error) { field('status').textContent = error.message || 'Não foi possível continuar.'; field('status').className = 'monthly-notification-error'; }
@@ -153,5 +195,5 @@
     instances.forEach((instance, host) => { instance.controller.reset(); host.innerHTML = ''; });
     instances.clear();
   }
-  window.IlhaMonthlyNotifications = { createController, summarize, reasonLabel, mount, reset };
+  window.IlhaMonthlyNotifications = { createController, summarize, reasonLabel, diagnosticLines, mount, reset };
 })();
