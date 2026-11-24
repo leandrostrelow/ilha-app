@@ -71,6 +71,15 @@ do Ilha só podem ser reutilizados quando a referência exata, o CPF e o víncul
 local conferem e a leitura completa do Asaas comprova que não há outra cobrança
 ativa fora das mensalidades conhecidas. Referências vazias ou desconhecidas não
 são adotadas. O lote não cria clientes, cobranças ou pagamentos.
+Se a inscrição individual original foi removida por `PAYMENT_EXPIRED`, a origem
+pode ser comprovada pelo arquivo privado completo: atleta, inscrição, pagamento,
+referência, customer e ambiente devem formar uma cadeia única. Também deve
+existir um único atleta atual com o CPF do pagador e vínculo compatível; cache de
+customer ausente exige essa prova histórica, e cache divergente bloqueia o uso.
+O status `PENDING` arquivado não comprova dívida nem quitação atual: a leitura
+completa dos pagamentos no Asaas continua obrigatória antes da configuração.
+Cliente inativo com cadastro e escopo comprovados pode ter os avisos desativados;
+continua bloqueado para ativação e não tem telefone nem regras individuais alterados.
 
 Antes de ativar um customer, a função confere o cadastro, desliga temporariamente
 os avisos, atualiza as regras e lê a configuração novamente. Só então habilita o
@@ -79,6 +88,16 @@ customer da integração; uma pausa não confirmada aparece como falha para revi
 A emissão do Pix continua independente dessa configuração.
 Novos customers permanecem bloqueados até essa verificação. A política inicia
 desativada na migration e só é ativada pela ação administrativa autorizada.
+
+O Asaas pode omitir um canal indisponível, como WhatsApp em
+`SEND_LINHA_DIGITAVEL`. A validação aceita campo conhecido ausente ou `null`
+somente quando o plano exige esse canal desligado e tanto o plano quanto a
+resposta confirmam `enabled: false` para a regra inteira. Isso não converte o
+valor desconhecido em `false` no histórico: a garantia vem da regra desativada,
+que [impede qualquer envio segundo a API oficial](https://docs.asaas.com/reference/atualizar-notificacao-existente).
+Os dois avisos ativos exigem todos os canais com valores booleanos exatos.
+Canal que permaneça `true`, tipo inválido ou canal desconhecido continua
+bloqueando a ativação.
 
 Use `notify_preview` antes de `notify_apply` e confira os resultados de todos os
 lotes, inclusive os bloqueados e os cadastros ainda sem customer. A aplicação

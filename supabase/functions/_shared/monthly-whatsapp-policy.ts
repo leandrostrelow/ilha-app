@@ -59,7 +59,7 @@ function notificationRows(response: Data, customerId: string) {
  }
  const notificationChannels = notificationChannelDiagnostics(rows);
  // Optional known fields remain unknown, never false. The plan writes all six
- // booleans explicitly; verifiedRules still requires exact readback equality.
+ // booleans explicitly; active rules still require exact readback equality.
  // Validation must inspect every raw field, independently from the bounded diagnostic list.
  const unknownChannel=rows.some(row=>Object.keys(row).some(key=>key.includes('EnabledFor')&&!flags.includes(key as typeof flags[number])&&row[key]!==false));
  const invalidChannel=rows.some(row=>flags.some(key=>typeof row[key]!=='boolean'&&row[key]!==undefined&&row[key]!==null));
@@ -85,7 +85,11 @@ function verifiedRules(response: Data, customerId: string, plan: Data[]) {
  if (rows.length !== plan.length) return false;
  return plan.every(want => {
   const got = rows.find(row => row.id === want.id);
-  return got && got.enabled === want.enabled && flags.every(key => got[key] === want[key]) &&
+  // Asaas may omit an unavailable channel on a disabled rule (for example,
+  // WhatsApp on SEND_LINHA_DIGITAVEL). enabled:false guarantees no delivery;
+  // keep the unknown value in the audit instead of coercing it to false.
+  return got && got.enabled === want.enabled && flags.every(key => got[key] === want[key] ||
+   want.enabled === false && got.enabled === false && want[key] === false && (got[key] === undefined || got[key] === null)) &&
    (!want.enabled || got.deleted !== true && got.event === 'PAYMENT_DUEDATE_WARNING' && got.scheduleOffset === want.scheduleOffset);
  });
 }
@@ -140,7 +144,9 @@ async function verifyRemotePaymentScope(customerId:string,scope:Data,request:Mon
 }
 async function proveReusableCustomer(remote:Data,target:Data,environment:string,rpc:MonthlyWhatsappRpc|undefined,request:MonthlyWhatsappRequest) {
  if(ownedCustomer(remote,target))return null;
- if(!sameCustomerIdentity(remote,target)||target.state!=='READY'||!rpc||typeof remote.externalReference!=='string'||!remote.externalReference)return fail('SHARED_OR_DIVERGENT_CUSTOMER');
+ // Ownership proof is independent from eligibility to receive reminders: an
+ // inactive verified customer may be paused, but apply never enables it.
+ if(!sameCustomerIdentity(remote,target)||!rpc||typeof remote.externalReference!=='string'||!remote.externalReference)return fail('SHARED_OR_DIVERGENT_CUSTOMER');
  const scope=await readCustomerScope(target,environment,rpc);
  // Exact references come only from matching customer + CPF records in our own database.
  if(!(scope.allowedExternalReferences as unknown[]).includes(remote.externalReference))return fail('SHARED_OR_DIVERGENT_CUSTOMER');
