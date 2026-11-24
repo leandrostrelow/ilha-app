@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(19);
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 insert into auth.users(id,email,raw_app_meta_data,raw_user_meta_data) values ('78000000-0000-4000-8000-000000000001','adjust@tests.invalid','{"provider":"email","providers":["email"]}','{"app_context":"public"}');
 insert into app_clients(id,full_name,email,due_day,status,client_type) values ('78000000-0000-4000-8000-000000000001','Synthetic adjustment','adjust@tests.invalid',25,'ATIVO','aluno');
@@ -17,6 +17,15 @@ select throws_ok($$select pg_temp.adjust('stale',(select proof from evidence),cl
 select throws_ok($$select pg_temp.adjust((select v from evidence),(select proof from evidence),clock_timestamp()-interval '1 minute')$$,'P0001','Asaas não comprova o ajuste sem recebimento desta cobrança.','reject stale remote proof');
 select throws_ok($$select pg_temp.adjust((select v from evidence),(select jsonb_set(proof,'{payment,value}','351') from evidence),clock_timestamp())$$,'P0001','Asaas não comprova o ajuste sem recebimento desta cobrança.','reject amount mismatch');
 select throws_ok($$select pg_temp.adjust((select v from evidence),(select jsonb_set(proof,'{payment,payment_date}','"2026-11-06"') from evidence),clock_timestamp())$$,'P0001','Asaas não comprova o ajuste sem recebimento desta cobrança.','reject remote receipt');
+select is(public.apply_app_invoice_payment_reconciliation('pay_test','SANDBOX','PENDING','ilha-monthly-invoice:78000000-0000-4000-8000-000000000021',350,null,'concurrent-due-webhook',proof)->>'status','REVIEW_REQUIRED','concurrent webhook cannot change due date outside audit') from evidence;
+update public.app_invoice_provider_payments set safe_snapshot=(select proof #- '{payment,deleted}' from evidence) where invoice_id='78000000-0000-4000-8000-000000000021';
+select throws_ok($$select pg_temp.adjust()$$,'P0001','Estado atual não permite o ajuste solicitado.','incomplete review snapshot missing deleted remains blocked');
+update public.app_invoice_provider_payments set safe_snapshot=(select proof #- '{payment,id}' from evidence) where invoice_id='78000000-0000-4000-8000-000000000021';
+select throws_ok($$select pg_temp.adjust()$$,'P0001','Estado atual não permite o ajuste solicitado.','incomplete review snapshot missing id remains blocked');
+update public.app_invoice_provider_payments set safe_snapshot=(select proof #- '{payment,customer}' from evidence) where invoice_id='78000000-0000-4000-8000-000000000021';
+select throws_ok($$select pg_temp.adjust()$$,'P0001','Estado atual não permite o ajuste solicitado.','incomplete review snapshot missing customer remains blocked');
+update public.app_invoice_provider_payments set safe_snapshot=(select proof from evidence) where invoice_id='78000000-0000-4000-8000-000000000021';
+select is(pg_temp.adjust()->>'state','READY_REMOTE','exact unpaid date mismatch can resume the audited correction');
 select is(pg_temp.adjust(v,proof,clock_timestamp())->>'state','COMPLETED','apply verified date') from evidence;
 select ok((select i.due_date='2026-11-25' and f.due_date=i.due_date and i.status='AGUARDANDO' and f.status='ABERTO' and p.status='PENDING' and i.paid_at is null and f.paid_at is null from app_payment_invoices i join app_invoice_provider_payments p on p.invoice_id=i.id join financial_transactions f on f.app_payment_invoice_id=i.id where i.id='78000000-0000-4000-8000-000000000021'),'invoice provider and ledger coordinated without receipt');
 select is(pg_temp.adjust()->>'state','COMPLETED','retry idempotent');

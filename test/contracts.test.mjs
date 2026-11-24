@@ -750,7 +750,7 @@ test('Ilha Play apresenta todos os estados mensais e atualização segura sem re
   assert.match(card, /!invoicePaymentActionAllowed\(invoice\)/);
   const paymentClick = sourceSection(indexSource, "$('view-payments').addEventListener('click'", "$('pixModal').addEventListener('click'");
   assert.match(paymentClick, /data-refresh-invoice/);
-  assert.match(paymentClick, /refresh\(false\)/);
+  assert.match(paymentClick, /refreshClientPayments\(false\)/);
   assert.doesNotMatch(paymentClick, /app-monthly-billing|action:\s*'retry'/);
   assert.match(functionSource(indexSource, 'renderPayments'), /paymentInvoicesLoadError[\s\S]*data-refresh-invoices/);
 });

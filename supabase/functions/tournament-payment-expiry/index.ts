@@ -1,3 +1,4 @@
+import { deferTournamentReconciliation } from "../_shared/tournament-reconciliation-failure.ts";
 import "jsr:@supabase/functions-js@2.112.3/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 
@@ -195,6 +196,8 @@ async function scheduleReconciliation(client: DbClient, payment: Row, status?: s
   const result = await client.from("tournament_payments").update(update)
     .eq("id", payment.id)
     .eq("status", payment.status)
+    .eq("updated_at", payment.updated_at)
+    .is("reconciliation_closed_at", null)
     .eq("provider_environment", asaasConfig().environment)
     .select("id")
     .maybeSingle();
@@ -444,6 +447,7 @@ Deno.serve(async (request) => {
   const expired = await client.from("tournament_payments")
     .select(selectColumns)
     .eq("provider", "ASAAS")
+    .is("reconciliation_closed_at", null)
     .in("status", ["CREATED", "RECONCILING", "PENDING", "FAILED", "OVERDUE"])
     .not("expires_at", "is", null)
     .lte("expires_at", now)
@@ -460,6 +464,7 @@ Deno.serve(async (request) => {
     const due = await client.from("tournament_payments")
       .select(selectColumns)
       .eq("provider", "ASAAS")
+      .is("reconciliation_closed_at", null)
       .in("status", ["RECONCILING", "PENDING", "CONFIRMED", "REVIEW_REQUIRED", "PARTIALLY_REFUNDED", "RECEIVED", "CANCELLED", "OVERDUE"])
       .not("next_reconciliation_at", "is", null)
       .lte("next_reconciliation_at", now)
@@ -674,9 +679,11 @@ Deno.serve(async (request) => {
       if (await archiveLocally(client, payment)) summary.expired += 1;
     } catch (error) {
       summary.deferred += 1;
+      const diagnostic = await deferTournamentReconciliation(error, () =>
+        scheduleReconciliation(client, payment));
       console.error("tournament-payment-expiry item deferred", {
         payment_id: payment.id,
-        error: error instanceof Error ? error.message : "unknown",
+        ...diagnostic,
       });
     }
   };

@@ -1,7 +1,9 @@
 import { reconcileMonthlyCompetence } from "../_shared/monthly-competence-reconciliation.ts";
+import { isDefiniteCustomerRejection, monthlyProviderDiagnostic, monthlyProviderOperation, monthlyRemoteDueDateChanged } from "../_shared/monthly-provider-safety.ts";
 import { adjustInvoiceAmount } from "../_shared/audited-invoice-amount.ts";
 import { adjustMonthlyInvoice } from "../_shared/audited-invoice-adjustment.ts";
 import { prepareFailedReissueReschedule } from "../_shared/failed-reissue-reschedule.ts";
+import { closeFailedMonthlyInvoice } from "../_shared/close-failed-monthly-invoice.ts";
 import { prepareAuditedMonthlyReissue } from "../_shared/audited-monthly-reissue.ts";
 // deno-lint-ignore-file no-import-prefix no-explicit-any
 import "jsr:@supabase/functions-js@2.112.3/edge-runtime.d.ts";
@@ -153,12 +155,14 @@ function asaasConfig() {
 class AsaasRequestError extends Error {
   status: number;
   codes: string[];
+  operation: string;
 
-  constructor(status: number, codes: string[], message: string) {
+  constructor(status: number, codes: string[], message: string, operation = "UNKNOWN") {
     super(message);
     this.name = "AsaasRequestError";
     this.status = status;
     this.codes = codes;
+    this.operation = operation;
   }
 }
 
@@ -208,7 +212,10 @@ function publicError(error: unknown) {
     if ([401, 403].includes(error.status)) {
       return "A integração Asaas não autorizou a emissão. Revise a configuração financeira.";
     }
-    return "O Asaas recusou os dados da cobrança. Revise o cadastro do responsável no Financeiro.";
+    const diagnostic = monthlyProviderDiagnostic(error)!;
+    const detail = `[ASAAS ${diagnostic.http_status}; ${diagnostic.operation}; ${diagnostic.codes.join(",") || "UNCLASSIFIED"}]`;
+    if (error.status === 429) return `O Asaas limitou as consultas. Aguarde uma nova tentativa. ${detail}`;
+    return `O Asaas recusou a operação. Confira os dados e o vencimento no Financeiro. ${detail}`;
   }
   return "Não foi possível concluir a emissão agora. A cobrança ficou segura para nova tentativa.";
 }
@@ -239,7 +246,7 @@ async function asaasRequest(path: string, init: RequestInit = {}) {
         text(record(item).description, 180)
       ).filter(Boolean).join(" ") ||
         `Asaas respondeu com status ${response.status}.`;
-      throw new AsaasRequestError(response.status, codes, message);
+      throw new AsaasRequestError(response.status, codes, message, monthlyProviderOperation(path, init.method));
     }
     return body;
   } finally {
@@ -294,6 +301,7 @@ function moneyCents(value: unknown) {
 }
 
 function providerStatus(payment: JsonRecord) {
+  if (payment.deleted === true) return "CANCELLED";
   const chargebackStatus = text(record(payment.chargeback).status, 40)
     .toUpperCase();
   if (
@@ -331,6 +339,7 @@ function safePaymentSnapshot(payment: JsonRecord) {
       invoice_url: text(payment.invoiceUrl, 500),
       payment_date: text(payment.paymentDate, 40),
       client_payment_date: text(payment.clientPaymentDate, 40),
+      deleted: payment.deleted === true,
     },
   };
 }
@@ -445,7 +454,7 @@ async function ensureAsaasCustomer(
   const mappedId = text(resolutionState.providerCustomerId, 120);
   if (resolutionState.status === "REVIEW_REQUIRED") {
     throw new ProviderInvariantError(
-      "O CPF do responsável mudou e o vínculo Asaas exige revisão.",
+      "O vínculo do responsável com o Asaas exige revisão financeira.",
     );
   }
   if (resolutionState.status === "ACTIVE" && mappedId) {
@@ -501,6 +510,16 @@ async function ensureAsaasCustomer(
         }),
       });
     } catch (error) {
+      if (isDefiniteCustomerRejection(error)) {
+        const released = await adminClient.rpc("release_rejected_app_payment_customer", {
+          p_client_id: clientId, p_provider_environment: environment,
+          p_resolution_token: resolutionToken,
+          p_http_status: (error as AsaasRequestError).status,
+        });
+        if (released.error || released.data !== true) {
+          throw new AmbiguousProviderResultError(new Error("A reserva do cliente não pôde ser liberada."));
+        }
+      }
       if (!isAmbiguousProviderFailure(error)) throw error;
       const recovered = await findAsaasCustomer(externalReference).catch(() =>
         null
@@ -684,6 +703,17 @@ async function processClaim(adminClient: DbClient, claim: JsonRecord) {
     const paymentId = text(payment.id, 120);
     const snapshot = safePaymentSnapshot(payment);
     const status = providerStatus(payment);
+    if (monthlyRemoteDueDateChanged(payment, invoice.due_date)) {
+      const review = await adminClient.rpc("apply_app_invoice_payment_reconciliation", {
+        p_provider_payment_id: paymentId, p_provider_environment: config.environment,
+        p_provider_status: "REVIEW_REQUIRED", p_external_reference: text(claim.external_reference, 180),
+        p_expected_amount: Number(payment.value), p_paid_at: null,
+        p_event_id: `due-date-review:${paymentId}:${text(payment.dueDate, 10)}`,
+        p_snapshot: { ...snapshot, event: "REMOTE_DUE_DATE_MISMATCH" },
+      });
+      if (review.error) throw review.error;
+      throw new ProviderInvariantError("O vencimento no Asaas diverge da fatura. Revise no Financeiro.");
+    }
     if (!SUPPORTED_PROVIDER_STATUSES.has(status)) {
       throw new ProviderInvariantError(
         `Status Asaas não suportado: ${status || "VAZIO"}.`,
@@ -791,6 +821,7 @@ async function processClaim(adminClient: DbClient, claim: JsonRecord) {
       invoice_id: invoiceId,
       ambiguous,
       error_type: error instanceof Error ? error.name : "UnknownError",
+      provider_diagnostic: monthlyProviderDiagnostic(error),
     });
     return {
       invoiceId,
@@ -917,6 +948,11 @@ Deno.serve(async (request: Request) => {
     if (!auth) return json(request, { error: "Credencial inválida." }, 401);
     const body = record(parsedBody);
     const action = text(body.action, 20).toLowerCase();
+    if (action === "close_failed_invoice") {
+      if (auth.kind !== "USER" || !auth.canWrite || !auth.userId) return json(request, {error:"Seu acesso não permite encerrar cobranças."},403);
+      return json(request,await closeFailedMonthlyInvoice(body,auth.userId,asaasConfig().environment,
+        (name,args)=>adminClient!.rpc(name,args),asaasRequest));
+    }
     if (action === "reconcile_months") {
       if (auth.kind !== "USER" || !auth.canWrite || !auth.userId) return json(request, {error:"Seu acesso não permite conciliar cobranças."},403);
       return json(request,await reconcileMonthlyCompetence(body,auth.userId,asaasConfig().environment,
