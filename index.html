@@ -5360,6 +5360,8 @@
     ];
 
     let session = null;
+    let clientSessionEpoch = 0;
+    let clientDataRequest = 0;
     const clientPreviewMode = window.IlhaClientPreview.mode;
     let client = null;
     let pendingSignup = null;
@@ -5415,6 +5417,8 @@
     let activePlanTab = 'aluno';
     let paymentFilter = { month: 'all', year: 'all' };
     let activePixPayload = '';
+    let activePixInvoiceId = '';
+    let paymentRefreshPromise = null;
     let pixModalReturnFocus = null;
     let pixModalPreviousBodyOverflow = '';
     const pullRefreshState = {
@@ -6451,6 +6455,7 @@
         return;
       }
       courtDataLoading = true;
+      const scope = clientSessionScope();
       try {
         const startDate = localDateString();
         const endDate = addPlainDateDays(startDate, 45);
@@ -6462,6 +6467,7 @@
           rest('rpc/get_active_court_opponents', { method: 'POST', body: {}, prefer: 'return=representation' }),
           rest('rpc/get_app_court_challenges', { method: 'POST', body: { p_start_date: startDate, p_end_date: endDate }, prefer: 'return=representation' })
         ]);
+        assertClientScope(scope);
         courtScheduleDays = results[0] || [];
         courtAvailability = Array.isArray(results[1]) ? results[1] : [];
         myCourtBookings = results[2] || [];
@@ -6475,11 +6481,12 @@
         renderClientCourts();
         if (showFeedback) toast('Agenda atualizada.');
       } catch (error) {
+        if (!clientScopeIsCurrent(scope)) return;
         renderClientCourts();
         toast(error.message || 'Não consegui carregar a agenda agora.');
       } finally {
-        courtDataLoading = false;
-        if (courtDataReloadPending) {
+        if (clientScopeIsCurrent(scope)) courtDataLoading = false;
+        if (clientScopeIsCurrent(scope) && courtDataReloadPending) {
           courtDataReloadPending = false;
           scheduleClientCourtRealtimeRefresh();
         }
@@ -6505,6 +6512,8 @@
         loadClientData().then(function () {
           renderAnnouncements();
           renderHome();
+          renderPayments();
+          syncActivePixModal();
           showClientDataWarning();
         }).catch(function () {});
       }, 120);
@@ -6560,6 +6569,7 @@
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'app_court_slot_events' }, scheduleClientCourtRealtimeRefresh)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'app_court_bookings' }, scheduleClientCourtRealtimeRefresh)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'app_court_schedule_days' }, scheduleClientCourtRealtimeRefresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'app_payment_invoices', filter: 'client_id=eq.' + userId }, scheduleClientNotificationRefresh)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'app_announcements' }, handleClientAnnouncementInsert)
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_announcements' }, scheduleClientNotificationRefresh)
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'app_announcements' }, scheduleClientNotificationRefresh)
@@ -7201,7 +7211,9 @@
       if (clientPreviewMode) throw new Error('Visualização somente leitura.');
       options = options || {};
       const requireAuth = options.auth !== false;
+      const scope = options._scope || clientSessionScope();
       if (requireAuth && session && !session.demo) await ensureFreshSession();
+      if (requireAuth) assertClientScope(scope);
       const h = headers(requireAuth);
       if (options.body !== undefined) h['Content-Type'] = 'application/json';
       if (options.prefer) h.Prefer = options.prefer;
@@ -7211,9 +7223,10 @@
         body: options.body === undefined ? undefined : JSON.stringify(options.body)
       });
       const text = await response.text();
+      if (requireAuth) assertClientScope(scope);
       if (response.status === 401 && requireAuth && !options._retried && session && session.refresh_token) {
         await forceRefreshSession();
-        return rest(path, Object.assign({}, options, { _retried: true }));
+        return rest(path, Object.assign({}, options, { _retried: true, _scope: scope }));
       }
       const data = parseJsonResponse(text, response);
       if (!response.ok) {
@@ -7224,6 +7237,53 @@
         throw error;
       }
       return data;
+    }
+
+    function clientSessionScope() {
+      return { epoch: clientSessionEpoch, userId: String(session && session.user && session.user.id || '') };
+    }
+
+    function clientScopeIsCurrent(scope) {
+      return scope.epoch === clientSessionEpoch && scope.userId === String(session && session.user && session.user.id || '');
+    }
+
+    function assertClientScope(scope) {
+      if (clientScopeIsCurrent(scope)) return;
+      const error = new Error('A conta foi desconectada ou alterada. Entre novamente para continuar.');
+      error.code = 'CLIENT_SESSION_CHANGED';
+      throw error;
+    }
+
+    // Only a definitive authentication rejection may be retried. Network errors,
+    // timeouts and provider failures can have already created a payment.
+    async function clientEdgeRequest(functionName, body, scope) {
+      scope = scope || clientSessionScope();
+      if (clientPreviewMode || demoMode || session && session.demo) throw new Error('Esta ação não está disponível na demonstração.');
+      assertClientScope(scope);
+      if (!session || !session.access_token) throw new Error('Entre novamente na sua conta.');
+      await ensureFreshSession();
+      assertClientScope(scope);
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const response = await fetchWithTimeout(SUPABASE_URL + '/functions/v1/' + functionName, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + session.access_token },
+          body: JSON.stringify(body)
+        });
+        const text = await response.text();
+        assertClientScope(scope);
+        if (response.status === 401 && attempt === 0 && session.refresh_token) {
+          await forceRefreshSession();
+          assertClientScope(scope);
+          continue;
+        }
+        const result = parseJsonResponse(text, response) || {};
+        if (!response.ok) {
+          const error = new Error(result.error || result.message || 'Não foi possível confirmar a operação. Consulte a fatura antes de tentar novamente.');
+          error.status = response.status;
+          error.orderId = result.order_id;
+          throw error;
+        }
+        return result;
+      }
     }
 
     function currentUser() {
@@ -7288,6 +7348,9 @@
       if (!nextSession.expires_at && nextSession.expires_in) {
         nextSession.expires_at = Math.floor(Date.now() / 1000) + Number(nextSession.expires_in || 0);
       }
+      const previousId = String(session && session.user && session.user.id || '');
+      const nextId = String(nextSession.user && nextSession.user.id || '');
+      if (previousId !== nextId) resetClientUserState();
       session = nextSession;
       storageSet('localStorage', SESSION_KEY, JSON.stringify(nextSession));
       scheduleSessionRefresh(nextSession);
@@ -7343,7 +7406,43 @@
       return nextSession;
     }
 
+    function resetClientUserState() {
+      clientSessionEpoch++;
+      clientDataRequest++;
+      clearTimeout(sessionRefreshTimer);
+      clearTimeout(sessionRestoreRetryTimer);
+      clearTimeout(pendingAccessRefreshTimer);
+      sessionRefreshPromise = null;
+      sessionRefreshTimer = 0; sessionRestoreRetryTimer = 0; pendingAccessRefreshTimer = 0;
+      stopClientRealtime();
+      clearTimeout(courtRealtimeRefreshTimer);
+      clearTimeout(clientNotificationRefreshTimer);
+      closePixModal();
+      closeAnyModal();
+      if (clientCommerce) clientCommerce.close();
+      clientCommerce = null;
+      client = null;
+      planRequests = []; storeRequests = []; paymentInvoices = [];
+      monthlyPaymentOptions = []; monthlyPaymentOptionsError = false; monthlyPixBusy = false;
+      advancePaymentOptions = []; advancePaymentOptionsError = false;
+      advancePaymentSelected.clear(); advancePaymentMessage = ''; advancePaymentExpanded = false;
+      familyInvoiceItems = []; familySummary = null; familyLoadError = null;
+      announcements = []; dismissedNotificationKeys.clear();
+      courtAvailability = []; courtScheduleDays = []; courtOpponents = [];
+      myCourtBookings = []; courtChallenges = []; myLessons = [];
+      selectedCourtDate = ''; selectedCourtSlot = null; courtChallengeSelecting = false;
+      courtDataLoading = false; courtDataReloadPending = false;
+      clientDataLoadError = null; paymentInvoicesLoadError = null; clientDataWarningAt = 0;
+      clientPushSubscriptionOwnerUserId = ''; clientPushPromptShown = false;
+      paymentFilter = { month: 'all', year: 'all' }; paymentRefreshPromise = null;
+      // Do not leave another person's data in hidden panels or a closed dialog.
+      ['paymentList', 'paymentCurrentMonth', 'paymentAdvance', 'pixModalBody', 'clientStoreOrders', 'familyList', 'clientCourtChallengeList'].forEach(function (id) {
+        if ($(id)) $(id).innerHTML = '';
+      });
+    }
+
     function clearSession() {
+      resetClientUserState();
       stopClientRealtime();
       clearTimeout(courtRealtimeRefreshTimer);
       clearTimeout(clientNotificationRefreshTimer);
@@ -7401,11 +7500,14 @@
       const delay = retryDelay == null
         ? Math.max(1000, (expiresAt || Date.now() + 32 * 60 * 1000) - Date.now() - 2 * 60 * 1000)
         : Math.max(1000, Number(retryDelay || 0));
+      const scope = clientSessionScope();
       sessionRefreshTimer = setTimeout(function () {
+        if (!clientScopeIsCurrent(scope)) return;
         if (!session || session.demo) return;
         forceRefreshSession().then(function (fresh) {
-          scheduleSessionRefresh(fresh || session);
+          if (clientScopeIsCurrent(scope)) scheduleSessionRefresh(fresh || session);
         }).catch(function (error) {
+          if (!clientScopeIsCurrent(scope)) return;
           if (isDefinitiveSessionError(error)) {
             clearSession();
             showAuthTab('login');
@@ -7430,7 +7532,9 @@
 
     async function refreshSession(value) {
       if (!value || !value.refresh_token) throw new Error('Sua sessão expirou. Entre novamente para continuar.');
+      const scope = clientSessionScope();
       const fresh = await authRequest('token?grant_type=refresh_token', { refresh_token: value.refresh_token });
+      assertClientScope(scope);
       storeSession(fresh);
       return fresh;
     }
@@ -7442,7 +7546,9 @@
     }
 
     async function refreshSessionSafely(original) {
+      const scope = clientSessionScope();
       const latest = readSession();
+      if (latest && String(latest.user && latest.user.id || '') !== scope.userId) { resetClientUserState(); session = latest; assertClientScope(scope); }
       if (sessionWasRotated(latest, original)) {
         session = latest;
         return latest;
@@ -7456,7 +7562,9 @@
           message.includes('already used');
         if (!reused) throw error;
         await new Promise(function (resolve) { setTimeout(resolve, 350); });
+        assertClientScope(scope);
         const recovered = readSession();
+        if (recovered && String(recovered.user && recovered.user.id || '') !== scope.userId) throw error;
         if (sessionWasRotated(recovered, original)) {
           session = recovered;
           scheduleSessionRefresh(recovered);
@@ -7470,11 +7578,12 @@
       if (!session || session.demo) return session;
       if (!sessionRefreshPromise) {
         const currentSession = session;
-        const refreshTask = function () { return refreshSessionSafely(currentSession); };
+        const refreshScope = clientSessionScope();
+        const refreshTask = function () { assertClientScope(refreshScope); return refreshSessionSafely(currentSession); };
         sessionRefreshPromise = (navigator.locks && navigator.locks.request
           ? navigator.locks.request('ilha-client-auth-refresh', refreshTask)
           : refreshTask()).finally(function () {
-          sessionRefreshPromise = null;
+          if (clientScopeIsCurrent(refreshScope)) sessionRefreshPromise = null;
         });
       }
       return sessionRefreshPromise;
@@ -7645,6 +7754,8 @@
         status: row.status || 'ABERTA',
         payment_method: row.payment_method || '',
         paid_at: row.paid_at || '',
+        received_method: row.received_method || '',
+        received_on: row.received_on || '',
         pix_payload: row.pix_payload || '',
         family_billing: row.family_billing === true,
         provider_status: row.provider_status || '',
@@ -7749,6 +7860,8 @@
         return;
       }
       if (!databaseReady) return;
+      const scope = clientSessionScope();
+      const requestId = ++clientDataRequest;
       const results = await Promise.allSettled([
         rest('app_plans?select=*&active=eq.true&order=type.asc,amount.asc', { auth: true }),
         rest('app_plan_requests?select=*&client_id=eq.' + encodeURIComponent(session.user.id) + '&order=created_at.desc', { auth: true }),
@@ -7763,6 +7876,8 @@
         rest('rpc/get_my_monthly_payment_options', { method: 'POST', body: {} }),
         rest('rpc/get_my_advance_payment_options', { method: 'POST', body: {} })
       ]);
+      assertClientScope(scope);
+      if (requestId !== clientDataRequest) return;
       const errors = results.filter(function (result) { return result.status === 'rejected'; }).map(function (result) { return result.reason; });
       const fulfilled = function (index) { return results[index].status === 'fulfilled'; };
       const value = function (index) { return fulfilled(index) ? results[index].value || [] : []; };
@@ -7812,9 +7927,12 @@
       try {
         await loadMyLessons();
       } catch (error) {
+        assertClientScope(scope);
         myLessons = previousLessons;
         errors.push(error);
       }
+      assertClientScope(scope);
+      if (requestId !== clientDataRequest) return;
       clientDataLoadError = errors[0] || null;
     }
 
@@ -8060,7 +8178,9 @@
     }
 
     async function finishAuthenticatedAccess() {
+      const accessEpoch = clientSessionEpoch;
       await ensureClient(null, null);
+      if (accessEpoch !== clientSessionEpoch) return false;
       if (session && client && client.id && (!session.user || !session.user.id)) {
         session.user = Object.assign({}, session.user || {}, {
           id: client.id,
@@ -8081,7 +8201,9 @@
       ensureClientPushSubscription(requestedBeforeLogin).finally(function () {
         storageRemove('sessionStorage', CLIENT_PUSH_AFTER_LOGIN_KEY);
       }).catch(function () {});
+      const scope = clientSessionScope();
       await loadClientData();
+      assertClientScope(scope);
       initClientCourtRealtime();
       unlock();
       showClientDataWarning();
@@ -8228,6 +8350,7 @@
           await finishAuthenticatedAccess();
           return;
         } catch (error) {
+          if (error && error.code === 'CLIENT_SESSION_CHANGED') return;
           clearSession();
           lock(error.message || 'Não consegui concluir a confirmação.');
           return;
@@ -8243,6 +8366,7 @@
         return;
       }
       try {
+        if (String(stored.user && stored.user.id || '') !== String(session && session.user && session.user.id || '')) resetClientUserState();
         session = stored;
         scheduleSessionRefresh(stored);
         if (isExpired(stored)) await forceRefreshSession();
@@ -8250,6 +8374,7 @@
         sessionRestoreAttempt = 0;
         setClientLoadingMessage('Entrando no Ilha Play');
       } catch (error) {
+        if (error && error.code === 'CLIENT_SESSION_CHANGED') return;
         const latest = readSession();
         if (latest && latest.access_token) session = latest;
         if (!isDefinitiveSessionError(error) && session) {
@@ -8400,10 +8525,10 @@
       if (view === 'store') {
         clientStoreCommerce().loadOrders();
         refresh(true).catch(function () {});
-        fetch(SUPABASE_URL + '/functions/v1/store-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + (session && session.access_token || '') }, body: JSON.stringify({ action: 'capabilities' }) })
-          .then(function (response) { return response.ok ? response.json() : {}; })
+        clientEdgeRequest('store-checkout', { action: 'capabilities' })
           .then(function (result) { $('clientStorePosBtn').hidden = result.can_sell !== true; }).catch(function () { $('clientStorePosBtn').hidden = true; });
       } else if (clientCommerce) clientCommerce.close();
+      if (view === 'payments') refreshClientPayments(true).catch(function () {});
       if (view === 'plans') {
         refresh(true).catch(function () {
           toast('Não consegui atualizar o plano agora.');
@@ -8431,6 +8556,7 @@
       renderAnnouncements();
       renderPlans();
       renderPayments();
+      syncActivePixModal();
       renderStore();
       renderClientCourts();
       renderClientPushState().catch(function () {});
@@ -9392,30 +9518,47 @@
       return copied;
     }
 
-    function openPixModal(invoice) {
-      const pix = invoicePixText(invoice);
-      if (!pix || invoicePixExpired(invoice) || ['FALHA', 'CANCELADA'].includes(invoiceEffectiveStatus(invoice))) {
-        toast('A segunda via desta cobrança ainda não foi disponibilizada pelo clube.');
-        return;
-      }
+    function renderPixModalInvoice(invoice) {
+      const status = invoiceEffectiveStatus(invoice);
+      const payable = invoicePaymentActionAllowed(invoice) && !['PAGA', 'CANCELADA', 'FALHA'].includes(status);
+      const pix = payable ? invoicePixText(invoice) : '';
       let qrUrl = '';
       try {
-        if (typeof qrcode === 'function') {
-          const qr = qrcode(0, 'M');
-          qr.addData(pix);
-          qr.make();
-          qrUrl = qr.createDataURL(5, 20);
+        if (pix && typeof qrcode === 'function') {
+          const qr = qrcode(0, 'M'); qr.addData(pix); qr.make(); qrUrl = qr.createDataURL(5, 20);
         }
       } catch (error) {}
       activePixPayload = pix;
-      pixModalReturnFocus = document.activeElement;
-      pixModalPreviousBodyOverflow = document.body.style.overflow;
       $('pixModalSubtitle').textContent = 'Fatura de ' + invoiceMonthLabel(invoice.invoice_month);
+      const message = status === 'PAGA' ? 'Pagamento recebido. Obrigado! Você não precisa pagar novamente.'
+        : status === 'CANCELADA' ? 'Cobrança cancelada. Não há pagamento a fazer nesta fatura.'
+        : invoiceProviderNeedsReview(invoice) ? 'Pagamento em revisão pelo clube. Não pague novamente.'
+        : String(invoice.provider_status || '').toUpperCase() === 'CONFIRMED' ? 'Pagamento identificado. Aguardando a confirmação final do Asaas.'
+        : invoicePixExpired(invoice) ? 'Este código Pix expirou. Consulte a fatura para verificar uma via válida.'
+        : payable ? 'Após pagar, toque em “Já paguei / consultar”. A confirmação também será atualizada automaticamente.'
+        : 'O Pix ainda não está disponível. Consulte novamente em instantes.';
       $('pixModalBody').innerHTML =
         '<div class="pix-modal-total"><span>Valor da fatura</span><strong>' + money(invoice.amount) + '</strong></div>' +
-        '<div class="invoice-meta"><span>' + escapeHtml(invoice.plan_name || invoice.description || 'Mensalidade') + '</span><span>Vencimento ' + escapeHtml(invoice.due_date ? formatShortDate(invoice.due_date) : 'a definir') + '</span>' + pill(invoiceEffectiveStatus(invoice)) + '</div>' +
-        '<div class="pix-modal-qr">' + (qrUrl ? '<img src="' + qrUrl + '" alt="QR Code Pix da fatura de ' + escapeHtml(invoiceMonthLabel(invoice.invoice_month)) + '" />' : '') + '<div class="pix-modal-code" tabindex="0" role="textbox" aria-readonly="true" aria-label="Código Pix copia e cola">' + escapeHtml(pix) + '</div></div>' +
-        '<button class="primary-btn" type="button" data-copy-modal-pix>Copiar código Pix</button>';
+        '<div class="invoice-meta"><span>' + escapeHtml(invoice.plan_name || invoice.description || 'Mensalidade') + '</span><span>Vencimento ' + escapeHtml(invoice.due_date ? formatShortDate(invoice.due_date) : 'a definir') + '</span>' + pill(status) + '</div>' +
+        '<p role="status">' + escapeHtml(message) + '</p>' +
+        (pix ? '<div class="pix-modal-qr">' + (qrUrl ? '<img src="' + qrUrl + '" alt="QR Code Pix da fatura" />' : '') + '<div class="pix-modal-code" tabindex="0" role="textbox" aria-readonly="true" aria-label="Código Pix copia e cola">' + escapeHtml(pix) + '</div></div><button class="primary-btn" type="button" data-copy-modal-pix>Copiar código Pix</button>' : '') +
+        (!['PAGA', 'CANCELADA'].includes(status) ? '<button class="ghost-btn" type="button" data-consult-modal-pix>Já paguei / consultar</button>' : '') +
+        (paymentInvoicesLoadError ? '<p role="alert">Não foi possível atualizar agora. Confira sua conexão e consulte novamente.</p>' : '');
+    }
+
+    function syncActivePixModal() {
+      if (!activePixInvoiceId || $('pixModal').hidden) return;
+      const invoice = paymentInvoices.find(function (row) { return row.id === activePixInvoiceId; });
+      if (!invoice) { closePixModal(); return; }
+      renderPixModalInvoice(invoice);
+    }
+
+    function openPixModal(invoice) {
+      if (!invoice || !invoice.id) return;
+      activePixInvoiceId = invoice.id;
+      pixModalReturnFocus = document.activeElement;
+      pixModalPreviousBodyOverflow = document.body.style.overflow;
+      renderPixModalInvoice(invoice);
       $('pixModal').hidden = false;
       document.body.style.overflow = 'hidden';
       const card = $('pixModal').querySelector('.pix-modal-card');
@@ -9427,14 +9570,43 @@
     }
 
     function closePixModal() {
-      if ($('pixModal').hidden) return;
       activePixPayload = '';
+      activePixInvoiceId = '';
+      if ($('pixModal').hidden) return;
       $('pixModal').hidden = true;
+      $('pixModalBody').innerHTML = '';
       document.body.style.overflow = pixModalPreviousBodyOverflow;
       pixModalPreviousBodyOverflow = '';
       const returnFocus = pixModalReturnFocus;
       pixModalReturnFocus = null;
       if (returnFocus && returnFocus.isConnected) returnFocus.focus();
+    }
+
+    async function refreshClientPayments(silent) {
+      if (!session || clientPreviewMode || demoMode || session.demo) return;
+      if (paymentRefreshPromise) return paymentRefreshPromise;
+      const scope = clientSessionScope();
+      const requestId = ++clientDataRequest;
+      paymentRefreshPromise = (async function () {
+        const results = await Promise.allSettled([
+          loadClientPaymentInvoices(),
+          rest('rpc/get_my_monthly_payment_options', { method: 'POST', body: {} }),
+          rest('rpc/get_my_advance_payment_options', { method: 'POST', body: {} })
+        ]);
+        assertClientScope(scope);
+        if (requestId !== clientDataRequest) return;
+        if (results[0].status === 'fulfilled') {
+          paymentInvoices = (results[0].value || []).map(mapPaymentInvoiceRow);
+          paymentInvoicesLoadError = null;
+        } else paymentInvoicesLoadError = results[0].reason;
+        monthlyPaymentOptionsError = results[1].status === 'rejected';
+        if (!monthlyPaymentOptionsError) monthlyPaymentOptions = results[1].value || [];
+        advancePaymentOptionsError = results[2].status === 'rejected';
+        if (!advancePaymentOptionsError) advancePaymentOptions = results[2].value || [];
+        renderPayments(); syncActivePixModal(); renderAnnouncements(); renderHome();
+        if (!silent) toast(paymentInvoicesLoadError ? 'Não foi possível consultar agora. Tente novamente em instantes.' : 'Situação da fatura atualizada.');
+      })().finally(function () { if (clientScopeIsCurrent(scope)) paymentRefreshPromise = null; });
+      return paymentRefreshPromise;
     }
 
     function trapPixModalFocus(event) {
@@ -9521,31 +9693,26 @@
       if (monthlyPixBusy || !advancePaymentSelected.size) return;
       if (clientPreviewMode || demoMode || session && session.demo) throw new Error('A emissão de Pix só está disponível na conta real do cliente.');
       if (!session || !session.access_token) throw new Error('Entre novamente na sua conta.');
+      const scope = clientSessionScope();
       const ownerId = session.user.id;
-      const ownerToken = session.access_token;
       const months = Array.from(advancePaymentSelected).sort();
       monthlyPixBusy = true; advancePaymentExpanded = true; advancePaymentMessage = ''; renderPayments();
       let prepared = 0;
       try {
         for (const month of months) {
           if (!session || session.user.id !== ownerId) throw new Error('A conta foi desconectada. Entre novamente para continuar.');
-          const response = await fetch(SUPABASE_URL + '/functions/v1/app-monthly-billing', {
-            method:'POST', headers:{'Content-Type':'application/json',apikey:SUPABASE_ANON_KEY,Authorization:'Bearer ' + ownerToken},
-            body:JSON.stringify({action:'client_advance',invoiceMonth:month})
-          });
-          const result = await response.json();
-          if (!response.ok || result.error) throw new Error(invoiceMonthLabel(month) + ': ' + (result.error || 'Não foi possível confirmar a emissão. Atualize antes de tentar novamente.'));
+          const result = await clientEdgeRequest('app-monthly-billing', { action: 'client_advance', invoiceMonth: month }, scope);
+          assertClientScope(scope);
+          if (result.error) throw new Error(invoiceMonthLabel(month) + ': ' + result.error);
           prepared++; advancePaymentSelected.delete(month);
         }
         advancePaymentMessage = prepared + ' mensalidade(s) preparada(s). Abra e pague cada Pix abaixo. Se estiver em processamento, toque em Atualizar em instantes.';
-      } catch (error) { advancePaymentMessage = (prepared ? prepared + ' mensalidade(s) já preparada(s). ' : '') + error.message; }
+      } catch (error) { if (clientScopeIsCurrent(scope)) advancePaymentMessage = (prepared ? prepared + ' mensalidade(s) já preparada(s). ' : '') + error.message; }
       finally {
-        if (session && session.user.id === ownerId) {
+        if (clientScopeIsCurrent(scope) && session && session.user.id === ownerId) {
           await loadClientData().catch(function () {});
         }
-        monthlyPixBusy = false;
-        if (session && session.user.id === ownerId) renderPayments();
-        else advancePaymentMessage = '';
+        if (clientScopeIsCurrent(scope)) { monthlyPixBusy = false; renderPayments(); }
       }
     }
 
@@ -9608,17 +9775,14 @@
       if (monthlyPixBusy) return;
       if (clientPreviewMode || demoMode || session && session.demo) throw new Error('A emissão de Pix só está disponível na conta real do cliente.');
       if (!session || !session.access_token) throw new Error('Entre novamente na sua conta.');
+      const scope = clientSessionScope();
       monthlyPixBusy = true;
       renderPayments();
       try {
         toast('Preparando seu Pix. Aguarde...');
-        const response = await fetch(SUPABASE_URL + '/functions/v1/app-monthly-billing', {
-          method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + session.access_token },
-          body: JSON.stringify({ action: 'client_generate', invoiceMonth: month })
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Não foi possível preparar o Pix. Atualize e tente novamente.');
+        const result = await clientEdgeRequest('app-monthly-billing', { action: 'client_generate', invoiceMonth: month }, scope);
         await loadClientData();
+        assertClientScope(scope);
         renderAll();
         const invoice = paymentInvoices.find(function (item) { return item.id === result.invoiceId; });
         if (invoice && invoicePaymentActionAllowed(invoice)) openPixModal(invoice);
@@ -9627,14 +9791,16 @@
       } catch (error) {
         // An uncertain response can still have created/settled the invoice.
         // Refresh before offering another attempt; the backend is idempotent.
-        await loadClientData().catch(function () {});
+        if (clientScopeIsCurrent(scope)) await loadClientData().catch(function () {});
         throw error;
-      } finally { monthlyPixBusy = false; renderPayments(); }
+      } finally { if (clientScopeIsCurrent(scope)) { monthlyPixBusy = false; renderPayments(); } }
     }
 
     let clientCommerce;
     function clientStoreCommerce() {
-      if (!clientCommerce) clientCommerce = window.IlhaStore.create({
+      if (!clientCommerce) {
+        const scope = clientSessionScope();
+        clientCommerce = window.IlhaStore.create({
         ordersHost: $('clientStoreOrders'), notify: toast,
         clients: function () { return []; },
         products: function () { return storeProducts.map(function (p) { return Object.assign({}, p, { price: p.amount }); }); },
@@ -9642,13 +9808,10 @@
         call: async function (body) {
           if (demoMode || session && session.demo) throw new Error('Compras Pix indisponíveis na demonstração.');
           if (!session) throw new Error('Entre na sua conta para comprar.');
-          const response = await fetch(SUPABASE_URL + '/functions/v1/store-checkout', { method: 'POST',
-            headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + session.access_token }, body: JSON.stringify(body) });
-          const result = await response.json();
-          if (!response.ok) { const error = new Error(result.error || 'Não foi possível acessar a loja.'); error.orderId = result.order_id; throw error; }
-          return result;
+          return clientEdgeRequest('store-checkout', body, scope);
         }
       });
+      }
       return clientCommerce;
     }
     function renderStore() {
@@ -9886,8 +10049,11 @@
     async function refresh(silent) {
       if (clientPreviewMode) { await window.IlhaClientPreview.refresh(); return; }
       if (!session) return;
+      const scope = clientSessionScope();
       await ensureClient(null, null);
+      assertClientScope(scope);
       await loadClientData();
+      assertClientScope(scope);
       initClientCourtRealtime();
       renderAll();
       if (clientDataLoadError) showClientDataWarning();
@@ -10064,6 +10230,11 @@
           scheduleClientCourtRealtimeRefresh();
         }
       }, 10000);
+      setInterval(function () {
+        if (session && !document.hidden && !monthlyPixBusy && (!$('pixModal').hidden || $('view-payments').classList.contains('active'))) {
+          refreshClientPayments(true).catch(function () {});
+        }
+      }, 30000);
       $('planGrid').addEventListener('click', function (event) {
         const tabBtn = event.target.closest('[data-plan-tab]');
         if (tabBtn) {
@@ -10100,7 +10271,7 @@
         }
         const refreshBtn = event.target.closest('[data-refresh-invoice], [data-refresh-invoices]');
         if (refreshBtn) {
-          runButtonTask(refreshBtn, function () { return refresh(false); }).catch(function () {
+          runButtonTask(refreshBtn, function () { return refreshClientPayments(false); }).catch(function () {
             toast('Não consegui atualizar a fatura agora. Tente novamente em instantes.');
           });
           return;
@@ -10119,6 +10290,11 @@
       $('pixModal').addEventListener('click', function (event) {
         if (event.target === $('pixModal') || event.target.closest('[data-close-pix]')) {
           closePixModal();
+          return;
+        }
+        const consultButton = event.target.closest('[data-consult-modal-pix]');
+        if (consultButton) {
+          runButtonTask(consultButton, function () { return refreshClientPayments(false); }).catch(function (error) { toast(error.message || 'Não foi possível consultar agora.'); });
           return;
         }
         const copyButton = event.target.closest('[data-copy-modal-pix]');
@@ -10205,7 +10381,13 @@
         }
         try {
           const synchronized = JSON.parse(event.newValue);
-          if (synchronized && synchronized.access_token) session = synchronized;
+          if (synchronized && synchronized.access_token) {
+            const changedUser = String(synchronized.user && synchronized.user.id || '') !== String(session && session.user && session.user.id || '');
+            if (changedUser) { resetClientUserState(); lock('Atualizando a conta conectada…'); }
+            session = synchronized;
+            scheduleSessionRefresh(synchronized);
+            if (changedUser) restore();
+          }
         } catch (error) {
           // Uma sessão inválida será tratada na próxima requisição autenticada.
         }

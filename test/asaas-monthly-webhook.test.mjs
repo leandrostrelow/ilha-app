@@ -78,7 +78,7 @@ test('mensalidade preserva os estados financeiros relevantes do evento Asaas', (
   const text = (value, maxLength) => String(value || '').trim().slice(0, maxLength);
   const monthlyProviderStatus = vm.runInNewContext(
     `(${executableFunction('monthlyProviderStatus')})`,
-    { text }
+    { text, monthlyReviewEvent: (event) => ['PAYMENT_RECEIVED_IN_CASH_UNDONE', 'PAYMENT_RESTORED', 'PAYMENT_REFUND_DENIED'].includes(event) }
   );
 
   assert.equal(monthlyProviderStatus('PAYMENT_CONFIRMED', { status: 'RECEIVED' }), 'CONFIRMED');
@@ -95,6 +95,10 @@ test('mensalidade preserva os estados financeiros relevantes do evento Asaas', (
   assert.equal(monthlyProviderStatus('PAYMENT_UPDATED', { status: 'refund_in_progress' }), 'REFUND_PENDING');
   assert.equal(monthlyProviderStatus('PAYMENT_CREATED', {}), 'PENDING');
   assert.equal(monthlyProviderStatus('PAYMENT_UPDATED', { status: 'future_provider_status' }), 'FUTURE_PROVIDER_STATUS');
+  for (const event of ['PAYMENT_RECEIVED_IN_CASH_UNDONE', 'PAYMENT_RESTORED', 'PAYMENT_REFUND_DENIED']) {
+    assert.equal(monthlyProviderStatus(event, { status: 'RECEIVED' }), 'REVIEW_REQUIRED');
+  }
+  assert.equal(monthlyProviderStatus('PAYMENT_UPDATED', { status: 'PENDING', deleted: true }), 'DELETED');
 });
 
 test('lookup mensal separa ambientes por provider ID e entrega divergencia de referencia ao RPC', async () => {

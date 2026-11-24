@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js@2.112.3/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import { reconcileStorePayment, storeProvider } from "../_shared/store-payment.ts";
 import { reconcileEventPayment } from "../_shared/event-payment.ts";
+import { monthlyReviewEvent } from "../_shared/monthly-provider-safety.ts";
 
 type JsonRecord = Record<string, unknown>;
 type DbClient = SupabaseClient<any, "public", "public", any>;
@@ -73,6 +74,8 @@ function isMonthlyInvoiceExternalReference(value: string) {
 }
 
 function monthlyProviderStatus(eventType: string, payment: JsonRecord) {
+  if (monthlyReviewEvent(eventType)) return "REVIEW_REQUIRED";
+  if (payment.deleted === true) return "DELETED";
   const eventStatuses: Record<string, string> = {
     PAYMENT_CREATED: "PENDING",
     PAYMENT_UPDATED: "PENDING",
@@ -420,7 +423,8 @@ Deno.serve(async (request) => {
     if (eventType === "PAYMENT_UPDATED" || eventType === "PAYMENT_CREATED") {
       paymentStatus = statusFromProvider(providerPayment);
     }
-    if (!paymentStatus) {
+    if (!paymentStatus && !(monthlyReviewEvent(eventType) &&
+      isMonthlyInvoiceExternalReference(text(providerPayment.externalReference, 180)))) {
       const ignored = await supabase.from("asaas_webhook_events").update({
         status: "IGNORED",
         processed_at: new Date().toISOString(),

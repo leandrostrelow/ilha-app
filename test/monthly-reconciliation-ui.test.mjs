@@ -55,3 +55,15 @@ test('correção de valor exige permissão, conferência, motivo e valor monetá
  for(const change of [{confirmed:false},{reason:''},{newAmount:''},{newAmount:'351'},{newAmount:'0'},{newAmount:'-1'},{newAmount:'520.001'},{newAmount:'NaN'},{newAmount:'Infinity'}])
   assert.throws(()=>build({...adjustment,...change},adjustmentConfig));
 });
+
+test('encerramento exige emissão falhada e transmite somente os dados originais sem pagamento',()=>{
+ const c={...config,invoices:[{...config.invoices[0],status:'ABERTA',providerStatus:'FAILED'}]};
+ const v={action:'close_failed_invoice',invoiceId:'synthetic-invoice',reason:values.reason,confirmed:true};
+ assert.deepEqual(build({...v,expectedAmount:1,receivedOn:'2026-10-30',newDueDate:'2026-12-01'},c),{
+  action:v.action,invoiceId:v.invoiceId,expectedAmount:250,invoiceMonth:'2026-11-01',oldDueDate:'2026-11-03',reason:v.reason
+ });
+ for(const change of [{status:'PAGA'},{providerStatus:'RECEIVED'},{providerStatus:'PENDING'},{paidAt:'2026-10-30'},{supersededAt:'2026-11-06'}])
+  assert.throws(()=>build(v,{...c,invoices:[{...c.invoices[0],...change}]}));
+ assert.throws(()=>build({...v,confirmed:false},c));
+ assert.throws(()=>build(v,{...c,canWrite:false}));
+});
