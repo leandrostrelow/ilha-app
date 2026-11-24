@@ -393,6 +393,39 @@ Deno.test('known reused customer needs exact database scope and only monthly act
  assert(!JSON.stringify(result.diagnostics).includes(ref));
 });
 
+Deno.test('inactive reused customer with proven isolated scope is only paused and remains blocked',async()=>{
+ const ref=`tournament-athlete:${id}`,inactive={...target,state:'BLOCKED',reason:'CLIENT_NOT_ACTIVE',phone:null};
+ const f=fixture({customer:{externalReference:ref,notificationDisabled:false},target:inactive});
+ const check=await preview(inactive,f.request,f.rpc,'SANDBOX');
+ assert(check.state==='BLOCKED'&&check.reason==='CLIENT_NOT_ACTIVE'&&!check.configured);
+ assert((check.diagnostics as Data).scopeVerified===true&&f.requests.every(r=>r.method==='GET'));
+ const result=await apply(id,'actor','SANDBOX',f.rpc,f.request);
+ assert(result.state==='BLOCKED'&&result.reason==='CLIENT_NOT_ACTIVE'&&result.notificationDisabled===true);
+ const writes=f.requests.filter(r=>r.method!=='GET');
+ assert(writes.length===1&&writes[0].method==='PUT'&&writes[0].path===`/customers/${customerId}`);
+ assert(JSON.stringify(writes[0].body)==='{"notificationDisabled":true}');
+ assert(f.getCustomer().externalReference===ref&&f.getCustomer().mobilePhone===target.phone);
+ assert(f.audits.length===1&&f.audits[0].p_status==='BLOCKED'&&f.audits[0].p_error_code==='CLIENT_NOT_ACTIVE');
+});
+
+Deno.test('inactive reused customer is never touched if identity, origin or isolated scope is unproven',async()=>{
+ const ref=`tournament-athlete:${id}`;
+ for(const changes of [
+  {customer:{cpfCnpj:'98765432100'}},
+  {customer:{externalReference:''}},
+  {scope:{allowedExternalReferences:['tournament-athlete:unproven']}},
+  {scope:{hasOtherActiveProduct:true}},
+  {scope:{state:'BLOCKED'}},
+  {payments:[{id:'pay_foreign_pending',customer:customerId,status:'PENDING',externalReference:'other'}]},
+ ]) {
+  const f=fixture({...changes,customer:{externalReference:ref,notificationDisabled:false,...(changes.customer||{})},target:{state:'BLOCKED',reason:'CLIENT_NOT_ACTIVE',phone:null}});
+  const result=await apply(id,'actor','SANDBOX',f.rpc,f.request);
+  assert(result.state==='BLOCKED'&&result.notificationDisabled===null);
+  assert(f.requests.every(r=>r.method==='GET'));
+  assert(f.getCustomer().notificationDisabled===false);
+ }
+});
+
 Deno.test('reused customer with another active product, unproven reference or divergent scope is never mutated',async()=>{
  const ref=`tournament-athlete:${id}`;
  for(const options of [

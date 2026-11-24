@@ -144,7 +144,9 @@ async function verifyRemotePaymentScope(customerId:string,scope:Data,request:Mon
 }
 async function proveReusableCustomer(remote:Data,target:Data,environment:string,rpc:MonthlyWhatsappRpc|undefined,request:MonthlyWhatsappRequest) {
  if(ownedCustomer(remote,target))return null;
- if(!sameCustomerIdentity(remote,target)||target.state!=='READY'||!rpc||typeof remote.externalReference!=='string'||!remote.externalReference)return fail('SHARED_OR_DIVERGENT_CUSTOMER');
+ // Ownership proof is independent from eligibility to receive reminders: an
+ // inactive verified customer may be paused, but apply never enables it.
+ if(!sameCustomerIdentity(remote,target)||!rpc||typeof remote.externalReference!=='string'||!remote.externalReference)return fail('SHARED_OR_DIVERGENT_CUSTOMER');
  const scope=await readCustomerScope(target,environment,rpc);
  // Exact references come only from matching customer + CPF records in our own database.
  if(!(scope.allowedExternalReferences as unknown[]).includes(remote.externalReference))return fail('SHARED_OR_DIVERGENT_CUSTOMER');

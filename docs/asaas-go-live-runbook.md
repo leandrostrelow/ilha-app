@@ -71,6 +71,15 @@ do Ilha só podem ser reutilizados quando a referência exata, o CPF e o víncul
 local conferem e a leitura completa do Asaas comprova que não há outra cobrança
 ativa fora das mensalidades conhecidas. Referências vazias ou desconhecidas não
 são adotadas. O lote não cria clientes, cobranças ou pagamentos.
+Se a inscrição individual original foi removida por `PAYMENT_EXPIRED`, a origem
+pode ser comprovada pelo arquivo privado completo: atleta, inscrição, pagamento,
+referência, customer e ambiente devem formar uma cadeia única. Também deve
+existir um único atleta atual com o CPF do pagador e vínculo compatível; cache de
+customer ausente exige essa prova histórica, e cache divergente bloqueia o uso.
+O status `PENDING` arquivado não comprova dívida nem quitação atual: a leitura
+completa dos pagamentos no Asaas continua obrigatória antes da configuração.
+Cliente inativo com cadastro e escopo comprovados pode ter os avisos desativados;
+continua bloqueado para ativação e não tem telefone nem regras individuais alterados.
 
 Antes de ativar um customer, a função confere o cadastro, desliga temporariamente
 os avisos, atualiza as regras e lê a configuração novamente. Só então habilita o
