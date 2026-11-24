@@ -1,3 +1,4 @@
+import { applyMonthlyWhatsappPolicy, monthlyWhatsappBatch, monthlyCustomerContactChanged } from "../_shared/monthly-whatsapp-policy.ts";
 import { reconcileMonthlyCompetence } from "../_shared/monthly-competence-reconciliation.ts";
 import { isDefiniteCustomerRejection, monthlyProviderDiagnostic, monthlyProviderOperation, monthlyRemoteDueDateChanged } from "../_shared/monthly-provider-safety.ts";
 import { adjustInvoiceAmount } from "../_shared/audited-invoice-amount.ts";
@@ -26,7 +27,9 @@ const MAX_CONCURRENCY = 3;
 const MAX_MANUAL_CLAIMS = 50;
 const MAX_SCHEDULED_CLAIMS = 50;
 const EXECUTION_BUDGET_MS = 105_000;
-const MIN_SAFE_BATCH_BUDGET_MS = 72_000;
+// Reserve the provider sequence plus bounded WhatsApp verification. Slow startup
+// yields a partial run before leasing rows; existing clients keep the 105s ceiling.
+const MIN_SAFE_BATCH_BUDGET_MS = 95_000;
 const SUPPORTED_PROVIDER_STATUSES = new Set([
   "PENDING",
   "CONFIRMED",
@@ -220,10 +223,10 @@ function publicError(error: unknown) {
   return "Não foi possível concluir a emissão agora. A cobrança ficou segura para nova tentativa.";
 }
 
-async function asaasRequest(path: string, init: RequestInit = {}) {
+async function asaasRequest(path: string, init: RequestInit = {}, timeoutMs = PROVIDER_TIMEOUT_MS) {
   const { apiKey, baseUrl } = asaasConfig();
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(`${baseUrl}${path}`, {
       ...init,
@@ -383,11 +386,19 @@ async function syncAsaasCustomerContact(
   client: JsonRecord,
   cpf: string,
   environment: string,
+  whatsappPolicyEnabled = false,
 ) {
   try {
     const remote = await asaasRequest(`/customers/${encodeURIComponent(customerId)}`);
     const ownsMonthlyCustomer = text(remote.externalReference, 180) ===
       `ilha-monthly-customer:${text(client.id, 60)}`;
+    if (text(remote.id,120) !== customerId || text(remote.cpfCnpj,20).replace(/\D/g, "") !== cpf) {
+      throw new ProviderInvariantError("O vínculo do responsável com o Asaas exige revisão financeira.");
+    }
+    const contact = {name:text(client.full_name,120),cpfCnpj:cpf,email:text(client.email,160) || undefined,
+      ...(!whatsappPolicyEnabled ? {mobilePhone:text(client.phone,20).replace(/\D/g, "") || undefined} : {})};
+    if (!monthlyCustomerContactChanged(remote,contact) &&
+        (whatsappPolicyEnabled || !(ownsMonthlyCustomer || environment === "SANDBOX") || remote.notificationDisabled === true)) return true;
     const updated = await asaasRequest(
       `/customers/${encodeURIComponent(customerId)}`,
       {
@@ -396,9 +407,9 @@ async function syncAsaasCustomerContact(
           name: text(client.full_name, 120),
           cpfCnpj: cpf,
           email: text(client.email, 160) || undefined,
-          mobilePhone: text(client.phone, 20).replace(/\D/g, "") || undefined,
-          // The app owns the D-5..D+5 daily reminder policy. Never modify
-          // notification settings on a shared customer discovered by CPF.
+          // The WhatsApp policy selects the payer or guardian phone separately.
+          ...(!whatsappPolicyEnabled ? { mobilePhone: text(client.phone, 20).replace(/\D/g, "") || undefined } : {}),
+          // A shared customer remains outside automatic notification ownership.
           ...(ownsMonthlyCustomer || environment === "SANDBOX"
             ? { notificationDisabled: true } : {}),
         }),
@@ -432,6 +443,11 @@ async function ensureAsaasCustomer(
   environment: string,
 ) {
   const clientId = text(client.id, 60);
+  let whatsappPolicyEnabled = false;
+  try {
+    const policy = await adminClient.rpc("get_monthly_whatsapp_policy");
+    whatsappPolicyEnabled = !policy.error && record(policy.data).enabled === true;
+  } catch { /* Policy lookup cannot prevent invoice issuance. */ }
   const cpf = text(client.cpf, 20).replace(/\D/g, "");
   if (cpf.length !== 11) {
     throw new ProviderInvariantError(
@@ -458,7 +474,7 @@ async function ensureAsaasCustomer(
     );
   }
   if (resolutionState.status === "ACTIVE" && mappedId) {
-    await syncAsaasCustomerContact(mappedId, client, cpf, environment);
+    await syncAsaasCustomerContact(mappedId, client, cpf, environment, whatsappPolicyEnabled);
     return mappedId;
   }
   if (resolutionState.claimed !== true) {
@@ -548,7 +564,7 @@ async function ensureAsaasCustomer(
   });
   if (saved.error) throw saved.error;
   if (reusedCustomer) {
-    await syncAsaasCustomerContact(customerId, client, cpf, environment);
+    await syncAsaasCustomerContact(customerId, client, cpf, environment, whatsappPolicyEnabled);
   }
   return customerId;
 }
@@ -699,6 +715,14 @@ async function processClaim(adminClient: DbClient, claim: JsonRecord) {
       client,
       config.environment,
     );
+    // Configure rules without a manual send or payment mutation; failure must not prevent Pix issuance.
+    try {
+      const notificationResult = await applyMonthlyWhatsappPolicy(clientId, null, config.environment,
+        (name,args)=>adminClient.rpc(name,args), (path,init)=>asaasRequest(path,init,2_500));
+      if (["BLOCKED", "FAILED"].includes(notificationResult.state)) {
+        console.warn("monthly WhatsApp policy requires review", { invoice_id: invoiceId, reason: notificationResult.reason });
+      }
+    } catch { console.warn("monthly WhatsApp policy deferred", { invoice_id: invoiceId }); }
     const payment = await createOrRecoverPayment(claim, invoice, customerId);
     const paymentId = text(payment.id, 120);
     const snapshot = safePaymentSnapshot(payment);
@@ -948,6 +972,13 @@ Deno.serve(async (request: Request) => {
     if (!auth) return json(request, { error: "Credencial inválida." }, 401);
     const body = record(parsedBody);
     const action = text(body.action, 20).toLowerCase();
+    if (action === "notify_preview" || action === "notify_apply") {
+      if (auth.kind !== "USER" || !auth.canWrite || !auth.userId) return json(request, {error:"Seu acesso não permite configurar os avisos."},403);
+      try {
+        return json(request, await monthlyWhatsappBatch(body,auth.userId,asaasConfig().environment,
+          (name,args)=>adminClient!.rpc(name,args),(path,init)=>asaasRequest(path,init,2_500)));
+      } catch { return json(request,{error:"Não foi possível conferir a política de WhatsApp. Atualize a consulta antes de repetir."},400); }
+    }
     if (action === "close_failed_invoice") {
       if (auth.kind !== "USER" || !auth.canWrite || !auth.userId) return json(request, {error:"Seu acesso não permite encerrar cobranças."},403);
       return json(request,await closeFailedMonthlyInvoice(body,auth.userId,asaasConfig().environment,

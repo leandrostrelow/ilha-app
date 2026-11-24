@@ -4021,6 +4021,19 @@
       color: #991b1b;
     }
 
+    .monthly-notification-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .monthly-notification-head p { margin: 5px 0; }
+    .monthly-notification-warning { color: #854d0e; font-size: 12px; line-height: 1.5; margin: 10px 0; }
+    .monthly-notification-actions { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
+    .monthly-notification-actions .field { flex: 1 1 240px; }
+    .monthly-notification-actions button { min-height: 44px; }
+    .monthly-notification-counts { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 10px 0; font-size: 12px; }
+    .monthly-notification-error { color: #991b1b; font-size: 12px; }
+    .monthly-notification-results { list-style: none; padding: 0; max-height: 320px; overflow: auto; }
+    .monthly-notification-results li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 18px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+    .monthly-notification-results li div { display: grid; gap: 3px; min-width: 0; overflow-wrap: anywhere; }
+    .monthly-notification-results li span { color: var(--muted); }
+
     .monthly-billing-summary {
       display: grid;
       grid-template-columns: repeat(8, minmax(105px, 1fr));
@@ -25242,6 +25255,7 @@
                 <button class="ghost-btn" type="button" id="monthlyBillingRetryBtn" data-club-permission="finance.write">Retentar falhas</button>
               </div>
               </details>
+              <section id="monthlyNotificationsSettings" aria-label="Avisos de mensalidades por WhatsApp" data-club-permission="finance.write"></section>
               <div class="monthly-billing-toolbar">
                 <div class="field">
                   <label for="monthlyBillingMonth">Mês de referência</label>
@@ -26398,6 +26412,7 @@
   <link rel="stylesheet" href="/adm/monthly-receipts.css?v=20261009-1">
   <script src="/adm/monthly-receipts.js?v=20261009-1"></script>
   <script src="/adm/monthly-reconciliation.js"></script>
+  <script src="/adm/monthly-notifications.js"></script>
   <script src="/adm/day-use.js"></script>
   <script>
     window.addEventListener('error', function (event) {
@@ -47951,6 +47966,16 @@ const colors = tournamentArtPalette({
 
     function renderMonthlyBilling() {
       renderMonthlyBillingSettings();
+      if (window.IlhaMonthlyNotifications) {
+        const sessionKey = monthlyNotificationsSessionKey();
+        window.IlhaMonthlyNotifications.mount($('monthlyNotificationsSettings'), {
+          sessionKey: sessionKey,
+          canWrite: function () { return canUseClubPermission('finance.write') && !isAdminDemoMode(); },
+          isCurrent: function () { return sessionKey === monthlyNotificationsSessionKey(); },
+          send: function (body) { return monthlyNotificationsRequest(body, sessionKey); },
+          confirm: function (message) { return window.confirm(message); }
+        });
+      }
       const payload = opsState.monthlyBillingPayload;
       const summary = payload && payload.summary || {};
       const candidates = (payload && payload.candidates || []).filter(function (candidate) {
@@ -48232,6 +48257,36 @@ const colors = tournamentArtPalette({
       if (!opsState.monthlyBillingSettingsLoaded) tasks.push(loadMonthlyBillingSettings(showFeedback));
       if (!opsState.monthlyBillingEnrollmentsLoaded) tasks.push(loadMonthlyBillingEnrollments(showFeedback));
       return Promise.all(tasks);
+    }
+
+    function monthlyNotificationsSessionKey() {
+      return String(adminSessionEpoch) + ':' + String(adminSession && adminSession.user && adminSession.user.id || '');
+    }
+
+    async function monthlyNotificationsRequest(body, sessionKey) {
+      function assertAccess() {
+        requireClubPermission('finance.write');
+        if (isAdminDemoMode()) throw new Error('A demonstração não altera avisos reais.');
+        if (!adminSession || !adminSession.access_token || sessionKey !== monthlyNotificationsSessionKey()) throw new Error('Sessão alterada. Abra novamente o financeiro.');
+      }
+      assertAccess();
+      const send = function () {
+        assertAccess();
+        return fetchWithAdminTimeout(supabaseBaseUrl() + '/functions/v1/app-monthly-billing', {
+          method: 'POST', headers: Object.assign({}, supabaseHeaders(true), { 'Content-Type': 'application/json' }), body: JSON.stringify(body)
+        }, MONTHLY_BILLING_REQUEST_TIMEOUT_MS);
+      };
+      let response = await send();
+      assertAccess();
+      if (response.status === 401) {
+        await refreshAdminSession(adminSession);
+        assertAccess();
+        response = await send();
+      }
+      const data = await response.json();
+      assertAccess();
+      if (!response.ok) throw new Error(data.error || data.message || 'Não foi possível consultar ou configurar os avisos.');
+      return data;
     }
 
     async function monthlyBillingRequest(action, invoiceId, retried, clientId) {
@@ -49018,6 +49073,7 @@ const colors = tournamentArtPalette({
 
     function clearAdminSession() {
       if (window.IlhaDayUse) window.IlhaDayUse.reset();
+      if (window.IlhaMonthlyNotifications) window.IlhaMonthlyNotifications.reset();
       operationalDashboard.reset();
       if (window.IlhaMonthlyReceipts) window.IlhaMonthlyReceipts.reset();
       clearTimeout(adminSessionRefreshTimer);

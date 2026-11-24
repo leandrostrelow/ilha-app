@@ -227,7 +227,7 @@ test('geração drena lotes somente dentro do orçamento global e informa trabal
   assert.doesNotMatch(edgeFunction, /action !== "scheduled" \|\| claims\.length < claimLimit/);
   assert.match(edgeFunction, /partial: isPartial[\s\S]*remainingReady/);
   assert.match(edgeFunction, /EXECUTION_BUDGET_MS = 105_000/);
-  assert.match(edgeFunction, /MIN_SAFE_BATCH_BUDGET_MS = 72_000/);
+  assert.match(edgeFunction, /MIN_SAFE_BATCH_BUDGET_MS = 95_000/);
   assert.match(edgeFunction, /Date\.now\(\) \+ MIN_SAFE_BATCH_BUDGET_MS > executionDeadline/);
   assert.match(edgeFunction, /const reconciliationMayRemain = isInternalOnlyAction[\s\S]*reconciliationMayRemain,/);
 });
