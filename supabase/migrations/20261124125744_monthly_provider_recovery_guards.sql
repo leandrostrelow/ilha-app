@@ -95,7 +95,7 @@ begin
  anchor := '(i.status in (''ABERTA'',''AGUARDANDO'',''VENCIDA'') and i.provider_status in (''PENDING'',''OVERDUE'') and p.status in (''PENDING'',''OVERDUE'') and f.status in (''ABERTO'',''VENCIDO''))';
  if position(anchor in definition)=0 then raise exception 'Definição do ajuste auditado não reconhecida; revise antes de aplicar.'; end if;
  extension := $code$
- or (p_operation='due_date' and i.status in ('ABERTA','AGUARDANDO','VENCIDA')
+ or ((p_operation='due_date' and i.status in ('ABERTA','AGUARDANDO','VENCIDA')
  and i.provider_status='REVIEW_REQUIRED' and p.status='REVIEW_REQUIRED'
  and f.status in ('ABERTO','VENCIDO') and p.last_error='REMOTE_DUE_DATE_MISMATCH'
  and p.safe_snapshot#>>'{payment,id}'=p.provider_payment_id
@@ -107,7 +107,7 @@ begin
  and p.safe_snapshot#>>'{payment,status}' in ('PENDING','OVERDUE')
  and p.safe_snapshot#>>'{payment,deleted}'='false'
  and coalesce(p.safe_snapshot#>>'{payment,payment_date}','')=''
- and coalesce(p.safe_snapshot#>>'{payment,client_payment_date}','')='')
+ and coalesce(p.safe_snapshot#>>'{payment,client_payment_date}','')='') is true)
 $code$;
  definition := replace(definition,anchor,anchor||extension);
  definition := replace(definition,'set status=next_status,safe_snapshot=p_snapshot,','set status=next_status,last_error=null,safe_snapshot=p_snapshot,');
