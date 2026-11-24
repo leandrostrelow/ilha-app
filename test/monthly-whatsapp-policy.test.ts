@@ -252,6 +252,70 @@ Deno.test('unknown fields persisting after write never count as disabled and pre
  }
 });
 
+Deno.test('disabled SEND_LINHA_DIGITAVEL with unavailable WhatsApp supports planning, verified update and idempotent reuse',async()=>{
+ for(const unavailable of [undefined,null]) {
+  const f=fixture({customer:{notificationDisabled:false}});
+  const request=async(path:string,init?:RequestInit)=>{
+   const response=await f.request(path,init);
+   if(path.endsWith('/notifications')) {
+    const row=(response.data as Data[]).find(r=>r.event==='SEND_LINHA_DIGITAVEL')!;
+    if(unavailable===undefined)delete row.whatsappEnabledForCustomer;else row.whatsappEnabledForCustomer=unavailable;
+   }
+   return response;
+  };
+  const initial=await preview(target,request);
+  assert(initial.state==='READY'&&!initial.configured);
+  const result=await apply(id,'actor','SANDBOX',f.rpc,request);
+  assert(result.state==='APPLIED'&&result.notificationDisabled===false);
+  const writes=f.requests.filter(r=>r.method==='PUT');
+  assert(writes[0].body.notificationDisabled===true);
+  const planned=(writes.find(r=>r.path==='/notifications/batch')!.body.notifications as Data[]).find(r=>r.id===defaults[7].id)!;
+  assert(planned.enabled===false&&planned.whatsappEnabledForCustomer===false);
+  const audited=((f.audits[0].p_after_config as Data).notifications as Data[]).find(r=>r.event==='SEND_LINHA_DIGITAVEL')!;
+  assert(audited.enabled===false&&audited.whatsappEnabledForCustomer===unavailable,'unknown channel must not be recorded as false');
+  assert((await preview(target,request)).configured===true);
+  const before=f.requests.length;
+  assert((await apply(id,null,'SANDBOX',f.rpc,request)).state==='APPLIED');
+  assert(f.requests.slice(before).every(r=>r.method==='GET'),'verified disabled rule must not trigger another update');
+ }
+});
+
+Deno.test('active due-date WhatsApp requires explicit true even when missing fields are allowed on disabled rules',async()=>{
+ for(const offset of [0,5])for(const unavailable of [undefined,null]) {
+  const f=fixture();let written=false;
+  const result=await apply(id,'actor','SANDBOX',f.rpc,async(path,init)=>{
+   const response=await f.request(path,init);if(path==='/notifications/batch')written=true;
+   if(written&&path.endsWith('/notifications')) {
+    const row=(response.data as Data[]).find(r=>r.event==='PAYMENT_DUEDATE_WARNING'&&r.scheduleOffset===offset)!;
+    if(unavailable===undefined)delete row.whatsappEnabledForCustomer;else row.whatsappEnabledForCustomer=unavailable;
+   }
+   return response;
+  });
+  assert(result.state==='BLOCKED'&&result.reason==='NOTIFICATION_READBACK_MISMATCH'&&result.notificationDisabled===true);
+  assert(!f.requests.some(r=>r.body.notificationDisabled===false));
+ }
+});
+
+Deno.test('disabled rules still reject true channels, unknown channels, invalid types and rules that remain enabled',async()=>{
+ for(const [change,reason] of [
+  [{whatsappEnabledForCustomer:true},'NOTIFICATION_READBACK_MISMATCH'],
+  [{emailEnabledForCustomer:true},'NOTIFICATION_READBACK_MISMATCH'],
+  [{unknownEnabledForCustomer:true},'UNKNOWN_NOTIFICATION_CHANNEL'],
+  [{unknownEnabledForCustomer:null},'UNKNOWN_NOTIFICATION_CHANNEL'],
+  [{whatsappEnabledForCustomer:'false'},'INVALID_NOTIFICATION_CHANNEL'],
+  [{enabled:true,whatsappEnabledForCustomer:undefined},'NOTIFICATION_READBACK_MISMATCH'],
+ ] as [Data,string][]) {
+  const f=fixture();let written=false;
+  const result=await apply(id,'actor','SANDBOX',f.rpc,async(path,init)=>{
+   const response=await f.request(path,init);if(path==='/notifications/batch')written=true;
+   if(written&&path.endsWith('/notifications'))Object.assign((response.data as Data[]).find(r=>r.event==='SEND_LINHA_DIGITAVEL')!,change);
+   return response;
+  });
+  assert(result.state==='BLOCKED'&&result.reason===reason&&result.notificationDisabled===true);
+  assert(!f.requests.some(r=>r.body.notificationDisabled===false));
+ }
+});
+
 Deno.test('known field with unexpected type is blocked and its value is absent from diagnostic output',async()=>{
  const f=fixture(),rows:Data[]=clone(defaults);rows[0].smsEnabledForCustomer='sensitive-provider-value';f.setRules(rows);
  const result=await preview(target,f.request);

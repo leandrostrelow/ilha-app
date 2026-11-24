@@ -59,7 +59,7 @@ function notificationRows(response: Data, customerId: string) {
  }
  const notificationChannels = notificationChannelDiagnostics(rows);
  // Optional known fields remain unknown, never false. The plan writes all six
- // booleans explicitly; verifiedRules still requires exact readback equality.
+ // booleans explicitly; active rules still require exact readback equality.
  // Validation must inspect every raw field, independently from the bounded diagnostic list.
  const unknownChannel=rows.some(row=>Object.keys(row).some(key=>key.includes('EnabledFor')&&!flags.includes(key as typeof flags[number])&&row[key]!==false));
  const invalidChannel=rows.some(row=>flags.some(key=>typeof row[key]!=='boolean'&&row[key]!==undefined&&row[key]!==null));
@@ -85,7 +85,11 @@ function verifiedRules(response: Data, customerId: string, plan: Data[]) {
  if (rows.length !== plan.length) return false;
  return plan.every(want => {
   const got = rows.find(row => row.id === want.id);
-  return got && got.enabled === want.enabled && flags.every(key => got[key] === want[key]) &&
+  // Asaas may omit an unavailable channel on a disabled rule (for example,
+  // WhatsApp on SEND_LINHA_DIGITAVEL). enabled:false guarantees no delivery;
+  // keep the unknown value in the audit instead of coercing it to false.
+  return got && got.enabled === want.enabled && flags.every(key => got[key] === want[key] ||
+   want.enabled === false && got.enabled === false && want[key] === false && (got[key] === undefined || got[key] === null)) &&
    (!want.enabled || got.deleted !== true && got.event === 'PAYMENT_DUEDATE_WARNING' && got.scheduleOffset === want.scheduleOffset);
  });
 }

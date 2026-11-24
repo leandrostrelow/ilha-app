@@ -80,6 +80,16 @@ A emissão do Pix continua independente dessa configuração.
 Novos customers permanecem bloqueados até essa verificação. A política inicia
 desativada na migration e só é ativada pela ação administrativa autorizada.
 
+O Asaas pode omitir um canal indisponível, como WhatsApp em
+`SEND_LINHA_DIGITAVEL`. A validação aceita campo conhecido ausente ou `null`
+somente quando o plano exige esse canal desligado e tanto o plano quanto a
+resposta confirmam `enabled: false` para a regra inteira. Isso não converte o
+valor desconhecido em `false` no histórico: a garantia vem da regra desativada,
+que [impede qualquer envio segundo a API oficial](https://docs.asaas.com/reference/atualizar-notificacao-existente).
+Os dois avisos ativos exigem todos os canais com valores booleanos exatos.
+Canal que permaneça `true`, tipo inválido ou canal desconhecido continua
+bloqueando a ativação.
+
 Use `notify_preview` antes de `notify_apply` e confira os resultados de todos os
 lotes, inclusive os bloqueados e os cadastros ainda sem customer. A aplicação
 requer `finance.write`; clientes e chamadas do cron não podem ativar a política.
