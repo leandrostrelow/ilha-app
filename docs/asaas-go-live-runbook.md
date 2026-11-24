@@ -66,8 +66,11 @@ os envios. Esta política não altera os avisos internos do Ilha Play.
 O destinatário é o responsável financeiro atual da família. Dependentes não
 são habilitados separadamente; menor sem família usa o contato do responsável
 cadastrado. A identidade fiscal do cliente não é substituída pela do responsável.
-Telefone inválido, vínculo ambíguo ou customer Asaas pertencente a outra integração
-exigem revisão. O lote não cria clientes, cobranças ou pagamentos.
+Telefone inválido e vínculo ambíguo exigem revisão. Customers antigos de torneios
+do Ilha só podem ser reutilizados quando a referência exata, o CPF e o vínculo
+local conferem e a leitura completa do Asaas comprova que não há outra cobrança
+ativa fora das mensalidades conhecidas. Referências vazias ou desconhecidas não
+são adotadas. O lote não cria clientes, cobranças ou pagamentos.
 
 Antes de ativar um customer, a função confere o cadastro, desliga temporariamente
 os avisos, atualiza as regras e lê a configuração novamente. Só então habilita o
@@ -88,6 +91,12 @@ preferências do customer não prova o cancelamento dessa fila. Não afirme que 
 limite retroativo de dois envios foi garantido apenas porque o lote concluiu;
 confira no Asaas ou com o suporte quando houver agendamento anterior. Não cancele
 nem reemita cobranças para alterar notificações.
+
+A preferência é do customer Asaas, não de uma fatura ou produto. Antes de
+reativar vendas de torneios ou outros fluxos que reutilizem o mesmo customer por
+CPF, revise o compartilhamento e a política de avisos desses produtos. A prova
+de ausência de outras cobranças ativas vale no momento da configuração e não
+autoriza inferir exclusividade futura do cadastro.
 
 Referências: [atualização em lote](https://docs.asaas.com/reference/atualizar-notificacoes-existentes-em-lote)
 e [desativação de notificações](https://central.ajuda.asaas.com/hc/pt-br/articles/31998232571803).

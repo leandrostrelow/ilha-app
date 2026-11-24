@@ -113,6 +113,78 @@ test('resumo distingue configuração verificada de elegibilidade e pendências'
   assert.match(api().reasonLabel('FAMILY_CONTACT_MISMATCH'), /responsável/);
 });
 
+test('diagnóstico mostra somente rótulos conhecidos, tipos e conferência da identidade', () => {
+  const lines = plain(api().diagnosticLines({
+    identity: { idMatches: true, documentMatches: false, referenceKind: 'EMPTY', deleted: null },
+    notificationChannels: [
+      { field: 'whatsappEnabledForCustomer', type: 'NULL', event: 'PAYMENT_DUEDATE_WARNING' },
+      { field: 'emailEnabledForProvider', type: 'MISSING', event: 'PAYMENT_CREATED' }
+    ]
+  }));
+  assert.deepEqual(lines, ['Cadastro no Asaas: confere', 'Documento do pagador: divergente', 'Vínculo da conta: sem referência', 'Cadastro excluído no Asaas: não informado',
+    'WhatsApp do pagador · Aviso de vencimento: nulo', 'E-mail da conta Asaas · Cobrança criada: ausente']);
+});
+
+test('diagnóstico nunca revela valores, documentos, contatos, referências ou propriedades desconhecidas', () => {
+  const secret = 'DO_NOT_RENDER_27999999999_11144477735_<img src=x onerror=alert(1)>';
+  const lines = plain(api().diagnosticLines({
+    raw: secret, cpf: secret, phone: secret, access_token: secret,
+    identity: { idMatches: secret, documentMatches: secret, referenceKind: secret, deleted: secret, cpf: secret, externalReference: secret },
+    notificationChannels: [
+      { field: 'smsEnabledForCustomer', type: 'STRING', event: 'PAYMENT_UPDATED', value: secret, customer: secret },
+      { field: secret, type: 'STRING', event: 'PAYMENT_UPDATED' },
+      { field: 'whatsappEnabledForCustomer', type: secret, event: 'PAYMENT_CREATED' },
+      { field: 'phoneCallEnabledForCustomer', type: 'BOOLEAN', event: secret },
+      { field: '__proto__', type: 'STRING', event: 'PAYMENT_CREATED' },
+      { field: 'smsEnabledForCustomer', type: 'constructor', event: 'PAYMENT_UPDATED' },
+      { field: 'smsEnabledForCustomer', type: 'STRING', event: 'toString' }
+    ]
+  }));
+  assert.deepEqual(lines, ['SMS do pagador · Cobrança atualizada: texto']);
+  assert.doesNotMatch(JSON.stringify(lines), /DO_NOT_RENDER|27999999999|11144477735|<img|externalReference|access_token/);
+  for (const value of [null, secret, [], { identity: secret, notificationChannels: secret }]) assert.deepEqual(plain(api().diagnosticLines(value)), []);
+});
+
+test('diagnóstico limita a lista, elimina repetições e usa sentinelas conhecidas sem valores externos', () => {
+  const repeated = { field: 'UNKNOWN_CHANNEL', type: 'OTHER', event: 'UNKNOWN_EVENT' };
+  assert.deepEqual(plain(api().diagnosticLines({ notificationChannels: [...Array(64).fill(repeated), { field: 'whatsappEnabledForCustomer', type: 'BOOLEAN', event: 'PAYMENT_CREATED' }] })),
+    ['Canal não reconhecido · Evento não reconhecido: outro tipo']);
+});
+
+test('conferência após salvar tem rótulo separado e mantém a mesma lista permitida sem valores brutos', () => {
+  const channel = { field: 'whatsappEnabledForCustomer', type: 'NULL', event: 'PAYMENT_DUEDATE_WARNING', value: 'PRIVATE_PHONE' };
+  assert.deepEqual(plain(api().diagnosticLines({ notificationChannels: [channel], verificationChannels: [channel,
+    { field: 'cpf', type: 'STRING', event: 'PAYMENT_CREATED', value: 'PRIVATE_CPF' },
+    { field: 'whatsappEnabledForCustomer', type: '<img src=x>', event: 'PAYMENT_CREATED' },
+    { field: 'whatsappEnabledForCustomer', type: 'BOOLEAN', event: '__proto__' }
+  ], rawAfterSave: 'PRIVATE_DATA' })), [
+    'WhatsApp do pagador · Aviso de vencimento: nulo',
+    'Após salvar: WhatsApp do pagador · Aviso de vencimento: nulo'
+  ]);
+  assert.match(api().reasonLabel('POLICY_DEADLINE_EXCEEDED'), /limite de tempo/);
+  assert.match(api().reasonLabel('AUDIT_FAILED'), /registrar a conferência/);
+  assert.match(api().reasonLabel('OTHER_ACTIVE_CUSTOMER_PAYMENT'), /outra cobrança ativa/);
+});
+
+test('resultado bloqueado abre diagnóstico sem HTML ou dados sensíveis recebidos', async () => {
+  const fields = new Map();
+  const host = { innerHTML: '', querySelector(selector) {
+    if (!fields.has(selector)) fields.set(selector, { reportValidity: () => true, value: reason });
+    return fields.get(selector);
+  } };
+  const diagnostics = { identity: { idMatches: false, documentMatches: true, referenceKind: 'FOREIGN', deleted: false, document: 'PRIVATE_DOCUMENT' },
+    notificationChannels: [{ field: 'whatsappEnabledForCustomer', type: 'NULL', event: 'PAYMENT_DUEDATE_WARNING', value: 'PRIVATE_VALUE' }],
+    html: '<img src=x onerror=alert(1)>', phone: 'PRIVATE_PHONE' };
+  api().mount(host, { sessionKey: 'synthetic-diagnostic', canWrite: () => true, isCurrent: () => true, confirm: () => false,
+    send: async () => page([entry('1', 'BLOCKED', { name: '<b>Teste</b>', diagnostics, reason: 'INVALID_NOTIFICATION_CHANNEL' })]) });
+  await fields.get('[data-mn-preview]').onclick();
+  const rendered = fields.get('[data-mn-list]').innerHTML;
+  assert.match(rendered, /<summary>Detalhes da conferência<\/summary>/);
+  assert.match(rendered, /Vínculo da conta: outra referência/);
+  assert.match(rendered, /&lt;b&gt;Teste&lt;\/b&gt;/);
+  assert.doesNotMatch(rendered, /PRIVATE_|<img|<b>Teste|notificationChannels|"identity"/);
+});
+
 test('UI só consulta/aplica em cliques explícitos e escapa os nomes retornados', async () => {
   const fields = new Map();
   const host = { innerHTML: '', querySelector(selector) {

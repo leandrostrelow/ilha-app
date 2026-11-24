@@ -5,9 +5,11 @@ type PolicyResult = Data & {state:string;reason:string|null;configured?:boolean;
 const obj = (v: unknown): Data => v && typeof v === 'object' && !Array.isArray(v) ? v as Data : {};
 const digits = (v: unknown) => String(v || '').replace(/\D/g, '');
 const flags = ['emailEnabledForProvider', 'smsEnabledForProvider', 'emailEnabledForCustomer', 'smsEnabledForCustomer', 'phoneCallEnabledForCustomer', 'whatsappEnabledForCustomer'] as const;
-class PolicyError extends Error { constructor(readonly code: string) { super(code); } }
-const fail = (code: string): never => { throw new PolicyError(code); };
+const notificationEvents = ['PAYMENT_CREATED','PAYMENT_UPDATED','PAYMENT_RECEIVED','PAYMENT_OVERDUE','PAYMENT_DUEDATE_WARNING','SEND_LINHA_DIGITAVEL'];
+class PolicyError extends Error { constructor(readonly code: string, readonly diagnostics: Data = {}) { super(code); } }
+const fail = (code: string, diagnostics: Data = {}): never => { throw new PolicyError(code,diagnostics); };
 const codeOf = (error: unknown) => error instanceof PolicyError ? error.code : 'PROVIDER_POLICY_FAILED';
+const diagnosticsOf = (error: unknown) => error instanceof PolicyError ? error.diagnostics : {};
 async function call(rpc: MonthlyWhatsappRpc, name: string, args: Data = {}) {
  const result = await rpc(name, args);
  if (result.error) throw new PolicyError(name === 'record_monthly_whatsapp_result' ? 'AUDIT_REJECTED' : 'POLICY_STATE_UNAVAILABLE');
@@ -29,6 +31,22 @@ export function monthlyCustomerContactChanged(remote: Data, desired: Data) {
  });
 }
 
+function notificationChannelDiagnostics(rows: Data[]) {
+ const issues = new Map<string,Data>();
+ const typeOf = (value:unknown) => value === undefined ? 'MISSING' : value === null ? 'NULL' : Array.isArray(value) ? 'ARRAY' :
+  ['boolean','string','number','object'].includes(typeof value) ? typeof value === 'boolean' ? 'BOOLEAN' : typeof value === 'string' ? 'STRING' : typeof value === 'number' ? 'NUMBER' : 'OBJECT' : 'OTHER';
+ for (const row of rows) {
+  const event = notificationEvents.includes(String(row.event)) ? String(row.event) : 'UNKNOWN_EVENT';
+  const add = (field:string,value:unknown) => {
+   const issue = {field,type:typeOf(value),event};
+   if (issues.size < 64) issues.set(JSON.stringify(issue),issue);
+  };
+  for (const key of flags) if (typeof row[key] !== 'boolean') add(key,row[key]);
+  // Unknown field names and values can contain provider or personal data; never return them.
+  for (const key of Object.keys(row)) if (key.includes('EnabledFor') && !flags.includes(key as typeof flags[number]) && row[key] !== false) add('UNKNOWN_CHANNEL',row[key]);
+ }
+ return [...issues.values()];
+}
 function notificationRows(response: Data, customerId: string) {
  if (!Array.isArray(response.data) || response.data.length === 0 || response.data.length > 50 || response.hasMore === true ||
      (response.totalCount !== undefined && response.totalCount !== response.data.length)) return fail('INCOMPLETE_NOTIFICATION_RULES');
@@ -37,10 +55,15 @@ function notificationRows(response: Data, customerId: string) {
   const id = String(row.id || '');
   if (!/^not_[a-zA-Z0-9_-]{1,116}$/.test(id) || ids.has(id) || row.customer !== customerId || typeof row.event !== 'string' ||
       typeof row.enabled !== 'boolean' || (row.deleted !== undefined && typeof row.deleted !== 'boolean')) return fail('INVALID_NOTIFICATION_RULES');
-  for (const key of Object.keys(row)) if (key.includes('EnabledFor') && !flags.includes(key as typeof flags[number]) && row[key] !== false) return fail('UNKNOWN_NOTIFICATION_CHANNEL');
-  for (const key of flags) if (typeof row[key] !== 'boolean') return fail('INVALID_NOTIFICATION_CHANNEL');
   ids.add(id);
  }
+ const notificationChannels = notificationChannelDiagnostics(rows);
+ // Optional known fields remain unknown, never false. The plan writes all six
+ // booleans explicitly; verifiedRules still requires exact readback equality.
+ // Validation must inspect every raw field, independently from the bounded diagnostic list.
+ const unknownChannel=rows.some(row=>Object.keys(row).some(key=>key.includes('EnabledFor')&&!flags.includes(key as typeof flags[number])&&row[key]!==false));
+ const invalidChannel=rows.some(row=>flags.some(key=>typeof row[key]!=='boolean'&&row[key]!==undefined&&row[key]!==null));
+ if (unknownChannel||invalidChannel) return fail(unknownChannel ? 'UNKNOWN_NOTIFICATION_CHANNEL' : 'INVALID_NOTIFICATION_CHANNEL',{notificationChannels});
  return rows;
 }
 // Two provider-created slots only; no new rules, send calls or payment mutations.
@@ -74,6 +97,61 @@ function ownedCustomer(remote: Data, target: Data) {
  return remote.id === target.providerCustomerId && remote.externalReference === `ilha-monthly-customer:${target.clientId}` &&
    digits(remote.cpfCnpj).length === 11 && digits(remote.cpfCnpj) === digits(target.cpf) && remote.deleted !== true;
 }
+function sameCustomerIdentity(remote: Data,target: Data) {
+ return remote.id===target.providerCustomerId&&digits(remote.cpfCnpj).length===11&&digits(remote.cpfCnpj)===digits(target.cpf)&&remote.deleted!==true;
+}
+async function readCustomerScope(target: Data,environment:string,rpc:MonthlyWhatsappRpc) {
+ const scope=obj(await call(rpc,'get_monthly_whatsapp_customer_scope',{p_client_id:target.clientId,p_provider_environment:environment}));
+ if (scope.state!=='READY'||scope.hasOtherActiveProduct===true) return fail('CUSTOMER_SCOPE_BLOCKED');
+ if (scope.clientId!==target.clientId||scope.customerId!==target.providerCustomerId||scope.targetVersion!==target.targetVersion||
+  scope.hasOtherActiveProduct!==false||typeof scope.scopeVersion!=='string'||!/^[a-f0-9]{32}$/.test(scope.scopeVersion)||
+  !Array.isArray(scope.allowedExternalReferences)||!Array.isArray(scope.monthlyPayments)||scope.monthlyPayments.length>500) return fail('CUSTOMER_SCOPE_UNVERIFIED');
+ return scope;
+}
+async function verifyRemotePaymentScope(customerId:string,scope:Data,request:MonthlyWhatsappRequest) {
+ const known=(scope.monthlyPayments as unknown[]).map(obj),ids=new Set<string>();
+ const settled=['RECEIVED','CONFIRMED','RECEIVED_IN_CASH','REFUNDED'];
+ // These are current Asaas statuses. Anything else is unknown, not evidence of settlement.
+ const active=['PENDING','OVERDUE','REFUND_REQUESTED','REFUND_IN_PROGRESS','CHARGEBACK_REQUESTED','CHARGEBACK_DISPUTE','AWAITING_CHARGEBACK_REVERSAL','DUNNING_REQUESTED','DUNNING_RECEIVED','AWAITING_RISK_ANALYSIS'];
+ let offset=0,total:number|undefined;
+ for(let page=0;page<5;page++) {
+  const response=await request(`/payments?customer=${encodeURIComponent(customerId)}&limit=100&offset=${offset}`);
+  if (!Array.isArray(response.data)||response.data.length>100||typeof response.hasMore!=='boolean'||
+   !Number.isInteger(response.totalCount)||Number(response.totalCount)<0||Number(response.totalCount)>500||
+   response.offset!==undefined&&response.offset!==offset||total!==undefined&&response.totalCount!==total) return fail('REMOTE_PAYMENT_SCOPE_INCOMPLETE');
+  total=Number(response.totalCount);
+  for(const value of response.data) {
+   const payment=obj(value),id=String(payment.id||'');
+   if(!/^pay_[a-zA-Z0-9_-]{1,116}$/.test(id)||ids.has(id)||payment.customer!==customerId||
+    payment.deleted!==undefined&&typeof payment.deleted!=='boolean') return fail('REMOTE_PAYMENT_SCOPE_UNVERIFIED');
+   ids.add(id);
+   if(payment.deleted===true||settled.includes(String(payment.status)))continue;
+   if(!active.includes(String(payment.status)))return fail('REMOTE_PAYMENT_SCOPE_UNVERIFIED');
+   if(!known.some(local=>local.providerPaymentId===id&&typeof local.externalReference==='string'&&local.externalReference!==''&&local.externalReference===payment.externalReference))return fail('OTHER_ACTIVE_CUSTOMER_PAYMENT');
+  }
+  offset+=response.data.length;
+  if(!response.hasMore) {
+   if(offset!==total)return fail('REMOTE_PAYMENT_SCOPE_INCOMPLETE');
+   return;
+  }
+  if(response.data.length===0||offset>=total)return fail('REMOTE_PAYMENT_SCOPE_INCOMPLETE');
+ }
+ return fail('REMOTE_PAYMENT_SCOPE_INCOMPLETE');
+}
+async function proveReusableCustomer(remote:Data,target:Data,environment:string,rpc:MonthlyWhatsappRpc|undefined,request:MonthlyWhatsappRequest) {
+ if(ownedCustomer(remote,target))return null;
+ if(!sameCustomerIdentity(remote,target)||target.state!=='READY'||!rpc||typeof remote.externalReference!=='string'||!remote.externalReference)return fail('SHARED_OR_DIVERGENT_CUSTOMER');
+ const scope=await readCustomerScope(target,environment,rpc);
+ // Exact references come only from matching customer + CPF records in our own database.
+ if(!(scope.allowedExternalReferences as unknown[]).includes(remote.externalReference))return fail('SHARED_OR_DIVERGENT_CUSTOMER');
+ await verifyRemotePaymentScope(String(target.providerCustomerId),scope,request);
+ return {scopeVersion:scope.scopeVersion,externalReference:remote.externalReference};
+}
+function customerIdentityDiagnostics(remote: Data,target: Data) {
+ return {idMatches:remote.id===target.providerCustomerId,documentMatches:digits(remote.cpfCnpj).length===11&&digits(remote.cpfCnpj)===digits(target.cpf),
+  referenceKind:remote.externalReference===`ilha-monthly-customer:${target.clientId}` ? 'OWNED' : remote.externalReference==null||remote.externalReference==='' ? 'EMPTY' : 'FOREIGN',
+  deleted:typeof remote.deleted==='boolean'?remote.deleted:null};
+}
 function publicTarget(target: Data) {
  const phone = normalizeMonthlyWhatsappPhone(target.phone);
  return {clientId:target.clientId,name:target.name,isFamily:target.isFamily,isMinor:target.isMinor,recipientKind:target.recipientKind,
@@ -82,18 +160,22 @@ function publicTarget(target: Data) {
 async function readTarget(clientId: string, environment: string, rpc: MonthlyWhatsappRpc) {
  return obj(await call(rpc,'get_monthly_whatsapp_target',{p_client_id:clientId,p_provider_environment:environment}));
 }
-export async function previewMonthlyWhatsappTarget(target: Data, request: MonthlyWhatsappRequest) {
+export async function previewMonthlyWhatsappTarget(target: Data, request: MonthlyWhatsappRequest,rpc?:MonthlyWhatsappRpc,environment='PRODUCTION') {
  const base = {...publicTarget(target),state:String(target.state || 'BLOCKED'),reason:target.reason || null,configured:false,notificationDisabled:null as boolean|null};
- if (!target.providerCustomerId) return {...base,state:target.state === 'READY' ? 'WAITING_CUSTOMER' : 'BLOCKED',reason:target.reason || 'CUSTOMER_NOT_CREATED'};
+ let diagnostics: Data = {};
+ if (!target.providerCustomerId) return {...base,state:target.state === 'READY' ? 'WAITING_CUSTOMER' : 'BLOCKED',reason:target.reason || 'CUSTOMER_NOT_CREATED',diagnostics};
  try {
   const customerId = String(target.providerCustomerId), remote = await request(`/customers/${encodeURIComponent(customerId)}`);
+  diagnostics = {identity:customerIdentityDiagnostics(remote,target)};
   base.notificationDisabled = typeof remote.notificationDisabled === 'boolean' ? remote.notificationDisabled : null;
-  if (!ownedCustomer(remote,target)) return {...base,state:'BLOCKED',reason:'SHARED_OR_DIVERGENT_CUSTOMER'};
+  const scopeProof=await proveReusableCustomer(remote,target,environment,rpc,request);
+  diagnostics={...diagnostics,scopeVerified:scopeProof!==null};
   const rules = await request(`/customers/${encodeURIComponent(customerId)}/notifications`);
   const plan = planMonthlyWhatsappRules(rules,customerId);
-  return {...base,configured:target.state === 'READY' && verifiedRules(rules,customerId,plan) && remote.notificationDisabled === false &&
+  diagnostics = {...diagnostics,notificationChannels:notificationChannelDiagnostics((rules.data as unknown[]).map(obj))};
+  return {...base,diagnostics,configured:target.state === 'READY' && verifiedRules(rules,customerId,plan) && remote.notificationDisabled === false &&
    normalizeMonthlyWhatsappPhone(remote.mobilePhone) === normalizeMonthlyWhatsappPhone(target.phone)};
- } catch(error) { return {...base,state:'BLOCKED',reason:codeOf(error)}; }
+ } catch(error) { return {...base,state:'BLOCKED',reason:codeOf(error),diagnostics:{...diagnostics,...diagnosticsOf(error)}}; }
 }
 export async function applyMonthlyWhatsappPolicy(clientId: string, actorId: string|null, environment: string,
  rpc: MonthlyWhatsappRpc, rawRequest: MonthlyWhatsappRequest, budgetMs = 15_000): Promise<PolicyResult> {
@@ -102,7 +184,7 @@ export async function applyMonthlyWhatsappPolicy(clientId: string, actorId: stri
   if (Date.now() >= deadline) return Promise.reject(new PolicyError("POLICY_DEADLINE_EXCEEDED"));
   return rawRequest(path,init);
  };
- let target: Data = {}, before: Data = {}, after: Data = {}, customerId = '', owned = false;
+ let target: Data = {}, before: Data = {}, after: Data = {}, diagnostics: Data = {}, customerId = '', owned = false;
  let needsDisable = false;
  const disable = async () => {
   const disabled = await rawRequest(`/customers/${encodeURIComponent(customerId)}`,{method:'PUT',body:JSON.stringify({notificationDisabled:true})});
@@ -121,7 +203,9 @@ export async function applyMonthlyWhatsappPolicy(clientId: string, actorId: stri
   if (!customerId) return {...publicTarget(target),state:target.state === 'READY' ? 'WAITING_CUSTOMER' : 'BLOCKED',reason:String(target.reason || 'CUSTOMER_NOT_CREATED')};
   const path = `/customers/${encodeURIComponent(customerId)}`;
   const remote = await request(path);
-  if (!ownedCustomer(remote,target)) return fail('SHARED_OR_DIVERGENT_CUSTOMER');
+  diagnostics = {identity:customerIdentityDiagnostics(remote,target)};
+  const scopeProof=await proveReusableCustomer(remote,target,environment,rpc,request);
+  diagnostics={...diagnostics,scopeVerified:scopeProof!==null};
   owned = true;
   // Unknown state is never evidence that delivery is disabled.
   needsDisable = true;
@@ -133,30 +217,42 @@ export async function applyMonthlyWhatsappPolicy(clientId: string, actorId: stri
   const rules = await request(`${path}/notifications`);
   before = safeConfig(remote,rules,target.recipientKind);
   const plan = planMonthlyWhatsappRules(rules,customerId);
+  diagnostics = {...diagnostics,notificationChannels:notificationChannelDiagnostics((rules.data as unknown[]).map(obj))};
   const alreadyConfigured = verifiedRules(rules,customerId,plan) && remote.notificationDisabled === false && normalizeMonthlyWhatsappPhone(remote.mobilePhone) === phone;
   if (!alreadyConfigured) {
    if (needsDisable) await disable();
    await request('/notifications/batch',{method:'PUT',body:JSON.stringify({customer:customerId,notifications:plan})});
    const verified = await request(`${path}/notifications`);
-   if (!verifiedRules(verified,customerId,plan)) return fail('NOTIFICATION_READBACK_MISMATCH');
+   let rulesMatch=false;
+   try {rulesMatch=verifiedRules(verified,customerId,plan);} catch(error) {
+    return fail(codeOf(error),{verificationChannels:diagnosticsOf(error).notificationChannels||[]});
+   }
+   if (!rulesMatch) return fail('NOTIFICATION_READBACK_MISMATCH',{
+    verificationChannels:notificationChannelDiagnostics(Array.isArray(verified.data)?verified.data.map(obj):[]),
+   });
    const fresh = await readTarget(clientId,environment,rpc);
    if (fresh.state !== 'READY' || fresh.policyEnabled !== true || fresh.targetVersion !== target.targetVersion || fresh.providerCustomerId !== customerId) return fail('TARGET_CHANGED');
+   if(scopeProof) {
+    const freshScope=await readCustomerScope(fresh,environment,rpc);
+    if(freshScope.scopeVersion!==scopeProof.scopeVersion||!(freshScope.allowedExternalReferences as unknown[]).includes(scopeProof.externalReference))return fail('CUSTOMER_SCOPE_CHANGED');
+    await verifyRemotePaymentScope(customerId,freshScope,request);
+   }
    // The recipient is taken from the current financial target, including the guardian for an isolated minor.
    needsDisable = true;
    await request(path,{method:'PUT',body:JSON.stringify({mobilePhone:phone,notificationDisabled:false})});
    const confirmed = await request(path);
-   if (!ownedCustomer(confirmed,target) || confirmed.notificationDisabled !== false || normalizeMonthlyWhatsappPhone(confirmed.mobilePhone) !== phone) return fail('CUSTOMER_READBACK_MISMATCH');
+   if (!sameCustomerIdentity(confirmed,target) || confirmed.externalReference!==remote.externalReference || confirmed.notificationDisabled !== false || normalizeMonthlyWhatsappPhone(confirmed.mobilePhone) !== phone) return fail('CUSTOMER_READBACK_MISMATCH');
    after = safeConfig(confirmed,verified,target.recipientKind);
   } else {after = before;needsDisable = true;}
   const auditId = obj(await audit('APPLIED',null)).auditId;
   needsDisable = false;
-  return {...publicTarget(target),state:'APPLIED',reason:null,configured:true,notificationDisabled:false,auditId};
+  return {...publicTarget(target),state:'APPLIED',reason:null,configured:true,notificationDisabled:false,auditId,diagnostics};
  } catch(error) {
   let reason = codeOf(error);
   if (owned && needsDisable) {try {await disable();} catch {reason='GLOBAL_DISABLE_UNCONFIRMED';}}
   const state = reason === 'POLICY_DEADLINE_EXCEEDED' || reason === 'PROVIDER_POLICY_FAILED' || reason === 'GLOBAL_DISABLE_UNCONFIRMED' || reason === 'POLICY_STATE_UNAVAILABLE' ? 'FAILED' : 'BLOCKED';
   if (target.targetVersion) {try {await audit(state,reason);} catch {reason = 'AUDIT_FAILED';}}
-  return {...publicTarget(target),clientId,state,reason,configured:false,notificationDisabled:owned && !needsDisable ? true : null};
+  return {...publicTarget(target),clientId,state,reason,configured:false,notificationDisabled:owned && !needsDisable ? true : null,diagnostics:{...diagnostics,...diagnosticsOf(error)}};
  }
 }
 export async function monthlyWhatsappBatch(body: Data,actorId: string,environment: string,rpc: MonthlyWhatsappRpc,request: MonthlyWhatsappRequest) {
@@ -171,7 +267,7 @@ export async function monthlyWhatsappBatch(body: Data,actorId: string,environmen
  if (!Array.isArray(page.targets) || page.targets.length>5) return fail('INVALID_TARGET_PAGE');
  const items = await Promise.all(page.targets.map(async value => {
   const target = obj(value);
-  return applying ? await applyMonthlyWhatsappPolicy(String(target.clientId),actorId,environment,rpc,request) : await previewMonthlyWhatsappTarget(target,request);
+  return applying ? await applyMonthlyWhatsappPolicy(String(target.clientId),actorId,environment,rpc,request) : await previewMonthlyWhatsappTarget(target,request,rpc,environment);
  }));
  return {policy,items,nextCursor:page.nextCursor || null,hasMore:page.hasMore === true,
   counts:{applied:items.filter(i=>i.state==='APPLIED').length,blocked:items.filter(i=>i.state==='BLOCKED').length,failed:items.filter(i=>i.state==='FAILED').length,waiting:items.filter(i=>i.state==='WAITING_CUSTOMER').length}};
