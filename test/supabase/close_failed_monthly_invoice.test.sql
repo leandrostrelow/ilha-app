@@ -31,8 +31,7 @@ update public.app_payment_invoices set status='PAGA',paid_at=now() where id='920
 select throws_ok($$select pg_temp.close_failed(4)$$,'P0001','Somente emissão com falha, sem cobrança remota nem recebimento, pode ser encerrada.','paid invoice cannot be closed');
 update public.financial_transactions set amount=351 where app_payment_invoice_id='92000000-0000-4000-8000-000000000025';
 select throws_ok($$select pg_temp.close_failed(5)$$,'P0001','Somente emissão com falha, sem cobrança remota nem recebimento, pode ser encerrada.','ledger amount mismatch blocks closure');
-update public.financial_transactions set type='DESPESA' where app_payment_invoice_id='92000000-0000-4000-8000-000000000026';
-select throws_ok($$select pg_temp.close_failed(6)$$,'P0001','Somente emissão com falha, sem cobrança remota nem recebimento, pode ser encerrada.','non-revenue ledger blocks closure');
+select throws_ok($$update public.financial_transactions set type='DESPESA' where app_payment_invoice_id='92000000-0000-4000-8000-000000000026'$$,'23514',null,'database rejects a non-revenue monthly ledger before closure');
 select is(pg_temp.close_failed(1,v,proof,clock_timestamp())->>'state','COMPLETED','strict absence proof closes the failed invoice') from prepared where n=1;
 select ok((select i.status='CANCELADA' and i.provider_status='CANCELLED' and i.paid_at is null and p.status='CANCELLED' and p.provider_payment_id is null and f.status='CANCELADO' and f.paid_at is null from public.app_payment_invoices i join public.app_invoice_provider_payments p on p.invoice_id=i.id join public.financial_transactions f on f.app_payment_invoice_id=i.id where i.id='92000000-0000-4000-8000-000000000021'),'closure coordinates invoice/provider/ledger without receipt');
 select is((select count(*)::int from private.monthly_failed_invoice_closures where invoice_id='92000000-0000-4000-8000-000000000021'),1,'one immutable closure audit');
