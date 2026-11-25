@@ -6,8 +6,8 @@ insert into auth.users(id,email,raw_app_meta_data,raw_user_meta_data)
 values('93000000-0000-4000-8000-000000000001','closed-receipt@tests.invalid','{"provider":"email","providers":["email"]}','{"app_context":"public"}');
 insert into public.app_clients(id,full_name,email,plan_amount,due_day,status,client_type)
 values('93000000-0000-4000-8000-000000000001','Synthetic closed receipt','closed-receipt@tests.invalid',350,10,'ATIVO','aluno');
-insert into public.app_payment_invoices(id,client_id,invoice_month,amount,due_date,status,provider_status)
-select ('93000000-0000-4000-8000-00000000002'||n)::uuid,'93000000-0000-4000-8000-000000000001',make_date(2030,n,1),350,make_date(2030,n,10),'ABERTA','FAILED' from generate_series(1,7) n;
+insert into public.app_payment_invoices(id,client_id,invoice_month,amount,due_date,status,provider_status,family_billing)
+select ('93000000-0000-4000-8000-00000000002'||n)::uuid,'93000000-0000-4000-8000-000000000001',make_date(2030,n,1),350,make_date(2030,n,10),'ABERTA','FAILED',n=4 from generate_series(1,7) n;
 insert into public.app_invoice_provider_payments(invoice_id,provider_environment,external_reference,expected_amount,status)
 select id,'SANDBOX','ilha-monthly-invoice:'||id,350,'FAILED' from public.app_payment_invoices where client_id='93000000-0000-4000-8000-000000000001';
 select private.sync_app_invoice_financial_transaction(id,'FAILED',null) from public.app_payment_invoices where client_id='93000000-0000-4000-8000-000000000001';
@@ -19,7 +19,7 @@ create function pg_temp.receive_closed(n integer,v text default null,proof jsonb
  received date default current_date-2,reason text default 'Synthetic confirmed club Pix.') returns jsonb language sql as $$
  select public.receive_closed_monthly_invoice(('93000000-0000-4000-8000-00000000002'||n)::uuid,'93000000-0000-4000-8000-000000000001',350,make_date(2030,n,1),make_date(2030,n,10),received,reason,v,proof,checked);
 $$;
-create temporary table prepared as select *,pg_temp.receive_closed(n)->>'version' v from fixtures;
+create temporary table prepared as select *,pg_temp.receive_closed(n)->>'version' v from fixtures where n<>4;
 select is(pg_temp.receive_closed(1)->>'state','CHECK_ABSENCE','preflight requires fresh remote absence');
 select is((select count(*)::int from private.monthly_invoice_receipts where invoice_id in(select id from fixtures)),0,'preflight registers no receipt');
 select throws_ok($$select pg_temp.receive_closed(1,(select v from prepared where n=1),null,clock_timestamp())$$,'P0001','Ausência de cobrança remota não comprovada.','no proof rejected');
@@ -34,7 +34,6 @@ select throws_ok($$select pg_temp.receive_closed(2,v,proof,clock_timestamp()) fr
 update public.app_invoice_provider_payments set provider_payment_id='pay_other' where invoice_id=(select id from fixtures where n=3);
 select throws_ok($$select pg_temp.receive_closed(3)$$,'P0001','Use somente emissão individual com falha já encerrada, sem cobrança remota nem recebimento.','remote id blocks local receipt');
 select set_config('ilha.monthly_billing_write','1',true);
-update public.app_payment_invoices set family_billing=true where id=(select id from fixtures where n=4);
 select throws_ok($$select pg_temp.receive_closed(4)$$,'P0001','Use somente emissão individual com falha já encerrada, sem cobrança remota nem recebimento.','family requires specific reconciliation');
 delete from private.monthly_failed_invoice_closures where invoice_id=(select id from fixtures where n=5);
 select throws_ok($$select pg_temp.receive_closed(5)$$,'P0001','Use somente emissão individual com falha já encerrada, sem cobrança remota nem recebimento.','ordinary cancellation cannot use receipt flow');
