@@ -43,7 +43,8 @@ select pg_temp.invoice(n),pg_temp.person(n),date_trunc('month',pg_temp.today()):
 insert into public.app_family_members(id,billing_responsible_id,member_client_id,full_name,relationship,monthly_amount,status,birth_date,contact_responsible_name,contact_responsible_phone,reviewed_at)
 select ('96000000-0000-4000-8002-'||lpad(n::text,12,'0'))::uuid,pg_temp.person(7),pg_temp.person(n),
  'Synthetic dependent '||n,'Filho(a)',100,case when n=14 then 'ATIVO' else 'PENDENTE' end,
- date '2015-01-01','Synthetic payer','27999990007',now() from generate_series(14,15)n;
+ date '2015-01-01','Synthetic payer','27999990007',case when n=14 then now() else null end
+from generate_series(14,15)n;
 -- Test the family exclusion independently of enrollment changes from triggers.
 update public.app_monthly_billing_enrollments set enabled=true where client_id in(pg_temp.person(14),pg_temp.person(15));
 create temporary table policy_before as select public.get_monthly_whatsapp_policy() as value;
@@ -100,8 +101,8 @@ update public.app_payment_invoices set status='AGUARDANDO',paid_at=null,provider
 update public.app_monthly_billing_enrollments set enabled=false where client_id=pg_temp.person(7);
 select ok(not pg_temp.target(7),'disabled enrollment has no reminder');
 update public.app_monthly_billing_enrollments set enabled=true where client_id=pg_temp.person(7);
-update public.app_clients set status='INATIVO' where id=pg_temp.person(7);
-select ok(not pg_temp.target(7),'inactive payer has no reminder');
+update public.app_clients set status='SUSPENSO' where id=pg_temp.person(7);
+select ok(not pg_temp.target(7),'suspended payer has no reminder');
 update public.app_clients set status='ATIVO' where id=pg_temp.person(7);
 update public.app_payment_invoices set pix_expires_at=now()-interval '1 minute' where id=pg_temp.invoice(7);
 select ok(not pg_temp.target(7),'expired Pix is not sent for collection');
