@@ -679,7 +679,8 @@ test('ADM impede mudança manual do estado financeiro de cobrança gerenciada pe
   assert.match(enrollmentRequest, /p_billing_method:/);
   const updateEnrollment = functionSource(adminSource, 'updateMonthlyBillingEnrollment');
   assert.match(updateEnrollment, /window\.confirm\(confirmation\)/);
-  assert.match(updateEnrollment, /Na primeira ativação, sem faturas anteriores, a mensalidade vence hoje/);
+  assert.match(updateEnrollment, /monthlyBillingActivationConfirmation\(clientName, nextMethod\)/);
+  assert.match(functionSource(adminSource, 'monthlyBillingActivationConfirmation'), /Na primeira ativação, sem faturas anteriores, a mensalidade vence hoje/);
   assert.match(updateEnrollment, /Faturas que já existem continuarão válidas/);
   assert.match(functionSource(adminSource, 'renderClientMonthlyBillingControl'), /Gerenciada pelo responsável/);
   assert.match(adminSource, /data-monthly-billing-enrollment/);
