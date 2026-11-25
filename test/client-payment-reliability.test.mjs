@@ -16,7 +16,7 @@ function fixture(names = []) {
     return nodes.get(id);
   };
   const c = vm.createContext({ console, Date, Set, Promise, URL, AbortController, JSON,
-    officialPlanSeed: [], storeProductSeed: [], window: { IlhaClientPreview: { mode: false } },
+    officialPlanSeed: [], storeProductSeed: [], window: { IlhaClientPreview: { mode: false }, clearTimeout() {} },
     storageGet: () => null, storageSet() {}, storageRemove() {}, clearTimeout() {}, setTimeout: () => 1,
     stopClientRealtime() {}, closeAnyModal() {}, scheduleSessionRefresh() {},
     $: node, document: { body: { style: { overflow: '' } }, activeElement: null }, requestAnimationFrame: f => f(),
@@ -27,7 +27,7 @@ function fixture(names = []) {
   });
   vm.runInContext(html.slice(html.indexOf('    let session = null;'), html.indexOf('    const pullRefreshState =')), c);
   vm.runInContext('let clientCommerce;', c);
-  for (const name of new Set(['clientSessionScope', 'clientScopeIsCurrent', 'assertClientScope', 'closePixModal', 'resetClientUserState', 'clearSession', 'storeSession', 'parseJsonResponse', ...names])) vm.runInContext(source(name), c);
+  for (const name of new Set(['clientSessionScope', 'clientScopeIsCurrent', 'assertClientScope', 'closePixModal', 'closeClientPushPrompt', 'resetClientUserState', 'clearSession', 'storeSession', 'parseJsonResponse', ...names])) vm.runInContext(source(name), c);
   const run = code => vm.runInContext(code, c);
   run("session = { user: { id: 'A' }, access_token: 'token-A', refresh_token: 'refresh-A' };");
   return { c, run, nodes, node };
@@ -38,6 +38,7 @@ test('logout removes financial/family state and closes the old Pix before anothe
   const { c, run, node } = fixture();
   run("paymentInvoices = [{ id: 'invoice-A', pix_payload: 'PIX-A' }]; familyInvoiceItems = [{ invoice_id: 'invoice-A' }]; familySummary = { name: 'A' }; announcements = [{ body: 'A' }]; myLessons = [{ name: 'A' }]; activePixPayload = 'PIX-A'; activePixInvoiceId = 'invoice-A';");
   node('pixModal').hidden = false;
+  node('clientPushPromptModal').hidden = false;
   node('pixModalBody').innerHTML = 'PIX-A';
   c.clearSession();
   assert.equal(run('session'), null);
@@ -46,6 +47,7 @@ test('logout removes financial/family state and closes the old Pix before anothe
   assert.equal(run('activePixPayload'), '');
   assert.equal(node('pixModalBody').innerHTML, '');
   assert.equal(node('pixModal').hidden, true);
+  assert.equal(node('clientPushPromptModal').hidden, true);
 });
 
 test('same-user token rotation preserves invoices; changing identity clears them', () => {

@@ -1735,6 +1735,8 @@
       display: block;
     }
 
+    .monthly-reminder-date { display: block; margin: 6px 0; color: var(--muted); font-size: 11px; font-weight: 650; }
+
     .notice-card-actions {
       display: flex;
       align-items: center;
@@ -4699,7 +4701,7 @@
       <div class="client-push-modal-visual"><span><svg><use href="#client-icon-bell"></use></svg></span></div>
       <div class="client-push-modal-body">
         <h2 id="clientPushPromptTitle">Ative suas notificações</h2>
-        <p id="clientPushPromptDescription">Receba convites de adversários, confirmações de reservas, mudanças de horários e avisos importantes do clube.</p>
+        <p id="clientPushPromptDescription">Receba lembretes das mensalidades, convites, reservas e avisos do clube.</p>
         <div class="client-push-modal-actions">
           <button class="primary-btn" type="button" id="clientPushPromptEnableBtn">Ativar notificações</button>
           <button class="ghost-btn" type="button" id="clientPushPromptLaterBtn">Agora não</button>
@@ -4937,7 +4939,7 @@
 
           <div class="push-consent-card" id="clientPushConsent" hidden>
             <span class="push-consent-icon"><svg><use href="#client-icon-bell"></use></svg></span>
-            <div class="push-consent-copy"><strong id="clientPushTitle">Ative suas notificações</strong><p id="clientPushDescription">É importante ativar para receber convites, aulas e informações financeiras.</p></div>
+            <div class="push-consent-copy"><strong id="clientPushTitle">Ative suas notificações</strong><p id="clientPushDescription">Receba lembretes das mensalidades, convites, reservas e avisos do clube.</p></div>
             <div class="push-consent-actions"><button class="primary-btn" type="button" id="clientEnableNotificationsBtn">Ativar</button></div>
           </div>
 
@@ -5322,7 +5324,6 @@
     const SESSION_KEY = 'ilha-client-session';
     const DEMO_SESSION_KEY = 'ilha-client-demo-session';
     const CLIENT_PUSH_PREFERENCE_KEY = 'ilha-client-push-enabled';
-    const CLIENT_PUSH_AFTER_LOGIN_KEY = 'ilha-client-push-enable-after-login';
     const CLIENT_INTRO_CONFIG_CACHE_KEY = 'ilha-client-intro-config-v1';
     const CLIENT_INTRO_SKIP_ONCE_KEY = 'ilha-client-intro-skip-once';
     const DEFAULT_CLIENT_INTRO_CONFIG = Object.freeze({ enabled: true, url: '/assets/app/ilha-play-intro.mp4' });
@@ -5406,6 +5407,12 @@
     let clientNotificationSoundEnabled = storageGet('localStorage', 'ilha-client-notification-sound') !== 'false';
     let clientPushSubscriptionOwnerUserId = '';
     let clientPushPromptShown = false;
+    let clientPushPromptTimer = 0;
+    let clientPushAppBackgrounded = false;
+    let clientPushActivationInProgress = false;
+    let clientPushSubscriptionPromise = null;
+    let clientPushActivationVersion = 0;
+    let clientPushPromptReturnFocus = null;
     let sessionRefreshPromise = null;
     let sessionRefreshTimer = 0;
     let sessionRestoreRetryTimer = 0;
@@ -5824,26 +5831,51 @@
       return saved;
     }
 
+    function clientPushSupportState() {
+      if (clientUsesIos() && !clientAppIsInstalled()) return 'install';
+      if (!('Notification' in window) || !('PushManager' in window) || !('serviceWorker' in navigator)) return 'unsupported';
+      return '';
+    }
+
     async function ensureClientPushSubscription(requestPermission) {
-      if ((session && session.demo) || !('Notification' in window) || !('PushManager' in window)) return false;
+      if ((session && session.demo) || clientPushSupportState()) return false;
       if (session && currentUser().id && !requestPermission && readStored(storageKey(CLIENT_PUSH_PREFERENCE_KEY), null) === false) return false;
-      const registration = await ensureClientServiceWorker();
-      if (!registration) return false;
-      let permission = Notification.permission;
-      if (permission === 'default' && requestPermission) permission = await Notification.requestPermission();
-      if (permission !== 'granted') return false;
-      let subscription = await registration.pushManager.getSubscription();
-      if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: clientUrlBase64ToBytes(CLIENT_PUSH_VAPID_KEY)
-        });
+      if (clientPushSubscriptionPromise) return clientPushSubscriptionPromise;
+      if (Notification.permission !== 'granted' && !requestPermission) return false;
+      const epoch = clientSessionEpoch;
+      clientPushActivationInProgress = true;
+      clientPushActivationVersion++;
+      const operation = (async function () {
+        // Ask from the click handler, before waiting for service-worker work.
+        let permission = Notification.permission;
+        if (permission === 'default' && requestPermission) permission = await Notification.requestPermission();
+        if (permission !== 'granted' || epoch !== clientSessionEpoch) return false;
+        const registration = await ensureClientServiceWorker();
+        if (!registration || epoch !== clientSessionEpoch) return false;
+        let subscription = await registration.pushManager.getSubscription();
+        if (epoch !== clientSessionEpoch) return false;
+        if (!subscription) {
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: clientUrlBase64ToBytes(CLIENT_PUSH_VAPID_KEY)
+          });
+        }
+        if (epoch !== clientSessionEpoch) return false;
+        if (session && currentUser().id) {
+          await saveClientPushSubscription(subscription);
+          return epoch === clientSessionEpoch && clientPushSubscriptionOwnerUserId === String(currentUser().id);
+        }
+        return true;
+      })();
+      clientPushSubscriptionPromise = operation;
+      try {
+        return await operation;
+      } finally {
+        if (clientPushSubscriptionPromise === operation) {
+          clientPushSubscriptionPromise = null;
+          clientPushActivationInProgress = false;
+        }
       }
-      if (session && currentUser().id) {
-        await saveClientPushSubscription(subscription);
-        return clientPushSubscriptionOwnerUserId === String(currentUser().id);
-      }
-      return true;
     }
 
     async function disableClientPushSubscription() {
@@ -5887,6 +5919,7 @@
     function closeWelcomeUpdateModal() {
       $('welcomeUpdateModal').hidden = true;
       storageSet('localStorage', 'ilha-welcome-update-v1', 'seen');
+      renderClientPushState({ prompt: true }).catch(function () {});
     }
 
     function showWelcomeUpdateModal() {
@@ -5899,8 +5932,12 @@
     }
 
     function closeClientPushPrompt() {
+      window.clearTimeout(clientPushPromptTimer);
+      clientPushPromptTimer = 0;
       const modal = $('clientPushPromptModal');
       if (modal) modal.hidden = true;
+      if (clientPushPromptReturnFocus && clientPushPromptReturnFocus.isConnected) clientPushPromptReturnFocus.focus();
+      clientPushPromptReturnFocus = null;
     }
 
     function openClientPushPrompt(state) {
@@ -5909,27 +5946,64 @@
       const description = $('clientPushPromptDescription');
       const button = $('clientPushPromptEnableBtn');
       if (!modal || !title || !description || !button) return;
+      if (modal.hidden) clientPushPromptReturnFocus = document.activeElement;
+      button.disabled = false;
       button.dataset.pushState = state || 'inactive';
       if (state === 'blocked') {
         title.textContent = 'Notificações bloqueadas';
-        description.textContent = 'Elas foram bloqueadas no navegador. Abra as configurações do aparelho, permita notificações para o Ilha Play e volte aqui para sincronizar.';
+        description.textContent = 'Permita os avisos do Ilha Play nas configurações de notificações do navegador ou do aparelho. Depois, volte ao app.';
         button.textContent = 'Como liberar';
-      } else if (state === 'unsupported') {
+      } else if (state === 'install') {
         title.textContent = 'Instale o Ilha Play';
         description.textContent = 'Para receber avisos no celular, adicione o Ilha Play à tela inicial e abra o aplicativo por esse ícone.';
         button.textContent = 'Como instalar';
+      } else if (state === 'unsupported') {
+        title.textContent = 'Notificações indisponíveis';
+        description.textContent = 'Este navegador não oferece notificações. Atualize o aparelho ou use um navegador compatível para ativar os avisos.';
+        button.textContent = 'Entendi';
       } else {
         title.textContent = 'Ative suas notificações';
-        description.textContent = 'Receba convites de adversários, confirmações de reservas, mudanças de horários e avisos importantes do clube.';
+        description.textContent = 'Receba lembretes das mensalidades, convites, reservas e avisos do clube.';
         button.textContent = 'Ativar notificações';
       }
       modal.hidden = false;
+      button.focus();
+    }
+
+    function clientPushPromptCanOpen() {
+      return !clientPreviewMode && session && !session.demo && !document.hidden &&
+        document.body.classList.contains('client-unlocked') &&
+        !document.body.classList.contains('client-intro-open') &&
+        (!$('welcomeUpdateModal') || $('welcomeUpdateModal').hidden);
     }
 
     function maybeShowClientPushPrompt(state) {
-      if (clientPushPromptShown || state === 'active' || !session || session.demo) return;
-      clientPushPromptShown = true;
-      window.setTimeout(function () { openClientPushPrompt(state); }, 450);
+      if (clientPushPromptShown || state === 'active' || !clientPushPromptCanOpen()) return;
+      const epoch = clientSessionEpoch;
+      window.clearTimeout(clientPushPromptTimer);
+      clientPushPromptTimer = window.setTimeout(async function () {
+        clientPushPromptTimer = 0;
+        if (epoch !== clientSessionEpoch || clientPushPromptShown || !clientPushPromptCanOpen() || clientPushActivationInProgress) return;
+        // Permission or subscription may have changed since the first render.
+        const activationVersion = clientPushActivationVersion;
+        const latestState = await renderClientPushState().catch(function () { return 'hidden'; });
+        if (epoch !== clientSessionEpoch || clientPushPromptShown || !clientPushPromptCanOpen() || clientPushActivationInProgress || activationVersion !== clientPushActivationVersion || latestState === 'active' || latestState === 'hidden') return;
+        clientPushPromptShown = true;
+        openClientPushPrompt(latestState);
+      }, 450);
+    }
+
+    function handleClientPushAppVisibility() {
+      if (document.hidden) {
+        window.clearTimeout(clientPushPromptTimer);
+        clientPushPromptTimer = 0;
+        if (!clientPushActivationInProgress) clientPushAppBackgrounded = true;
+        return;
+      }
+      if (!clientPushAppBackgrounded || clientPushActivationInProgress) return;
+      clientPushAppBackgrounded = false;
+      clientPushPromptShown = false;
+      renderClientPushState({ prompt: true }).catch(function () {});
     }
 
     async function renderClientPushState(options) {
@@ -5950,10 +6024,13 @@
       if (profileControl) profileControl.hidden = true;
       card.classList.remove('is-active');
       let state = 'inactive';
-      if (!('Notification' in window) || !('PushManager' in window)) {
-        state = 'unsupported';
-        title.textContent = 'Ative suas notificações';
-        description.textContent = 'Adicione o Ilha Play à tela inicial para receber os avisos.';
+      const supportState = clientPushSupportState();
+      if (supportState) {
+        state = supportState;
+        title.textContent = state === 'install' ? 'Ative suas notificações' : 'Notificações indisponíveis';
+        description.textContent = state === 'install'
+          ? 'Adicione o Ilha Play à tela inicial para receber os avisos.'
+          : 'Use um navegador compatível e atualizado para receber os avisos.';
         button.disabled = false;
         button.textContent = 'Como ativar';
         button.dataset.pushState = state;
@@ -5961,8 +6038,10 @@
         if (options.prompt) maybeShowClientPushPrompt(state);
         return state;
       }
+      const epoch = clientSessionEpoch;
       const registration = await ensureClientServiceWorker().catch(function () { return null; });
       const subscription = registration ? await registration.pushManager.getSubscription().catch(function () { return null; }) : null;
+      if (epoch !== clientSessionEpoch || !session) return 'hidden';
       const userId = String(currentUser().id || '');
       let ownerConfirmed = Boolean(userId && clientPushSubscriptionOwnerUserId === userId);
       if (Notification.permission === 'granted' && subscription && !ownerConfirmed) {
@@ -5973,8 +6052,10 @@
           ownerConfirmed = false;
         }
       }
+      if (epoch !== clientSessionEpoch || !session) return 'hidden';
       if (Notification.permission === 'granted' && subscription && ownerConfirmed) {
         state = 'active';
+        closeClientPushPrompt();
         if (profileControl) profileControl.hidden = false;
         if (profileButton) {
           profileButton.disabled = false;
@@ -5989,7 +6070,7 @@
       } else {
         state = 'inactive';
         title.textContent = 'Ative suas notificações';
-        description.textContent = 'É importante ativar para receber convites, aulas e informações financeiras.';
+        description.textContent = 'Receba lembretes das mensalidades, convites, reservas e avisos do clube.';
         button.disabled = false;
         button.textContent = Notification.permission === 'granted' && subscription
           ? 'Sincronizar'
@@ -6005,12 +6086,17 @@
       const state = String(button && button.dataset.pushState || 'inactive');
       if (state === 'blocked') {
         openClientPushPrompt('blocked');
-        toast('Libere o Ilha Play em Ajustes > Notificações no seu aparelho.');
+        toast('Permita os avisos nas configurações do navegador ou do aparelho e volte ao app.');
+        return;
+      }
+      if (state === 'install') {
+        openClientPushPrompt('install');
+        installClientApp().catch(function () {});
         return;
       }
       if (state === 'unsupported') {
-        openClientPushPrompt('unsupported');
-        installClientApp().catch(function () {});
+        if (button && button.id === 'clientPushPromptEnableBtn') closeClientPushPrompt();
+        else openClientPushPrompt('unsupported');
         return;
       }
       button.disabled = true;
@@ -6022,8 +6108,12 @@
       }
       enableClientNotificationSound();
       const enabled = await ensureClientPushSubscription(true);
-      await renderClientPushState();
-      if (!enabled) throw new Error('A permissão não foi liberada. Verifique as configurações do navegador.');
+      const nextState = await renderClientPushState();
+      if (!enabled && nextState !== 'active') {
+        if (nextState === 'hidden' || !session) return;
+        openClientPushPrompt(nextState);
+        throw new Error('As notificações ainda não foram ativadas. Você pode tentar novamente ou escolher Agora não.');
+      }
       closeClientPushPrompt();
       toast('Notificações ativadas neste aparelho.');
     }
@@ -7433,7 +7523,10 @@
       selectedCourtDate = ''; selectedCourtSlot = null; courtChallengeSelecting = false;
       courtDataLoading = false; courtDataReloadPending = false;
       clientDataLoadError = null; paymentInvoicesLoadError = null; clientDataWarningAt = 0;
+      closeClientPushPrompt();
       clientPushSubscriptionOwnerUserId = ''; clientPushPromptShown = false;
+      clientPushAppBackgrounded = false;
+      clientPushSubscriptionPromise = null; clientPushActivationInProgress = false;
       paymentFilter = { month: 'all', year: 'all' }; paymentRefreshPromise = null;
       // Do not leave another person's data in hidden panels or a closed dialog.
       ['paymentList', 'paymentCurrentMonth', 'paymentAdvance', 'pixModalBody', 'clientStoreOrders', 'familyList', 'clientCourtChallengeList'].forEach(function (id) {
@@ -8197,10 +8290,7 @@
         unlockPendingAccess();
         return false;
       }
-      const requestedBeforeLogin = storageGet('sessionStorage', CLIENT_PUSH_AFTER_LOGIN_KEY) === '1';
-      ensureClientPushSubscription(requestedBeforeLogin).finally(function () {
-        storageRemove('sessionStorage', CLIENT_PUSH_AFTER_LOGIN_KEY);
-      }).catch(function () {});
+      ensureClientPushSubscription(false).catch(function () {});
       const scope = clientSessionScope();
       await loadClientData();
       assertClientScope(scope);
@@ -8434,6 +8524,7 @@
       const identity = client && (client.full_name || client.email) || currentUser().email || '';
       $('pendingAccessIdentity').innerHTML = identity ? 'Conta conectada: <strong>' + escapeHtml(identity) + '</strong>' : '';
       schedulePendingAccessRefresh();
+      renderClientPushState({ prompt: true }).catch(function () {});
     }
 
     async function checkPendingApproval(showFeedback) {
@@ -8643,6 +8734,14 @@
       } catch (_) { return ''; }
     }
 
+    function monthlyReminderDateLabel(item) {
+      if (!item || item.source_type !== 'client' || item.event_type !== 'FATURA_MENSAL_LEMBRETE' || !item.published_at) return '';
+      const published = String(item.published_at);
+      const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(published) ? published + 'T12:00:00-03:00' : published);
+      if (Number.isNaN(date.getTime())) return '';
+      return 'Aviso de ' + date.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    }
+
     function visibleAnnouncements() {
       const seenInvoices = new Set();
       const invoices = new Map(paymentInvoices.map(function (invoice) { return [String(invoice.id), invoice]; }));
@@ -8751,9 +8850,11 @@
         const sourceKey = notificationSourceKey(item);
         const imageUrl = safeImageUrl(item.image_url);
         const linkUrl = safeHttpUrl(item.link_url);
+        const reminderDate = monthlyReminderDateLabel(item);
         return '<article class="notice-card">' +
           (imageUrl ? '<button class="notice-image-button" type="button" data-notice-photo="' + escapeHtml(sourceKey) + '" aria-label="Abrir imagem inteira"><img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(item.title || 'Comunicado') + '" /></button>' : '') +
           '<div><h3>' + escapeHtml(item.title) + '</h3>' +
+          (reminderDate ? '<small class="monthly-reminder-date">' + escapeHtml(reminderDate) + '</small>' : '') +
           (item.body ? '<p>' + escapeHtml(item.body) + '</p>' : '') + '</div>' +
           '<div class="notice-card-actions">' +
             (linkUrl ? '<a class="ghost-btn" href="' + escapeHtml(linkUrl) + '" target="_blank" rel="noopener noreferrer">Abrir comunicado</a>' : '') +
@@ -8778,9 +8879,11 @@
         $('homeNotices').hidden = homeItems.length === 0;
         $('homeAnnouncements').innerHTML = homeItems.map(function (item) {
           const imageUrl = safeImageUrl(item.image_url);
+          const reminderDate = monthlyReminderDateLabel(item);
           return '<button class="dashboard-notice-card' + (imageUrl ? '' : ' no-image') + '" type="button" data-home-notification="' + escapeHtml(notificationSourceKey(item)) + '">' +
             (imageUrl ? '<img src="' + escapeHtml(imageUrl) + '" alt="" />' : '') +
             '<div class="dashboard-notice-copy"><strong>' + escapeHtml(item.title) + '</strong>' +
+            (reminderDate ? '<small class="monthly-reminder-date">' + escapeHtml(reminderDate) + '</small>' : '') +
             (item.body ? '<span>' + escapeHtml(item.body) + '</span>' : '<span>Novo aviso do Ilha Tênis</span>') + '</div>' +
             '<span class="dashboard-notice-arrow" aria-hidden="true">›</span>' +
           '</button>';
@@ -10354,6 +10457,13 @@
       $('clientStorePosBtn').addEventListener('click', function () { clientStoreCommerce().checkout(null, true); });
       $('clientStoreSearch').addEventListener('input', renderStore);
       $('clientStoreCategory').addEventListener('change', renderStore);
+      document.addEventListener('visibilitychange', handleClientPushAppVisibility);
+      window.addEventListener('pageshow', function (event) {
+        if (event.persisted) {
+          clientPushAppBackgrounded = true;
+          handleClientPushAppVisibility();
+        }
+      });
       document.addEventListener('visibilitychange', function () {
         if (!document.hidden && session) {
           if (document.body.classList.contains('client-checking')) {
@@ -10571,7 +10681,6 @@
         enableClientNotificationSound();
         ensureClientPushSubscription(true).then(function (enabled) {
           if (enabled) {
-            storageSet('sessionStorage', CLIENT_PUSH_AFTER_LOGIN_KEY, '1');
             button.textContent = 'Notificações ativadas';
             toast('Notificações ativadas. Você ficará por dentro das novidades.');
           } else {
@@ -10598,6 +10707,7 @@
         return 'intro-error';
       }).finally(function () {
         showWelcomeUpdateModal();
+        renderClientPushState({ prompt: true }).catch(function () {});
       });
     }
 

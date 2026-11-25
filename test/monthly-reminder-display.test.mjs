@@ -49,3 +49,32 @@ test('other notices and payment confirmations stay visible; missing links do not
   const missing2 = { ...older, id: 'missing2', source_id: 'missing2', link_url: '' };
   assert.deepEqual(fixture([older, paid, generic, missing1, missing2], [{ id: 'invoice-a', status: 'PAGA' }])(), ['paid', 'generic', 'missing1', 'missing2']);
 });
+
+
+test('monthly reminders display their original publication date in club time, not the current date', () => {
+  const context = vm.createContext({});
+  vm.runInContext(extract('monthlyReminderDateLabel(', 'visibleAnnouncements('), context);
+  const label = value => context.monthlyReminderDateLabel(value);
+  assert.equal(label(reminder('dated', 'invoice-a', '2026-11-25T01:30:00Z')), 'Aviso de 24/11/2026');
+  assert.equal(label(reminder('dated', 'invoice-a', '2026-11-25T12:00:00Z')), 'Aviso de 25/11/2026');
+  assert.equal(label(reminder('date-only', 'invoice-a', '2026-11-25')), 'Aviso de 25/11/2026');
+  assert.equal(label({ ...newer, event_type: 'FATURA_MENSAL_PAGA' }), '');
+  assert.equal(label({ ...newer, published_at: 'invalid' }), '');
+  assert.equal(label({ ...newer, published_at: null }), '');
+});
+
+test('home and notification list show the dated reminder without relabeling its historical title', () => {
+  const item = { ...reminder('dated', 'invoice-a', '2026-11-24T12:00:00Z'), title: 'Sua mensalidade vence amanhã', body: 'Vencimento em 25/11/2026.' };
+  const nodes = Object.fromEntries(['notificationsList', 'notificationToolbar', 'homeAnnouncements', 'homeNotices'].map(id => [id, { innerHTML: '', hidden: false, querySelectorAll: () => [] }]));
+  const context = vm.createContext({ $: id => nodes[id], visibleAnnouncements: () => [item], readAnnouncementKeys: () => [],
+    announcementKey: row => row.id, notificationSourceKey: row => row.id, safeImageUrl: () => '', safeHttpUrl: () => '', escapeHtml: value => String(value), updateNotificationBadges: () => {} });
+  vm.runInContext(extract('monthlyReminderDateLabel(', 'visibleAnnouncements(') + extract('renderAnnouncements(', 'renderHome('), context);
+  context.renderAnnouncements();
+  for (const id of ['notificationsList', 'homeAnnouncements']) {
+    assert.match(nodes[id].innerHTML, /Aviso de 24\/11\/2026/);
+    assert.match(nodes[id].innerHTML, /Sua mensalidade vence amanhã/);
+    assert.match(nodes[id].innerHTML, /Vencimento em 25\/11\/2026/);
+  }
+  item.event_type = 'GERAL'; context.renderAnnouncements();
+  for (const id of ['notificationsList', 'homeAnnouncements']) assert.doesNotMatch(nodes[id].innerHTML, /Aviso de/);
+});

@@ -120,6 +120,31 @@ autoriza inferir exclusividade futura do cadastro.
 Referências: [atualização em lote](https://docs.asaas.com/reference/atualizar-notificacoes-existentes-em-lote)
 e [desativação de notificações](https://central.ajuda.asaas.com/hc/pt-br/articles/31998232571803).
 
+## Lembretes no Ilha Play
+
+O app mantém uma programação independente do WhatsApp do Asaas. O cron
+`ilha-play-monthly-payment-reminders` roda às 09h30 de São Paulo e gera um
+lembrete por pagador/competência/data somente em D−3, D−1, D0, D+1 e D+3.
+O título informa se a mensalidade vence em três dias, amanhã, hoje, venceu
+ontem ou há três dias; o corpo mostra o valor, o vencimento e o acesso ao Pix.
+
+O envio exige conta e cobrança habilitadas, fatura disponível para pagamento e
+ausência de recebimento ou revisão pendente. Dependentes não recebem a cobrança
+da família. O dispatcher revalida a fatura, a data e o texto antes de enviar;
+pagamento, cancelamento ou alteração posterior podem encerrar um aviso na fila.
+Reenvios manuais autorizados no ADM continuam separados desta programação.
+
+Sem assinatura de push, o aviso fica dentro do app e o dispatcher registra
+`SEM_ASSINATURA`. `ENVIADO` comprova o aceite do serviço de push, não a exibição
+na tela do aparelho. Confira a execução do cron, a fila e as assinaturas por
+consulta, sem acionar envios de teste em produção.
+
+Ao abrir ou retornar ao app, quem ainda não tem notificações ativas recebe o
+convite de ativação. A permissão nativa é solicitada somente após tocar no botão.
+Quem bloqueou as notificações recebe orientação para liberar nas configurações;
+no iPhone, o app precisa estar adicionado à tela inicial. Aparelhos já ativos não
+recebem novamente o convite.
+
 ## 2. E2E financeiro válido em staging
 
 Este é o roteiro operacional completo. Ele usa somente o projeto Supabase

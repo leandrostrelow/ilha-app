@@ -11,7 +11,7 @@ begin
     order by c.client_id limit 1;
   if target is null then raise exception 'Missing eligible test fixture'; end if;
   -- Bring an unissued fixture into the window, only inside this rollback.
-  update public.app_clients set due_day=least(extract(day from now() at time zone 'America/Sao_Paulo')::integer,28) where id=target;
+  update public.app_clients set due_day=extract(day from now() at time zone 'America/Sao_Paulo')::integer where id=target;
   if has_function_privilege('authenticated','public.prepare_client_monthly_pix(uuid,date,text)','EXECUTE')
     or has_function_privilege('anon','public.get_my_monthly_payment_options()','EXECUTE')
     or has_function_privilege('authenticated','public.enqueue_due_monthly_payment_reminders()','EXECUTE') then
@@ -31,9 +31,10 @@ begin
   update public.app_monthly_billing_enrollments set enabled=true where client_id=target;
   perform set_config('ilha.monthly_billing_write','1',true);
   update public.app_payment_invoices set provider_status='PENDING',status='AGUARDANDO',pix_payload='TEST-ROLLBACK-NOT-A-PAYMENT',pix_expires_at=now()+interval '1 day' where id=test_invoice_id returning due_date into due;
+  update public.app_invoice_provider_payments set status='PENDING' where invoice_id=test_invoice_id;
   for n in -6..6 loop
     if exists(select 1 from private.monthly_payment_reminder_targets(due+n) t where t.invoice_id=test_invoice_id)
-      is distinct from (n between -5 and 5) then raise exception 'Reminder boundary incorrect: %',n; end if;
+      is distinct from (n in (-3,-1,0,1,3)) then raise exception 'Reminder boundary incorrect: %',n; end if;
   end loop;
   perform public.enqueue_due_monthly_payment_reminders();
   perform public.enqueue_due_monthly_payment_reminders();

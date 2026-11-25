@@ -469,13 +469,13 @@ test('home personaliza saudação e oferece controle completo das notificações
   assert.match(renderHome, /Bem-vindo, /);
   assert.match(home, /id="clientPushConsent"/);
   assert.doesNotMatch(home, /id="clientPushStatus"|>Ligadas</);
-  assert.match(home, /É importante ativar para receber convites, aulas e informações financeiras/);
+  assert.match(home, /Receba lembretes das mensalidades, convites, reservas e avisos do clube/);
   assert.doesNotMatch(home, /Escolha o melhor horário/);
   assert.doesNotMatch(home, /dashboard-notices-head|Avisos do clube|Ver todos/);
   assert.ok(home.indexOf('id="homeAnnouncements"') < home.indexOf('id="clientPushConsent"'));
   assert.match(indexSource, /\.push-consent-card \{ grid-template-columns: 38px minmax\(0, 1fr\) auto;/);
   assert.match(indexSource, /id="clientPushPromptModal"/);
-  assert.match(indexSource, /Receba convites de adversários/);
+  assert.match(indexSource, /Receba lembretes das mensalidades, convites, reservas e avisos do clube/);
   assert.match(renderPush, /options\.prompt/);
   assert.match(renderPush, /maybeShowClientPushPrompt/);
   assert.match(renderPush, /card\.hidden = state === 'active'/);
