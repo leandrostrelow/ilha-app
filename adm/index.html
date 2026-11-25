@@ -12573,6 +12573,25 @@
       color: #ffffff;
     }
 
+    #invoiceReceiptModal .admin-modal-head > div { min-width: 0; }
+    #invoiceReceiptSummary {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 4px 10px;
+      margin: 10px 0 0;
+      line-height: 1.4;
+    }
+    #invoiceReceiptName {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      overflow-wrap: anywhere;
+    }
+    #invoiceReceiptDue { font-size: 14px; }
+    #invoiceReceiptAmount { font-size: 22px; font-weight: 800; }
+    #invoiceReceiptDate { cursor: pointer; }
+
     .adm-login {
       background:
         radial-gradient(circle at 15% 18%, rgba(168, 213, 52, .2), transparent 28%),
@@ -24977,12 +24996,12 @@
 
     <div class="admin-modal-overlay" id="invoiceReceiptModal" aria-hidden="true" style="z-index:1200">
       <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="invoiceReceiptTitle" tabindex="-1" style="max-width:540px">
-        <div class="admin-modal-head"><div><h2 id="invoiceReceiptTitle">Registrar pagamento</h2><p id="invoiceReceiptSummary" class="muted"></p></div><button class="ghost-btn" type="button" id="invoiceReceiptClose" aria-label="Fechar recebimento">Fechar</button></div>
+        <div class="admin-modal-head"><div><h2 id="invoiceReceiptTitle">Registrar pagamento</h2><p id="invoiceReceiptSummary" class="muted"><strong id="invoiceReceiptName"></strong><span id="invoiceReceiptDue"></span></p></div><button class="ghost-btn" type="button" id="invoiceReceiptClose" aria-label="Fechar recebimento">Fechar</button></div>
         <form id="invoiceReceiptForm">
           <div class="admin-modal-body" style="display:grid;gap:16px">
             <p class="muted" style="margin:0">Baixa somente desta fatura. O plano, a forma padrão de cobrança e as próximas mensalidades não serão alterados.</p>
             <label>Valor recebido · baixa integral<input id="invoiceReceiptAmount" readonly /></label>
-            <label>Forma de recebimento<select id="invoiceReceiptMethod" required><option value="CASH">Dinheiro em mãos</option><option value="CLUB_PIX">Pix direto do clube</option></select></label>
+            <label>Forma de recebimento<select id="invoiceReceiptMethod" required><option value="CLUB_PIX" selected>PIX CLUBE</option><option value="CASH">Dinheiro em mãos</option></select></label>
             <label>Data do recebimento<input id="invoiceReceiptDate" type="date" required /></label>
             <label>Observação · opcional<textarea id="invoiceReceiptNotes" rows="2" maxlength="500" placeholder="Ex.: recebido na recepção"></textarea></label>
             <label style="display:flex;flex-direction:row;align-items:flex-start;gap:10px"><input id="invoiceReceiptConfirmed" type="checkbox" required style="width:18px;min-height:18px;flex:none;order:0;margin-top:2px" /><span style="order:1;text-transform:none;font-size:13px;letter-spacing:0">Confirmo que o clube já recebeu este valor.</span></label>
@@ -48550,9 +48569,11 @@ const colors = tournamentArtPalette({
       if (!invoiceCanReceiveManually(invoice)) { toast('Atualize a fatura antes de registrar o pagamento.'); return; }
       invoiceReceiptTarget = invoice;
       const client = findClientByKey(invoice.clientId);
-      $('invoiceReceiptSummary').textContent = (client && client.name || invoice.client || 'Mensalidade') + ' · ' + invoiceMonthLabel(invoice.invoiceMonth);
+      $('invoiceReceiptName').textContent = client && client.name || invoice.client || 'Mensalidade';
+      $('invoiceReceiptDue').textContent = 'Vencimento ' + (invoice.dueDate ? financeDateLabel(invoice.dueDate) : 'não informado');
       $('invoiceReceiptForm').reset();
       $('invoiceReceiptAmount').value = money(invoice.amount);
+      $('invoiceReceiptMethod').value = 'CLUB_PIX';
       $('invoiceReceiptDate').value = localDateString();
       $('invoiceReceiptDate').max = localDateString();
       $('invoiceReceiptError').hidden = true;
@@ -52570,6 +52591,11 @@ const colors = tournamentArtPalette({
         }
       });
       $('invoiceReceiptClose').addEventListener('click', closeInvoiceReceipt);
+      $('invoiceReceiptDate').addEventListener('click', function () {
+        if (typeof this.showPicker === 'function') {
+          try { this.showPicker(); } catch (_) { /* Mantém a edição nativa se o navegador não permitir abrir o calendário. */ }
+        }
+      });
       $('invoiceReceiptForm').addEventListener('submit', saveInvoiceReceipt);
       $('clientModal').addEventListener('click', function (event) {
         const suspensionReview = event.target.closest('[data-invoice-suspension-review]');
