@@ -23112,6 +23112,7 @@
                   <button class="ghost-btn" type="button" id="clientMonthlyBillingToggleBtn" disabled>Carregando...</button>
                   <button class="primary-btn" type="button" id="clientMonthlyBillingGenerateBtn" hidden>Gerar mensalidade</button>
                 </div>
+                <p id="clientBillingActivationError" role="alert" class="client-invoice-provider-error" hidden></p>
               </div>
               <div class="field">
                 <label for="clientEditFrequency">Aulas por semana</label>
@@ -33686,6 +33687,9 @@ const colors = tournamentArtPalette({
       monthlyBillingEnrollmentsLoaded: false,
       monthlyBillingEnrollmentsLoading: false,
       monthlyBillingEnrollmentSavingClientId: '',
+      clientBillingActivationDraft: null,
+      clientBillingMethodDraft: null,
+      clientProfileSaving: false,
       teamTab: 'list',
       barAccessUsersLoaded: false,
       barAccessUsersLoading: false,
@@ -34038,14 +34042,15 @@ const colors = tournamentArtPalette({
       visible: function () { return document.body.classList.contains('club-home') && !document.body.classList.contains('adm-locked'); },
       read: supabaseRestAll, write: supabaseRest, error: reportActionError,
       invoiceAction: handleDashboardInvoiceAction,
-      openClient: async function (id, finance) {
-        requireClubPermission('clients.read');
-        await loadOpsData(true);
-        if (!finance) openClientsModule();
-        openClientModal(id, finance ? 'Finance' : 'Info');
-      }
+      openClient: openDashboardClient
     });
 
+    async function openDashboardClient(id, finance) {
+      requireClubPermission('clients.read');
+      if (opsState.clientProfileSaving) return;
+      await loadOpsData(true);
+      openClientModal(id, finance ? 'Finance' : 'Info');
+    }
 
     function beginBarAction(key, form) {
       if (barActionLocks.has(key)) return false;
@@ -37057,8 +37062,12 @@ const colors = tournamentArtPalette({
     }
 
     function openClientModal(key, initialTab) {
+      if (opsState.clientProfileSaving) return;
       const client = findClientByKey(key);
       if (!client) return;
+      opsState.clientBillingActivationDraft = null;
+      opsState.clientBillingMethodDraft = null;
+      $('clientBillingActivationError').hidden = true;
       document.querySelectorAll('#clientModal [data-modal-mode-disabled]').forEach(function (control) {
         control.disabled = control.dataset.modalModeDisabled === 'true';
         delete control.dataset.modalModeDisabled;
@@ -37151,7 +37160,10 @@ const colors = tournamentArtPalette({
       });
     }
 
-    function closeClientModal() {
+    function closeClientModal(saved) {
+      if (opsState.clientProfileSaving && saved !== true) return;
+      opsState.clientBillingActivationDraft = null;
+      opsState.clientBillingMethodDraft = null;
       clientLessonEditEnrollmentId = '';
       closeFamilyEditor();
       hideClubAdminModal('clientModal');
@@ -47696,21 +47708,26 @@ const colors = tournamentArtPalette({
       }
       const clientId = String(client.id || '');
       const loaded = opsState.monthlyBillingEnrollmentsLoaded;
-      const saving = opsState.monthlyBillingEnrollmentSavingClientId === clientId;
+      const saving = opsState.clientProfileSaving || opsState.monthlyBillingEnrollmentSavingClientId === clientId;
       const enrollment = opsState.monthlyBillingEnrollments[clientId] || {};
       const enabled = enrollment.enabled === true;
+      const pending = opsState.clientBillingActivationDraft && opsState.clientBillingActivationDraft.clientId === clientId;
+      const draftMethod = opsState.clientBillingMethodDraft;
       const billingMethod = loaded
         ? normalizeMonthlyBillingMethod(enrollment.billingMethod)
         : 'ASAAS_PIX';
-      methodSelect.value = billingMethod;
-      status.textContent = !loaded
+      methodSelect.value = pending ? opsState.clientBillingActivationDraft.billingMethod
+        : !enabled && draftMethod && draftMethod.clientId === clientId ? draftMethod.billingMethod : billingMethod;
+      status.textContent = pending
+        ? 'Ativação preparada. Clique em Salvar e ativar cobrança para salvar o cadastro e depois ativar a mensalidade com os dados confirmados.'
+        : !loaded
         ? 'Consultando a ativação segura...'
         : enabled
           ? billingMethod === 'ASAAS_PIX'
             ? 'Pix Asaas habilitado. A mensalidade respeita o dia de vencimento cadastrado e o Pix é preparado automaticamente. O aluno também pode gerar a fatura no Financeiro do app; a baixa é automática.'
             : 'Ativada em ' + monthlyBillingMethodLabel(billingMethod) + '. O sistema cria o lançamento interno e o ADM confirma o recebimento.'
           : 'Desativada. Escolha a forma de pagamento e ative quando este aluno entrar na cobrança mensal.';
-      button.textContent = saving ? 'Salvando...' : !loaded ? 'Carregando...' : enabled ? 'Desativar cobrança' : 'Ativar cobrança';
+      button.textContent = saving ? 'Salvando...' : !loaded ? 'Carregando...' : pending ? 'Cancelar ativação' : enabled ? 'Desativar cobrança' : 'Ativar cobrança';
       button.disabled = !loaded || saving || !clientId || !canUseClubPermission('finance.write');
       button.className = enabled ? 'ghost-btn' : 'primary-btn';
       methodSelect.disabled = !loaded || saving || !clientId || !canUseClubPermission('finance.write');
@@ -47723,6 +47740,30 @@ const colors = tournamentArtPalette({
       generateButton.hidden = !loaded || !enabled || !canUseClubPermission('finance.write');
       generateButton.dataset.clientId = clientId;
       generateButton.disabled = saving || Boolean(opsState.monthlyBillingLoading);
+      const submit = $('clientModalForm').querySelector('[type="submit"]');
+      if (submit && !opsState.clientProfileSaving) submit.textContent = pending ? 'Salvar e ativar cobrança' : 'Salvar cadastro';
+    }
+
+    function toggleClientMonthlyBilling() {
+      if (opsState.clientProfileSaving || opsState.monthlyBillingEnrollmentSavingClientId || !opsState.monthlyBillingEnrollmentsLoaded) return;
+      requireClubPermission('finance.write');
+      const client = findClientByKey(opsState.selectedClientId);
+      if (!client) return;
+      if (client.status === 'SUSPENSO') { resumeSuspendedEnrollment(client.id, null); return; }
+      if (activeFamilyLinkForClient(client.id)) throw new Error('Dependente não recebe cobrança própria. Abra a conta do responsável.');
+      const enrollment = opsState.monthlyBillingEnrollments[client.id] || {};
+      const method = normalizeMonthlyBillingMethod($('clientMonthlyBillingMethod').value);
+      if (enrollment.enabled || !canUseClubPermission('clients.write')) {
+        return updateMonthlyBillingEnrollment(client.id, !enrollment.enabled, method);
+      }
+      opsState.clientBillingActivationDraft = opsState.clientBillingActivationDraft
+        ? null : { clientId: String(client.id), billingMethod: method };
+      $('clientBillingActivationError').hidden = true;
+      renderClientMonthlyBillingControl(client);
+    }
+
+    function monthlyBillingActivationConfirmation(clientName, method) {
+      return 'Ativar a cobrança mensal de ' + clientName + ' em ' + monthlyBillingMethodLabel(method) + '? Na primeira ativação, sem faturas anteriores, a mensalidade vence hoje.' + (method === 'ASAAS_PIX' ? ' O Pix será preparado automaticamente e ficará disponível no app.' : ' O lançamento pode ser gerado em Mensalidades.') + ' Faturas existentes serão preservadas.';
     }
 
     async function updateMonthlyBillingEnrollment(clientId, nextEnabled, nextMethod, options) {
@@ -47743,7 +47784,7 @@ const colors = tournamentArtPalette({
       if (options.methodOnly) {
         confirmation = 'Alterar a forma de pagamento mensal de ' + clientName + ' para ' + monthlyBillingMethodLabel(nextMethod) + '? Faturas já emitidas não serão convertidas.';
       } else if (nextEnabled) {
-        confirmation = 'Ativar a cobrança mensal de ' + clientName + ' em ' + monthlyBillingMethodLabel(nextMethod) + '? Na primeira ativação, sem faturas anteriores, a mensalidade vence hoje.' + (nextMethod === 'ASAAS_PIX' ? ' O Pix será preparado automaticamente e ficará disponível no app.' : ' O lançamento pode ser gerado em Mensalidades.') + ' Faturas existentes serão preservadas.';
+        confirmation = monthlyBillingActivationConfirmation(clientName, nextMethod);
       } else {
         confirmation = 'Desativar novas mensalidades para ' + clientName + '? Faturas que já existem continuarão válidas.';
       }
@@ -47759,6 +47800,9 @@ const colors = tournamentArtPalette({
         const row = Array.isArray(saved) ? saved[0] : saved;
         const enabled = Boolean(row && (row.enabled === true || row.enabled === 'true'));
         const billingMethod = normalizeMonthlyBillingMethod(row && (row.billingMethod || row.billing_method) || nextMethod);
+        if (!row || String(row.clientId || row.client_id || '') !== clientId || enabled !== nextEnabled || billingMethod !== nextMethod) {
+          throw new Error('O servidor não confirmou o estado solicitado da cobrança. Confira antes de tentar novamente.');
+        }
         opsState.monthlyBillingEnrollments[clientId] = { enabled: enabled, billingMethod: billingMethod };
         opsState.monthlyBillingEnrollmentsLoaded = true;
         applyMonthlyBillingEnrollmentsToPayload();
@@ -50318,21 +50362,33 @@ const colors = tournamentArtPalette({
     async function saveClientModal(event) {
       event.preventDefault();
       const submitButton = event.submitter;
+      if (opsState.clientProfileSaving || submitButton && submitButton.disabled) return;
+      opsState.clientProfileSaving = true;
+      let profileSaved = false;
+      let activationAttempted = false;
+      let activationCompleted = false;
       try {
         requireClubPermission('clients.write');
-        if (submitButton && submitButton.disabled) return;
         if (submitButton) {
           submitButton.disabled = true;
           submitButton.textContent = 'Salvando...';
         }
         const client = findClientByKey(opsState.selectedClientId);
         if (!client) throw new Error('Aluno não encontrado.');
+        const activation = opsState.clientBillingActivationDraft;
+        if (activation) {
+          requireClubPermission('finance.write');
+          if (activation.clientId !== String(client.id)) throw new Error('A ativação pertence a outra ficha. Feche e abra novamente.');
+        }
+        $('clientBillingActivationError').hidden = true;
         const values = clientProfileFormValues();
         const initial = opsState.clientFormInitialValues || values;
         const familyMember = activeFamilyLinkForClient(client.id);
         if (familyMember) {
+          if (activation) throw new Error('Dependente não recebe cobrança própria. Abra a conta do responsável.');
+          $('clientModalForm').inert = true;
           await saveFamilyStudentProfile(familyMember, client, values, initial);
-          closeClientModal();
+          closeClientModal(true);
           renderClientsModule();
           renderStudentsModule();
           if (opsState.monthlyBillingLoaded) await loadMonthlyBillingPreview(false);
@@ -50396,6 +50452,12 @@ const colors = tournamentArtPalette({
         if (!dueChanged) localUpdate.dueDay = client.dueDay;
         if (!lessonsChanged && !planChanged) localUpdate.weeklyLessons = client.weeklyLessons;
         const accessReleaseRequested = !wasActive && String(localUpdate.status || '').toUpperCase() === 'ATIVO';
+        if (activation) {
+          if (localUpdate.status !== 'ATIVO') throw new Error('Selecione o status Ativo antes de salvar e ativar a cobrança.');
+          if (!localUpdate.dueDay) throw new Error('Informe o dia de vencimento antes de ativar a cobrança.');
+          if (!window.confirm('Salvar os dados desta ficha e ativar a cobrança em seguida?\n\n' + monthlyBillingActivationConfirmation(localUpdate.name, activation.billingMethod))) return;
+        }
+        $('clientModalForm').inert = true;
         if (!isAdminDemoMode()) {
           const payload = {
             full_name: localUpdate.name,
@@ -50430,20 +50492,40 @@ const colors = tournamentArtPalette({
           if (savedClient) Object.assign(client, mapClientRow(savedClient));
         }
         if (isAdminDemoMode()) Object.assign(client, localUpdate);
+        profileSaved = true;
+        opsState.clientFormInitialValues = values;
         const accessReleased = !wasActive && String(client.status || localUpdate.status || '').toUpperCase() === 'ATIVO';
         if (accessReleased && !isAdminDemoMode()) await notifyClientAccessReleased(client);
-        closeClientModal();
+        if (activation) {
+          activationAttempted = true;
+          const activated = await updateMonthlyBillingEnrollment(client.id, true, activation.billingMethod, { skipConfirmation: true });
+          if (!activated) throw new Error(opsState.monthlyBillingMessage || 'Não foi possível confirmar a ativação.');
+          activationCompleted = true;
+          opsState.clientBillingActivationDraft = null;
+        }
+        closeClientModal(true);
         renderClientsModule();
         renderHomeDashboard();
         if ((financeChanged || lessonsChanged) && opsState.monthlyBillingLoaded) await loadMonthlyBillingPreview(false);
-        toast(accessReleased ? 'Aluno liberado e notificado.' : 'Aluno atualizado.');
+        toast(activationCompleted ? 'Cadastro salvo e cobrança mensal ativada.' : accessReleased ? 'Aluno liberado e notificado.' : 'Aluno atualizado.');
       } catch (error) {
+        if (profileSaved && activationAttempted && !activationCompleted) {
+          $('clientBillingActivationError').textContent = 'Cadastro salvo, mas a ativação da cobrança não foi confirmada. ' + (error && error.message || '') + ' Confira os dados e clique em Salvar e ativar cobrança para tentar novamente nesta ficha.';
+          $('clientBillingActivationError').hidden = false;
+          selectClientProfileTab('Finance');
+          renderClientsModule();
+          renderHomeDashboard();
+        }
         reportActionError(error);
       } finally {
+        opsState.clientProfileSaving = false;
+        $('clientModalForm').inert = false;
         if (submitButton && submitButton.isConnected) {
           submitButton.disabled = false;
-          submitButton.textContent = 'Salvar cadastro';
+          submitButton.textContent = opsState.clientBillingActivationDraft ? 'Salvar e ativar cobrança' : 'Salvar cadastro';
         }
+        const activeClient = findClientByKey(opsState.selectedClientId);
+        if (activeClient && $('clientModal').classList.contains('show')) renderClientMonthlyBillingControl(activeClient);
       }
     }
 
@@ -52504,18 +52586,21 @@ const colors = tournamentArtPalette({
         finally { this.disabled = false; }
       });
       $('clientMonthlyBillingToggleBtn').addEventListener('click', function () {
-        if (this.dataset.resumeSuspendedClient) { resumeSuspendedEnrollment(this.dataset.resumeSuspendedClient, null); return; }
-        updateMonthlyBillingEnrollment(
-          this.dataset.monthlyBillingClient,
-          this.dataset.monthlyBillingEnabled !== 'true',
-          $('clientMonthlyBillingMethod').value
-        );
+        Promise.resolve().then(toggleClientMonthlyBilling).catch(reportActionError);
       });
       $('clientMonthlyBillingMethod').addEventListener('change', function () {
         const clientId = this.dataset.monthlyBillingClient;
         const enabled = this.dataset.monthlyBillingEnabled === 'true';
         const savedMethod = normalizeMonthlyBillingMethod(this.dataset.monthlyBillingSavedMethod);
         const nextMethod = normalizeMonthlyBillingMethod(this.value);
+        if (opsState.clientProfileSaving) return;
+        if (!enabled && canUseClubPermission('clients.write')) {
+          opsState.clientBillingMethodDraft = { clientId: clientId, billingMethod: nextMethod };
+          if (opsState.clientBillingActivationDraft && opsState.clientBillingActivationDraft.clientId === clientId) {
+            opsState.clientBillingActivationDraft.billingMethod = nextMethod;
+          }
+          return;
+        }
         if (!clientId || nextMethod === savedMethod) return;
         updateMonthlyBillingEnrollment(clientId, enabled, nextMethod, { methodOnly: true });
       });
