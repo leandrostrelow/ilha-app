@@ -7,6 +7,14 @@ vm.runInNewContext(readFileSync(new URL('../adm/monthly-reconciliation.js',impor
 const build=(v,c)=>JSON.parse(JSON.stringify(context.window.IlhaMonthlyReconciliation.payload(v,c)));
 const config={canWrite:true,clientId:'synthetic-client',today:'2026-11-06',invoices:[{id:'synthetic-invoice',status:'PAGA',providerStatus:'RECEIVED',amount:250,invoiceMonth:'2026-11-01',dueDate:'2026-11-03'}]};
 const values={action:'historical_receipt',month:'2026-10',amount:'230',dueDate:'2026-10-05',receivedOn:'2026-10-06',reason:'Pix do clube conferido no extrato.',confirmed:true};
+test('Pix após emissão encerrada exige data explícita e preserva os dados da fatura',()=>{
+ const c={...config,today:'2026-11-25',invoices:[{...config.invoices[0],status:'CANCELADA',providerStatus:'CANCELLED'}]};
+ const v={action:'receive_closed',invoiceId:'synthetic-invoice',receivedOn:'2026-11-23',reason:values.reason,confirmed:true};
+ assert.deepEqual(build(v,c),{action:v.action,invoiceId:v.invoiceId,expectedAmount:250,invoiceMonth:'2026-11-01',oldDueDate:'2026-11-03',receivedOn:'2026-11-23',reason:v.reason});
+ for(const change of [{receivedOn:''},{receivedOn:'2026-11-26'},{receivedOn:'2026-02-30'},{confirmed:false}]) assert.throws(()=>build({...v,...change},c));
+ for(const change of [{status:'ABERTA'},{providerStatus:'FAILED'},{paidAt:'2026-11-23'},{supersededAt:'2026-11-25'}]) assert.throws(()=>build(v,{...c,invoices:[{...c.invoices[0],...change}]}));
+ assert.throws(()=>build(v,{...c,canWrite:false}));
+});
 test('histórico mantém valor e datas reais explicitamente informados',()=>{
  assert.deepEqual(build(values,config),{action:'historical_receipt',clientId:'synthetic-client',invoiceMonth:'2026-10-01',amount:230,dueDate:'2026-10-05',receivedOn:'2026-10-06',reason:values.reason});
 });

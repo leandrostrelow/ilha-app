@@ -5,6 +5,7 @@ import { adjustInvoiceAmount } from "../_shared/audited-invoice-amount.ts";
 import { adjustMonthlyInvoice } from "../_shared/audited-invoice-adjustment.ts";
 import { prepareFailedReissueReschedule } from "../_shared/failed-reissue-reschedule.ts";
 import { closeFailedMonthlyInvoice } from "../_shared/close-failed-monthly-invoice.ts";
+import { receiveClosedMonthlyInvoice } from "../_shared/closed-invoice-receipt.ts";
 import { prepareAuditedMonthlyReissue } from "../_shared/audited-monthly-reissue.ts";
 // deno-lint-ignore-file no-import-prefix no-explicit-any
 import "jsr:@supabase/functions-js@2.112.3/edge-runtime.d.ts";
@@ -978,6 +979,11 @@ Deno.serve(async (request: Request) => {
         return json(request, await monthlyWhatsappBatch(body,auth.userId,asaasConfig().environment,
           (name,args)=>adminClient!.rpc(name,args),(path,init)=>asaasRequest(path,init,2_500)));
       } catch { return json(request,{error:"Não foi possível conferir a política de WhatsApp. Atualize a consulta antes de repetir."},400); }
+    }
+    if (action === "receive_closed") {
+      if (auth.kind !== "USER" || !auth.canWrite || !auth.userId) return json(request, {error:"Seu acesso não permite registrar recebimentos."},403);
+      return json(request,await receiveClosedMonthlyInvoice(body,auth.userId,asaasConfig().environment,
+        (name,args)=>adminClient!.rpc(name,args),asaasRequest));
     }
     if (action === "close_failed_invoice") {
       if (auth.kind !== "USER" || !auth.canWrite || !auth.userId) return json(request, {error:"Seu acesso não permite encerrar cobranças."},403);
