@@ -41,6 +41,34 @@ test('exportação segue a lista filtrada, preserva centavos e bloqueia fórmula
   assert.match(fn,/quoteCsv/);assert.match(fn,/\[=\+@-\]/);
 });
 
+test('baixa em Inadimplentes reabre em Pix Clube e mostra o vencimento da fatura sem presumir a data de recebimento', async()=>{
+  const invoice = {id:'invoice-demo',clientId:'client-demo',invoiceMonth:'2026-11-01',dueDate:'2026-11-15',amount:350,status:'VENCIDA',providerStatus:'OVERDUE'};
+  const fields = Object.fromEntries(['Form','Name','Due','Amount','Method','Date','Error'].map(id=>['invoiceReceipt'+id,{}]));
+  fields.invoiceReceiptForm.reset = ()=>{ fields.invoiceReceiptMethod.value='CASH'; };
+  const ctx = vm.createContext({Date,Intl,opsData:{paymentInvoices:[invoice]},invoiceReceiptBusy:false,
+    $: id=>fields[id], requireClubPermission:()=>{}, isAdminDemoMode:()=>false, loadOpsData:async()=>{},
+    findClientByKey:()=>({name:'Aluno de teste'}), localDateString:()=>'2026-11-25',
+    money:amount=>Number(amount).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),
+    showClubAdminModal:()=>{}, toast:()=>{throw new Error('Fatura indisponível');}});
+  for (const name of ['financeDateValue','financeDateLabel','invoiceIsProviderManaged','invoiceCanReceiveManually','confirmManualMonthlyPayment','handleDashboardInvoiceAction']) {
+    vm.runInContext(source.match(new RegExp('    (?:async )?function '+name+'\\([^]*?\\n    \\}'))[0],ctx);
+  }
+  await ctx.handleDashboardInvoiceAction('receipt',{id:invoice.id});
+  assert.equal(fields.invoiceReceiptMethod.value,'CLUB_PIX');
+  assert.equal(fields.invoiceReceiptName.textContent,'Aluno de teste');
+  assert.equal(fields.invoiceReceiptDue.textContent,'Vencimento 15/11/2026');
+  assert.equal(fields.invoiceReceiptAmount.value.replace(/\s/g,' '),'R$ 350,00');
+  assert.equal(fields.invoiceReceiptDate.value,'');
+  assert.equal(fields.invoiceReceiptDate.max,'2026-11-25');
+  fields.invoiceReceiptMethod.value='CASH';
+  fields.invoiceReceiptDate.value='2026-11-20';
+  await ctx.handleDashboardInvoiceAction('receipt',{id:invoice.id});
+  assert.equal(fields.invoiceReceiptMethod.value,'CLUB_PIX');
+  assert.equal(fields.invoiceReceiptDate.value,'');
+  assert.equal(invoice.status,'VENCIDA');
+  assert.equal(invoice.paidAt,undefined);
+});
+
 test('Postgres: vencimento compartilhado, permissões, concorrência e rollback atômico', {skip:!process.env.ILHA_PGLITE_PATH}, async()=>{
   const {PGlite}=await import(process.env.ILHA_PGLITE_PATH); const db=new PGlite();
   const payer='11111111-1111-4111-8111-111111111111', member='22222222-2222-4222-8222-222222222222', student='33333333-3333-4333-8333-333333333333';
